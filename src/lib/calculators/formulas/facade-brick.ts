@@ -1,0 +1,216 @@
+import type { CalculatorDefinition } from "../types";
+
+export const facadeBrickDef: CalculatorDefinition = {
+  id: "exterior_brick",
+  slug: "oblitsovochnyj-kirpich",
+  title: "Калькулятор облицовочного кирпича",
+  h1: "Калькулятор облицовочного кирпича — расчёт для фасада",
+  description: "Рассчитайте количество облицовочного (фасадного) кирпича, раствора и анкеров для облицовки фасада или цоколя.",
+  metaTitle: "Калькулятор облицовочного кирпича | Фасад — Мастерок",
+  metaDescription: "Бесплатный калькулятор облицовочного кирпича: рассчитайте количество фасадного кирпича, раствора и гибких связей для облицовки дома.",
+  category: "facade",
+  categorySlug: "fasad",
+  tags: ["облицовочный кирпич", "фасадный кирпич", "облицовка фасада", "клинкер", "кирпич"],
+  popularity: 62,
+  complexity: 2,
+  fields: [
+    {
+      key: "area",
+      label: "Площадь облицовки (без проёмов)",
+      type: "slider",
+      unit: "м²",
+      min: 5,
+      max: 1000,
+      step: 5,
+      defaultValue: 80,
+    },
+    {
+      key: "brickType",
+      label: "Тип кирпича",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Одинарный (250×120×65 мм)" },
+        { value: 1, label: "Полуторный (250×120×88 мм)" },
+        { value: 2, label: "Двойной (250×120×138 мм)" },
+        { value: 3, label: "Клинкерный (250×85×65 мм)" },
+      ],
+    },
+    {
+      key: "jointThickness",
+      label: "Толщина шва",
+      type: "select",
+      defaultValue: 10,
+      options: [
+        { value: 8, label: "8 мм (клинкер, декоративная кладка)" },
+        { value: 10, label: "10 мм (стандарт)" },
+        { value: 12, label: "12 мм (крупный кирпич)" },
+      ],
+    },
+    {
+      key: "withTie",
+      label: "Гибкие связи (анкеры)",
+      type: "select",
+      defaultValue: 1,
+      options: [
+        { value: 0, label: "Не требуется (вентфасад без связей)" },
+        { value: 1, label: "Гибкие связи стеклопластиковые ТПА" },
+        { value: 2, label: "Гибкие связи нержавеющая сталь" },
+      ],
+    },
+  ],
+  calculate(inputs): import("../types").CalculatorResult {
+    const area = Math.max(5, inputs.area ?? 80);
+    const brickType = Math.round(inputs.brickType ?? 0);
+    const jointMm = inputs.jointThickness ?? 10;
+    const withTie = Math.round(inputs.withTie ?? 1);
+
+    // Размеры кирпичей (Д × В)
+    const dims: { l: number; h: number; label: string }[] = [
+      { l: 250, h: 65, label: "250×65" },   // одинарный
+      { l: 250, h: 88, label: "250×88" },   // полуторный
+      { l: 250, h: 138, label: "250×138" }, // двойной
+      { l: 250, h: 65, label: "250×65" },   // клинкер (тот же, но другая ширина)
+    ];
+
+    const dim = dims[brickType];
+    const l = (dim.l + jointMm) / 1000;
+    const h = (dim.h + jointMm) / 1000;
+    const bricksPerM2 = 1 / (l * h);
+
+    const totalBricks = area * bricksPerM2;
+    const totalWithReserve = Math.ceil(totalBricks * 1.10);
+
+    const materials = [];
+
+    const brickLabels = ["Одинарный кирпич 250×120×65 мм", "Полуторный кирпич 250×120×88 мм", "Двойной кирпич 250×120×138 мм", "Клинкерный кирпич 250×85×65 мм"];
+    materials.push({
+      name: `${brickLabels[brickType]} (шов ${jointMm} мм)`,
+      quantity: totalBricks,
+      unit: "шт",
+      withReserve: totalWithReserve,
+      purchaseQty: totalWithReserve,
+      category: "Кирпич",
+    });
+
+    // Раствор кладочный — расход ~0.23 м³ на 1 м³ кладки
+    // Кладка в полкирпича: толщина 120 мм → объём кладки = area × 0.12
+    const masonryVolume = area * 0.12;
+    const mortarVolume = masonryVolume * 0.23;
+    const cementBags = Math.ceil((mortarVolume * 430) / 50); // цемент 430 кг/м³ → мешки 50 кг
+    const sandM3 = Math.ceil(mortarVolume * 1.4 * 10) / 10; // песок 1.4 м³/м³
+
+    materials.push({
+      name: "Цемент М500 (мешок 50 кг) для кладочного раствора М100",
+      quantity: (mortarVolume * 430) / 50,
+      unit: "мешков",
+      withReserve: cementBags,
+      purchaseQty: cementBags,
+      category: "Раствор",
+    });
+    materials.push({
+      name: "Песок речной (м³)",
+      quantity: mortarVolume * 1.4,
+      unit: "м³",
+      withReserve: sandM3,
+      purchaseQty: sandM3,
+      category: "Раствор",
+    });
+
+    // Гибкие связи (анкеры) — 4 шт/м²
+    if (withTie > 0) {
+      const tiesCount = Math.ceil(area * 5 * 1.05);
+      materials.push({
+        name: withTie === 1 ? "Гибкая связь стеклопластиковая ТПА ∅6 мм, L=200 мм" : "Гибкая связь нержавеющая сталь ∅4 мм",
+        quantity: area * 5,
+        unit: "шт",
+        withReserve: tiesCount,
+        purchaseQty: tiesCount,
+        category: "Крепёж",
+      });
+    }
+
+    // Гидроизоляция цоколя — рулонная
+    const perimeterEst = Math.sqrt(area) * 4;
+    const hydroArea = perimeterEst * 0.3; // периметр × 0.3 м высоты
+    const hydroAreaWithReserve = hydroArea * 1.15;
+    const hydroRolls = Math.ceil(hydroAreaWithReserve / 10); // 1 рулон = 10 м²
+    materials.push({
+      name: "Гидроизоляция цоколя рулонная (рулон 10 м², ширина 0.3 м)",
+      quantity: hydroArea / 10,
+      unit: "рулонов",
+      withReserve: hydroRolls,
+      purchaseQty: hydroRolls,
+      category: "Гидроизоляция",
+    });
+
+    // Вентиляционные коробочки — 1 на 2 м.п. нижнего ряда
+    const ventBoxCount = Math.ceil(perimeterEst / 2);
+    materials.push({
+      name: "Вентиляционная коробочка для кирпичной кладки",
+      quantity: ventBoxCount,
+      unit: "шт",
+      withReserve: ventBoxCount,
+      purchaseQty: ventBoxCount,
+      category: "Вентиляция",
+    });
+
+    // Расшивка швов (затирка фасадная Weber.Vetonit или Ceresit CE 33)
+    // Расход ~0.3 кг/м² (шов 10 мм, кирпич одинарный)
+    const groutKg = area * 0.35;
+    const groutBags = Math.ceil(groutKg / 25);
+    materials.push({
+      name: "Кладочный раствор/затирка для расшивки швов (мешок 25 кг)",
+      quantity: groutKg / 25,
+      unit: "мешков",
+      withReserve: groutBags,
+      purchaseQty: groutBags,
+      category: "Затирка",
+    });
+
+    // Грунтовка гидрофобная для кирпича (финишная обработка)
+    const hydrophoberLiters = area * 0.2 * 1.1; // 0.2 л/м²
+    const hydrophoberCans = Math.ceil(hydrophoberLiters / 5);
+    materials.push({
+      name: "Гидрофобизатор для кирпича (канистра 5 л, ~0.2 л/м²)",
+      quantity: hydrophoberLiters / 5,
+      unit: "канистр",
+      withReserve: hydrophoberCans,
+      purchaseQty: hydrophoberCans,
+      category: "Защита",
+    });
+
+    const warnings: string[] = [];
+    if (brickType === 3 && jointMm > 10) {
+      warnings.push("Клинкерный кирпич традиционно укладывается со швом 8–10 мм — более толстый шов смотрится нехарактерно");
+    }
+    if (withTie === 0) {
+      warnings.push("Без гибких связей облицовочная кладка должна опираться на фундамент и иметь конструктивное крепление к стене");
+    }
+    warnings.push("Облицовочный кирпич укладывается с вентиляционным зазором 20–40 мм от несущей стены (СП 15.13330)");
+
+    return {
+      materials,
+      totals: {
+        area,
+        bricksPerM2: Math.round(bricksPerM2),
+        totalBricks,
+      } as Record<string, number>,
+      warnings,
+    };
+  },
+  formulaDescription: `
+**Расчёт облицовочного кирпича:**
+- Одинарный 250×65: ~64 шт/м² (шов 10мм)
+- Полуторный 250×88: ~49 шт/м²
+- Двойной 250×138: ~31 шт/м²
+- Раствор: ~0.23 м³ на 1 м³ кладки (кладка в полкирпича)
+- Гибкие связи: 5 шт/м²
+  `,
+  howToUse: [
+    "Введите площадь облицовки (без проёмов)",
+    "Выберите тип кирпича и толщину шва",
+    "Укажите необходимость гибких связей",
+    "Нажмите «Рассчитать»",
+  ],
+};

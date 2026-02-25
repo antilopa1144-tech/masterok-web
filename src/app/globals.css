@@ -1,0 +1,353 @@
+/* ═══════════════════════════════════════════════════════════════
+   Мастерок — globals.css
+   Tailwind CSS v4.2 — светлая тема
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Импорт Tailwind v4 ─────────────────────────────────── */
+@import "tailwindcss";
+
+/* ── 2. Дизайн-токены ──────────────────────────────────────── */
+@theme {
+  /* Акцентный цвет — оранжевый */
+  --color-accent-50: #fff7ed;
+  --color-accent-100: #ffedd5;
+  --color-accent-200: #fed7aa;
+  --color-accent-300: #fdba74;
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+  --color-accent-700: #c2410c;
+  --color-accent-800: #9a3412;
+  --color-accent-900: #7c2d12;
+
+  /* Серая палитра — slate */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* Категорийные цвета */
+  --color-cat-foundation: #6366f1;
+  --color-cat-walls: #14b8a6;
+  --color-cat-flooring: #f59e0b;
+  --color-cat-roofing: #ef4444;
+  --color-cat-facade: #8b5cf6;
+  --color-cat-engineering: #06b6d4;
+  --color-cat-interior: #10b981;
+  --color-cat-ceiling: #3b82f6;
+
+  /* Типографика */
+  --font-sans: var(--font-inter, "Inter"), ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Тени */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-header: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-result: 0 4px 24px rgba(249, 115, 22, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  /* Скругления */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+}
+
+/* ── 3. Базовые стили ──────────────────────────────────────── */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    box-sizing: border-box;
+    border-color: var(--color-slate-200);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-800);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--color-slate-900);
+  }
+
+  a {
+    color: var(--color-accent-600);
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  a:hover {
+    color: var(--color-accent-700);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+/* ── 4. Контейнеры ─────────────────────────────────────────── */
+
+.page-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.page-container-wide {
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-container,
+  .page-container-wide {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container,
+  .page-container-wide {
+    padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .page-container-wide {
+    max-width: 90rem;
+    padding-inline: 3rem;
+  }
+}
+
+/* ── 5. Компонентные утилиты ───────────────────────────────── */
+
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-2
+    px-6 py-3
+    bg-accent-500 text-white font-semibold
+    rounded-xl
+    shadow-sm
+    transition-all duration-150
+    hover:bg-accent-600 hover:shadow-md
+    active:bg-accent-700
+    focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:outline-none
+    disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-secondary {
+  @apply inline-flex items-center justify-center gap-2
+    px-5 py-2.5
+    bg-white text-slate-700 font-medium
+    rounded-xl
+    border border-slate-200
+    transition-all duration-150
+    hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm
+    active:bg-slate-100
+    focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:outline-none;
+}
+
+@utility card {
+  @apply bg-white rounded-2xl border border-slate-200 shadow-card;
+}
+
+@utility card-hover {
+  @apply card
+    transition-all duration-200 ease-out
+    hover:shadow-card-hover hover:border-slate-300 hover:-translate-y-0.5;
+}
+
+@utility input-field {
+  @apply w-full px-4 py-2.5
+    bg-white border border-slate-200 rounded-xl
+    text-slate-800 placeholder:text-slate-400
+    transition-all duration-150
+    focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500;
+}
+
+@utility input-label {
+  @apply block text-sm font-medium text-slate-700 mb-1.5;
+}
+
+@utility badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+@utility result-card {
+  @apply bg-white rounded-2xl p-5 border-2 border-accent-200 shadow-result;
+}
+
+@utility range-slider {
+  @apply w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer
+    accent-accent-500;
+}
+
+@utility section-title {
+  @apply text-xl font-bold text-slate-900 mb-4;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── 6. Hero-градиент ──────────────────────────────────────── */
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    #fff7ed 0%,
+    #fef3c7 25%,
+    #f8fafc 50%,
+    #eff6ff 100%
+  );
+}
+
+/* ── 7. Слайдеры (range input) ─────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-slate-200);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-accent-500);
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-accent-500);
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ── 8. Скроллбар ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate-400);
+}
+
+/* ── 9. Анимации ──────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@utility slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+@utility scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* ── 10. Категорийные цвета ────────────────────────────────── */
+@utility cat-foundation { color: var(--color-cat-foundation); }
+@utility cat-walls { color: var(--color-cat-walls); }
+@utility cat-flooring { color: var(--color-cat-flooring); }
+@utility cat-roofing { color: var(--color-cat-roofing); }
+@utility cat-facade { color: var(--color-cat-facade); }
+@utility cat-engineering { color: var(--color-cat-engineering); }
+@utility cat-interior { color: var(--color-cat-interior); }
+@utility cat-ceiling { color: var(--color-cat-ceiling); }
+
+@utility bg-cat-foundation { background-color: #eef2ff; }
+@utility bg-cat-walls { background-color: #ccfbf1; }
+@utility bg-cat-flooring { background-color: #fef3c7; }
+@utility bg-cat-roofing { background-color: #fee2e2; }
+@utility bg-cat-facade { background-color: #f3e8ff; }
+@utility bg-cat-engineering { background-color: #cffafe; }
+@utility bg-cat-interior { background-color: #d1fae5; }
+@utility bg-cat-ceiling { background-color: #dbeafe; }

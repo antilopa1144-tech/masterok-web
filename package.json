@@ -1,0 +1,33 @@
+{
+  "name": "masterok-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "basic-ftp": "^5.1.0",
+    "lucide-react": "^0.575.0",
+    "next": "^15.5.12",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.0",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "^15.5.12",
+    "postcss": "^8",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.2.0",
+    "typescript": "^5",
+    "vitest": "^4.0.18"
+  }
+}

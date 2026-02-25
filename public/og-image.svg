@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1e293b"/>
+  <rect x="60" y="60" width="1080" height="510" rx="20" fill="#334155"/>
+  <text x="600" y="200" font-size="80" text-anchor="middle" font-family="serif" fill="white">&#x1F528;</text>
+  <text x="600" y="320" font-size="72" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="white">&#x41C;&#x430;&#x441;&#x442;&#x435;&#x440;&#x43E;&#x43A;</text>
+  <text x="600" y="410" font-size="36" text-anchor="middle" font-family="sans-serif" fill="#94a3b8">50+ &#x441;&#x442;&#x440;&#x43E;&#x438;&#x442;&#x435;&#x43B;&#x44C;&#x43D;&#x44B;&#x445; &#x43A;&#x430;&#x43B;&#x44C;&#x43A;&#x443;&#x43B;&#x44F;&#x442;&#x43E;&#x440;&#x43E;&#x432; &#x43E;&#x43D;&#x43B;&#x430;&#x439;&#x43D;</text>
+  <rect x="460" y="460" width="280" height="70" rx="35" fill="#f97316"/>
+  <text x="600" y="505" font-size="28" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="white">masterok-calc.ru</text>
+</svg>
