@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
@@ -227,9 +228,9 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         </div>
         <p className="text-xs text-slate-400 mt-2 text-center">
           Ответы Михалыча носят справочный характер. Для точных расчётов используйте{" "}
-          <a href="/" className="text-accent-500 hover:underline">
+          <Link href="/" className="text-accent-500 hover:underline">
             калькуляторы
-          </a>
+          </Link>
           .
         </p>
       </div>
