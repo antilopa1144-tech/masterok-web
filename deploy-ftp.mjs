@@ -26,32 +26,9 @@ const REMOTE_DIR = "/Masterok/public_html";
 
 let uploadedCount = 0;
 let failedCount = 0;
-const createdDirs = new Set();
 
 /**
- * Recursively create directory path on FTP server.
- * MKD only creates one level, so we need to create each segment.
- */
-async function ensureDirManual(client, dirPath) {
-  if (createdDirs.has(dirPath)) return;
-
-  const segments = dirPath.split("/").filter(Boolean);
-  let current = "";
-  for (const segment of segments) {
-    current += "/" + segment;
-    if (createdDirs.has(current)) continue;
-    try {
-      await client.send(`MKD ${current}`);
-    } catch {
-      // already exists — ok
-    }
-    createdDirs.add(current);
-  }
-}
-
-/**
- * Collect all files recursively from local directory.
- * Returns flat list of {localPath, remotePath} pairs.
+ * Recursively collect all files from local directory.
  */
 async function collectFiles(localDir, remoteDir) {
   const files = [];
@@ -62,14 +39,29 @@ async function collectFiles(localDir, remoteDir) {
     const remotePath = posix.join(remoteDir, entry.name);
 
     if (entry.isDirectory()) {
-      const subFiles = await collectFiles(localPath, remotePath);
-      files.push(...subFiles);
+      files.push(...await collectFiles(localPath, remotePath));
     } else {
       files.push({ localPath, remotePath });
     }
   }
 
   return files;
+}
+
+/**
+ * Collect all unique directories from the file list.
+ */
+function collectDirs(files) {
+  const dirs = new Set();
+  for (const { remotePath } of files) {
+    let dir = posix.dirname(remotePath);
+    while (dir && dir !== "/" && dir !== ".") {
+      dirs.add(dir);
+      dir = posix.dirname(dir);
+    }
+  }
+  // Sort by depth (shortest first) to create parent dirs before children
+  return [...dirs].sort((a, b) => a.split("/").length - b.split("/").length);
 }
 
 async function main() {
@@ -89,33 +81,41 @@ async function main() {
     try {
       await client.cd(REMOTE_DIR);
       await client.clearWorkingDir();
+      await client.cd("/");
       console.log("Cleared.\n");
     } catch (err) {
       console.log(`Clear failed (${err.message}), will create dir.\n`);
+      await client.cd("/");
     }
 
-    // Ensure base dir exists
-    await ensureDirManual(client, REMOTE_DIR);
-
-    // Collect all files first
+    // Collect all files
     console.log(`Scanning ${LOCAL_DIR}...`);
     const files = await collectFiles(LOCAL_DIR, REMOTE_DIR);
     console.log(`Found ${files.length} files to upload.\n`);
 
-    // Upload each file
+    // Create all directories first using ensureDir
+    const dirs = collectDirs(files);
+    console.log(`Creating ${dirs.length} directories...`);
+    for (const dir of dirs) {
+      try {
+        // ensureDir creates full path and cd's into it
+        await client.ensureDir(dir);
+        await client.cd("/"); // reset after ensureDir
+      } catch (err) {
+        console.log(`  Warning: could not create ${dir}: ${err.message}`);
+      }
+    }
+    console.log("Directories created.\n");
+
+    // Upload all files using absolute paths
+    console.log("Uploading files...\n");
     for (const { localPath, remotePath } of files) {
       const stats = await stat(localPath);
       const sizeKB = (stats.size / 1024).toFixed(1);
       process.stdout.write(`  ${remotePath} (${sizeKB} KB)...`);
 
       try {
-        // Ensure target directory exists
-        const dir = posix.dirname(remotePath);
-        await ensureDirManual(client, dir);
-
-        // cd to target dir + upload by filename
-        await client.cd(dir);
-        await client.uploadFrom(localPath, posix.basename(remotePath));
+        await client.uploadFrom(localPath, remotePath);
         uploadedCount++;
         console.log(" ✓");
       } catch (err) {
