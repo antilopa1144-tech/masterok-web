@@ -25,6 +25,9 @@ if (!CONFIG.password) {
 const LOCAL_DIR = "./out";
 const REMOTE_DIR = "/Masterok/public_html";
 
+let uploadedCount = 0;
+let failedCount = 0;
+
 async function uploadDir(client, localDir, remoteDir) {
   const entries = await readdir(localDir, { withFileTypes: true });
 
@@ -33,24 +36,51 @@ async function uploadDir(client, localDir, remoteDir) {
     const remotePath = posix.join(remoteDir, entry.name);
 
     if (entry.isDirectory()) {
+      // Create remote directory
       try {
-        await client.ensureDir(remotePath);
+        await client.send(`MKD ${remotePath}`);
       } catch {
-        // dir may already exist
+        // directory already exists — ok
       }
       await uploadDir(client, localPath, remotePath);
-      await client.cd("/"); // reset to root after ensureDir
     } else {
       const stats = await stat(localPath);
       const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
       process.stdout.write(`  ${remotePath} (${sizeMB} MB)...`);
       try {
-        await client.uploadFrom(localPath, remotePath);
+        // Always cd to target directory first, then upload by filename
+        const dir = posix.dirname(remotePath);
+        const filename = posix.basename(remotePath);
+        await client.cd(dir);
+        await client.uploadFrom(localPath, filename);
+        uploadedCount++;
         console.log(" ✓");
       } catch (err) {
+        failedCount++;
         console.log(` ✗ ${err.message}`);
       }
     }
+  }
+}
+
+async function removeDir(client, remoteDir) {
+  try {
+    await client.cd(remoteDir);
+    const list = await client.list();
+
+    for (const item of list) {
+      const itemPath = posix.join(remoteDir, item.name);
+      if (item.isDirectory) {
+        await removeDir(client, itemPath);
+      } else {
+        await client.remove(itemPath);
+      }
+    }
+
+    await client.cd("/");
+    await client.removeDir(remoteDir);
+  } catch {
+    // directory doesn't exist or already empty — ok
   }
 }
 
@@ -63,19 +93,51 @@ async function main() {
     await client.access(CONFIG);
     console.log("Connected!\n");
 
-    // Clear remote directory first
+    // Verify we can reach the remote directory
+    const pwd = await client.pwd();
+    console.log(`FTP root: ${pwd}`);
+
+    // Clear remote directory contents
     console.log(`Clearing ${REMOTE_DIR}...`);
     try {
       await client.cd(REMOTE_DIR);
       await client.clearWorkingDir();
       console.log("Cleared.\n");
-    } catch {
-      await client.ensureDir(REMOTE_DIR);
-      console.log("Created remote dir.\n");
+    } catch (err) {
+      console.log(`Clear failed (${err.message}), creating dir...`);
+      try {
+        await client.ensureDir(REMOTE_DIR);
+        console.log("Created remote dir.\n");
+      } catch (err2) {
+        console.error(`Cannot create ${REMOTE_DIR}: ${err2.message}`);
+        process.exit(1);
+      }
     }
+
+    // Reset to root before uploading
+    await client.cd("/");
 
     console.log(`Uploading ${LOCAL_DIR} → ${REMOTE_DIR}...\n`);
     await uploadDir(client, LOCAL_DIR, REMOTE_DIR);
+
+    // Verify upload
+    await client.cd(REMOTE_DIR);
+    const remoteFiles = await client.list();
+
+    console.log(`\n--- Deploy Summary ---`);
+    console.log(`Uploaded: ${uploadedCount} files`);
+    console.log(`Failed:   ${failedCount} files`);
+    console.log(`Remote ${REMOTE_DIR}/ contains: ${remoteFiles.length} items`);
+
+    if (failedCount > 0) {
+      console.error(`\n⚠️  ${failedCount} files failed to upload!`);
+      process.exit(1);
+    }
+
+    if (remoteFiles.length === 0) {
+      console.error(`\n⚠️  Remote directory is empty after upload!`);
+      process.exit(1);
+    }
 
     console.log("\n✅ Deploy complete!");
   } catch (err) {
