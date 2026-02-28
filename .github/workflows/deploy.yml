@@ -68,9 +68,10 @@ jobs:
         run: |
           lftp -e "
             set ftp:ssl-allow no;
-            set mirror:use-pget-n 5;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
             open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST;
-            mirror -R --delete --verbose ./out /Masterok/public_html;
+            mirror -R --overwrite --verbose --parallel=5 ./out /Masterok/public_html;
             quit
           "
 
