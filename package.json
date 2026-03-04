@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy:ci": "node deploy-ci.mjs",
+    "deploy:ci:skip-tests": "node deploy-ci.mjs --skip-tests"
   },
   "dependencies": {
     "basic-ftp": "^5.1.0",
