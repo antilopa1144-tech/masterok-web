@@ -55,6 +55,17 @@ import { slopesDef } from "./formulas/slopes";
 import { soundInsulationDef } from "./formulas/sound-insulation";
 import { balconyDef } from "./formulas/balcony";
 import { atticDef } from "./formulas/attic";
+// Новые калькуляторы (10 шт)
+import { fastenersDef } from "./formulas/fasteners";
+import { foamBlocksDef } from "./formulas/foam-blocks";
+import { brickworkDef } from "./formulas/brickwork";
+import { rebarDef } from "./formulas/rebar";
+import { bathroomDef } from "./formulas/bathroom";
+import { drywallCeilingDef } from "./formulas/drywall-ceiling";
+import { warmFloorPipesDef } from "./formulas/warm-floor-pipes";
+import { sewageDef } from "./formulas/sewage";
+import { frameHouseDef } from "./formulas/frame-house";
+import { softRoofingDef } from "./formulas/soft-roofing";
 
 export const ALL_CALCULATORS: CalculatorDefinition[] = [
   // Фундамент
@@ -63,11 +74,15 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   foundationSlabDef,
   blindAreaDef,
   basementDef,
+  rebarDef,
   // Стены
   brickDef,
   drywallDef,
   gypsumBoardDef,
   aeratedConcreteDef,
+  foamBlocksDef,
+  brickworkDef,
+  frameHouseDef,
   plasterDef,
   wallPanelsDef,
   partitionsDef,
@@ -86,9 +101,11 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   ceilingRailDef,
   ceilingCassetteDef,
   ceilingInsulationDef,
+  drywallCeilingDef,
   // Кровля
   roofingDef,
   guttersDef,
+  softRoofingDef,
   // Фасад/утепление
   insulationDef,
   facadeInsulationDef,
@@ -103,6 +120,8 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   electricDef,
   heatingDef,
   ventilationDef,
+  warmFloorPipesDef,
+  sewageDef,
   // Внутренняя отделка
   wallpaperDef,
   paintDef,
@@ -115,6 +134,8 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   soundInsulationDef,
   balconyDef,
   atticDef,
+  bathroomDef,
+  fastenersDef,
 ];
 
 // Поиск по slug (URL)

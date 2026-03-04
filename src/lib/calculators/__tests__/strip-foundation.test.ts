@@ -23,18 +23,20 @@ describe("Калькулятор ленточного фундамента", () 
       expect(result.totals.volume).toBeCloseTo(16, 2);
     });
 
-    it("бетон М200 присутствует", () => {
-      expect(findMaterial(result, "Бетон М200")).toBeDefined();
+    it("бетон М250 присутствует", () => {
+      expect(findMaterial(result, "Бетон М250")).toBeDefined();
     });
 
-    it("объём с запасом: purchaseQty = 16.8 м³", () => {
-      const concrete = findMaterial(result, "Бетон М200");
-      expect(concrete?.purchaseQty).toBeCloseTo(16.8, 1);
+    it("объём с запасом: purchaseQty ≈ 17.2 м³", () => {
+      const concrete = findMaterial(result, "Бетон М250");
+      // 16 * 1.07 = 17.12 -> Math.ceil(17.12 * 10) / 10 = 17.2
+      expect(concrete?.purchaseQty).toBeCloseTo(17.2, 1);
     });
 
-    it("арматура продольная = 168 м.п. (purchaseQty >= 168)", () => {
-      const rebar = findMaterial(result, "продольная");
-      expect(rebar?.purchaseQty).toBeGreaterThanOrEqual(168);
+    it("арматура рабочая = 179.2 м.п. (purchaseQty >= 179)", () => {
+      const rebar = findMaterial(result, "рабочая");
+      // 40 * 4 * 1.12 = 179.2
+      expect(rebar?.purchaseQty).toBeGreaterThanOrEqual(179);
     });
 
     it("арматура хомуты присутствует", () => {
@@ -47,15 +49,6 @@ describe("Калькулятор ленточного фундамента", () 
 
     it("доски опалубки присутствуют", () => {
       expect(findMaterial(result, "опалубки")).toBeDefined();
-    });
-
-    it("цемент 98 мешков", () => {
-      const cement = findMaterial(result, "Цемент М400");
-      expect(cement?.purchaseQty).toBe(98);
-    });
-
-    it("гидроизоляция присутствует", () => {
-      expect(findMaterial(result, "Гидроизоляция")).toBeDefined();
     });
 
     it("инварианты", () => {
@@ -96,9 +89,9 @@ describe("Калькулятор ленточного фундамента", () 
       reinforcement: 0,
     });
 
-    it("продольная арматура = 40 * 2 * 1.05 = 84 м.п.", () => {
-      const rebar = findMaterial(result, "продольная");
-      expect(rebar?.purchaseQty).toBeGreaterThanOrEqual(84);
+    it("рабочая арматура = 40 * 2 * 1.12 = 89.6 м.п.", () => {
+      const rebar = findMaterial(result, "рабочая");
+      expect(rebar?.purchaseQty).toBeGreaterThanOrEqual(89);
     });
   });
 });

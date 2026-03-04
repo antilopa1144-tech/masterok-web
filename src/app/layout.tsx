@@ -6,6 +6,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { StructuredData } from "@/components/layout/StructuredData";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -70,6 +72,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru" className={inter.variable}>
+      <head>
+        <StructuredData />
+      </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <a
           href="#main-content"

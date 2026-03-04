@@ -37,7 +37,7 @@ export default function HomePage() {
       />
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="hero-gradient border-b border-slate-200">
+      <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-14 md:py-20 text-center">
           <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-700 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 mb-6">
             <CategoryIcon icon="trophy" size={16} />
@@ -187,7 +187,7 @@ export default function HomePage() {
 
       {/* ── Михалыч ─────────────────────────────────────────── */}
       <section className="page-container-wide py-8">
-        <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 md:p-12 text-white overflow-hidden">
+        <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 md:p-12 text-white overflow-hidden dark:bg-slate-800">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="md:max-w-xl lg:max-w-2xl">
               <div className="flex items-center gap-3 mb-4">
@@ -268,7 +268,7 @@ export default function HomePage() {
       {/* ── Почему Мастерок ─────────────────────────────────── */}
       <section className="page-container-wide py-8 pb-14">
         <div className="card p-6 md:p-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-6">
+          <h2 className="text-xl font-bold text-slate-900 mb-6 dark:text-slate-100">
             Почему Мастерок?
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -46,11 +46,14 @@ export default function YandexMetrika() {
         }}
       />
       <noscript>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <div>
           <img
             src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
             style={{ position: "absolute", left: "-9999px" }}
             alt=""
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </noscript>

@@ -59,11 +59,23 @@ export const stripFoundationDef: CalculatorDefinition = {
       key: "reinforcement",
       label: "Армирование",
       type: "select",
-      defaultValue: 0,
+      defaultValue: 1,
       options: [
         { value: 0, label: "2 нитки Ø12 мм (лёгкие постройки)" },
         { value: 1, label: "4 нитки Ø12 мм (дом 1–2 этажа)" },
         { value: 2, label: "4 нитки Ø14 мм (тяжёлые конструкции)" },
+        { value: 3, label: "6 ниток Ø12 мм (широкая лента)" },
+      ],
+    },
+    {
+      key: "deliveryMethod",
+      label: "Способ заливки",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Миксер (самослив)" },
+        { value: 1, label: "Бетононасос (+0.5 м³ потери)" },
+        { value: 2, label: "Вручную (замес на месте)" },
       ],
     },
   ],
@@ -73,107 +85,111 @@ export const stripFoundationDef: CalculatorDefinition = {
     const depthMm = Math.max(300, inputs.depth ?? 700);
     const aboveMm = Math.max(0, inputs.aboveGround ?? 300);
     const reinforcement = Math.round(inputs.reinforcement ?? 1);
+    const delivery = Math.round(inputs.deliveryMethod ?? 0);
 
     const widthM = widthMm / 1000;
     const totalHeightM = (depthMm + aboveMm) / 1000;
 
     // Объём бетона
-    const volume = perimeter * widthM * totalHeightM;
-    const volumeWithReserve = volume * 1.05;
+    let volume = perimeter * widthM * totalHeightM;
+    
+    // Технологические потери
+    let techLoss = 0;
+    if (delivery === 1) techLoss = 0.5; // остаток в системе насоса
+    
+    const volumeWithReserve = (volume + techLoss) * 1.07; // 7% на усадку и недовоз
 
     // Арматура
     const rebarDiamMm = reinforcement === 2 ? 14 : 12;
-    const rebarThreads = reinforcement === 0 ? 2 : 4;
+    let rebarThreads = 4;
+    if (reinforcement === 0) rebarThreads = 2;
+    if (reinforcement === 3) rebarThreads = 6;
 
-    // Продольные нитки
-    const longitudinalLength = perimeter * rebarThreads * 1.05;
+    // Продольные нитки (нахлест 30-40 диаметров ~ 10% длины)
+    const longitudinalLength = perimeter * rebarThreads * 1.12;
 
-    // Поперечные хомуты: каждые 400 мм
-    const clampCount = Math.ceil(perimeter / 0.4);
-    const clampPerimeter = 2 * (widthM + totalHeightM) + 0.4; // длина хомута
-    const clampLength = clampCount * clampPerimeter * 1.05;
+    // Поперечные хомуты (шаг 300-400 мм)
+    const clampStep = 0.4;
+    const clampCount = Math.ceil(perimeter / clampStep);
+    // Длина хомута: 2*(W-0.1) + 2*(H-0.1) + 0.3 (загибы)
+    const clampPerimeter = 2 * (widthM - 0.1 + totalHeightM - 0.1) + 0.3; 
+    const clampLength = clampCount * Math.max(0.8, clampPerimeter) * 1.05;
 
     const totalRebarLength = longitudinalLength + clampLength;
-    const rebarWeightKg = totalRebarLength * (rebarDiamMm === 14 ? 1.21 : 0.888); // кг/м
+    const rebarWeightKg = longitudinalLength * (rebarDiamMm === 14 ? 1.21 : 0.888) + clampLength * 0.395; // Ø8 = 0.395 кг/м
 
     // Вязальная проволока: ~0.05 кг на соединение
     const connections = clampCount * rebarThreads;
     const wireKg = Math.ceil(connections * 0.05 * 1.1 * 10) / 10;
 
-    // Опалубка
-    const formworkArea = 2 * perimeter * totalHeightM * 1.05;
-    const boards22m = Math.ceil(formworkArea / (0.15 * 6)); // доска 150×25×6000 мм
-
-    // Цемент для бетона М200 (290 кг/м³)
-    const cementKg = volumeWithReserve * 290;
-    const cementBags = Math.ceil(cementKg / 50);
+    // Опалубка (две стороны)
+    const formworkArea = 2 * perimeter * (aboveMm / 1000 + 0.1); // цоколь + 10см в землю
+    const boardsPcs = Math.ceil(formworkArea / (0.15 * 6)); // доска 150×25×6000 мм
 
     const warnings: string[] = [];
-    if (depthMm < 600 && perimeter > 30) warnings.push("Глубина менее 600 мм рискованна для отапливаемого здания в Центральной России. Проверьте глубину промерзания грунта");
-    if (widthMm < 300) warnings.push("Ширина ленты менее 300 мм не рекомендуется для несущих стен");
+    if (depthMm < 600 && perimeter > 30) warnings.push("Глубина менее 600 мм рискованна для отапливаемого здания. Проверьте глубину промерзания грунта");
+    if (widthMm < 300) warnings.push("Ширина ленты менее 300 мм не рекомендуется для несущих стен из кирпича или блоков");
+    if (delivery === 1 && volume < 5) warnings.push("Заказ бетононасоса для объёма < 5 м³ экономически невыгоден");
+
+    const materials = [
+      { name: "Бетон М250 (В20)", quantity: volume, unit: "м³", withReserve: Math.ceil(volumeWithReserve * 10) / 10, purchaseQty: Math.ceil(volumeWithReserve * 10) / 10, category: "Бетон" },
+      { name: `Арматура Ø${rebarDiamMm} мм (рабочая)`, quantity: longitudinalLength, unit: "м.п.", withReserve: Math.ceil(longitudinalLength), purchaseQty: Math.ceil(longitudinalLength), category: "Арматура" },
+      { name: "Арматура Ø8 мм (хомуты)", quantity: clampLength, unit: "м.п.", withReserve: Math.ceil(clampLength), purchaseQty: Math.ceil(clampLength), category: "Арматура" },
+      { name: "Вязальная проволока (отожженная)", quantity: wireKg, unit: "кг", withReserve: wireKg, purchaseQty: Math.ceil(wireKg), category: "Арматура" },
+      { name: "Доска опалубки 25×150×6000 мм", quantity: boardsPcs, unit: "шт", withReserve: boardsPcs, purchaseQty: boardsPcs, category: "Опалубка" },
+      { name: "Брус 50×50 мм (распорки/колья)", quantity: Math.ceil(perimeter / 2), unit: "шт", withReserve: Math.ceil(perimeter / 2), purchaseQty: Math.ceil(perimeter / 2), category: "Опалубка" },
+      { name: "Саморезы по дереву 70-90 мм", quantity: boardsPcs * 4, unit: "шт", withReserve: boardsPcs * 4, purchaseQty: Math.ceil(boardsPcs * 4 / 100) * 100, category: "Опалубка" },
+    ];
+
+    if (delivery === 2) {
+      const cementBags = Math.ceil(volumeWithReserve * 300 / 50);
+      materials.push({ name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты (замес)" });
+    }
 
     return {
-      materials: [
-        { name: "Бетон М200 (В15)", quantity: volume, unit: "м³", withReserve: Math.ceil(volumeWithReserve * 10) / 10, purchaseQty: Math.ceil(volumeWithReserve * 10) / 10, category: "Бетон" },
-        { name: `Арматура Ø${rebarDiamMm} мм (продольная)`, quantity: longitudinalLength, unit: "м.п.", withReserve: Math.ceil(longitudinalLength), purchaseQty: Math.ceil(longitudinalLength), category: "Арматура" },
-        { name: "Арматура Ø8 мм (хомуты)", quantity: clampLength, unit: "м.п.", withReserve: Math.ceil(clampLength), purchaseQty: Math.ceil(clampLength), category: "Арматура" },
-        { name: "Вязальная проволока 3–4 мм", quantity: wireKg, unit: "кг", withReserve: wireKg, purchaseQty: Math.ceil(wireKg), category: "Арматура" },
-        { name: "Доска опалубки 25×150×6000 мм", quantity: boards22m, unit: "шт", withReserve: boards22m, purchaseQty: boards22m, category: "Опалубка" },
-        { name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты (замес)" },
-        // Гидроизоляция рулонная (Технониколь): все стороны ленты
-        // Площадь = 2 боковые стороны + верх ленты = 2 × периметр × высота + периметр × ширина
-        (() => {
-          const hydroArea = 2 * perimeter * totalHeightM + perimeter * widthM;
-          const hydroAreaReserve = hydroArea * 1.15;
-          const hydroRolls = Math.ceil(hydroAreaReserve / 10); // 1 рулон = 10 м²
-          return {
-            name: "Гидроизоляция рулонная Технониколь (рулон 10 м²)",
-            quantity: hydroArea,
-            unit: "рулонов",
-            withReserve: hydroRolls,
-            purchaseQty: hydroRolls,
-            category: "Гидроизоляция",
-          };
-        })(),
-        // Обратная засыпка (песок): объём траншеи минус объём бетона
-        // Траншея: perimeter × (widthM + 0.2) × (depthMm/1000) — с учётом зазора ~0.1 м с каждой стороны
-        (() => {
-          const trenchVolume = perimeter * (widthM + 0.2) * (depthMm / 1000);
-          const backfillVolume = Math.max(0, trenchVolume - volume);
-          const backfillReserve = backfillVolume * 1.1;
-          return {
-            name: "Обратная засыпка (песок крупнозернистый)",
-            quantity: backfillVolume,
-            unit: "м³",
-            withReserve: Math.ceil(backfillReserve * 10) / 10,
-            purchaseQty: Math.ceil(backfillReserve * 10) / 10,
-            category: "Обратная засыпка",
-          };
-        })(),
-      ],
+      materials,
       totals: { perimeter, widthMm, totalHeightM, volume, rebarWeightKg },
       warnings,
     };
   },
   formulaDescription: `
-**Расчёт ленточного фундамента:**
+**Расчёт ленточного фундамента (нормы РФ):**
 
-Объём бетона = Периметр × Ширина_ленты × Высота_ленты
+1. **Бетон**: Объём = Периметр × Ширина × Высота. Запас 7% учитывает усадку при вибрировании и погрешность приёмки.
+2. **Арматура**: 
+   - Продольная: нахлёст 12% (по 40 диаметров в местах стыка).
+   - Хомуты: шаг 400 мм, защитный слой бетона 50 мм с каждой стороны.
+3. **Опалубка**: Расчёт по площади боковых поверхностей цокольной части.
 
-Арматура:
-- Продольная: периметр × кол-во_ниток × 1.05
-- Хомуты: через каждые 400 мм, по периметру сечения
-
-Марка бетона: М200 (В15) — минимум для фундаментов жилых домов (СНиП 2.02.01-83)
-
-Глубина промерзания: Москва ~1.4 м, СПб ~1.2 м, Урал ~1.8 м
+Рекомендуемая марка бетона: М250 (В20) и выше.
   `,
   howToUse: [
-    "Введите полный периметр ленты (все несущие стены, включая внутренние)",
-    "Укажите ширину ленты (типично 300–500 мм)",
-    "Задайте глубину залегания (ниже точки промерзания для вашего региона)",
-    "Укажите высоту цоколя над землёй",
-    "Выберите схему армирования по нагрузке",
-    "Нажмите «Рассчитать» — получите бетон, арматуру и опалубку",
+    "Введите полный периметр ленты (все несущие стены)",
+    "Укажите ширину ленты (обычно на 100 мм шире стены)",
+    "Задайте глубину залегания и высоту цоколя",
+    "Выберите способ заливки (насос требует доп. объёма)",
+    "Нажмите «Рассчитать» — получите полную смету материалов",
   ],
+  expertTips: [
+    {
+      title: "Защитный слой",
+      content: "Арматура не должна касаться земли или опалубки. Используйте пластиковые фиксаторы («стульчики» и «звёздочки»), чтобы обеспечить слой бетона 50 мм. Это защитит металл от коррозии.",
+      author: "Иваныч, прораб"
+    },
+    {
+      title: "Продухи в цоколе",
+      content: "Не забудьте заложить гильзы для продухов (вентиляции подполья) и ввода коммуникаций (вода, канализация) до заливки бетона. Долбить готовый монолит — дорого и долго.",
+      author: "Инженер-строитель"
+    }
+  ],
+  faq: [
+    {
+      question: "Нужна ли подбетонка?",
+      answer: "Для частного дома достаточно песчано-гравийной подушки 200 мм с тщательным трамбованием и слоем гидроизоляции (плёнки), чтобы цементное молочко не ушло в песок."
+    },
+    {
+      question: "Когда можно снимать опалубку?",
+      answer: "В летнее время — через 3-5 дней. Бетон набирает 70% прочности за 7-10 дней при температуре +20°C."
+    }
+  ]
 };

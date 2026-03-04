@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 import type { CalculatorResult } from "../types";
 
 /** Find a material by partial name match */

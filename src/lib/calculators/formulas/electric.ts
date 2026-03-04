@@ -61,79 +61,91 @@ export const electricDef: CalculatorDefinition = {
       defaultValue: 1,
       hint: "Требует отдельной линии 380В или 220В/32А",
     },
+    {
+      key: "reserve",
+      label: "Запас кабеля",
+      type: "slider",
+      unit: "%",
+      min: 5,
+      max: 30,
+      step: 5,
+      defaultValue: 15,
+      hint: "На спуски к розеткам, петли в коробках и ошибки монтажа",
+    },
   ],
   calculate(inputs): import("../types").CalculatorResult {
     const area = Math.max(20, inputs.apartmentArea ?? 60);
     const rooms = Math.max(1, Math.round(inputs.roomsCount ?? 3));
     const height = Math.max(2.4, inputs.ceilingHeight ?? 2.7);
     const hasKitchen = (inputs.hasKitchen ?? 1) > 0;
-
-    // Периметр ≈ √area × 4, длина трасс ≈ периметр × этажи ≈ площадь/4 × 2
-    const perimeterEst = Math.sqrt(area) * 4;
+    const reserve = (inputs.reserve ?? 15) / 100;
 
     // Группы: освещение (1.5 мм²), розетки (2.5 мм²), сплит-системы (2.5 мм²), плита (4 или 6 мм²)
     const lightingGroups = rooms + 1; // по комнате + общий коридор
     const outletGroups = rooms + 2;   // по комнате + кухня + ванная
     const acGroups = Math.ceil(rooms / 2);
 
-    // Длина кабеля 1.5 мм² (освещение): от щитка до каждой точки
-    const distFromPanel = Math.sqrt(area); // среднее расстояние
-    const cable15length = lightingGroups * (distFromPanel + height * 2) * 1.2;
-
-    // Длина кабеля 2.5 мм² (розетки): от щитка по периметру
-    const cable25length = outletGroups * (distFromPanel + 3) * 1.3
-      + acGroups * (distFromPanel + height) * 1.2;
-
-    // Кабель 6 мм² на кухонную плиту
-    const cable6length = hasKitchen ? distFromPanel * 1.2 : 0;
+    // Эмпирическая формула прораба: 
+    // Кабель 3х2.5 ≈ Площадь * 1.5 (для розеток)
+    // Кабель 3х1.5 ≈ Площадь * 1.0 (для света)
+    const distFromPanel = Math.sqrt(area) * 1.5; 
+    
+    const cable15length = area * 1.1 + (lightingGroups * height);
+    const cable25length = area * 1.6 + (outletGroups * height * 1.5);
+    const cable6length = hasKitchen ? (distFromPanel + height) * 1.2 : 0;
 
     // Щиток: автоматы
     const breakersCount = lightingGroups + outletGroups + acGroups + (hasKitchen ? 1 : 0);
-    const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0);
+    const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0) + 1; // + общее УЗО
 
     // Гофра / кабель-канал
-    const conduitLength = Math.ceil((cable15length + cable25length + cable6length) * 1.1);
+    const conduitLength = Math.ceil((cable15length + cable25length + cable6length) * 0.8); // не всё в гофре
 
     // Розетки и выключатели
-    const outletsCount = Math.ceil(area * 0.5); // ~0.5 розетки/м²
-    const switchesCount = rooms * 2 + 2;
+    const outletsCount = Math.ceil(area * 0.6) + (rooms * 2); // ~0.6 розетки/м² + по 2 у кроватей
+    const switchesCount = rooms + 2; // по одному на комнату + проходные
 
     const warnings: string[] = [];
-    if (area > 100) {
-      warnings.push("Для площади > 100 м² рекомендуется трёхфазный ввод 380В");
-    }
-    if (hasKitchen) {
-      warnings.push("Линия на электроплиту: ВВГнг 3×6 мм² с автоматом 32А и УЗО 40А/30мА");
-    }
+    if (area > 100) warnings.push("Для площади > 100 м² рекомендуется трёхфазный ввод 380В (15 кВт)");
+    if (hasKitchen) warnings.push("Линия на электроплиту: ВВГнг-LS 3×6 мм² с автоматом 32А и УЗО 40А/30мА");
+    warnings.push("Все розетки в ванной и на кухне должны быть защищены УЗО с током утечки 10-30 мА");
 
     return {
       materials: [
         {
           name: "Кабель ВВГнг-LS 3×1.5 (освещение)",
-          quantity: Math.ceil(cable15length),
+          quantity: cable15length,
           unit: "м.п.",
-          withReserve: Math.ceil(cable15length * 1.10),
-          purchaseQty: Math.ceil(cable15length * 1.10),
+          withReserve: Math.ceil(cable15length * (1 + reserve)),
+          purchaseQty: Math.ceil(cable15length * (1 + reserve) / 50) * 50, // бухты по 50м
           category: "Кабель",
         },
         {
           name: "Кабель ВВГнг-LS 3×2.5 (розетки)",
-          quantity: Math.ceil(cable25length),
+          quantity: cable25length,
           unit: "м.п.",
-          withReserve: Math.ceil(cable25length * 1.10),
-          purchaseQty: Math.ceil(cable25length * 1.10),
+          withReserve: Math.ceil(cable25length * (1 + reserve)),
+          purchaseQty: Math.ceil(cable25length * (1 + reserve) / 50) * 50, // бухты по 50м
           category: "Кабель",
         },
         ...(hasKitchen ? [{
-          name: "Кабель ВВГнг-LS 3×6 (плита)",
-          quantity: Math.ceil(cable6length),
+          name: "Кабель ВВГнг-LS 3×6 (плита/варочная)",
+          quantity: cable6length,
           unit: "м.п.",
-          withReserve: Math.ceil(cable6length * 1.10),
-          purchaseQty: Math.ceil(cable6length * 1.10),
+          withReserve: Math.ceil(cable6length * 1.1),
+          purchaseQty: Math.ceil(cable6length * 1.1),
           category: "Кабель",
         }] : []),
         {
-          name: "Автоматический выключатель",
+          name: "Щит распределительный (навесной/встраиваемый)",
+          quantity: 1,
+          unit: "шт",
+          withReserve: 1,
+          purchaseQty: 1,
+          category: "Щиток",
+        },
+        {
+          name: "Автоматический выключатель (10А/16А)",
           quantity: breakersCount,
           unit: "шт",
           withReserve: breakersCount + 2,
@@ -141,7 +153,7 @@ export const electricDef: CalculatorDefinition = {
           category: "Щиток",
         },
         {
-          name: "УЗО / дифавтомат",
+          name: "УЗО / Дифавтомат (30мА)",
           quantity: uzoCount,
           unit: "шт",
           withReserve: uzoCount,
@@ -149,7 +161,7 @@ export const electricDef: CalculatorDefinition = {
           category: "Щиток",
         },
         {
-          name: "Розетки",
+          name: "Розетки (внутренние, с заземлением)",
           quantity: outletsCount,
           unit: "шт",
           withReserve: Math.ceil(outletsCount * 1.05),
@@ -157,35 +169,35 @@ export const electricDef: CalculatorDefinition = {
           category: "Механизмы",
         },
         {
-          name: "Выключатели",
+          name: "Выключатели (1-клавишные/2-клавишные)",
           quantity: switchesCount,
           unit: "шт",
-          withReserve: switchesCount,
-          purchaseQty: switchesCount,
+          withReserve: Math.ceil(switchesCount * 1.05),
+          purchaseQty: Math.ceil(switchesCount * 1.05),
           category: "Механизмы",
         },
         {
-          name: "Гофра ПВХ Ø20 мм (м.п.)",
-          quantity: conduitLength,
-          unit: "м.п.",
-          withReserve: conduitLength,
-          purchaseQty: conduitLength,
-          category: "Защита кабеля",
-        },
-        {
-          name: "Распределительная коробка",
-          quantity: Math.ceil(outletGroups / 3),
+          name: "Подрозетники (стаканы)",
+          quantity: outletsCount + switchesCount,
           unit: "шт",
-          withReserve: Math.ceil(outletGroups / 3),
-          purchaseQty: Math.ceil(outletGroups / 3),
+          withReserve: Math.ceil((outletsCount + switchesCount) * 1.1),
+          purchaseQty: Math.ceil((outletsCount + switchesCount) * 1.1),
           category: "Монтаж",
         },
         {
-          name: "Изолента ПВХ (рулон 20 м)",
-          quantity: Math.ceil((breakersCount + outletGroups) * 2 / 20),
-          unit: "рулонов",
-          withReserve: Math.max(1, Math.ceil((breakersCount + outletGroups) * 2 / 20)),
-          purchaseQty: Math.max(1, Math.ceil((breakersCount + outletGroups) * 2 / 20)),
+          name: "Гофра ПВХ Ø20 мм с протяжкой",
+          quantity: conduitLength,
+          unit: "м.п.",
+          withReserve: conduitLength,
+          purchaseQty: Math.ceil(conduitLength / 50) * 50,
+          category: "Защита кабеля",
+        },
+        {
+          name: "Гипс/алебастр (для фиксации подрозетников)",
+          quantity: Math.ceil((outletsCount + switchesCount) / 5),
+          unit: "кг",
+          withReserve: Math.ceil((outletsCount + switchesCount) / 5),
+          purchaseQty: Math.ceil((outletsCount + switchesCount) / 5),
           category: "Монтаж",
         },
       ],
@@ -199,19 +211,42 @@ export const electricDef: CalculatorDefinition = {
     };
   },
   formulaDescription: `
-**Нормы электропроводки:**
-- Освещение: ВВГнг 3×1.5 мм², автомат 10А
-- Розетки: ВВГнг 3×2.5 мм², автомат 16А
-- Кондиционер: 3×2.5 мм², автомат 16А
-- Электроплита: 3×6 мм², автомат 32А
+**Расчёт электропроводки (опыт монтажа):**
 
-По ПУЭ 7: розетки в ванной — только через УЗО 30 мА.
-Расчёт кабеля: от щитка + перпендикуляр к стенам × 1.2 (запас на штробы).
+1. **Метраж кабеля**: 
+   - Розетки: S_пола × 1.6 + спуски к каждой точке.
+   - Свет: S_пола × 1.1 + спуски к выключателям.
+2. **Запас**: 15% — необходимый минимум на петли в подрозетниках, распаечных коробках и щите.
+3. **Автоматы**: 1 группа на 1 комнату (свет) + 1 группа на 1 комнату (розетки) + мощные потребители (кухня, СМА, кондиционеры).
+4. **Защита**: УЗО обязательно на все «мокрые» группы и розеточные сети.
   `,
   howToUse: [
-    "Введите площадь и количество комнат",
-    "Укажите высоту потолков",
-    "Выберите тип разводки (скрытая или открытая)",
-    "Нажмите «Рассчитать» — получите кабель, автоматы и механизмы",
+    "Введите общую площадь объекта",
+    "Укажите количество жилых комнат",
+    "Выберите наличие электроплиты (влияет на вводной кабель)",
+    "Укажите запас (рекомендуем 15-20% для новичков)",
+    "Нажмите «Рассчитать» — получите список материалов для чернового монтажа",
   ],
+  expertTips: [
+    {
+      title: "Маркировка кабеля",
+      content: "Используйте только кабель с маркировкой LS (Low Smoke) — он не поддерживает горение и не выделяет ядовитый дым. ВВГнг-LS — золотой стандарт для жилых помещений.",
+      author: "Электрик 5 разряда"
+    },
+    {
+      title: "Распаечные коробки",
+      content: "Если планируете натяжные потолки, делайте распаечные коробки за ними, но используйте только сварку или опрессовку гильзами (ГМЛ). Ваго (Wago) в необслуживаемых местах — риск.",
+      author: "Мастер-монтажник"
+    }
+  ],
+  faq: [
+    {
+      question: "Зачем нужно УЗО?",
+      answer: "УЗО спасает жизнь при утечке тока (например, если повреждена изоляция в стиральной машине). Автомат защищает только кабель от перегрузки и КЗ."
+    },
+    {
+      question: "Можно ли класть кабель без гофры?",
+      answer: "В штробах под штукатурку — можно. За подвесными потолками и в деревянных домах — только в негорючей гофре или металлической трубе."
+    }
+  ]
 };

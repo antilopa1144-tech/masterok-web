@@ -5,6 +5,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
@@ -22,7 +23,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-800">
       <div className="page-container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Логотип */}
@@ -48,8 +49,8 @@ export default function Header() {
                   href={link.href}
                   className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors no-underline ${
                     active
-                      ? "text-accent-600 bg-accent-50"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "text-accent-600 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -57,6 +58,8 @@ export default function Header() {
                 </Link>
               );
             })}
+
+            <ThemeToggle />
 
             <Link
               href="/prilozhenie/"
@@ -69,8 +72,9 @@ export default function Header() {
 
           {/* Мобильная кнопка */}
           <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
             <button
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Меню"
               aria-expanded={menuOpen}
@@ -104,7 +108,7 @@ export default function Header() {
 
       {/* Мобильное меню */}
       {menuOpen && (
-        <nav className="md:hidden border-t border-slate-200 bg-white" aria-label="Мобильная навигация">
+        <nav className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" aria-label="Мобильная навигация">
           <div className="page-container py-3 space-y-1">
             {NAV_LINKS.map((link) => {
               const active = isActive(pathname, link.match);
@@ -114,8 +118,8 @@ export default function Header() {
                   href={link.href}
                   className={`block px-3 py-2.5 rounded-lg font-medium transition-colors no-underline ${
                     active
-                      ? "text-accent-600 bg-accent-50"
-                      : "text-slate-700 hover:bg-slate-50"
+                      ? "text-accent-600 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
+                      : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   }`}
                   onClick={() => setMenuOpen(false)}
                   aria-current={active ? "page" : undefined}
@@ -125,7 +129,7 @@ export default function Header() {
               );
             })}
 
-            <div className="pt-2 border-t border-slate-200">
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
               <p className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Категории
               </p>
@@ -133,7 +137,7 @@ export default function Header() {
                 <Link
                   key={cat.id}
                   href={`/kalkulyatory/${cat.slug}/`}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 text-sm hover:bg-slate-50 transition-colors no-underline"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 text-sm hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors no-underline"
                   onClick={() => setMenuOpen(false)}
                 >
                   <CategoryIcon icon={cat.icon} size={16} color={cat.color} />
@@ -142,10 +146,10 @@ export default function Header() {
               ))}
             </div>
 
-            <div className="pt-3">
+            <div className="pt-3 flex items-center gap-2">
               <Link
                 href="/prilozhenie/"
-                className="btn-primary w-full text-center inline-flex items-center justify-center gap-2"
+                className="btn-primary flex-1 text-center inline-flex items-center justify-center gap-2"
                 onClick={() => setMenuOpen(false)}
               >
                 <CategoryIcon icon="phone" size={16} color="#fff" />

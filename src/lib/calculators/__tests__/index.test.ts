@@ -9,8 +9,8 @@ import {
 
 describe("Индекс калькуляторов", () => {
   describe("ALL_CALCULATORS", () => {
-    it("содержит 50 калькуляторов", () => {
-      expect(ALL_CALCULATORS).toHaveLength(50);
+    it("содержит 60 калькуляторов", () => {
+      expect(ALL_CALCULATORS).toHaveLength(60);
     });
 
     it("все id уникальны", () => {

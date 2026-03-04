@@ -23,15 +23,30 @@ describe("Электропроводка", () => {
   });
 
   describe("Розетки и выключатели", () => {
-    it("~0.5 розетки/м²", () => {
+    it("розетки присутствуют и количество по формуле", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
       const outlets = findMaterial(r, "Розетки");
-      expect(outlets!.quantity).toBe(30); // ceil(60*0.5)
+      expect(outlets).toBeDefined();
+      // outletsCount = ceil(60 * 0.6) + (3 * 2) = 42
+      expect(outlets!.quantity).toBe(42);
     });
 
-    it("выключатели: rooms*2+2", () => {
+    it("выключатели присутствуют и количество по формуле", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      expect(findMaterial(r, "Выключатели")!.quantity).toBe(8); // 3*2+2
+      const switches = findMaterial(r, "Выключатели");
+      expect(switches).toBeDefined();
+      // switchesCount = rooms + 2 = 5
+      expect(switches!.quantity).toBe(5);
+    });
+
+    it("розетки и выключатели не зависят от hasKitchen", () => {
+      const withKitchen = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
+      const withoutKitchen = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 0 });
+
+      expect(findMaterial(withKitchen, "Розетки")!.quantity).toBe(42);
+      expect(findMaterial(withoutKitchen, "Розетки")!.quantity).toBe(42);
+      expect(findMaterial(withKitchen, "Выключатели")!.quantity).toBe(5);
+      expect(findMaterial(withoutKitchen, "Выключатели")!.quantity).toBe(5);
     });
   });
 
@@ -39,14 +54,15 @@ describe("Электропроводка", () => {
     it("автоматы: группы + запас 2 шт", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
       const breakers = findMaterial(r, "Автоматический");
-      // breakersCount=12, purchaseQty=12+2=14
+      // lightingGroups=4, outletGroups=5, acGroups=2, kitchen=1 -> 12
+      // purchaseQty = 12 + 2 = 14
       expect(breakers!.purchaseQty).toBe(14);
     });
 
-    it("УЗО: ceil(outletGroups/2) + kitchen", () => {
+    it("УЗО: ceil(outletGroups/2) + kitchen + 1", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      // outletGroups=5, uzo=ceil(5/2)+1=4
-      expect(findMaterial(r, "УЗО")!.quantity).toBe(4);
+      // outletGroups=5, kitchen=1 -> ceil(5/2) + 1 + 1 = 5
+      expect(findMaterial(r, "УЗО")!.quantity).toBe(5);
     });
   });
 
@@ -58,7 +74,7 @@ describe("Электропроводка", () => {
 
     it("электроплита → предупреждение о линии", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      expect(r.warnings.some(w => w.includes("32А"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("3×6"))).toBe(true);
     });
   });
 
@@ -68,9 +84,12 @@ describe("Электропроводка", () => {
       expect(findMaterial(r, "Гофра")).toBeDefined();
     });
 
-    it("распределительные коробки", () => {
+    it("подрозетники присутствуют", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      expect(findMaterial(r, "Распределительная")).toBeDefined();
+      const boxes = findMaterial(r, "Подрозетники");
+      expect(boxes).toBeDefined();
+      // outletsCount + switchesCount = 42 + 5 = 47
+      expect(boxes!.quantity).toBe(47);
     });
   });
 });

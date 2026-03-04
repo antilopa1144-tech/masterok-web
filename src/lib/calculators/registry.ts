@@ -56,6 +56,17 @@ const FORMULA_MAP: Record<string, string> = {
   zvukoizolyaciya: "sound-insulation",
   "otdelka-balkona": "balcony",
   "otdelka-mansardy": "attic",
+  // Новые калькуляторы (10 шт)
+  krepezh: "fasteners",
+  penobloki: "foam-blocks",
+  "kladka-kirpicha": "brickwork",
+  armatura: "rebar",
+  "vannaya-komnata": "bathroom",
+  "podvesnoy-potolok-gkl": "drywall-ceiling",
+  "vodyanoy-teplyy-pol": "warm-floor-pipes",
+  septik: "sewage",
+  "karkasnyj-dom": "frame-house",
+  "myagkaya-krovlya": "soft-roofing",
 };
 
 /** Кеш загруженных функций */
@@ -73,7 +84,7 @@ export async function getCalculateFn(slug: string): Promise<CalculateFn | undefi
   if (!file) return undefined;
 
   try {
-    const mod = await import(`./formulas/${file}`);
+    const mod = await import(`./formulas/${file}.ts`);
     // Каждый модуль экспортирует xyzDef с полем calculate
     const def = Object.values(mod)[0] as { calculate: CalculateFn };
     cache.set(slug, def.calculate);

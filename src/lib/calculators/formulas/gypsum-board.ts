@@ -5,7 +5,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
   slug: "gipsokarton-potolok",
   title: "Калькулятор гипсокартона на потолок",
   h1: "Калькулятор гипсокартона на потолок — расчёт ГКЛ, профилей и крепежа",
-  description: "Рассчитайте листы гипсокартона Knauf, профили ПП 60×27 и ПН 28×27, дюбели и саморезы для обшивки стен, перегородок и потолков.",
+  description: "Рассчитайте листы гипсокартона Knauf, профили ПП 60×27 и ПН 27×28, дюбели и саморезы для обшивки стен, перегородок и потолков.",
   metaTitle: "Калькулятор гипсокартона на потолок | Расчёт ГКЛ Knauf — Мастерок",
   metaDescription: "Бесплатный калькулятор гипсокартона на потолок Knauf: рассчитайте листы ГКЛ, профили ПП 60×27, подвесы, дюбели и саморезы.",
   category: "walls",
@@ -100,7 +100,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
     const ppLengthStd = 3.0; // стандартный 3 м
     const ppQuantity = Math.ceil(ppMeters / ppLengthStd);
 
-    // ПН 28×27 (направляющий профиль) — по периметру, 2 ряда
+    // ПН 27×28 (направляющий профиль) — по периметру, 2 ряда
     const perimeter = (wallLength + wallHeight) * 2;
     const pnMeters = constructionType === 1 ? perimeter * 2 : perimeter; // перегородка: верх+низ×2 (обе стороны не нужны, только периметр)
     const pnQuantity = Math.ceil(pnMeters / 3.0);
@@ -146,7 +146,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
           category: "Профиль",
         },
         {
-          name: "Профиль ПН 28×27 (направляющий, 3 м)",
+          name: "Профиль ПН 27×28 (направляющий, 3 м)",
           quantity: pnMeters / 3.0,
           unit: "шт",
           withReserve: pnQuantity,
@@ -221,7 +221,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
 - Лист ГКЛ Knauf: 1200×2500 мм = 3.0 м²
 - Запас +10% на подрезку
 - ПП 60×27: шаг 400 или 600 мм
-- ПН 28×27: по периметру конструкции
+- ПН 27×28: по периметру конструкции
 
 Стандарт Knauf: саморезы с шагом 250 мм по краям, 300 мм в середине.
   `,

@@ -6,6 +6,7 @@ import { getCategoryById } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Suspense } from "react";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 
 interface PageProps {
@@ -101,6 +102,20 @@ export default async function CalculatorPage({ params }: PageProps) {
     ],
   };
 
+  // FAQ микроразметка
+  const faqLd = calc.faq && calc.faq.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": calc.faq.map(item => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
+  } : null;
+
   return (
     <>
       <script
@@ -111,33 +126,27 @@ export default async function CalculatorPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
 
       {/* Hero-шапка */}
       <div
         style={{ backgroundColor: accentBg }}
-        className="border-b border-slate-200"
+        className="border-b border-slate-200 dark:border-slate-800"
       >
         <div className="page-container-wide py-6 md:py-8">
           {/* Хлебные крошки */}
-          <nav className="flex items-center gap-1.5 text-sm text-slate-500 mb-4 flex-wrap">
-            <Link href="/" className="hover:text-slate-700 no-underline transition-colors">
-              Калькуляторы
-            </Link>
-            <span>›</span>
-            {category && (
-              <>
-                <Link
-                  href={`/kalkulyatory/${category.slug}/`}
-                  className="hover:text-slate-700 no-underline transition-colors"
-                  style={{ color: accentColor }}
-                >
-                  <CategoryIcon icon={category.icon} size={14} color={accentColor} />{" "}{category.label}
-                </Link>
-                <span>›</span>
-              </>
-            )}
-            <span className="text-slate-700">{calc.title}</span>
-          </nav>
+          <Breadcrumbs
+            items={[
+              { href: "/", label: "Калькуляторы" },
+              ...(category ? [{ href: `/kalkulyatory/${category.slug}/`, label: category.label }] : []),
+              { label: calc.title },
+            ]}
+          />
 
           <div className="flex items-start gap-4">
             {category && (
@@ -196,6 +205,8 @@ export default async function CalculatorPage({ params }: PageProps) {
               popularity: calc.popularity,
               complexity: calc.complexity,
               fields: calc.fields,
+              expertTips: calc.expertTips,
+              faq: calc.faq,
             }} />
             </Suspense>
 

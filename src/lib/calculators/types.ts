@@ -78,4 +78,13 @@ export interface CalculatorDefinition extends CalculatorMeta {
   calculate: CalculateFn;
   formulaDescription?: string;
   howToUse?: string[];
+  expertTips?: {
+    title: string;
+    content: string;
+    author?: string;
+  }[];
+  faq?: {
+    question: string;
+    answer: string;
+  }[];
 }

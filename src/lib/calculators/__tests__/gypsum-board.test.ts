@@ -40,8 +40,8 @@ describe("Калькулятор гипсокартона (стены/перег
       expect(pp?.purchaseQty).toBe(13);
     });
 
-    it("ПН 28×27 = 7 шт", () => {
-      const pn = findMaterial(result, "ПН 28×27");
+    it("ПН 27×28 = 7 шт", () => {
+      const pn = findMaterial(result, "ПН 27×28");
       expect(pn?.purchaseQty).toBe(7);
     });
 
@@ -106,8 +106,8 @@ describe("Калькулятор гипсокартона (стены/перег
       expect(gkl!.name).toContain("Перегородка");
     });
 
-    it("ПН 28×27 = 14 шт (перегородка — двойной периметр)", () => {
-      const pn = findMaterial(result, "ПН 28×27");
+    it("ПН 27×28 = 14 шт (перегородка — двойной периметр)", () => {
+      const pn = findMaterial(result, "ПН 27×28");
       expect(pn?.purchaseQty).toBe(14);
     });
 

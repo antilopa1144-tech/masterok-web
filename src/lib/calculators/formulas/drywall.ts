@@ -1,19 +1,23 @@
 import type { CalculatorDefinition } from "../types";
 
-// ГКЛ 1200×2500 мм = 3.0 м²
-const GKL_AREA = 1.2 * 2.5;
+// Размеры листов ГКЛ (ширина × высота, м)
+const SHEET_SIZES: Record<number, [number, number]> = {
+  0: [1.2, 2.5],  // 1200×2500 мм = 3.0 м²
+  1: [1.2, 3.0],  // 1200×3000 мм = 3.6 м²
+  2: [0.6, 2.5],  // 600×2500 мм = 1.5 м²
+};
 
 export const drywallDef: CalculatorDefinition = {
   id: "drywall",
   slug: "gipsokarton",
   title: "Калькулятор гипсокартона",
   h1: "Калькулятор гипсокартона онлайн — расчёт листов и профиля",
-  description: "Рассчитайте количество листов ГКЛ, профилей CD и UD, крепежа для перегородок и обшивки стен.",
+  description: "Рассчитайте количество листов ГКЛ, профилей ПП и ПН, крепежа для перегородок и обшивки стен.",
   metaTitle: "Калькулятор гипсокартона онлайн | Расчёт ГКЛ и профиля — Мастерок",
-  metaDescription: "Бесплатный калькулятор гипсокартона: рассчитайте листы ГКЛ Knauf, профиль CD/UD, дюбели и саморезы для перегородок и обшивки стен.",
+  metaDescription: "Бесплатный калькулятор гипсокартона: рассчитайте листы ГКЛ Knauf, профиль ПП/ПН, дюбели и саморезы для перегородок и обшивки стен.",
   category: "walls",
   categorySlug: "steny",
-  tags: ["гипсокартон", "ГКЛ", "перегородка", "Knauf", "профиль", "CD", "UD", "обшивка"],
+  tags: ["гипсокартон", "ГКЛ", "перегородка", "Knauf", "профиль", "ПП", "ПН", "обшивка"],
   popularity: 70,
   complexity: 2,
   fields: [
@@ -59,6 +63,17 @@ export const drywallDef: CalculatorDefinition = {
       ],
     },
     {
+      key: "sheetSize",
+      label: "Размер листа ГКЛ",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "1200×2500 мм (стандарт)" },
+        { value: 1, label: "1200×3000 мм" },
+        { value: 2, label: "600×2500 мм (малоформатный)" },
+      ],
+    },
+    {
       key: "profileStep",
       label: "Шаг профилей",
       type: "select",
@@ -75,29 +90,32 @@ export const drywallDef: CalculatorDefinition = {
     const height = Math.max(1.5, inputs.height ?? 2.7);
     const layers = Math.round(inputs.layers ?? 1);
     const profileStep = inputs.profileStep ?? 0.6;
+    const sheetSizeIdx = Math.round(inputs.sheetSize ?? 0);
+    const [sheetW, sheetH] = SHEET_SIZES[sheetSizeIdx] ?? SHEET_SIZES[0];
+    const gklArea = sheetW * sheetH;
 
     const area = length * height;
     const sides = workType === 0 ? 2 : 1; // перегородка — 2 стороны
     const totalSheetArea = area * sides * layers;
-    const sheetsNeeded = Math.ceil((totalSheetArea / GKL_AREA) * 1.10);
+    const sheetsNeeded = Math.ceil((totalSheetArea / gklArea) * 1.10);
 
-    // Профиль UD (направляющий): по периметру + запас 5%
-    const udPerimeter = workType === 2
+    // Профиль ПН 27×28 (направляющий): по периметру + запас 5%
+    const pnPerimeter = workType === 2
       ? 2 * (length + height) // потолок: периметр
       : 2 * (length + height); // стена/перегородка
-    const udLength = Math.ceil(udPerimeter * 1.05 / 3) * 3; // кратно 3 м (стандарт)
+    const pnLength = Math.ceil(pnPerimeter * 1.05 / 3) * 3; // кратно 3 м (стандарт)
 
-    // Профиль CD (несущий стоечный): по длине / шаг + 1
-    const cdCount = Math.ceil(length / profileStep) + 1;
-    const cdLength = cdCount * height * 1.05;
-    const cdPieces3m = Math.ceil(cdLength / 3);
+    // Профиль ПП 60×27 (стоечный/несущий): по длине / шаг + 1
+    const ppCount = Math.ceil(length / profileStep) + 1;
+    const ppLength = ppCount * height * 1.05;
+    const ppPieces3m = Math.ceil(ppLength / 3);
 
     // Саморезы: ~30 шт/м² на ГКЛ (крепление к профилю)
     const screwsTFLength = Math.ceil(totalSheetArea * 30 * 1.05);
     // Саморезы металл-металл (LB): для соединения профилей
-    const screwsLB = Math.ceil(cdCount * 4 * 1.05);
-    // Дюбели для UD: через каждые 60 см по периметру
-    const udDowels = Math.ceil(udPerimeter / 0.6);
+    const screwsLB = Math.ceil(ppCount * 4 * 1.05);
+    // Дюбели для ПН: через каждые 60 см по периметру
+    const pnDowels = Math.ceil(pnPerimeter / 0.6);
 
     // Шпаклёвка стартовая (Knauf Фуген): 0.8 кг/м² по площади ГКЛ
     const puttyStartKg = totalSheetArea * 0.8 * 1.15;
@@ -127,27 +145,27 @@ export const drywallDef: CalculatorDefinition = {
     return {
       materials: [
         {
-          name: `ГКЛ 1200×2500 мм (${workType === 0 ? "ГКЛ стандарт" : "ГКЛ"}), листы`,
-          quantity: totalSheetArea / GKL_AREA,
+          name: `ГКЛ ${Math.round(sheetW * 1000)}×${Math.round(sheetH * 1000)} мм (${workType === 0 ? "ГКЛ стандарт" : "ГКЛ"}), листы`,
+          quantity: totalSheetArea / gklArea,
           unit: "листов",
           withReserve: sheetsNeeded,
           purchaseQty: sheetsNeeded,
           category: "Листы ГКЛ",
         },
         {
-          name: "Профиль направляющий UD 27/28 (3 м)",
-          quantity: udPerimeter / 3,
+          name: "Профиль направляющий ПН 27×28 (3 м)",
+          quantity: pnPerimeter / 3,
           unit: "шт (3 м)",
-          withReserve: Math.ceil(udLength / 3),
-          purchaseQty: Math.ceil(udLength / 3),
+          withReserve: Math.ceil(pnLength / 3),
+          purchaseQty: Math.ceil(pnLength / 3),
           category: "Профиль",
         },
         {
-          name: "Профиль стоечный CD 60/27 (3 м)",
-          quantity: cdLength / 3,
+          name: "Профиль стоечный ПП 60×27 (3 м)",
+          quantity: ppLength / 3,
           unit: "шт (3 м)",
-          withReserve: cdPieces3m,
-          purchaseQty: cdPieces3m,
+          withReserve: ppPieces3m,
+          purchaseQty: ppPieces3m,
           category: "Профиль",
         },
         {
@@ -160,26 +178,26 @@ export const drywallDef: CalculatorDefinition = {
         },
         {
           name: "Саморезы-клопы 3.5×9.5 мм (металл–металл)",
-          quantity: cdCount * 4,
+          quantity: ppCount * 4,
           unit: "шт",
           withReserve: screwsLB,
           purchaseQty: Math.ceil(screwsLB / 100) * 100,
           category: "Крепёж",
         },
         {
-          name: "Дюбели 6×40 для крепления UD",
-          quantity: udDowels,
+          name: "Дюбели 6×40 для крепления ПН",
+          quantity: pnDowels,
           unit: "шт",
-          withReserve: Math.ceil(udDowels * 1.05),
-          purchaseQty: Math.ceil(udDowels * 1.05 / 100) * 100,
+          withReserve: Math.ceil(pnDowels * 1.05),
+          purchaseQty: Math.ceil(pnDowels * 1.05 / 100) * 100,
           category: "Крепёж",
         },
         {
           name: "Лента уплотнительная (рулон 30 м)",
-          quantity: udPerimeter / 30,
+          quantity: pnPerimeter / 30,
           unit: "рулонов",
-          withReserve: Math.ceil(udPerimeter / 30),
-          purchaseQty: Math.ceil(udPerimeter / 30),
+          withReserve: Math.ceil(pnPerimeter / 30),
+          purchaseQty: Math.ceil(pnPerimeter / 30),
           category: "Доп. материалы",
         },
         {
@@ -229,14 +247,17 @@ export const drywallDef: CalculatorDefinition = {
   },
   formulaDescription: `
 **Расчёт ГКЛ:**
-Листов = ⌈Площадь × Стороны × Слои / 3.0 м²⌉ × 1.10
+Листов = ⌈Площадь × Стороны × Слои / Площадь_листа⌉ × 1.10
 
-Стандартный лист ГКЛ (Knauf): 1200×2500 мм = 3.0 м²
+Доступные размеры листа ГКЛ (Knauf):
+- 1200×2500 мм = 3.0 м² (стандарт)
+- 1200×3000 мм = 3.6 м²
+- 600×2500 мм = 1.5 м² (малоформатный)
 
 **Каркас:**
-- UD направляющий: по периметру конструкции
-- CD несущий: каждые 400–600 мм
-- Саморезы TF 25 мм: ~30 шт/м²
+- ПН 27×28 направляющий: по периметру конструкции
+- ПП 60×27 стоечный: каждые 400–600 мм
+- Саморезы TN 25 мм: ~30 шт/м²
 
 По ГОСТ 6266-97 и ТТК Knauf.
   `,

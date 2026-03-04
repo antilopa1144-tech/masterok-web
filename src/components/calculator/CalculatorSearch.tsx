@@ -94,6 +94,7 @@ export default function CalculatorSearch({ calculators }: Props) {
           placeholder="Найти калькулятор: бетон, плитка, ламинат..."
           className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all text-sm"
           role="combobox"
+          aria-controls="search-results"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
@@ -110,7 +111,7 @@ export default function CalculatorSearch({ calculators }: Props) {
 
       {/* Результаты */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden scale-in" role="listbox">
+        <div id="search-results" className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden scale-in" role="listbox">
           {results.length > 0 ? (
             <ul>
               {results.map((calc, i) => {

@@ -24,12 +24,12 @@ describe("Калькулятор гипсокартона", () => {
       expect(sheets?.purchaseQty).toBe(10);
     });
 
-    it("профиль UD присутствует", () => {
-      expect(findMaterial(result, "UD")).toBeDefined();
+    it("профиль ПН присутствует", () => {
+      expect(findMaterial(result, "ПН")).toBeDefined();
     });
 
-    it("профиль CD присутствует", () => {
-      expect(findMaterial(result, "CD")).toBeDefined();
+    it("профиль ПП присутствует", () => {
+      expect(findMaterial(result, "ПП")).toBeDefined();
     });
 
     it("саморезы для ГКЛ 3.5×25 в кг", () => {

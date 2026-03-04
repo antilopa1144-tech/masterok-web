@@ -115,8 +115,10 @@ export const selfLevelingDef: CalculatorDefinition = {
     const primerL = area * 0.15;
     const primerCans = Math.ceil(primerL / 5);
 
-    // Демпферная лента
-    const perimeterEst = Math.ceil(Math.sqrt(area) * 4);
+    // Демпферная лента — периметр помещения
+    const perimeterEst = inputMode === 0
+      ? Math.ceil(2 * (Math.max(1, inputs.length ?? 5) + Math.max(1, inputs.width ?? 4)))
+      : Math.ceil(Math.sqrt(area) * 4); // оценка для квадратного помещения
     const tapeRolls = Math.ceil(perimeterEst / 25);
 
     const warnings: string[] = [];

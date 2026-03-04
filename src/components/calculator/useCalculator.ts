@@ -16,6 +16,15 @@ const MAX_HISTORY = 10;
 
 export interface CalculatorWidgetProps extends CalculatorMeta {
   fields: CalculatorField[];
+  expertTips?: {
+    title: string;
+    content: string;
+    author?: string;
+  }[];
+  faq?: {
+    question: string;
+    answer: string;
+  }[];
 }
 
 export interface HistoryEntry {

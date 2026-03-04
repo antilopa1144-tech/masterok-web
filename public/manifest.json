@@ -1,0 +1,61 @@
+{
+  "name": "Мастерок — строительные калькуляторы",
+  "short_name": "Мастерок",
+  "description": "Онлайн-калькуляторы для расчёта строительных материалов с ИИ-помощником Михалычем",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e293b",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "finance",
+    "lifestyle"
+  ],
+  "shortcuts": [
+    {
+      "name": "Калькулятор кирпича",
+      "short_name": "Кирпич",
+      "description": "Рассчитать кирпич для стены",
+      "url": "/instrumenty/kalkulyator/brick",
+      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+    },
+    {
+      "name": "Калькулятор штукатурки",
+      "short_name": "Штукатурка",
+      "description": "Рассчитать штукатурку для стен",
+      "url": "/instrumenty/kalkulyator/plaster",
+      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+    },
+    {
+      "name": "Калькулятор плитки",
+      "short_name": "Плитка",
+      "description": "Рассчитать плитку для пола/стены",
+      "url": "/instrumenty/kalkulyator/tile",
+      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "form_factor": "wide"
+    }
+  ]
+}

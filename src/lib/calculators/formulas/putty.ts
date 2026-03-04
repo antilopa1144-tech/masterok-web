@@ -156,15 +156,17 @@ export const puttyDef: CalculatorDefinition = {
       });
     }
 
-    // Серпянка при стартовой
+    // Серпянка при стартовой: ~1.2 м.п. на 1 м² стен (стыки листов ГКЛ, углы, трещины)
+    // Рулон серпянки 45 мм × 45 м или 90 м
     if (puttyType >= 1) {
-      const serpyankaSqm = Math.ceil(wallArea * 1.1);
+      const serpyankaMeters = wallArea * 1.2 * 1.1; // 1.2 м.п./м² + 10% запас
+      const serpyankaRolls = Math.ceil(serpyankaMeters / 45); // рулон 45 м
       materials.push({
-        name: "Серпянка (лента армировочная 50 мм)",
-        quantity: serpyankaSqm * 0.1,
+        name: "Серпянка (лента армировочная 45 мм, рулон 45 м)",
+        quantity: wallArea * 1.2,
         unit: "м.п.",
-        withReserve: Math.ceil(serpyankaSqm * 0.11),
-        purchaseQty: Math.ceil(serpyankaSqm * 0.11 / 45),
+        withReserve: Math.ceil(serpyankaMeters),
+        purchaseQty: serpyankaRolls,
         category: "Армирование",
       });
     }

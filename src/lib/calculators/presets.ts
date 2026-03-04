@@ -80,4 +80,51 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
     { label: "Квартира 60м²", values: { totalArea: 60, ceilingHeight: 270, climateZone: 1, buildingType: 1, radiatorType: 0, roomCount: 3 } },
     { label: "Дом 120м²", values: { totalArea: 120, ceilingHeight: 270, climateZone: 1, buildingType: 2, radiatorType: 0, roomCount: 6 } },
   ],
+
+  // ── Новые калькуляторы ───────────────────────────
+  krepezh: [
+    { label: "ГКЛ 10 листов", values: { materialType: 0, sheetCount: 10, fastenerStep: 250, hasFrameScrews: 1, hasDowels: 0 } },
+    { label: "ОСБ 20 листов", values: { materialType: 1, sheetCount: 20, fastenerStep: 200, hasFrameScrews: 1, hasDowels: 1 } },
+    { label: "Профлист 50 м²", values: { materialType: 2, sheetCount: 50, fastenerStep: 300, hasFrameScrews: 0, hasDowels: 0 } },
+  ],
+  penobloki: [
+    { label: "Дом 10×2.7 м", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, blockSize: 0, mortarType: 0 } },
+    { label: "Перегородка 5×2.7", values: { inputMode: 0, wallLength: 5, wallHeight: 2.7, openingsArea: 1, blockSize: 1, mortarType: 0 } },
+    { label: "Керамзитоблок 30 м²", values: { inputMode: 1, area: 30, openingsArea: 3, blockSize: 2, mortarType: 1 } },
+  ],
+  "kladka-kirpicha": [
+    { label: "Стена дома 10×2.7", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, brickFormat: 0, wallThickness: 1, mortarJoint: 10 } },
+    { label: "В 1.5 кирпича 8×3", values: { inputMode: 0, wallLength: 8, wallHeight: 3, openingsArea: 4, brickFormat: 0, wallThickness: 2, mortarJoint: 10 } },
+    { label: "Перегородка 15 м²", values: { inputMode: 1, area: 15, openingsArea: 2, brickFormat: 1, wallThickness: 0, mortarJoint: 10 } },
+  ],
+  armatura: [
+    { label: "Плита 10×8 м", values: { structureType: 0, length: 10, width: 8, height: 0.3, mainDiameter: 12, gridStep: 200 } },
+    { label: "Лента 10×8 м", values: { structureType: 1, length: 10, width: 8, height: 0.8, mainDiameter: 12, gridStep: 200 } },
+    { label: "Армопояс 30 м.п.", values: { structureType: 2, length: 15, width: 15, height: 0.25, mainDiameter: 10, gridStep: 200 } },
+  ],
+  "vannaya-komnata": [
+    { label: "Типовая 2.5×1.7", values: { length: 2.5, width: 1.7, height: 2.5, floorTileSize: 0, wallTileSize: 1, hasWaterproofing: 1, doorWidth: 0.7 } },
+    { label: "Большая 3×2.5", values: { length: 3, width: 2.5, height: 2.5, floorTileSize: 2, wallTileSize: 2, hasWaterproofing: 1, doorWidth: 0.8 } },
+  ],
+  "podvesnoy-potolok-gkl": [
+    { label: "Комната 5×4", values: { inputMode: 0, length: 5, width: 4, layers: 1, profileStep: 600 } },
+    { label: "Зал 6×5", values: { inputMode: 0, length: 6, width: 5, layers: 1, profileStep: 600 } },
+    { label: "Двойной слой 20 м²", values: { inputMode: 1, area: 20, layers: 2, profileStep: 600 } },
+  ],
+  "vodyanoy-teplyy-pol": [
+    { label: "Комната 5×4, шаг 200", values: { inputMode: 0, length: 5, width: 4, pipeStep: 200, pipeType: 0 } },
+    { label: "Дом 60 м², шаг 150", values: { inputMode: 1, area: 60, pipeStep: 150, pipeType: 0 } },
+  ],
+  septik: [
+    { label: "Семья 4 чел., кольца", values: { residents: 4, septikType: 0, chambersCount: 2, pipeLength: 10, groundType: 0 } },
+    { label: "Дом 6 чел., пластик", values: { residents: 6, septikType: 1, chambersCount: 2, pipeLength: 15, groundType: 1 } },
+  ],
+  "karkasnyj-dom": [
+    { label: "Дом 6×8 (периметр 28 м)", values: { wallLength: 28, wallHeight: 2.7, openingsArea: 10, studStep: 600, insulationType: 0, outerSheathing: 0, innerSheathing: 0 } },
+    { label: "Дом 8×10 (периметр 36 м)", values: { wallLength: 36, wallHeight: 2.7, openingsArea: 15, studStep: 600, insulationType: 1, outerSheathing: 1, innerSheathing: 1 } },
+  ],
+  "myagkaya-krovlya": [
+    { label: "Дом 80 м²", values: { roofArea: 80, slope: 30, ridgeLength: 8, eaveLength: 20, valleyLength: 0 } },
+    { label: "Дом 150 м² с ендовами", values: { roofArea: 150, slope: 25, ridgeLength: 12, eaveLength: 30, valleyLength: 8 } },
+  ],
 };

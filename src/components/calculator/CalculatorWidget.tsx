@@ -1,7 +1,8 @@
 "use client";
 
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
-import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
+import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ } from "./CalculatorParts";
+import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 
 export type { CalculatorWidgetProps };
@@ -98,7 +99,23 @@ export default function CalculatorWidget({ calculator }: Props) {
 
       {/* Результат */}
       {result && (
-        <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Результаты расчёта</h2>
+            <ExportButtons calculatorName={calculator.title} result={result} />
+          </div>
+          <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+        </div>
+      )}
+
+      {/* Экспертные советы */}
+      {calculator.expertTips && calculator.expertTips.length > 0 && (
+        <ExpertTips tips={calculator.expertTips} />
+      )}
+
+      {/* FAQ */}
+      {calculator.faq && calculator.faq.length > 0 && (
+        <CalculatorFAQ faq={calculator.faq} />
       )}
     </div>
   );

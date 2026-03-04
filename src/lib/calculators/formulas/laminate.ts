@@ -95,6 +95,17 @@ export const laminateDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 10,
     },
+    {
+      key: "offsetMode",
+      label: "Смещение досок",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Хаотичное (экономное)" },
+        { value: 1, label: "На 1/3 длины (классика)" },
+        { value: 2, label: "На 1/2 длины (кирпичная)" },
+      ],
+    },
   ],
   calculate(inputs) {
     const inputMode = Math.round(inputs.inputMode ?? 0);
@@ -114,108 +125,143 @@ export const laminateDef: CalculatorDefinition = {
 
     const packArea = Math.max(0.5, inputs.packArea ?? 2.397);
     const method = Math.round(inputs.layingMethod ?? 0);
+    const offset = Math.round(inputs.offsetMode ?? 0);
     const hasUnderlayment = (inputs.hasUnderlayment ?? 1) > 0;
     const underlaymentRoll = Math.max(5, inputs.underlaymentRoll ?? 10);
 
-    const wasteCoeff: Record<number, number> = { 0: 1.05, 1: 1.15, 2: 1.20 };
-    const coeff = wasteCoeff[method] ?? 1.05;
+    // Коэффициент отходов: способ укладки + смещение
+    const methodWaste: Record<number, number> = { 0: 1.05, 1: 1.15, 2: 1.20 };
+    const offsetWaste = [0, 0.03, 0.07]; // хаотично - 0, 1/3 - +3%, 1/2 - +7%
+    
+    const coeff = (methodWaste[method] ?? 1.05) + (offsetWaste[offset] ?? 0);
 
     const laminateArea = area * coeff;
     const packs = Math.ceil(laminateArea / packArea);
 
-    // Подложка с нахлёстом 15%
-    const underlaymentArea = hasUnderlayment ? area * 1.15 : 0;
+    // Подложка с нахлёстом 10%
+    const underlaymentArea = hasUnderlayment ? area * 1.10 : 0;
     const underlaymentRolls = hasUnderlayment ? Math.ceil(underlaymentArea / underlaymentRoll) : 0;
 
-    // Плинтус: периметр минус дверь (~0.9 м), +5% подрезка, стандарт 2.5 м
-    const plinthLength = (perimeter - 0.9) * 1.05;
+    // Плинтус: периметр минус двери (~0.9 м на каждую), +7% подрезка
+    const doorCount = Math.max(1, Math.ceil(area / 15)); // примерная оценка кол-ва дверей
+    const plinthLength = (perimeter - doorCount * 0.9) * 1.07;
     const plinthPieces = Math.ceil(plinthLength / 2.5);
 
-    // Распорные клинья: каждые 0.5 м по периметру
-    const wedges = Math.ceil((perimeter - 0.9) / 0.5);
+    // Распорные клинья: каждые 0.4 м по периметру
+    const wedges = Math.ceil(perimeter / 0.4);
 
     const warnings: string[] = [];
-    if (area < 3) warnings.push("Маленькая площадь — процент отходов может быть выше расчётного");
-    if (method === 2 && area > 50) warnings.push("Укладка ёлочкой на большой площади: расход материала +20%");
+    if (area < 5) warnings.push("Маленькая площадь: процент отходов может быть выше из-за невозможности использовать обрезки");
+    if (method === 2) warnings.push("Укладка ёлочкой: требует идеально ровного основания и высокой квалификации");
+    if (offset === 2) warnings.push("Смещение на 1/2: самый неэкономный способ укладки, много коротких обрезков");
+
+    const materials = [
+      {
+        name: "Ламинат (упаковки)",
+        quantity: laminateArea / packArea,
+        unit: "упак.",
+        withReserve: packs,
+        purchaseQty: packs,
+        category: "Напольное покрытие",
+      },
+      ...(hasUnderlayment ? [{
+        name: "Подложка (рулонная)",
+        quantity: area / underlaymentRoll,
+        unit: "рулонов",
+        withReserve: underlaymentRolls,
+        purchaseQty: underlaymentRolls,
+        category: "Подложка",
+      }] : []),
+      {
+        name: "Плинтус напольный (2.5 м)",
+        quantity: plinthLength / 2.5,
+        unit: "шт",
+        withReserve: plinthPieces,
+        purchaseQty: plinthPieces,
+        category: "Плинтус",
+      },
+      {
+        name: "Углы и заглушки для плинтуса",
+        quantity: Math.ceil(perimeter / 2),
+        unit: "шт",
+        withReserve: Math.ceil(perimeter / 2),
+        purchaseQty: Math.ceil(perimeter / 2),
+        category: "Плинтус",
+      },
+      {
+        name: "Клинья распорные (набор)",
+        quantity: 1,
+        unit: "упак",
+        withReserve: 1,
+        purchaseQty: 1,
+        category: "Инструмент",
+      },
+      ...(hasUnderlayment ? [{
+        name: "Скотч алюминиевый (для стыков подложки)",
+        quantity: 1,
+        unit: "рулон",
+        withReserve: 1,
+        purchaseQty: 1,
+        category: "Подложка",
+      }] : []),
+      {
+        name: "Порожек стыковочный (0.9 м)",
+        quantity: doorCount,
+        unit: "шт",
+        withReserve: doorCount,
+        purchaseQty: doorCount,
+        category: "Плинтус",
+      },
+    ];
 
     return {
-      materials: [
-        {
-          name: "Ламинат",
-          quantity: laminateArea / packArea,
-          unit: "упак.",
-          withReserve: packs,
-          purchaseQty: packs,
-          category: "Напольное покрытие",
-        },
-        ...(hasUnderlayment ? [{
-          name: "Подложка",
-          quantity: area / underlaymentRoll,
-          unit: "рулонов",
-          withReserve: underlaymentRolls,
-          purchaseQty: underlaymentRolls,
-          category: "Подложка",
-        }] : []),
-        {
-          name: "Плинтус напольный (2.5 м)",
-          quantity: plinthLength / 2.5,
-          unit: "шт",
-          withReserve: plinthPieces,
-          purchaseQty: plinthPieces,
-          category: "Плинтус",
-        },
-        {
-          name: "Клинья распорные",
-          quantity: wedges,
-          unit: "шт",
-          withReserve: wedges,
-          purchaseQty: Math.ceil(wedges / 10) * 10,
-          category: "Крепёж",
-        },
-        ...(hasUnderlayment ? [{
-          name: "Скотч для подложки (рулон 50 м)",
-          quantity: 1,
-          unit: "рулон",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Подложка",
-        }] : []),
-        {
-          name: "Порожек стыковочный",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Плинтус",
-        },
-      ],
+      materials,
       totals: {
         area,
         perimeter,
         packs,
-        wastePercent: (coeff - 1) * 100,
+        wastePercent: Math.round((coeff - 1) * 100),
       },
       warnings,
     };
   },
   formulaDescription: `
-**Расчёт ламината:**
-Упаковок = (Площадь × Коэффициент_отходов) / Площадь_упаковки
+**Расчёт ламината (профессиональный подход):**
 
-Коэффициенты отходов:
-- Прямая укладка: +5%
-- Диагональная: +15%
-- Ёлочка: +20%
-
-**Подложка:** площадь × 1.15 (нахлёст 15 см)
-
-**Плинтус:** периметр − 0.9 м (дверь) × 1.05
+1. **Площадь**: Учитывается чистая площадь пола.
+2. **Запас на подрезку**:
+   - Прямая укладка + хаотичное смещение: 5%
+   - Прямая укладка + смещение 1/2: 12%
+   - Диагональная укладка: 15-18%
+3. **Подложка**: Площадь пола + 10% на перехлест полотен.
+4. **Плинтус**: Периметр за вычетом дверных проемов + 7% на углы.
   `,
   howToUse: [
-    "Введите размеры комнаты или площадь",
-    "Укажите площадь упаковки (написана на упаковке, обычно 1.99–2.40 м²)",
-    "Выберите способ укладки (прямая — меньше отходов)",
-    "Включите подложку, если нужна (рекомендуется всегда)",
-    "Нажмите «Рассчитать» — получите упаковки ламината, подложку и плинтус",
+    "Введите размеры комнаты",
+    "Укажите площадь одной упаковки (из характеристик товара)",
+    "Выберите способ укладки и тип смещения досок",
+    "Нажмите «Рассчитать» — вы получите количество упаковок, подложки и погонаж плинтуса",
   ],
+  expertTips: [
+    {
+      title: "Акклиматизация",
+      content: "Ламинат должен отлежаться в помещении, где будет укладываться, минимум 48 часов. Это предотвратит вздутие швов после монтажа.",
+      author: "Мастер по полам"
+    },
+    {
+      title: "Направление укладки",
+      content: "Укладывайте ламинат длинной стороной вдоль лучей света из окна. Так стыки будут практически незаметны.",
+      author: "Дизайнер-технолог"
+    }
+  ],
+  faq: [
+    {
+      question: "Нужна ли пароизоляция под подложку?",
+      answer: "Если основание — бетонная стяжка (особенно в новостройке), обязательно постелите полиэтиленовую пленку 200 мкр под подложку, чтобы влага из бетона не испортила ламинат."
+    },
+    {
+      question: "Какой зазор оставлять у стен?",
+      answer: "Обязательно оставляйте деформационный зазор 10–15 мм по всему периметру. Ламинат «дышит», и без зазора он встанет «домиком»."
+    }
+  ]
 };

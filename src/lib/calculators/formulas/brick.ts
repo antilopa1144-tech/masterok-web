@@ -112,12 +112,24 @@ export const brickDef: CalculatorDefinition = {
         { value: 4, label: "Жаркие (выше +30°C)" },
       ],
     },
+    {
+      key: "wasteMode",
+      label: "Запас на бой и подрезку",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Стандартный (5%)" },
+        { value: 1, label: "Усиленный (10%) — сложная геометрия" },
+        { value: 2, label: "Минимальный (3%) — опытный мастер" },
+      ],
+    },
   ],
   calculate(inputs) {
     const inputMode = Math.round(inputs.inputMode ?? 0);
     const brickType = Math.round(Math.min(2, Math.max(0, inputs.brickType ?? 0)));
     const wallThickness = Math.round(Math.min(3, Math.max(0, inputs.wallThickness ?? 1)));
     const conditions = Math.round(Math.min(4, Math.max(1, inputs.workingConditions ?? 1)));
+    const wasteMode = Math.round(inputs.wasteMode ?? 0);
 
     let area: number;
     let wallHeight: number;
@@ -136,16 +148,19 @@ export const brickDef: CalculatorDefinition = {
     const conditionsMultiplier: Record<number, number> = { 1: 1.0, 2: 1.05, 3: 1.10, 4: 1.08 };
     const mult = conditionsMultiplier[conditions] ?? 1.0;
 
+    const wasteCoeffs = [1.05, 1.10, 1.03];
+    const wasteCoeff = wasteCoeffs[wasteMode] ?? 1.05;
+
     const bricksPerM2 = BRICKS_PER_SQM[brickType]?.[wallThickness] ?? 102;
-    const bricksNeeded = Math.ceil(area * bricksPerM2 * 1.05); // 5% запас
+    const bricksNeeded = Math.ceil(area * bricksPerM2 * wasteCoeff);
 
     const mortarPerM2 = MORTAR_PER_SQM[brickType]?.[wallThickness] ?? 0.023;
-    const mortarVolume = area * mortarPerM2 * 1.08 * mult;
+    const mortarVolume = area * mortarPerM2 * 1.12 * mult; // 12% запас на потери раствора
     const mortarBags = Math.ceil(mortarVolume / 0.015); // мешок 25 кг → 0.015 м³
 
-    const cementKg = mortarVolume * 375;
+    const cementKg = mortarVolume * 400; // М400 для раствора М150
     const cementBags50 = Math.ceil(cementKg / 50);
-    const sandM3 = mortarVolume * 1.5;
+    const sandM3 = mortarVolume * 1.2; // коэффициент рыхлости песка
 
     // Кладочная сетка
     const brickHeightMm = BRICK_HEIGHT_MM[brickType] ?? 65;
@@ -156,9 +171,9 @@ export const brickDef: CalculatorDefinition = {
     const meshArea = Math.ceil(meshLayers * wallWidth * 1.1 * 10) / 10;
 
     const warnings: string[] = [];
-    if (conditions === 3) warnings.push("При кладке в мороз: применяйте противоморозные добавки в раствор, прогревайте кладку");
-    if (conditions === 4) warnings.push("При жаркой погоде: смачивайте кирпич водой перед укладкой, увлажняйте свежую кладку");
-    if (wallThickness === 0 && area > 15) warnings.push("Для перегородки площадью > 15 м² рекомендуется армирование каждые 3 ряда");
+    if (conditions === 3) warnings.push("При кладке в мороз: применяйте противоморозные добавки (ПМД) в раствор");
+    if (conditions === 4) warnings.push("При жаре: обязательно смачивайте кирпич водой, иначе он «выпьет» воду из раствора");
+    if (wallThickness === 0 && area > 15) warnings.push("Для перегородки в полкирпича такой площади обязательно армирование каждые 3 ряда");
 
     return {
       materials: [
@@ -171,7 +186,7 @@ export const brickDef: CalculatorDefinition = {
           category: "Основное",
         },
         {
-          name: "Цемент М400",
+          name: "Цемент М400 (для раствора)",
           quantity: cementKg,
           unit: "кг",
           withReserve: cementKg,
@@ -179,23 +194,15 @@ export const brickDef: CalculatorDefinition = {
           category: "Раствор",
         },
         {
-          name: "Мешки цемента (50 кг)",
-          quantity: cementBags50,
-          unit: "мешков",
-          withReserve: cementBags50,
-          purchaseQty: cementBags50,
-          category: "Раствор",
-        },
-        {
-          name: "Песок строительный",
+          name: "Песок строительный (сеяный)",
           quantity: sandM3,
           unit: "м³",
-          withReserve: Math.ceil(sandM3 * 10) / 10,
-          purchaseQty: Math.ceil(sandM3 * 10) / 10,
+          withReserve: Math.ceil(sandM3 * 1.1 * 10) / 10,
+          purchaseQty: Math.ceil(sandM3 * 1.1 * 10) / 10,
           category: "Раствор",
         },
         {
-          name: "Кладочная сетка (карты 0.5×2 м)",
+          name: "Кладочная сетка (ячейка 50х50)",
           quantity: meshArea,
           unit: "м²",
           withReserve: meshArea,
@@ -203,23 +210,15 @@ export const brickDef: CalculatorDefinition = {
           category: "Армирование",
         },
         {
-          name: "Сухая кладочная смесь 25 кг",
-          quantity: mortarBags,
-          unit: "мешков",
-          withReserve: mortarBags,
-          purchaseQty: mortarBags,
-          category: "Альтернатива раствору",
-        },
-        {
-          name: "Грунтовка по кладке (канистра 10 л)",
-          quantity: area * 0.15, // 150 мл/м² × 1 слой → литры
+          name: "Пластификатор для раствора",
+          quantity: Math.ceil(cementBags50 * 0.5),
           unit: "л",
-          withReserve: Math.ceil(area * 0.15 * 1.15 * 10) / 10,
-          purchaseQty: Math.ceil(area * 0.15 * 1.15 / 10), // канистра 10 л
-          category: "Грунтовка",
+          withReserve: Math.ceil(cementBags50 * 0.5),
+          purchaseQty: Math.ceil(cementBags50 * 0.5),
+          category: "Раствор",
         },
         ...(wallThickness >= 2 ? [{
-          name: "Гибкие связи (облицовочная кладка)",
+          name: "Гибкие связи (для облицовки)",
           quantity: area * 5,
           unit: "шт",
           withReserve: Math.ceil(area * 5 * 1.05),
@@ -237,23 +236,41 @@ export const brickDef: CalculatorDefinition = {
     };
   },
   formulaDescription: `
-**Нормы по ГОСТ 530-2012 и СНиП 3.03.01-87:**
+**Нормы расчёта кирпичной кладки (ГОСТ 530-2012):**
 
-Количество кирпичей на 1 м² кладки:
-| Тип кирпича | 0.5 кирпича | 1 кирпич | 1.5 кирпича | 2 кирпича |
-|-------------|-------------|----------|-------------|-----------|
-| Одинарный   | 51 шт       | 102 шт   | 153 шт      | 204 шт    |
-| Полуторный  | 39 шт       | 78 шт    | 117 шт      | 156 шт    |
-| Двойной     | 26 шт       | 52 шт    | 78 шт       | 104 шт    |
+1. **Количество кирпича**: Рассчитывается исходя из объёма кладки за вычетом растворных швов (стандарт 10 мм).
+2. **Расход раствора**: В среднем 0.23–0.25 м³ на 1 м³ кладки.
+3. **Запас**: 5% — стандарт на бой при разгрузке и подрезку. 10% — если в стене много проёмов и углов.
 
-Запас 5% на бой и подрезку.
-Расход раствора: 0.019–0.045 м³/м² в зависимости от типа кирпича и толщины.
+**Пропорции раствора М150**: 1 часть цемента М400 на 3 части песка.
   `,
   howToUse: [
-    "Выберите способ ввода: по размерам стены или по площади",
-    "Укажите тип кирпича (одинарный — самый распространённый)",
-    "Выберите толщину кладки: 0.5 кирпича — перегородка, 1 кирпич — обычная стена",
-    "Укажите условия работы для точного расчёта расхода раствора",
-    "Нажмите «Рассчитать» — получите количество кирпичей, цемента и песка",
+    "Выберите тип кирпича и толщину стены",
+    "Укажите размеры стены или чистую площадь кладки",
+    "Выберите условия работы (влияет на расход воды и добавки)",
+    "Укажите желаемый запас (рекомендуем 5%)",
+    "Нажмите «Рассчитать» для получения полной сметы",
   ],
+  expertTips: [
+    {
+      title: "Бой кирпича",
+      content: "При покупке кирпича рядового (забутовочного) закладывайте минимум 5% на бой. Если кирпич везут издалека навалом, а не на поддонах — бой может составить до 10%.",
+      author: "Петрович, каменщик"
+    },
+    {
+      title: "Цвет шва",
+      content: "Если кладка лицевая, используйте готовые цветные кладочные смеси. Самодельный раствор из песка и цемента всегда будет «гулять» по оттенку, что испортит вид фасада.",
+      author: "Прораб-облицовщик"
+    }
+  ],
+  faq: [
+    {
+      question: "Нужно ли армировать кладку?",
+      answer: "Да, несущие стены армируют сеткой каждые 5 рядов одинарного кирпича. Перегородки в полкирпича — каждые 3-4 ряда."
+    },
+    {
+      question: "Какой песок лучше для раствора?",
+      answer: "Только сеяный или мытый карьерный песок. Речной песок слишком быстро оседает в ведре, с ним тяжело работать каменщику."
+    }
+  ]
 };
