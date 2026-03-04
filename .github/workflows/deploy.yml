@@ -71,7 +71,13 @@ jobs:
             set net:max-retries 3;
             set net:reconnect-interval-base 5;
             open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST;
-            mirror -R --delete --overwrite --verbose --parallel=1 ./out /Masterok/public_html;
+            set cmd:fail-exit false;
+            rm -f /Masterok/public_html/kalkulyatory/engineering;
+            rm -r /Masterok/public_html/kalkulyatory/engineering;
+            rm -f /Masterok/public_html/kalkulyatory/interior;
+            rm -r /Masterok/public_html/kalkulyatory/interior;
+            set cmd:fail-exit true;
+            mirror -R --delete --overwrite --verbose --parallel=1 --scan-all-first ./out /Masterok/public_html;
             quit
           "
 
