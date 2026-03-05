@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 // Размеры листов ГКЛ (ширина × высота, м)
 const SHEET_SIZES: Record<number, [number, number]> = {
@@ -142,6 +143,15 @@ export const drywallDef: CalculatorDefinition = {
     if (height > 3.5) warnings.push("При высоте > 3.5 м: требуется усиленный каркас (профиль шириной 100 мм)");
     if (layers === 2) warnings.push("Двойной слой: второй слой крепится со смещением стыков на 600 мм");
 
+    const scenarios = buildNativeScenarios({
+      id: "drywall-main",
+      title: "Drywall main",
+      exactNeed: (totalSheetArea / gklArea) * 1.1,
+      unit: "листов",
+      packageSizes: [1],
+      packageLabelPrefix: "drywall-sheet",
+    });
+
     return {
       materials: [
         {
@@ -243,6 +253,7 @@ export const drywallDef: CalculatorDefinition = {
       ],
       totals: { area, sides, layers, sheetsNeeded },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

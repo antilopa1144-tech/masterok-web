@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const drywallCeilingDef: CalculatorDefinition = {
   id: "drywall_ceiling",
@@ -173,6 +174,15 @@ export const drywallCeilingDef: CalculatorDefinition = {
       );
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "drywall-ceiling-main",
+      title: "Drywall ceiling main",
+      exactNeed: (area * layers) / sheetArea * 1.1,
+      unit: "листов",
+      packageSizes: [1],
+      packageLabelPrefix: "drywall-ceiling-sheet",
+    });
+
     return {
       materials: [
         {
@@ -275,6 +285,7 @@ export const drywallCeilingDef: CalculatorDefinition = {
         crabCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

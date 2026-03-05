@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const tileDef: CalculatorDefinition = {
   id: "tile",
@@ -230,6 +231,15 @@ export const tileDef: CalculatorDefinition = {
       },
     ];
 
+    const scenarios = buildNativeScenarios({
+      id: "tile-main",
+      title: "Tile main",
+      exactNeed: tilesExact * coeff,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "tile-piece",
+    });
+
     return {
       materials,
       totals: {
@@ -239,6 +249,7 @@ export const tileDef: CalculatorDefinition = {
         wastePercent: Math.round((coeff - 1) * 100),
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

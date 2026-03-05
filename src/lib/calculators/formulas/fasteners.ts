@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 // Нормы расхода крепежа по типу материала
 // ГКЛ: саморезы 3.5×25, ~24 шт/лист (шаг 250мм по периметру + по стойкам)
@@ -192,6 +193,15 @@ export const fastenersDef: CalculatorDefinition = {
       warnings.push("При большой площади профлиста рекомендуется использовать шуруповёрт с регулировкой момента");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "fasteners-main",
+      title: "Fasteners main",
+      exactNeed: screwsWithReserve,
+      unit: "шт",
+      packageSizes: [100],
+      packageLabelPrefix: "fasteners-pack",
+    });
+
     return {
       materials,
       totals: {
@@ -200,6 +210,7 @@ export const fastenersDef: CalculatorDefinition = {
         screwsPerUnit,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

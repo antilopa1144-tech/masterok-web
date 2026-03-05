@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const gypsumBoardDef: CalculatorDefinition = {
   id: "gypsum_board",
@@ -127,6 +128,15 @@ export const gypsumBoardDef: CalculatorDefinition = {
       warnings.push("Перегородка: заполните пространство звукоизоляционной минватой 50–100 мм");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "gypsum-board-main",
+      title: "Gypsum board main",
+      exactNeed: area * layers * (constructionType === 1 ? 2 : 1) / sheetArea * 1.1,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "gypsum-sheet",
+    });
+
     return {
       materials: [
         {
@@ -214,6 +224,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
       ],
       totals: { area, totalSheets, ppQuantity } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
