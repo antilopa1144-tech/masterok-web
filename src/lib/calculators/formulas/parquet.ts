@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const parquetDef: CalculatorDefinition = {
   id: "floors_parquet",
@@ -100,6 +101,15 @@ export const parquetDef: CalculatorDefinition = {
 
     const methodNames = ["Прямая", "Диагональная", "Ёлочка"];
 
+    const scenarios = buildNativeScenarios({
+      id: "parquet-main",
+      title: "Parquet main",
+      exactNeed: areaWithWaste,
+      unit: "м²",
+      packageSizes: [packArea],
+      packageLabelPrefix: "parquet-pack",
+    });
+
     return {
       materials: [
         {
@@ -166,6 +176,7 @@ export const parquetDef: CalculatorDefinition = {
         perimeter,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

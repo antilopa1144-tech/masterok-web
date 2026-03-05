@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const selfLevelingDef: CalculatorDefinition = {
   id: "floors_self_leveling",
@@ -134,6 +135,15 @@ export const selfLevelingDef: CalculatorDefinition = {
 
     const typeNames = ["Выравнивающая смесь", "Финишная смесь", "Быстросхватывающаяся"];
 
+    const scenarios = buildNativeScenarios({
+      id: "self-leveling-main",
+      title: "Self leveling main",
+      exactNeed: totalKg,
+      unit: "кг",
+      packageSizes: [bagWeight],
+      packageLabelPrefix: "self-leveling-bag",
+    });
+
     return {
       materials: [
         {
@@ -163,6 +173,7 @@ export const selfLevelingDef: CalculatorDefinition = {
       ],
       totals: { area, thickness, kgPerSqm, totalKg } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

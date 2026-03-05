@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const laminateDef: CalculatorDefinition = {
   id: "laminate",
@@ -213,7 +214,14 @@ export const laminateDef: CalculatorDefinition = {
         category: "Плинтус",
       },
     ];
-
+    const scenarios = buildNativeScenarios({
+      id: "laminate-main",
+      title: "Laminate main",
+      exactNeed: laminateArea,
+      unit: "м²",
+      packageSizes: [packArea],
+      packageLabelPrefix: "laminate-pack",
+    });
     return {
       materials,
       totals: {
@@ -223,6 +231,7 @@ export const laminateDef: CalculatorDefinition = {
         wastePercent: Math.round((coeff - 1) * 100),
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

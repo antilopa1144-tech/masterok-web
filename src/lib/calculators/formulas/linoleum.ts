@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const linoleumDef: CalculatorDefinition = {
   id: "floors_linoleum",
@@ -110,6 +111,15 @@ export const linoleumDef: CalculatorDefinition = {
     const perimeter = 2 * (roomL + roomW);
     const plinthPcs = Math.ceil(perimeter * 1.05 / 2.5);
 
+    const scenarios = buildNativeScenarios({
+      id: "linoleum-main",
+      title: "Linoleum main",
+      exactNeed: totalLinearM,
+      unit: "м.п.",
+      packageSizes: [0.1],
+      packageLabelPrefix: "linoleum-linear",
+    });
+
     return {
       materials: [
         {
@@ -155,6 +165,7 @@ export const linoleumDef: CalculatorDefinition = {
       ],
       totals: { usefulArea, totalLinearM, stripsNeeded, wastePercent } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const wallpaperDef: CalculatorDefinition = {
   id: "wallpaper",
@@ -126,6 +127,15 @@ export const wallpaperDef: CalculatorDefinition = {
     if (rapport > 0.32) warnings.push("Большой раппорт узора — отходы могут значительно превысить расчётные. Закупите на 1-2 рулона больше");
     if (rollWidthM > 0.7) warnings.push("Широкие обои (1.06 м) сложнее клеить — рекомендуется опыт или помощник");
 
+    const scenarios = buildNativeScenarios({
+      id: "wallpaper-main",
+      title: "Wallpaper main",
+      exactNeed: totalStrips / stripsPerRoll,
+      unit: "рулонов",
+      packageSizes: [1],
+      packageLabelPrefix: "wallpaper-roll",
+    });
+
     return {
       materials: [
         {
@@ -209,6 +219,7 @@ export const wallpaperDef: CalculatorDefinition = {
         stripsPerRoll,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
