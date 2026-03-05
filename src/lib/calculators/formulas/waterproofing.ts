@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const waterproofingDef: CalculatorDefinition = {
   id: "bathroom_waterproof",
@@ -185,6 +186,15 @@ export const waterproofingDef: CalculatorDefinition = {
     warnings.push("Каждый слой мастики наносится после полного высыхания предыдущего (обычно 4–6 часов)");
     warnings.push("Перед укладкой плитки дайте гидроизоляции набрать прочность 24–72 часа");
 
+    const scenarios = buildNativeScenarios({
+      id: "waterproofing-main",
+      title: "Waterproofing main",
+      exactNeed: totalMasticKg,
+      unit: "kg",
+      packageSizes: [packageKg],
+      packageLabelPrefix: "waterproofing-mastic",
+    });
+
     return {
       materials,
       totals: {
@@ -193,6 +203,7 @@ export const waterproofingDef: CalculatorDefinition = {
         totalArea,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

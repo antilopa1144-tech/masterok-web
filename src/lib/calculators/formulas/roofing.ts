@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const roofingDef: CalculatorDefinition = {
   id: "roofing_unified",
@@ -126,6 +127,15 @@ export const roofingDef: CalculatorDefinition = {
 
       if (slope < 14) warnings.push("Для металлочерепицы рекомендуется уклон не менее 14°. При меньшем уклоне обязательна герметизация стыков.");
 
+      const scenariosMetal = buildNativeScenarios({
+        id: "roofing-metal",
+        title: "Roofing metal",
+        exactNeed: realArea,
+        unit: "m2",
+        packageSizes: [sheetArea],
+        packageLabelPrefix: "roofing-metal-sheet",
+      });
+
       return {
         materials: [
           { name: "Металлочерепица (листы)", quantity: realArea / sheetArea, unit: "шт", withReserve: sheetsNeeded, purchaseQty: sheetsNeeded, category: "Кровля" },
@@ -138,6 +148,7 @@ export const roofingDef: CalculatorDefinition = {
         ],
         totals: { area, realArea, slope, sheetsNeeded } as Record<string, number>,
         warnings,
+        scenarios: scenariosMetal,
       };
     } else if (type === 1) {
       // Мягкая черепица
@@ -145,6 +156,14 @@ export const roofingDef: CalculatorDefinition = {
       const packArea = 3.0; 
       const packs = Math.ceil((realArea / packArea) * wasteCoeff);
       const osbSheets = Math.ceil((realArea * 1.05) / 3.125); // лист 2500х1250 = 3.125 м2
+      const scenariosSoft = buildNativeScenarios({
+        id: "roofing-soft",
+        title: "Roofing soft",
+        exactNeed: realArea,
+        unit: "m2",
+        packageSizes: [packArea],
+        packageLabelPrefix: "roofing-soft-pack",
+      });
       return {
         materials: [
           { name: "Мягкая черепица (упаковки)", quantity: realArea / packArea, unit: "упак.", withReserve: packs, purchaseQty: packs, category: "Кровля" },
@@ -156,10 +175,19 @@ export const roofingDef: CalculatorDefinition = {
         ],
         totals: { area, realArea, slope, packs } as Record<string, number>,
         warnings,
+        scenarios: scenariosSoft,
       };
     } else {
       // Упрощенный возврат для остальных типов (профнастил, ондулин и т.д.)
       const sheetsNeeded = Math.ceil((realArea / 1.5) * wasteCoeff);
+      const scenariosGeneric = buildNativeScenarios({
+        id: "roofing-generic",
+        title: "Roofing generic",
+        exactNeed: realArea,
+        unit: "m2",
+        packageSizes: [1.5],
+        packageLabelPrefix: "roofing-generic-sheet",
+      });
       return {
         materials: [
           { name: "Кровельный материал (листы)", quantity: realArea / 1.5, unit: "шт", withReserve: sheetsNeeded, purchaseQty: sheetsNeeded, category: "Кровля" },
@@ -168,6 +196,7 @@ export const roofingDef: CalculatorDefinition = {
         ],
         totals: { area, realArea, slope, sheetsNeeded } as Record<string, number>,
         warnings,
+        scenarios: scenariosGeneric,
       };
     }
   },

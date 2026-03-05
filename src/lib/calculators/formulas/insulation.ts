@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const insulationDef: CalculatorDefinition = {
   id: "insulation",
@@ -83,12 +84,21 @@ export const insulationDef: CalculatorDefinition = {
       const volume = area * (thickness / 1000);
       const ecoWoolKg = Math.ceil(volume * density * 1.1);
       warnings.push("Эковата требует профессионального оборудования для напыления");
+      const scenarios = buildNativeScenarios({
+        id: "insulation-ecowool",
+        title: "Insulation ecowool",
+        exactNeed: ecoWoolKg,
+        unit: "kg",
+        packageSizes: [15],
+        packageLabelPrefix: "insulation-ecowool-bag",
+      });
       return {
         materials: [
           { name: "Эковата (мешки 15 кг)", quantity: ecoWoolKg / 15, unit: "мешков", withReserve: Math.ceil(ecoWoolKg / 15), purchaseQty: Math.ceil(ecoWoolKg / 15), category: "Основное" },
         ],
         totals: { area, thickness, volume, ecoWoolKg },
         warnings,
+        scenarios,
       };
     }
 
@@ -172,10 +182,20 @@ export const insulationDef: CalculatorDefinition = {
       });
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "insulation-main",
+      title: "Insulation main",
+      exactNeed: areaWithReserve,
+      unit: "m2",
+      packageSizes: [plateArea],
+      packageLabelPrefix: "insulation-plate-area",
+    });
+
     return {
       materials,
       totals: { area, thickness, platesNeeded, plateArea },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

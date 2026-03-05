@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const windowsDef: CalculatorDefinition = {
   id: "windows_install",
@@ -243,6 +244,15 @@ export const windowsDef: CalculatorDefinition = {
       warnings.push("Толстые стены требуют усиленного крепления оконной рамы — проверьте несущую способность анкеров в конкретном материале стены");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "windows-main",
+      title: "Windows main",
+      exactNeed: psulLengthPerWindow * windowCount,
+      unit: "m",
+      packageSizes: [psulRollLength, iflulRollLength],
+      packageLabelPrefix: "windows-seal-roll",
+    });
+
     return {
       materials,
       totals: {
@@ -250,6 +260,7 @@ export const windowsDef: CalculatorDefinition = {
         totalPerimeter: perimeterM * windowCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
