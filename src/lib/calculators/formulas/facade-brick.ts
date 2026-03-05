@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const facadeBrickDef: CalculatorDefinition = {
   id: "exterior_brick",
@@ -189,6 +190,15 @@ export const facadeBrickDef: CalculatorDefinition = {
     }
     warnings.push("Облицовочный кирпич укладывается с вентиляционным зазором 20–40 мм от несущей стены (СП 15.13330)");
 
+    const scenarios = buildNativeScenarios({
+      id: "facade-brick-main",
+      title: "Facade brick main",
+      exactNeed: totalBricks * 1.1,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "facade-brick-piece",
+    });
+
     return {
       materials,
       totals: {
@@ -197,6 +207,7 @@ export const facadeBrickDef: CalculatorDefinition = {
         totalBricks,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

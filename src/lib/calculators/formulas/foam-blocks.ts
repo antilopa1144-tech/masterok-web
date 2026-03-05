@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 // Размеры блоков [длина мм, высота мм, толщина мм]
 const BLOCK_SIZES: Record<number, [number, number, number, string]> = {
@@ -243,10 +244,20 @@ export const foamBlocksDef: CalculatorDefinition = {
       warnings.push("Для пеноблоков рекомендуется специальный клей (шов 2–3 мм) вместо ЦПС — меньше мостиков холода");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "foam-blocks-main",
+      title: "Foam blocks main",
+      exactNeed: blocksNet * 1.05,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "foam-block-piece",
+    });
+
     return {
       materials,
       totals: { wallArea, netArea, blocksNet, volume } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

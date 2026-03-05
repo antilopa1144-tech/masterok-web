@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const fenceDef: CalculatorDefinition = {
   id: "fence",
@@ -229,10 +230,20 @@ export const fenceDef: CalculatorDefinition = {
 
     if (gates > 0) warnings.push(`Ворота (${gates} шт): требуют усиленных столбов 80×80 или 100×100 мм`);
 
+    const scenarios = buildNativeScenarios({
+      id: "fence-main",
+      title: "Fence main",
+      exactNeed: netLength,
+      unit: "м.п.",
+      packageSizes: [1],
+      packageLabelPrefix: "fence-linear",
+    });
+
     return {
       materials,
       totals: { length, netLength, postsCount, height } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const facadePanelsDef: CalculatorDefinition = {
   id: "exterior_facade_panels",
@@ -216,6 +217,15 @@ export const facadePanelsDef: CalculatorDefinition = {
       warnings.push("Металлокассеты без утеплителя — возможно образование конденсата изнутри. Рекомендуется утепление");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "facade-panels-main",
+      title: "Facade panels main",
+      exactNeed: areaWithReserve / panelArea,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "facade-panel",
+    });
+
     return {
       materials,
       totals: {
@@ -224,6 +234,7 @@ export const facadePanelsDef: CalculatorDefinition = {
         bracketsCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

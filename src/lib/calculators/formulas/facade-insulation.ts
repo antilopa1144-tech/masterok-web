@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const facadeInsulationDef: CalculatorDefinition = {
   id: "insulation_mineral_wool",
@@ -201,10 +202,20 @@ export const facadeInsulationDef: CalculatorDefinition = {
       warnings.push("При площади >500 м² рекомендуется разбить фасад на захватки и использовать леса с допуском нагрузки");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "facade-insulation-main",
+      title: "Facade insulation main",
+      exactNeed: areaWithReserve,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "facade-insulation-m2",
+    });
+
     return {
       materials,
       totals: { area, thickness } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
