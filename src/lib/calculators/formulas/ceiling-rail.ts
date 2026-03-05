@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const ceilingRailDef: CalculatorDefinition = {
   id: "ceilings_rail",
@@ -89,6 +90,15 @@ export const ceilingRailDef: CalculatorDefinition = {
     // Саморезы: ~4 шт на подвес + ~2 шт на стыки реек
     const screws = hangers * 4 + railPcs * 2;
 
+    const scenarios = buildNativeScenarios({
+      id: "ceiling-rail-main",
+      title: "Ceiling rail main",
+      exactNeed: totalRailLength / railLength,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "ceiling-rail",
+    });
+
     return {
       materials: [
         {
@@ -133,6 +143,7 @@ export const ceilingRailDef: CalculatorDefinition = {
         },
       ],
       totals: { area, rowCount, railPcs } as Record<string, number>,
+      scenarios,
       warnings: [
         "Рейки монтируются перпендикулярно направляющим профилям",
         "Оставляйте зазор 5–10 мм для вентиляции у стен",

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const ceilingCassetteDef: CalculatorDefinition = {
   id: "ceilings_cassette",
@@ -82,6 +83,15 @@ export const ceilingCassetteDef: CalculatorDefinition = {
       warnings.push("Для больших площадей рекомендуйте устанавливать профили с шагом 600 мм для жёсткости");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "ceiling-cassette-main",
+      title: "Ceiling cassette main",
+      exactNeed: totalCassettes * 1.1,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "ceiling-cassette",
+    });
+
     return {
       materials: [
         {
@@ -127,6 +137,7 @@ export const ceilingCassetteDef: CalculatorDefinition = {
       ],
       totals: { area, totalCassettes, hangers } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

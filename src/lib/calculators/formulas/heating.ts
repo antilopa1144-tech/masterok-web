@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const heatingDef: CalculatorDefinition = {
   id: "engineering_heating",
@@ -215,6 +216,15 @@ export const heatingDef: CalculatorDefinition = {
       warnings.push("Для Сибири и севера рекомендуется теплотехнический расчёт у специалиста — данный расчёт ориентировочный");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "heating-main",
+      title: "Heating main",
+      exactNeed: totalUnits,
+      unit: "секций",
+      packageSizes: [1],
+      packageLabelPrefix: "heating-section",
+    });
+
     return {
       materials,
       totals: {
@@ -223,6 +233,7 @@ export const heatingDef: CalculatorDefinition = {
         totalArea,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

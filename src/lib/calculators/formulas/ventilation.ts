@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const ventilationDef: CalculatorDefinition = {
   id: "engineering_ventilation",
@@ -191,6 +192,15 @@ export const ventilationDef: CalculatorDefinition = {
     }
     warnings.push(`Расчётный воздухообмен: ${requiredAirflowRounded} м³/ч (кратность ${exchangeRates}×/ч + 60 м³/ч/чел)`);
 
+    const scenarios = buildNativeScenarios({
+      id: "ventilation-main",
+      title: "Ventilation main",
+      exactNeed: requiredAirflowRounded,
+      unit: "м³/ч",
+      packageSizes: [50],
+      packageLabelPrefix: "ventilation-airflow",
+    });
+
     return {
       materials,
       totals: {
@@ -199,6 +209,7 @@ export const ventilationDef: CalculatorDefinition = {
         exchangeRate: exchangeRates,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const ceilingStretchDef: CalculatorDefinition = {
   id: "ceilings_stretch",
@@ -90,6 +91,15 @@ export const ceilingStretchDef: CalculatorDefinition = {
       warnings.push(`Для ${fixtures} светильников: устанавливайте закладные платформы ДО натяжки полотна`);
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "ceiling-stretch-main",
+      title: "Ceiling stretch main",
+      exactNeed: area,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "ceiling-stretch-m2",
+    });
+
     return {
       materials: [
         {
@@ -143,6 +153,7 @@ export const ceilingStretchDef: CalculatorDefinition = {
       ],
       totals: { area, perimeter, fixtures } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
