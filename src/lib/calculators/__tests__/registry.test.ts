@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { getCalculateFn, getCalculateFnSync } from "../registry";
 import { ALL_CALCULATORS } from "../index";
 
@@ -77,3 +77,34 @@ describe("Registry калькуляторов", () => {
     });
   });
 });
+
+describe("Сценарный контракт через registry", () => {
+  it("добавляет MIN/REC/MAX для выборки калькуляторов", async () => {
+    const sample: Array<[string, Record<string, number>]> = [
+      ["beton", { concreteVolume: 5, concreteGrade: 3, reserve: 5 }],
+      ["kirpich", { inputMode: 1, area: 20, brickType: 0, wallThickness: 1 }],
+      ["styazhka", { inputMode: 1, area: 20, thickness: 50, screedType: 1 }],
+      ["teplyy-pol", { roomArea: 12, furnitureArea: 2, heatingType: 0, powerDensity: 150 }],
+      ["elektrika", { apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 }],
+      ["shpaklevka", { inputMode: 1, area: 40, puttyType: 1, bagWeight: 25 }],
+    ];
+
+    for (const [slug, input] of sample) {
+      const fn = await getCalculateFn(slug);
+      expect(fn, `функция не загружена для ${slug}`).toBeDefined();
+
+      const result = fn!(input);
+      expect(result.scenarios, `нет scenarios для ${slug}`).toBeDefined();
+
+      const min = result.scenarios?.MIN;
+      const rec = result.scenarios?.REC;
+      const max = result.scenarios?.MAX;
+
+      expect(min?.exact_need ?? 0, `MIN exact invalid for ${slug}`).toBeGreaterThanOrEqual(0);
+      expect(rec?.exact_need ?? 0, `REC exact invalid for ${slug}`).toBeGreaterThanOrEqual(min?.exact_need ?? 0);
+      expect(max?.exact_need ?? 0, `MAX exact invalid for ${slug}`).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
+      expect(rec?.purchase_quantity ?? 0, `purchase < exact for ${slug}`).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
+    }
+  });
+});
+

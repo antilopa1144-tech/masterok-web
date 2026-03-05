@@ -3,6 +3,7 @@
  * Uses dynamic imports for code splitting — each formula is loaded only when needed.
  */
 import type { CalculateFn } from "./types";
+import { withScenarioContract } from "./scenario-adapter";
 
 /** Маппинг slug → имя файла формулы */
 const FORMULA_MAP: Record<string, string> = {
@@ -87,8 +88,9 @@ export async function getCalculateFn(slug: string): Promise<CalculateFn | undefi
     const mod = await import(`./formulas/${file}.ts`);
     // Каждый модуль экспортирует xyzDef с полем calculate
     const def = Object.values(mod)[0] as { calculate: CalculateFn };
-    cache.set(slug, def.calculate);
-    return def.calculate;
+    const wrappedCalculate = withScenarioContract(slug, def.calculate);
+    cache.set(slug, wrappedCalculate);
+    return wrappedCalculate;
   } catch {
     return undefined;
   }
@@ -98,3 +100,4 @@ export async function getCalculateFn(slug: string): Promise<CalculateFn | undefi
 export function getCalculateFnSync(slug: string): CalculateFn | undefined {
   return cache.get(slug);
 }
+

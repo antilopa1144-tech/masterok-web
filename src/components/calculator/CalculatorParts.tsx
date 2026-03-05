@@ -234,6 +234,51 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
   );
 }
 
+
+// ── Сценарии MIN/REC/MAX ───────────────────────────────────────────────────
+
+function ScenarioBlock({ result }: { result: CalculatorResult }) {
+  if (!result.scenarios) return null;
+
+  const scenarios = [
+    { key: "MIN", title: "MIN" },
+    { key: "REC", title: "REC" },
+    { key: "MAX", title: "MAX" },
+  ] as const;
+
+  return (
+    <div className="card p-5">
+      <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+        Сценарии MIN/REC/MAX
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {scenarios.map((s) => {
+          const item = result.scenarios?.[s.key];
+          if (!item) return null;
+
+          return (
+            <div key={s.key} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{s.title}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                need: <span className="font-semibold">{formatNumber(item.exact_need)}</span>
+              </p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                buy: <span className="font-semibold">{formatNumber(item.purchase_quantity)}</span>
+              </p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                leftover: <span className="font-semibold">{formatNumber(item.leftover)}</span>
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                plan: {item.buy_plan.package_label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Панель истории ───────────────────────────────────────────────────────────
 
 export function HistoryPanel({
@@ -338,6 +383,8 @@ export function ResultBlock({
       </div>
 
       {/* Итоги */}
+      {result.scenarios && (<ScenarioBlock result={result} />)}
+
       {Object.keys(result.totals).length > 0 && (
         <div className="card p-5">
           <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
@@ -353,3 +400,4 @@ export function ResultBlock({
     </div>
   );
 }
+
