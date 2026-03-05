@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const wallPanelsDef: CalculatorDefinition = {
   id: "walls_panels",
@@ -192,10 +193,20 @@ export const wallPanelsDef: CalculatorDefinition = {
       warnings.push("Декоративный камень — обработайте гидрофобизатором после укладки");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "wall-panels-main",
+      title: "Wall panels main",
+      exactNeed: piecesNeeded,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "wall-panel-piece",
+    });
+
     return {
       materials,
       totals: { area, piecesNeeded } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

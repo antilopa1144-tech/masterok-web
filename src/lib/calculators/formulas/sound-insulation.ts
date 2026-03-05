@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const soundInsulationDef: CalculatorDefinition = {
   id: "insulation_sound",
@@ -265,10 +266,20 @@ export const soundInsulationDef: CalculatorDefinition = {
     }
     warnings.push("Для эффективной звукоизоляции все зазоры и стыки должны быть тщательно заделаны акустическим герметиком");
 
+    const scenarios = buildNativeScenarios({
+      id: "sound-insulation-main",
+      title: "Sound insulation main",
+      exactNeed: areaWithReserve,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "sound-insulation-m2",
+    });
+
     return {
       materials,
       totals: { area } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

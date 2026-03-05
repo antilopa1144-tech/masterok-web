@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const stripFoundationDef: CalculatorDefinition = {
   id: "strip_foundation",
@@ -146,10 +147,20 @@ export const stripFoundationDef: CalculatorDefinition = {
       materials.push({ name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты (замес)" });
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "strip-foundation-main",
+      title: "Strip foundation main",
+      exactNeed: volumeWithReserve,
+      unit: "м³",
+      packageSizes: [0.1],
+      packageLabelPrefix: "strip-foundation-concrete",
+    });
+
     return {
       materials,
       totals: { perimeter, widthMm, totalHeightM, volume, rebarWeightKg },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

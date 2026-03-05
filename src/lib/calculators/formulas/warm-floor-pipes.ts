@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const warmFloorPipesDef: CalculatorDefinition = {
   id: "warm_floor_pipes",
@@ -217,6 +218,15 @@ export const warmFloorPipesDef: CalculatorDefinition = {
       warnings.push("При площади > 40 м² рекомендуется проектный расчёт теплопотерь");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "warm-floor-pipes-main",
+      title: "Warm floor pipes main",
+      exactNeed: totalPipe,
+      unit: "м.п.",
+      packageSizes: [200],
+      packageLabelPrefix: "warm-floor-pipe-coil",
+    });
+
     return {
       materials,
       totals: {
@@ -229,6 +239,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
         coils,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const terraceDef: CalculatorDefinition = {
   id: "terrace",
@@ -214,6 +215,15 @@ export const terraceDef: CalculatorDefinition = {
       warnings.push("Для больших террас рекомендуется деформационный зазор 10–15 мм у стен и строений");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "terrace-main",
+      title: "Terrace main",
+      exactNeed: totalBoards * 1.1,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "terrace-board",
+    });
+
     return {
       materials,
       totals: {
@@ -222,6 +232,7 @@ export const terraceDef: CalculatorDefinition = {
         lagCount: lagRowCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
