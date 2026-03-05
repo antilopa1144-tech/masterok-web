@@ -65,10 +65,29 @@ export interface MaterialResult {
   category?: string;
 }
 
+
+export type ScenarioName = "MIN" | "REC" | "MAX";
+
+export interface CalculatorScenario {
+  exact_need: number;
+  purchase_quantity: number;
+  leftover: number;
+  assumptions: string[];
+  key_factors: Record<string, number>;
+  buy_plan: {
+    package_label: string;
+    package_size: number;
+    packages_count: number;
+    unit: string;
+  };
+}
+
+export type CalculatorScenarios = Record<ScenarioName, CalculatorScenario>;
 export interface CalculatorResult {
   materials: MaterialResult[];
   totals: Record<string, number>;
   warnings: string[];
+  scenarios?: CalculatorScenarios;
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;
@@ -88,3 +107,4 @@ export interface CalculatorDefinition extends CalculatorMeta {
     answer: string;
   }[];
 }
+

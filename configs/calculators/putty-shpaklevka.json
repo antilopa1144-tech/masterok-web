@@ -1,0 +1,29 @@
+{
+  "id": "putty-shpaklevka",
+  "title": "Putty calculator migration config",
+  "enabledFactors": [
+    "surface_quality",
+    "geometry_complexity",
+    "installation_method",
+    "worker_skill",
+    "waste_factor",
+    "logistics_buffer",
+    "packaging_rounding"
+  ],
+  "formulas": {
+    "finish": {
+      "baseFormula": "putty_area_thickness",
+      "consumption_kg_per_m2_mm": 1.1,
+      "thickness_mm": 1
+    },
+    "start": {
+      "baseFormula": "putty_area_thickness",
+      "consumption_kg_per_m2_mm": 2.7,
+      "thickness_mm": 1
+    }
+  },
+  "packaging": {
+    "unit": "kg",
+    "defaultBagKg": 20
+  }
+}

@@ -1,4 +1,108 @@
-import type { CalculatorDefinition } from "../types";
+import type { CalculatorDefinition, CalculatorScenarios } from "../types";
+import { computeEstimate, type EngineCalculatorConfig } from "../../../../engine/compute";
+import type { ScenarioBundle } from "../../../../engine/scenarios";
+import type { FieldFactorName } from "../../../../engine/factors";
+import factorTables from "../../../../configs/factor-tables.json";
+import puttyEngineConfig from "../../../../configs/calculators/putty-shpaklevka.json";
+
+interface PuttyEngineSourceConfig {
+  enabledFactors: FieldFactorName[];
+  formulas: {
+    finish: {
+      consumption_kg_per_m2_mm: number;
+      thickness_mm: number;
+    };
+    start: {
+      consumption_kg_per_m2_mm: number;
+      thickness_mm: number;
+    };
+  };
+  packaging: {
+    unit: string;
+    defaultBagKg: number;
+  };
+}
+
+const engineSource = puttyEngineConfig as PuttyEngineSourceConfig;
+
+function resolveWorkArea(inputs: Record<string, number>): number {
+  const inputMode = Math.round(inputs.inputMode ?? 0);
+
+  if (inputMode === 0) {
+    const l = Math.max(1, inputs.length ?? 5);
+    const w = Math.max(1, inputs.width ?? 4);
+    const h = Math.max(2, inputs.height ?? 2.7);
+    const ceilArea = l * w;
+    const wallsArea = 2 * (l + w) * h;
+    const surfaceMode = Math.round(inputs.surface ?? 0);
+
+    if (surfaceMode === 0) return wallsArea;
+    if (surfaceMode === 1) return ceilArea;
+    return wallsArea + ceilArea;
+  }
+
+  return Math.max(1, inputs.area ?? 50);
+}
+
+function toEngineConfig(
+  id: string,
+  title: string,
+  consumptionKgPerM2Mm: number,
+  bagWeightKg: number,
+): EngineCalculatorConfig {
+  return {
+    id,
+    title,
+    baseFormula: "putty_area_thickness",
+    baseParams: {
+      consumption_kg_per_m2_mm: consumptionKgPerM2Mm,
+    },
+    enabledFactors: engineSource.enabledFactors,
+    packaging: {
+      unit: engineSource.packaging.unit,
+      options: [{ size: bagWeightKg, label: `bag-${bagWeightKg}kg` }],
+    },
+  };
+}
+
+function mergeScenarios(
+  scenarioList: ScenarioBundle[],
+  bagWeightKg: number,
+  bagUnit: string,
+): CalculatorScenarios {
+  const names: Array<"MIN" | "REC" | "MAX"> = ["MIN", "REC", "MAX"];
+
+  return Object.fromEntries(
+    names.map((name) => {
+      const exactNeed = scenarioList.reduce((sum, scenario) => sum + scenario[name].exact_need, 0);
+      const purchaseQuantity = scenarioList.reduce((sum, scenario) => sum + scenario[name].purchase_quantity, 0);
+      const leftover = scenarioList.reduce((sum, scenario) => sum + scenario[name].leftover, 0);
+
+      const assumptions = Array.from(
+        new Set(scenarioList.flatMap((scenario) => scenario[name].assumptions)),
+      );
+
+      const baseFactors = scenarioList[0]?.[name].key_factors ?? {};
+
+      return [
+        name,
+        {
+          exact_need: exactNeed,
+          purchase_quantity: purchaseQuantity,
+          leftover,
+          assumptions,
+          key_factors: baseFactors,
+          buy_plan: {
+            package_label: `bag-${bagWeightKg}kg-total`,
+            package_size: bagWeightKg,
+            packages_count: Math.ceil(purchaseQuantity / bagWeightKg),
+            unit: bagUnit,
+          },
+        },
+      ];
+    }),
+  ) as CalculatorScenarios;
+}
 
 export const puttyDef: CalculatorDefinition = {
   id: "mixes_putty",
@@ -103,64 +207,75 @@ export const puttyDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs): import("../types").CalculatorResult {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let wallArea: number;
-
-    if (inputMode === 0) {
-      const l = Math.max(1, inputs.length ?? 5);
-      const w = Math.max(1, inputs.width ?? 4);
-      const h = Math.max(2, inputs.height ?? 2.7);
-      const ceilArea = l * w;
-      const wallsArea = 2 * (l + w) * h;
-      const surfaceMode = Math.round(inputs.surface ?? 0);
-      if (surfaceMode === 0) wallArea = wallsArea;
-      else if (surfaceMode === 1) wallArea = ceilArea;
-      else wallArea = wallsArea + ceilArea;
-    } else {
-      wallArea = Math.max(1, inputs.area ?? 50);
-    }
-
-    const puttyType = Math.round(inputs.puttyType ?? 0);
-    const bagWeight = inputs.bagWeight ?? 20;
+    const wallArea = resolveWorkArea(inputs);
+    const puttyType = Math.max(0, Math.min(2, Math.round(inputs.puttyType ?? 0)));
+    const bagWeight = Math.max(1, inputs.bagWeight ?? engineSource.packaging.defaultBagKg);
 
     const warnings: string[] = [];
-    const materials = [];
+    const materials: import("../types").MaterialResult[] = [];
+    const scenarioParts: ScenarioBundle[] = [];
 
     if (puttyType === 0 || puttyType === 1) {
-      // Финишная: 1.0–1.2 кг/м² (слой 1–2 мм)
-      const finishKgPerSqm = 1.1;
-      const finishKg = wallArea * finishKgPerSqm * 1.1;
-      const finishBags = Math.ceil(finishKg / bagWeight);
+      const finishConfig = toEngineConfig(
+        "putty-finish",
+        "Putty finish",
+        engineSource.formulas.finish.consumption_kg_per_m2_mm,
+        bagWeight,
+      );
+
+      const finishScenario = computeEstimate(
+        finishConfig,
+        {
+          area_m2: wallArea,
+          thickness_mm: engineSource.formulas.finish.thickness_mm,
+        },
+        factorTables.factors,
+      );
+
+      scenarioParts.push(finishScenario);
+
       materials.push({
         name: `Шпаклёвка финишная (мешки ${bagWeight} кг)`,
-        quantity: finishKg / bagWeight,
+        quantity: finishScenario.REC.exact_need / bagWeight,
         unit: "мешков",
-        withReserve: finishBags,
-        purchaseQty: finishBags,
+        withReserve: finishScenario.REC.buy_plan.packages_count,
+        purchaseQty: finishScenario.REC.buy_plan.packages_count,
         category: "Финишная",
       });
     }
 
     if (puttyType === 1 || puttyType === 2) {
-      // Стартовая: ~0.8–1.0 кг/м²/мм × 3 мм среднего слоя = ~2.7 кг/м²
-      const startKgPerSqm = 2.7;
-      const startKg = wallArea * startKgPerSqm * 1.1;
-      const startBags = Math.ceil(startKg / bagWeight);
+      const startConfig = toEngineConfig(
+        "putty-start",
+        "Putty start",
+        engineSource.formulas.start.consumption_kg_per_m2_mm,
+        bagWeight,
+      );
+
+      const startScenario = computeEstimate(
+        startConfig,
+        {
+          area_m2: wallArea,
+          thickness_mm: engineSource.formulas.start.thickness_mm,
+        },
+        factorTables.factors,
+      );
+
+      scenarioParts.push(startScenario);
+
       materials.push({
         name: `Шпаклёвка стартовая (мешки ${bagWeight} кг)`,
-        quantity: startKg / bagWeight,
+        quantity: startScenario.REC.exact_need / bagWeight,
         unit: "мешков",
-        withReserve: startBags,
-        purchaseQty: startBags,
+        withReserve: startScenario.REC.buy_plan.packages_count,
+        purchaseQty: startScenario.REC.buy_plan.packages_count,
         category: "Стартовая",
       });
     }
 
-    // Серпянка при стартовой: ~1.2 м.п. на 1 м² стен (стыки листов ГКЛ, углы, трещины)
-    // Рулон серпянки 45 мм × 45 м или 90 м
     if (puttyType >= 1) {
-      const serpyankaMeters = wallArea * 1.2 * 1.1; // 1.2 м.п./м² + 10% запас
-      const serpyankaRolls = Math.ceil(serpyankaMeters / 45); // рулон 45 м
+      const serpyankaMeters = wallArea * 1.2 * 1.1;
+      const serpyankaRolls = Math.ceil(serpyankaMeters / 45);
       materials.push({
         name: "Серпянка (лента армировочная 45 мм, рулон 45 м)",
         quantity: wallArea * 1.2,
@@ -171,10 +286,9 @@ export const puttyDef: CalculatorDefinition = {
       });
     }
 
-    // Грунтовка глубокого проникновения — обязательна перед каждым слоем
-    const coats = puttyType === 1 ? 2 : 1; // стартовая + финишная = 2 слоя грунтовки
-    const primerLiters = wallArea * 0.15 * coats; // 150 мл/м² на слой
-    const primerCans = Math.ceil(primerLiters / 10); // канистры 10 л
+    const coats = puttyType === 1 ? 2 : 1;
+    const primerLiters = wallArea * 0.15 * coats;
+    const primerCans = Math.ceil(primerLiters / 10);
     materials.push({
       name: "Грунтовка глубокого проникновения (10 л)",
       quantity: primerLiters / 10,
@@ -184,10 +298,8 @@ export const puttyDef: CalculatorDefinition = {
       category: "Подготовка",
     });
 
-    // Наждачная бумага для шлифовки
     if (puttyType === 0 || puttyType === 1) {
-      // Финишная → шлифуем P180–P240
-      const sandpaperSheets = Math.ceil(wallArea / 5); // 1 лист на ~5 м²
+      const sandpaperSheets = Math.ceil(wallArea / 5);
       materials.push({
         name: "Наждачная бумага P180–P240",
         quantity: sandpaperSheets,
@@ -202,10 +314,22 @@ export const puttyDef: CalculatorDefinition = {
       warnings.push("Для больших площадей рекомендуется нанесение шпаклёвки механизированным методом");
     }
 
+    const scenarios = mergeScenarios(scenarioParts, bagWeight, engineSource.packaging.unit);
+
     return {
       materials,
-      totals: { wallArea, puttyType } as Record<string, number>,
+      totals: {
+        wallArea,
+        puttyType,
+        minExactNeedKg: scenarios.MIN.exact_need,
+        recExactNeedKg: scenarios.REC.exact_need,
+        maxExactNeedKg: scenarios.MAX.exact_need,
+        minPurchaseKg: scenarios.MIN.purchase_quantity,
+        recPurchaseKg: scenarios.REC.purchase_quantity,
+        maxPurchaseKg: scenarios.MAX.purchase_quantity,
+      },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
@@ -223,3 +347,4 @@ export const puttyDef: CalculatorDefinition = {
     "Нажмите «Рассчитать» — получите количество мешков",
   ],
 };
+

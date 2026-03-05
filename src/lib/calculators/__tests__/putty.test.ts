@@ -118,3 +118,23 @@ describe("Калькулятор шпаклёвки", () => {
     });
   });
 });
+
+
+describe("Сценарный контракт shared engine", () => {
+  it("сценарии MIN/REC/MAX присутствуют и упорядочены", () => {
+    const result = calc({ inputMode: 1, area: 48.6, puttyType: 0, bagWeight: 20 });
+
+    expect(result.scenarios).toBeDefined();
+    expect(result.scenarios?.REC.exact_need).toBeGreaterThanOrEqual(result.scenarios?.MIN.exact_need ?? 0);
+    expect(result.scenarios?.MAX.exact_need).toBeGreaterThanOrEqual(result.scenarios?.REC.exact_need ?? 0);
+  });
+
+  it("REC сценарий дает purchase >= exact и содержит buy plan", () => {
+    const result = calc({ inputMode: 1, area: 48.6, puttyType: 1, bagWeight: 25 });
+    const rec = result.scenarios?.REC;
+
+    expect(rec).toBeDefined();
+    expect((rec?.purchase_quantity ?? 0)).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
+    expect(rec?.buy_plan.package_size).toBe(25);
+  });
+});
