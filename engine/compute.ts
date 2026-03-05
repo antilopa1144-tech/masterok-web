@@ -12,7 +12,7 @@ export interface EnginePackagingConfig {
 export interface EngineCalculatorConfig {
   id: string;
   title: string;
-  baseFormula: "putty_area_thickness";
+  baseFormula: "putty_area_thickness" | "coating_area_rate";
   baseParams: {
     consumption_kg_per_m2_mm: number;
   };
@@ -33,12 +33,20 @@ function puttyAreaThicknessFormula(inputs: FormulaInputs, consumptionKgPerM2Mm: 
   return area * thickness * consumptionKgPerM2Mm;
 }
 
+function coatingAreaRateFormula(inputs: FormulaInputs, consumptionPerM2: number): number {
+  const area = Math.max(0, inputs.area_m2 ?? 0);
+  return area * consumptionPerM2;
+}
+
 export function computeEstimate(
   config: EngineCalculatorConfig,
   inputs: FormulaInputs,
   factorTable: FactorTable = DEFAULT_TABLE,
 ): ScenarioBundle {
-  const baseExactNeed = puttyAreaThicknessFormula(inputs, config.baseParams.consumption_kg_per_m2_mm);
+  const baseExactNeed =
+    config.baseFormula === "coating_area_rate"
+      ? coatingAreaRateFormula(inputs, config.baseParams.consumption_kg_per_m2_mm)
+      : puttyAreaThicknessFormula(inputs, config.baseParams.consumption_kg_per_m2_mm);
 
   const scenarios = Object.fromEntries(
     SCENARIOS.map((scenario) => {
@@ -82,3 +90,4 @@ export function computeEstimate(
 
   return scenarios;
 }
+

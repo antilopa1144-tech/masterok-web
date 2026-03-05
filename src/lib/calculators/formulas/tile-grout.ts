@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const tileGroutDef: CalculatorDefinition = {
   id: "floors_tile_grout",
@@ -124,6 +125,15 @@ export const tileGroutDef: CalculatorDefinition = {
 
     const groutNames = ["Затирка цементная", "Затирка эпоксидная", "Затирка полиуретановая"];
 
+    const scenarios = buildNativeScenarios({
+      id: "tile-grout-main",
+      title: "Tile grout main",
+      exactNeed: totalKg,
+      unit: "кг",
+      packageSizes: [bagSize],
+      packageLabelPrefix: "tile-grout-pack",
+    });
+
     return {
       materials: [
         {
@@ -137,6 +147,7 @@ export const tileGroutDef: CalculatorDefinition = {
       ],
       totals: { area, kgPerSqm, totalKg } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
@@ -158,3 +169,4 @@ export const tileGroutDef: CalculatorDefinition = {
     "Нажмите «Рассчитать» — получите количество упаковок",
   ],
 };
+

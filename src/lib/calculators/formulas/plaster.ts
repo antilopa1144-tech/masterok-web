@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const plasterDef: CalculatorDefinition = {
   id: "mixes_plaster",
@@ -154,6 +155,15 @@ export const plasterDef: CalculatorDefinition = {
     const groundKg = netArea * 0.1; // грунтовка ~100 мл/м²
     const groundCans = Math.ceil(groundKg / 5);
 
+    const scenarios = buildNativeScenarios({
+      id: "plaster-main",
+      title: "Plaster main",
+      exactNeed: totalKg,
+      unit: "кг",
+      packageSizes: [bagWeight],
+      packageLabelPrefix: "plaster-bag",
+    });
+
     return {
       materials: [
         {
@@ -239,6 +249,7 @@ export const plasterDef: CalculatorDefinition = {
       ],
       totals: { wallArea, netArea, thickness, totalKg } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
@@ -278,3 +289,4 @@ export const plasterDef: CalculatorDefinition = {
     }
   ]
 };
+

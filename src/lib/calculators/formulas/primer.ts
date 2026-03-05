@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const primerDef: CalculatorDefinition = {
   id: "mixes_primer",
@@ -107,6 +108,15 @@ export const primerDef: CalculatorDefinition = {
 
     const primerNames = ["Грунтовка глубокого проникновения", "Бетон-контакт", "Грунтовка для ГКЛ"];
 
+    const scenarios = buildNativeScenarios({
+      id: "primer-main",
+      title: "Primer main",
+      exactNeed: totalL,
+      unit: "л",
+      packageSizes: [canSize],
+      packageLabelPrefix: "primer-can",
+    });
+
     return {
       materials: [
         {
@@ -136,6 +146,7 @@ export const primerDef: CalculatorDefinition = {
       ],
       totals: { area, lPerSqm, totalL, coats } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
@@ -157,3 +168,4 @@ export const primerDef: CalculatorDefinition = {
     "Нажмите «Рассчитать» — получите количество канистр",
   ],
 };
+

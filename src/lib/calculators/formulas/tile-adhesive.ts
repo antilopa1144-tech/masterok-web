@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const tileAdhesiveDef: CalculatorDefinition = {
   id: "mixes_tile_glue",
@@ -117,6 +118,15 @@ export const tileAdhesiveDef: CalculatorDefinition = {
     const crossesCount = Math.ceil(tilesCount * 4 * 1.1); // 4 крестика на плитку, запас 10%
     const crossesPacks = Math.ceil(crossesCount / 200); // 1 упаковка = 200 шт
 
+    const scenarios = buildNativeScenarios({
+      id: "tile-adhesive-main",
+      title: "Tile adhesive main",
+      exactNeed: totalKg,
+      unit: "кг",
+      packageSizes: [bagWeight],
+      packageLabelPrefix: "tile-adhesive-bag",
+    });
+
     return {
       materials: [
         {
@@ -149,6 +159,7 @@ export const tileAdhesiveDef: CalculatorDefinition = {
         ...warnings,
         `Рекомендуемая марка: ${recommendations[layingType] ?? recommendations[0]}`,
       ],
+      scenarios,
     };
   },
   formulaDescription: `
@@ -168,3 +179,4 @@ export const tileAdhesiveDef: CalculatorDefinition = {
     "Нажмите «Рассчитать» — получите мешки клея и рекомендации по марке",
   ],
 };
+

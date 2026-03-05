@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const paintDef: CalculatorDefinition = {
   id: "paint",
@@ -96,6 +97,15 @@ export const paintDef: CalculatorDefinition = {
     if (surfaceType >= 2) warnings.push("Для пористых поверхностей: обязательно нанесите грунтовку перед покраской");
     if (coats === 1) warnings.push("Один слой не обеспечит равномерного покрытия. Рекомендуется 2 слоя");
 
+    const scenarios = buildNativeScenarios({
+      id: "paint-main",
+      title: "Paint main",
+      exactNeed: litersWithReserve,
+      unit: "л",
+      packageSizes: sizes,
+      packageLabelPrefix: "paint-can",
+    });
+
     return {
       materials: [
         {
@@ -178,6 +188,7 @@ export const paintDef: CalculatorDefinition = {
         coats,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
@@ -217,3 +228,4 @@ export const paintDef: CalculatorDefinition = {
     }
   ]
 };
+
