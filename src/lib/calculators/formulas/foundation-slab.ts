@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const foundationSlabDef: CalculatorDefinition = {
   id: "foundation_slab",
@@ -132,6 +133,15 @@ export const foundationSlabDef: CalculatorDefinition = {
     }
     warnings.push("Бетон укладывается без технологических перерывов — заказывайте миксеры с интервалом не более 1.5 ч");
 
+    const scenarios = buildNativeScenarios({
+      id: "foundation-slab-main",
+      title: "Foundation slab main",
+      exactNeed: concreteM3 * 1.05,
+      unit: "м³",
+      packageSizes: [0.1],
+      packageLabelPrefix: "foundation-slab-concrete",
+    });
+
     return {
       materials: [
         {
@@ -210,6 +220,7 @@ export const foundationSlabDef: CalculatorDefinition = {
       ],
       totals: { area, concreteM3, rebarTons } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

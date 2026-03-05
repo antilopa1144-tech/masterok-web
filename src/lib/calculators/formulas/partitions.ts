@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const partitionsDef: CalculatorDefinition = {
   id: "partitions_blocks",
@@ -98,6 +99,15 @@ export const partitionsDef: CalculatorDefinition = {
       warnings.push("При высоте >3 м перегородку необходимо связать с несущими конструкциями анкерами");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "partitions-main",
+      title: "Partitions main",
+      exactNeed: blocksNeeded,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "partition-block",
+    });
+
     return {
       materials: [
         {
@@ -162,6 +172,7 @@ export const partitionsDef: CalculatorDefinition = {
       ],
       totals: { wallArea, blocksNeeded, length, height } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 /** Масса 1 м.п. арматуры по ГОСТ 5781-82, кг */
 const WEIGHT_PER_METER: Record<number, number> = {
@@ -306,6 +307,15 @@ export const rebarDef: CalculatorDefinition = {
       },
     ];
 
+    const scenarios = buildNativeScenarios({
+      id: "rebar-main",
+      title: "Rebar main",
+      exactNeed: mainRebarLength,
+      unit: "м.п.",
+      packageSizes: [11.7],
+      packageLabelPrefix: "rebar-rod",
+    });
+
     return {
       materials,
       totals: {
@@ -320,6 +330,7 @@ export const rebarDef: CalculatorDefinition = {
         intersections: totalIntersections,
       },
       warnings,
+      scenarios,
     };
   },
 

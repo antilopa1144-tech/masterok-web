@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const frameHouseDef: CalculatorDefinition = {
   id: "frame_house",
@@ -224,6 +225,15 @@ export const frameHouseDef: CalculatorDefinition = {
       warnings.push("ППС паронепроницаем — требуется принудительная вентиляция при высоте стен > 3 м");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "frame-house-main",
+      title: "Frame house main",
+      exactNeed: outerSheets,
+      unit: "листов",
+      packageSizes: [1],
+      packageLabelPrefix: "frame-house-sheet",
+    });
+
     return {
       materials: [
         {
@@ -308,6 +318,7 @@ export const frameHouseDef: CalculatorDefinition = {
         insulVolume,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

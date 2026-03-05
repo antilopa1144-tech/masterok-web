@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const guttersDef: CalculatorDefinition = {
   id: "roofing_gutters",
@@ -100,6 +101,15 @@ export const guttersDef: CalculatorDefinition = {
       warnings.push(`Рекомендуется ${recommendedFunnels} воронок (1 на 10–12 м желоба)`);
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "gutters-main",
+      title: "Gutters main",
+      exactNeed: gutterPcs,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "gutters-piece",
+    });
+
     return {
       materials: [
         {
@@ -185,6 +195,7 @@ export const guttersDef: CalculatorDefinition = {
       ],
       totals: { perimeter, funnels, pipePcs, gutterPcs } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
