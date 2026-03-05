@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const blindAreaDef: CalculatorDefinition = {
   id: "foundation_blind_area",
@@ -239,10 +240,20 @@ export const blindAreaDef: CalculatorDefinition = {
     warnings.push("Уклон отмостки от стены: 1–3% (10–30 мм/м) для отвода воды");
     warnings.push("Компенсационный шов у стены фундамента обязателен — иначе трещины");
 
+    const scenarios = buildNativeScenarios({
+      id: "blind-area-main",
+      title: "Blind area main",
+      exactNeed: area,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "blind-area-m2",
+    });
+
     return {
       materials,
       totals: { area, perimeter, width } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

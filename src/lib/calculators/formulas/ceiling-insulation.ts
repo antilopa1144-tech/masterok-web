@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const ceilingInsulationDef: CalculatorDefinition = {
   id: "ceilings_insulation",
@@ -153,10 +154,20 @@ export const ceilingInsulationDef: CalculatorDefinition = {
       warnings.push("ЭППС не паропроницаем — пароизоляция не требуется, но обеспечьте вентиляцию чердака");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "ceiling-insulation-main",
+      title: "Ceiling insulation main",
+      exactNeed: areaWithReserve * layers,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "ceiling-insulation-m2",
+    });
+
     return {
       materials,
       totals: { area, thickness } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

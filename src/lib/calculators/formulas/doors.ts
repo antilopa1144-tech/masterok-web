@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const doorsDef: CalculatorDefinition = {
   id: "doors_install",
@@ -178,6 +179,15 @@ export const doorsDef: CalculatorDefinition = {
       warnings.push("Проверьте, что ширина коробки соответствует толщине стены — возможно нужны доборы");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "doors-main",
+      title: "Doors main",
+      exactNeed: doorCount,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "doors-piece",
+    });
+
     return {
       materials,
       totals: {
@@ -185,6 +195,7 @@ export const doorsDef: CalculatorDefinition = {
         totalFoamCans,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

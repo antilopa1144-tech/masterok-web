@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 // Кирпичей на 1 м² стены с учётом шва 10 мм (по ГОСТ)
 // [0.5 кирпича, 1 кирпич, 1.5 кирпича, 2 кирпича]
@@ -251,6 +252,15 @@ export const brickworkDef: CalculatorDefinition = {
       warnings.push("Двойной кирпич в полкирпича — нестандартное решение. Проверьте расчёт на устойчивость");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "brickwork-main",
+      title: "Brickwork main",
+      exactNeed: totalBricks * 1.05,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "brickwork-piece",
+    });
+
     return {
       materials,
       totals: {
@@ -262,6 +272,7 @@ export const brickworkDef: CalculatorDefinition = {
         pallets,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const decorPlasterDef: CalculatorDefinition = {
   id: "walls_decor_plaster",
@@ -99,6 +100,15 @@ export const decorPlasterDef: CalculatorDefinition = {
     // Колер (пигмент) — 1 банка на каждые 25 кг смеси
     const colorBanks = Math.ceil(totalKg / 25);
 
+    const scenarios = buildNativeScenarios({
+      id: "decor-plaster-main",
+      title: "Decor plaster main",
+      exactNeed: totalKg,
+      unit: "кг",
+      packageSizes: [bagWeight],
+      packageLabelPrefix: "decor-plaster-bag",
+    });
+
     return {
       materials: [
         {
@@ -144,6 +154,7 @@ export const decorPlasterDef: CalculatorDefinition = {
       ],
       totals: { area, kgPerSqm, totalKg } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
