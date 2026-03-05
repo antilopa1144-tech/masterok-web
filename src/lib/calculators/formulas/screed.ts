@@ -1,5 +1,5 @@
 import type { CalculatorDefinition } from "../types";
-
+import { buildNativeScenarios } from "../scenario-native";
 export const screedDef: CalculatorDefinition = {
   id: "screed",
   slug: "styazhka",
@@ -123,6 +123,15 @@ export const screedDef: CalculatorDefinition = {
       const needMesh = thicknessMm >= 40;
       const meshArea = needMesh ? Math.ceil(area * 1.15) : 0; // +15% нахлёст
 
+      const scenarios = buildNativeScenarios({
+        id: "screed-cement",
+        title: "Screed cement",
+        exactNeed: cementKg,
+        unit: "кг",
+        packageSizes: [50],
+        packageLabelPrefix: "screed-cement-bag",
+      });
+
       return {
         materials: [
           { name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты" },
@@ -135,6 +144,7 @@ export const screedDef: CalculatorDefinition = {
         ],
         totals: { area, thicknessMm, volume, cementKg } as Record<string, number>,
         warnings,
+        scenarios,
       };
     } else if (type === 1) {
       // Готовая ЦПС М150
@@ -149,6 +159,15 @@ export const screedDef: CalculatorDefinition = {
       const needMesh2 = thicknessMm >= 40;
       const meshArea2 = needMesh2 ? Math.ceil(area * 1.15) : 0;
 
+      const scenarios = buildNativeScenarios({
+        id: "screed-ready-mix",
+        title: "Screed ready mix",
+        exactNeed: cpsTotalKg,
+        unit: "кг",
+        packageSizes: [40, 50],
+        packageLabelPrefix: "screed-ready-bag",
+      });
+
       return {
         materials: [
           { name: "ЦПС М150 (мешки 50 кг)", quantity: cpsTotalKg / 50, unit: "мешков", withReserve: bags50, purchaseQty: bags50, category: "Основное" },
@@ -160,6 +179,7 @@ export const screedDef: CalculatorDefinition = {
         ],
         totals: { area, thicknessMm, volume, cpsTotalKg } as Record<string, number>,
         warnings,
+        scenarios,
       };
     } else {
       // Полусухая стяжка
@@ -168,6 +188,15 @@ export const screedDef: CalculatorDefinition = {
       const fiberKg = area * 0.6; // фиброволокно 0.6 кг/м²
 
       warnings.push("Полусухая стяжка требует специального оборудования (пневмонагнетатель)");
+
+      const scenarios = buildNativeScenarios({
+        id: "screed-semidry",
+        title: "Screed semi-dry",
+        exactNeed: cpsKg,
+        unit: "кг",
+        packageSizes: [50],
+        packageLabelPrefix: "screed-semidry-bag",
+      });
 
       const perimeter3 = inputMode === 0
         ? 2 * (Math.max(0.5, inputs.length ?? 5) + Math.max(0.5, inputs.width ?? 4))
@@ -182,6 +211,7 @@ export const screedDef: CalculatorDefinition = {
         ],
         totals: { area, thicknessMm, volume } as Record<string, number>,
         warnings,
+        scenarios,
       };
     }
   },

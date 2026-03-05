@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 // Пропорции на 1 м³ бетона (цемент М400, по СНиП)
 // [цемент кг, песок м³, щебень м³, вода л]
@@ -87,6 +88,15 @@ export const concreteDef: CalculatorDefinition = {
     const warnings: string[] = [];
     if (volume < 0.5) warnings.push("Для малых объёмов (< 0.5 м³) удобнее использовать готовые сухие смеси");
     if (grade >= 5 && manualMix) warnings.push("Бетон М300+ сложно приготовить вручную. Рекомендуется заказ готового бетона");
+
+    const scenarios = buildNativeScenarios({
+      id: "concrete-main",
+      title: "Concrete main",
+      exactNeed: totalVolume,
+      unit: "м³",
+      packageSizes: [0.1],
+      packageLabelPrefix: "concrete-volume",
+    });
 
     const materials = [
       {
@@ -189,6 +199,7 @@ export const concreteDef: CalculatorDefinition = {
         reserve,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

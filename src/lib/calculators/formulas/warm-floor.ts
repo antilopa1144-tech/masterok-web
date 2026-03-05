@@ -1,5 +1,5 @@
 import type { CalculatorDefinition } from "../types";
-
+import { buildNativeScenarios } from "../scenario-native";
 export const warmFloorDef: CalculatorDefinition = {
   id: "warm_floor",
   slug: "teplyy-pol",
@@ -79,6 +79,15 @@ export const warmFloorDef: CalculatorDefinition = {
       // Теплоотражающая подложка (фольгированный пенополиэтилен) — предотвращает потери тепла вниз
       const insulationArea = Math.ceil(heatingArea * 1.1);
 
+      const scenarios = buildNativeScenarios({
+        id: "warm-floor-mat",
+        title: "Warm floor mat",
+        exactNeed: heatingArea,
+        unit: "м²",
+        packageSizes: [2],
+        packageLabelPrefix: "warm-floor-mat",
+      });
+
       return {
         materials: [
           { name: `Нагревательный мат ${powerDensity} Вт/м² (2 м²)`, quantity: heatingArea / 2.0, unit: "шт", withReserve: matsTotal, purchaseQty: matsTotal, category: "Греющий элемент" },
@@ -89,6 +98,7 @@ export const warmFloorDef: CalculatorDefinition = {
         ],
         totals: { roomArea, heatingArea, totalPowerW, totalPowerKW } as Record<string, number>,
         warnings,
+        scenarios,
       };
     } else if (type === 1) {
       // Греющий кабель в стяжку
@@ -97,6 +107,15 @@ export const warmFloorDef: CalculatorDefinition = {
 
       // Утеплитель ЭПС под кабель — 30 мм (предотвращает потери тепла вниз)
       const insulArea2 = Math.ceil(heatingArea * 1.1);
+
+      const scenarios = buildNativeScenarios({
+        id: "warm-floor-cable",
+        title: "Warm floor cable",
+        exactNeed: cableLength,
+        unit: "м.п.",
+        packageSizes: [1],
+        packageLabelPrefix: "warm-floor-cable",
+      });
 
       return {
         materials: [
@@ -108,6 +127,7 @@ export const warmFloorDef: CalculatorDefinition = {
         ],
         totals: { roomArea, heatingArea, totalPowerW, totalPowerKW, cableLength } as Record<string, number>,
         warnings,
+        scenarios,
       };
     } else {
       // Водяной тёплый пол
@@ -115,6 +135,15 @@ export const warmFloorDef: CalculatorDefinition = {
       const pipeLength = Math.ceil((heatingArea / pipeStep) * 1.05);
 
       warnings.push("Водяной тёплый пол требует согласования с управляющей компанией в МКД");
+
+      const scenarios = buildNativeScenarios({
+        id: "warm-floor-water",
+        title: "Warm floor water",
+        exactNeed: pipeLength,
+        unit: "м.п.",
+        packageSizes: [1],
+        packageLabelPrefix: "warm-floor-pipe",
+      });
 
       return {
         materials: [
@@ -125,6 +154,7 @@ export const warmFloorDef: CalculatorDefinition = {
         ],
         totals: { roomArea, heatingArea, totalPowerW, pipeLength } as Record<string, number>,
         warnings,
+        scenarios,
       };
     }
   },

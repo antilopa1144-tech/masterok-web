@@ -1,5 +1,5 @@
 import type { CalculatorDefinition } from "../types";
-
+import { buildNativeScenarios } from "../scenario-native";
 // Кирпичей на 1 м² кладки (с учётом швов 10 мм), по СНиП 3.03.01-87
 const BRICKS_PER_SQM: Record<number, Record<number, number>> = {
   0: { 0: 51, 1: 102, 2: 153, 3: 204 },  // одинарный 250×120×65
@@ -152,7 +152,8 @@ export const brickDef: CalculatorDefinition = {
     const wasteCoeff = wasteCoeffs[wasteMode] ?? 1.05;
 
     const bricksPerM2 = BRICKS_PER_SQM[brickType]?.[wallThickness] ?? 102;
-    const bricksNeeded = Math.ceil(area * bricksPerM2 * wasteCoeff);
+    const exactBricks = area * bricksPerM2 * wasteCoeff;
+    const bricksNeeded = Math.ceil(exactBricks);
 
     const mortarPerM2 = MORTAR_PER_SQM[brickType]?.[wallThickness] ?? 0.023;
     const mortarVolume = area * mortarPerM2 * 1.12 * mult; // 12% запас на потери раствора
@@ -174,6 +175,15 @@ export const brickDef: CalculatorDefinition = {
     if (conditions === 3) warnings.push("При кладке в мороз: применяйте противоморозные добавки (ПМД) в раствор");
     if (conditions === 4) warnings.push("При жаре: обязательно смачивайте кирпич водой, иначе он «выпьет» воду из раствора");
     if (wallThickness === 0 && area > 15) warnings.push("Для перегородки в полкирпича такой площади обязательно армирование каждые 3 ряда");
+
+    const scenarios = buildNativeScenarios({
+      id: "brick-main",
+      title: "Brick main",
+      exactNeed: exactBricks,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "brick-piece",
+    });
 
     return {
       materials: [
@@ -233,6 +243,7 @@ export const brickDef: CalculatorDefinition = {
         wallThicknessMm: WALL_THICKNESS_MM[wallThickness] ?? 250,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

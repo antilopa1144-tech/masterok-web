@@ -1,5 +1,5 @@
 import type { CalculatorDefinition } from "../types";
-
+import { buildNativeScenarios } from "../scenario-native";
 export const electricDef: CalculatorDefinition = {
   id: "engineering_electrics",
   slug: "elektrika",
@@ -110,6 +110,16 @@ export const electricDef: CalculatorDefinition = {
     if (hasKitchen) warnings.push("Линия на электроплиту: ВВГнг-LS 3×6 мм² с автоматом 32А и УЗО 40А/30мА");
     warnings.push("Все розетки в ванной и на кухне должны быть защищены УЗО с током утечки 10-30 мА");
 
+    const totalCableNeed = cable15length + cable25length + cable6length;
+    const scenarios = buildNativeScenarios({
+      id: "electric-cable",
+      title: "Electric cable",
+      exactNeed: totalCableNeed,
+      unit: "м.п.",
+      packageSizes: [50],
+      packageLabelPrefix: "electric-cable-roll",
+    });
+
     return {
       materials: [
         {
@@ -208,6 +218,7 @@ export const electricDef: CalculatorDefinition = {
         breakersCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
