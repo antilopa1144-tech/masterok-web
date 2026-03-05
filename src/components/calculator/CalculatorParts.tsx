@@ -340,9 +340,9 @@ export function ResultBlock({
   return (
     <div className="space-y-4 slide-up">
       {result.warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1 dark:bg-amber-950/30 dark:border-amber-900/60">
           {result.warnings.map((w, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-amber-800">
+            <div key={i} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
               <span className="shrink-0">⚠️</span>
               <span>{w}</span>
             </div>
@@ -400,4 +400,3 @@ export function ResultBlock({
     </div>
   );
 }
-

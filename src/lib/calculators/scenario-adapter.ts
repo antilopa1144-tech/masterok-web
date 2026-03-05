@@ -80,40 +80,37 @@ function buildScenariosFromPrimary(
   const packageLabel = primary?.name ?? `legacy-${slug}`;
   const packageUnit = primary?.unit ?? "unit";
 
-  return Object.fromEntries(
-    SCENARIO_NAMES.map((scenarioName) => {
-      const { multiplier, keyFactors } = combineScenarioFactors(DEFAULT_FACTOR_TABLE, REQUIRED_FACTORS, scenarioName);
-      const exactNeed = roundDisplay(baseExact * multiplier, 3);
-      const purchase = roundPurchaseLikeBaseline(exactNeed * purchaseRatio, basePurchase);
-      const purchaseQuantity = Math.max(exactNeed, roundDisplay(purchase, 3));
-      const leftover = roundDisplay(Math.max(0, purchaseQuantity - exactNeed), 3);
+  return SCENARIO_NAMES.reduce((acc, scenarioName) => {
+    const { multiplier, keyFactors } = combineScenarioFactors(DEFAULT_FACTOR_TABLE, REQUIRED_FACTORS, scenarioName);
+    const exactNeed = roundDisplay(baseExact * multiplier, 3);
+    const purchase = roundPurchaseLikeBaseline(exactNeed * purchaseRatio, basePurchase);
+    const purchaseQuantity = Math.max(exactNeed, roundDisplay(purchase, 3));
+    const leftover = roundDisplay(Math.max(0, purchaseQuantity - exactNeed), 3);
 
-      const assumptions = [
-        `legacy_adapter:${slug}`,
-        `primary_material:${packageLabel}`,
-      ];
+    const assumptions = [
+      `legacy_adapter:${slug}`,
+      `primary_material:${packageLabel}`,
+    ];
 
-      return [
-        scenarioName,
-        {
-          exact_need: exactNeed,
-          purchase_quantity: purchaseQuantity,
-          leftover,
-          assumptions,
-          key_factors: {
-            ...keyFactors,
-            field_multiplier: roundDisplay(multiplier, 6),
-          },
-          buy_plan: {
-            package_label: packageLabel,
-            package_size: packageSize,
-            packages_count: Math.max(1, Math.ceil(purchaseQuantity / packageSize)),
-            unit: packageUnit,
-          },
-        },
-      ];
-    }),
-  ) as CalculatorScenarios;
+    acc[scenarioName] = {
+      exact_need: exactNeed,
+      purchase_quantity: purchaseQuantity,
+      leftover,
+      assumptions,
+      key_factors: {
+        ...keyFactors,
+        field_multiplier: roundDisplay(multiplier, 6),
+      },
+      buy_plan: {
+        package_label: packageLabel,
+        package_size: packageSize,
+        packages_count: Math.max(1, Math.ceil(purchaseQuantity / packageSize)),
+        unit: packageUnit,
+      },
+    };
+
+    return acc;
+  }, {} as CalculatorScenarios);
 }
 
 export function ensureScenarioContract(slug: string, result: CalculatorResult): CalculatorResult {

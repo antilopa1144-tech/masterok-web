@@ -53,6 +53,7 @@ export default async function CalculatorPage({ params }: PageProps) {
 
   const accentColor = category?.color ?? "#f97316";
   const accentBg = category?.bgColor ?? "#fff7ed";
+  const heroStyle = { "--accent-hero-bg": accentBg } as Record<string, string>;
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
 
@@ -135,8 +136,8 @@ export default async function CalculatorPage({ params }: PageProps) {
 
       {/* Hero-шапка */}
       <div
-        style={{ backgroundColor: accentBg }}
-        className="border-b border-slate-200 dark:border-slate-800"
+        style={heroStyle}
+        className="border-b border-slate-200 dark:border-slate-800 bg-[var(--accent-hero-bg)] dark:bg-slate-900"
       >
         <div className="page-container-wide py-6 md:py-8">
           {/* Хлебные крошки */}

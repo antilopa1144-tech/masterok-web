@@ -48,45 +48,42 @@ export function computeEstimate(
       ? coatingAreaRateFormula(inputs, config.baseParams.consumption_kg_per_m2_mm)
       : puttyAreaThicknessFormula(inputs, config.baseParams.consumption_kg_per_m2_mm);
 
-  const scenarios = Object.fromEntries(
-    SCENARIOS.map((scenario) => {
-      const { multiplier, keyFactors } = combineScenarioFactors(factorTable, config.enabledFactors, scenario);
-      const exactNeed = baseExactNeed * multiplier;
+  const scenarios = SCENARIOS.reduce((acc, scenario) => {
+    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, config.enabledFactors, scenario);
+    const exactNeed = baseExactNeed * multiplier;
 
-      const packaging = optimizePackaging(
-        exactNeed,
-        config.packaging.options.map((option) => ({
-          size: option.size,
-          label: option.label,
-          unit: config.packaging.unit,
-        })),
-      );
+    const packaging = optimizePackaging(
+      exactNeed,
+      config.packaging.options.map((option) => ({
+        size: option.size,
+        label: option.label,
+        unit: config.packaging.unit,
+      })),
+    );
 
-      return [
-        scenario,
-        {
-          exact_need: roundDisplay(exactNeed, 3),
-          purchase_quantity: roundDisplay(packaging.purchaseQuantity, 3),
-          leftover: roundDisplay(packaging.leftover, 3),
-          assumptions: [
-            `base_formula:${config.baseFormula}`,
-            `consumption_kg_per_m2_mm:${config.baseParams.consumption_kg_per_m2_mm}`,
-            `packaging:${packaging.package.label}`,
-          ],
-          key_factors: {
-            ...keyFactors,
-            field_multiplier: roundDisplay(multiplier, 6),
-          },
-          buy_plan: {
-            package_label: packaging.package.label,
-            package_size: packaging.package.size,
-            packages_count: packaging.packageCount,
-            unit: packaging.package.unit,
-          },
-        },
-      ];
-    }),
-  ) as ScenarioBundle;
+    acc[scenario] = {
+      exact_need: roundDisplay(exactNeed, 3),
+      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 3),
+      leftover: roundDisplay(packaging.leftover, 3),
+      assumptions: [
+        `base_formula:${config.baseFormula}`,
+        `consumption_kg_per_m2_mm:${config.baseParams.consumption_kg_per_m2_mm}`,
+        `packaging:${packaging.package.label}`,
+      ],
+      key_factors: {
+        ...keyFactors,
+        field_multiplier: roundDisplay(multiplier, 6),
+      },
+      buy_plan: {
+        package_label: packaging.package.label,
+        package_size: packaging.package.size,
+        packages_count: packaging.packageCount,
+        unit: packaging.package.unit,
+      },
+    };
+
+    return acc;
+  }, {} as ScenarioBundle);
 
   return scenarios;
 }

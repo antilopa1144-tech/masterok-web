@@ -55,9 +55,8 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="p-2 rounded-lg transition-colors"
+        className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors"
         aria-label="Переключить тему"
-        disabled
       >
         <CategoryIcon icon="sun" size={18} color="#64748b" />
       </button>
@@ -78,3 +77,4 @@ export function ThemeToggle() {
     </button>
   );
 }
+
