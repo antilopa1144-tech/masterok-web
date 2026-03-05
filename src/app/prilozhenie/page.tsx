@@ -45,19 +45,19 @@ export default function PrilozheніePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="hero-gradient border-b border-slate-200">
+      <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-12 md:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-700 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 mb-5">
+              <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 dark:border-accent-800/40 mb-5">
                 📱 Доступно в RuStore
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-4">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
                 Мастерок — приложение
                 <br />
                 <span className="text-accent-500">строительного мастера</span>
               </h1>
-              <p className="text-slate-500 text-lg leading-relaxed mb-6">
+              <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed mb-6">
                 50+ бесплатных строительных калькуляторов в вашем кармане.
                 Работает без интернета. Идеально для стройки.
               </p>
@@ -76,7 +76,7 @@ export default function PrilozheніePage() {
                 </Link>
               </div>
 
-              <p className="text-sm text-slate-400 mt-3">
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-3">
                 Бесплатно · Android · Без рекламы в расчётах
               </p>
             </div>
@@ -126,15 +126,15 @@ export default function PrilozheніePage() {
 
       {/* Возможности */}
       <section className="page-container-wide py-12">
-        <h2 className="text-2xl font-bold text-slate-900 text-center mb-8">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-8">
           Что умеет приложение
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {FEATURES.map((f) => (
             <div key={f.title} className="card p-6">
               <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="font-bold text-slate-900 mb-2">{f.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">{f.title}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>

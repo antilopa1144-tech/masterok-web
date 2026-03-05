@@ -51,17 +51,17 @@ export default function InstrumentyPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-b border-slate-200 bg-linear-to-b from-white to-slate-50">
+      <section className="border-b border-slate-200 dark:border-slate-800 bg-linear-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900">
         <div className="page-container-wide py-10 md:py-14">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-700 text-sm font-medium px-3 py-1.5 rounded-full border border-accent-200 mb-4">
+            <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-3 py-1.5 rounded-full border border-accent-200 dark:border-accent-800/40 mb-4">
               <CategoryIcon icon="wrench" size={16} />
               <span>Инструменты строителя</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-3">
               Полезные инструменты
             </h1>
-            <p className="text-slate-500 text-lg leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed">
               Конвертер единиц, расчёт площади нестандартных помещений, калькулятор
               и чек-листы работ — всё для стройки и ремонта.
             </p>
@@ -87,7 +87,7 @@ export default function InstrumentyPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="font-bold text-slate-900 text-base group-hover:text-accent-600 transition-colors">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-accent-600 transition-colors">
                       {tool.title}
                     </h2>
                     <span
@@ -97,7 +97,7 @@ export default function InstrumentyPage() {
                       {tool.badge}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500 leading-relaxed">{tool.desc}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{tool.desc}</p>
                 </div>
               </div>
             </Link>
@@ -108,7 +108,7 @@ export default function InstrumentyPage() {
       {/* Чек-листы превью */}
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-slate-900">Чек-листы работ</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Чек-листы работ</h2>
           <Link href="/instrumenty/chek-listy/" className="text-sm text-accent-600 hover:text-accent-700 font-medium">
             Все чек-листы →
           </Link>
@@ -122,19 +122,19 @@ export default function InstrumentyPage() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{cl.categoryIcon}</span>
-                <span className="text-xs text-slate-400">{cl.category}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{cl.category}</span>
               </div>
-              <h3 className="font-bold text-slate-900 text-sm leading-snug mb-1 group-hover:text-accent-600 transition-colors">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1 group-hover:text-accent-600 transition-colors">
                 {cl.title}
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 mb-3">
+              <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2 mb-3">
                 {cl.description}
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
                   {cl.totalItems} пунктов
                 </span>
-                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
                   {cl.duration}
                 </span>
                 <span

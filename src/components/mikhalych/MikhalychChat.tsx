@@ -142,7 +142,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             <div
               className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 msg.role === "assistant"
-                  ? "bg-slate-50 text-slate-900 rounded-tl-none border border-slate-200"
+                  ? "bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700"
                   : "bg-accent-500 text-white rounded-tr-none"
               }`}
             >
@@ -156,11 +156,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-sm">
               🤖
             </div>
-            <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-none">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-none">
               <div className="flex items-center gap-1.5" aria-label="Михалыч думает...">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" />
               </div>
             </div>
           </div>
@@ -176,14 +176,14 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
       </div>
 
       {messages.length === 1 && starterQuestions.length > 0 && (
-        <div className="px-4 py-3 border-t border-slate-200">
-          <p className="text-xs text-slate-400 mb-2">Попробуйте спросить:</p>
+        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Попробуйте спросить:</p>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.slice(0, 3).map((q, i) => (
               <button
                 key={i}
                 onClick={() => sendMessage(q)}
-                className="text-xs bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-full transition-colors text-left"
+                className="text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full transition-colors text-left"
               >
                 {q.length > 50 ? q.slice(0, 50) + "..." : q}
               </button>
@@ -192,7 +192,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         </div>
       )}
 
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
         <div className="flex items-end gap-3">
           <textarea
             ref={textareaRef}
@@ -226,7 +226,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             </svg>
           </button>
         </div>
-        <p className="text-xs text-slate-400 mt-2 text-center">
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 text-center">
           Ответы Михалыча носят справочный характер. Для точных расчётов используйте{" "}
           <Link href="/" className="text-accent-500 hover:underline">
             калькуляторы

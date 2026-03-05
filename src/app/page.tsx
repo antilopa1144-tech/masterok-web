@@ -39,17 +39,17 @@ export default function HomePage() {
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-14 md:py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-700 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 mb-6">
+          <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 dark:border-accent-800/40 mb-6">
             <CategoryIcon icon="trophy" size={16} />
             <span>{totalCount}+ бесплатных калькуляторов</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
             Строительные калькуляторы{" "}
             <span className="text-accent-500">онлайн</span>
           </h1>
 
-          <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
             Точный расчёт материалов по ГОСТ и СНиП. Бетон, кирпич, кровля,
             плитка, ламинат — всё в одном месте. Быстро, бесплатно, без
             регистрации.
@@ -90,10 +90,10 @@ export default function HomePage() {
               { val: "ГОСТ", label: "Нормы" },
             ].map((s) => (
               <div key={s.label} className="text-center">
-                <div className="text-2xl font-bold text-slate-900">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {s.val}
                 </div>
-                <div className="text-xs text-slate-400 mt-0.5">{s.label}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
@@ -102,7 +102,7 @@ export default function HomePage() {
 
       {/* ── Категории ───────────────────────────────────────── */}
       <section className="page-container-wide py-10" id="calculators">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
           Категории калькуляторов
         </h2>
 
@@ -123,10 +123,10 @@ export default function HomePage() {
                 >
                   <CategoryIcon icon={cat.icon} size={22} color={cat.color} />
                 </div>
-                <h3 className="font-semibold text-slate-900 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
                   {cat.label}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 dark:text-slate-500">
                   {count} {(() => { const m10 = count % 10; const m100 = count % 100; if (m100 >= 11 && m100 <= 19) return "калькуляторов"; if (m10 === 1) return "калькулятор"; if (m10 >= 2 && m10 <= 4) return "калькулятора"; return "калькуляторов"; })()}
                 </p>
               </Link>
@@ -138,10 +138,10 @@ export default function HomePage() {
       {/* ── Популярные калькуляторы ──────────────────────────── */}
       <section className="page-container-wide py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Популярные калькуляторы
           </h2>
-          <span className="text-sm text-slate-400 hidden sm:block">
+          <span className="text-sm text-slate-400 dark:text-slate-500 hidden sm:block">
             Чаще всего используются
           </span>
         </div>
@@ -161,10 +161,10 @@ export default function HomePage() {
                 >
                   <CategoryIcon icon={cat?.icon ?? "wrench"} size={22} color={cat?.color ?? "#64748b"} />
                 </div>
-                <h3 className="font-semibold text-slate-900 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
                   {calc.title}
                 </h3>
-                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2">
                   {calc.description}
                 </p>
                 <div className="mt-3">
@@ -228,7 +228,7 @@ export default function HomePage() {
       {/* ── Инструменты ─────────────────────────────────────── */}
       <section className="page-container-wide py-8">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Полезные инструменты
           </h2>
           <Link
@@ -256,10 +256,10 @@ export default function HomePage() {
               >
                 <CategoryIcon icon={tool.icon} size={24} color={tool.color} />
               </div>
-              <div className="font-semibold text-slate-900 text-sm group-hover:text-accent-600 transition-colors">
+              <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
                 {tool.title}
               </div>
-              <div className="text-xs text-slate-400 mt-1">{tool.desc}</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tool.desc}</div>
             </Link>
           ))}
         </div>
@@ -324,10 +324,10 @@ export default function HomePage() {
                   <CategoryIcon icon={f.icon} size={20} color={f.color} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 text-sm mb-1">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">
                     {f.title}
                   </h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                     {f.desc}
                   </p>
                 </div>

@@ -158,10 +158,10 @@ export default async function CalculatorPage({ params }: PageProps) {
               </div>
             )}
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2">
                 {calc.h1}
               </h1>
-              <p className="text-slate-600 text-sm md:text-base leading-relaxed max-w-2xl">
+              <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed max-w-2xl">
                 {calc.description}
               </p>
 
@@ -173,10 +173,10 @@ export default async function CalculatorPage({ params }: PageProps) {
                 >
                   {category?.label ?? "Калькулятор"}
                 </span>
-                <span className="badge bg-white text-slate-500 border border-slate-200">
+                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {["Простой", "Стандартный", "Детальный"][calc.complexity - 1]}
                 </span>
-                <span className="badge bg-white text-slate-500 border border-slate-200">
+                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   По ГОСТ и СНиП
                 </span>
               </div>
@@ -190,7 +190,7 @@ export default async function CalculatorPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Левая колонка — калькулятор */}
           <div className="lg:col-span-2 space-y-6">
-            <Suspense fallback={<div className="card p-6 h-48 animate-pulse bg-slate-100" />}>
+            <Suspense fallback={<div className="card p-6 h-48 animate-pulse bg-slate-100 dark:bg-slate-700" />}>
             <CalculatorWithMikhalych calculator={{
               id: calc.id,
               slug: calc.slug,
@@ -213,11 +213,11 @@ export default async function CalculatorPage({ params }: PageProps) {
             {/* Формулы */}
             {calc.formulaDescription && (
               <div className="card p-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
                   Формулы и нормы расчёта
                 </h2>
-                <div className="prose prose-sm max-w-none text-slate-600">
-                  <pre className="whitespace-pre-wrap text-sm font-normal leading-relaxed bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div className="prose prose-sm max-w-none text-slate-600 dark:text-slate-300">
+                  <pre className="whitespace-pre-wrap text-sm font-normal leading-relaxed bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                     {calc.formulaDescription.trim()}
                   </pre>
                 </div>
@@ -227,12 +227,12 @@ export default async function CalculatorPage({ params }: PageProps) {
             {/* Как пользоваться */}
             {calc.howToUse && calc.howToUse.length > 0 && (
               <div className="card p-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
                   Как пользоваться калькулятором
                 </h2>
                 <ol className="space-y-2">
                   {calc.howToUse.map((step, i) => (
-                    <li key={i} className="flex items-start gap-3 text-slate-600">
+                    <li key={i} className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
                       <span
                         className="flex w-6 h-6 rounded-full text-xs font-bold items-center justify-center shrink-0 mt-0.5 text-white"
                         style={{ backgroundColor: accentColor }}
@@ -251,8 +251,8 @@ export default async function CalculatorPage({ params }: PageProps) {
           <div className="space-y-4">
             {/* Скачать приложение */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-900 mb-2">📱 Мастерок для Android</h3>
-              <p className="text-sm text-slate-500 mb-3 leading-relaxed">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">📱 Мастерок для Android</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
                 50+ калькуляторов в одном приложении. Работает без интернета.
                 Сохраняйте расчёты и создавайте проекты.
               </p>
@@ -264,7 +264,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             {/* Похожие калькуляторы */}
             {related.length > 0 && (
               <div className="card p-5">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
+                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                   Похожие калькуляторы
                 </h3>
                 <div className="space-y-2">
@@ -272,7 +272,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                     <Link
                       key={r.id}
                       href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
-                      className="flex items-center gap-2 text-sm text-slate-700 hover:text-accent-600 no-underline transition-colors py-1.5 group"
+                      className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-accent-600 dark:hover:text-accent-400 no-underline transition-colors py-1.5 group"
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -290,7 +290,7 @@ export default async function CalculatorPage({ params }: PageProps) {
         {/* Связанные калькуляторы — карточки (полная ширина, под основным контентом) */}
         {related.length > 0 && (
           <div className="mt-10">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
               Может пригодиться
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -313,10 +313,10 @@ export default async function CalculatorPage({ params }: PageProps) {
                       />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 group-hover:text-accent-600 transition-colors leading-snug">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
                         {r.title}
                       </p>
-                      <p className="text-xs text-slate-400 mt-0.5 truncate">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
                         {r.description}
                       </p>
                     </div>

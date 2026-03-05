@@ -66,10 +66,10 @@ export default async function CategoryPage({ params }: PageProps) {
       />
 
       {/* Hero */}
-      <div style={{ backgroundColor: cat.bgColor }} className="border-b border-slate-200">
+      <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
         <div className="page-container-wide py-8">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-500 mb-4">
-            <Link href="/" className="hover:text-slate-700 no-underline">Калькуляторы</Link>
+          <nav className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-4">
+            <Link href="/" className="hover:text-slate-700 dark:hover:text-slate-200 no-underline">Калькуляторы</Link>
             <span>›</span>
             <span style={{ color: cat.color }} className="font-medium">{cat.label}</span>
           </nav>
@@ -82,10 +82,10 @@ export default async function CategoryPage({ params }: PageProps) {
               <CategoryIcon icon={cat.icon} size={28} color={cat.color} />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
                 {cat.label}
               </h1>
-              <p className="text-slate-500 mt-1">{cat.description}</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">{cat.description}</p>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default async function CategoryPage({ params }: PageProps) {
       {/* Список калькуляторов */}
       <div className="page-container-wide py-8">
         {calculators.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
+          <div className="text-center py-16 text-slate-400 dark:text-slate-500">
             <p className="text-lg">Калькуляторы этой категории скоро появятся</p>
             <Link href="/" className="btn-secondary mt-4 inline-flex">
               Все калькуляторы
@@ -114,12 +114,12 @@ export default async function CategoryPage({ params }: PageProps) {
                 >
                   <CategoryIcon icon={cat.icon} size={20} color={cat.color} />
                 </div>
-                <h2 className="font-bold text-slate-900 mb-1 group-hover:text-accent-600 transition-colors">
+                <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-600 transition-colors">
                   {calc.title}
                 </h2>
-                <p className="text-sm text-slate-500 leading-relaxed">{calc.description}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{calc.description}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
                     {"★".repeat(calc.complexity)}{"☆".repeat(3 - calc.complexity)} сложность
                   </span>
                 </div>

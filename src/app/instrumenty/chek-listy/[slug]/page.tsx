@@ -38,14 +38,14 @@ export default async function ChecklistPage({ params }: Props) {
   return (
     <div className="page-container py-8 max-w-4xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-6 flex-wrap">
-        <Link href="/" className="hover:text-slate-600">Главная</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6 flex-wrap">
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
         <span>/</span>
-        <Link href="/instrumenty/chek-listy/" className="hover:text-slate-600">Чек-листы</Link>
+        <Link href="/instrumenty/chek-listy/" className="hover:text-slate-600 dark:hover:text-slate-300">Чек-листы</Link>
         <span>/</span>
-        <span className="text-slate-600">{cl.title}</span>
+        <span className="text-slate-600 dark:text-slate-300">{cl.title}</span>
       </nav>
 
       {/* Заголовок */}
@@ -53,26 +53,26 @@ export default async function ChecklistPage({ params }: Props) {
         <div className="flex items-center gap-3 mb-3">
           <span className="text-3xl">{cl.categoryIcon}</span>
           <div>
-            <p className="text-sm text-slate-400">{cl.category}</p>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">
+            <p className="text-sm text-slate-400 dark:text-slate-500">{cl.category}</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
               {cl.title}
             </h1>
           </div>
         </div>
-        <p className="text-slate-500 mb-4">{cl.description}</p>
+        <p className="text-slate-500 dark:text-slate-400 mb-4">{cl.description}</p>
 
         {/* Метки */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
+          <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full font-medium">
             📋 {cl.totalItems} пунктов
           </span>
-          <span className="text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
+          <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-3 py-1 rounded-full">
             ⏱ {cl.duration}
           </span>
           <span className={`text-sm px-3 py-1 rounded-full ${colors.bg} ${colors.text}`}>
             {COMPLEXITY_LABELS[cl.complexity]}
           </span>
-          <span className="text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
+          <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-3 py-1 rounded-full">
             {cl.steps.length} этапов
           </span>
         </div>
@@ -87,15 +87,15 @@ export default async function ChecklistPage({ params }: Props) {
               <div className="w-8 h-8 rounded-full bg-accent-100 text-accent-700 flex items-center justify-center text-sm font-bold shrink-0">
                 {stepIndex + 1}
               </div>
-              <h2 className="font-bold text-slate-900 text-base">{step.title}</h2>
+              <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">{step.title}</h2>
             </div>
 
             {/* Пункты */}
             <ul className="space-y-2.5">
               {step.items.map((item, itemIndex) => (
                 <li key={itemIndex} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-sm border-2 border-slate-300 shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-700 leading-snug">{item}</span>
+                  <div className="w-5 h-5 rounded-sm border-2 border-slate-300 dark:border-slate-600 shrink-0 mt-0.5" />
+                  <span className="text-sm text-slate-700 dark:text-slate-200 leading-snug">{item}</span>
                 </li>
               ))}
             </ul>
@@ -115,8 +115,8 @@ export default async function ChecklistPage({ params }: Props) {
       </div>
 
       {/* Совет */}
-      <div className="mt-6 bg-accent-50 border border-accent-200 rounded-xl p-4">
-        <p className="text-sm text-accent-700">
+      <div className="mt-6 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4">
+        <p className="text-sm text-accent-700 dark:text-accent-300">
           <strong>Совет:</strong> Откройте страницу на телефоне, чтобы отмечать пункты прямо на объекте.
           Или нажмите <strong>Ctrl+P</strong> для печати.
         </p>

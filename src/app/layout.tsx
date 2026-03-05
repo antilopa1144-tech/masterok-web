@@ -9,6 +9,23 @@ import YandexMetrika from "@/components/analytics/YandexMetrika";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { StructuredData } from "@/components/layout/StructuredData";
 
+const THEME_INIT_SCRIPT = `(() => {
+  try {
+    const key = 'theme';
+    const stored = localStorage.getItem(key);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = stored === 'light' || stored === 'dark'
+      ? stored
+      : (prefersDark ? 'dark' : 'light');
+
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.style.colorScheme = theme;
+  } catch (_) {
+    // no-op
+  }
+})();`;
+
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   display: "swap",
@@ -71,8 +88,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={inter.variable}>
+    <html lang="ru" className={inter.variable} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <StructuredData />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>

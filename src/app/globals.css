@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    Мастерок — globals.css
-   Tailwind CSS v4.2 — светлая тема
+   Tailwind CSS v4.2 — глобальные стили
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── 1. Импорт Tailwind v4 ─────────────────────────────────── */
@@ -97,14 +97,6 @@
 
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     color: var(--color-slate-100);
-  }
-
-  .dark a {
-    color: var(--color-accent-400);
-  }
-
-  .dark a:hover {
-    color: var(--color-accent-300);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -238,7 +230,31 @@
 }
 
 @utility section-title {
-  @apply text-xl font-bold text-slate-900 mb-4;
+  @apply text-xl font-bold text-slate-900 mb-4 dark:text-slate-100;
+}
+
+@utility theme-surface {
+  @apply bg-white dark:bg-slate-800;
+}
+
+@utility theme-surface-muted {
+  @apply bg-slate-50 dark:bg-slate-900;
+}
+
+@utility theme-border {
+  @apply border border-slate-200 dark:border-slate-700;
+}
+
+@utility theme-title {
+  @apply text-slate-900 dark:text-slate-100;
+}
+
+@utility theme-text {
+  @apply text-slate-600 dark:text-slate-300;
+}
+
+@utility theme-muted {
+  @apply text-slate-500 dark:text-slate-400;
 }
 
 @utility no-scrollbar {
@@ -257,6 +273,15 @@
     #fef3c7 25%,
     #f8fafc 50%,
     #eff6ff 100%
+  );
+}
+
+.dark .hero-gradient {
+  background: linear-gradient(
+    135deg,
+    #111827 0%,
+    #0f172a 45%,
+    #1e293b 100%
   );
 }
 

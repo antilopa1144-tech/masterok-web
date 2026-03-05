@@ -25,7 +25,7 @@ export function ExpertTips({ tips }: { tips: NonNullable<CalculatorDefinition["e
             {tip.author && (
               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-accent-100 flex items-center justify-center text-[10px]">🏗️</div>
-                <span className="text-xs font-medium text-slate-400">{tip.author}</span>
+                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{tip.author}</span>
               </div>
             )}
           </div>
@@ -82,7 +82,7 @@ export function FieldInput({
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
                   value === opt.value
                     ? "border-transparent text-white"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300 bg-white"
+                    : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                 }`}
                 style={value === opt.value ? { backgroundColor: accentColor } : {}}
               >
@@ -101,7 +101,7 @@ export function FieldInput({
             ))}
           </select>
         )}
-        {field.hint && <p className="mt-1 text-xs text-slate-400">{field.hint}</p>}
+        {field.hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{field.hint}</p>}
       </div>
     );
   }
@@ -110,17 +110,17 @@ export function FieldInput({
     return (
       <div className="flex items-center justify-between gap-4">
         <div>
-          <label className="text-sm font-medium text-slate-700">{field.label}</label>
-          {field.hint && <p className="text-xs text-slate-400 mt-0.5">{field.hint}</p>}
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">{field.label}</label>
+          {field.hint && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{field.hint}</p>}
         </div>
         <button
           onClick={() => onChange(value > 0 ? 0 : 1)}
           className={`relative w-11 h-6 rounded-full transition-colors ${
-            value > 0 ? "" : "bg-slate-200"
+            value > 0 ? "" : "bg-slate-200 dark:bg-slate-700"
           }`}
           style={value > 0 ? { backgroundColor: accentColor } : {}}
         >
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${value > 0 ? "translate-x-5" : ""}`} />
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-slate-100 rounded-full shadow-sm transition-transform ${value > 0 ? "translate-x-5" : ""}`} />
         </button>
       </div>
     );
@@ -146,14 +146,14 @@ export function FieldInput({
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
             }}
-            className={`w-20 text-right text-sm font-semibold border bg-white rounded-lg px-2 py-1 focus:outline-none focus:ring-2 transition-colors ${
+            className={`w-20 text-right text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 transition-colors ${
               isOutOfRange
                 ? "text-red-600 border-red-300 focus:ring-red-500/30 focus:border-red-500"
-                : "text-slate-700 border-slate-200 focus:ring-accent-500/30 focus:border-accent-500"
+                : "text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 focus:ring-accent-500/30 focus:border-accent-500"
             }`}
             aria-invalid={isOutOfRange}
           />
-          {field.unit && <span className="text-xs text-slate-400 w-8 shrink-0">{field.unit}</span>}
+          {field.unit && <span className="text-xs text-slate-400 dark:text-slate-500 w-8 shrink-0">{field.unit}</span>}
         </div>
       </div>
       {field.type === "slider" && (
@@ -173,7 +173,7 @@ export function FieldInput({
           Допустимые значения: {min} — {max} {field.unit ?? ""}
         </p>
       )}
-      {!isOutOfRange && field.hint && <p className="mt-1 text-xs text-slate-400">{field.hint}</p>}
+      {!isOutOfRange && field.hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{field.hint}</p>}
     </div>
   );
 }
@@ -192,18 +192,18 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
     <div className="space-y-4">
       {Object.entries(groups).map(([groupName, items]) => (
         <div key={groupName}>
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-2">{groupName}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-2">{groupName}</p>
           <div className="space-y-2">
             {items.map((m, i) => (
-              <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-slate-100 last:border-0">
-                <span className="text-sm text-slate-700 flex-1 leading-snug">{m.name}</span>
+              <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug">{m.name}</span>
                 <div className="text-right shrink-0">
-                  <div className="text-base font-bold text-slate-900">
+                  <div className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)}{" "}
-                    <span className="text-sm font-normal text-slate-500">{m.unit}</span>
+                    <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{m.unit}</span>
                   </div>
                   {m.withReserve && m.withReserve !== m.quantity && (
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-400 dark:text-slate-500">
                       без запаса: {formatNumber(m.quantity)} {m.unit}
                     </div>
                   )}
@@ -224,11 +224,11 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
   const label = TOTAL_LABELS[name] ?? name;
   const unit = TOTAL_UNITS[name] ?? "";
   return (
-    <div className="bg-slate-50 rounded-xl p-3">
-      <p className="text-xs text-slate-400 mb-0.5">{label}</p>
-      <p className="text-base font-semibold text-slate-900">
+    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3">
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{label}</p>
+      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
         {formatNumber(value)}
-        {unit && <span className="text-sm font-normal text-slate-500 ml-1">{unit}</span>}
+        {unit && <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-1">{unit}</span>}
       </p>
     </div>
   );
@@ -244,22 +244,22 @@ export function HistoryPanel({
   onRestore: (entry: HistoryEntry) => void;
 }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-3 space-y-1 border border-slate-200">
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+    <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1 border border-slate-200 dark:border-slate-700">
+      <p className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
         Прошлые расчёты
       </p>
       {calcHistory.map((entry) => (
         <button
           key={entry.ts}
           onClick={() => onRestore(entry)}
-          className="w-full text-left flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
+          className="w-full text-left flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors"
         >
-          <span className="text-xs text-slate-500 shrink-0">
+          <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
             {new Date(entry.ts).toLocaleString("ru-RU", {
               month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
             })}
           </span>
-          <span className="text-xs text-slate-400 truncate">
+          <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
             {entry.result.materials.slice(0, 2).map(
               (m) => `${formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)} ${m.unit}`
             ).join(", ")}
@@ -308,25 +308,25 @@ export function ResultBlock({
       {/* Карточка результатов */}
       <div className="result-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h3 className="text-base font-semibold text-slate-900">Список материалов</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Список материалов</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => copyMaterialsAsText(result.materials)}
-              className="flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
               title="Скопировать список для мессенджера"
             >
               📋 <span className="hidden sm:inline">Скопировать</span>
             </button>
             <button
               onClick={onShare}
-              className="flex items-center gap-1.5 text-xs bg-accent-50 hover:bg-accent-100 text-accent-700 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
               title="Поделиться ссылкой"
             >
               {shareState === "copied" ? "✓" : "🔗"} <span className="hidden sm:inline">{shareState === "copied" ? "Скопировано!" : "Поделиться"}</span>
             </button>
             <button
               onClick={() => window.print()}
-              className="flex items-center text-xs bg-accent-50 hover:bg-accent-100 text-accent-700 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
+              className="flex items-center text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
               title="Распечатать"
             >
               🖨 <span className="hidden sm:inline ml-1.5">Печать</span>
@@ -340,7 +340,7 @@ export function ResultBlock({
       {/* Итоги */}
       {Object.keys(result.totals).length > 0 && (
         <div className="card p-5">
-          <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
             Итого
           </h4>
           <div className="grid grid-cols-2 gap-3">

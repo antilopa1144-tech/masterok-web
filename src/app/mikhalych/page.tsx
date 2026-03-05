@@ -68,7 +68,7 @@ export default function MikhalychPage() {
           <div className="space-y-4">
             {/* О Михалыче */}
             <div className="card p-5">
-              <h2 className="font-bold text-slate-900 mb-3">
+              <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-3">
                 Что умеет Михалыч?
               </h2>
               <ul className="space-y-2.5">
@@ -79,7 +79,7 @@ export default function MikhalychPage() {
                   { icon: "🏪", text: "Порекомендует материалы и бренды для России" },
                   { icon: "📏", text: "Ответит по нормам ГОСТ, СНиП и рекомендациям производителей" },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
                     <span className="text-base shrink-0">{item.icon}</span>
                     <span>{item.text}</span>
                   </li>
@@ -89,7 +89,7 @@ export default function MikhalychPage() {
 
             {/* Популярные калькуляторы */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-900 mb-3">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">
                 Калькуляторы рядом
               </h3>
               <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function MikhalychPage() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center gap-2 text-sm text-slate-600 hover:text-accent-600 no-underline transition-colors py-1"
+                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-accent-600 dark:hover:text-accent-400 no-underline transition-colors py-1"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-accent-400 shrink-0" />
                     {link.title}
@@ -113,10 +113,10 @@ export default function MikhalychPage() {
             </div>
 
             {/* Приложение */}
-            <div className="card p-5 bg-accent-50 border-accent-100">
+            <div className="card p-5 bg-accent-50 dark:bg-accent-900/20 border-accent-100 dark:border-accent-800/40">
               <div className="text-2xl mb-2">📱</div>
-              <h3 className="font-bold text-slate-900 mb-1">Михалыч в приложении</h3>
-              <p className="text-sm text-slate-500 mb-3">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Михалыч в приложении</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-300 mb-3">
                 В приложении Мастерок Михалыч работает прямо рядом с калькулятором.
               </p>
               <Link href="/prilozhenie/" className="btn-primary text-sm w-full text-center">

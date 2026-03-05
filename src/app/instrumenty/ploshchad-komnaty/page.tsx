@@ -52,9 +52,9 @@ function NumInput({
           className="input-field flex-1"
           placeholder="0"
         />
-        <span className="text-sm text-slate-500 w-6 shrink-0">{unit}</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400 w-6 shrink-0">{unit}</span>
       </div>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -150,24 +150,24 @@ export default function PloshadKomnatyPage() {
   return (
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-6">
-        <Link href="/" className="hover:text-slate-600">Главная</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
         <span>/</span>
-        <span className="text-slate-600">Площадь комнаты</span>
+        <span className="text-slate-600 dark:text-slate-300">Площадь комнаты</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
+      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
         Калькулятор площади комнаты
       </h1>
-      <p className="text-slate-500 mb-8">
+      <p className="text-slate-500 dark:text-slate-400 mb-8">
         Рассчитайте площадь пола, периметр и площадь стен для помещений любой формы.
       </p>
 
       {/* Выбор формы */}
       <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 mb-3">Форма помещения</p>
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">Форма помещения</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {SHAPES.map((s) => (
             <button
@@ -176,13 +176,13 @@ export default function PloshadKomnatyPage() {
               className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
                 shape === s.id
                   ? "border-accent-400 bg-accent-50 text-accent-700"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600"
               }`}
             >
               <span className="text-lg leading-none">{s.icon}</span>
               <div>
                 <div className="text-sm font-medium">{s.label}</div>
-                <div className="text-xs text-slate-400 leading-tight hidden sm:block">{s.desc}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500 leading-tight hidden sm:block">{s.desc}</div>
               </div>
             </button>
           ))}
@@ -196,7 +196,7 @@ export default function PloshadKomnatyPage() {
 
       {/* Параметры */}
       <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 mb-4">Размеры</p>
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">Размеры</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {shape === "rect" && (
             <>
@@ -268,7 +268,7 @@ export default function PloshadKomnatyPage() {
             )}
           </div>
           {result.notes && (
-            <p className="mt-3 text-xs text-slate-400">{result.notes}</p>
+            <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">{result.notes}</p>
           )}
         </div>
       )}
@@ -279,9 +279,9 @@ export default function PloshadKomnatyPage() {
 function ResultItem({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
     <div className="bg-white/10 rounded-xl p-3">
-      <p className="text-xs text-slate-400 mb-0.5">{label}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{label}</p>
       <p className="text-xl font-bold text-white">
-        {value} <span className="text-sm font-normal text-slate-300">{unit}</span>
+        {value} <span className="text-sm font-normal text-slate-300 dark:text-slate-400">{unit}</span>
       </p>
     </div>
   );

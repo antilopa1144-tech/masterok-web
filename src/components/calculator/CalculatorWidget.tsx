@@ -38,12 +38,12 @@ export default function CalculatorWidget({ calculator }: Props) {
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-slate-400 font-medium">Примеры:</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Примеры:</span>
           {presets.map((p) => (
             <button
               key={p.label}
               onClick={() => applyPreset(p.values)}
-              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-accent-300 hover:text-accent-600 hover:bg-accent-50 transition-all"
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-300 dark:hover:border-accent-500/40 hover:text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-all"
             >
               {p.label}
             </button>
@@ -52,25 +52,25 @@ export default function CalculatorWidget({ calculator }: Props) {
       )}
 
       {/* Форма калькулятора */}
-      <div className="card p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Параметры расчёта</h2>
-          <div className="flex items-center gap-3">
-            {calcHistory.length > 0 && (
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                className="text-sm text-slate-400 hover:text-accent-600 transition-colors flex items-center gap-1"
-                title="История расчётов"
+        <div className="card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Параметры расчёта</h2>
+            <div className="flex items-center gap-3">
+              {calcHistory.length > 0 && (
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="text-sm text-slate-400 hover:text-accent-600 transition-colors flex items-center gap-1"
+                  title="История расчётов"
               >
                 🕒 {calcHistory.length}
               </button>
             )}
-            <button
-              onClick={handleReset}
-              className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              Сбросить
-            </button>
+              <button
+                onClick={handleReset}
+                className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                Сбросить
+              </button>
           </div>
         </div>
 

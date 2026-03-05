@@ -70,7 +70,7 @@ export default function CalculatorWithMikhalych({
       <div className="space-y-6">
         <div className="card p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Параметры расчёта</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Параметры расчёта</h2>
             <div className="flex items-center gap-3">
               {calcHistory.length > 0 && (
                 <button
@@ -81,7 +81,7 @@ export default function CalculatorWithMikhalych({
                   🕒 {calcHistory.length}
                 </button>
               )}
-              <button onClick={handleReset} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={handleReset} className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                 Сбросить
               </button>
             </div>

@@ -69,7 +69,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
               <CategoryIcon icon="file-text" size={16} color="currentColor" />
               <div>
                 <div className="font-medium">PDF документ</div>
-                <div className="text-xs text-slate-400">Для печати и отправки</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Для печати и отправки</div>
               </div>
             </button>
 
@@ -85,7 +85,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
               <CategoryIcon icon="sheet" size={16} color="currentColor" />
               <div>
                 <div className="font-medium">Excel таблица</div>
-                <div className="text-xs text-slate-400">Для редактирования</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Для редактирования</div>
               </div>
             </button>
           </div>

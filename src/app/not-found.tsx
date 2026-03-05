@@ -10,10 +10,10 @@ export default function NotFound() {
     <div className="page-container py-16">
       <div className="text-center mb-12">
         <div className="text-6xl mb-4">🔨</div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
           Страница не найдена
         </h1>
-        <p className="text-slate-500 max-w-md mx-auto">
+        <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
           Возможно, калькулятор переехал или адрес изменился. Выберите нужный
           раздел ниже или вернитесь на главную.
         </p>
@@ -21,7 +21,7 @@ export default function NotFound() {
 
       {/* Популярные калькуляторы */}
       <div className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 text-center">
+        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
           Популярные калькуляторы
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
@@ -43,7 +43,7 @@ export default function NotFound() {
                     color={cat?.color ?? "#64748b"}
                   />
                 </span>
-                <span className="text-sm font-medium text-slate-700 leading-snug">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug">
                   {calc.title}
                 </span>
               </Link>
@@ -54,7 +54,7 @@ export default function NotFound() {
 
       {/* Категории */}
       <div className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 text-center">
+        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
           Все категории
         </h2>
         <div className="flex flex-wrap justify-center gap-2">
@@ -62,7 +62,7 @@ export default function NotFound() {
             <Link
               key={cat.id}
               href={`/kalkulyatory/${cat.slug}/`}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 hover:border-accent-300 hover:text-accent-600 transition-all no-underline"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 hover:border-accent-300 dark:hover:border-accent-500/40 hover:text-accent-600 transition-all no-underline"
             >
               <CategoryIcon icon={cat.icon} size={16} color={cat.color} />
               {cat.label}

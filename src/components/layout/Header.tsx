@@ -34,7 +34,7 @@ export default function Header() {
             <div className="w-8 h-8 bg-accent-500 rounded-lg flex items-center justify-center">
               <CategoryIcon icon="hammer" size={18} color="#fff" />
             </div>
-            <span className="font-bold text-lg text-slate-900">
+            <span className="font-bold text-lg text-slate-900 dark:text-slate-100">
               Мастерок
             </span>
           </Link>
@@ -80,7 +80,7 @@ export default function Header() {
               aria-expanded={menuOpen}
             >
               <svg
-                className="w-5 h-5 text-slate-700"
+                className="w-5 h-5 text-slate-700 dark:text-slate-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -130,7 +130,7 @@ export default function Header() {
             })}
 
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-              <p className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <p className="px-3 py-1 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Категории
               </p>
               {CATEGORIES.map((cat) => (

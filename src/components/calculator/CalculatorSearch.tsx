@@ -92,7 +92,7 @@ export default function CalculatorSearch({ calculators }: Props) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Найти калькулятор: бетон, плитка, ламинат..."
-          className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white shadow-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all text-sm"
+          className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all text-sm"
           role="combobox"
           aria-controls="search-results"
           aria-expanded={showDropdown}
@@ -102,7 +102,7 @@ export default function CalculatorSearch({ calculators }: Props) {
         {query && (
           <button
             onClick={close}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
           >
             <CategoryIcon icon="close" size={16} />
           </button>
@@ -111,7 +111,7 @@ export default function CalculatorSearch({ calculators }: Props) {
 
       {/* Результаты */}
       {showDropdown && (
-        <div id="search-results" className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden scale-in" role="listbox">
+        <div id="search-results" className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl z-50 overflow-hidden scale-in" role="listbox">
           {results.length > 0 ? (
             <ul>
               {results.map((calc, i) => {
@@ -122,13 +122,13 @@ export default function CalculatorSearch({ calculators }: Props) {
                     id={`search-result-${i}`}
                     role="option"
                     aria-selected={i === activeIndex}
-                    className="border-b border-slate-50 last:border-0"
+                    className="border-b border-slate-50 dark:border-slate-700 last:border-0"
                   >
                     <Link
                       href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
                       onClick={close}
                       className={`flex items-center gap-3 px-4 py-3 no-underline transition-colors ${
-                        i === activeIndex ? "bg-accent-50" : "hover:bg-slate-50"
+                        i === activeIndex ? "bg-accent-50 dark:bg-accent-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span
@@ -138,12 +138,12 @@ export default function CalculatorSearch({ calculators }: Props) {
                         <CategoryIcon icon={cat?.icon ?? "wrench"} size={16} color={cat?.color ?? "#64748b"} />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 truncate">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                           {calc.title}
                         </p>
-                        <p className="text-xs text-slate-400 truncate">{cat?.label}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{cat?.label}</p>
                       </div>
-                      <span className="ml-auto text-slate-300 text-sm shrink-0">→</span>
+                      <span className="ml-auto text-slate-300 dark:text-slate-500 text-sm shrink-0">→</span>
                     </Link>
                   </li>
                 );
@@ -151,7 +151,7 @@ export default function CalculatorSearch({ calculators }: Props) {
             </ul>
           ) : (
             <div className="px-4 py-6 text-center">
-              <p className="text-slate-400 text-sm">Ничего не найдено по запросу «{query}»</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm">Ничего не найдено по запросу «{query}»</p>
               <Link
                 href="/mikhalych/"
                 className="text-sm text-accent-600 hover:text-accent-700 mt-2 inline-block no-underline"

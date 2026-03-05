@@ -45,7 +45,7 @@ function renderContent(content: string) {
       const text = currentParagraph.join(" ").trim();
       if (text) {
         elements.push(
-          <p key={key++} className="text-slate-700 leading-relaxed mb-4">
+          <p key={key++} className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
             {text}
           </p>
         );
@@ -59,7 +59,7 @@ function renderContent(content: string) {
       elements.push(
         <ul key={key++} className="list-disc list-outside pl-5 mb-5 space-y-1.5">
           {currentList.map((item, i) => (
-            <li key={i} className="text-slate-700 leading-relaxed">
+            <li key={i} className="text-slate-700 dark:text-slate-300 leading-relaxed">
               {item}
             </li>
           ))}
@@ -79,7 +79,7 @@ function renderContent(content: string) {
       elements.push(
         <h2
           key={key++}
-          className="text-xl font-bold text-slate-900 mt-8 mb-3"
+          className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3"
         >
           {trimmed.slice(3)}
         </h2>
@@ -94,7 +94,7 @@ function renderContent(content: string) {
       elements.push(
         <h3
           key={key++}
-          className="text-lg font-semibold text-slate-800 mt-6 mb-2"
+          className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2"
         >
           {trimmed.slice(4)}
         </h3>
@@ -175,32 +175,32 @@ export default async function BlogPostPage({ params }: Props) {
       />
 
       {/* Hero */}
-      <div className="bg-slate-50 border-b border-slate-200">
+      <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6 max-w-3xl">
           {/* Breadcrumbs */}
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-4 flex-wrap">
-            <Link href="/" className="hover:text-slate-600 no-underline">
+          <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-4 flex-wrap">
+            <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300 no-underline">
               Главная
             </Link>
             <span>/</span>
             <Link
               href="/blog/"
-              className="hover:text-slate-600 no-underline"
+              className="hover:text-slate-600 dark:hover:text-slate-300 no-underline"
             >
               Блог
             </Link>
             <span>/</span>
-            <span className="text-slate-600">{post.title}</span>
+            <span className="text-slate-600 dark:text-slate-300">{post.title}</span>
           </nav>
 
           {/* Meta */}
           <div className="flex items-center gap-3 mb-3 flex-wrap">
             <span className="text-2xl">{post.icon}</span>
-            <span className="badge bg-slate-100 text-slate-600 border-0 text-xs">
+            <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
               {post.category}
             </span>
-            <span className="text-xs text-slate-400">{post.readTime}</span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-400 dark:text-slate-500">{post.readTime}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               {new Date(post.date).toLocaleDateString("ru-RU", {
                 day: "numeric",
                 month: "long",
@@ -209,10 +209,10 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
             {post.title}
           </h1>
-          <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-2xl">
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed max-w-2xl">
             {post.description}
           </p>
         </div>
@@ -224,13 +224,13 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* Tags */}
         {post.tags.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-slate-200">
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-slate-400">Теги:</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500">Теги:</span>
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full"
+                  className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2.5 py-1 rounded-full"
                 >
                   {tag}
                 </span>
@@ -241,11 +241,11 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* CTA — related calculator */}
         {post.relatedCalculator && (
-          <div className="mt-8 bg-accent-50 border border-accent-200 rounded-2xl p-6 text-center">
-            <p className="text-lg font-bold text-slate-900 mb-1">
+          <div className="mt-8 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-2xl p-6 text-center">
+            <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
               Рассчитайте материалы онлайн
             </p>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-300 mb-4">
               Используйте наш калькулятор для точного расчёта по ГОСТ и СНиП
             </p>
             <Link

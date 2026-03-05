@@ -167,16 +167,16 @@ export default function KalkulyatorPage() {
   return (
     <div className="page-container py-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-6">
-        <Link href="/" className="hover:text-slate-600">Главная</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
         <span>/</span>
-        <span className="text-slate-600">Калькулятор</span>
+        <span className="text-slate-600 dark:text-slate-300">Калькулятор</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">Калькулятор</h1>
-      <p className="text-slate-500 mb-8">Быстрые вычисления прямо на сайте. Поддерживает клавиатуру.</p>
+      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">Калькулятор</h1>
+      <p className="text-slate-500 dark:text-slate-400 mb-8">Быстрые вычисления прямо на сайте. Поддерживает клавиатуру.</p>
 
       <div className="max-w-sm mx-auto md:mx-0 md:flex md:gap-8 md:max-w-2xl">
         {/* Калькулятор */}
@@ -192,34 +192,34 @@ export default function KalkulyatorPage() {
           </div>
 
           {/* Кнопки */}
-          <div className="grid grid-cols-4 gap-2 p-3 bg-slate-50">
+          <div className="grid grid-cols-4 gap-2 p-3 bg-slate-50 dark:bg-slate-900">
             {/* Ряд 1 */}
             <button onClick={clear} className={`${BTN} col-span-2 bg-red-100 text-red-700 hover:bg-red-200 text-base`}>C</button>
-            <button onClick={backspace} className={`${BTN} bg-slate-200 text-slate-700 hover:bg-slate-300 text-xl`}>⌫</button>
+            <button onClick={backspace} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xl`}>⌫</button>
             <button onClick={() => append("÷")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>÷</button>
 
             {/* Ряд 2 */}
-            <button onClick={() => append("7")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>7</button>
-            <button onClick={() => append("8")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>8</button>
-            <button onClick={() => append("9")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>9</button>
+            <button onClick={() => append("7")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>7</button>
+            <button onClick={() => append("8")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>8</button>
+            <button onClick={() => append("9")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>9</button>
             <button onClick={() => append("×")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>×</button>
 
             {/* Ряд 3 */}
-            <button onClick={() => append("4")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>4</button>
-            <button onClick={() => append("5")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>5</button>
-            <button onClick={() => append("6")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>6</button>
+            <button onClick={() => append("4")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>4</button>
+            <button onClick={() => append("5")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>5</button>
+            <button onClick={() => append("6")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>6</button>
             <button onClick={() => append("-")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>−</button>
 
             {/* Ряд 4 */}
-            <button onClick={() => append("1")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>1</button>
-            <button onClick={() => append("2")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>2</button>
-            <button onClick={() => append("3")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>3</button>
+            <button onClick={() => append("1")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>1</button>
+            <button onClick={() => append("2")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>2</button>
+            <button onClick={() => append("3")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>3</button>
             <button onClick={() => append("+")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>+</button>
 
             {/* Ряд 5 */}
-            <button onClick={toggleSign} className={`${BTN} bg-slate-200 text-slate-700 hover:bg-slate-300 text-sm`}>+/−</button>
-            <button onClick={() => append("0")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>0</button>
-            <button onClick={() => append(".")} className={`${BTN} bg-white hover:bg-slate-100 text-slate-900 border border-slate-200`}>,</button>
+            <button onClick={toggleSign} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm`}>+/−</button>
+            <button onClick={() => append("0")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>0</button>
+            <button onClick={() => append(".")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>,</button>
             <button
               onClick={calculate}
               className={`${BTN} text-white`}
@@ -232,10 +232,10 @@ export default function KalkulyatorPage() {
         {history.length > 0 && (
           <div className="mt-6 md:mt-0 flex-1">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-600">История вычислений</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">История вычислений</p>
               <button
                 onClick={() => setHistory([])}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 Очистить
               </button>
@@ -251,7 +251,7 @@ export default function KalkulyatorPage() {
                   }}
                   className="card-hover w-full text-right px-4 py-3 block"
                 >
-                  <div className="text-xs text-slate-400 truncate">{item.expr}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.expr}</div>
                 </button>
               ))}
             </div>

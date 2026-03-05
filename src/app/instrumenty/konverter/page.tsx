@@ -148,18 +148,18 @@ export default function KonverterPage() {
   return (
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-6">
-        <Link href="/" className="hover:text-slate-600">Главная</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
         <span>/</span>
-        <span className="text-slate-600">Конвертер единиц</span>
+        <span className="text-slate-600 dark:text-slate-300">Конвертер единиц</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
+      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
         Конвертер единиц измерения
       </h1>
-      <p className="text-slate-500 mb-8">
+      <p className="text-slate-500 dark:text-slate-400 mb-8">
         Пересчитайте строительные единицы: длину, площадь, объём, массу, давление и температуру.
       </p>
 
@@ -172,7 +172,7 @@ export default function KonverterPage() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
               i === groupIndex
                 ? "bg-accent-500 text-white border-accent-500"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
             }`}
           >
             <span>{g.icon}</span>
@@ -210,7 +210,7 @@ export default function KonverterPage() {
           <div className="flex justify-center pb-1">
             <button
               onClick={swap}
-              className="w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors text-lg"
+              className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100 transition-colors text-lg"
               title="Поменять местами"
             >
               ⇄
@@ -229,15 +229,15 @@ export default function KonverterPage() {
                 <option key={u.key} value={u.key}>{u.label}</option>
               ))}
             </select>
-            <div className="input-field text-lg font-bold text-accent-600 bg-accent-50 border-accent-200 select-all cursor-text">
+            <div className="input-field text-lg font-bold text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40 select-all cursor-text">
               {result}
             </div>
           </div>
         </div>
 
         {/* Быстрые результаты по всем единицам */}
-        <div className="mt-6 pt-5 border-t border-slate-200">
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-3">
+        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-3">
             {inputValue || "1"} {group.units.find(u => u.key === fromUnit)?.label} =
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -263,11 +263,11 @@ export default function KonverterPage() {
                     className={`text-left px-3 py-2 rounded-xl border transition-colors ${
                       u.key === toUnit
                         ? "border-accent-400 bg-accent-50"
-                        : "border-slate-200 bg-slate-50 hover:border-slate-200"
+                        : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
                     }`}
                   >
-                    <div className="text-xs text-slate-400 truncate">{u.label}</div>
-                    <div className="text-sm font-semibold text-slate-700 truncate">{res}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{u.label}</div>
+                    <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{res}</div>
                   </button>
                 );
               })}
@@ -275,7 +275,7 @@ export default function KonverterPage() {
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-400 text-center">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500 text-center">
         Нажмите на любую единицу снизу, чтобы выбрать её как целевую
       </p>
     </div>

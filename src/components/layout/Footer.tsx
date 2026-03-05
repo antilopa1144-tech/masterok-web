@@ -6,27 +6,27 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-slate-300 mt-auto dark:bg-slate-950">
+    <footer className="mt-auto bg-slate-100 text-slate-600 border-t border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800">
       <div className="page-container-wide py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* О сайте */}
           <div>
             <Link
               href="/"
-              className="flex items-center gap-2 font-bold text-lg text-white mb-3 no-underline hover:text-accent-400 transition-colors"
+              className="flex items-center gap-2 font-bold text-lg text-slate-900 dark:text-white mb-3 no-underline hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
             >
               <div className="w-7 h-7 bg-accent-500 rounded-lg flex items-center justify-center">
                 <CategoryIcon icon="hammer" size={15} color="#fff" />
               </div>
               <span>Мастерок</span>
             </Link>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
               Бесплатные строительные калькуляторы онлайн. Точный расчёт
               материалов по ГОСТ и СНиП.
             </p>
             <Link
               href="/prilozhenie/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-accent-400 hover:text-accent-300 transition-colors no-underline mt-4"
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 transition-colors no-underline mt-4"
             >
               <CategoryIcon icon="phone" size={14} color="currentColor" />
               Скачать приложение
@@ -35,7 +35,7 @@ export default function Footer() {
 
           {/* Категории */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
               Категории
             </h3>
             <ul className="space-y-2">
@@ -43,7 +43,7 @@ export default function Footer() {
                 <li key={cat.id}>
                   <Link
                     href={`/kalkulyatory/${cat.slug}/`}
-                    className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors no-underline"
+                    className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline"
                   >
                     <CategoryIcon icon={cat.icon} size={14} color="currentColor" />
                     {cat.label}
@@ -55,7 +55,7 @@ export default function Footer() {
 
           {/* Популярное */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
               Популярное
             </h3>
             <ul className="space-y-2">
@@ -70,7 +70,7 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-slate-400 hover:text-white transition-colors no-underline"
+                    className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline"
                   >
                     {item.label}
                   </Link>
@@ -81,40 +81,40 @@ export default function Footer() {
 
           {/* Сервисы */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
               Сервисы
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/mikhalych/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors no-underline">
+                <Link href="/mikhalych/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="bot" size={14} color="currentColor" />
                   Михалыч — AI-ассистент
                 </Link>
               </li>
               <li>
-                <Link href="/blog/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors no-underline">
+                <Link href="/blog/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="book" size={14} color="currentColor" />
                   Блог
                 </Link>
               </li>
               <li>
-                <Link href="/prilozhenie/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors no-underline">
+                <Link href="/prilozhenie/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="phone" size={14} color="currentColor" />
                   Приложение
                 </Link>
               </li>
             </ul>
 
-            <div className="mt-6 p-3 bg-slate-800 rounded-xl border border-slate-700">
-              <p className="text-xs text-slate-300 font-medium mb-1">
+            <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">
                 Нашли ошибку в расчёте?
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Напишите нашему ИИ-ассистенту
               </p>
               <Link
                 href="/mikhalych/"
-                className="mt-2 inline-block text-xs font-medium text-accent-400 hover:text-accent-300 no-underline transition-colors"
+                className="mt-2 inline-block text-xs font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 no-underline transition-colors"
               >
                 Спросить Михалыча →
               </Link>
@@ -123,11 +123,11 @@ export default function Footer() {
         </div>
 
         {/* Нижняя строка */}
-        <div className="mt-10 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-sm text-slate-500">
+        <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <p className="text-sm text-slate-500 dark:text-slate-500">
             © {year} Мастерок. Все расчёты носят справочный характер.
           </p>
-          <span className="text-sm text-slate-500">Расчёты по ГОСТ и СНиП</span>
+          <span className="text-sm text-slate-500 dark:text-slate-500">Расчёты по ГОСТ и СНиП</span>
         </div>
       </div>
     </footer>
