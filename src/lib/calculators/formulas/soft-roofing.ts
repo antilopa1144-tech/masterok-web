@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const softRoofingDef: CalculatorDefinition = {
   id: "soft_roofing",
@@ -235,6 +236,15 @@ export const softRoofingDef: CalculatorDefinition = {
       },
     );
 
+    const scenarios = buildNativeScenarios({
+      id: "soft-roofing-main",
+      title: "Soft roofing main",
+      exactNeed: packs,
+      unit: "упак.",
+      packageSizes: [1],
+      packageLabelPrefix: "soft-roofing-pack",
+    });
+
     return {
       materials,
       totals: {
@@ -246,6 +256,7 @@ export const softRoofingDef: CalculatorDefinition = {
         totalLinear,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

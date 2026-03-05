@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const slopesDef: CalculatorDefinition = {
   id: "slopes_finishing",
@@ -244,6 +245,15 @@ export const slopesDef: CalculatorDefinition = {
       category: "Подготовка",
     });
 
+    const scenarios = buildNativeScenarios({
+      id: "slopes-main",
+      title: "Slopes main",
+      exactNeed: totalSlopeArea,
+      unit: "м²",
+      packageSizes: [1],
+      packageLabelPrefix: "slopes-m2",
+    });
+
     return {
       materials,
       totals: {
@@ -251,6 +261,7 @@ export const slopesDef: CalculatorDefinition = {
         openingCount,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

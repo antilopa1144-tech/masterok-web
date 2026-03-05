@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const stairsDef: CalculatorDefinition = {
   id: "stairs",
@@ -242,6 +243,15 @@ export const stairsDef: CalculatorDefinition = {
       });
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "stairs-main",
+      title: "Stairs main",
+      exactNeed: stepCount,
+      unit: "ступеней",
+      packageSizes: [1],
+      packageLabelPrefix: "stairs-step",
+    });
+
     return {
       materials,
       totals: {
@@ -251,6 +261,7 @@ export const stairsDef: CalculatorDefinition = {
         realStepHeight: Math.round(realStepHeight * 1000) / 1000,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

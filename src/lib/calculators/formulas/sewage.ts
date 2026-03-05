@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const sewageDef: CalculatorDefinition = {
   id: "sewage",
@@ -243,6 +244,15 @@ export const sewageDef: CalculatorDefinition = {
       warnings.push("Однокамерный септик — минимальная очистка. Рекомендуется 2–3 камеры");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "sewage-main",
+      title: "Sewage main",
+      exactNeed: totalVolume,
+      unit: "м³",
+      packageSizes: [0.1],
+      packageLabelPrefix: "sewage-volume",
+    });
+
     return {
       materials,
       totals: {
@@ -254,6 +264,7 @@ export const sewageDef: CalculatorDefinition = {
         pipeLength,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const sidingDef: CalculatorDefinition = {
   id: "exterior_siding",
@@ -122,6 +123,15 @@ export const sidingDef: CalculatorDefinition = {
       warnings.push("Фиброцементный сайдинг требует обязательной окраски торцов при раскрое");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "siding-main",
+      title: "Siding main",
+      exactNeed: panelsNeeded,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "siding-panel",
+    });
+
     return {
       materials: [
         {
@@ -199,6 +209,7 @@ export const sidingDef: CalculatorDefinition = {
       ],
       totals: { facadeArea, netArea, panelsNeeded, perimeter } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
