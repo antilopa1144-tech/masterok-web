@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const atticDef: CalculatorDefinition = {
   id: "attic",
@@ -223,6 +224,15 @@ export const atticDef: CalculatorDefinition = {
     }
     warnings.push("Между утеплителем и кровлей необходим вентиляционный зазор 40–50 мм для отвода конденсата");
 
+    const scenarios = buildNativeScenarios({
+      id: "attic-main",
+      title: "Attic main",
+      exactNeed: roofArea * 1.05 / plateArea * layerCount,
+      unit: "плит",
+      packageSizes: [1],
+      packageLabelPrefix: "attic-insulation-plate",
+    });
+
     return {
       materials,
       totals: {
@@ -231,6 +241,7 @@ export const atticDef: CalculatorDefinition = {
         insulationThicknessMm,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

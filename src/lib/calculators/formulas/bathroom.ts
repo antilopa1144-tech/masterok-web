@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const bathroomDef: CalculatorDefinition = {
   id: "bathroom",
@@ -261,6 +262,15 @@ export const bathroomDef: CalculatorDefinition = {
       );
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "bathroom-main",
+      title: "Bathroom main",
+      exactNeed: (floorArea / (floorTW * floorTH)) * 1.1 + (wallArea / (wallTW * wallTH)) * 1.1,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "bathroom-tile",
+    });
+
     return {
       materials,
       totals: {
@@ -271,6 +281,7 @@ export const bathroomDef: CalculatorDefinition = {
         tilesWall,
       },
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

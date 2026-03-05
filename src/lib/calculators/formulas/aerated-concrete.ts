@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const aeratedConcreteDef: CalculatorDefinition = {
   id: "walls_aerated_concrete",
@@ -160,6 +161,15 @@ export const aeratedConcreteDef: CalculatorDefinition = {
       warnings.push("Для наружных стен 300+ мм рекомендуется проверить теплотехнический расчёт по СП 50.13330");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "aerated-concrete-main",
+      title: "Aerated concrete main",
+      exactNeed: blocksNet * 1.05,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "aerated-block",
+    });
+
     return {
       materials: [
         {
@@ -245,6 +255,7 @@ export const aeratedConcreteDef: CalculatorDefinition = {
       ],
       totals: { wallArea, netArea, blocksNet, volume } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

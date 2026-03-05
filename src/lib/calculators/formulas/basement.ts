@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const basementDef: CalculatorDefinition = {
   id: "foundation_basement",
@@ -311,6 +312,15 @@ export const basementDef: CalculatorDefinition = {
     }
     warnings.push("Для подвала обязательна ливневая и дренажная система вокруг фундамента");
 
+    const scenarios = buildNativeScenarios({
+      id: "basement-main",
+      title: "Basement main",
+      exactNeed: floorVolume + wallVolume,
+      unit: "м³",
+      packageSizes: [0.1],
+      packageLabelPrefix: "basement-concrete",
+    });
+
     return {
       materials,
       totals: {
@@ -320,6 +330,7 @@ export const basementDef: CalculatorDefinition = {
         wallVolume,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `

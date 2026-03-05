@@ -1,4 +1,5 @@
 import type { CalculatorDefinition } from "../types";
+import { buildNativeScenarios } from "../scenario-native";
 
 export const balconyDef: CalculatorDefinition = {
   id: "balcony",
@@ -249,6 +250,15 @@ export const balconyDef: CalculatorDefinition = {
       warnings.push("Деревянная вагонка требует обработки антисептиком и лаком — балкон влажная зона");
     }
 
+    const scenarios = buildNativeScenarios({
+      id: "balcony-main",
+      title: "Balcony main",
+      exactNeed: totalFinishArea * 1.1 / panelAreaUnit,
+      unit: "шт",
+      packageSizes: [1],
+      packageLabelPrefix: "balcony-panel",
+    });
+
     return {
       materials,
       totals: {
@@ -257,6 +267,7 @@ export const balconyDef: CalculatorDefinition = {
         totalFinishArea,
       } as Record<string, number>,
       warnings,
+      scenarios,
     };
   },
   formulaDescription: `
