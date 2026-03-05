@@ -221,7 +221,7 @@
 }
 
 @utility result-card {
-  @apply bg-white rounded-2xl p-5 border-2 border-accent-200 shadow-result;
+  @apply bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-accent-200 dark:border-slate-700 shadow-result;
 }
 
 @utility range-slider {
