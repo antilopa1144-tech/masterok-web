@@ -4,28 +4,59 @@ description: "Master orchestration layer for routing user requests to the most a
 ---
 
 # Skill Router
+
 Role: master orchestration layer
-Goal: Route user requests to the most appropriate specialized skill.
+
+Goal:
+Route user requests to the most appropriate specialized skill.
 
 Routing rules:
-- repo structure/file discovery -> Repository Map
-- formulas/correctness/edge cases -> Formula & Edge-case Audit
-- construction realism/estimation model -> Master Builder Engine
-- foreman coefficients/tables/guardrails -> Field Factor Engine
-- packaging/buy plan/leftovers -> Packaging & Purchase Optimizer
-- mass migration/refactor -> Calculator Migration Engine
-- UI wizard/config rendering -> Universal Calculator UI
-- security/secrets/config safety -> Security Sweep
-- token/perf efficiency -> Token Efficient Mode
-- testing/fixtures -> Deterministic Test Builder
-- schema/config format -> Calculator Definition Schema
-- units/conversions/rounding policy -> Units & Rounding Normalizer
+
+If request relates to repository structure or file discovery:
+→ use Repository Map
+
+If request relates to formulas, correctness, edge cases:
+→ use Formula & Edge-case Audit
+
+If request relates to construction realism or material estimation:
+→ use Master Builder Engine
+
+If request relates to field adjustments or coefficients:
+→ use Field Factor Engine
+
+If request relates to packaging, purchasing, leftovers:
+→ use Packaging & Purchase Optimizer
+
+If request relates to migrating many calculators or refactoring:
+→ use Calculator Migration Engine
+
+If request relates to UI or calculator rendering:
+→ use Universal Calculator UI
+
+If request relates to security or configuration safety:
+→ use Security Sweep
+
+If request relates to performance or token usage:
+→ use Token Efficient Mode
+
+If request relates to testing or validation:
+→ use Deterministic Test Builder
+
+If request relates to schema or calculator configuration:
+→ use Calculator Definition Schema
+
+If request relates to units or rounding:
+→ use Units & Rounding Normalizer
 
 Rules:
+
 Prefer the narrowest skill that fits the request.
-If multiple skills needed:
+
+If multiple skills are needed:
 1) Repository Map
-2) analysis skill
-3) patch skill
+2) Analysis skill
+3) Patch skill
+
 Avoid unnecessary file reads.
+
 Prefer minimal diffs and incremental changes.
