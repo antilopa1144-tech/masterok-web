@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "factors": {
+    "surface_quality": { "min": 0.95, "rec": 1.0, "max": 1.08 },
+    "geometry_complexity": { "min": 0.97, "rec": 1.0, "max": 1.12 },
+    "installation_method": { "min": 0.98, "rec": 1.0, "max": 1.1 },
+    "worker_skill": { "min": 0.96, "rec": 1.0, "max": 1.07 },
+    "waste_factor": { "min": 1.0, "rec": 1.06, "max": 1.15 },
+    "logistics_buffer": { "min": 1.0, "rec": 1.02, "max": 1.06 },
+    "packaging_rounding": { "min": 1.0, "rec": 1.01, "max": 1.03 }
+  }
+}

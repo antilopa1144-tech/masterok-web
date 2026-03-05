@@ -1,0 +1,33 @@
+{
+  "id": "demo-putty-area-thickness",
+  "title": "Demo: Putty by Area and Thickness",
+  "baseFormula": "putty_area_thickness",
+  "baseParams": {
+    "consumption_kg_per_m2_mm": 1.2
+  },
+  "enabledFactors": [
+    "surface_quality",
+    "geometry_complexity",
+    "installation_method",
+    "worker_skill",
+    "waste_factor",
+    "logistics_buffer",
+    "packaging_rounding"
+  ],
+  "packaging": {
+    "unit": "kg",
+    "options": [
+      { "size": 25, "label": "bag-25kg" }
+    ]
+  },
+  "uiModes": ["Quick", "Pro", "Expert"],
+  "validation": {
+    "area_m2": { "min": 0.1, "max": 2000 },
+    "thickness_mm": { "min": 0.2, "max": 10 }
+  },
+  "presets": {
+    "quick": { "area_m2": 20, "thickness_mm": 1 },
+    "pro": { "area_m2": 45, "thickness_mm": 1.5 },
+    "expert": { "area_m2": 70, "thickness_mm": 2 }
+  }
+}
