@@ -1,8 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ALL_CHECKLISTS, getChecklistBySlug, COMPLEXITY_LABELS } from "@/lib/checklists";
+import { ALL_CHECKLISTS, getChecklistBySlug } from "@/lib/checklists";
+import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import PrintButton from "./PrintButton";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
+
+const UI_TEXT = {
+  notFoundTitle: "Чек-лист не найден",
+  breadcrumbHome: "Главная",
+  breadcrumbTools: "Инструменты",
+  breadcrumbChecklist: "Чек-листы",
+  checklistSuffix: `— чек-лист | ${SITE_NAME}`,
+  itemsSuffix: "пунктов",
+  stagesSuffix: "этапов",
+  backToAll: "← Все чек-листы",
+  tipPrefix: "Совет:",
+  tipText: "Откройте страницу на телефоне, чтобы отмечать пункты прямо на объекте. Или нажмите Ctrl+P для печати.",
+} as const;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -15,11 +31,18 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const cl = getChecklistBySlug(slug);
-  if (!cl) return { title: "Чек-лист не найден" };
-  return {
-    title: `${cl.title} — чек-лист | Мастерок`,
-    description: cl.description,
-  };
+  if (!cl) return { title: UI_TEXT.notFoundTitle };
+
+  const title = `${cl.title} ${UI_TEXT.checklistSuffix}`;
+  const description = cl.description;
+  const pageUrl = `${SITE_URL}/instrumenty/chek-listy/${cl.slug}/`;
+
+  return buildPageMetadata({
+    title,
+    description,
+    url: pageUrl,
+    type: "article",
+  });
 }
 
 const COMPLEXITY_COLORS: Record<number, { bg: string; text: string }> = {
@@ -39,11 +62,11 @@ export default async function ChecklistPage({ params }: Props) {
     <div className="page-container py-8 max-w-4xl">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6 flex-wrap">
-        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
         <span>/</span>
-        <Link href="/instrumenty/chek-listy/" className="hover:text-slate-600 dark:hover:text-slate-300">Чек-листы</Link>
+        <Link href="/instrumenty/chek-listy/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbChecklist}</Link>
         <span>/</span>
         <span className="text-slate-600 dark:text-slate-300">{cl.title}</span>
       </nav>
@@ -64,16 +87,16 @@ export default async function ChecklistPage({ params }: Props) {
         {/* Метки */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full font-medium">
-            📋 {cl.totalItems} пунктов
+            📋 {cl.totalItems} {UI_TEXT.itemsSuffix}
           </span>
           <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-3 py-1 rounded-full">
             ⏱ {cl.duration}
           </span>
           <span className={`text-sm px-3 py-1 rounded-full ${colors.bg} ${colors.text}`}>
-            {COMPLEXITY_LABELS[cl.complexity]}
+            {CHECKLIST_COMPLEXITY_LABELS[cl.complexity]}
           </span>
           <span className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-3 py-1 rounded-full">
-            {cl.steps.length} этапов
+            {cl.steps.length} {UI_TEXT.stagesSuffix}
           </span>
         </div>
       </div>
@@ -110,17 +133,21 @@ export default async function ChecklistPage({ params }: Props) {
           href="/instrumenty/chek-listy/"
           className="btn-secondary flex-1 text-center no-underline"
         >
-          ← Все чек-листы
+          {UI_TEXT.backToAll}
         </Link>
       </div>
 
       {/* Совет */}
       <div className="mt-6 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4">
         <p className="text-sm text-accent-700 dark:text-accent-300">
-          <strong>Совет:</strong> Откройте страницу на телефоне, чтобы отмечать пункты прямо на объекте.
-          Или нажмите <strong>Ctrl+P</strong> для печати.
+          <strong>{UI_TEXT.tipPrefix}</strong> {UI_TEXT.tipText.split("Ctrl+P")[0]}<strong>Ctrl+P</strong>{UI_TEXT.tipText.split("Ctrl+P")[1]}
         </p>
       </div>
     </div>
   );
 }
+
+
+
+
+

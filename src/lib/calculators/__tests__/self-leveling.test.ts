@@ -1,84 +1,41 @@
-import { describe, it, expect } from "vitest";
-import { selfLevelingDef } from "../formulas/self-leveling";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { describe, expect, it } from 'vitest';
+import selfLevelingFixture from '../../../../tests/fixtures/self-leveling-canonical-parity.json';
+import { selfLevelingDef } from '../formulas/self-leveling';
+import { runCanonicalParitySuite } from './canonical-parity';
+import { checkInvariants, findMaterial } from './_helpers';
 
 const calc = selfLevelingDef.calculate.bind(selfLevelingDef);
 
-describe("Наливной пол", () => {
-  describe("По размерам помещения", () => {
-    it("5×4 м, 10 мм, выравнивающая, мешки 25 кг", () => {
-      const r = calc({ inputMode: 0, length: 5, width: 4, thickness: 10, mixtureType: 0, bagWeight: 25 });
-      checkInvariants(r);
-      // area=20, kgPerSqm=1.6*10=16, totalKg=20*16*1.05=336, bags=ceil(336/25)=14
-      const mix = findMaterial(r, "Выравнивающая");
-      expect(mix).toBeDefined();
-      expect(mix!.purchaseQty).toBe(14);
-      expect(r.totals.area).toBe(20);
-    });
+describe('Наливной пол', () => {
+  it('декларирует formulaVersion для canonical self-leveling', () => {
+    expect(selfLevelingDef.formulaVersion).toBe('self-leveling-canonical-v1');
   });
 
-  describe("По площади", () => {
-    it("inputMode=1, area=20", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 0, bagWeight: 25 });
-      expect(r.totals.area).toBe(20);
-      expect(findMaterial(r, "мешки")!.purchaseQty).toBe(14);
-    });
+  it('добавляет предупреждение для тонкого слоя выравнивающей смеси', () => {
+    const result = calc({ inputMode: 1, area: 20, thickness: 4, mixtureType: 0, bagWeight: 25 });
+    expect(result.warnings.some((warning) => warning.includes('5 мм'))).toBe(true);
   });
+});
 
-  describe("Тип смеси", () => {
-    it("финишная — 1.4 кг/м²/мм", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 1, bagWeight: 25 });
-      // kgPerSqm=1.4*10=14, totalKg=20*14*1.05=294, bags=ceil(294/25)=12
-      expect(findMaterial(r, "Финишная")!.purchaseQty).toBe(12);
-    });
+runCanonicalParitySuite({
+  suiteName: 'Canonical self-leveling fixture parity',
+  cases: selfLevelingFixture.cases,
+  calculate: calc,
+  assertCase(result, expected) {
+    expect(result.formulaVersion).toBe(expected.formulaVersion);
+    expect(result.totals.area).toBeCloseTo(expected.area, 0.05);
+    expect(result.totals.perimeter).toBeCloseTo(expected.perimeter, 0.05);
+    expect(result.warnings).toHaveLength(expected.warningsCount);
 
-    it("быстросхватывающаяся — 1.8 кг/м²/мм", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 2, bagWeight: 25 });
-      // kgPerSqm=1.8*10=18, totalKg=20*18*1.05=378, bags=ceil(378/25)=16
-      expect(findMaterial(r, "Быстросхватывающ")!.purchaseQty).toBe(16);
-    });
-  });
+    const recScenario = result.scenarios.REC;
+    expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
+    expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 0.00001);
+    expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 0.00001);
 
-  describe("Сопутствующие материалы", () => {
-    it("грунтовка включена", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 0, bagWeight: 25 });
-      const primer = findMaterial(r, "Грунтовка");
-      expect(primer).toBeDefined();
-      // primerL=20*0.15=3, cans=ceil(3/5)=1
-      expect(primer!.purchaseQty).toBe(1);
-    });
+    expect(findMaterial(result, 'мешки')?.purchaseQty ?? findMaterial(result, 'смесь')?.purchaseQty).toBe(expected.materials.bags);
+    expect(findMaterial(result, 'Грунтовка')?.purchaseQty).toBe(expected.materials.primerCans);
+    expect(findMaterial(result, 'Демпферная')?.purchaseQty).toBe(expected.materials.tapeRolls);
 
-    it("демпферная лента включена", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 0, bagWeight: 25 });
-      const tape = findMaterial(r, "Демпферная");
-      expect(tape).toBeDefined();
-      // perimeter=ceil(sqrt(20)*4)=ceil(17.89)=18, rolls=ceil(18/25)=1
-      expect(tape!.purchaseQty).toBe(1);
-    });
-  });
-
-  describe("Предупреждения", () => {
-    it("толщина < 5 мм + выравнивающая → предупреждение", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 4, mixtureType: 0, bagWeight: 25 });
-      expect(r.warnings.some(w => w.includes("5 мм"))).toBe(true);
-    });
-
-    it("толщина > 30 мм + финишная → предупреждение", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 35, mixtureType: 1, bagWeight: 25 });
-      expect(r.warnings.some(w => w.includes("30 мм"))).toBe(true);
-    });
-
-    it("площадь > 30 м² → деформационные швы", () => {
-      const r = calc({ inputMode: 1, area: 40, thickness: 10, mixtureType: 0, bagWeight: 25 });
-      expect(r.warnings.some(w => w.includes("деформационных швов"))).toBe(true);
-    });
-  });
-
-  describe("Фасовка", () => {
-    it("мешки 20 кг → больше мешков", () => {
-      const r = calc({ inputMode: 1, area: 20, thickness: 10, mixtureType: 0, bagWeight: 20 });
-      // totalKg=336, bags=ceil(336/20)=17
-      expect(findMaterial(r, "мешки")!.purchaseQty).toBe(17);
-    });
-  });
+    checkInvariants(result);
+  },
 });

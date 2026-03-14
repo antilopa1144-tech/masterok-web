@@ -1,12 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ALL_CHECKLISTS, COMPLEXITY_LABELS } from "@/lib/checklists";
+import { ALL_CHECKLISTS } from "@/lib/checklists";
+import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Инструменты строителя — конвертер, площадь, чек-листы | Мастерок",
+const META = {
+  title: `Инструменты строителя — конвертер, площадь, чек-листы | ${SITE_NAME}`,
   description: "Бесплатные инструменты для строительства и ремонта: конвертер единиц, расчёт площади комнаты, калькулятор и чек-листы работ.",
-};
+} as const;
+
+const PAGE_URL = `${SITE_URL}/instrumenty/`;
+
+export const metadata: Metadata = buildPageMetadata({
+  title: META.title,
+  description: META.description,
+  url: PAGE_URL,
+});
+
+const UI_TEXT = {
+  heroBadge: "Инструменты строителя",
+  heroTitle: "Полезные инструменты",
+  heroDescription: "Конвертер единиц, расчёт площади нестандартных помещений, калькулятор и чек-листы работ — всё для стройки и ремонта.",
+  previewTitle: "Чек-листы работ",
+  previewLink: "Все чек-листы →",
+  checklistItemsSuffix: "пунктов",
+  checklistTemplatesSuffix: "шаблонов",
+} as const;
 
 const TOOLS = [
   {
@@ -41,7 +62,7 @@ const TOOLS = [
     icon: "checklist",
     title: "Чек-листы работ",
     desc: "Готовые пошаговые чек-листы для ремонта и строительства. Скачать и распечатать.",
-    badge: `${ALL_CHECKLISTS.length} шаблонов`,
+    badge: `${ALL_CHECKLISTS.length} ${UI_TEXT.checklistTemplatesSuffix}`,
     color: "#8B5CF6",
     bg: "#EDE9FE",
   },
@@ -56,14 +77,13 @@ export default function InstrumentyPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-3 py-1.5 rounded-full border border-accent-200 dark:border-accent-800/40 mb-4">
               <CategoryIcon icon="wrench" size={16} />
-              <span>Инструменты строителя</span>
+              <span>{UI_TEXT.heroBadge}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-3">
-              Полезные инструменты
+              {UI_TEXT.heroTitle}
             </h1>
             <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed">
-              Конвертер единиц, расчёт площади нестандартных помещений, калькулятор
-              и чек-листы работ — всё для стройки и ремонта.
+              {UI_TEXT.heroDescription}
             </p>
           </div>
         </div>
@@ -108,9 +128,9 @@ export default function InstrumentyPage() {
       {/* Чек-листы превью */}
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Чек-листы работ</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{UI_TEXT.previewTitle}</h2>
           <Link href="/instrumenty/chek-listy/" className="text-sm text-accent-600 hover:text-accent-700 font-medium">
-            Все чек-листы →
+            {UI_TEXT.previewLink}
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -132,7 +152,7 @@ export default function InstrumentyPage() {
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
-                  {cl.totalItems} пунктов
+                  {cl.totalItems} {UI_TEXT.checklistItemsSuffix}
                 </span>
                 <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
                   {cl.duration}
@@ -146,7 +166,7 @@ export default function InstrumentyPage() {
                       : "bg-red-50 text-red-700"
                   }`}
                 >
-                  {COMPLEXITY_LABELS[cl.complexity]}
+                  {CHECKLIST_COMPLEXITY_LABELS[cl.complexity]}
                 </span>
               </div>
             </Link>
@@ -156,3 +176,8 @@ export default function InstrumentyPage() {
     </>
   );
 }
+
+
+
+
+

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- noscript tracking pixel must stay a plain img */
+
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
@@ -46,7 +48,6 @@ export default function YandexMetrika() {
         }}
       />
       <noscript>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <div>
           <img
             src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}

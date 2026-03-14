@@ -1,14 +1,21 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import factorTables from "../../../../configs/factor-tables.json";
+import paintCanonicalSpecJson from "../../../../configs/calculators/paint-canonical.v1.json";
+import { computeCanonicalPaint } from "../../../../engine/paint";
+import type { PaintCanonicalSpec } from "../../../../engine/canonical";
+
+const paintCanonicalSpec = paintCanonicalSpecJson as PaintCanonicalSpec;
 
 export const paintDef: CalculatorDefinition = {
   id: "paint",
   slug: "kraska",
+  formulaVersion: paintCanonicalSpec.formula_version,
   title: "Калькулятор краски",
   h1: "Калькулятор краски онлайн — расчёт количества краски для стен и потолка",
   description: "Рассчитайте точное количество краски для стен, потолка или фасада. Учёт количества слоёв и типа поверхности.",
-  metaTitle: "Калькулятор краски онлайн | Расчёт краски — Мастерок",
-  metaDescription: "Бесплатный калькулятор краски: рассчитайте литраж краски для стен и потолка с учётом количества слоёв, впитываемости и площади.",
+  metaTitle: withSiteMetaTitle("Калькулятор краски онлайн | Расчёт краски"),
+  metaDescription: "Бесплатный калькулятор краски: рассчитайте литры краски для стен, потолка или фасада с учётом количества слоёв, впитываемости основания и типа поверхности.",
   category: "interior",
   categorySlug: "otdelka",
   tags: ["краска", "покраска", "стены", "потолок", "фасад", "расход краски"],
@@ -49,6 +56,28 @@ export const paintDef: CalculatorDefinition = {
       ],
     },
     {
+      key: "surfacePrep",
+      label: "Подготовка основания",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Загрунтованная поверхность" },
+        { value: 1, label: "Новая необработанная" },
+        { value: 2, label: "Ранее окрашенная" },
+      ],
+    },
+    {
+      key: "colorIntensity",
+      label: "Насыщенность цвета",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Светлый / белый" },
+        { value: 1, label: "Яркий / насыщенный" },
+        { value: 2, label: "Тёмный" },
+      ],
+    },
+    {
       key: "consumption",
       label: "Расход краски (на упаковке)",
       type: "slider",
@@ -61,171 +90,73 @@ export const paintDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const area = Math.max(1, inputs.area ?? 40);
-    const coats = Math.round(Math.max(1, Math.min(3, inputs.coats ?? 2)));
-    const surfaceType = Math.round(inputs.surfaceType ?? 0);
-    const consumption = Math.max(5, inputs.consumption ?? 10); // м²/л
-
-    // Коэффициент для типа поверхности
-    const surfaceCoeff: Record<number, number> = {
-      0: 1.0,  // гладкая
-      1: 1.15, // бетон/штукатурка
-      2: 1.30, // пористая
-      3: 1.10, // дерево
-    };
-    const coeff = surfaceCoeff[surfaceType] ?? 1.0;
-
-    const litersNeeded = (area / consumption) * coats * coeff;
-    const litersWithReserve = litersNeeded * 1.10; // +10% запас
-
-    // Тара: 3 л, 5 л, 10 л, 15 л — берём оптимальную
-    const sizes = [3, 5, 10, 15];
-    let bestCans = 0;
-    let bestSize = 5;
-    for (const size of sizes) {
-      const cans = Math.ceil(litersWithReserve / size);
-      if (bestCans === 0 || cans * size < bestCans * bestSize) {
-        bestCans = cans;
-        bestSize = size;
-      }
-    }
-
-    // Грунтовка: 1 слой, ~8–12 м²/л
-    const primerLiters = Math.ceil((area / 10) * 1.10);
-
-    const warnings: string[] = [];
-    if (surfaceType >= 2) warnings.push("Для пористых поверхностей: обязательно нанесите грунтовку перед покраской");
-    if (coats === 1) warnings.push("Один слой не обеспечит равномерного покрытия. Рекомендуется 2 слоя");
-
-    const scenarios = buildNativeScenarios({
-      id: "paint-main",
-      title: "Paint main",
-      exactNeed: litersWithReserve,
-      unit: "л",
-      packageSizes: sizes,
-      packageLabelPrefix: "paint-can",
-    });
-
-    return {
-      materials: [
-        {
-          name: `Краска (банки ${bestSize} л)`,
-          quantity: litersWithReserve / bestSize,
-          unit: "банок",
-          withReserve: bestCans,
-          purchaseQty: bestCans,
-          category: "Основное",
-        },
-        {
-          name: "Краска (литры)",
-          quantity: litersNeeded,
-          unit: "л",
-          withReserve: litersWithReserve,
-          purchaseQty: Math.ceil(litersWithReserve),
-          category: "Основное",
-        },
-        {
-          name: "Грунтовка (банка 10 л)",
-          quantity: primerLiters / 10,
-          unit: "банок",
-          withReserve: Math.ceil(primerLiters / 10),
-          purchaseQty: Math.ceil(primerLiters / 10),
-          category: "Грунтовка",
-        },
-        {
-          name: "Валик малярный (микрофибра, 250 мм)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Кисть плоская (для углов, 50 мм)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Кювета (ванночка) для краски",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Перчатки х/б с ПВХ",
-          quantity: 2,
-          unit: "пары",
-          withReserve: 2,
-          purchaseQty: 2,
-          category: "Расходники",
-        },
-        {
-          name: "Малярная лента (рулон 50 м)",
-          quantity: Math.sqrt(area) * 4 / 50,
-          unit: "рулон",
-          withReserve: (Math.sqrt(area) * 4 * 1.1) / 50,
-          purchaseQty: Math.max(1, Math.ceil((Math.sqrt(area) * 4 * 1.1) / 50)),
-          category: "Расходники",
-        },
-        {
-          name: "Плёнка защитная (рулон 30 м²)",
-          quantity: area / 30,
-          unit: "рулон",
-          withReserve: (area * 1.1) / 30,
-          purchaseQty: Math.max(1, Math.ceil((area * 1.1) / 30)),
-          category: "Расходники",
-        },
-      ],
-      totals: {
-        area,
-        litersNeeded,
-        litersWithReserve,
-        coats,
+    return computeCanonicalPaint(
+      paintCanonicalSpec,
+      {
+        inputMode: inputs.inputMode,
+        area: inputs.area,
+        wallArea: inputs.wallArea,
+        ceilingArea: inputs.ceilingArea,
+        roomWidth: inputs.roomWidth,
+        roomLength: inputs.roomLength,
+        roomHeight: inputs.roomHeight,
+        length: inputs.length,
+        width: inputs.width,
+        height: inputs.height,
+        openingsArea: inputs.openingsArea,
+        doorsWindows: inputs.doorsWindows,
+        paintType: inputs.paintType ?? 0,
+        surfaceType: inputs.surfaceType,
+        surfacePrep: inputs.surfacePrep ?? 0,
+        colorIntensity: inputs.colorIntensity ?? 0,
+        coats: inputs.coats,
+        coverage: inputs.coverage ?? inputs.consumption,
+        canSize: inputs.canSize,
       },
-      warnings,
-      scenarios,
-    };
+      factorTables.factors,
+    );
   },
   formulaDescription: `
-**Расчёт краски (практика РФ):**
+**Расчёт краски:**
+Литры = Площадь × Количество слоёв × Поправка поверхности × Поправка основания × Поправка цвета / Укрывистость
 
-1. **Расход**: Зависит от укрывистости краски и впитываемости основания.
-2. **Слои**: Минимум 2 слоя для равномерного цвета.
-3. **Инструмент**: Для водно-дисперсионных красок лучше использовать валики из микрофибры или полиамида с ворсом 9-12 мм.
-4. **Защита**: Малярная лента и пленка — обязательны, чтобы не тратить время на отмывание капель.
+Сценарии MIN/REC/MAX добавляют реальные факторы потерь, упаковки и условий работ.
   `,
   howToUse: [
-    "Введите площадь стен или потолка",
+    "Введите площадь стен, потолка или фасада",
     "Укажите количество слоёв и тип поверхности",
-    "Введите расход с банки (обычно 10-12 м2/л)",
-    "Нажмите «Рассчитать» — получите список материалов и инструментов",
+    "Введите укрывистость с банки (обычно 8–14 м²/л)",
+    "Нажмите «Рассчитать» — получите краску, грунтовку и расходники",
   ],
   expertTips: [
     {
       title: "Выбор валика",
-      content: "Не покупайте дешевые поролоновые валики — они оставляют пузырьки воздуха на краске. Берите валик с ворсом из микрофибры, он дает самую гладкую поверхность.",
-      author: "Мастер-маляр"
+      content: "Для водно-дисперсионных красок лучше использовать валик из микрофибры или полиамида с ворсом 9-12 мм.",
+      author: "Мастер-маляр",
     },
     {
       title: "Проверка цвета",
-      content: "Всегда делайте «выкрас» на небольшом участке стены. Цвет в банке и на стене при разном освещении может сильно отличаться.",
-      author: "Дизайнер"
-    }
+      content: "Всегда делайте выкрас на небольшом участке стены. Цвет на стене и в банке может отличаться при разном освещении.",
+      author: "Дизайнер",
+    },
   ],
   faq: [
     {
       question: "Нужно ли грунтовать перед покраской?",
-      answer: "Обязательно! Грунтовка выравнивает впитываемость стены. Без неё краска ляжет пятнами, а расход увеличится в 1.5 раза."
+      answer: "Да, перед покраской основание обычно грунтуют, потому что грунтовка выравнивает впитываемость, улучшает сцепление краски с поверхностью и уменьшает риск пятен, полос и перерасхода материала уже на первом слое. Особенно заметен эффект на пористых, неоднородных, недавно зашпаклёванных или локально отремонтированных основаниях, где без грунта покрытие часто ложится неравномерно и итоговый расход краски оказывается заметно выше расчётного.",
     },
     {
-      question: "Как хранить начатую банку?",
-      answer: "Плотно закройте крышку и переверните банку на 10 секунд, чтобы краска загерметизировала щели. Храните только при плюсовой температуре."
-    }
-  ]
+      question: "Почему калькулятор показывает три сценария?",
+      answer: "MIN, REC и MAX позволяют заранее увидеть расход краски в идеальных, рабочих и консервативных условиях, а не ориентироваться только на одну усреднённую цифру, которая редко совпадает с реальностью на объекте. Так проще выбрать безопасный объём закупки с учётом впитываемости основания, потерь при нанесении, количества слоёв и того, как теоретический расход переводится в реальные фасовки банок, особенно если выбранный цвет укрывистый не с первого прохода.",
+    },
+  ],
 };
+
+
+
+
+
+
+
+
 

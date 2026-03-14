@@ -1,0 +1,70 @@
+{
+  "calculator_id": "wallpaper",
+  "formula_version": "wallpaper-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "perimeter", "unit": "m", "default_value": 14, "min": 1, "max": 200 },
+    { "key": "area", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
+    { "key": "roomWidth", "unit": "m", "default_value": 4, "min": 1, "max": 50 },
+    { "key": "roomLength", "unit": "m", "default_value": 5, "min": 1, "max": 50 },
+    { "key": "roomHeight", "unit": "m", "default_value": 2.7, "min": 2, "max": 5 },
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 50 },
+    { "key": "width", "unit": "m", "default_value": 4, "min": 1, "max": 50 },
+    { "key": "height", "unit": "m", "default_value": 2.7, "min": 2, "max": 5 },
+    { "key": "wallHeight", "unit": "m", "default_value": 2.7, "min": 2, "max": 5 },
+    { "key": "openingsArea", "unit": "m2", "default_value": 0, "min": 0, "max": 500 },
+    { "key": "doorsCount", "default_value": 0, "min": 0, "max": 20 },
+    { "key": "windowsCount", "default_value": 0, "min": 0, "max": 20 },
+    { "key": "rollWidth", "unit": "m", "default_value": 0.53, "min": 0.5, "max": 1.2 },
+    { "key": "rollLength", "unit": "m", "default_value": 10.05, "min": 5, "max": 50 },
+    { "key": "rapport", "unit": "cm", "default_value": 0, "min": 0, "max": 100 },
+    { "key": "wallpaperType", "default_value": 1, "min": 1, "max": 3 },
+    { "key": "reservePercent", "default_value": 0, "min": 0, "max": 100 },
+    { "key": "reserveRolls", "default_value": 0, "min": 0, "max": 10 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "surface_quality",
+      "geometry_complexity",
+      "installation_method",
+      "worker_skill"
+    ]
+  },
+  "normative_formula": {
+    "wallpaper_types": [
+      { "id": 1, "key": "paper", "label": "Бумажные обои", "paste_kg_per_m2": 0.005 },
+      { "id": 2, "key": "vinyl", "label": "Виниловые обои", "paste_kg_per_m2": 0.01 },
+      { "id": 3, "key": "fleece", "label": "Флизелиновые обои", "paste_kg_per_m2": 0.008 }
+    ],
+    "opening_defaults": {
+      "door_area_m2": 1.71,
+      "window_area_m2": 1.68
+    }
+  },
+  "packaging_rules": {
+    "roll_unit": "рулонов",
+    "roll_package_size": 1,
+    "paste_pack_kg": 0.25,
+    "primer_can_l": 5
+  },
+  "material_rules": {
+    "trim_allowance_m": 0.05,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve_factor": 1.1,
+    "paste_reserve_factor": 1.1,
+    "glue_roller_count": 1,
+    "wallpaper_spatula_count": 1,
+    "knife_count": 1,
+    "blades_pack_count": 1,
+    "bucket_count": 1,
+    "sponge_count": 2
+  },
+  "warnings_rules": {
+    "large_rapport_threshold_m": 0.32,
+    "wide_roll_threshold_m": 0.7,
+    "low_strips_per_roll_threshold": 2
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

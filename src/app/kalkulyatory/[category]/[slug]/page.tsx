@@ -7,7 +7,23 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Suspense } from "react";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 
+const UI_TEXT = {
+  rootBreadcrumb: "Калькуляторы",
+  defaultCategoryLabel: "Калькулятор",
+  complexityLabels: ["Простой", "Стандартный", "Детальный"] as const,
+  standardsBadge: "По ГОСТ и СНиП",
+  formulasTitle: "Формулы и нормы расчёта",
+  howToUseTitle: "Как пользоваться калькулятором",
+  faqTitle: "Частые вопросы",
+  appPromoTitle: `📱 ${SITE_NAME} для Android`,
+  appPromoDescription: "50+ калькуляторов в одном приложении. Работает без интернета. Сохраняйте расчёты и создавайте проекты.",
+  appPromoLink: "Узнать подробнее",
+  relatedTitle: "Похожие калькуляторы",
+  maybeUsefulTitle: "Может пригодиться",
+} as const;
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -27,15 +43,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const calc = getCalculatorBySlug(slug);
   if (!calc) return {};
 
-  return {
+  const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
+
+  return buildPageMetadata({
     title: calc.metaTitle,
     description: calc.metaDescription,
-    openGraph: {
-      title: calc.metaTitle,
-      description: calc.metaDescription,
-      type: "website",
-    },
-  };
+    url: canonicalUrl,
+  });
 }
 
 export default async function CalculatorPage({ params }: PageProps) {
@@ -55,15 +69,18 @@ export default async function CalculatorPage({ params }: PageProps) {
   const accentBg = category?.bgColor ?? "#fff7ed";
   const heroStyle = { "--accent-hero-bg": accentBg } as Record<string, string>;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  const baseUrl = SITE_URL;
+  const canonicalUrl = `${baseUrl}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
 
   // Структурированные данные — приложение
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: calc.metaTitle,
+    name: calc.title,
     description: calc.metaDescription,
-    url: `${baseUrl}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`,
+    alternateName: calc.h1,
+    keywords: calc.tags.join(", "),
+    url: canonicalUrl,
     applicationCategory: "UtilitiesApplication",
     operatingSystem: "Web",
     inLanguage: "ru",
@@ -82,7 +99,7 @@ export default async function CalculatorPage({ params }: PageProps) {
       {
         "@type": "ListItem",
         position: 1,
-        name: "Калькуляторы",
+        name: UI_TEXT.rootBreadcrumb,
         item: `${baseUrl}/`,
       },
       ...(category
@@ -117,6 +134,23 @@ export default async function CalculatorPage({ params }: PageProps) {
     }))
   } : null;
 
+  // HowTo микроразметка
+  const howToLd = calc.howToUse && calc.howToUse.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": calc.title,
+    "description": calc.metaDescription,
+    "inLanguage": "ru",
+    "url": canonicalUrl,
+    "step": calc.howToUse.map((step, i) => ({
+      "@type": "HowToStep",
+      "position": i + 1,
+      "name": `Шаг ${i + 1}`,
+      "text": step,
+      "url": `${canonicalUrl}#${calc.id}-step-${i + 1}`,
+    })),
+  } : null;
+
   return (
     <>
       <script
@@ -127,6 +161,12 @@ export default async function CalculatorPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {howToLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
+        />
+      )}
       {faqLd && (
         <script
           type="application/ld+json"
@@ -143,7 +183,7 @@ export default async function CalculatorPage({ params }: PageProps) {
           {/* Хлебные крошки */}
           <Breadcrumbs
             items={[
-              { href: "/", label: "Калькуляторы" },
+              { href: "/", label: UI_TEXT.rootBreadcrumb },
               ...(category ? [{ href: `/kalkulyatory/${category.slug}/`, label: category.label }] : []),
               { label: calc.title },
             ]}
@@ -172,13 +212,13 @@ export default async function CalculatorPage({ params }: PageProps) {
                   className="badge text-white"
                   style={{ backgroundColor: accentColor }}
                 >
-                  {category?.label ?? "Калькулятор"}
+                  {category?.label ?? UI_TEXT.defaultCategoryLabel}
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  {["Простой", "Стандартный", "Детальный"][calc.complexity - 1]}
+                  {UI_TEXT.complexityLabels[calc.complexity - 1]}
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  По ГОСТ и СНиП
+                  {UI_TEXT.standardsBadge}
                 </span>
               </div>
             </div>
@@ -197,7 +237,7 @@ export default async function CalculatorPage({ params }: PageProps) {
               slug: calc.slug,
               title: calc.title,
               h1: calc.h1,
-              description: calc.description,
+              description: calc.metaDescription,
               metaTitle: calc.metaTitle,
               metaDescription: calc.metaDescription,
               category: calc.category,
@@ -215,7 +255,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             {calc.formulaDescription && (
               <div className="card p-6">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  Формулы и нормы расчёта
+                  {UI_TEXT.formulasTitle}
                 </h2>
                 <div className="prose prose-sm max-w-none text-slate-600 dark:text-slate-300">
                   <pre className="whitespace-pre-wrap text-sm font-normal leading-relaxed bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
@@ -229,11 +269,11 @@ export default async function CalculatorPage({ params }: PageProps) {
             {calc.howToUse && calc.howToUse.length > 0 && (
               <div className="card p-6">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  Как пользоваться калькулятором
+                  {UI_TEXT.howToUseTitle}
                 </h2>
                 <ol className="space-y-2">
                   {calc.howToUse.map((step, i) => (
-                    <li key={i} className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
+                    <li id={`${calc.id}-step-${i + 1}`} key={i} className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
                       <span
                         className="flex w-6 h-6 rounded-full text-xs font-bold items-center justify-center shrink-0 mt-0.5 text-white"
                         style={{ backgroundColor: accentColor }}
@@ -246,19 +286,43 @@ export default async function CalculatorPage({ params }: PageProps) {
                 </ol>
               </div>
             )}
+
+            {/* FAQ */}
+            {calc.faq && calc.faq.length > 0 && (
+              <div className="card p-6">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  {UI_TEXT.faqTitle}
+                </h2>
+                <div className="space-y-3">
+                  {calc.faq.map((item, i) => (
+                    <details
+                      key={`${calc.id}-faq-${i}`}
+                      className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
+                    >
+                      <summary className="relative cursor-pointer list-none pr-6 font-medium text-slate-900 dark:text-slate-100">
+                        {item.question}
+                        <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">+</span>
+                      </summary>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                        {item.answer}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Правая колонка */}
           <div className="space-y-4">
             {/* Скачать приложение */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">📱 Мастерок для Android</h3>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.appPromoTitle}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
-                50+ калькуляторов в одном приложении. Работает без интернета.
-                Сохраняйте расчёты и создавайте проекты.
+                {UI_TEXT.appPromoDescription}
               </p>
               <Link href="/prilozhenie/" className="btn-secondary text-sm w-full text-center">
-                Узнать подробнее
+                {UI_TEXT.appPromoLink}
               </Link>
             </div>
 
@@ -266,7 +330,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             {related.length > 0 && (
               <div className="card p-5">
                 <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                  Похожие калькуляторы
+                  {UI_TEXT.relatedTitle}
                 </h3>
                 <div className="space-y-2">
                   {related.map((r) => (
@@ -292,7 +356,7 @@ export default async function CalculatorPage({ params }: PageProps) {
         {related.length > 0 && (
           <div className="mt-10">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-              Может пригодиться
+              {UI_TEXT.maybeUsefulTitle}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {related.map((r) => {
@@ -331,3 +395,13 @@ export default async function CalculatorPage({ params }: PageProps) {
     </>
   );
 }
+
+
+
+
+
+
+
+
+
+

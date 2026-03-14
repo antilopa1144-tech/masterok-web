@@ -476,8 +476,4 @@ export const ALL_CHECKLISTS: Checklist[] = [
 export const getChecklistBySlug = (slug: string): Checklist | undefined =>
   ALL_CHECKLISTS.find((c) => c.slug === slug);
 
-export const COMPLEXITY_LABELS: Record<number, string> = {
-  1: "Начинающий",
-  2: "Средний уровень",
-  3: "Профессиональный",
-};
+

@@ -1,14 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { puttyDef } from "../formulas/putty";
 import { findMaterial, checkInvariants } from "./_helpers";
+import parityFixture from "../../../../tests/fixtures/putty-canonical-parity.json";
 
 const calc = puttyDef.calculate.bind(puttyDef);
 
 describe("Калькулятор шпаклёвки", () => {
-  describe("Только финишная, стены, 5×4×2.7 м, мешок 20 кг", () => {
-    // wallsArea = 2*(5+4)*2.7 = 48.6
-    // finishKg = 48.6 * 1.1 * 1.1 = 58.806
-    // finishBags = ceil(58.806/20) = ceil(2.94) = 3
+  describe("Только финишная, стены, 5x4x2.7 м, мешок 20 кг", () => {
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -46,7 +44,6 @@ describe("Калькулятор шпаклёвки", () => {
   });
 
   describe("Стартовая + финишная", () => {
-    // startKg = 48.6 * 2.7 * 1.1 = 144.342 → bags = ceil(144.342/20) = ceil(7.22) = 8
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -89,8 +86,6 @@ describe("Калькулятор шпаклёвки", () => {
   });
 
   describe("Потолок", () => {
-    // ceilArea = 5*4 = 20
-    // finishKg = 20 * 1.1 * 1.1 = 24.2 → bags = ceil(24.2/20) = 2
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -111,14 +106,13 @@ describe("Калькулятор шпаклёвки", () => {
     });
   });
 
-  describe("Большая площадь → предупреждение о механизации", () => {
-    it("площадь > 100 м² → предупреждение", () => {
+  describe("Большая площадь -> предупреждение о механизации", () => {
+    it("площадь > 100 м² -> предупреждение", () => {
       const result = calc({ inputMode: 1, area: 120, surface: 0, puttyType: 0, bagWeight: 20 });
-      expect(result.warnings.some((w) => w.includes("механизированным"))).toBe(true);
+      expect(result.warnings.some((warning) => warning.includes("механизированным"))).toBe(true);
     });
   });
 });
-
 
 describe("Сценарный контракт shared engine", () => {
   it("сценарии MIN/REC/MAX присутствуют и упорядочены", () => {
@@ -137,4 +131,86 @@ describe("Сценарный контракт shared engine", () => {
     expect((rec?.purchase_quantity ?? 0)).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
     expect(rec?.buy_plan.package_size).toBe(25);
   });
+
+  it("поддерживает отдельные startLayers и finishLayers", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 20,
+      puttyType: 1,
+      bagWeight: 20,
+      qualityClass: 2,
+      startLayers: 3,
+      finishLayers: 1,
+    });
+
+    expect(result.totals.startLayers).toBe(3);
+    expect(result.totals.finishLayers).toBe(1);
+    expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(115.753, 2);
+    expect(findMaterial(result, "стартовая")?.purchaseQty).toBe(5);
+    expect(findMaterial(result, "финишная")?.purchaseQty).toBe(1);
+  });
 });
+
+describe("Canonical putty fixture parity", () => {
+  const cases = parityFixture.cases as Array<{
+    id: string;
+    inputs: Record<string, number>;
+    expected: {
+      wallArea: number;
+      formulaVersion: string;
+      materials: Record<string, number>;
+      warningsCount: number;
+      recScenario: {
+        packageSize: number;
+        exactNeed: number;
+        purchaseQuantity: number;
+      };
+    };
+  }>;
+
+  for (const fixtureCase of cases) {
+    it(fixtureCase.id, () => {
+      const result = calc(fixtureCase.inputs);
+
+      expect(result.formulaVersion).toBe(fixtureCase.expected.formulaVersion);
+      expect(result.totals.wallArea).toBeCloseTo(fixtureCase.expected.wallArea, 1);
+      expect(result.warnings).toHaveLength(fixtureCase.expected.warningsCount);
+      expect(result.scenarios?.REC.buy_plan.package_size).toBe(fixtureCase.expected.recScenario.packageSize);
+      expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.exactNeed, 1);
+      expect(result.scenarios?.REC.purchase_quantity ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.purchaseQuantity, 1);
+
+      if (fixtureCase.expected.materials.finishBags !== undefined) {
+        expect(findMaterial(result, "финишная")?.purchaseQty).toBe(fixtureCase.expected.materials.finishBags);
+      }
+      if (fixtureCase.expected.materials.startBags !== undefined) {
+        expect(findMaterial(result, "стартовая")?.purchaseQty).toBe(fixtureCase.expected.materials.startBags);
+      }
+      if (fixtureCase.expected.materials.primerCans !== undefined) {
+        expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(fixtureCase.expected.materials.primerCans);
+      }
+      if (fixtureCase.expected.materials.serpyankaRolls !== undefined) {
+        expect(findMaterial(result, "Серпянка")?.purchaseQty).toBe(fixtureCase.expected.materials.serpyankaRolls);
+      }
+      if (fixtureCase.expected.materials.sandpaperSheets !== undefined) {
+        expect(findMaterial(result, "Наждачная")?.purchaseQty).toBe(fixtureCase.expected.materials.sandpaperSheets);
+      }
+    });
+  }
+});
+
+describe("Canonical qualityClass profiles", () => {
+  it("поддерживает canonical qualityClass без изменения web default профиля", () => {
+    const legacy = calc({ inputMode: 1, area: 20, puttyType: 2, bagWeight: 20 });
+    const standard = calc({ inputMode: 1, area: 20, puttyType: 2, bagWeight: 20, qualityClass: 2 });
+    const recMultiplier = standard.scenarios?.REC.key_factors.field_multiplier ?? 1;
+
+    expect(legacy.totals.qualityClass).toBe(0);
+    expect(standard.totals.qualityClass).toBe(2);
+    expect(standard.scenarios?.REC.exact_need ?? 0).toBeCloseTo(20 * 1.5 * 2 * recMultiplier, 2);
+    expect(standard.scenarios?.REC.exact_need ?? 0).not.toBeCloseTo(legacy.scenarios?.REC.exact_need ?? 0, 2);
+  });
+});
+
+
+
+

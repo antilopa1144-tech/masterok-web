@@ -3,6 +3,26 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 
+const UI_TEXT = {
+  breadcrumbHome: "Главная",
+  breadcrumbTools: "Инструменты",
+  breadcrumbCurrent: "Площадь комнаты",
+  pageTitle: "Калькулятор площади комнаты",
+  pageDescription: "Рассчитайте площадь пола, периметр и площадь стен для помещений любой формы.",
+  defaultLengthUnit: "м",
+  onlyFloorHint: "Оставьте 0, если нужна только площадь пола",
+  shapeTitle: "Форма помещения",
+  dimensionsTitle: "Размеры",
+  calculate: "Рассчитать",
+  resultTitle: "Результат",
+  floorAreaLabel: "Площадь пола",
+  perimeterLabel: "Периметр",
+  wallAreaLabel: "Площадь стен",
+  lshapeNotes: "Периметр — приближённый. Уточните по чертежу.",
+  tshapeNotes: "Площадь трёх секций. Периметр — приближённый.",
+  triangleNotes: "Периметр — для равнобедренного треугольника.",
+} as const;
+
 type ShapeType = "rect" | "lshape" | "tshape" | "trapezoid" | "triangle" | "circle";
 
 interface ShapeOption {
@@ -30,7 +50,7 @@ function NumInput({
   label,
   value,
   onChange,
-  unit = "м",
+  unit = UI_TEXT.defaultLengthUnit,
   hint,
 }: {
   label: string;
@@ -99,7 +119,7 @@ export default function PloshadKomnatyPage() {
         const A = n(a), B = n(b), C = n(c), D = n(d);
         floor = A * B - C * D;
         perim = 2 * (A + B); // приближение
-        notes = "Периметр — приближённый. Уточните по чертежу.";
+        notes = UI_TEXT.lshapeNotes;
         break;
       }
       case "tshape": {
@@ -107,7 +127,7 @@ export default function PloshadKomnatyPage() {
         const A = n(a), B = n(b), C = n(c), D = n(d), E = n(e), F = n(f);
         floor = A * B + C * D + E * F;
         perim = 2 * (A + B + C + D); // приближение
-        notes = "Площадь трёх секций. Периметр — приближённый.";
+        notes = UI_TEXT.tshapeNotes;
         break;
       }
       case "trapezoid": {
@@ -122,7 +142,7 @@ export default function PloshadKomnatyPage() {
         const base = n(a), height = n(b);
         floor = 0.5 * base * height;
         perim = base + 2 * Math.sqrt((base / 2) ** 2 + height ** 2); // равнобедренный
-        notes = "Периметр — для равнобедренного треугольника.";
+        notes = UI_TEXT.triangleNotes;
         break;
       }
       case "circle": {
@@ -151,23 +171,23 @@ export default function PloshadKomnatyPage() {
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
-        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
         <span>/</span>
-        <span className="text-slate-600 dark:text-slate-300">Площадь комнаты</span>
+        <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
       <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
-        Калькулятор площади комнаты
+        {UI_TEXT.pageTitle}
       </h1>
       <p className="text-slate-500 dark:text-slate-400 mb-8">
-        Рассчитайте площадь пола, периметр и площадь стен для помещений любой формы.
+        {UI_TEXT.pageDescription}
       </p>
 
       {/* Выбор формы */}
       <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">Форма помещения</p>
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">{UI_TEXT.shapeTitle}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {SHAPES.map((s) => (
             <button
@@ -196,7 +216,7 @@ export default function PloshadKomnatyPage() {
 
       {/* Параметры */}
       <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">Размеры</p>
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">{UI_TEXT.dimensionsTitle}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {shape === "rect" && (
             <>
@@ -247,24 +267,22 @@ export default function PloshadKomnatyPage() {
             label="Высота стен (для расчёта площади стен)"
             value={wallHeight}
             onChange={setWallHeight}
-            hint="Оставьте 0, если нужна только площадь пола"
+            hint={UI_TEXT.onlyFloorHint}
           />
         </div>
 
-        <button onClick={calculate} className="btn-primary w-full mt-5">
-          Рассчитать
-        </button>
+        <button onClick={calculate} className="btn-primary w-full mt-5">{UI_TEXT.calculate}</button>
       </div>
 
       {/* Результат */}
       {result && (
         <div className="result-card">
-          <h3 className="text-base font-semibold text-white mb-4">Результат</h3>
+          <h3 className="text-base font-semibold text-white mb-4">{UI_TEXT.resultTitle}</h3>
           <div className="grid grid-cols-2 gap-3">
-            <ResultItem label="Площадь пола" value={fmtM(result.floorArea)} unit="м²" />
-            <ResultItem label="Периметр" value={fmtM(result.perimeter)} unit="м" />
+            <ResultItem label={UI_TEXT.floorAreaLabel} value={fmtM(result.floorArea)} unit="м²" />
+            <ResultItem label={UI_TEXT.perimeterLabel} value={fmtM(result.perimeter)} unit="м" />
             {result.wallArea !== undefined && result.wallArea > 0 && (
-              <ResultItem label="Площадь стен" value={fmtM(result.wallArea)} unit="м²" />
+              <ResultItem label={UI_TEXT.wallAreaLabel} value={fmtM(result.wallArea)} unit="м²" />
             )}
           </div>
           {result.notes && (

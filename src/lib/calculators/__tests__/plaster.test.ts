@@ -48,7 +48,7 @@ describe("Калькулятор штукатурки", () => {
     });
   });
 
-  describe("Цементная штукатурка: расход 15 кг/м² на 10 мм", () => {
+  describe("Цементная штукатурка: canonical расход 17 кг/м² на 10 мм", () => {
     // netArea ≈ 43.6, thickness=15, kgPerSqm=15*1.5=22.5
     // totalKg = 43.6*22.5*1.1 = 1079.1 → bags=ceil(1079.1/30)=36
     const result = calc({
@@ -106,3 +106,51 @@ describe("Калькулятор штукатурки", () => {
     });
   });
 });
+
+it("декларирует formulaVersion для canonical plaster", () => {
+  expect(plasterDef.formulaVersion).toBe("plaster-canonical-v1");
+});
+
+describe("Canonical plaster fixture parity", () => {
+  const parityFixture = require("../../../../tests/fixtures/plaster-canonical-parity.json") as {
+    cases: Array<{
+      id: string;
+      inputs: Record<string, number>;
+      expected: {
+        formulaVersion: string;
+        netArea: number;
+        totalKg: number;
+        warningsCount: number;
+        materials: {
+          plasterBags: number;
+          primerPackages: number;
+          beacons: number;
+          hasMesh: number;
+        };
+        recScenario: {
+          packageSize: number;
+          exactNeed: number;
+          purchaseQuantity: number;
+        };
+      };
+    }>;
+  };
+
+  for (const fixtureCase of parityFixture.cases) {
+    it(fixtureCase.id, () => {
+      const result = calc(fixtureCase.inputs);
+      expect(result.formulaVersion).toBe(fixtureCase.expected.formulaVersion);
+      expect(result.totals.netArea).toBeCloseTo(fixtureCase.expected.netArea, 2);
+      expect(result.totals.totalKg).toBeCloseTo(fixtureCase.expected.totalKg, 2);
+      expect(result.warnings).toHaveLength(fixtureCase.expected.warningsCount);
+      expect(result.scenarios?.REC.buy_plan.package_size).toBe(fixtureCase.expected.recScenario.packageSize);
+      expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.exactNeed, 2);
+      expect(result.scenarios?.REC.purchase_quantity ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.purchaseQuantity, 2);
+      expect(result.materials.find((material) => material.category === "Основное")?.purchaseQty).toBe(fixtureCase.expected.materials.plasterBags);
+      expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(fixtureCase.expected.materials.primerPackages);
+      expect(findMaterial(result, "Маяки")?.purchaseQty).toBe(fixtureCase.expected.materials.beacons);
+      expect(Boolean(findMaterial(result, "Стеклосетка"))).toBe(Boolean(fixtureCase.expected.materials.hasMesh));
+    });
+  }
+});
+

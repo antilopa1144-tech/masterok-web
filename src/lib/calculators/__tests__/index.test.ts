@@ -6,6 +6,7 @@ import {
   getCalculatorsByCategory,
   getPopularCalculators,
 } from "../index";
+import { SITE_NAME } from "@/lib/site";
 
 describe("Индекс калькуляторов", () => {
   describe("ALL_CALCULATORS", () => {
@@ -155,3 +156,77 @@ describe("Индекс калькуляторов", () => {
     });
   });
 });
+
+describe("SEO метаданные калькуляторов", () => {
+  it("metaTitle оканчивается на бренд сайта", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.metaTitle.endsWith(`— ${SITE_NAME}`), `metaTitle без бренда у ${calc.id}`).toBe(true);
+    }
+  });
+
+  it("metaTitle не содержит жёсткий legacy-бренд в середине строки", () => {
+    for (const calc of ALL_CALCULATORS) {
+      const legacyCount = (calc.metaTitle.match(/Мастерок/g) ?? []).length;
+      expect(legacyCount, `дублированный бренд в metaTitle у ${calc.id}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("metaDescription заполнен и начинается с единого SEO-шаблона", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.metaDescription, `metaDescription пуст у ${calc.id}`).toBeTruthy();
+      expect(calc.metaDescription.startsWith("Бесплатный калькулятор"), `metaDescription выбивается из шаблона у ${calc.id}`).toBe(true);
+    }
+  });
+
+  it("metaDescription достаточно подробный для сниппета и заканчивается пунктуацией", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.metaDescription.length, `слишком короткий metaDescription у ${calc.id}`).toBeGreaterThanOrEqual(100);
+      expect(/[.!?]$/.test(calc.metaDescription), `metaDescription без завершающей пунктуации у ${calc.id}`).toBe(true);
+    }
+  });
+
+  it("metaDescription содержит явный пользовательский интент", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.metaDescription.toLowerCase().includes("рассчитайте"), `metaDescription без пользовательского интента у ${calc.id}`).toBe(true);
+    }
+  });
+
+  it("у каждого калькулятора есть FAQ минимум из двух вопросов", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.faq, `faq отсутствует у ${calc.id}`).toBeTruthy();
+      expect(calc.faq?.length, `faq слишком короткий у ${calc.id}`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("FAQ содержит заполненные вопросы и ответы", () => {
+    for (const calc of ALL_CALCULATORS) {
+      for (const item of calc.faq ?? []) {
+        expect(item.question.trim().length, `пустой вопрос FAQ у ${calc.id}`).toBeGreaterThan(10);
+        expect(item.answer.trim().length, `пустой ответ FAQ у ${calc.id}`).toBeGreaterThan(30);
+        expect(/[.!?]$/.test(item.answer.trim()), `ответ FAQ без завершающей пунктуации у ${calc.id}`).toBe(true);
+      }
+    }
+  });
+
+  it("у каждого калькулятора есть howToUse для HowTo schema", () => {
+    for (const calc of ALL_CALCULATORS) {
+      expect(calc.howToUse, `howToUse отсутствует у ${calc.id}`).toBeTruthy();
+      expect(calc.howToUse?.length, `howToUse слишком короткий у ${calc.id}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("howToUse содержит достаточно конкретные шаги", () => {
+    for (const calc of ALL_CALCULATORS) {
+      for (const step of calc.howToUse ?? []) {
+        expect(step.trim().length, `слишком короткий шаг howToUse у ${calc.id}`).toBeGreaterThan(10);
+        expect(step.trim().includes(" "), `слишком абстрактный шаг howToUse у ${calc.id}`).toBe(true);
+      }
+    }
+  });
+});
+
+
+
+
+
+

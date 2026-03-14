@@ -1,14 +1,20 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import plasterCanonicalSpecJson from "../../../../configs/calculators/plaster-canonical.v1.json";
+import { computeCanonicalPlaster } from "../../../../engine/plaster";
+import type { PlasterCanonicalSpec } from "../../../../engine/canonical";
+
+const plasterCanonicalSpec = plasterCanonicalSpecJson as PlasterCanonicalSpec;
 
 export const plasterDef: CalculatorDefinition = {
   id: "mixes_plaster",
   slug: "shtukaturka",
+  formulaVersion: plasterCanonicalSpec.formula_version,
   title: "Калькулятор штукатурки",
   h1: "Калькулятор штукатурки онлайн — расчёт расхода смеси на стены",
   description: "Рассчитайте количество штукатурки на стены и потолок. Учёт толщины слоя, типа поверхности и производителя.",
-  metaTitle: "Калькулятор штукатурки онлайн | Расчёт расхода — Мастерок",
-  metaDescription: "Бесплатный калькулятор штукатурки: рассчитайте количество мешков Knauf, Волма, Ceresit по площади и толщине слоя. Нормы по СНиП 3.04.01-87.",
+  metaTitle: withSiteMetaTitle("Калькулятор штукатурки онлайн | Расчёт расхода"),
+  metaDescription: "Бесплатный калькулятор штукатурки: рассчитайте количество мешков гипсовой или цементной смеси Knauf, Волма, Ceresit по площади, толщине слоя и типу основания. Нормы по СНиП 3.04.01-87.",
   category: "walls",
   categorySlug: "steny",
   tags: ["штукатурка", "штукатурная смесь", "Knauf", "Волма", "гипсовая штукатурка", "цементная штукатурка"],
@@ -113,144 +119,20 @@ export const plasterDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let wallArea: number;
-
-    if (inputMode === 0) {
-      const l = Math.max(1, inputs.length ?? 5);
-      const w = Math.max(1, inputs.width ?? 4);
-      const h = Math.max(2, inputs.height ?? 2.7);
-      wallArea = 2 * (l + w) * h;
-    } else {
-      wallArea = Math.max(1, inputs.area ?? 50);
-    }
-
-    const openings = Math.max(0, inputs.openingsArea ?? 5);
-    const netArea = Math.max(0, wallArea - openings);
-    const thickness = Math.max(5, Math.min(50, inputs.thickness ?? 15));
-    const type = Math.round(inputs.plasterType ?? 0);
-    const bagWeight = inputs.bagWeight ?? 30;
-
-    // Расход по типам (кг/м² на 10 мм толщины): гипс ~8, цементная ~15, цем-изв ~13
-    const consumptionPer10mm: Record<number, number> = { 0: 8.5, 1: 15, 2: 13 };
-    const kgPer10mm = consumptionPer10mm[type] ?? 8.5;
-    const kgPerSqm = kgPer10mm * (thickness / 10);
-
-    const totalKg = netArea * kgPerSqm * 1.1; // +10% запас
-    const bags = Math.ceil(totalKg / bagWeight);
-
-    const warnings: string[] = [];
-    if (thickness > 20 && type === 0) {
-      warnings.push("Гипсовую штукатурку толщиной > 20 мм наносят в 2 слоя с армирующей сеткой");
-    }
-    if (thickness > 30) {
-      warnings.push("При толщине > 30 мм обязательно армирование стекловолоконной сеткой");
-    }
-    if (netArea < 5) {
-      warnings.push("Маленькая площадь — лучше использовать готовую шпаклёвку из ведра");
-    }
-
-    const typeNames = ["Гипсовая штукатурка", "Цементная штукатурка", "Цементно-известковая"];
-    const groundKg = netArea * 0.1; // грунтовка ~100 мл/м²
-    const groundCans = Math.ceil(groundKg / 5);
-
-    const scenarios = buildNativeScenarios({
-      id: "plaster-main",
-      title: "Plaster main",
-      exactNeed: totalKg,
-      unit: "кг",
-      packageSizes: [bagWeight],
-      packageLabelPrefix: "plaster-bag",
+  calculate(inputs) {
+    return computeCanonicalPlaster(plasterCanonicalSpec, {
+      inputMode: inputs.inputMode,
+      length: inputs.length,
+      width: inputs.width,
+      height: inputs.height,
+      area: inputs.area,
+      openingsArea: inputs.openingsArea,
+      plasterType: inputs.plasterType,
+      thickness: inputs.thickness,
+      bagWeight: inputs.bagWeight,
+      substrateType: inputs.substrateType ?? 1,
+      wallEvenness: inputs.wallEvenness ?? 1,
     });
-
-    return {
-      materials: [
-        {
-          name: `${typeNames[type] ?? typeNames[0]} (мешки ${bagWeight} кг)`,
-          quantity: totalKg / bagWeight,
-          unit: "мешков",
-          withReserve: bags,
-          purchaseQty: bags,
-          category: "Основное",
-        },
-        {
-          name: "Грунтовка (5 л)",
-          quantity: netArea * 0.1 / 5,
-          unit: "шт",
-          withReserve: groundCans,
-          purchaseQty: groundCans,
-          category: "Подготовка",
-        },
-        ...(thickness > 20 ? [{
-          name: "Стеклосетка армировочная (50×50 мм)",
-          quantity: netArea,
-          unit: "м²",
-          withReserve: Math.ceil(netArea * 1.1),
-          purchaseQty: Math.ceil(netArea * 1.1),
-          category: "Армирование",
-        }] : []),
-        {
-          name: "Маяки штукатурные (3 м, уп. 10 шт)",
-          quantity: netArea / 1.5 / 10,
-          unit: "упак.",
-          withReserve: Math.ceil(netArea / 1.5 / 10),
-          purchaseQty: Math.ceil(netArea / 1.5 / 10),
-          category: "Вспомогательное",
-        },
-        {
-          name: "Правило алюминиевое (2 м)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Шпатель фасадный (450-600 мм)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Ведро строительное (20 л)",
-          quantity: 2,
-          unit: "шт",
-          withReserve: 2,
-          purchaseQty: 2,
-          category: "Инструмент",
-        },
-        {
-          name: "Миксер для дрели (насадка)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Перчатки прорезиненные",
-          quantity: 3,
-          unit: "пары",
-          withReserve: 3,
-          purchaseQty: 3,
-          category: "Расходники",
-        },
-        ...(inputMode === 0 ? [{
-          name: "Угловой профиль перфорированный 25×25 мм (3 м)",
-          quantity: Math.ceil(Math.max(2, inputs.height ?? 2.7) * 4 / 3),
-          unit: "шт",
-          withReserve: Math.ceil(Math.max(2, inputs.height ?? 2.7) * 4 / 3 * 1.1),
-          purchaseQty: Math.ceil(Math.max(2, inputs.height ?? 2.7) * 4 / 3 * 1.1),
-          category: "Вспомогательное",
-        }] : []),
-      ],
-      totals: { wallArea, netArea, thickness, totalKg } as Record<string, number>,
-      warnings,
-      scenarios,
-    };
   },
   formulaDescription: `
 **Расчёт штукатурки (практика РФ):**
@@ -281,12 +163,13 @@ export const plasterDef: CalculatorDefinition = {
   faq: [
     {
       question: "Нужно ли вынимать маяки?",
-      answer: "Да, стальные маяки со временем начинают ржаветь, и на обоях проступят рыжие полосы. Вынимайте их после схватывания раствора и заделывайте штробы той же смесью."
+      answer: "Металлические маяки в штукатурке обычно рекомендуют вынимать после первичного схватывания раствора, особенно если поверхность потом идёт под покраску, тонкие обои или другие чувствительные финишные покрытия. Если оставить сталь в стене, со временем возможны ржавые полосы, локальные трещины и проблемы на стыке материалов, поэтому безопаснее извлечь маяки и сразу заделать штробы той же смесью, пока основание и слой работают как единая система, а место маяка ещё легко восстановить без заметной полосы. Это особенно важно во влажных зонах, на фасадных участках и там, где дальше планируется тонкая финишная шлифовка под светлую краску или декоративный свет, который сильно проявляет дефекты плоскости. Там, где поверхность потом должна работать как идеально ровная и стабильная плоскость, оставленные маяки почти всегда становятся лишним риском и источником будущих полос. Внутри сухих помещений их иногда оставляют, но в ответственных узлах и там, где возможна коррозия или проявление по финишу, безопаснее убрать и заделать штробы. Если маяки металлические и остаются в слое, особенно во влажных зонах, есть риск появления ржавых полос и локальных трещин, поэтому это решение лучше принимать заранее по системе отделки. Если оставить металлические маяки в слое, особенно во влажных или наружных зонах, есть риск ржавых полос и локальных трещин, поэтому решение лучше принимать заранее по системе отделки. Металлические маяки часто убирают, если есть риск коррозии и проявления полос на тонком финише. На фасадах, во влажных зонах и под тонкий финишный слой этот вопрос особенно лучше решать заранее, а не после появления полос и ржавчины."
     },
     {
       question: "Можно ли штукатурить по старой краске?",
-      answer: "Нет, штукатурка отвалится пластом. Краску нужно полностью счистить или сделать частые насечки и обработать бетоноконтактом."
+      answer: "По старой краске штукатурить без подготовки обычно нельзя, потому что адгезия у такой основы непредсказуемая и слой может отойти целым пластом уже после высыхания. Если краска держится очень прочно, основание всё равно нужно проверять, делать насечки, обеспыливать и применять подходящий адгезионный грунт, но в большинстве бытовых случаев надёжнее удалить слабые и гладкие покрытия до прочного основания, чем рисковать всей площадью отделки из-за сомнительной основы и переделывать стену уже после высыхания штукатурки, особенно под тяжёлую плитку или толстый слой выравнивания. Ошибка здесь часто выглядит как экономия времени, но потом оборачивается полной переделкой слоя и повторной подготовкой того же участка стены. Даже хороший адгезионный грунт не заменяет прочного основания, если старая краска уже отслаивается или мелит. Даже хороший адгезионный грунт не заменяет прочного основания, если старая краска уже отслаивается или мелит. Только если покрытие реально держится, не отслаивается и основание подготовлено под адгезию, иначе старая краска становится слабым слоем между стеной и новой штукатуркой. Обычно нет без подготовки: краску проверяют на прочность, удаляют слабые участки и делают адгезионный слой, иначе новая штукатурка держится на самом слабом старом покрытии. Если краска держится слабо или поверхность глянцевая, без снятия и подготовки штукатурка быстро отойдёт вместе с основанием. Только после проверки сцепления и подготовки: слабая краска почти всегда срывает новый слой вместе с собой. Без проверки адгезии и подготовки основания такой слой чаще всего держится хуже именно в местах напряжения и отслаивания."
     }
   ]
 };
+
 

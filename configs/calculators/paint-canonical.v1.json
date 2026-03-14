@@ -1,0 +1,94 @@
+{
+  "calculator_id": "paint",
+  "formula_version": "paint-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "area", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
+    { "key": "wallArea", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
+    { "key": "ceilingArea", "unit": "m2", "default_value": 20, "min": 0, "max": 1000 },
+    { "key": "doorsWindows", "unit": "m2", "default_value": 0, "min": 0, "max": 200 },
+    { "key": "roomWidth", "unit": "m", "default_value": 4, "min": 0.5, "max": 20 },
+    { "key": "roomLength", "unit": "m", "default_value": 5, "min": 0.5, "max": 20 },
+    { "key": "roomHeight", "unit": "m", "default_value": 2.7, "min": 2, "max": 5 },
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 20 },
+    { "key": "width", "unit": "m", "default_value": 4, "min": 1, "max": 20 },
+    { "key": "height", "unit": "m", "default_value": 2.7, "min": 2, "max": 5 },
+    { "key": "openingsArea", "unit": "m2", "default_value": 0, "min": 0, "max": 200 },
+    { "key": "paintType", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "surfaceType", "default_value": 0, "min": 0, "max": 8 },
+    { "key": "surfacePrep", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "colorIntensity", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "coats", "default_value": 2, "min": 1, "max": 5 },
+    { "key": "coverage", "unit": "m2/l", "default_value": 10, "min": 4, "max": 15 },
+    { "key": "canSize", "unit": "l", "default_value": 0, "min": 0, "max": 15 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "surface_quality",
+      "geometry_complexity",
+      "installation_method",
+      "worker_skill",
+      "waste_factor",
+      "logistics_buffer",
+      "packaging_rounding"
+    ]
+  },
+  "normative_formula": {
+    "paint_types": [
+      { "id": 0, "key": "interior", "label": "Интерьерная краска" },
+      { "id": 1, "key": "facade", "label": "Фасадная краска" }
+    ],
+    "surface_types": [
+      { "id": 0, "key": "smooth_puttied", "label": "Гладкая шпатлёванная", "multiplier": 1.0, "scope_ids": [0] },
+      { "id": 1, "key": "plaster_concrete", "label": "Бетон, штукатурка", "multiplier": 1.15, "scope_ids": [0] },
+      { "id": 2, "key": "porous_block", "label": "Пористая (газоблок, кирпич)", "multiplier": 1.3, "scope_ids": [0] },
+      { "id": 3, "key": "wood", "label": "Дерево", "multiplier": 1.1, "scope_ids": [0] },
+      { "id": 4, "key": "wallpaper", "label": "Обои под покраску", "multiplier": 1.2, "scope_ids": [0] },
+      { "id": 5, "key": "relief_texture", "label": "Рельефная фактура", "multiplier": 1.4, "scope_ids": [0] },
+      { "id": 6, "key": "facade_concrete", "label": "Фасад: бетон", "multiplier": 1.0, "scope_ids": [1] },
+      { "id": 7, "key": "facade_brick", "label": "Фасад: кирпич", "multiplier": 1.15, "scope_ids": [1] },
+      { "id": 8, "key": "facade_bark_beetle", "label": "Фасад: короед", "multiplier": 1.4, "scope_ids": [1] }
+    ],
+    "surface_preparations": [
+      { "id": 0, "key": "primed", "label": "Загрунтованная", "multiplier": 1.0 },
+      { "id": 1, "key": "raw", "label": "Новая необработанная", "multiplier": 1.2 },
+      { "id": 2, "key": "repainted", "label": "Ранее окрашенная", "multiplier": 0.95 }
+    ],
+    "color_intensities": [
+      { "id": 0, "key": "light", "label": "Светлый", "multiplier": 1.0 },
+      { "id": 1, "key": "bright", "label": "Яркий", "multiplier": 1.15 },
+      { "id": 2, "key": "dark", "label": "Тёмный", "multiplier": 1.3 }
+    ]
+  },
+  "packaging_rules": {
+    "unit": "л",
+    "default_package_size": 5,
+    "allowed_package_sizes": [3, 5, 9, 10, 15],
+    "optimal_package_sizes": [3, 5, 10, 15]
+  },
+  "material_rules": {
+    "primer_l_per_m2": 0.11,
+    "legacy_universal_primer_l_per_m2": 0.15,
+    "primer_package_size_l": 10,
+    "roller_area_m2_per_piece": 50,
+    "legacy_brush_area_m2_per_piece": 40,
+    "legacy_brushes_min": 2,
+    "legacy_brushes_max": 10,
+    "brushes_count": 1,
+    "trays_count": 1,
+    "tape_roll_length_m": 50,
+    "tape_runs_per_room": 2,
+    "tape_reserve_factor": 1.1,
+    "ceiling_premium_factor": 1.15,
+    "default_roller_absorption_l": 0.3,
+    "legacy_first_coat_multiplier": 1.2
+  },
+  "warnings_rules": {
+    "primer_required_surface_ids": [2, 4, 5, 7, 8],
+    "one_coat_warning_threshold": 1,
+    "rough_surface_warning_ids": [5, 8]
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

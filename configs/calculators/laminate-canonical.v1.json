@@ -1,0 +1,63 @@
+{
+  "calculator_id": "laminate",
+  "formula_version": "laminate-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 30 },
+    { "key": "width", "unit": "m", "default_value": 4, "min": 1, "max": 30 },
+    { "key": "area", "unit": "m2", "default_value": 20, "min": 1, "max": 500 },
+    { "key": "perimeter", "unit": "m", "default_value": 0, "min": 0, "max": 200 },
+    { "key": "packArea", "unit": "m2", "default_value": 2.397, "min": 0.5, "max": 5 },
+    { "key": "layoutProfileId", "default_value": 7, "min": 1, "max": 8 },
+    { "key": "reservePercent", "default_value": 10, "min": 0, "max": 25 },
+    { "key": "hasUnderlayment", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "underlaymentRollArea", "unit": "m2", "default_value": 10, "min": 5, "max": 20 },
+    { "key": "doorThresholds", "default_value": 1, "min": 0, "max": 10 },
+    { "key": "underlayType", "default_value": 3, "min": 2, "max": 5 },
+    { "key": "laminateClass", "default_value": 32, "min": 31, "max": 34 },
+    { "key": "laminateThickness", "default_value": 8, "min": 6, "max": 14 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "installation_method",
+      "worker_skill"
+    ]
+  },
+  "normative_formula": {
+    "layout_profiles": [
+      { "id": 1, "key": "straight_random", "label": "Прямая, хаотичное смещение", "waste_percent": 5 },
+      { "id": 2, "key": "straight_one_third", "label": "Прямая, смещение 1/3", "waste_percent": 8 },
+      { "id": 3, "key": "straight_half", "label": "Прямая, смещение 1/2", "waste_percent": 12 },
+      { "id": 4, "key": "diagonal", "label": "Диагональная", "waste_percent": 15 },
+      { "id": 5, "key": "herringbone", "label": "Ёлочка", "waste_percent": 20 },
+      { "id": 6, "key": "quarter_shift", "label": "Смещение 1/4", "waste_percent": 7 },
+      { "id": 7, "key": "chaotic", "label": "Хаотичная", "waste_percent": 10 },
+      { "id": 8, "key": "deck", "label": "Палубная", "waste_percent": 12 }
+    ]
+  },
+  "packaging_rules": {
+    "laminate_pack_area_unit": "м²",
+    "plinth_piece_length_m": 2.5,
+    "underlayment_roll_area_m2": 10
+  },
+  "material_rules": {
+    "small_room_threshold_m2": 15,
+    "small_room_waste_per_m2_percent": 0.5,
+    "reserve_percent_default": 10,
+    "underlayment_overlap_percent": 5,
+    "vapor_barrier_overlap_percent": 10,
+    "wedge_spacing_m": 0.5,
+    "default_door_opening_width_m": 0.9,
+    "rectangle_inner_corners": 4
+  },
+  "warnings_rules": {
+    "small_area_warning_threshold_m2": 5,
+    "diagonal_warning_profile_ids": [4],
+    "herringbone_warning_profile_ids": [5],
+    "half_shift_warning_profile_ids": [3, 8]
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

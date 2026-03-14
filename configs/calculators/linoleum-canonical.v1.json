@@ -1,0 +1,47 @@
+{
+  "calculator_id": "linoleum",
+  "formula_version": "linoleum-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 30 },
+    { "key": "width", "unit": "m", "default_value": 4, "min": 1, "max": 20 },
+    { "key": "area", "unit": "m2", "default_value": 20, "min": 1, "max": 500 },
+    { "key": "roomWidth", "unit": "m", "default_value": 4, "min": 1, "max": 20 },
+    { "key": "perimeter", "unit": "m", "default_value": 0, "min": 0, "max": 200 },
+    { "key": "rollWidth", "unit": "m", "default_value": 3.0, "min": 1.5, "max": 5 },
+    { "key": "hasPattern", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "patternRepeatCm", "unit": "cm", "default_value": 30, "min": 0, "max": 100 },
+    { "key": "needGlue", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "needPlinth", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "needTape", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "installation_method"]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "linear_meter_unit": "м.п.",
+    "linear_meter_step_m": 0.1,
+    "plinth_piece_length_m": 2.5,
+    "primer_can_liters": 10,
+    "glue_bucket_kg": 10,
+    "cold_welding_tube_linear_m": 20
+  },
+  "material_rules": {
+    "trim_allowance_m": 0.1,
+    "room_margin_m": 0.2,
+    "glue_kg_per_m2": 0.4,
+    "primer_liters_per_m2": 0.15,
+    "plinth_reserve_percent": 5,
+    "default_door_opening_width_m": 0.9,
+    "tape_extra_perimeter_run": 1
+  },
+  "warnings_rules": {
+    "high_waste_percent_threshold": 25,
+    "max_single_roll_width_m": 5,
+    "low_roll_width_warning_threshold_m": 3
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

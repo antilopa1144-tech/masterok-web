@@ -1,80 +1,77 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { primerDef } from "../formulas/primer";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { checkInvariants, findMaterial } from "./_helpers";
+import parityFixture from "../../../../tests/fixtures/primer-canonical-parity.json";
 
 const calc = primerDef.calculate.bind(primerDef);
 
 describe("Грунтовка", () => {
-  describe("Глубокое проникновение", () => {
-    it("50 м², бетон, 1 слой, канистра 5 л", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 5 });
-      checkInvariants(r);
-      // lPerSqm=0.1*1.5=0.15, totalL=50*0.15*1*1.05=7.875, cans=ceil(7.875/5)=2
-      const primer = findMaterial(r, "Грунтовка");
-      expect(primer).toBeDefined();
-      expect(primer!.purchaseQty).toBe(2);
-      expect(r.totals.lPerSqm).toBeCloseTo(0.15, 3);
-    });
-
-    it("50 м², ГКЛ (множитель 1.0)", () => {
-      const r = calc({ area: 50, surfaceType: 1, primerType: 0, coats: 1, canSize: 5 });
-      // lPerSqm=0.1*1.0=0.10, totalL=50*0.10*1.05=5.25, cans=ceil(5.25/5)=2
-      expect(r.totals.lPerSqm).toBeCloseTo(0.10, 3);
-    });
-
-    it("2 слоя — удвоение расхода", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 2, canSize: 5 });
-      // totalL=50*0.15*2*1.05=15.75, cans=ceil(15.75/5)=4
-      expect(findMaterial(r, "Грунтовка")!.purchaseQty).toBe(4);
-    });
+  it("декларирует formulaVersion для canonical primer", () => {
+    expect(primerDef.formulaVersion).toBe("primer-canonical-v1");
   });
 
-  describe("Бетон-контакт", () => {
-    it("50 м², бетон, 1 слой", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 10 });
-      // lPerSqm=0.35*1.5=0.525, totalL=50*0.525*1.05=27.5625, cans=ceil(27.5625/10)=3
-      expect(findMaterial(r, "контакт")!.purchaseQty).toBe(3);
-    });
+  it("считает глубокое проникновение по впитывающей поверхности", () => {
+    const result = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 5 });
+    checkInvariants(result);
+
+    expect(result.formulaVersion).toBe("primer-canonical-v1");
+    expect(result.totals.lPerSqm).toBeCloseTo(0.15, 3);
+    expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(2);
+    expect(result.warnings.some((warning) => warning.includes("2 слоя"))).toBe(true);
   });
 
-  describe("Для ГКЛ", () => {
-    it("50 м², ГКЛ, 1 слой", () => {
-      const r = calc({ area: 50, surfaceType: 1, primerType: 2, coats: 1, canSize: 5 });
-      // lPerSqm=0.12*1.0=0.12, totalL=50*0.12*1.05=6.3, cans=ceil(6.3/5)=2
-      expect(findMaterial(r, "ГКЛ")!.purchaseQty).toBe(2);
-    });
+  it("считает бетон-контакт с упаковкой по 10 л", () => {
+    const result = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 10 });
+
+    expect(result.totals.lPerSqm).toBeCloseTo(0.525, 3);
+    expect(findMaterial(result, "контакт")?.purchaseQty).toBe(3);
+    expect(result.warnings).toHaveLength(3);
   });
 
-  describe("Канистры", () => {
-    it("20 л — меньше канистр", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 20 });
-      // totalL=7.875, cans=ceil(7.875/20)=1
-      expect(findMaterial(r, "Грунтовка")!.purchaseQty).toBe(1);
-    });
-  });
+  it("поддерживает room-dimensions вход в canonical engine", () => {
+    const result = calc({ inputMode: 0, roomWidth: 4, roomLength: 5, roomHeight: 2.7, surfaceType: 1, primerType: 2, coats: 2, canSize: 15 });
 
-  describe("Инструмент", () => {
-    it("валик и кювета включены", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 5 });
-      expect(findMaterial(r, "Валик")).toBeDefined();
-      expect(findMaterial(r, "Кювета")).toBeDefined();
-    });
-  });
-
-  describe("Предупреждения", () => {
-    it("бетон + не глубокое проникновение → рекомендация", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 5 });
-      expect(r.warnings.some(w => w.includes("впитывающих"))).toBe(true);
-    });
-
-    it("1 слой на бетон → рекомендация 2 слоя", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 5 });
-      expect(r.warnings.some(w => w.includes("2 слоя"))).toBe(true);
-    });
-
-    it("бетон-контакт на бетоне → предупреждение", () => {
-      const r = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 5 });
-      expect(r.warnings.some(w => w.includes("невпитывающих"))).toBe(true);
-    });
+    expect(result.totals.area).toBeCloseTo(48.6, 2);
+    expect(findMaterial(result, "ГКЛ")?.purchaseQty).toBe(1);
   });
 });
+
+describe("Canonical primer fixture parity", () => {
+  const cases = parityFixture.cases as Array<{
+    id: string;
+    inputs: Record<string, number>;
+    expected: {
+      area: number;
+      formulaVersion: string;
+      materials: {
+        primerCans: number;
+        rollers: number;
+        brushes: number;
+        trays: number;
+      };
+      warningsCount: number;
+      recScenario: {
+        packageSize: number;
+        exactNeed: number;
+        purchaseQuantity: number;
+      };
+    };
+  }>;
+
+  for (const fixtureCase of cases) {
+    it(fixtureCase.id, () => {
+      const result = calc(fixtureCase.inputs);
+      expect(result.formulaVersion).toBe(fixtureCase.expected.formulaVersion);
+      expect(result.totals.area).toBeCloseTo(fixtureCase.expected.area, 2);
+      expect(result.warnings).toHaveLength(fixtureCase.expected.warningsCount);
+      expect(result.scenarios?.REC.buy_plan.package_size).toBe(fixtureCase.expected.recScenario.packageSize);
+      expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.exactNeed, 2);
+      expect(result.scenarios?.REC.purchase_quantity ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.purchaseQuantity, 3);
+      expect(findMaterial(result, "Валик")?.purchaseQty).toBe(fixtureCase.expected.materials.rollers);
+      expect(findMaterial(result, "Кисть")?.purchaseQty).toBe(fixtureCase.expected.materials.brushes);
+      expect(findMaterial(result, "Кювета")?.purchaseQty).toBe(fixtureCase.expected.materials.trays);
+      expect(result.materials.find((material) => material.category === "Основное")?.purchaseQty).toBe(fixtureCase.expected.materials.primerCans);
+    });
+  }
+});
+

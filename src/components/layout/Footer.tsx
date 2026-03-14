@@ -1,6 +1,44 @@
 import Link from "next/link";
+import { getCalculatorBySlug } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { SITE_FOOTER_DESCRIPTION, SITE_NAME } from "@/lib/site";
+
+const UI_TEXT = {
+  siteDescription: SITE_FOOTER_DESCRIPTION,
+  downloadApp: "Скачать приложение",
+  categoriesTitle: "Категории",
+  popularTitle: "Популярное",
+  servicesTitle: "Сервисы",
+  aiAssistant: "Михалыч — AI-ассистент",
+  blog: "Блог",
+  app: "Приложение",
+  reportTitle: "Нашли ошибку в расчёте?",
+  reportDescription: "Напишите нашему ИИ-ассистенту",
+  askMikhalych: "Спросить Михалыча →",
+  copyrightSuffix: `${SITE_NAME}. Все расчёты носят справочный характер.`,
+  standards: "Расчёты по ГОСТ и СНиП",
+  popularCalculatorFallback: "Калькулятор",
+} as const;
+
+const POPULAR_CALCULATOR_SLUGS = [
+  "beton",
+  "kirpich",
+  "krovlya",
+  "plitka",
+  "laminat",
+  "oboi",
+] as const;
+
+const POPULAR_CALCULATOR_LINKS = POPULAR_CALCULATOR_SLUGS.map((slug) => {
+  const calculator = getCalculatorBySlug(slug);
+
+  return {
+    slug,
+    href: calculator ? `/kalkulyatory/${calculator.categorySlug}/${calculator.slug}/` : "/kalkulyatory/",
+    label: calculator?.title ?? UI_TEXT.popularCalculatorFallback,
+  };
+});
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -9,7 +47,6 @@ export default function Footer() {
     <footer className="mt-auto bg-slate-100 text-slate-600 border-t border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800">
       <div className="page-container-wide py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* О сайте */}
           <div>
             <Link
               href="/"
@@ -18,25 +55,23 @@ export default function Footer() {
               <div className="w-7 h-7 bg-accent-500 rounded-lg flex items-center justify-center">
                 <CategoryIcon icon="hammer" size={15} color="#fff" />
               </div>
-              <span>Мастерок</span>
+              <span>{SITE_NAME}</span>
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Бесплатные строительные калькуляторы онлайн. Точный расчёт
-              материалов по ГОСТ и СНиП.
+              {UI_TEXT.siteDescription}
             </p>
             <Link
               href="/prilozhenie/"
               className="inline-flex items-center gap-2 text-sm font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 transition-colors no-underline mt-4"
             >
               <CategoryIcon icon="phone" size={14} color="currentColor" />
-              Скачать приложение
+              {UI_TEXT.downloadApp}
             </Link>
           </div>
 
-          {/* Категории */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
-              Категории
+              {UI_TEXT.categoriesTitle}
             </h3>
             <ul className="space-y-2">
               {CATEGORIES.map((cat) => (
@@ -53,21 +88,13 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Популярное */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
-              Популярное
+              {UI_TEXT.popularTitle}
             </h3>
             <ul className="space-y-2">
-              {[
-                { href: "/kalkulyatory/fundament/beton/", label: "Калькулятор бетона" },
-                { href: "/kalkulyatory/steny/kirpich/", label: "Калькулятор кирпича" },
-                { href: "/kalkulyatory/krovlya/krovlya/", label: "Калькулятор кровли" },
-                { href: "/kalkulyatory/poly/plitka/", label: "Калькулятор плитки" },
-                { href: "/kalkulyatory/poly/laminat/", label: "Калькулятор ламината" },
-                { href: "/kalkulyatory/otdelka/oboi/", label: "Калькулятор обоев" },
-              ].map((item) => (
-                <li key={item.href}>
+              {POPULAR_CALCULATOR_LINKS.map((item) => (
+                <li key={item.slug}>
                   <Link
                     href={item.href}
                     className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline"
@@ -79,57 +106,61 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Сервисы */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
-              Сервисы
+              {UI_TEXT.servicesTitle}
             </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/mikhalych/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="bot" size={14} color="currentColor" />
-                  Михалыч — AI-ассистент
+                  {UI_TEXT.aiAssistant}
                 </Link>
               </li>
               <li>
                 <Link href="/blog/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="book" size={14} color="currentColor" />
-                  Блог
+                  {UI_TEXT.blog}
                 </Link>
               </li>
               <li>
                 <Link href="/prilozhenie/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="phone" size={14} color="currentColor" />
-                  Приложение
+                  {UI_TEXT.app}
                 </Link>
               </li>
             </ul>
 
             <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
               <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">
-                Нашли ошибку в расчёте?
+                {UI_TEXT.reportTitle}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Напишите нашему ИИ-ассистенту
+                {UI_TEXT.reportDescription}
               </p>
               <Link
                 href="/mikhalych/"
                 className="mt-2 inline-block text-xs font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 no-underline transition-colors"
               >
-                Спросить Михалыча →
+                {UI_TEXT.askMikhalych}
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Нижняя строка */}
         <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-sm text-slate-500 dark:text-slate-500">
-            © {year} Мастерок. Все расчёты носят справочный характер.
+            © {year} {UI_TEXT.copyrightSuffix}
           </p>
-          <span className="text-sm text-slate-500 dark:text-slate-500">Расчёты по ГОСТ и СНиП</span>
+          <span className="text-sm text-slate-500 dark:text-slate-500">{UI_TEXT.standards}</span>
         </div>
       </div>
     </footer>
   );
 }
+
+
+
+
+
+

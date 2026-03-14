@@ -8,7 +8,7 @@ export interface BlogPost {
   icon: string;
   tags: string[];
   /** Slug калькулятора для CTA-ссылки */
-  relatedCalculator?: { slug: string; categorySlug: string; label: string };
+  relatedCalculator?: { slug: string; categorySlug: string };
   /** Полный текст статьи в формате markdown-like (заголовки ##, списки -, абзацы) */
   content: string;
 }
@@ -24,7 +24,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Стены",
     icon: "🧱",
     tags: ["кирпич", "кладка", "стены", "расчёт"],
-    relatedCalculator: { slug: "kirpich", categorySlug: "steny", label: "Калькулятор кирпича" },
+    relatedCalculator: { slug: "kirpich", categorySlug: "steny" },
     content: `## Зачем считать кирпич заранее
 
 Кирпич — один из самых популярных стеновых материалов в России. Ошибка в расчёте на 10-15% означает либо простой бригады (кирпича не хватило, ждём довоз), либо переплату за лишние поддоны, которые потом негде хранить. Правильный расчёт экономит и деньги, и нервы.
@@ -96,7 +96,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Полы",
     icon: "🔲",
     tags: ["стяжка", "полы", "ЦПС", "Knauf"],
-    relatedCalculator: { slug: "styazhka", categorySlug: "poly", label: "Калькулятор стяжки" },
+    relatedCalculator: { slug: "styazhka", categorySlug: "poly" },
     content: `## Три вида стяжки — коротко
 
 Стяжка пола — выравнивающий слой между плитой перекрытия и финишным покрытием. В российском строительстве применяют три основных вида: мокрую (классическая ЦПС), полусухую и сухую (сборную). У каждой свои плюсы, и выбор зависит от ситуации.
@@ -179,7 +179,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Фасад",
     icon: "🏢",
     tags: ["утепление", "фасад", "минвата", "пенопласт", "Технониколь"],
-    relatedCalculator: { slug: "uteplenie-sten", categorySlug: "fasad", label: "Калькулятор утепления стен" },
+    relatedCalculator: { slug: "uteplenie-sten", categorySlug: "fasad" },
     content: `## Зачем утеплять фасад
 
 Через неутеплённые стены дом теряет 25-35% тепла. При стоимости газового отопления для дома 150 м² порядка 3000-5000 руб/мес зимой, утепление окупается за 3-5 лет. А ещё — это комфорт: стены не промерзают, нет конденсата, нет грибка.
@@ -257,7 +257,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Фундамент",
     icon: "🏗️",
     tags: ["фундамент", "бетон", "арматура", "расчёт"],
-    relatedCalculator: { slug: "lentochnyj-fundament", categorySlug: "fundament", label: "Калькулятор ленточного фундамента" },
+    relatedCalculator: { slug: "lentochnyj-fundament", categorySlug: "fundament" },
     content: `## Фундамент — это 20-30% бюджета стройки
 
 Ошибки в фундаменте — самые дорогие. Переделать стены можно, фундамент — практически нет. Поэтому расчёт должен быть точным: не экономить на прочности и не переплачивать за избыточный запас.
@@ -324,7 +324,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Фундамент",
     icon: "💧",
     tags: ["гидроизоляция", "фундамент", "ванная", "Технониколь"],
-    relatedCalculator: { slug: "gidroizolyaciya", categorySlug: "fundament", label: "Калькулятор гидроизоляции" },
+    relatedCalculator: { slug: "gidroizolyaciya", categorySlug: "fundament" },
     content: `## Почему гидроизоляция — это не «можно и без неё»
 
 Вода — главный враг любого здания. Через микротрещины в бетоне влага проникает внутрь, зимой замерзает и разрывает конструкцию. В ванной комнате без гидроизоляции вода через межплиточные швы пропитывает стяжку, разрушает клей и добирается до соседей снизу. Гидроизоляция стоит 3-5% бюджета, а переделка последствий — 30-50%.
@@ -398,7 +398,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Инженерия",
     icon: "🌀",
     tags: ["вентиляция", "инженерные системы", "воздухообмен", "рекуператор"],
-    relatedCalculator: { slug: "ventilyaciya", categorySlug: "inzhenernye-sistemy", label: "Калькулятор вентиляции" },
+    relatedCalculator: { slug: "ventilyaciya", categorySlug: "inzhenernye-sistemy" },
     content: `## Вентиляция — невидимая, но критичная
 
 В утеплённом доме с пластиковыми окнами без вентиляции влажность поднимается до 70-80% за несколько дней. Результат — конденсат на окнах, плесень в углах, головные боли и ощущение духоты. Вентиляция — это не роскошь, а обязательная инженерная система.
@@ -469,7 +469,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Инженерия",
     icon: "⚡",
     tags: ["электрика", "автоматы", "УЗО", "кабель", "ПУЭ"],
-    relatedCalculator: { slug: "elektrika", categorySlug: "inzhenernye-sistemy", label: "Калькулятор электрики" },
+    relatedCalculator: { slug: "elektrika", categorySlug: "inzhenernye-sistemy" },
     content: `## Электрика — зона нулевой терпимости к ошибкам
 
 Неправильно подобранный автомат, тонкий кабель или отсутствие УЗО — это не «потом переделаем», это пожар или удар током. По статистике МЧС, неисправная электропроводка — причина 30% пожаров в жилых домах. Разберёмся, как сделать правильно.
@@ -568,7 +568,7 @@ export const ALL_POSTS: BlogPost[] = [
     category: "Полы и стены",
     icon: "🔲",
     tags: ["плитка", "клей", "раскладка", "Ceresit"],
-    relatedCalculator: { slug: "plitka", categorySlug: "poly", label: "Калькулятор плитки" },
+    relatedCalculator: { slug: "plitka", categorySlug: "poly" },
     content: `## Плитка — материал, где ошибки видны сразу
 
 Криво подрезанная плитка, неровные швы, отошедший от стены элемент — всё это на виду каждый день. Поэтому к выбору и расчёту плитки стоит подходить основательно.
@@ -654,3 +654,4 @@ export const ALL_POSTS: BlogPost[] = [
 export function getPostBySlug(slug: string): BlogPost | undefined {
   return ALL_POSTS.find((p) => p.slug === slug);
 }
+

@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getCalculatorBySlug } from "@/lib/calculators";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 import { ALL_POSTS, getPostBySlug } from "@/lib/blog";
+
+const UI_TEXT = {
+  notFoundTitle: "Статья не найдена",
+  breadcrumbHome: "Главная",
+  breadcrumbBlog: "Блог",
+  tagsLabel: "Теги:",
+  articleCtaTitle: "Рассчитайте материалы онлайн",
+  articleCtaDescription: "Используйте наш калькулятор для точного расчёта по ГОСТ и СНиП",
+  allArticles: "← Все статьи",
+  allCalculators: "Все калькуляторы",
+  calculatorCtaFallback: "Открыть калькулятор",
+} as const;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -14,25 +29,26 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPostBySlug(slug);
-  if (!post) return { title: "Статья не найдена" };
+  if (!post) return { title: UI_TEXT.notFoundTitle };
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  const baseUrl = SITE_URL;
 
-  return {
-    title: `${post.title} | Мастерок`,
-    description: post.description,
-    openGraph: {
-      title: post.title,
-      description: post.description,
-      type: "article",
-      publishedTime: post.date,
-      tags: post.tags,
-      url: `${baseUrl}/blog/${post.slug}/`,
-    },
-  };
+  const title = `${post.title} | ${SITE_NAME}`;
+  const description = post.description;
+  const canonicalUrl = `${baseUrl}/blog/${post.slug}/`;
+
+  return buildPageMetadata({
+    title,
+    openGraphTitle: post.title,
+    twitterTitle: title,
+    description,
+    url: canonicalUrl,
+    type: "article",
+    publishedTime: post.date,
+    tags: post.tags,
+  });
 }
 
-/** Рендерит markdown-like текст в React-элементы */
 function renderContent(content: string) {
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
@@ -72,7 +88,6 @@ function renderContent(content: string) {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Heading ##
     if (trimmed.startsWith("## ")) {
       flushParagraph();
       flushList();
@@ -87,7 +102,6 @@ function renderContent(content: string) {
       continue;
     }
 
-    // Heading ###
     if (trimmed.startsWith("### ")) {
       flushParagraph();
       flushList();
@@ -102,28 +116,24 @@ function renderContent(content: string) {
       continue;
     }
 
-    // List item
     if (trimmed.startsWith("- ")) {
       flushParagraph();
       currentList.push(trimmed.slice(2));
       continue;
     }
 
-    // Numbered list item
     if (/^\d+\.\s/.test(trimmed)) {
       flushParagraph();
       currentList.push(trimmed);
       continue;
     }
 
-    // Empty line — paragraph break
     if (trimmed === "") {
       flushParagraph();
       flushList();
       continue;
     }
 
-    // Regular text
     flushList();
     currentParagraph.push(trimmed);
   }
@@ -139,10 +149,11 @@ export default async function BlogPostPage({ params }: Props) {
   const post = getPostBySlug(slug);
   if (!post) notFound();
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  const baseUrl = SITE_URL;
+  const relatedCalculatorDef = post.relatedCalculator
+    ? getCalculatorBySlug(post.relatedCalculator.slug)
+    : undefined;
 
-  // Article JSON-LD
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -152,12 +163,12 @@ export default async function BlogPostPage({ params }: Props) {
     dateModified: post.date,
     author: {
       "@type": "Organization",
-      name: "Мастерок",
+      name: SITE_NAME,
       url: baseUrl,
     },
     publisher: {
       "@type": "Organization",
-      name: "Мастерок",
+      name: SITE_NAME,
       url: baseUrl,
     },
     mainEntityOfPage: {
@@ -174,26 +185,23 @@ export default async function BlogPostPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Hero */}
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6 max-w-3xl">
-          {/* Breadcrumbs */}
           <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-4 flex-wrap">
             <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300 no-underline">
-              Главная
+              {UI_TEXT.breadcrumbHome}
             </Link>
             <span>/</span>
             <Link
               href="/blog/"
               className="hover:text-slate-600 dark:hover:text-slate-300 no-underline"
             >
-              Блог
+              {UI_TEXT.breadcrumbBlog}
             </Link>
             <span>/</span>
             <span className="text-slate-600 dark:text-slate-300">{post.title}</span>
           </nav>
 
-          {/* Meta */}
           <div className="flex items-center gap-3 mb-3 flex-wrap">
             <span className="text-2xl">{post.icon}</span>
             <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
@@ -218,15 +226,13 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Article body */}
       <article className="page-container py-8 max-w-3xl">
         <div className="prose-custom">{renderContent(post.content)}</div>
 
-        {/* Tags */}
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-slate-400 dark:text-slate-500">Теги:</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500">{UI_TEXT.tagsLabel}</span>
               {post.tags.map((tag) => (
                 <span
                   key={tag}
@@ -239,37 +245,39 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         )}
 
-        {/* CTA — related calculator */}
         {post.relatedCalculator && (
           <div className="mt-8 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-2xl p-6 text-center">
             <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-              Рассчитайте материалы онлайн
+              {UI_TEXT.articleCtaTitle}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-300 mb-4">
-              Используйте наш калькулятор для точного расчёта по ГОСТ и СНиП
+              {UI_TEXT.articleCtaDescription}
             </p>
             <Link
               href={`/kalkulyatory/${post.relatedCalculator.categorySlug}/${post.relatedCalculator.slug}/`}
               className="btn-primary no-underline"
             >
-              {post.relatedCalculator.label} →
+              {relatedCalculatorDef?.title ?? UI_TEXT.calculatorCtaFallback} →
             </Link>
           </div>
         )}
 
-        {/* Navigation */}
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
           <Link
             href="/blog/"
             className="btn-secondary flex-1 text-center no-underline"
           >
-            ← Все статьи
+            {UI_TEXT.allArticles}
           </Link>
           <Link href="/#calculators" className="btn-secondary flex-1 text-center no-underline">
-            Все калькуляторы
+            {UI_TEXT.allCalculators}
           </Link>
         </div>
       </article>
     </div>
   );
 }
+
+
+
+

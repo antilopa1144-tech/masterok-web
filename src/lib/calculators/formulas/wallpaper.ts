@@ -1,14 +1,21 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import factorTables from "../../../../configs/factor-tables.json";
+import wallpaperCanonicalSpecJson from "../../../../configs/calculators/wallpaper-canonical.v1.json";
+import { computeCanonicalWallpaper } from "../../../../engine/wallpaper";
+import type { WallpaperCanonicalSpec } from "../../../../engine/canonical";
+
+const wallpaperCanonicalSpec = wallpaperCanonicalSpecJson as WallpaperCanonicalSpec;
 
 export const wallpaperDef: CalculatorDefinition = {
   id: "wallpaper",
   slug: "oboi",
+  formulaVersion: wallpaperCanonicalSpec.formula_version,
   title: "Калькулятор обоев",
   h1: "Калькулятор обоев онлайн — расчёт количества рулонов",
   description: "Рассчитайте точное количество рулонов обоев с учётом высоты комнаты, дверей, окон и раппорта.",
-  metaTitle: "Калькулятор обоев онлайн | Расчёт рулонов — Мастерок",
-  metaDescription: "Бесплатный калькулятор обоев: рассчитайте количество рулонов с учётом окон, дверей и раппорта узора. Правильный расчёт без лишних рулонов.",
+  metaTitle: withSiteMetaTitle("Калькулятор обоев онлайн | Расчёт рулонов"),
+  metaDescription: "Бесплатный калькулятор обоев: рассчитайте количество рулонов, полос, клея и грунтовки с учётом высоты комнаты, окон, дверей и раппорта узора.",
   category: "interior",
   categorySlug: "otdelka",
   tags: ["обои", "рулоны", "оклейка", "ремонт", "стены"],
@@ -89,151 +96,60 @@ export const wallpaperDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 1,
     },
+    {
+      key: "reserveRolls",
+      label: "Запас рулонов",
+      type: "slider",
+      unit: "шт",
+      min: 0,
+      max: 5,
+      step: 1,
+      defaultValue: 1,
+      hint: "Рекомендуемый запас на подрезку, брак и будущий ремонт",
+    },
   ],
   calculate(inputs) {
-    const perimeter = Math.max(5, inputs.perimeter ?? 14);
-    const height = Math.max(2, inputs.height ?? 2.7);
-    const rollLength = Math.max(5, inputs.rollLength ?? 10);
-    const rollWidthM = (inputs.rollWidth ?? 530) / 1000;
-    const rapport = (inputs.rapport ?? 0) / 100; // в метры
-    const doors = Math.round(inputs.doors ?? 1);
-    const windows = Math.round(inputs.windows ?? 1);
+    const rollWidth = inputs.rollWidth !== undefined
+      ? (inputs.rollWidth > 10 ? inputs.rollWidth / 1000 : inputs.rollWidth)
+      : undefined;
 
-    // Высота полосы с учётом раппорта
-    const stripHeight = rapport > 0
-      ? Math.ceil(height / rapport) * rapport
-      : height;
-
-    // Полос из одного рулона
-    const stripsPerRoll = Math.floor(rollLength / stripHeight);
-
-    // Общая длина стен
-    const wallArea = perimeter * height;
-
-    // Вычитаем проёмы: дверь ~1.9×0.9=1.71 м², окно ~1.4×1.2=1.68 м²
-    const openingsArea = doors * 1.71 + windows * 1.68;
-    const netArea = Math.max(0, wallArea - openingsArea);
-
-    // Количество полос
-    const totalStrips = Math.ceil(netArea / (rollWidthM * height));
-
-    // Рулонов с запасом 1 полоса
-    const rolls = Math.ceil(totalStrips / stripsPerRoll) + 1;
-
-    // Клей: 1 пачка ~20 л → ~50 м² при разведении
-    const gluePackets = Math.ceil(netArea / 50);
-
-    const warnings: string[] = [];
-    if (rapport > 0.32) warnings.push("Большой раппорт узора — отходы могут значительно превысить расчётные. Закупите на 1-2 рулона больше");
-    if (rollWidthM > 0.7) warnings.push("Широкие обои (1.06 м) сложнее клеить — рекомендуется опыт или помощник");
-
-    const scenarios = buildNativeScenarios({
-      id: "wallpaper-main",
-      title: "Wallpaper main",
-      exactNeed: totalStrips / stripsPerRoll,
-      unit: "рулонов",
-      packageSizes: [1],
-      packageLabelPrefix: "wallpaper-roll",
-    });
-
-    return {
-      materials: [
-        {
-          name: "Обои",
-          quantity: totalStrips / stripsPerRoll,
-          unit: "рулонов",
-          withReserve: rolls,
-          purchaseQty: rolls,
-          category: "Основное",
-        },
-        {
-          name: "Клей обойный (пачка)",
-          quantity: netArea / 50,
-          unit: "пачек",
-          withReserve: gluePackets,
-          purchaseQty: gluePackets,
-          category: "Клей",
-        },
-        {
-          name: "Грунтовка глубокого проникновения (канистра 10 л)",
-          quantity: wallArea * 0.3,
-          unit: "л",
-          withReserve: wallArea * 0.3 * 1.15,
-          purchaseQty: Math.ceil((wallArea * 0.3 * 1.15) / 10) * 10,
-          category: "Грунтовка",
-        },
-        {
-          name: "Валик для обойного клея",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Пластиковый шпатель (крыло) для обоев",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Нож малярный (со сменными лезвиями)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Запасные лезвия для ножа (уп. 10 шт)",
-          quantity: 1,
-          unit: "уп",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Расходники",
-        },
-        {
-          name: "Ведро для клея (10-12 л)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Губка поролоновая (для удаления клея)",
-          quantity: 2,
-          unit: "шт",
-          withReserve: 2,
-          purchaseQty: 2,
-          category: "Расходники",
-        },
-      ],
-      totals: {
-        wallArea,
-        netArea,
-        perimeter,
-        rollsNeeded: rolls,
-        stripsPerRoll,
+    return computeCanonicalWallpaper(
+      wallpaperCanonicalSpec,
+      {
+        inputMode: inputs.inputMode,
+        perimeter: inputs.perimeter,
+        area: inputs.area,
+        roomWidth: inputs.roomWidth,
+        roomLength: inputs.roomLength,
+        roomHeight: inputs.roomHeight,
+        length: inputs.length,
+        width: inputs.width,
+        height: inputs.height,
+        wallHeight: inputs.wallHeight ?? inputs.height,
+        openingsArea: inputs.openingsArea,
+        doorsCount: inputs.doorsCount ?? inputs.doors,
+        windowsCount: inputs.windowsCount ?? inputs.windows,
+        rollLength: inputs.rollLength,
+        rollWidth,
+        rapport: inputs.rapport,
+        wallpaperType: inputs.wallpaperType ?? 1,
+        reserveRolls: inputs.reserveRolls ?? 1,
+        reservePercent: inputs.reservePercent ?? 0,
       },
-      warnings,
-      scenarios,
-    };
+      factorTables.factors,
+    );
   },
   formulaDescription: `
-**Расчёт обоев (практика отделочников):**
+**Расчёт обоев:**
+Рулоны считаются через полезную площадь стен, раскрой полосы и выход полос из рулона.
 
-1. **Полосы**: Считаются по периметру. Из одного рулона 10 м обычно выходит 3 целых полосы при высоте потолка 2.7 м и наличии рисунка.
-2. **Запас**: Мы всегда добавляем +1 рулон к расчёту. Он нужен на случай брака, повреждения полотна или будущих подклеек.
-3. **Клей**: Расход зависит от типа обоев (флизелин/винил). Наносите клей на стену, если иное не указано на рулоне.
-4. **Инструмент**: Острый нож — залог ровного стыка у плинтуса. Меняйте лезвие каждые 3-4 полосы.
+Сначала определяется полезная площадь после вычета проёмов, затем — длина полосы с учётом раппорта,
+а после этого рассчитывается точное количество рулонов и сценарии MIN/REC/MAX.
   `,
   howToUse: [
     "Измерьте периметр комнаты и высоту потолков",
     "Укажите параметры рулона и раппорт (шаг рисунка)",
-    "Нажмите «Рассчитать» — получите список рулонов, клея и необходимых инструментов",
+    "Нажмите «Рассчитать» — получите рулоны, клей, грунтовку и расходники",
   ],
   expertTips: [
     {
@@ -250,11 +166,14 @@ export const wallpaperDef: CalculatorDefinition = {
   faq: [
     {
       question: "Нужно ли мазать клеем сами обои?",
-      answer: "Современные флизелиновые обои не требуют нанесения клея на полотно — мажется только стена. Бумажные и виниловые на бумажной основе нужно мазать и выдерживать 5-7 минут."
+      answer: "Это зависит от основы конкретных обоев, а не от общего названия материала: у современных флизелиновых полотен клей чаще наносят только на стену, а бумажные и многие виниловые на бумажной основе требуют нанесения клея на полотно с короткой выдержкой перед приклейкой. Поэтому перед работой всегда нужно смотреть инструкцию именно на вашем рулоне, иначе можно получить перерастянутые полотна, слабый шов или проблемы с подгонкой рисунка, особенно на длинных полосах с раппортом, заметными стыками на свету и сложными внутренними углами. Неправильная схема нанесения клея чаще всего бьёт не по расходу, а по качеству стыка и поведению полотна после высыхания, поэтому перед стартом полезно сделать пробную полосу на самом заметном участке стены. Для тяжёлых полотен и сложного рисунка особенно полезно заранее проверить, не требует ли производитель дополнительной промазки кромок или усиленного клея. Это зависит от типа полотна и инструкции производителя: для части флизелиновых обоев клей наносят только на стену, а для бумажных и некоторых тяжёлых покрытий схема другая. Это зависит от типа покрытия и инструкции производителя: флизелин чаще клеят по стене, а бумажные и часть тяжёлых покрытий требуют намазывания самого полотна или комбинированной схемы. Ошибка в способе нанесения быстро приводит к отслоению стыков и перерасходу клея уже на первом помещении. Это зависит от типа полотна: ошибка по технологии быстро даёт пузыри, слабый шов и лишний расход клея. Это зависит от типа полотна: ошибка здесь чаще ведёт не к экономии, а к растяжению, пузырям и плохому стыку по шву. Это зависит от типа покрытия и указаний производителя: для одних обоев клей наносят только на стену, для других ещё и на полотно."
     },
     {
-      question: "Как убрать пузыри?",
-      answer: "Если пузырь не уходит при разглаживании шпателем, аккуратно проколите его шприцем с клеем, введите немного клея и прижмите."
+      question: "Почему калькулятор показывает три сценария?",
+      answer: "MIN, REC и MAX помогают увидеть расход обоев не только в идеальной раскладке, но и в более реалистичном рабочем сценарии с подрезкой, подгонкой рисунка и обычными потерями при оклейке. Это удобно, когда нужно сравнить минимальную потребность, безопасный рекомендуемый запас и более консервативный вариант закупки, особенно если материал дорогой, есть раппорт или добор потом может оказаться уже из другой партии, что сразу усложняет работу по цвету и стыкам, а иногда и заметно повышает итоговую стоимость ремонта. Такой диапазон особенно полезен там, где ошибка даже в один рулон потом заметно влияет на весь результат по рисунку, партиям и срокам завершения отделки, а не только на сухую цифру по смете. Он позволяет заранее решить, где можно идти по минимальному сценарию, а где лучше сразу брать рабочий запас без риска добора по другой партии и остановки оклейки на заметной стене. Эти сценарии помогают не спорить между идеальным минимумом и практической закупкой, а сразу видеть вилку, в которой подрезка, раппорт и запас уже меняют число рулонов. Это нужно, чтобы отделить идеальную раскладку от реальной работы с подрезкой, раппортом, подбором рисунка и запасом на стыки или замену повреждённого полотна. Так проще понять разницу между идеальной раскладкой и реальной закупкой, где расход увеличивают подрезка, подбор рисунка, раппорт и резерв на замену полотен. Это позволяет сравнить идеальный расход, реальную рабочую норму и безопасный запас на подрезку и подбор рисунка. Такая вилка особенно полезна там, где рисунок, подрезка и реальная высота стен быстро съедают кажущийся запас рулонов."
     }
   ]
 };
+
+
+

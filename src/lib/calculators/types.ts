@@ -88,6 +88,8 @@ export interface CalculatorResult {
   totals: Record<string, number>;
   warnings: string[];
   scenarios?: CalculatorScenarios;
+  formulaVersion?: string;
+  canonicalSpecId?: string;
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;
@@ -95,6 +97,7 @@ export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;
 export interface CalculatorDefinition extends CalculatorMeta {
   fields: CalculatorField[];
   calculate: CalculateFn;
+  formulaVersion?: string;
   formulaDescription?: string;
   howToUse?: string[];
   expertTips?: {
@@ -107,4 +110,5 @@ export interface CalculatorDefinition extends CalculatorMeta {
     answer: string;
   }[];
 }
+
 

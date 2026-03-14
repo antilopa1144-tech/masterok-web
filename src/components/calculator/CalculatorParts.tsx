@@ -1,13 +1,9 @@
 "use client";
 
 import type { CalculatorResult, CalculatorField, CalculatorDefinition } from "@/lib/calculators/types";
-import {
-  formatNumber,
-  TOTAL_LABELS,
-  TOTAL_UNITS,
-  HIDDEN_TOTALS,
-  type HistoryEntry,
-} from "./useCalculator";
+import { formatNumber, type HistoryEntry } from "./useCalculator";
+import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS } from "./totalsDisplay";
+import { CALCULATOR_UI_TEXT } from "./uiText";
 
 // ── Компонент экспертных советов ─────────────────────────────────────────────
 
@@ -15,7 +11,7 @@ export function ExpertTips({ tips }: { tips: NonNullable<CalculatorDefinition["e
   return (
     <div className="space-y-4 mt-8">
       <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-        <span>👷‍♂️</span> Советы прораба
+        <span>👷‍♂️</span> {CALCULATOR_UI_TEXT.expertTips}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {tips.map((tip, i) => (
@@ -40,7 +36,7 @@ export function ExpertTips({ tips }: { tips: NonNullable<CalculatorDefinition["e
 export function CalculatorFAQ({ faq }: { faq: NonNullable<CalculatorDefinition["faq"]> }) {
   return (
     <div className="space-y-4 mt-8">
-      <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Частые вопросы</h2>
+      <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.faqTitle}</h2>
       <div className="space-y-3">
         {faq.map((item, i) => (
           <details key={i} className="group bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -170,7 +166,7 @@ export function FieldInput({
       )}
       {isOutOfRange && (
         <p className="mt-1 text-xs text-red-500">
-          Допустимые значения: {min} — {max} {field.unit ?? ""}
+          {CALCULATOR_UI_TEXT.allowedValues(min, max, field.unit)}
         </p>
       )}
       {!isOutOfRange && field.hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{field.hint}</p>}
@@ -183,7 +179,7 @@ export function FieldInput({
 export function MaterialList({ materials }: { materials: CalculatorResult["materials"] }) {
   const groups: Record<string, typeof materials> = {};
   for (const m of materials) {
-    const cat = m.category ?? "Основное";
+    const cat = m.category ?? CALCULATOR_UI_TEXT.defaultMaterialCategory;
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(m);
   }
@@ -204,7 +200,7 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                   </div>
                   {m.withReserve && m.withReserve !== m.quantity && (
                     <div className="text-xs text-slate-400 dark:text-slate-500">
-                      без запаса: {formatNumber(m.quantity)} {m.unit}
+                      {CALCULATOR_UI_TEXT.withoutReserve}: {formatNumber(m.quantity)} {m.unit}
                     </div>
                   )}
                 </div>
@@ -235,7 +231,7 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
 }
 
 
-// ── Сценарии MIN/REC/MAX ───────────────────────────────────────────────────
+// ── {CALCULATOR_UI_TEXT.scenariosTitle} ───────────────────────────────────────────────────
 
 function ScenarioBlock({ result }: { result: CalculatorResult }) {
   if (!result.scenarios) return null;
@@ -249,7 +245,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
   return (
     <div className="card p-5">
       <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-        Сценарии MIN/REC/MAX
+        {CALCULATOR_UI_TEXT.scenariosTitle}
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {scenarios.map((s) => {
@@ -260,16 +256,16 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
             <div key={s.key} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1">
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{s.title}</p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                need: <span className="font-semibold">{formatNumber(item.exact_need)}</span>
+                {CALCULATOR_UI_TEXT.scenarioLabels.need}: <span className="font-semibold">{formatNumber(item.exact_need)}</span>
               </p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                buy: <span className="font-semibold">{formatNumber(item.purchase_quantity)}</span>
+                {CALCULATOR_UI_TEXT.scenarioLabels.buy}: <span className="font-semibold">{formatNumber(item.purchase_quantity)}</span>
               </p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                leftover: <span className="font-semibold">{formatNumber(item.leftover)}</span>
+                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: <span className="font-semibold">{formatNumber(item.leftover)}</span>
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                plan: {item.buy_plan.package_label}
+                {CALCULATOR_UI_TEXT.scenarioLabels.plan}: {item.buy_plan.package_label}
               </p>
             </div>
           );
@@ -291,7 +287,7 @@ export function HistoryPanel({
   return (
     <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1 border border-slate-200 dark:border-slate-700">
       <p className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-        Прошлые расчёты
+        {CALCULATOR_UI_TEXT.pastCalculations}
       </p>
       {calcHistory.map((entry) => (
         <button
@@ -322,7 +318,7 @@ function copyMaterialsAsText(materials: CalculatorResult["materials"]): void {
     const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
     return `• ${m.name}: ${formatNumber(qty)} ${m.unit}`;
   });
-  const text = `Список материалов (Мастерок)\n\n${lines.join("\n")}`;
+  const text = `${CALCULATOR_UI_TEXT.copyMaterialsHeading}\n\n${lines.join("\n")}`;
   void navigator.clipboard.writeText(text);
 }
 
@@ -353,28 +349,28 @@ export function ResultBlock({
       {/* Карточка результатов */}
       <div className="result-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Список материалов</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.materialsListTitle}</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => copyMaterialsAsText(result.materials)}
               className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title="Скопировать список для мессенджера"
+              title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
             >
-              📋 <span className="hidden sm:inline">Скопировать</span>
+              📋 <span className="hidden sm:inline">{CALCULATOR_UI_TEXT.copy}</span>
             </button>
             <button
               onClick={onShare}
               className="flex items-center gap-1.5 text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title="Поделиться ссылкой"
+              title={CALCULATOR_UI_TEXT.shareLinkTitle}
             >
-              {shareState === "copied" ? "✓" : "🔗"} <span className="hidden sm:inline">{shareState === "copied" ? "Скопировано!" : "Поделиться"}</span>
+              {shareState === "copied" ? "✓" : "🔗"} <span className="hidden sm:inline">{shareState === "copied" ? CALCULATOR_UI_TEXT.copied : CALCULATOR_UI_TEXT.share}</span>
             </button>
             <button
               onClick={() => window.print()}
               className="flex items-center text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title="Распечатать"
+              title={CALCULATOR_UI_TEXT.printTitle}
             >
-              🖨 <span className="hidden sm:inline ml-1.5">Печать</span>
+              🖨 <span className="hidden sm:inline ml-1.5">{CALCULATOR_UI_TEXT.print}</span>
             </button>
           </div>
         </div>
@@ -388,7 +384,7 @@ export function ResultBlock({
       {Object.keys(result.totals).length > 0 && (
         <div className="card p-5">
           <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            Итого
+            {CALCULATOR_UI_TEXT.total}
           </h4>
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(result.totals).map(([key, val]) => (

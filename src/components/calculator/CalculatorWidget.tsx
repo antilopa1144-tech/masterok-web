@@ -4,6 +4,7 @@ import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
+import { CALCULATOR_UI_TEXT } from "./uiText";
 
 export type { CalculatorWidgetProps };
 
@@ -38,7 +39,7 @@ export default function CalculatorWidget({ calculator }: Props) {
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Примеры:</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{CALCULATOR_UI_TEXT.examples}</span>
           {presets.map((p) => (
             <button
               key={p.label}
@@ -54,13 +55,13 @@ export default function CalculatorWidget({ calculator }: Props) {
       {/* Форма калькулятора */}
         <div className="card p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Параметры расчёта</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
             <div className="flex items-center gap-3">
               {calcHistory.length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}
                   className="text-sm text-slate-400 hover:text-accent-600 transition-colors flex items-center gap-1"
-                  title="История расчётов"
+                  title={CALCULATOR_UI_TEXT.historyTitle}
               >
                 🕒 {calcHistory.length}
               </button>
@@ -69,7 +70,7 @@ export default function CalculatorWidget({ calculator }: Props) {
                 onClick={handleReset}
                 className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                Сбросить
+                {CALCULATOR_UI_TEXT.reset}
               </button>
           </div>
         </div>
@@ -93,7 +94,7 @@ export default function CalculatorWidget({ calculator }: Props) {
           className="btn-primary w-full text-base"
           style={{ backgroundColor: category?.color }}
         >
-          {hasCalculated ? "Сохранить в историю" : "Рассчитать"}
+          {hasCalculated ? CALCULATOR_UI_TEXT.saveToHistory : CALCULATOR_UI_TEXT.calculate}
         </button>
       </div>
 
@@ -101,7 +102,7 @@ export default function CalculatorWidget({ calculator }: Props) {
       {result && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Результаты расчёта</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.resultsTitle}</h2>
             <ExportButtons calculatorName={calculator.title} result={result} />
           </div>
           <ResultBlock result={result} shareState={shareState} onShare={handleShare} />

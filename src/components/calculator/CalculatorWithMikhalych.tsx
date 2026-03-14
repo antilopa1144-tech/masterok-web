@@ -8,6 +8,7 @@ import {
   type CalculatorWidgetProps,
 } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
+import { CALCULATOR_UI_TEXT } from "./uiText";
 
 export type { CalculatorWidgetProps };
 
@@ -70,13 +71,13 @@ export default function CalculatorWithMikhalych({
       <div className="space-y-6">
         <div className="card p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Параметры расчёта</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
             <div className="flex items-center gap-3">
               {calcHistory.length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}
                   className="text-sm text-slate-400 hover:text-accent-600 transition-colors"
-                  title="История расчётов"
+                  title={CALCULATOR_UI_TEXT.historyTitle}
                 >
                   🕒 {calcHistory.length}
                 </button>

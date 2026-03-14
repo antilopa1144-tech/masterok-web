@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useEstimateExport, type Material } from '@/lib/export';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import type { CalculatorResult } from '@/lib/calculators/types';
+import { CALCULATOR_UI_TEXT } from './uiText';
 
 interface ExportButtonsProps {
   calculatorName: string;
@@ -46,7 +47,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
         className="btn-secondary text-sm py-2 px-4 inline-flex items-center gap-2"
       >
         <CategoryIcon icon="download" size={16} color="currentColor" />
-        Экспорт
+        {CALCULATOR_UI_TEXT.export}
       </button>
 
       {isOpen && (
@@ -68,8 +69,8 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
             >
               <CategoryIcon icon="file-text" size={16} color="currentColor" />
               <div>
-                <div className="font-medium">PDF документ</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">Для печати и отправки</div>
+                <div className="font-medium">{CALCULATOR_UI_TEXT.exportPdfTitle}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">{CALCULATOR_UI_TEXT.exportPdfDescription}</div>
               </div>
             </button>
 
@@ -84,8 +85,8 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
             >
               <CategoryIcon icon="sheet" size={16} color="currentColor" />
               <div>
-                <div className="font-medium">Excel таблица</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">Для редактирования</div>
+                <div className="font-medium">{CALCULATOR_UI_TEXT.exportExcelTitle}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">{CALCULATOR_UI_TEXT.exportExcelDescription}</div>
               </div>
             </button>
           </div>

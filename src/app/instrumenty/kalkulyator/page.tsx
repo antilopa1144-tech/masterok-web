@@ -7,6 +7,18 @@ type HistoryItem = { expr: string; result: string };
 
 const MAX_HISTORY = 8;
 
+const UI_TEXT = {
+  error: "Ошибка",
+  breadcrumbHome: "Главная",
+  breadcrumbTools: "Инструменты",
+  breadcrumbCurrent: "Калькулятор",
+  title: "Калькулятор",
+  description: "Быстрые вычисления прямо на сайте. Поддерживает клавиатуру.",
+  historyTitle: "История вычислений",
+  clearHistory: "Очистить",
+} as const;
+
+
 /**
  * Безопасный парсер арифметических выражений (без eval/new Function).
  * Поддерживает: +, -, *, /, скобки, отрицательные числа.
@@ -120,7 +132,7 @@ export default function KalkulyatorPage() {
       const result = safeEval(safeExpr);
 
       if (!isFinite(result) || isNaN(result)) {
-        setDisplay("Ошибка");
+        setDisplay(UI_TEXT.error);
         return;
       }
 
@@ -137,7 +149,7 @@ export default function KalkulyatorPage() {
         ...h.slice(0, MAX_HISTORY - 1),
       ]);
     } catch {
-      setDisplay("Ошибка");
+      setDisplay(UI_TEXT.error);
     }
   }, [display]);
 
@@ -168,15 +180,15 @@ export default function KalkulyatorPage() {
     <div className="page-container py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
-        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
         <span>/</span>
-        <span className="text-slate-600 dark:text-slate-300">Калькулятор</span>
+        <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">Калькулятор</h1>
-      <p className="text-slate-500 dark:text-slate-400 mb-8">Быстрые вычисления прямо на сайте. Поддерживает клавиатуру.</p>
+      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.title}</h1>
+      <p className="text-slate-500 dark:text-slate-400 mb-8">{UI_TEXT.description}</p>
 
       <div className="max-w-sm mx-auto md:mx-0 md:flex md:gap-8 md:max-w-2xl">
         {/* Калькулятор */}
@@ -232,13 +244,11 @@ export default function KalkulyatorPage() {
         {history.length > 0 && (
           <div className="mt-6 md:mt-0 flex-1">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">История вычислений</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{UI_TEXT.historyTitle}</p>
               <button
                 onClick={() => setHistory([])}
                 className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-              >
-                Очистить
-              </button>
+              >{UI_TEXT.clearHistory}</button>
             </div>
             <div className="space-y-2">
               {history.map((item, i) => (

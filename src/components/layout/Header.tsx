@@ -6,16 +6,31 @@ import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { SITE_NAME } from "@/lib/site";
+
+const UI_TEXT = {
+  logo: SITE_NAME,
+  navCalculators: "Калькуляторы",
+  navMikhalych: "Михалыч AI",
+  navTools: "Инструменты",
+  navBlog: "Блог",
+  download: "Скачать",
+  menu: "Меню",
+  mainNavigation: "Основная навигация",
+  mobileNavigation: "Мобильная навигация",
+  categories: "Категории",
+  downloadApp: "Скачать приложение",
+} as const;
 
 const NAV_LINKS = [
-  { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
-  { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"] },
-  { href: "/instrumenty/", label: "Инструменты", match: ["/instrumenty"] },
-  { href: "/blog/", label: "Блог", match: ["/blog"] },
-];
+  { href: "/", label: UI_TEXT.navCalculators, match: ["/", "/kalkulyatory"] },
+  { href: "/mikhalych/", label: UI_TEXT.navMikhalych, match: ["/mikhalych"] },
+  { href: "/instrumenty/", label: UI_TEXT.navTools, match: ["/instrumenty"] },
+  { href: "/blog/", label: UI_TEXT.navBlog, match: ["/blog"] },
+] as const;
 
-function isActive(pathname: string, match: string[]): boolean {
-  return match.some((m) => m === "/" ? pathname === "/" : pathname.startsWith(m));
+function isActive(pathname: string, match: readonly string[]): boolean {
+  return match.some((m) => (m === "/" ? pathname === "/" : pathname.startsWith(m)));
 }
 
 export default function Header() {
@@ -26,21 +41,16 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-800">
       <div className="page-container-wide">
         <div className="flex items-center justify-between h-16">
-          {/* Логотип */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 no-underline"
-          >
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
             <div className="w-8 h-8 bg-accent-500 rounded-lg flex items-center justify-center">
               <CategoryIcon icon="hammer" size={18} color="#fff" />
             </div>
             <span className="font-bold text-lg text-slate-900 dark:text-slate-100">
-              Мастерок
+              {UI_TEXT.logo}
             </span>
           </Link>
 
-          {/* Десктоп-навигация */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Основная навигация">
+          <nav className="hidden md:flex items-center gap-1" aria-label={UI_TEXT.mainNavigation}>
             {NAV_LINKS.map((link) => {
               const active = isActive(pathname, link.match);
               return (
@@ -66,17 +76,16 @@ export default function Header() {
               className="btn-primary text-sm py-2 px-4 ml-3 inline-flex items-center gap-1.5"
             >
               <CategoryIcon icon="phone" size={15} color="#fff" />
-              Скачать
+              {UI_TEXT.download}
             </Link>
           </nav>
 
-          {/* Мобильная кнопка */}
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
             <button
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Меню"
+              aria-label={UI_TEXT.menu}
               aria-expanded={menuOpen}
             >
               <svg
@@ -106,9 +115,11 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Мобильное меню */}
       {menuOpen && (
-        <nav className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" aria-label="Мобильная навигация">
+        <nav
+          className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          aria-label={UI_TEXT.mobileNavigation}
+        >
           <div className="page-container py-3 space-y-1">
             {NAV_LINKS.map((link) => {
               const active = isActive(pathname, link.match);
@@ -131,7 +142,7 @@ export default function Header() {
 
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
               <p className="px-3 py-1 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Категории
+                {UI_TEXT.categories}
               </p>
               {CATEGORIES.map((cat) => (
                 <Link
@@ -153,7 +164,7 @@ export default function Header() {
                 onClick={() => setMenuOpen(false)}
               >
                 <CategoryIcon icon="phone" size={16} color="#fff" />
-                Скачать приложение
+                {UI_TEXT.downloadApp}
               </Link>
             </div>
           </div>

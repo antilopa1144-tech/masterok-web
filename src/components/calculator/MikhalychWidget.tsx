@@ -10,6 +10,7 @@ import {
   getApiHeaders,
   USE_PROXY,
 } from "@/lib/mikhalych";
+import { MIKHALYCH_WIDGET_UI_TEXT as UI_TEXT, getMikhalychAssistantErrorMessage } from "./uiText";
 
 interface Props {
   calculatorTitle: string;
@@ -31,8 +32,8 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   useEffect(() => {
     if (open && messages.length === 0) {
       const greeting = calcContext
-        ? `Привет! Вижу, что вы работаете с **${calculatorTitle}**. Уже вижу параметры расчёта. Задавайте вопросы — отвечу с учётом ваших данных.`
-        : `Привет! Задайте вопрос по **${calculatorTitle}** — расскажу о технологии, нормах расхода и типичных ошибках.`;
+        ? UI_TEXT.greetingWithContext(calculatorTitle)
+        : UI_TEXT.greetingWithoutContext(calculatorTitle);
       setMessages([{ role: "assistant", content: greeting }]);
     }
   }, [open, messages.length, calculatorTitle, calcContext]);
@@ -45,7 +46,10 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
     if (!text.trim() || loading) return;
 
     if (!USE_PROXY && !getApiKey()) {
-      setMessages((prev) => [...prev, { role: "assistant", content: "API-ключ не настроен." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: UI_TEXT.apiKeyMissing },
+      ]);
       return;
     }
 
@@ -86,14 +90,17 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
       });
 
       if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Ошибка ${res.status}: ${errText.slice(0, 200)}`);
+        throw new Error(getMikhalychAssistantErrorMessage(res.status));
       }
       const data = await res.json();
-      const content = data.choices?.[0]?.message?.content ?? "Не удалось получить ответ.";
+      const content =
+        data.choices?.[0]?.message?.content ?? UI_TEXT.genericApiError;
       setMessages((prev) => [...prev, { role: "assistant", content }]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Не удалось получить ответ. Проверьте соединение.";
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : UI_TEXT.networkError;
       setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${msg}` }]);
     } finally {
       setLoading(false);
@@ -108,13 +115,13 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             🤖
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-white mb-1">Спросите Михалыча</h3>
+            <h3 className="font-semibold text-white mb-1">{UI_TEXT.title}</h3>
             <p className="text-sm text-slate-300 mb-3">
-              Опытный строительный мастер ответит на ваши вопросы по{" "}
+              {UI_TEXT.introDescription}{" "}
               <span className="text-accent-400">{calculatorTitle.toLowerCase()}</span>.
               {calcContext && (
                 <span className="block mt-1 text-xs text-green-400">
-                  ✓ Михалыч видит ваши параметры расчёта
+                  {UI_TEXT.contextVisible}
                 </span>
               )}
             </p>
@@ -122,7 +129,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
               onClick={() => setOpen(true)}
               className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
             >
-              Задать вопрос →
+              {UI_TEXT.askButton}
             </button>
           </div>
         </div>
@@ -135,17 +142,17 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
       <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl" aria-hidden="true">🤖</span>
-          <span className="text-sm font-semibold text-white">Михалыч</span>
+          <span className="text-sm font-semibold text-white">{UI_TEXT.assistantName}</span>
           {calcContext && (
             <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-              знает параметры
+              {UI_TEXT.knowParams}
             </span>
           )}
         </div>
         <button
           onClick={() => setOpen(false)}
           className="text-slate-400 hover:text-white text-sm transition-colors"
-          aria-label="Закрыть чат"
+          aria-label={UI_TEXT.closeChat}
         >
           ✕
         </button>
@@ -169,7 +176,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
         {loading && (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-accent-500 flex items-center justify-center text-xs" aria-hidden="true">🤖</div>
-            <div className="flex gap-1 px-3 py-2 bg-slate-600/50 rounded-xl" aria-label="Михалыч думает...">
+            <div className="flex gap-1 px-3 py-2 bg-slate-600/50 rounded-xl" aria-label={UI_TEXT.thinking}>
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
@@ -186,16 +193,16 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder="Задайте вопрос..."
+            placeholder={UI_TEXT.inputPlaceholder}
             disabled={loading}
-            aria-label="Сообщение для Михалыча"
+            aria-label={UI_TEXT.inputAriaLabel}
             className="flex-1 bg-slate-600/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-accent-500/50"
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || loading}
             className="bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white px-3 py-2 rounded-xl transition-colors text-sm font-medium"
-            aria-label="Отправить"
+            aria-label={UI_TEXT.sendAriaLabel}
           >
             →
           </button>

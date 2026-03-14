@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { CALCULATOR_UI_TEXT } from "./uiText";
 
 interface Props {
   calculators: CalculatorMeta[];
@@ -91,7 +92,7 @@ export default function CalculatorSearch({ calculators }: Props) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Найти калькулятор: бетон, плитка, ламинат..."
+          placeholder={CALCULATOR_UI_TEXT.searchPlaceholder}
           className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all text-sm"
           role="combobox"
           aria-controls="search-results"
@@ -151,12 +152,12 @@ export default function CalculatorSearch({ calculators }: Props) {
             </ul>
           ) : (
             <div className="px-4 py-6 text-center">
-              <p className="text-slate-400 dark:text-slate-500 text-sm">Ничего не найдено по запросу «{query}»</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm">{CALCULATOR_UI_TEXT.searchEmpty(query)}</p>
               <Link
                 href="/mikhalych/"
                 className="text-sm text-accent-600 hover:text-accent-700 mt-2 inline-block no-underline"
               >
-                Спросить Михалыча →
+                {CALCULATOR_UI_TEXT.askMikhalych}
               </Link>
             </div>
           )}

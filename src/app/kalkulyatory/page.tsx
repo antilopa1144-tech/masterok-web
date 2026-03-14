@@ -3,11 +3,26 @@ import Link from "next/link";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Все строительные калькуляторы онлайн | Мастерок",
+const META = {
+  title: `Все строительные калькуляторы онлайн | ${SITE_NAME}`,
   description: "Полный каталог строительных калькуляторов: бетон, кирпич, кровля, полы, отделка. Расчёт материалов по ГОСТ и СНиП.",
-};
+} as const;
+
+const PAGE_URL = `${SITE_URL}/kalkulyatory/`;
+
+export const metadata: Metadata = buildPageMetadata({
+  title: META.title,
+  description: META.description,
+  url: PAGE_URL,
+});
+
+const UI_TEXT = {
+  title: "Все калькуляторы",
+  countSuffix: "калькуляторов по всем разделам строительства",
+} as const;
 
 export default function KalkulyatoryPage() {
   return (
@@ -15,10 +30,10 @@ export default function KalkulyatoryPage() {
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-8">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Все калькуляторы
+            {UI_TEXT.title}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
-            {ALL_CALCULATORS.length} калькуляторов по всем разделам строительства
+            {ALL_CALCULATORS.length} {UI_TEXT.countSuffix}
           </p>
         </div>
       </div>
@@ -62,3 +77,9 @@ export default function KalkulyatoryPage() {
     </div>
   );
 }
+
+
+
+
+
+

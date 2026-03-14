@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "families": {
+    "dry_mix_area_based": {
+      "description": "Dry mixes calculated by area/thickness with packaging in bags and auxiliary materials.",
+      "webExamples": ["putty", "plaster"],
+      "flutterExamples": ["calculate_putty", "calculate_plaster"],
+      "canonicalInputs": ["inputMode", "length", "width", "height", "area", "openingsArea", "bagWeight"],
+      "commonOutputs": ["materials", "totals", "warnings", "scenarios"],
+      "fixtureCases": ["room_dimensions", "direct_area", "invalid_inputs", "large_area_warning"]
+    },
+    "liquid_coating_area_based": {
+      "description": "Liquid materials calculated by area, coats and surface modifiers with liters/cans packaging.",
+      "webExamples": ["primer", "paint"],
+      "flutterExamples": ["calculate_primer", "calculate_paint"],
+      "canonicalInputs": ["area", "coats", "surfaceType", "surfacePrep", "canSize"],
+      "commonOutputs": ["materials", "totals", "warnings", "scenarios"],
+      "fixtureCases": ["single_surface", "split_scope", "warning_case", "invalid_inputs"]
+    },
+    "roll_material": {
+      "description": "Roll-based finishing materials with strip logic and reserve-by-roll policies.",
+      "webExamples": ["wallpaper"],
+      "flutterExamples": ["calculate_wallpaper"],
+      "canonicalInputs": ["perimeter", "wallHeight", "rollWidth", "rollLength", "rapport", "reserveRolls"],
+      "commonOutputs": ["materials", "totals", "warnings", "scenarios"],
+      "fixtureCases": ["room_dimensions", "direct_area", "large_rapport_warning", "wide_roll_warning"]
+    },
+    "roll_flooring": {
+      "description": "Roll-based floor coverings with strip planning, linear meters and seam-aware accessories.",
+      "webExamples": ["linoleum"],
+      "flutterExamples": ["calculate_linoleum", "calculate_linoleum_v2"],
+      "canonicalInputs": ["inputMode", "length", "width", "area", "roomWidth", "perimeter", "rollWidth", "patternRepeatCm", "hasPattern"],
+      "commonOutputs": ["materials", "totals", "warnings", "scenarios"],
+      "fixtureCases": ["room_dimensions", "direct_area", "pattern_repeat", "wide_waste_warning"]
+    },
+    "piece_flooring": {
+      "description": "Piece or pack-based floor coverings with waste profiles and accessory calculations.",
+      "webExamples": ["tile", "laminate", "parquet"],
+      "flutterExamples": ["calculate_tile", "calculate_laminate", "calculate_parquet"],
+      "canonicalInputs": ["inputMode", "length", "width", "area", "packArea", "layoutProfileId", "reservePercent"],
+      "commonOutputs": ["materials", "totals", "warnings", "scenarios"],
+      "fixtureCases": ["room_dimensions", "direct_area", "complex_layout", "warning_case"]
+    }
+  },
+  "canonicalized": {
+    "putty": { "family": "dry_mix_area_based", "formulaVersion": "putty-canonical-v1" },
+    "plaster": { "family": "dry_mix_area_based", "formulaVersion": "plaster-canonical-v1" },
+    "primer": { "family": "liquid_coating_area_based", "formulaVersion": "primer-canonical-v1" },
+    "paint": { "family": "liquid_coating_area_based", "formulaVersion": "paint-canonical-v1" },
+    "wallpaper": { "family": "roll_material", "formulaVersion": "wallpaper-canonical-v1" },
+    "tile": { "family": "piece_flooring", "formulaVersion": "tile-canonical-v1" },
+    "laminate": { "family": "piece_flooring", "formulaVersion": "laminate-canonical-v1" },
+    "parquet": { "family": "piece_flooring", "formulaVersion": "parquet-canonical-v1" },
+    "linoleum": { "family": "roll_flooring", "formulaVersion": "linoleum-canonical-v1" },`r`n    "self-leveling": { "family": "dry_mix_area_based", "formulaVersion": "self-leveling-canonical-v1" }
+  }
+}
+

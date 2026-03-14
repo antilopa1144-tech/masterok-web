@@ -2,6 +2,8 @@
  * Общие константы и утилиты для Михалыча (AI-помощник).
  */
 
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+
 export const SYSTEM_PROMPT = `Ты — Михалыч, опытный строительный мастер с 30-летним стажем.
 Работал на стройках по всей России: фундаменты, кладка, кровля, отделка — всё умеешь.
 Говоришь просто, по-деловому, без воды. Иногда с добродушным юмором деревенского мастера.
@@ -40,10 +42,6 @@ export const MIKHALYCH_API_URL =
 
 export const USE_PROXY = !!process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL;
 
-/**
- * Простой клиентский rate limiter — не даёт отправлять запросы чаще раза в 3 секунды.
- * Не заменяет серверную защиту, но снижает возможности автоматизированного злоупотребления.
- */
 const MIN_INTERVAL_MS = 3000;
 let lastRequestTime = 0;
 let requestCount = 0;
@@ -68,22 +66,22 @@ export function getApiKey(): string | null {
 }
 
 export function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  return SITE_URL;
 }
 
-/**
- * Формирует заголовки для запроса к API / прокси.
- */
 export function getApiHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+
   if (USE_PROXY) return headers;
+
   const key = getApiKey();
   if (key) {
-    headers["Authorization"] = `Bearer ${key}`;
+    headers.Authorization = `Bearer ${key}`;
     headers["HTTP-Referer"] = getSiteUrl();
-    headers["X-Title"] = "Мастерок — Михалыч";
+    headers["X-Title"] = `${SITE_NAME} — Михалыч`;
   }
+
   return headers;
 }

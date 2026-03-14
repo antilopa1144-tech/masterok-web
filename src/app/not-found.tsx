@@ -5,24 +5,32 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 
 const POPULAR = ALL_CALCULATORS.filter((c) => c.popularity >= 9).slice(0, 6);
 
+const UI_TEXT = {
+  title: "Страница не найдена",
+  description:
+    "Возможно, калькулятор переехал или адрес изменился. Выберите нужный раздел ниже или вернитесь на главную.",
+  popularTitle: "Популярные калькуляторы",
+  categoriesTitle: "Все категории",
+  homeCta: "На главную",
+  mikhalychCta: "Спросить Михалыча",
+} as const;
+
 export default function NotFound() {
   return (
     <div className="page-container py-16">
       <div className="text-center mb-12">
         <div className="text-6xl mb-4">🔨</div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-          Страница не найдена
+          {UI_TEXT.title}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          Возможно, калькулятор переехал или адрес изменился. Выберите нужный
-          раздел ниже или вернитесь на главную.
+          {UI_TEXT.description}
         </p>
       </div>
 
-      {/* Популярные калькуляторы */}
       <div className="mb-10">
         <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
-          Популярные калькуляторы
+          {UI_TEXT.popularTitle}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
           {POPULAR.map((calc) => {
@@ -52,10 +60,9 @@ export default function NotFound() {
         </div>
       </div>
 
-      {/* Категории */}
       <div className="mb-10">
         <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
-          Все категории
+          {UI_TEXT.categoriesTitle}
         </h2>
         <div className="flex flex-wrap justify-center gap-2">
           {CATEGORIES.map((cat) => (
@@ -71,16 +78,12 @@ export default function NotFound() {
         </div>
       </div>
 
-      {/* CTA */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Link href="/" className="btn-primary">
-          На главную
+          {UI_TEXT.homeCta}
         </Link>
-        <Link
-          href="/mikhalych/"
-          className="btn-secondary"
-        >
-          Спросить Михалыча
+        <Link href="/mikhalych/" className="btn-secondary">
+          {UI_TEXT.mikhalychCta}
         </Link>
       </div>
     </div>

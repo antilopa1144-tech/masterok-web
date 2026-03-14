@@ -3,14 +3,137 @@ import Link from "next/link";
 import { ALL_CALCULATORS, getPopularCalculators } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { SITE_NAME, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 
-export const metadata: Metadata = {
-  title: "Мастерок — строительные калькуляторы онлайн бесплатно",
+const META = {
+  title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
   description:
     "50+ бесплатных строительных калькуляторов онлайн: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.",
+} as const;
+
+export const metadata: Metadata = {
+  title: META.title,
+  description: META.description,
 };
+
+const UI_TEXT = {
+  heroBadgeSuffix: "бесплатных калькуляторов",
+  heroTitle: "Строительные калькуляторы",
+  heroAccent: "онлайн",
+  heroDescription:
+    "Точный расчёт материалов по ГОСТ и СНиП. Бетон, кирпич, кровля, плитка, ламинат — всё в одном месте. Быстро, бесплатно, без регистрации.",
+  heroPrimaryCta: "Начать расчёт",
+  heroSecondaryCta: "Спросить Михалыча",
+  stats: [
+    { val: "100%", label: "Бесплатно" },
+    { val: "ГОСТ", label: "Нормы" },
+  ],
+  categoriesTitle: "Категории калькуляторов",
+  popularTitle: "Популярные калькуляторы",
+  popularMeta: "Чаще всего используются",
+  otherCategory: "Прочее",
+  mikhalychTitle: "Михалыч — ваш ИИ-прораб",
+  mikhalychMeta: "Строительный ИИ-ассистент",
+  mikhalychDescription:
+    "Задайте любой строительный вопрос. Михалыч поможет рассчитать материалы, расскажет про технологию укладки, объяснит нормы СНиП и предупредит о типичных ошибках.",
+  mikhalychPrimaryCta: "Начать диалог",
+  mikhalychSecondaryCta: "Приложение",
+  toolsTitle: "Полезные инструменты",
+  toolsCta: "Все инструменты →",
+  featuresTitle: `Почему ${SITE_NAME}?`,
+} as const;
+
+const TOOLS = [
+  {
+    href: "/instrumenty/konverter/",
+    icon: "converter",
+    title: "Конвертер",
+    desc: "мм → м → дюйм",
+    bg: "#DBEAFE",
+    color: "#3B82F6",
+  },
+  {
+    href: "/instrumenty/ploshchad-komnaty/",
+    icon: "area",
+    title: "Площадь комнаты",
+    desc: "Г, Т, трапеция",
+    bg: "#D1FAE5",
+    color: "#10B981",
+  },
+  {
+    href: "/instrumenty/kalkulyator/",
+    icon: "calculator",
+    title: "Калькулятор",
+    desc: "Как на телефоне",
+    bg: "#FEF3C7",
+    color: "#F59E0B",
+  },
+  {
+    href: "/instrumenty/chek-listy/",
+    icon: "checklist",
+    title: "Чек-листы",
+    desc: "6 шаблонов работ",
+    bg: "#EDE9FE",
+    color: "#8B5CF6",
+  },
+] as const;
+
+const FEATURES = [
+  {
+    icon: "target",
+    color: "#6366F1",
+    bg: "#EDE9FE",
+    title: "Точные нормы",
+    desc: "Все расчёты основаны на актуальных ГОСТ, СНиП и СП. Нормы расхода от производителей и практики строителей.",
+  },
+  {
+    icon: "engineering",
+    color: "#06B6D4",
+    bg: "#CFFAFE",
+    title: "Мгновенно",
+    desc: "Расчёт происходит прямо в браузере без отправки данных на сервер. Никаких задержек и регистраций.",
+  },
+  {
+    icon: "phone",
+    color: "#10B981",
+    bg: "#D1FAE5",
+    title: "Мобильное приложение",
+    desc: "Работает без интернета. Сохраняйте расчёты, создавайте проекты, делитесь QR-кодами со сметой.",
+  },
+  {
+    icon: "hammer",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
+    title: "Практичные результаты",
+    desc: "Кроме основных материалов — сопутствующие: крепёж, клей, грунтовка. Всё что нужно в магазин.",
+  },
+  {
+    icon: "foundation",
+    color: "#EF4444",
+    bg: "#FEE2E2",
+    title: "Для России",
+    desc: "Российские размеры материалов, бренды (Knauf, Ceresit, Технониколь), нормы и единицы измерения.",
+  },
+  {
+    icon: "chat",
+    color: "#8B5CF6",
+    bg: "#EDE9FE",
+    title: "ИИ-помощник",
+    desc: "Михалыч ответит на вопросы по технологии, поможет разобраться в нюансах и подберёт нужный материал.",
+  },
+] as const;
+
+function getCalculatorCountLabel(count: number) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod100 >= 11 && mod100 <= 19) return "калькуляторов";
+  if (mod10 === 1) return "калькулятор";
+  if (mod10 >= 2 && mod10 <= 4) return "калькулятора";
+  return "калькуляторов";
+}
 
 export default function HomePage() {
   const popular = getPopularCalculators(8);
@@ -19,15 +142,17 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Мастерок",
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru",
-    description: "Строительные калькуляторы онлайн",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_WEBPAGE_DESCRIPTION,
     potentialAction: {
       "@type": "SearchAction",
       target: "/?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
+
+  const stats = [{ val: `${totalCount}+`, label: "Калькуляторов" }, ...UI_TEXT.stats];
 
   return (
     <>
@@ -36,59 +161,68 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* ── Hero ────────────────────────────────────────────── */}
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-14 md:py-20 text-center">
           <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 dark:border-accent-800/40 mb-6">
             <CategoryIcon icon="trophy" size={16} />
-            <span>{totalCount}+ бесплатных калькуляторов</span>
+            <span>{totalCount}+ {UI_TEXT.heroBadgeSuffix}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
-            Строительные калькуляторы{" "}
-            <span className="text-accent-500">онлайн</span>
+            {UI_TEXT.heroTitle}{" "}
+            <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
           </h1>
 
           <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
-            Точный расчёт материалов по ГОСТ и СНиП. Бетон, кирпич, кровля,
-            плитка, ламинат — всё в одном месте. Быстро, бесплатно, без
-            регистрации.
+            {UI_TEXT.heroDescription}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="#calculators" className="btn-primary text-base px-8 py-3">
-              Начать расчёт
+              {UI_TEXT.heroPrimaryCta}
             </Link>
             <Link href="/mikhalych/" className="btn-secondary text-base px-6 py-3 inline-flex items-center gap-2">
               <CategoryIcon icon="bot" size={18} />
-              Спросить Михалыча
+              {UI_TEXT.heroSecondaryCta}
             </Link>
           </div>
 
-          {/* Поиск */}
           <div className="mt-8 max-w-xl mx-auto">
             <CalculatorSearch
               calculators={ALL_CALCULATORS.map(
                 ({
-                  id, slug, title, h1, description, metaTitle,
-                  metaDescription, category, categorySlug, tags,
-                  popularity, complexity,
+                  id,
+                  slug,
+                  title,
+                  h1,
+                  description,
+                  metaTitle,
+                  metaDescription,
+                  category,
+                  categorySlug,
+                  tags,
+                  popularity,
+                  complexity,
                 }) => ({
-                  id, slug, title, h1, description, metaTitle,
-                  metaDescription, category, categorySlug, tags,
-                  popularity, complexity,
+                  id,
+                  slug,
+                  title,
+                  h1,
+                  description,
+                  metaTitle,
+                  metaDescription,
+                  category,
+                  categorySlug,
+                  tags,
+                  popularity,
+                  complexity,
                 })
               )}
             />
           </div>
 
-          {/* Статистика */}
           <div className="grid grid-cols-3 gap-6 max-w-sm mx-auto mt-10">
-            {[
-              { val: `${totalCount}+`, label: "Калькуляторов" },
-              { val: "100%", label: "Бесплатно" },
-              { val: "ГОСТ", label: "Нормы" },
-            ].map((s) => (
+            {stats.map((s) => (
               <div key={s.label} className="text-center">
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {s.val}
@@ -100,17 +234,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Категории ───────────────────────────────────────── */}
       <section className="page-container-wide py-10" id="calculators">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-          Категории калькуляторов
+          {UI_TEXT.categoriesTitle}
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {CATEGORIES.map((cat) => {
-            const count = ALL_CALCULATORS.filter(
-              (c) => c.category === cat.id
-            ).length;
+            const count = ALL_CALCULATORS.filter((c) => c.category === cat.id).length;
             return (
               <Link
                 key={cat.id}
@@ -127,7 +258,7 @@ export default function HomePage() {
                   {cat.label}
                 </h3>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  {count} {(() => { const m10 = count % 10; const m100 = count % 100; if (m100 >= 11 && m100 <= 19) return "калькуляторов"; if (m10 === 1) return "калькулятор"; if (m10 >= 2 && m10 <= 4) return "калькулятора"; return "калькуляторов"; })()}
+                  {count} {getCalculatorCountLabel(count)}
                 </p>
               </Link>
             );
@@ -135,14 +266,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Популярные калькуляторы ──────────────────────────── */}
       <section className="page-container-wide py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Популярные калькуляторы
+            {UI_TEXT.popularTitle}
           </h2>
           <span className="text-sm text-slate-400 dark:text-slate-500 hidden sm:block">
-            Чаще всего используются
+            {UI_TEXT.popularMeta}
           </span>
         </div>
 
@@ -175,7 +305,7 @@ export default function HomePage() {
                       color: cat?.color ?? "#64748b",
                     }}
                   >
-                    {cat?.label ?? "Прочее"}
+                    {cat?.label ?? UI_TEXT.otherCategory}
                   </span>
                 </div>
               </Link>
@@ -184,8 +314,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
-      {/* ── Михалыч ─────────────────────────────────────────── */}
       <section className="page-container-wide py-8">
         <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 md:p-12 text-white overflow-hidden dark:bg-slate-800">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -196,55 +324,47 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-white">
-                    Михалыч — ваш ИИ-прораб
+                    {UI_TEXT.mikhalychTitle}
                   </h2>
                   <p className="text-slate-400 text-sm">
-                    Строительный ИИ-ассистент
+                    {UI_TEXT.mikhalychMeta}
                   </p>
                 </div>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Задайте любой строительный вопрос. Михалыч поможет рассчитать
-                материалы, расскажет про технологию укладки, объяснит нормы СНиП
-                и предупредит о типичных ошибках.
+                {UI_TEXT.mikhalychDescription}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-3 shrink-0">
               <Link href="/mikhalych/" className="btn-primary text-base px-8">
-                Начать диалог
+                {UI_TEXT.mikhalychPrimaryCta}
               </Link>
               <Link
                 href="/prilozhenie/"
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 text-white font-medium rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-150 no-underline text-base"
               >
                 <CategoryIcon icon="phone" size={18} color="#fff" />
-                Приложение
+                {UI_TEXT.mikhalychSecondaryCta}
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Инструменты ─────────────────────────────────────── */}
       <section className="page-container-wide py-8">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Полезные инструменты
+            {UI_TEXT.toolsTitle}
           </h2>
           <Link
             href="/instrumenty/"
             className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline"
           >
-            Все инструменты →
+            {UI_TEXT.toolsCta}
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { href: "/instrumenty/konverter/", icon: "converter", title: "Конвертер", desc: "мм → м → дюйм", bg: "#DBEAFE", color: "#3B82F6" },
-            { href: "/instrumenty/ploshchad-komnaty/", icon: "area", title: "Площадь комнаты", desc: "Г, Т, трапеция", bg: "#D1FAE5", color: "#10B981" },
-            { href: "/instrumenty/kalkulyator/", icon: "calculator", title: "Калькулятор", desc: "Как на телефоне", bg: "#FEF3C7", color: "#F59E0B" },
-            { href: "/instrumenty/chek-listy/", icon: "checklist", title: "Чек-листы", desc: "6 шаблонов работ", bg: "#EDE9FE", color: "#8B5CF6" },
-          ].map((tool) => (
+          {TOOLS.map((tool) => (
             <Link
               key={tool.href}
               href={tool.href}
@@ -265,57 +385,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Почему Мастерок ─────────────────────────────────── */}
       <section className="page-container-wide py-8 pb-14">
         <div className="card p-6 md:p-8">
           <h2 className="text-xl font-bold text-slate-900 mb-6 dark:text-slate-100">
-            Почему Мастерок?
+            {UI_TEXT.featuresTitle}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: "target",
-                color: "#6366F1",
-                bg: "#EDE9FE",
-                title: "Точные нормы",
-                desc: "Все расчёты основаны на актуальных ГОСТ, СНиП и СП. Нормы расхода от производителей и практики строителей.",
-              },
-              {
-                icon: "engineering",
-                color: "#06B6D4",
-                bg: "#CFFAFE",
-                title: "Мгновенно",
-                desc: "Расчёт происходит прямо в браузере без отправки данных на сервер. Никаких задержек и регистраций.",
-              },
-              {
-                icon: "phone",
-                color: "#10B981",
-                bg: "#D1FAE5",
-                title: "Мобильное приложение",
-                desc: "Работает без интернета. Сохраняйте расчёты, создавайте проекты, делитесь QR-кодами со сметой.",
-              },
-              {
-                icon: "hammer",
-                color: "#F59E0B",
-                bg: "#FEF3C7",
-                title: "Практичные результаты",
-                desc: "Кроме основных материалов — сопутствующие: крепёж, клей, грунтовка. Всё что нужно в магазин.",
-              },
-              {
-                icon: "foundation",
-                color: "#EF4444",
-                bg: "#FEE2E2",
-                title: "Для России",
-                desc: "Российские размеры материалов, бренды (Knauf, Ceresit, Технониколь), нормы и единицы измерения.",
-              },
-              {
-                icon: "chat",
-                color: "#8B5CF6",
-                bg: "#EDE9FE",
-                title: "ИИ-помощник",
-                desc: "Михалыч ответит на вопросы по технологии, поможет разобраться в нюансах и подберёт нужный материал.",
-              },
-            ].map((f) => (
+            {FEATURES.map((f) => (
               <div key={f.title} className="flex items-start gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"

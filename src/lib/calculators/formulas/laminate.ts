@@ -1,19 +1,37 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import factorTables from "../../../../configs/factor-tables.json";
+import laminateCanonicalSpecJson from "../../../../configs/calculators/laminate-canonical.v1.json";
+import { computeCanonicalLaminate } from "../../../../engine/laminate";
+import type { LaminateCanonicalSpec } from "../../../../engine/canonical";
+
+const laminateCanonicalSpec = laminateCanonicalSpecJson as LaminateCanonicalSpec;
+
+function mapLegacyLayoutProfile(layingMethod: number | undefined, offsetMode: number | undefined): number {
+  const method = Math.round(layingMethod ?? 0);
+  const offset = Math.round(offsetMode ?? 0);
+
+  if (method === 1) return 4;
+  if (method === 2) return 5;
+  if (offset === 1) return 2;
+  if (offset === 2) return 3;
+  return 1;
+}
 
 export const laminateDef: CalculatorDefinition = {
   id: "laminate",
   slug: "laminat",
+  formulaVersion: laminateCanonicalSpec.formula_version,
   title: "Калькулятор ламината",
   h1: "Калькулятор ламината онлайн — расчёт количества упаковок",
-  description: "Рассчитайте количество упаковок ламината, подложки и плинтуса для вашей комнаты. Учёт способа укладки.",
-  metaTitle: "Калькулятор ламината онлайн | Расчёт упаковок — Мастерок",
-  metaDescription: "Бесплатный калькулятор ламината: рассчитайте точное количество упаковок с учётом способа укладки, подложки и плинтуса. Быстро и без ошибок.",
+  description: "Рассчитайте количество упаковок ламината, подложки и плинтуса для вашей комнаты. Учёт способа укладки и явного запаса.",
+  metaTitle: withSiteMetaTitle("Калькулятор ламината онлайн | Расчёт упаковок"),
+  metaDescription: "Бесплатный калькулятор ламината: рассчитайте количество упаковок, подложку, плинтус и порожки с учётом схемы укладки и запаса на подрезку.",
   category: "flooring",
   categorySlug: "poly",
   tags: ["ламинат", "напольное покрытие", "подложка", "плинтус", "пол"],
   popularity: 82,
-  complexity: 1,
+  complexity: 2,
   fields: [
     {
       key: "inputMode",
@@ -63,7 +81,7 @@ export const laminateDef: CalculatorDefinition = {
       label: "Площадь упаковки",
       type: "slider",
       unit: "м²",
-      min: 1,
+      min: 0.5,
       max: 5,
       step: 0.001,
       defaultValue: 2.397,
@@ -75,10 +93,32 @@ export const laminateDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Прямая — +5% отходов" },
-        { value: 1, label: "Диагональная — +15% отходов" },
-        { value: 2, label: "Ёлочка — +20% отходов" },
+        { value: 0, label: "Прямая" },
+        { value: 1, label: "Диагональная" },
+        { value: 2, label: "Ёлочка" },
       ],
+    },
+    {
+      key: "offsetMode",
+      label: "Смещение досок",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Хаотичное / случайное" },
+        { value: 1, label: "На 1/3 длины" },
+        { value: 2, label: "На 1/2 длины" },
+      ],
+    },
+    {
+      key: "reservePercent",
+      label: "Явный запас",
+      type: "slider",
+      unit: "%",
+      min: 0,
+      max: 25,
+      step: 1,
+      defaultValue: 10,
+      hint: "Если запас выше расчётного по раскладке, калькулятор возьмёт его как основной.",
     },
     {
       key: "hasUnderlayment",
@@ -97,180 +137,68 @@ export const laminateDef: CalculatorDefinition = {
       defaultValue: 10,
     },
     {
-      key: "offsetMode",
-      label: "Смещение досок",
-      type: "select",
-      defaultValue: 0,
-      options: [
-        { value: 0, label: "Хаотичное (экономное)" },
-        { value: 1, label: "На 1/3 длины (классика)" },
-        { value: 2, label: "На 1/2 длины (кирпичная)" },
-      ],
+      key: "doorThresholds",
+      label: "Количество порогов",
+      type: "slider",
+      min: 0,
+      max: 10,
+      step: 1,
+      defaultValue: 1,
     },
   ],
   calculate(inputs) {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let area: number;
-    let perimeter: number;
-
-    if (inputMode === 0) {
-      const l = Math.max(1, inputs.length ?? 5);
-      const w = Math.max(1, inputs.width ?? 4);
-      area = l * w;
-      perimeter = 2 * (l + w);
-    } else {
-      area = Math.max(1, inputs.area ?? 20);
-      const side = Math.sqrt(area);
-      perimeter = 4 * side;
-    }
-
-    const packArea = Math.max(0.5, inputs.packArea ?? 2.397);
-    const method = Math.round(inputs.layingMethod ?? 0);
-    const offset = Math.round(inputs.offsetMode ?? 0);
-    const hasUnderlayment = (inputs.hasUnderlayment ?? 1) > 0;
-    const underlaymentRoll = Math.max(5, inputs.underlaymentRoll ?? 10);
-
-    // Коэффициент отходов: способ укладки + смещение
-    const methodWaste: Record<number, number> = { 0: 1.05, 1: 1.15, 2: 1.20 };
-    const offsetWaste = [0, 0.03, 0.07]; // хаотично - 0, 1/3 - +3%, 1/2 - +7%
-    
-    const coeff = (methodWaste[method] ?? 1.05) + (offsetWaste[offset] ?? 0);
-
-    const laminateArea = area * coeff;
-    const packs = Math.ceil(laminateArea / packArea);
-
-    // Подложка с нахлёстом 10%
-    const underlaymentArea = hasUnderlayment ? area * 1.10 : 0;
-    const underlaymentRolls = hasUnderlayment ? Math.ceil(underlaymentArea / underlaymentRoll) : 0;
-
-    // Плинтус: периметр минус двери (~0.9 м на каждую), +7% подрезка
-    const doorCount = Math.max(1, Math.ceil(area / 15)); // примерная оценка кол-ва дверей
-    const plinthLength = (perimeter - doorCount * 0.9) * 1.07;
-    const plinthPieces = Math.ceil(plinthLength / 2.5);
-
-    // Распорные клинья: каждые 0.4 м по периметру
-    const wedges = Math.ceil(perimeter / 0.4);
-
-    const warnings: string[] = [];
-    if (area < 5) warnings.push("Маленькая площадь: процент отходов может быть выше из-за невозможности использовать обрезки");
-    if (method === 2) warnings.push("Укладка ёлочкой: требует идеально ровного основания и высокой квалификации");
-    if (offset === 2) warnings.push("Смещение на 1/2: самый неэкономный способ укладки, много коротких обрезков");
-
-    const materials = [
+    return computeCanonicalLaminate(
+      laminateCanonicalSpec,
       {
-        name: "Ламинат (упаковки)",
-        quantity: laminateArea / packArea,
-        unit: "упак.",
-        withReserve: packs,
-        purchaseQty: packs,
-        category: "Напольное покрытие",
+        inputMode: inputs.inputMode,
+        length: inputs.length,
+        width: inputs.width,
+        area: inputs.area,
+        perimeter: inputs.perimeter,
+        packArea: inputs.packArea,
+        layoutProfileId: inputs.layoutProfileId ?? mapLegacyLayoutProfile(inputs.layingMethod, inputs.offsetMode),
+        reservePercent: inputs.reservePercent,
+        hasUnderlayment: inputs.hasUnderlayment,
+        underlaymentRollArea: inputs.underlaymentRoll,
+        doorThresholds: inputs.doorThresholds,
       },
-      ...(hasUnderlayment ? [{
-        name: "Подложка (рулонная)",
-        quantity: area / underlaymentRoll,
-        unit: "рулонов",
-        withReserve: underlaymentRolls,
-        purchaseQty: underlaymentRolls,
-        category: "Подложка",
-      }] : []),
-      {
-        name: "Плинтус напольный (2.5 м)",
-        quantity: plinthLength / 2.5,
-        unit: "шт",
-        withReserve: plinthPieces,
-        purchaseQty: plinthPieces,
-        category: "Плинтус",
-      },
-      {
-        name: "Углы и заглушки для плинтуса",
-        quantity: Math.ceil(perimeter / 2),
-        unit: "шт",
-        withReserve: Math.ceil(perimeter / 2),
-        purchaseQty: Math.ceil(perimeter / 2),
-        category: "Плинтус",
-      },
-      {
-        name: "Клинья распорные (набор)",
-        quantity: 1,
-        unit: "упак",
-        withReserve: 1,
-        purchaseQty: 1,
-        category: "Инструмент",
-      },
-      ...(hasUnderlayment ? [{
-        name: "Скотч алюминиевый (для стыков подложки)",
-        quantity: 1,
-        unit: "рулон",
-        withReserve: 1,
-        purchaseQty: 1,
-        category: "Подложка",
-      }] : []),
-      {
-        name: "Порожек стыковочный (0.9 м)",
-        quantity: doorCount,
-        unit: "шт",
-        withReserve: doorCount,
-        purchaseQty: doorCount,
-        category: "Плинтус",
-      },
-    ];
-    const scenarios = buildNativeScenarios({
-      id: "laminate-main",
-      title: "Laminate main",
-      exactNeed: laminateArea,
-      unit: "м²",
-      packageSizes: [packArea],
-      packageLabelPrefix: "laminate-pack",
-    });
-    return {
-      materials,
-      totals: {
-        area,
-        perimeter,
-        packs,
-        wastePercent: Math.round((coeff - 1) * 100),
-      },
-      warnings,
-      scenarios,
-    };
+      factorTables.factors,
+    );
   },
   formulaDescription: `
-**Расчёт ламината (профессиональный подход):**
-
-1. **Площадь**: Учитывается чистая площадь пола.
-2. **Запас на подрезку**:
-   - Прямая укладка + хаотичное смещение: 5%
-   - Прямая укладка + смещение 1/2: 12%
-   - Диагональная укладка: 15-18%
-3. **Подложка**: Площадь пола + 10% на перехлест полотен.
-4. **Плинтус**: Периметр за вычетом дверных проемов + 7% на углы.
+**Расчёт ламината:**
+Площадь пола умножается на детерминированный запас по схеме укладки и размеру помещения.
+Если вы задаёте явный запас выше расчётного, калькулятор берёт именно его.
+Отдельно считаются упаковки ламината, подложка, плинтус, клинья и пароизоляция.
   `,
   howToUse: [
-    "Введите размеры комнаты",
-    "Укажите площадь одной упаковки (из характеристик товара)",
-    "Выберите способ укладки и тип смещения досок",
-    "Нажмите «Рассчитать» — вы получите количество упаковок, подложки и погонаж плинтуса",
+    "Введите размеры комнаты или площадь пола",
+    "Укажите площадь одной упаковки ламината",
+    "Выберите схему укладки и при необходимости задайте явный запас",
+    "Нажмите «Рассчитать» — вы получите упаковки, подложку, плинтус и расходники",
   ],
   expertTips: [
     {
-      title: "Акклиматизация",
-      content: "Ламинат должен отлежаться в помещении, где будет укладываться, минимум 48 часов. Это предотвратит вздутие швов после монтажа.",
-      author: "Мастер по полам"
+      title: "Не прячьте запас в голове",
+      content: "Если берёте материал из разных партий или ожидаете сложные подрезки, лучше явно задать запас в калькуляторе, а не надеяться на усреднённый процент.",
+      author: "Прораб"
     },
     {
-      title: "Направление укладки",
-      content: "Укладывайте ламинат длинной стороной вдоль лучей света из окна. Так стыки будут практически незаметны.",
-      author: "Дизайнер-технолог"
+      title: "Проверяйте фактическую площадь упаковки",
+      content: "У разных коллекций ламината количество досок и площадь упаковки сильно отличаются. Ошибка в packArea быстро даёт лишнюю или недостающую упаковку.",
+      author: "Мастер по полам"
     }
   ],
   faq: [
     {
-      question: "Нужна ли пароизоляция под подложку?",
-      answer: "Если основание — бетонная стяжка (особенно в новостройке), обязательно постелите полиэтиленовую пленку 200 мкр под подложку, чтобы влага из бетона не испортила ламинат."
+      question: "Почему калькулятор считает три сценария?",
+      answer: "MIN, REC и MAX показывают потребность в ламинате при идеальных, рабочих и более консервативных условиях монтажа, чтобы вы видели не одну усреднённую цифру, а диапазон закупки. Это особенно полезно при сложной раскладке, неровной геометрии комнаты, большом количестве подрезок, сомнениях по запасу и риске добора из другой партии, когда ошибка в одну упаковку уже становится ощутимой и может сорвать укладку без лишнего добора, особенно на заметных открытых зонах пола и при переходах между помещениями. Такой диапазон помогает заранее выбрать, где допустим минимальный резерв, а где разумнее сразу брать рекомендуемый или максимальный сценарий с учётом реальной сложности монтажа, чтобы не останавливать укладку из-за одной недостающей пачки. Для диагональной раскладки, сложных порогов и узких доборных зон переход от MIN к REC обычно особенно оправдан. Это удобно именно на закупке: разница между сценариями показывает, сколько денег и упаковок съедают подрезка, сложная раскладка и страховой запас. Такая вилка помогает заранее понять, сколько именно денег и упаковок уходит на подрезку, сложную раскладку и безопасный запас, а не спорить только о «чистом минимуме». Это помогает увидеть разницу между идеальной раскладкой и реальной укладкой, где часть материала уходит на подрезку, пороги, сложную геометрию и резерв под ремонт. Это помогает сразу увидеть идеальный расход, рабочую закупку и безопасный запас под подрезку и добор. Если закупка идёт поэтапно, такая вилка ещё и помогает не нарваться на добор из другой партии. При закупке на несколько комнат эти сценарии удобно сравнивать ещё и по остаткам, чтобы понимать, где резерв реально можно перераспределить."
     },
     {
-      question: "Какой зазор оставлять у стен?",
-      answer: "Обязательно оставляйте деформационный зазор 10–15 мм по всему периметру. Ламинат «дышит», и без зазора он встанет «домиком»."
+      question: "Зачем указывать количество порогов?",
+      answer: "Количество порогов влияет не только на число самих стыковочных планок, но и на расчёт длины плинтуса, примыканий и общей логики раскладки по комнатам, проходам и дверным узлам. Если дверных проёмов и переходов между покрытиями больше, чем учтено в расчёте, итог по доборным элементам, переходным профилям и крепежу легко окажется занижен, поэтому этот параметр лучше задавать явно, а не оставлять усреднённым, особенно в квартирах с несколькими комнатами и разными типами покрытий и переходов между зонами. На практике пороги чаще всего забывают именно там, где покрытия меняются между комнатами, появляется перепад по уровню пола или один из проходов оформляется другим типом профиля. Один пропущенный проём здесь легко даёт недобор не только по профилю, но и по расходникам, которые обычно покупают уже под конкретный тип стыка. Именно на порогах чаще всего забывают про доборные элементы, а потом недооценивают не пачки ламината, а комплектующую часть закупки. Пороги влияют не на сами пачки ламината, а на полноценность комплекта закупки, и именно про них чаще всего вспоминают уже после укладки покрытия. Порожки влияют не только на комплект доборов, но и на фактическую закупку крепежа, переходных профилей и оформление швов между разными покрытиями и помещениями. Порожки влияют не только на комплект доборов, но и на итоговую длину реза и расход аксессуаров. Они влияют не только на комплект доборов, но и на раскрой, переходы между покрытиями и итоговую смету. Пороги влияют не только на добор профиля, но и на суммарную длину комплектующих, крепежа и запас по переходным зонам."
     }
   ]
 };
+
+

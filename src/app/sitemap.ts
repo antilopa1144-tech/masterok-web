@@ -3,8 +3,9 @@ import { ALL_CALCULATORS } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { ALL_POSTS } from "@/lib/blog";
+import { SITE_URL } from "@/lib/site";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+const BASE_URL = SITE_URL;
 
 // Required for output: "export"
 export const dynamic = "force-static";
@@ -83,3 +84,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [...staticPages, ...toolPages, ...categoryPages, ...calculatorPages, ...checklistPages, ...blogPages];
 }
+

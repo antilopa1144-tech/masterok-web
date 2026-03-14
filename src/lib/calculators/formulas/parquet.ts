@@ -1,19 +1,37 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import factorTables from "../../../../configs/factor-tables.json";
+import parquetCanonicalSpecJson from "../../../../configs/calculators/parquet-canonical.v1.json";
+import { computeCanonicalParquet } from "../../../../engine/parquet";
+import type { ParquetCanonicalSpec } from "../../../../engine/canonical";
+
+const parquetCanonicalSpec = parquetCanonicalSpecJson as ParquetCanonicalSpec;
+
+function mapLegacyLayoutProfile(layingMethod: number | undefined): number {
+  switch (Math.round(layingMethod ?? 0)) {
+    case 1:
+      return 2;
+    case 2:
+      return 3;
+    default:
+      return 1;
+  }
+}
 
 export const parquetDef: CalculatorDefinition = {
   id: "floors_parquet",
   slug: "parket",
+  formulaVersion: parquetCanonicalSpec.formula_version,
   title: "Калькулятор паркетной доски",
   h1: "Калькулятор паркетной доски онлайн — расчёт количества упаковок",
-  description: "Рассчитайте количество паркетной доски, подложки и плинтуса с учётом способа укладки и запаса.",
-  metaTitle: "Калькулятор паркетной доски | Расчёт онлайн — Мастерок",
-  metaDescription: "Бесплатный калькулятор паркетной доски: рассчитайте упаковки Tarkett, Quick-Step, Haro по площади комнаты с учётом укладки.",
+  description: "Рассчитайте количество паркетной доски, подложки и плинтуса с учётом схемы укладки и сценариев MIN/REC/MAX.",
+  metaTitle: withSiteMetaTitle("Калькулятор паркетной доски | Расчёт онлайн"),
+  metaDescription: "Бесплатный калькулятор паркетной доски: рассчитайте упаковки, подложку, плинтус и порожки с учётом схемы укладки и практического запаса.",
   category: "flooring",
   categorySlug: "poly",
   tags: ["паркет", "паркетная доска", "Tarkett", "Quick-Step", "напольное покрытие"],
   popularity: 62,
-  complexity: 1,
+  complexity: 2,
   fields: [
     {
       key: "roomLength",
@@ -51,7 +69,7 @@ export const parquetDef: CalculatorDefinition = {
       label: "Площадь упаковки",
       type: "slider",
       unit: "м²",
-      min: 1,
+      min: 0.5,
       max: 4,
       step: 0.01,
       defaultValue: 1.892,
@@ -71,129 +89,48 @@ export const parquetDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const roomL = Math.max(1, inputs.roomLength ?? 5);
-    const roomW = Math.max(1, inputs.roomWidth ?? 4);
-    const area = roomL * roomW;
-    const method = Math.round(inputs.layingMethod ?? 0);
-    const packArea = Math.max(0.5, inputs.packArea ?? 1.892);
-    const boardWidthMm = inputs.boardWidth ?? 190;
-
-    const wasteCoeff = [1.05, 1.15, 1.20][method] ?? 1.05;
-    const areaWithWaste = area * wasteCoeff;
-    const packs = Math.ceil(areaWithWaste / packArea);
-
-    // Подложка: с нахлёстом 10 см
-    const underlayArea = area * 1.10;
-    const underlayRolls = Math.ceil(underlayArea / 10);
-
-    // Плинтус: периметр − 1 проём (0.9 м), +5% запас
-    const perimeter = 2 * (roomL + roomW);
-    const plinthLength = (perimeter - 0.9) * 1.05;
-    const plinthPcs = Math.ceil(plinthLength / 2.5);
-
-    // Распорные клинья: по периметру каждые 0.5 м
-    const wedges = Math.ceil(perimeter / 0.5);
-
-    const warnings: string[] = [];
-    if (area < 5) warnings.push("Маленькая площадь — отходы будут выше расчётного процента");
-    if (method === 2) warnings.push("Укладка ёлочкой требует профессионального инструмента и опыта");
-
-    const methodNames = ["Прямая", "Диагональная", "Ёлочка"];
-
-    const scenarios = buildNativeScenarios({
-      id: "parquet-main",
-      title: "Parquet main",
-      exactNeed: areaWithWaste,
-      unit: "м²",
-      packageSizes: [packArea],
-      packageLabelPrefix: "parquet-pack",
-    });
-
-    return {
-      materials: [
-        {
-          name: `Паркетная доска (упак. ~${packArea} м²)`,
-          quantity: areaWithWaste / packArea,
-          unit: "упак.",
-          withReserve: packs,
-          purchaseQty: packs,
-          category: "Покрытие",
-        },
-        {
-          name: "Подложка (рулон 10 м²)",
-          quantity: area / 10,
-          unit: "рулонов",
-          withReserve: underlayRolls,
-          purchaseQty: underlayRolls,
-          category: "Подложка",
-        },
-        {
-          name: "Плинтус напольный (2.5 м)",
-          quantity: plinthLength / 2.5,
-          unit: "шт",
-          withReserve: plinthPcs,
-          purchaseQty: plinthPcs,
-          category: "Плинтус",
-        },
-        {
-          name: "Клинья распорные",
-          quantity: wedges,
-          unit: "шт",
-          withReserve: wedges,
-          purchaseQty: Math.ceil(wedges / 10) * 10,
-          category: "Монтаж",
-        },
-        {
-          name: "Скотч для подложки",
-          quantity: 1,
-          unit: "рулон",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Подложка",
-        },
-        {
-          name: "Порожек стыковочный (для дверного проёма)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Доборные",
-        },
-        {
-          name: "Масло/лак для паркета (банка 2.5 л, для массива)",
-          quantity: area * 0.2,
-          unit: "л",
-          withReserve: Math.ceil(area * 0.2 * 1.1 * 10) / 10,
-          purchaseQty: Math.ceil(area * 0.2 * 1.1 / 2.5),
-          category: "Покрытие",
-        },
-      ],
-      totals: {
-        area,
-        areaWithWaste,
-        wastePercent: (wasteCoeff - 1) * 100,
-        perimeter,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
-    };
+  calculate(inputs) {
+    return computeCanonicalParquet(
+      parquetCanonicalSpec,
+      {
+        inputMode: inputs.inputMode ?? 0,
+        length: inputs.length ?? inputs.roomLength,
+        width: inputs.width ?? inputs.roomWidth,
+        area: inputs.area,
+        perimeter: inputs.perimeter,
+        packArea: inputs.packArea,
+        layoutProfileId: inputs.layoutProfileId ?? mapLegacyLayoutProfile(inputs.layingMethod),
+        reservePercent: inputs.reservePercent,
+        needUnderlayment: inputs.needUnderlayment ?? 1,
+        needPlinth: inputs.needPlinth ?? 1,
+        needGlue: inputs.needGlue ?? 0,
+        underlaymentRollArea: inputs.underlaymentRollArea,
+        doorThresholds: inputs.doorThresholds ?? 1,
+      },
+      factorTables.factors,
+    );
   },
   formulaDescription: `
 **Расчёт паркетной доски:**
-Упаковок = ⌈Площадь × Коэффициент_отходов / Площадь_упаковки⌉
-
-Коэффициенты отходов:
-- Прямая укладка: ×1.05 (+5%)
-- Диагональная: ×1.15 (+15%)
-- Ёлочка: ×1.20 (+20%)
-
-Подложка: площадь × 1.10 (нахлёст 10 см по швам)
+Площадь пола умножается на детерминированный запас по схеме укладки, после чего переводится в упаковки.
+Подложка, плинтус и доборные элементы считаются отдельно, а MIN/REC/MAX показывают рабочий диапазон закупки.
   `,
   howToUse: [
     "Введите размеры комнаты",
     "Выберите способ укладки",
-    "Укажите площадь упаковки (на этикетке)",
-    "Нажмите «Рассчитать» — получите упаковки, подложку и плинтус",
+    "Укажите площадь упаковки с этикетки",
+    "Нажмите «Рассчитать» — получите упаковки, подложку, плинтус и сценарии закупки",
+  ],
+faq: [
+    {
+      question: "Какой запас паркетной доски брать при укладке?",
+      answer: "Для прямой укладки паркетной доски обычно хватает 5–7% запаса, а для диагонали, ёлочки и других сложных схем его увеличивают, потому что подрезки и отбраковка по рисунку становятся заметно больше. Чем сложнее схема укладки, выше требования к подбору доски по тону и больше участков с примыканиями, тем осторожнее стоит считать запас, чтобы не остаться без нужных пачек в конце монтажа и не добирать материал из другой партии с отличием по оттенку, которое особенно заметно на открытых зонах пола, длинных рядах и участках вокруг порогов. Для дорогой доски с выраженным рисунком резерв обычно важен не меньше, чем сама чистая площадь укладки и подбор по текстуре древесины, потому что одна неудачная пачка может визуально выбиться на всём поле пола. На сложных рисунках типа ёлочки запас лучше считать ближе к верхней границе, чем ориентироваться на прямую укладку. Чем сложнее рисунок, уже помещение и заметнее требования к подбору планок по тону, тем важнее иметь запас не только по площади, но и по сортировке материала. При сложной раскладке, диагонали, отбортовке у стен и подборе рисунка запас лучше считать ближе к верхней границе, иначе добор партии может отличаться по тону. Его особенно внимательно считают при диагональной схеме, сложной геометрии помещения, селекции рисунка и риске несовпадения партии по тону. При диагонали, сложной геометрии и отборе по рисунку запас всегда нужен выше, чем на прямой раскладке. На диагональной схеме, сложной комнате и подборе рисунка запас почти всегда нужен выше базового. Если материал идёт в несколько комнат, запас лучше распределять по общей партии сразу, а не покупать каждое помещение отдельно."
+    },
+    {
+      question: "Нужна ли подложка под паркетную доску?",
+      answer: "Да, подложка под паркетную доску обычно нужна для компенсации небольших неровностей, улучшения акустического комфорта и правильной работы всего напольного пирога при плавающей укладке. Конкретный состав слоя зависит от основания, наличия тёплого пола, требований производителя доски и того, нужна ли дополнительная пароизоляция, поэтому подложку лучше выбирать как часть всей системы пола, а не как случайный рулон «по остаточному принципу», особенно если важно сохранить гарантийные требования производителя. Для тёплого пола и влажных оснований неправильный выбор подложки особенно быстро проявляется по шуму, геометрии, скрипам и поведению покрытия уже в первые сезоны эксплуатации. Ошибка здесь обычно всплывает не в момент укладки, а позже, когда покрытие начинает реагировать на перепады влажности и нагрузки по всей площади пола. Даже когда производитель допускает укладку без отдельной подложки на готовый слой, важно проверить требования именно к шуму, влажности и ровности основания, а не опираться только на общую рекламу материала. Это зависит от конструкции пола и рекомендаций производителя: в одних системах она нужна для акустики и выравнивания мелких неровностей, а в других мешает правильной работе замка и покрытия. Это зависит от конструкции пола и требований производителя: в одних системах она нужна для акустики и выравнивания мелких неровностей, а в других мешает правильной работе покрытия. В плавающей схеме она обычно обязательна, потому что влияет на шум, компенсирует мелкие неровности и защищает замок. Но решение всё равно лучше увязывать с конструкцией пола и требованиями производителя, а не выбирать подложку только по привычке или цене рулона."
+    }
   ],
 };
+
+

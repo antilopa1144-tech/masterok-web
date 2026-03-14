@@ -3,6 +3,11 @@ import { getCalculateFn, getCalculateFnSync } from "../registry";
 import { ALL_CALCULATORS } from "../index";
 
 describe("Registry калькуляторов", () => {
+  it("канонизированные калькуляторы декларируют formulaVersion", () => {
+    const canonicalized = ALL_CALCULATORS.filter((calculator) => ["shpaklevka", "gruntovka", "kraska", "oboi", "plitka", "laminat", "parket", "linoleum", "nalivnoy-pol"].includes(calculator.slug));
+    expect(canonicalized.length).toBeGreaterThan(0);
+    expect(canonicalized.every((calculator) => Boolean(calculator.formulaVersion))).toBe(true);
+  });
   describe("getCalculateFn (async)", () => {
     it("загружает калькулятор бетона по slug", async () => {
       const fn = await getCalculateFn("beton");
@@ -80,13 +85,21 @@ describe("Registry калькуляторов", () => {
 
 describe("Сценарный контракт через registry", () => {
   it("добавляет MIN/REC/MAX для выборки калькуляторов", async () => {
-    const sample: Array<[string, Record<string, number>]> = [
+        const sample: Array<[string, Record<string, number>]> = [
       ["beton", { concreteVolume: 5, concreteGrade: 3, reserve: 5 }],
       ["kirpich", { inputMode: 1, area: 20, brickType: 0, wallThickness: 1 }],
       ["styazhka", { inputMode: 1, area: 20, thickness: 50, screedType: 1 }],
       ["teplyy-pol", { roomArea: 12, furnitureArea: 2, heatingType: 0, powerDensity: 150 }],
       ["elektrika", { apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 }],
       ["shpaklevka", { inputMode: 1, area: 40, puttyType: 1, bagWeight: 25 }],
+      ["gruntovka", { area: 40, surfaceType: 0, primerType: 0, coats: 2, canSize: 10 }],
+      ["kraska", { area: 40, coats: 2, surfaceType: 0, consumption: 10 }],
+      ["oboi", { perimeter: 14, height: 2.7, rollLength: 10, rollWidth: 530, rapport: 0, doors: 1, windows: 1 }],
+      ["plitka", { inputMode: 1, area: 12, tileWidth: 300, tileHeight: 300, layingMethod: 0, jointWidth: 3, roomComplexity: 0 }],
+      ["laminat", { inputMode: 1, area: 20, packArea: 2.397, layingMethod: 0, offsetMode: 0, reservePercent: 10, hasUnderlayment: 1, doorThresholds: 1 }],
+      ["parket", { roomLength: 5, roomWidth: 4, layingMethod: 0, packArea: 1.892 }],
+      ["linoleum", { roomLength: 5, roomWidth: 3, rollWidth: 3.5, hasPattern: 0, withGlue: 1, withPlinth: 1 }],
+      ["nalivnoy-pol", { inputMode: 1, area: 20, thickness: 10, mixtureType: 0, bagWeight: 25 }],
     ];
 
     for (const [slug, input] of sample) {
@@ -107,4 +120,19 @@ describe("Сценарный контракт через registry", () => {
     }
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

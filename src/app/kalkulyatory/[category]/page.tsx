@@ -3,7 +3,20 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCalculatorsByCategory } from "@/lib/calculators";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/calculators/categories";
+import { SITE_TITLE_SUFFIX, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+
+const UI_TEXT = {
+  rootBreadcrumb: "Калькуляторы",
+  emptyState: "Калькуляторы этой категории скоро появятся",
+  allCalculators: "Все калькуляторы",
+  complexitySuffix: "сложность",
+  titleSuffix: `— ${SITE_TITLE_SUFFIX}`,
+  descriptionPrefix: "Бесплатные калькуляторы:",
+  descriptionSuffix: "Точный расчёт по ГОСТ.",
+  itemListNameSuffix: "— строительные калькуляторы",
+} as const;
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -18,10 +31,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cat = getCategoryBySlug(slug);
   if (!cat) return {};
 
-  return {
-    title: `${cat.label} — строительные калькуляторы онлайн`,
-    description: `Бесплатные калькуляторы: ${cat.description.toLowerCase()}. Точный расчёт по ГОСТ.`,
-  };
+  const title = `${cat.label} ${UI_TEXT.titleSuffix}`;
+  const description = `${UI_TEXT.descriptionPrefix} ${cat.description.toLowerCase()}. ${UI_TEXT.descriptionSuffix}`;
+  const pageUrl = `${SITE_URL}/kalkulyatory/${cat.slug}/`;
+
+  return buildPageMetadata({
+    title,
+    description,
+    url: pageUrl,
+  });
 }
 
 export default async function CategoryPage({ params }: PageProps) {
@@ -30,13 +48,13 @@ export default async function CategoryPage({ params }: PageProps) {
   if (!cat) notFound();
 
   const calculators = getCalculatorsByCategory(cat.id);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  const baseUrl = SITE_URL;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Калькуляторы", item: `${baseUrl}/` },
+      { "@type": "ListItem", position: 1, name: UI_TEXT.rootBreadcrumb, item: `${baseUrl}/` },
       { "@type": "ListItem", position: 2, name: cat.label },
     ],
   };
@@ -44,7 +62,7 @@ export default async function CategoryPage({ params }: PageProps) {
   const itemListLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `${cat.label} — строительные калькуляторы`,
+    name: `${cat.label} ${UI_TEXT.itemListNameSuffix}`,
     numberOfItems: calculators.length,
     itemListElement: calculators.map((calc, i) => ({
       "@type": "ListItem",
@@ -69,7 +87,7 @@ export default async function CategoryPage({ params }: PageProps) {
       <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
         <div className="page-container-wide py-8">
           <nav className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-4">
-            <Link href="/" className="hover:text-slate-700 dark:hover:text-slate-200 no-underline">Калькуляторы</Link>
+            <Link href="/" className="hover:text-slate-700 dark:hover:text-slate-200 no-underline">{UI_TEXT.rootBreadcrumb}</Link>
             <span>›</span>
             <span style={{ color: cat.color }} className="font-medium">{cat.label}</span>
           </nav>
@@ -95,9 +113,9 @@ export default async function CategoryPage({ params }: PageProps) {
       <div className="page-container-wide py-8">
         {calculators.length === 0 ? (
           <div className="text-center py-16 text-slate-400 dark:text-slate-500">
-            <p className="text-lg">Калькуляторы этой категории скоро появятся</p>
+            <p className="text-lg">{UI_TEXT.emptyState}</p>
             <Link href="/" className="btn-secondary mt-4 inline-flex">
-              Все калькуляторы
+              {UI_TEXT.allCalculators}
             </Link>
           </div>
         ) : (
@@ -120,7 +138,7 @@ export default async function CategoryPage({ params }: PageProps) {
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{calc.description}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <span className="text-xs text-slate-400 dark:text-slate-500">
-                    {"★".repeat(calc.complexity)}{"☆".repeat(3 - calc.complexity)} сложность
+                    {"★".repeat(calc.complexity)}{"☆".repeat(3 - calc.complexity)} {UI_TEXT.complexitySuffix}
                   </span>
                 </div>
               </Link>
@@ -131,3 +149,9 @@ export default async function CategoryPage({ params }: PageProps) {
     </div>
   );
 }
+
+
+
+
+
+

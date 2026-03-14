@@ -8,6 +8,7 @@ import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { StructuredData } from "@/components/layout/StructuredData";
+import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
 const THEME_INIT_SCRIPT = `(() => {
   try {
@@ -34,11 +35,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Мастерок — строительные калькуляторы онлайн",
-    template: "%s | Мастерок",
+    default: SITE_DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`, 
   },
   description:
-    "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и ещё 50+ расчётов. Точно, быстро, по ГОСТ.",
+    SITE_METADATA_DESCRIPTION,
   keywords: [
     "строительный калькулятор",
     "калькулятор бетона",
@@ -48,15 +49,14 @@ export const metadata: Metadata = {
     "калькулятор ламината",
     "расчёт стройматериалов онлайн",
   ],
-  authors: [{ name: "Мастерок" }],
-  creator: "Мастерок",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru"
-  ),
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  metadataBase: new URL(SITE_URL),
   twitter: {
     card: "summary_large_image",
-    title: "Мастерок — строительные калькуляторы",
-    description: "50+ бесплатных строительных калькуляторов онлайн",
+    title: SITE_TWITTER_TITLE,
+    description: SITE_TWITTER_DESCRIPTION,
+    images: [SITE_OG_IMAGE_PATH],
   },
   robots: {
     index: true,
@@ -74,11 +74,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ru_RU",
-    siteName: "Мастерок",
-    title: "Мастерок — строительные калькуляторы онлайн",
+    siteName: SITE_NAME,
+    title: SITE_DEFAULT_TITLE,
     description:
-      "50+ бесплатных строительных калькуляторов. Точный расчёт материалов по ГОСТ.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+      SITE_OG_DESCRIPTION,
+    images: [{ url: SITE_OG_IMAGE_PATH, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT }],
   },
 };
 
@@ -111,3 +111,11 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+
+
+
+
+
+

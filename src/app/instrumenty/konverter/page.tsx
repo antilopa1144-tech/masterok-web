@@ -3,8 +3,26 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const UI_TEXT = {
+  breadcrumbHome: "Главная",
+  breadcrumbTools: "Инструменты",
+  breadcrumbCurrent: "Конвертер единиц",
+  title: "Конвертер единиц измерения",
+  description: "Пересчитайте строительные единицы: длину, площадь, объём, массу, давление и температуру.",
+  fromLabel: "Из",
+  toLabel: "В",
+  inputPlaceholder: "Введите число",
+  swapTitle: "Поменять местами",
+  quickTargetHint: "Нажмите на любую единицу снизу, чтобы выбрать её как целевую",
+  quickResultsSuffix: "=",
+  defaultInputValue: "1",
+} as const;
+
+type UnitGroupId = "length" | "area" | "volume" | "mass" | "pressure" | "temperature";
+
 // Категории единиц
 interface UnitGroup {
+  id: UnitGroupId;
   label: string;
   icon: string;
   units: { key: string; label: string; toBase: number }[];
@@ -12,6 +30,7 @@ interface UnitGroup {
 
 const UNIT_GROUPS: UnitGroup[] = [
   {
+    id: "length",
     label: "Длина",
     icon: "📏",
     units: [
@@ -24,6 +43,7 @@ const UNIT_GROUPS: UnitGroup[] = [
     ],
   },
   {
+    id: "area",
     label: "Площадь",
     icon: "▦",
     units: [
@@ -36,6 +56,7 @@ const UNIT_GROUPS: UnitGroup[] = [
     ],
   },
   {
+    id: "volume",
     label: "Объём",
     icon: "📦",
     units: [
@@ -47,6 +68,7 @@ const UNIT_GROUPS: UnitGroup[] = [
     ],
   },
   {
+    id: "mass",
     label: "Масса",
     icon: "⚖️",
     units: [
@@ -57,6 +79,7 @@ const UNIT_GROUPS: UnitGroup[] = [
     ],
   },
   {
+    id: "pressure",
     label: "Давление",
     icon: "🌡️",
     units: [
@@ -69,6 +92,7 @@ const UNIT_GROUPS: UnitGroup[] = [
     ],
   },
   {
+    id: "temperature",
     label: "Температура",
     icon: "🌡️",
     units: [
@@ -111,7 +135,7 @@ export default function KonverterPage() {
   const [inputValue, setInputValue] = useState("1");
 
   const group = UNIT_GROUPS[groupIndex];
-  const isTemperature = group.label === "Температура";
+  const isTemperature = group.id === "temperature";
 
   // При смене группы — сброс единиц
   const handleGroupChange = (idx: number) => {
@@ -119,7 +143,7 @@ export default function KonverterPage() {
     const g = UNIT_GROUPS[idx];
     setFromUnit(g.units[0].key);
     setToUnit(g.units[1]?.key ?? g.units[0].key);
-    setInputValue("1");
+    setInputValue(UI_TEXT.defaultInputValue);
   };
 
   const calculate = (): string => {
@@ -149,25 +173,25 @@ export default function KonverterPage() {
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
-        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
         <span>/</span>
-        <span className="text-slate-600 dark:text-slate-300">Конвертер единиц</span>
+        <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
       <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
-        Конвертер единиц измерения
+        {UI_TEXT.title}
       </h1>
       <p className="text-slate-500 dark:text-slate-400 mb-8">
-        Пересчитайте строительные единицы: длину, площадь, объём, массу, давление и температуру.
+        {UI_TEXT.description}
       </p>
 
       {/* Выбор категории */}
       <div className="flex flex-wrap gap-2 mb-6">
         {UNIT_GROUPS.map((g, i) => (
           <button
-            key={g.label}
+            key={g.id}
             onClick={() => handleGroupChange(i)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
               i === groupIndex
@@ -186,7 +210,7 @@ export default function KonverterPage() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
           {/* Откуда */}
           <div>
-            <label className="input-label">Из</label>
+            <label className="input-label">{UI_TEXT.fromLabel}</label>
             <select
               value={fromUnit}
               onChange={(e) => setFromUnit(e.target.value)}
@@ -200,7 +224,7 @@ export default function KonverterPage() {
               type="number"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Введите число"
+              placeholder={UI_TEXT.inputPlaceholder}
               className="input-field text-lg font-semibold"
               autoFocus
             />
@@ -211,7 +235,7 @@ export default function KonverterPage() {
             <button
               onClick={swap}
               className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100 transition-colors text-lg"
-              title="Поменять местами"
+              title={UI_TEXT.swapTitle}
             >
               ⇄
             </button>
@@ -219,7 +243,7 @@ export default function KonverterPage() {
 
           {/* Куда */}
           <div>
-            <label className="input-label">В</label>
+            <label className="input-label">{UI_TEXT.toLabel}</label>
             <select
               value={toUnit}
               onChange={(e) => setToUnit(e.target.value)}
@@ -238,7 +262,7 @@ export default function KonverterPage() {
         {/* Быстрые результаты по всем единицам */}
         <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700">
           <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-3">
-            {inputValue || "1"} {group.units.find(u => u.key === fromUnit)?.label} =
+            {inputValue || UI_TEXT.defaultInputValue} {group.units.find(u => u.key === fromUnit)?.label} {UI_TEXT.quickResultsSuffix}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {group.units
@@ -276,7 +300,7 @@ export default function KonverterPage() {
       </div>
 
       <p className="mt-4 text-xs text-slate-400 dark:text-slate-500 text-center">
-        Нажмите на любую единицу снизу, чтобы выбрать её как целевую
+        {UI_TEXT.quickTargetHint}
       </p>
     </div>
   );

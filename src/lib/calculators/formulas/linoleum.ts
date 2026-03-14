@@ -1,19 +1,26 @@
 import type { CalculatorDefinition } from "../types";
-import { buildNativeScenarios } from "../scenario-native";
+import { withSiteMetaTitle } from "../meta";
+import factorTables from "../../../../configs/factor-tables.json";
+import linoleumCanonicalSpecJson from "../../../../configs/calculators/linoleum-canonical.v1.json";
+import { computeCanonicalLinoleum } from "../../../../engine/linoleum";
+import type { LinoleumCanonicalSpec } from "../../../../engine/canonical";
+
+const linoleumCanonicalSpec = linoleumCanonicalSpecJson as LinoleumCanonicalSpec;
 
 export const linoleumDef: CalculatorDefinition = {
   id: "floors_linoleum",
   slug: "linoleum",
+  formulaVersion: linoleumCanonicalSpec.formula_version,
   title: "Калькулятор линолеума",
   h1: "Калькулятор линолеума онлайн — расчёт погонных метров и раскроя",
-  description: "Рассчитайте количество линолеума с учётом ширины рулона и раскладки. Минимум отходов.",
-  metaTitle: "Калькулятор линолеума | Расчёт погонных метров — Мастерок",
-  metaDescription: "Бесплатный калькулятор линолеума: рассчитайте метраж с учётом ширины рулона и раскроя. Учёт стыков и запаса.",
+  description: "Рассчитайте количество линолеума с учётом ширины рулона, полос, раппорта рисунка и доборных материалов.",
+  metaTitle: withSiteMetaTitle("Калькулятор линолеума | Расчёт погонных метров"),
+  metaDescription: "Бесплатный калькулятор линолеума: рассчитайте погонные метры, полосы, швы, клей и плинтус с учётом ширины рулона и рисунка.",
   category: "flooring",
   categorySlug: "poly",
   tags: ["линолеум", "напольное покрытие", "рулонное покрытие", "линолеум ширина"],
   popularity: 60,
-  complexity: 1,
+  complexity: 2,
   fields: [
     {
       key: "roomLength",
@@ -47,7 +54,7 @@ export const linoleumDef: CalculatorDefinition = {
         { value: 3.0, label: "3.0 м" },
         { value: 3.5, label: "3.5 м (стандарт)" },
         { value: 4.0, label: "4.0 м" },
-        { value: 5.0, label: "5.0 м" },
+        { value: 5.0, label: "5.0 м" }
       ],
     },
     {
@@ -55,7 +62,6 @@ export const linoleumDef: CalculatorDefinition = {
       label: "Рисунок с раппортом",
       type: "switch",
       defaultValue: 0,
-      hint: "Раппорт — повторяющийся узор. Требует дополнительного запаса на подгонку",
     },
     {
       key: "patternRepeat",
@@ -69,119 +75,49 @@ export const linoleumDef: CalculatorDefinition = {
       hint: "Указан на упаковке рулона",
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const roomL = Math.max(1, inputs.roomLength ?? 5);
-    const roomW = Math.max(1, inputs.roomWidth ?? 4);
-    const rollW = inputs.rollWidth ?? 3.5;
-    const hasPattern = (inputs.hasPattern ?? 0) > 0;
-    const patternRepeatM = (inputs.patternRepeat ?? 30) / 100;
-
-    // Определяем ориентацию укладки
-    // Рулон кладём вдоль длинной стороны для минимума стыков
-    const longerSide = Math.max(roomL, roomW);
-    const shorterSide = Math.min(roomL, roomW);
-
-    // Количество полос вдоль короткой стороны
-    const stripsNeeded = Math.ceil(shorterSide / rollW);
-
-    // Длина каждой полосы = длинная сторона + запас на подрезку (0.1 м)
-    let stripLength = longerSide + 0.1;
-
-    // Если есть раппорт — каждая следующая полоса добавляет один полный раппорт
-    // Первая полоса: stripLength, каждая последующая: stripLength + patternRepeatM
-    let totalLinearM: number;
-    if (hasPattern && stripsNeeded > 1) {
-      totalLinearM = stripLength + (stripLength + patternRepeatM) * (stripsNeeded - 1);
-    } else {
-      totalLinearM = stripLength * stripsNeeded;
-    }
-    const totalArea = totalLinearM * rollW;
-    const usefulArea = roomL * roomW;
-    const wastePercent = Math.round(((totalArea - usefulArea) / usefulArea) * 100);
-
-    const warnings: string[] = [];
-    if (stripsNeeded > 1) {
-      warnings.push(`Укладка потребует ${stripsNeeded} полосы. Рекомендуется ширина рулона ${Math.ceil(shorterSide * 10) / 10} м для укладки без стыка`);
-    }
-    if (wastePercent > 25) {
-      warnings.push(`Отходы составят ${wastePercent}% — попробуйте рулон большей ширины`);
-    }
-
-    // Плинтус
-    const perimeter = 2 * (roomL + roomW);
-    const plinthPcs = Math.ceil(perimeter * 1.05 / 2.5);
-
-    const scenarios = buildNativeScenarios({
-      id: "linoleum-main",
-      title: "Linoleum main",
-      exactNeed: totalLinearM,
-      unit: "м.п.",
-      packageSizes: [0.1],
-      packageLabelPrefix: "linoleum-linear",
-    });
-
-    return {
-      materials: [
-        {
-          name: "Линолеум (м.п.)",
-          quantity: totalLinearM,
-          unit: "м.п.",
-          withReserve: Math.ceil(totalLinearM * 10) / 10,
-          purchaseQty: Math.ceil(totalLinearM * 10) / 10,
-          category: "Покрытие",
-        },
-        {
-          name: "Двусторонний скотч / клей",
-          quantity: usefulArea,
-          unit: "м²",
-          withReserve: Math.ceil(usefulArea * 1.05),
-          purchaseQty: Math.ceil(usefulArea * 1.05 / 10),
-          category: "Крепление",
-        },
-        {
-          name: "Плинтус ПВХ (2.5 м)",
-          quantity: perimeter / 2.5,
-          unit: "шт",
-          withReserve: plinthPcs,
-          purchaseQty: plinthPcs,
-          category: "Плинтус",
-        },
-        {
-          name: "Порог стыковочный",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Доборные",
-        },
-        {
-          name: "Грунтовка (бетоноконтакт, канистра 10 л)",
-          quantity: usefulArea * 0.15,
-          unit: "л",
-          withReserve: Math.ceil(usefulArea * 0.15 * 1.15 * 10) / 10,
-          purchaseQty: Math.ceil(usefulArea * 0.15 * 1.15 / 10),
-          category: "Подготовка",
-        },
-      ],
-      totals: { usefulArea, totalLinearM, stripsNeeded, wastePercent } as Record<string, number>,
-      warnings,
-      scenarios,
-    };
+  calculate(inputs) {
+    return computeCanonicalLinoleum(
+      linoleumCanonicalSpec,
+      {
+        inputMode: inputs.inputMode ?? 0,
+        length: inputs.length ?? inputs.roomLength,
+        width: inputs.width ?? inputs.roomWidth,
+        area: inputs.area,
+        roomWidth: inputs.roomWidth,
+        perimeter: inputs.perimeter,
+        rollWidth: inputs.rollWidth,
+        hasPattern: inputs.hasPattern,
+        patternRepeatCm: inputs.patternRepeat ?? inputs.patternRepeatCm,
+        needGlue: inputs.withGlue ?? 0,
+        needPlinth: inputs.withPlinth ?? 1,
+        needTape: inputs.needTape ?? 1,
+      },
+      factorTables.factors,
+    );
   },
   formulaDescription: `
 **Раскрой линолеума:**
-Полосы = ⌈Ширина_комнаты / Ширина_рулона⌉
-Длина полос = Длина_комнаты + 0.1 м (подрезка)
-
-При рисунке с раппортом:
-Дополнительный запас = Шаг_раппорта × (Полос - 1)
-
-Рекомендация: подбирайте ширину рулона равной ширине комнаты — это исключает стыки.
+Калькулятор определяет количество полос по ширине рулона, длину каждой полосы с подрезкой, запас на раппорт рисунка и переводит результат в погонные метры покупки.
+Отдельно считаются клей, грунтовка, плинтус и холодная сварка швов.
   `,
   howToUse: [
-    "Введите длину и ширину комнаты",
+    "Введите размеры комнаты",
     "Выберите ширину рулона",
     "Если у линолеума рисунок — включите раппорт",
-    "Нажмите «Рассчитать» — получите метраж и плинтус",
+    "Нажмите «Рассчитать» — получите погонные метры, швы, клей и доборные материалы",
+  ],
+faq: [
+    {
+      question: "Что делать, если ширина комнаты больше ширины рулона?",
+      answer: "Если ширина комнаты больше ширины рулона, линолеум приходится укладывать несколькими полосами, а значит нужно заранее считать количество швов, стыковку рисунка и общий раскрой по длине каждой полосы. Калькулятор помогает оценить нужный метраж, число швов и сопутствующие материалы до покупки, чтобы не столкнуться с нехваткой рулона или неожиданным смещением рисунка уже на этапе раскроя и сварки стыков, особенно если помещение большое и шов попадает в проходную или хорошо заметную зону пола с активной ходьбой. В таких комнатах особенно важно заранее продумать, где пройдёт шов, насколько заметен он будет в реальной эксплуатации и можно ли увести стык под мебель или менее заметную зону. Иначе визуальная проблема проявится уже после укладки, когда исправить расположение шва без полной перекройки покрытия и нового куска материала уже нельзя. В таком случае лучше заранее решить, где пойдёт стык и как рисунок будет смотреться по свету, потому что технически возможный шов не всегда получается визуально удачным. В таком случае заранее считают количество полотен, длину стыка и направление рисунка, потому что именно на этих местах обычно теряют материал сильнее, чем на простом запасе по периметру. Тогда заранее считают число полотен, длину стыка, направление укладки и возможный раппорт, потому что именно здесь чаще всего появляется основной перерасход. Нужно заранее учитывать шов, направление укладки и подгонку рисунка, иначе расход и сложность монтажа вырастут. В таком случае заранее считают стык, направление полотен и потери на совмещении рисунка, а не только площадь комнаты."
+    },
+    {
+      question: "Нужно ли учитывать раппорт рисунка у линолеума?",
+      answer: "Да, если у линолеума есть выраженный рисунок, раппорт напрямую влияет на длину полос, стыковку соседних полотен и итоговый расход материала, потому что рисунок приходится совмещать, а не просто резать по чистому размеру комнаты. Если не учитывать этот параметр заранее, нужный метраж линолеума легко недооценить уже на этапе закупки и столкнуться с нехваткой материала при раскрое, особенно если стыки попадают в заметную зону помещения, рисунок должен совпасть между соседними полотнами, а запас на разворот, подрезку у стен, разворот рисунка у входа, обход ниш, подгонку у порога и совмещение продольного стыка остаётся минимальным. Чем крупнее и контрастнее рисунок, тем болезненнее ошибка даже в несколько сантиметров на одной полосе. Для длинных помещений с продольным рисунком ошибку по раппорту особенно тяжело скрыть после приклейки покрытия. Чем активнее рисунок и длиннее помещение, тем заметнее ошибка по раппорту, поэтому экономия на этом запасе чаще всего заканчивается нестыковкой именно в самом видимом месте. Если рисунок выраженный, именно раппорт чаще всего даёт самый заметный перерасход на длинных помещениях и стыках, поэтому его лучше учитывать ещё до выбора ширины рулона. Если рисунок выраженный, именно раппорт часто даёт основной перерасход на длинных помещениях и стыках, поэтому его учитывают ещё до выбора ширины рулона. Да, иначе полотна могут не совпасть по рисунку, и фактический расход окажется заметно выше расчёта по площади. Чем заметнее рисунок и длиннее помещение, тем сильнее ошибка по раппорту бьёт именно по общей длине закупки. На заметном рисунке и длинных полосах ошибка по раппорту быстрее всего проявляется именно в местах стыков и доборных участков у стены."
+    }
   ],
 };
+
+
+
+

@@ -1,0 +1,66 @@
+{
+  "calculator_id": "tile",
+  "formula_version": "tile-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "length", "unit": "m", "default_value": 4, "min": 0.5, "max": 30 },
+    { "key": "width", "unit": "m", "default_value": 3, "min": 0.5, "max": 30 },
+    { "key": "area", "unit": "m2", "default_value": 12, "min": 1, "max": 500 },
+    { "key": "tileWidthCm", "unit": "cm", "default_value": 30, "min": 5, "max": 200 },
+    { "key": "tileHeightCm", "unit": "cm", "default_value": 30, "min": 5, "max": 200 },
+    { "key": "jointWidth", "unit": "mm", "default_value": 3, "min": 1, "max": 10 },
+    { "key": "groutDepth", "unit": "mm", "default_value": 0, "min": 0, "max": 15 },
+    { "key": "layoutPattern", "default_value": 1, "min": 1, "max": 4 },
+    { "key": "roomComplexity", "default_value": 1, "min": 1, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "installation_method",
+      "worker_skill"
+    ]
+  },
+  "normative_formula": {
+    "layouts": [
+      { "id": 1, "key": "straight", "label": "Прямая укладка", "waste_percent": 10 },
+      { "id": 2, "key": "diagonal", "label": "Диагональная укладка", "waste_percent": 15 },
+      { "id": 3, "key": "offset", "label": "Укладка со смещением", "waste_percent": 10 },
+      { "id": 4, "key": "herringbone", "label": "Укладка ёлочкой", "waste_percent": 20 }
+    ],
+    "room_complexities": [
+      { "id": 1, "key": "simple", "label": "Прямоугольная комната", "waste_bonus_percent": 0 },
+      { "id": 2, "key": "l_shaped", "label": "Г-образная комната", "waste_bonus_percent": 5 },
+      { "id": 3, "key": "complex", "label": "Сложная геометрия", "waste_bonus_percent": 10 }
+    ]
+  },
+  "packaging_rules": {
+    "tile_unit": "шт",
+    "tile_package_size": 1,
+    "glue_bag_kg": 25,
+    "grout_bag_kg": 2,
+    "primer_can_l": 5,
+    "svp_pack_size": 100
+  },
+  "material_rules": {
+    "glue_kg_per_m2_small": 3.5,
+    "glue_kg_per_m2_medium": 4,
+    "glue_kg_per_m2_large": 5.5,
+    "glue_kg_per_m2_xl": 6.5,
+    "primer_l_per_m2": 0.15,
+    "grout_density_kg_per_m3": 1600,
+    "grout_loss_factor": 1.1,
+    "crosses_reserve_factor": 1.2,
+    "svp_threshold_cm": 45,
+    "large_tile_extra_waste_percent": 5,
+    "mosaic_waste_discount_percent": -3,
+    "silicone_tube_area_m2": 15
+  },
+  "warnings_rules": {
+    "low_tile_count_threshold": 5,
+    "large_tile_warning_threshold_cm": 60,
+    "herringbone_large_area_m2": 30
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}
