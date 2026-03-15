@@ -19,6 +19,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 const CONFIGS_DIR = path.resolve(__dirname, "../configs/calculators");
+const FACTOR_TABLE_PATH = path.resolve(__dirname, "../configs/factor-tables.json");
 const OUTPUT_PATH = path.resolve("C:/probrab1/lib/domain/generated/canonical_specs.g.dart");
 
 function snakeToCamel(s: string): string {
@@ -93,7 +94,23 @@ function generateDart(): string {
     "",
   ];
 
-  return [...header, ...specs, ...indexMap].join("\n");
+  // Generate factor table from configs/factor-tables.json
+  const factorTableLines: string[] = [];
+  if (fs.existsSync(FACTOR_TABLE_PATH)) {
+    const ftRaw = fs.readFileSync(FACTOR_TABLE_PATH, "utf-8");
+    const ftJson = JSON.parse(ftRaw);
+    const factors = ftJson.factors as Record<string, { min: number; rec: number; max: number }>;
+
+    factorTableLines.push("/// Default factor table from configs/factor-tables.json");
+    factorTableLines.push("const Map<String, Map<String, double>> defaultFactorTable = {");
+    for (const [name, range] of Object.entries(factors)) {
+      factorTableLines.push(`  '${name}': {'MIN': ${range.min}, 'REC': ${range.rec}, 'MAX': ${range.max}},`);
+    }
+    factorTableLines.push("};");
+    factorTableLines.push("");
+  }
+
+  return [...header, ...specs, ...indexMap, ...factorTableLines].join("\n");
 }
 
 // Ensure output directory exists

@@ -6,6 +6,8 @@ import { CATEGORIES, getCategoryBySlug } from "@/lib/calculators/categories";
 import { SITE_TITLE_SUFFIX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
+import CategoryFaqAccordion from "./CategoryFaqAccordion";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -48,6 +50,7 @@ export default async function CategoryPage({ params }: PageProps) {
   if (!cat) notFound();
 
   const calculators = getCalculatorsByCategory(cat.id);
+  const faqItems = CATEGORY_FAQ[cat.id] ?? [];
   const baseUrl = SITE_URL;
 
   const breadcrumbLd = {
@@ -72,6 +75,19 @@ export default async function CategoryPage({ params }: PageProps) {
     })),
   };
 
+  const faqLd = faqItems.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  } : null;
+
   return (
     <div>
       <script
@@ -82,6 +98,12 @@ export default async function CategoryPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
 
       {/* Hero */}
       <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
@@ -146,6 +168,18 @@ export default async function CategoryPage({ params }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* FAQ section */}
+      {faqItems.length > 0 && (
+        <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div className="page-container-wide py-10">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+              Частые вопросы: {cat.label.toLowerCase()}
+            </h2>
+            <CategoryFaqAccordion items={faqItems} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
