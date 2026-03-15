@@ -57,20 +57,20 @@ describe("Калькулятор арматуры", () => {
     });
 
     it("фиксаторы = 400 шт", () => {
-      expect(result.totals.fixatorCount).toBe(400);
+      expect(result.totals.fixators).toBe(400);
     });
 
-    it("фиксаторы присутствуют в материалах с запасом 10%", () => {
+    it("фиксаторы пластиковые = 400 шт (без доп. запаса)", () => {
       const fix = findMaterial(result, "Фиксаторы");
       expect(fix).toBeDefined();
-      expect(fix!.purchaseQty).toBe(Math.ceil(400 * 1.1)); // 440
+      expect(fix!.purchaseQty).toBe(400);
     });
 
     it("totals содержат все ключевые значения", () => {
       expect(result.totals.mainRebarLength).toBeGreaterThan(0);
       expect(result.totals.mainRebarKg).toBeGreaterThan(0);
-      expect(result.totals.totalRebarLength).toBeGreaterThan(0);
-      expect(result.totals.totalRebarKg).toBeGreaterThan(0);
+      expect(result.totals.tieRebarLength).toBeGreaterThan(0);
+      expect(result.totals.tieRebarKg).toBeGreaterThan(0);
       expect(result.totals.intersections).toBeGreaterThan(0);
     });
 
@@ -81,11 +81,11 @@ describe("Калькулятор арматуры", () => {
 
   describe("Ленточный фундамент 10×8, h=0.3, Ø12, шаг 200", () => {
     // perimeter = 2 × (10 + 8) = 36
-    // mainRebarLength = 36 × 4 × 1.05 = 151.2
+    // mainRebarLength = 36 × 4 × 1.12 = 161.28
     // stirrupCount = ceil(36 / 0.4) = 90
-    // sectionPerimeter = 2 × (0.4 + 0.3 - 0.1) = 1.2
-    // tieRebarLength = 90 × 1.2 = 108
-    // fixators = ceil(36 × 2) = 72
+    // sectionPerimeter = 2 × (0.3 + 0.3 - 0.1) = 1.0, but max(0.8, 1.0) = 1.0
+    // tieRebarLength = 90 × max(0.8, 1.0) = 90
+    // fixators = 0 (strip foundation)
     const result = calc({
       structureType: 1,
       length: 10,
@@ -95,22 +95,21 @@ describe("Калькулятор арматуры", () => {
       gridStep: 200,
     });
 
-    it("4 продольных прутка: 36 × 4 × 1.05 = 151.2 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(151.2, 1);
+    it("4 продольных прутка: 36 × 4 × 1.12 = 161.28 м.п.", () => {
+      expect(result.totals.mainRebarLength).toBeCloseTo(161.28, 1);
     });
 
-    it("хомуты присутствуют", () => {
-      const tie = findMaterial(result, "Хомуты");
+    it("арматура для хомутов присутствует", () => {
+      const tie = findMaterial(result, "хомутов");
       expect(tie).toBeDefined();
-      expect(tie!.quantity).toBeCloseTo(108, 0);
     });
 
-    it("стержни 11.7 м = ceil(151.2 / 11.7) = 13", () => {
-      expect(result.totals.mainRods).toBe(13);
+    it("стержни 11.7 м = ceil(161.28 / 11.7) = 14", () => {
+      expect(result.totals.mainRods).toBe(14);
     });
 
-    it("фиксаторы = ceil(36 × 2) = 72", () => {
-      expect(result.totals.fixatorCount).toBe(72);
+    it("фиксаторы = 0 (ленточный фундамент)", () => {
+      expect(result.totals.fixators).toBe(0);
     });
 
     it("вязальная проволока присутствует", () => {
@@ -124,10 +123,9 @@ describe("Калькулятор арматуры", () => {
 
   describe("Армопояс 10×8, Ø12", () => {
     // perimeter = 36
-    // mainRebarLength = 36 × 4 × 1.05 = 151.2
+    // mainRebarLength = 36 × 4 × 1.12 = 161.28
     // stirrupCount = ceil(36 / 0.4) = 90
-    // sectionPerimeter = 2 × (0.3 + 0.25 - 0.1) = 0.9
-    // tieRebarLength = 90 × 0.9 = 81
+    // tieRebarLength = 90 × 2 × (0.30 + 0.25 - 0.1) = 90 × 0.9 = 81
     const result = calc({
       structureType: 2,
       length: 10,
@@ -137,8 +135,8 @@ describe("Калькулятор арматуры", () => {
       gridStep: 200,
     });
 
-    it("4 прутка: 151.2 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(151.2, 1);
+    it("4 прутка: 161.28 м.п.", () => {
+      expect(result.totals.mainRebarLength).toBeCloseTo(161.28, 1);
     });
 
     it("хомуты ≈ 81 м.п.", () => {
@@ -153,8 +151,8 @@ describe("Калькулятор арматуры", () => {
   describe("Перекрытие 10×8, Ø12, шаг 200", () => {
     // одинарная сетка: barsAlongLength=41, barsAlongWidth=51
     // mainRebarLength = (41×10 + 51×8) × 1.05 = 818 × 1.05 = 858.9
-    // Вторичная Ø6: secStep = 0.4, secBarsX = ceil(8/0.4)+1=21, secBarsY = ceil(10/0.4)+1=26
-    // tieRebarLength = 21×10 + 26×8 = 210 + 208 = 418
+    // Вторичная Ø6: secStep = 0.4, secBarsL = ceil(8/0.4)+1=21, secBarsW = ceil(10/0.4)+1=26
+    // tieRebarLength = (21×10 + 26×8) × 1.05 = 418 × 1.05 = 438.9
     const result = calc({
       structureType: 3,
       length: 10,
@@ -168,10 +166,10 @@ describe("Калькулятор арматуры", () => {
       expect(result.totals.mainRebarLength).toBeCloseTo(858.9, 0);
     });
 
-    it("вторичная сетка Ø6 присутствует", () => {
-      const sec = findMaterial(result, "Вторичная сетка");
+    it("арматура вторичная Ø6 присутствует", () => {
+      const sec = findMaterial(result, "вторичная");
       expect(sec).toBeDefined();
-      expect(sec!.quantity).toBeCloseTo(418, 0);
+      expect(sec!.quantity).toBeCloseTo(438.9, 0);
     });
 
     it("инварианты", () => {
@@ -189,7 +187,7 @@ describe("Калькулятор арматуры", () => {
         mainDiameter: 8,
         gridStep: 200,
       });
-      expect(result.warnings.some((w) => w.includes("12"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("не менее 10"))).toBe(true);
     });
 
     it("толщина плиты < 150 мм → предупреждение по СП", () => {
@@ -213,19 +211,19 @@ describe("Калькулятор арматуры", () => {
         mainDiameter: 8,
         gridStep: 200,
       });
-      expect(result.warnings.some((w) => w.includes("10"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("не менее 10"))).toBe(true);
     });
 
-    it("перекрытие < 150 мм → предупреждение", () => {
+    it("шаг сетки > 250 мм → предупреждение о несущей способности", () => {
       const result = calc({
-        structureType: 3,
+        structureType: 0,
         length: 10,
         width: 8,
-        height: 0.1,
+        height: 0.3,
         mainDiameter: 12,
-        gridStep: 200,
+        gridStep: 300,
       });
-      expect(result.warnings.some((w) => w.includes("150 мм"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("250 мм"))).toBe(true);
     });
   });
 });

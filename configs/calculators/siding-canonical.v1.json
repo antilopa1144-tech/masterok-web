@@ -1,0 +1,51 @@
+{
+  "calculator_id": "siding",
+  "formula_version": "siding-canonical-v1",
+  "input_schema": [
+    { "key": "facadeArea", "unit": "m2", "default_value": 100, "min": 10, "max": 1000 },
+    { "key": "openingsArea", "unit": "m2", "default_value": 10, "min": 0, "max": 100 },
+    { "key": "perimeter", "unit": "m", "default_value": 40, "min": 10, "max": 200 },
+    { "key": "height", "unit": "m", "default_value": 5, "min": 2, "max": 15 },
+    { "key": "sidingType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "exteriorCorners", "default_value": 4, "min": 0, "max": 20 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "siding_types": [0, 1, 2]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_areas": { "0": 0.732, "1": 0.9, "2": 0.63 },
+    "panel_reserve": 1.10,
+    "starter_length": 3.66,
+    "j_profile_length": 3.66,
+    "corner_length": 3.0,
+    "finish_length": 3.66,
+    "screws_per_m2": 12,
+    "screw_reserve": 1.05,
+    "batten_step": 0.5,
+    "batten_reserve": 1.05,
+    "membrane_roll": 75,
+    "membrane_reserve": 1.15,
+    "sealant_per_perim": 15,
+    "starter_reserve": 1.05,
+    "j_reserve": 1.10,
+    "corner_reserve": 1.05
+  },
+  "warnings_rules": {
+    "large_net_area_threshold_m2": 300,
+    "high_openings_ratio": 0.3
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

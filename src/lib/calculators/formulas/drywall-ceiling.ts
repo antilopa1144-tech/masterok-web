@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalDrywallCeiling } from "../../../../engine/drywall-ceiling";
+import drywallCeilingSpec from "../../../../configs/calculators/drywall-ceiling-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const drywallCeilingDef: CalculatorDefinition = {
   id: "drywall_ceiling",
@@ -92,200 +94,17 @@ export const drywallCeilingDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let length: number;
-    let width: number;
-
-    if (inputMode === 0) {
-      length = Math.max(1, inputs.length ?? 5);
-      width = Math.max(1, inputs.width ?? 4);
-    } else {
-      const a = Math.max(1, inputs.area ?? 20);
-      length = Math.sqrt(a);
-      width = Math.sqrt(a);
-    }
-
-    const area = length * width;
-    const layers = Math.round(inputs.layers ?? 1);
-    const profileStep = inputs.profileStep ?? 600; // мм
-    const profileStepM = profileStep / 1000;
-
-    // --- ГКЛ ---
-    const sheetArea = 1.2 * 2.5; // 3.0 м²
-    const sheets = Math.ceil((area * layers) / sheetArea * 1.10);
-
-    // --- Профиль ПП 60×27 (основной несущий, вдоль длины) ---
-    const mainProfileRows = Math.ceil(width / profileStepM);
-    const mainProfileMeters = mainProfileRows * length;
-
-    // --- Профиль ПП 60×27 (поперечный, перпендикулярно основным) ---
-    const crossProfileRows = Math.ceil(length / 1.2);
-    const crossProfileMeters = crossProfileRows * width;
-
-    const totalProfileMeters =
-      (mainProfileMeters + crossProfileMeters) * 1.05;
-    const ppPieces = Math.ceil(totalProfileMeters / 3); // профиль 3 м
-
-    // --- Профиль ПН 27×28 (направляющий, по периметру) ---
-    const pnMeters = 2 * (length + width) * 1.05;
-    const pnPieces = Math.ceil(pnMeters / 3);
-
-    // --- Подвесы прямые ---
-    const suspCount =
-      mainProfileRows * Math.ceil(length / 0.7); // каждые 700 мм
-
-    // --- Крабы соединительные ---
-    const crabCount = mainProfileRows * crossProfileRows;
-
-    // --- Саморезы для ГКЛ 3.5×25 ---
-    const screwsGKL = sheets * 23;
-    const screwsKg =
-      Math.ceil(screwsGKL * 1.05 / 1000 * 10) / 10; // вес, кг
-
-    // --- Саморезы-клопы (профиль-профиль) ---
-    const clopCount = suspCount * 2 + crabCount * 4;
-
-    // --- Дюбель-гвозди ---
-    const dowelCount =
-      suspCount * 2 + Math.ceil(pnMeters / 0.5);
-
-    // --- Серпянка ---
-    const serpyankaMeters = Math.ceil(area * 1.2 * 1.1);
-    const serpyankaRolls = Math.ceil(serpyankaMeters / 45); // рулон 45 м
-
-    // --- Шпаклёвка Knauf Фуген ---
-    const puttyKg = Math.ceil(serpyankaMeters * 0.25); // 0.25 кг/м шва
-    const puttyBags = Math.ceil(puttyKg / 25);
-
-    // --- Грунтовка ---
-    const primerL = area * 0.15;
-    const primerCans = Math.ceil(primerL * 1.15 / 10); // канистра 10 л
-
-    // --- Warnings ---
-    const warnings: string[] = [];
-    if (layers === 2) {
-      warnings.push(
-        "При 2 слоях ГКЛ укладывайте листы со смещением стыков минимум 400 мм",
-      );
-    }
-    if (area > 50) {
-      warnings.push(
-        "При площади > 50 м² рекомендуется устройство деформационных швов",
-      );
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "drywall-ceiling-main",
-      title: "Drywall ceiling main",
-      exactNeed: (area * layers) / sheetArea * 1.1,
-      unit: "листов",
-      packageSizes: [1],
-      packageLabelPrefix: "drywall-ceiling-sheet",
-    });
+    const spec = drywallCeilingSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalDrywallCeiling(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: "ГКЛ 1200×2500 мм",
-          quantity: (area * layers) / sheetArea,
-          unit: "листов",
-          withReserve: sheets,
-          purchaseQty: sheets,
-          category: "Листы ГКЛ",
-        },
-        {
-          name: "Профиль ПП 60×27 (3 м)",
-          quantity: (mainProfileMeters + crossProfileMeters) / 3,
-          unit: "шт",
-          withReserve: ppPieces,
-          purchaseQty: ppPieces,
-          category: "Профиль",
-        },
-        {
-          name: "Профиль ПН 27×28 (3 м)",
-          quantity: (2 * (length + width)) / 3,
-          unit: "шт",
-          withReserve: pnPieces,
-          purchaseQty: pnPieces,
-          category: "Профиль",
-        },
-        {
-          name: "Подвес прямой",
-          quantity: suspCount,
-          unit: "шт",
-          withReserve: suspCount,
-          purchaseQty: suspCount,
-          category: "Крепёж",
-        },
-        {
-          name: "Краб соединительный",
-          quantity: crabCount,
-          unit: "шт",
-          withReserve: crabCount,
-          purchaseQty: crabCount,
-          category: "Крепёж",
-        },
-        {
-          name: "Саморезы для ГКЛ 3.5×25 мм",
-          quantity: screwsGKL / 1000,
-          unit: "кг",
-          withReserve: screwsKg,
-          purchaseQty: Math.ceil(screwsKg),
-          category: "Крепёж",
-        },
-        {
-          name: "Саморезы-клопы 3.5×9.5 мм",
-          quantity: clopCount,
-          unit: "шт",
-          withReserve: clopCount,
-          purchaseQty: clopCount,
-          category: "Крепёж",
-        },
-        {
-          name: "Дюбель-гвозди 6×40 мм",
-          quantity: dowelCount,
-          unit: "шт",
-          withReserve: dowelCount,
-          purchaseQty: dowelCount,
-          category: "Крепёж",
-        },
-        {
-          name: "Серпянка (рулон 45 м)",
-          quantity: serpyankaMeters / 45,
-          unit: "рулон",
-          withReserve: serpyankaRolls,
-          purchaseQty: serpyankaRolls,
-          category: "Отделка",
-        },
-        {
-          name: "Шпаклёвка Knauf Фуген (25 кг)",
-          quantity: puttyKg / 25,
-          unit: "мешок",
-          withReserve: puttyBags,
-          purchaseQty: puttyBags,
-          category: "Отделка",
-        },
-        {
-          name: "Грунтовка глубокого проникновения (10 л)",
-          quantity: primerL / 10,
-          unit: "канистра",
-          withReserve: primerCans,
-          purchaseQty: primerCans,
-          category: "Отделка",
-        },
-      ],
-      totals: {
-        area,
-        length,
-        width,
-        sheets,
-        ppPieces,
-        pnPieces,
-        suspCount,
-        crabCount,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

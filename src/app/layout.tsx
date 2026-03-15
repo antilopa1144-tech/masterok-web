@@ -80,6 +80,24 @@ export const metadata: Metadata = {
       SITE_OG_DESCRIPTION,
     images: [{ url: SITE_OG_IMAGE_PATH, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT }],
   },
+  alternates: {
+    canonical: SITE_URL,
+    languages: {
+      "ru": SITE_URL,
+      "x-default": SITE_URL,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION ?? "",
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION ?? "",
+  },
+  other: {
+    "theme-color": "#f97316",
+    "msapplication-TileColor": "#f97316",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -90,6 +108,9 @@ export default function RootLayout({
   return (
     <html lang="ru" className={inter.variable} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://mc.yandex.ru" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <StructuredData />
       </head>

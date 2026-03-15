@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalSiding } from "../../../../engine/siding";
+import sidingSpec from "../../../../configs/calculators/siding-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const sidingDef: CalculatorDefinition = {
   id: "exterior_siding",
@@ -79,138 +81,18 @@ export const sidingDef: CalculatorDefinition = {
       defaultValue: 4,
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const facadeArea = Math.max(10, inputs.facadeArea ?? 150);
-    const openings = Math.max(0, inputs.openingsArea ?? 20);
-    const perimeter = Math.max(10, inputs.perimeter ?? 48);
-    const height = Math.max(2, inputs.height ?? 6);
-    const sidingType = Math.round(inputs.sidingType ?? 0);
-    const corners = Math.round(inputs.cornersCount ?? 4);
-
-    const netArea = Math.max(1, facadeArea - openings);
-
-    // Размеры панели
-    const panelData: Record<number, { usefulWidth: number; length: number; name: string }> = {
-      0: { usefulWidth: 0.20, length: 3.66, name: "Виниловый сайдинг" },
-      1: { usefulWidth: 0.30, length: 3.00, name: "Металлический сайдинг" },
-      2: { usefulWidth: 0.175, length: 3.60, name: "Фиброцементный сайдинг" },
-    };
-    const panel = panelData[sidingType] ?? panelData[0];
-    const panelArea = panel.usefulWidth * panel.length;
-    const panelsNeeded = Math.ceil((netArea / panelArea) * 1.10);
-
-    // Стартовая планка: по периметру + проёмы
-    const starterLength = perimeter + (openings > 0 ? Math.sqrt(openings) * 4 : 0);
-    const starterPcs = Math.ceil(starterLength / 3.66);
-
-    // J-профиль (вокруг окон и дверей + верх/низ)
-    const jProfileLength = Math.sqrt(openings) * 4 * 2 + perimeter;
-    const jProfilePcs = Math.ceil(jProfileLength * 1.10 / 3.66);
-
-    // Угловой профиль: высота × кол-во углов
-    const cornerPcs = Math.ceil((height * corners * 1.05) / 3.0);
-
-    // Финишная планка
-    const finishPcs = Math.ceil(perimeter * 1.05 / 3.66);
-
-    // Крепёж: ~1 саморез на 30 см длины панели → ~12 шт/м²
-    const screws = Math.ceil(netArea * 12 * 1.05);
-
-    // Обрешётка (доска 40×50 или металлопрофиль): шаг 400–600 мм
-    const battensLm = Math.ceil((netArea / 0.5) * 1.05);
-
-    const warnings: string[] = [];
-    if (sidingType === 2) {
-      warnings.push("Фиброцементный сайдинг требует обязательной окраски торцов при раскрое");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "siding-main",
-      title: "Siding main",
-      exactNeed: panelsNeeded,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "siding-panel",
-    });
+  calculate(inputs) {
+    const spec = sidingSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalSiding(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `${panel.name} (панели)`,
-          quantity: netArea / panelArea,
-          unit: "шт",
-          withReserve: panelsNeeded,
-          purchaseQty: panelsNeeded,
-          category: "Панели",
-        },
-        {
-          name: "Стартовая планка (3.66 м)",
-          quantity: starterLength / 3.66,
-          unit: "шт",
-          withReserve: starterPcs,
-          purchaseQty: starterPcs,
-          category: "Комплектующие",
-        },
-        {
-          name: "J-профиль (3.66 м)",
-          quantity: jProfileLength / 3.66,
-          unit: "шт",
-          withReserve: jProfilePcs,
-          purchaseQty: jProfilePcs,
-          category: "Комплектующие",
-        },
-        {
-          name: "Угловой профиль (3 м)",
-          quantity: (height * corners) / 3.0,
-          unit: "шт",
-          withReserve: cornerPcs,
-          purchaseQty: cornerPcs,
-          category: "Комплектующие",
-        },
-        {
-          name: "Финишная планка (3.66 м)",
-          quantity: perimeter / 3.66,
-          unit: "шт",
-          withReserve: finishPcs,
-          purchaseQty: finishPcs,
-          category: "Комплектующие",
-        },
-        {
-          name: "Саморезы для сайдинга",
-          quantity: screws,
-          unit: "шт",
-          withReserve: screws,
-          purchaseQty: Math.ceil(screws / 200) * 200,
-          category: "Крепёж",
-        },
-        {
-          name: "Обрешётка / брус 40×50 (м.п.)",
-          quantity: netArea / 0.5,
-          unit: "м.п.",
-          withReserve: battensLm,
-          purchaseQty: battensLm,
-          category: "Обрешётка",
-        },
-        {
-          name: "Гидроветрозащитная мембрана Изоспан А (рулон 75 м²)",
-          quantity: netArea / 75,
-          unit: "рулон",
-          withReserve: Math.ceil(netArea * 1.15 / 75),
-          purchaseQty: Math.ceil(netArea * 1.15 / 75),
-          category: "Изоляция",
-        },
-        {
-          name: "Герметик силиконовый (туба 310 мл)",
-          quantity: Math.sqrt(netArea) * 4 / 15,
-          unit: "шт",
-          withReserve: Math.ceil(Math.sqrt(netArea) * 4 / 15),
-          purchaseQty: Math.ceil(Math.sqrt(netArea) * 4 / 15),
-          category: "Доп. материалы",
-        },
-      ],
-      totals: { facadeArea, netArea, panelsNeeded, perimeter } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

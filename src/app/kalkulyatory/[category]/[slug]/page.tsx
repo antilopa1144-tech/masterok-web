@@ -9,6 +9,7 @@ import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikha
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
+import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -23,6 +24,7 @@ const UI_TEXT = {
   appPromoLink: "Узнать подробнее",
   relatedTitle: "Похожие калькуляторы",
   maybeUsefulTitle: "Может пригодиться",
+  crossCategoryTitle: "Другие популярные калькуляторы",
 } as const;
 
 interface PageProps {
@@ -49,6 +51,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: calc.metaTitle,
     description: calc.metaDescription,
     url: canonicalUrl,
+    openGraphTitle: calc.h1,
+    twitterTitle: calc.metaTitle,
+    tags: calc.tags,
   });
 }
 
@@ -65,6 +70,12 @@ export default async function CalculatorPage({ params }: PageProps) {
     (c) => c.category === calc.category && c.slug !== calc.slug
   ).slice(0, 4);
 
+  // Cross-category popular calculators (for internal linking SEO)
+  const crossCategory = ALL_CALCULATORS
+    .filter((c) => c.category !== calc.category && c.slug !== calc.slug)
+    .sort((a, b) => b.popularity - a.popularity)
+    .slice(0, 4);
+
   const accentColor = category?.color ?? "#f97316";
   const accentBg = category?.bgColor ?? "#fff7ed";
   const heroStyle = { "--accent-hero-bg": accentBg } as Record<string, string>;
@@ -72,107 +83,13 @@ export default async function CalculatorPage({ params }: PageProps) {
   const baseUrl = SITE_URL;
   const canonicalUrl = `${baseUrl}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
 
-  // Структурированные данные — приложение
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: calc.title,
-    description: calc.metaDescription,
-    alternateName: calc.h1,
-    keywords: calc.tags.join(", "),
-    url: canonicalUrl,
-    applicationCategory: "UtilitiesApplication",
-    operatingSystem: "Web",
-    inLanguage: "ru",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "RUB",
-    },
-  };
-
-  // Хлебные крошки для поисковиков
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: UI_TEXT.rootBreadcrumb,
-        item: `${baseUrl}/`,
-      },
-      ...(category
-        ? [
-            {
-              "@type": "ListItem",
-              position: 2,
-              name: category.label,
-              item: `${baseUrl}/kalkulyatory/${category.slug}/`,
-            },
-          ]
-        : []),
-      {
-        "@type": "ListItem",
-        position: category ? 3 : 2,
-        name: calc.title,
-      },
-    ],
-  };
-
-  // FAQ микроразметка
-  const faqLd = calc.faq && calc.faq.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": calc.faq.map(item => ({
-      "@type": "Question",
-      "name": item.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": item.answer
-      }
-    }))
-  } : null;
-
-  // HowTo микроразметка
-  const howToLd = calc.howToUse && calc.howToUse.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": calc.title,
-    "description": calc.metaDescription,
-    "inLanguage": "ru",
-    "url": canonicalUrl,
-    "step": calc.howToUse.map((step, i) => ({
-      "@type": "HowToStep",
-      "position": i + 1,
-      "name": `Шаг ${i + 1}`,
-      "text": step,
-      "url": `${canonicalUrl}#${calc.id}-step-${i + 1}`,
-    })),
-  } : null;
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <CalculatorJsonLd
+        calc={calc}
+        categoryLabel={category?.label}
+        canonicalUrl={canonicalUrl}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-      />
-      {howToLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
-        />
-      )}
-      {faqLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
-        />
-      )}
 
       {/* Hero-шапка */}
       <div
@@ -303,7 +220,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                         {item.question}
                         <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">+</span>
                       </summary>
-                      <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                      <p data-faq-answer className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                         {item.answer}
                       </p>
                     </details>
@@ -360,6 +277,46 @@ export default async function CalculatorPage({ params }: PageProps) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {related.map((r) => {
+                const rCat = getCategoryById(r.category);
+                return (
+                  <Link
+                    key={r.id}
+                    href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
+                    className="card-hover p-4 flex items-start gap-3 no-underline group"
+                  >
+                    <span
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: (rCat?.color ?? "#64748b") + "18" }}
+                    >
+                      <CategoryIcon
+                        icon={rCat?.icon ?? "wrench"}
+                        size={20}
+                        color={rCat?.color ?? "#64748b"}
+                      />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
+                        {r.title}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                        {r.description}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Cross-category popular calculators */}
+        {crossCategory.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+              {UI_TEXT.crossCategoryTitle}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {crossCategory.map((r) => {
                 const rCat = getCategoryById(r.category);
                 return (
                   <Link

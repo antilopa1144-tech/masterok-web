@@ -1,0 +1,52 @@
+{
+  "calculator_id": "foam-blocks",
+  "formula_version": "foam-blocks-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "wallLength", "unit": "m", "default_value": 10, "min": 1, "max": 100 },
+    { "key": "wallHeight", "unit": "m", "default_value": 2.7, "min": 1, "max": 5 },
+    { "key": "area", "unit": "m2", "default_value": 27, "min": 1, "max": 500 },
+    { "key": "openingsArea", "unit": "m2", "default_value": 5, "min": 0, "max": 50 },
+    { "key": "blockSize", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "mortarType", "default_value": 0, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "block_sizes": {
+      "0": { "l": 600, "h": 300, "t": 200, "label": "Пеноблок 600×300×200" },
+      "1": { "l": 600, "h": 300, "t": 100, "label": "Пеноблок 600×300×100" },
+      "2": { "l": 390, "h": 190, "t": 188, "label": "Керамзитоблок 390×190×188" },
+      "3": { "l": 390, "h": 190, "t": 90, "label": "Керамзитоблок 390×190×90" }
+    }
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "block_reserve": 1.05,
+    "glue_kg_per_m3": 25,
+    "glue_bag_kg": 25,
+    "cps_kg_per_m3": 1700,
+    "cps_volume_per_m3": 0.25,
+    "cps_bag_kg": 50,
+    "mesh_interval": 3,
+    "rebar_interval": 4,
+    "rebar_reserve": 1.1,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can_l": 10
+  },
+  "warnings_rules": {
+    "non_load_bearing_thickness_mm": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

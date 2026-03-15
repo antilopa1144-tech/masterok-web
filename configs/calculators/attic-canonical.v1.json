@@ -1,0 +1,51 @@
+{
+  "calculator_id": "attic",
+  "formula_version": "attic-canonical-v1",
+  "input_schema": [
+    { "key": "roofArea", "unit": "m2", "default_value": 60, "min": 10, "max": 300 },
+    { "key": "insulationThickness", "unit": "mm", "default_value": 200, "min": 150, "max": 250 },
+    { "key": "insulationType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "finishType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "withVapourBarrier", "default_value": 1, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "insulation_types": [0, 1, 2],
+    "finish_types": [0, 1, 2],
+    "vapour_barrier_types": [0, 1, 2]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "plate_thickness": { "0": 100, "1": 150, "2": 100 },
+    "plate_area": { "0": 0.6, "1": 0.6, "2": 0.72 },
+    "wind_membrane_roll": 70,
+    "vapor_roll": 70,
+    "tape_roll": 25,
+    "plate_reserve": 1.05,
+    "membrane_reserve": 1.15,
+    "tape_area_coeff": 40,
+    "panel_area": 0.288,
+    "panel_reserve": 1.12,
+    "batten_pitch": 0.4,
+    "gkl_sheet": 3.0,
+    "gkl_reserve": 1.1,
+    "profile_step": 0.6,
+    "putty_kg_per_m2": 0.5,
+    "putty_bag": 25
+  },
+  "warnings_rules": {
+    "thin_insulation_threshold_mm": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

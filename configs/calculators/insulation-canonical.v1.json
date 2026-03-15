@@ -1,0 +1,54 @@
+{
+  "calculator_id": "insulation",
+  "formula_version": "insulation-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 40, "min": 1, "max": 500 },
+    { "key": "insulationType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 200 },
+    { "key": "plateSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "reserve", "unit": "%", "default_value": 5, "min": 0, "max": 15 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "insulation_types": [
+      { "id": 0, "key": "mineral_wool", "label": "Минеральная вата", "dowels_per_sqm": 7 },
+      { "id": 1, "key": "epps", "label": "ЭППС / пеноплекс", "dowels_per_sqm": 5 },
+      { "id": 2, "key": "eps", "label": "ЕПС / пенопласт", "dowels_per_sqm": 6 },
+      { "id": 3, "key": "ecowool", "label": "Эковата", "dowels_per_sqm": 0 }
+    ],
+    "plate_sizes": [
+      { "id": 0, "key": "1200x600", "label": "1200×600", "area_m2": 0.72 },
+      { "id": 1, "key": "1000x500", "label": "1000×500", "area_m2": 0.50 },
+      { "id": 2, "key": "2000x1000", "label": "2000×1000", "area_m2": 2.00 }
+    ]
+  },
+  "packaging_rules": {
+    "plate_unit": "шт",
+    "ecowool_unit": "мешков"
+  },
+  "material_rules": {
+    "plate_reserve": 1.05,
+    "dowel_reserve": 1.05,
+    "membrane_reserve": 1.15,
+    "alu_tape_m2_per_m2": 2,
+    "alu_tape_roll_m": 50,
+    "glue_kg_per_m2": 2.5,
+    "glue_bag_kg": 25,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can_l": 10,
+    "ecowool_density": 35,
+    "ecowool_waste": 1.10,
+    "ecowool_bag_kg": 15
+  },
+  "warnings_rules": {
+    "thin_thickness_threshold_mm": 50,
+    "ecowool_settle_threshold_mm": 150,
+    "professional_area_threshold_m2": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

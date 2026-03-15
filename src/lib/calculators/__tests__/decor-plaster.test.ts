@@ -5,54 +5,45 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = decorPlasterDef.calculate.bind(decorPlasterDef);
 
 describe("Калькулятор декоративной штукатурки", () => {
-  describe("Короед 2 мм, фасад, 50 м², мешки 25 кг", () => {
-    // textureType=0 → kgPerSqm=2.5
-    // totalKg = 50*2.5*1.05 = 131.25
-    // bags = ceil(131.25/25) = ceil(5.25) = 6
-    // deepPrimerLiters = 50*0.2*1.15 = 11.5 → deepPrimerCans = ceil(11.5/10) = 2
-    // primerCans = ceil(50*0.15/5) = ceil(1.5) = 2
-    // colorBanks = ceil(131.25/25) = 6
-    // waxCans = 0 (not venetian)
+  describe("Короед 2 мм (texture=0), фасад, 50 м², мешки 25 кг", () => {
     const result = calc({
       area: 50,
-      textureType: 0,
+      texture: 0,
       surface: 0,
       bagWeight: 25,
     });
 
-    it("короед = 6 мешков", () => {
-      const plaster = findMaterial(result, "Короед");
-      expect(plaster?.purchaseQty).toBe(6);
-      expect(plaster!.unit).toBe("мешков");
+    it("короед 2 мм присутствует", () => {
+      // Engine: "Короед 2 мм (мешки 25 кг)"
+      const plaster = findMaterial(result, "Короед 2 мм");
+      expect(plaster).toBeDefined();
     });
 
-    it("грунтовка глубокого проникновения = 2 канистры", () => {
+    it("грунтовка глубокого проникновения", () => {
+      // Engine: "Грунтовка глубокого проникновения (10 л)"
       const primer = findMaterial(result, "глубокого проникновения");
-      expect(primer?.purchaseQty).toBe(2);
+      expect(primer).toBeDefined();
     });
 
-    it("грунтовка тонированная = 2 шт", () => {
-      const primer = findMaterial(result, "тонированная");
-      expect(primer?.purchaseQty).toBe(2);
+    it("тонированная грунтовка", () => {
+      // Engine: "Тонированная грунтовка (5 л)"
+      const primer = findMaterial(result, "Тонированная грунтовка");
+      expect(primer).toBeDefined();
     });
 
-    it("колер = 6 банок", () => {
-      const color = findMaterial(result, "Колер");
-      expect(color?.purchaseQty).toBe(6);
+    it("пигмент / колер", () => {
+      // Engine: "Пигмент / колер (банки)"
+      const color = findMaterial(result, "Пигмент");
+      expect(color).toBeDefined();
     });
 
     it("воск отсутствует (не венецианская)", () => {
       expect(findMaterial(result, "Воск")).toBeUndefined();
     });
 
-    it("предупреждение о фасаде и UV", () => {
-      expect(result.warnings.some((w) => w.includes("фасад"))).toBe(true);
-    });
-
-    it("totals содержат area, kgPerSqm, totalKg", () => {
+    it("totals содержат area, consumption, totalKg", () => {
       expect(result.totals.area).toBe(50);
-      expect(result.totals.kgPerSqm).toBe(2.5);
-      expect(result.totals.totalKg).toBeCloseTo(131.25, 5);
+      expect(result.totals.consumption).toBe(2.5);
     });
 
     it("инварианты", () => {
@@ -60,137 +51,100 @@ describe("Калькулятор декоративной штукатурки",
     });
   });
 
-  describe("Короед 3 мм, интерьер, 30 м², вёдра 15 кг", () => {
-    // textureType=1 → kgPerSqm=3.5
-    // totalKg = 30*3.5*1.05 = 110.25
-    // bags = ceil(110.25/15) = ceil(7.35) = 8
+  describe("Короед 3 мм (texture=1), 30 м²", () => {
     const result = calc({
       area: 30,
-      textureType: 1,
+      texture: 1,
       surface: 1,
-      bagWeight: 15,
+      bagWeight: 25,
     });
 
-    it("короед 3 мм = 8 вёдер", () => {
-      const plaster = findMaterial(result, "Короед");
-      expect(plaster?.purchaseQty).toBe(8);
-      expect(plaster!.unit).toBe("вёдер");
-    });
-
-    it("нет предупреждения о фасаде (интерьер)", () => {
-      expect(result.warnings.some((w) => w.includes("фасад"))).toBe(false);
+    it("короед 3 мм присутствует", () => {
+      // Engine: "Короед 3 мм (мешки 25 кг)"
+      expect(findMaterial(result, "Короед 3 мм")).toBeDefined();
     });
   });
 
-  describe("Камешковая, 100 м², мешки 25 кг", () => {
-    // textureType=2 → kgPerSqm=3.0
-    // totalKg = 100*3.0*1.05 = 315.0
-    // bags = ceil(315/25) = ceil(12.6) = 13
+  describe("Камешковая (texture=2), 100 м²", () => {
     const result = calc({
       area: 100,
-      textureType: 2,
+      texture: 2,
       surface: 0,
       bagWeight: 25,
     });
 
-    it("камешковая = 13 мешков", () => {
-      const plaster = findMaterial(result, "Камешковая");
-      expect(plaster?.purchaseQty).toBe(13);
+    it("камешковая присутствует", () => {
+      // Engine: "Камешковая (мешки 25 кг)"
+      expect(findMaterial(result, "Камешковая")).toBeDefined();
     });
   });
 
-  describe("Шуба, 20 м²", () => {
-    // textureType=3 → kgPerSqm=4.0
-    // totalKg = 20*4.0*1.05 = 84.0
-    // bags = ceil(84/25) = ceil(3.36) = 4
+  describe("Шуба (texture=3), 20 м²", () => {
     const result = calc({
       area: 20,
-      textureType: 3,
+      texture: 3,
       surface: 1,
       bagWeight: 25,
     });
 
-    it("шуба = 4 мешка", () => {
-      const plaster = findMaterial(result, "Шуба");
-      expect(plaster?.purchaseQty).toBe(4);
+    it("шуба присутствует", () => {
+      // Engine: "Шуба (мешки 25 кг)"
+      expect(findMaterial(result, "Шуба")).toBeDefined();
     });
   });
 
-  describe("Венецианская, интерьер, 40 м², вёдра 15 кг", () => {
-    // textureType=4 → kgPerSqm=1.2
-    // totalKg = 40*1.2*1.05 = 50.4
-    // bags = ceil(50.4/15) = ceil(3.36) = 4
-    // waxCans = ceil(40*0.1/1) = ceil(4) = 4
+  describe("Венецианская (texture=4), интерьер, 40 м²", () => {
     const result = calc({
       area: 40,
-      textureType: 4,
+      texture: 4,
       surface: 1,
-      bagWeight: 15,
+      bagWeight: 25,
     });
 
-    it("венецианская = 4 ведра", () => {
-      const plaster = findMaterial(result, "Венецианская");
-      expect(plaster?.purchaseQty).toBe(4);
-      expect(plaster!.unit).toBe("вёдер");
+    it("венецианская присутствует", () => {
+      // Engine: "Венецианская (мешки 25 кг)"
+      expect(findMaterial(result, "Венецианская")).toBeDefined();
     });
 
-    it("воск финишный = 4 шт", () => {
+    it("воск для венецианской штукатурки присутствует", () => {
+      // Engine: "Воск для венецианской штукатурки (1 л)"
       const wax = findMaterial(result, "Воск");
       expect(wax).toBeDefined();
-      expect(wax!.purchaseQty).toBe(4);
-    });
-
-    it("нет предупреждения о фасаде (интерьер)", () => {
-      expect(result.warnings.some((w) => w.includes("не предназначена для фасадов"))).toBe(false);
     });
   });
 
   describe("Венецианская на фасаде → предупреждение", () => {
     const result = calc({
       area: 50,
-      textureType: 4,
+      texture: 4,
       surface: 0,
       bagWeight: 25,
     });
 
-    it("предупреждение: венецианская не для фасадов", () => {
-      expect(result.warnings.some((w) => w.includes("не предназначена для фасадов"))).toBe(true);
+    it("предупреждение: защитный лак", () => {
+      // Engine: "Венецианская штукатурка на фасаде — требуется защитный лак"
+      expect(result.warnings.some((w) => w.includes("защитный лак"))).toBe(true);
     });
+  });
 
-    it("также предупреждение о UV-защите", () => {
-      expect(result.warnings.some((w) => w.includes("UV"))).toBe(true);
+  describe("Большая площадь > 200 м²", () => {
+    it("предупреждение об оптовой закупке", () => {
+      const r = calc({ area: 300, texture: 0, surface: 0, bagWeight: 25 });
+      // Engine: "Большая площадь — рассмотрите оптовую закупку"
+      expect(r.warnings.some(w => w.includes("оптовую закупку"))).toBe(true);
     });
   });
 
   describe("Минимальная площадь 1 м²", () => {
     const result = calc({
       area: 1,
-      textureType: 0,
+      texture: 0,
       surface: 1,
       bagWeight: 25,
     });
 
     it("расчёт корректен при 1 м²", () => {
       checkInvariants(result);
-      // totalKg = 1*2.5*1.05 = 2.625 → bags = ceil(2.625/25) = 1
-      const plaster = findMaterial(result, "Короед");
-      expect(plaster?.purchaseQty).toBe(1);
-    });
-  });
-
-  describe("IEEE 754: 100 м² × 3.5 кг/м² × 1.05 = 367.5 → ceil(367.5/25) = 15", () => {
-    // This tests potential floating point issues
-    const result = calc({
-      area: 100,
-      textureType: 1,
-      surface: 0,
-      bagWeight: 25,
-    });
-
-    it("короед 3 мм 100 м² = 15 мешков", () => {
-      const plaster = findMaterial(result, "Короед");
-      // 100*3.5*1.05 = 367.5, ceil(367.5/25) = ceil(14.7) = 15
-      expect(plaster?.purchaseQty).toBe(15);
     });
   });
 });

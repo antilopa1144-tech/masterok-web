@@ -1,0 +1,44 @@
+{
+  "calculator_id": "balcony",
+  "formula_version": "balcony-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 3, "min": 1, "max": 10 },
+    { "key": "width", "unit": "m", "default_value": 1.2, "min": 0.6, "max": 3 },
+    { "key": "height", "unit": "m", "default_value": 2.5, "min": 2, "max": 3 },
+    { "key": "finishType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "insulationType", "default_value": 0, "min": 0, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_areas": {
+      "0": 0.288,
+      "1": 0.3,
+      "2": 0.288,
+      "3": 0.576
+    },
+    "batten_pitch": 0.4,
+    "insulation_plate": 0.72,
+    "insulation_reserve": 1.05,
+    "finish_reserve": 1.1,
+    "klaymer_per_panel": 3,
+    "klaymer_reserve": 1.1
+  },
+  "warnings_rules": {
+    "large_balcony_area_threshold_m2": 15,
+    "uninsulated_warning_threshold": 0
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

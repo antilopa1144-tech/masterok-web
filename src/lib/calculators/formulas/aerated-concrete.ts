@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalAeratedConcrete } from "../../../../engine/aerated-concrete";
+import aeratedconcreteSpec from "../../../../configs/calculators/aerated-concrete-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const aeratedConcreteDef: CalculatorDefinition = {
   id: "walls_aerated_concrete",
@@ -105,158 +107,18 @@ export const aeratedConcreteDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let wallArea: number;
-
-    if (inputMode === 0) {
-      const w = Math.max(1, inputs.wallWidth ?? 10);
-      const h = Math.max(1, inputs.wallHeight ?? 2.7);
-      wallArea = w * h;
-    } else {
-      wallArea = Math.max(1, inputs.area ?? 27);
-    }
-
-    const openings = Math.max(0, inputs.openingsArea ?? 5);
-    const netArea = Math.max(0.5, wallArea - openings);
-
-    const blockT = inputs.blockThickness ?? 200; // мм
-    const blockH = inputs.blockHeight ?? 200; // мм
-    const blockL = inputs.blockLength ?? 600; // мм
-
-    // Площадь грани блока (видимой) в м²
-    const blockFaceArea = (blockH / 1000) * (blockL / 1000);
-    const blocksPerSqm = 1 / blockFaceArea;
-
-    const blocksNet = netArea * blocksPerSqm;
-    const blocksWithReserve = Math.ceil(blocksNet * 1.05); // +5%
-
-    // Клей для газобетона: 25–30 кг/м³ при шве 2–3 мм
-    const volume = netArea * (blockT / 1000);
-    const glueKg = volume * 28; // 28 кг/м³ — норма по ТЛ
-    const glueBags = Math.ceil(glueKg / 25);
-
-    // Армирование: каждый 4-й ряд или каждый ряд для перегородок
-    const rows = Math.ceil((inputs.wallHeight ?? 2.7) / (blockH / 1000));
-    const rebarRows = Math.ceil(rows / 4);
-    const rebarLength = Math.ceil(
-      (inputMode === 0 ? (inputs.wallWidth ?? 10) : Math.sqrt(netArea)) * rebarRows * 1.1
-    );
-
-    // Грунтовка глубокого проникновения: 150 мл/м²
-    const primerLiters = netArea * 0.15;
-    const primerWithReserve = primerLiters * 1.15;
-    const primerCanisters = Math.ceil(primerWithReserve / 10); // канистра 10 л
-
-    // U-блоки для перемычек: 1 перемычка на 3 м стены, длина перемычки ≈ 1 м, 1 блок на 0.5 м
-    const wallLen = inputMode === 0 ? (inputs.wallWidth ?? 10) : Math.sqrt(wallArea);
-    const lintelsCount = Math.max(1, Math.floor(wallLen / 3));
-    const uBlocksNeeded = lintelsCount * 2; // 2 блока на перемычку (~1 м / 0.5 м)
-    const uBlocksWithReserve = Math.ceil(uBlocksNeeded * 1.1);
-
-    const warnings: string[] = [];
-    if (blockT < 200) {
-      warnings.push("Блоки ≤ 150 мм — только для ненесущих перегородок. Несущие стены от 200 мм");
-    }
-    if (blockT >= 300) {
-      warnings.push("Для наружных стен 300+ мм рекомендуется проверить теплотехнический расчёт по СП 50.13330");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "aerated-concrete-main",
-      title: "Aerated concrete main",
-      exactNeed: blocksNet * 1.05,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "aerated-block",
-    });
+  calculate(inputs) {
+    const spec = aeratedconcreteSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalAeratedConcrete(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Блок газобетонный ${blockT}×${blockH}×${blockL} мм`,
-          quantity: blocksNet,
-          unit: "шт",
-          withReserve: blocksWithReserve,
-          purchaseQty: blocksWithReserve,
-          category: "Блоки",
-        },
-        {
-          name: "Клей для газобетона (мешки 25 кг)",
-          quantity: glueKg / 25,
-          unit: "мешков",
-          withReserve: glueBags,
-          purchaseQty: glueBags,
-          category: "Кладочный клей",
-        },
-        {
-          name: "Арматура Ø8 (армирование рядов)",
-          quantity: rebarLength,
-          unit: "м.п.",
-          withReserve: rebarLength,
-          purchaseQty: rebarLength,
-          category: "Армирование",
-        },
-        {
-          name: "Уголок защитный ПВХ",
-          quantity: Math.ceil(Math.sqrt(netArea) * 4 * 1.1),
-          unit: "м.п.",
-          withReserve: Math.ceil(Math.sqrt(netArea) * 4 * 1.1),
-          purchaseQty: Math.ceil(Math.sqrt(netArea) * 4 * 1.1 / 3),
-          category: "Доп. материалы",
-        },
-        {
-          name: "Грунтовка глубокого проникновения (канистра 10 л)",
-          quantity: primerLiters,
-          unit: "л",
-          withReserve: Math.ceil(primerWithReserve * 10) / 10,
-          purchaseQty: primerCanisters,
-          category: "Грунтовка",
-        },
-        {
-          name: "U-блок для перемычек",
-          quantity: uBlocksNeeded,
-          unit: "шт",
-          withReserve: uBlocksWithReserve,
-          purchaseQty: uBlocksWithReserve,
-          category: "Перемычки",
-        },
-        {
-          name: "Ножовка по газобетону (с твердосплавными напайками)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Кельва-ковш для клея (по ширине блока)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Рубанок (тёрка) для газобетона",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Инструмент",
-        },
-        {
-          name: "Перчатки прорезиненные (усиленные)",
-          quantity: 5,
-          unit: "пар",
-          withReserve: 5,
-          purchaseQty: 5,
-          category: "Расходники",
-        },
-      ],
-      totals: { wallArea, netArea, blocksNet, volume } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

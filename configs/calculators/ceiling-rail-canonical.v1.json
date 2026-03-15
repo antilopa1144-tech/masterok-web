@@ -1,0 +1,40 @@
+{
+  "calculator_id": "ceiling-rail",
+  "formula_version": "ceiling-rail-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 20, "min": 1, "max": 200 },
+    { "key": "railWidth", "unit": "mm", "default_value": 100, "min": 100, "max": 200 },
+    { "key": "railLength", "unit": "m", "default_value": 3.0, "min": 3.0, "max": 4.0 },
+    { "key": "roomLength", "unit": "m", "default_value": 5, "min": 1, "max": 30 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "rail_widths": [100, 150, 200],
+    "rail_lengths": [3.0, 3.6, 4.0]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "rail_reserve": 1.1,
+    "t_profile_spacing": 1.0,
+    "t_profile_length": 3,
+    "t_reserve": 1.05,
+    "hanger_spacing": 1.2,
+    "screws_per_hanger": 4,
+    "screws_per_rail": 2
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

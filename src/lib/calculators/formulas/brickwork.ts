@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalBrickwork } from "../../../../engine/brickwork";
+import brickworkSpec from "../../../../configs/calculators/brickwork-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 // Кирпичей на 1 м² стены с учётом шва 10 мм (по ГОСТ)
 // [0.5 кирпича, 1 кирпич, 1.5 кирпича, 2 кирпича]
@@ -133,147 +135,17 @@ export const brickworkDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let wallArea: number;
-    let wallLength: number;
-    let wallHeight: number;
-
-    if (inputMode === 0) {
-      wallLength = Math.max(1, inputs.wallLength ?? 10);
-      wallHeight = Math.max(1, inputs.wallHeight ?? 2.7);
-      wallArea = wallLength * wallHeight;
-    } else {
-      wallArea = Math.max(1, inputs.area ?? 27);
-      wallHeight = 2.7;
-      wallLength = wallArea / wallHeight;
-    }
-
-    const openings = Math.max(0, inputs.openingsArea ?? 5);
-    const netArea = Math.max(0.5, wallArea - openings);
-
-    const brickFormat = Math.round(inputs.brickFormat ?? 0);
-    const wallThicknessIdx = Math.round(inputs.wallThickness ?? 1);
-    const mortarJoint = Math.max(8, Math.min(15, inputs.mortarJoint ?? 10));
-
-    // Кирпичей на 1 м² (базовое значение при шве 10 мм)
-    const baseBricks = (BRICKS_PER_SQM[brickFormat] ?? BRICKS_PER_SQM[0])[wallThicknessIdx] ?? 102;
-
-    // Корректировка по толщине шва (если отличается от 10 мм)
-    const jointCoeff = mortarJoint === 10 ? 1.0 : (10 / mortarJoint) * 0.97 + 0.03;
-    const bricksPerSqm = baseBricks * jointCoeff;
-
-    const totalBricks = netArea * bricksPerSqm;
-    const bricksWithReserve = Math.ceil(totalBricks * 1.05); // +5% на бой
-
-    // Раствор
-    const wallThicknessMm = WALL_THICKNESS_MM[wallThicknessIdx] ?? 250;
-    const wallVolume = netArea * (wallThicknessMm / 1000);
-    const mortarCoeff = MORTAR_PER_M3[brickFormat] ?? 0.221;
-    const mortarM3 = wallVolume * mortarCoeff;
-    // 1 м³ раствора ≈ 1700 кг, мешки ЦПС 50 кг (1:3 пропорция)
-    const mortarKg = mortarM3 * 1700;
-    const mortarBags = Math.ceil(mortarKg / 50);
-
-    // Кладочная сетка: каждые 5 рядов
-    const brickH = BRICK_HEIGHTS[brickFormat] ?? 65;
-    const rowHeight = (brickH + mortarJoint) / 1000; // м
-    const totalRows = Math.ceil(wallHeight / rowHeight);
-    const meshRows = Math.floor(totalRows / 5);
-    const meshArea = wallLength * (wallThicknessMm / 1000) * meshRows;
-    const meshCards = Math.ceil(meshArea / 0.5); // карты 0.5×2 м = 1 м²... берём м²
-
-    // Перемычки ж/б для проёмов
-    const openingsCount = Math.max(0, Math.round(openings / 2));
-    const lintelsPerOpening = wallThicknessIdx >= 1 ? 2 : 1;
-
-    // Кирпич на поддоне
-    const bricksPerPallet: Record<number, number> = { 0: 480, 1: 352, 2: 176 };
-    const pallets = Math.ceil(bricksWithReserve / (bricksPerPallet[brickFormat] ?? 480));
-
-    const materials: Array<{
-      name: string; quantity: number; unit: string;
-      withReserve: number; purchaseQty: number; category: string;
-    }> = [
-      {
-        name: `Кирпич рядовой ${brickFormat === 0 ? "одинарный" : brickFormat === 1 ? "полуторный" : "двойной"}`,
-        quantity: totalBricks,
-        unit: "шт",
-        withReserve: bricksWithReserve,
-        purchaseQty: bricksWithReserve,
-        category: "Кирпич",
-      },
-      {
-        name: `Поддоны кирпича (${bricksPerPallet[brickFormat] ?? 480} шт)`,
-        quantity: pallets,
-        unit: "шт",
-        withReserve: pallets,
-        purchaseQty: pallets,
-        category: "Кирпич",
-      },
-      {
-        name: "Кладочный раствор (ЦПС, мешки 50 кг)",
-        quantity: mortarKg,
-        unit: "мешков",
-        withReserve: mortarBags,
-        purchaseQty: mortarBags,
-        category: "Раствор",
-      },
-    ];
-
-    if (meshRows > 0) {
-      materials.push({
-        name: "Кладочная сетка 50×50×3 мм",
-        quantity: meshArea,
-        unit: "м²",
-        withReserve: Math.ceil(meshArea * 1.1),
-        purchaseQty: Math.ceil(meshArea * 1.1),
-        category: "Армирование",
-      });
-    }
-
-    if (openingsCount > 0) {
-      materials.push({
-        name: "Перемычка ж/б (брусковая, 2 м)",
-        quantity: openingsCount * lintelsPerOpening,
-        unit: "шт",
-        withReserve: openingsCount * lintelsPerOpening,
-        purchaseQty: openingsCount * lintelsPerOpening,
-        category: "Перемычки",
-      });
-    }
-
-    const warnings: string[] = [];
-    if (wallThicknessIdx === 0) {
-      warnings.push("Стена в полкирпича — только ненесущие перегородки. Для несущих стен минимум в кирпич (250 мм)");
-    }
-    if (wallThicknessIdx >= 2 && wallHeight > 3) {
-      warnings.push("При высоте стен > 3 м и толщине 1.5+ кирпича рекомендуется армопояс по верхнему ряду");
-    }
-    if (brickFormat === 2 && wallThicknessIdx === 0) {
-      warnings.push("Двойной кирпич в полкирпича — нестандартное решение. Проверьте расчёт на устойчивость");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "brickwork-main",
-      title: "Brickwork main",
-      exactNeed: totalBricks * 1.05,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "brickwork-piece",
-    });
+    const spec = brickworkSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalBrickwork(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        wallArea,
-        netArea,
-        totalBricks: bricksWithReserve,
-        wallVolume,
-        mortarM3,
-        pallets,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

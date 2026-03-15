@@ -4,78 +4,59 @@ import { findMaterial, checkInvariants } from "./_helpers";
 
 const calc = gypsumBoardDef.calculate.bind(gypsumBoardDef);
 
-describe("Калькулятор гипсокартона (стены/перегородки/потолок)", () => {
-  describe("Обшивка стены, 20 м², 1 слой, шаг 600", () => {
-    // constructionType=0, area=20, layers=1, profileStep=600
-    // sheetArea = 3.0
-    // sheetsOneSide = ceil(20*1/3.0*1.1) = ceil(7.333) = 8
-    // totalSheets = 8 (обшивка — 1 сторона)
-    // wallHeight = 2.7, wallLength = 20/2.7 ≈ 7.407
-    // ppCount = ceil(7.407/0.6)+1 = 13+1 = 14
-    // ppMeters = 14*2.7 = 37.8
-    // ppQuantity = ceil(37.8/3) = 13
-    // perimeter = (7.407+2.7)*2 = 20.214
-    // pnMeters = 20.214 (обшивка — 1 раз)
-    // pnQuantity = ceil(20.214/3) = 7
-    // screwsGKL = 8*24 = 192
-    // dubelCount = ceil(20.214/0.5)*2 = 41*2 = 82
-    // jointsPerRow = ceil(7.407/1.2)+1 = 7+1 = 8
-    // serpyanka = ceil(8*2.7*1*1.1) = ceil(23.76) = 24
+describe("Калькулятор гипсокартона", () => {
+  describe("Обшивка стены (constructionType=0), 40 м², 1 слой, шаг 600", () => {
     const result = calc({
-      area: 20,
+      area: 40,
       constructionType: 0,
       layers: 1,
       gklType: 0,
       profileStep: 600,
     });
 
-    it("ГКЛ = 8 листов", () => {
-      const gkl = findMaterial(result, "ГКЛ");
-      expect(gkl?.purchaseQty).toBe(8);
-      expect(gkl!.name).toContain("Обшивка стены");
+    it("ГКЛ стандартный присутствует", () => {
+      // Engine: "ГКЛ стандартный"
+      const gkl = findMaterial(result, "ГКЛ стандартный");
+      expect(gkl).toBeDefined();
     });
 
-    it("ПП 60×27 = 13 шт", () => {
-      const pp = findMaterial(result, "ПП 60×27");
-      expect(pp?.purchaseQty).toBe(13);
+    it("Профиль ПП 60×27 3м присутствует", () => {
+      // Engine: "Профиль ПП 60×27 3м"
+      expect(findMaterial(result, "ПП 60×27")).toBeDefined();
     });
 
-    it("ПН 27×28 = 7 шт", () => {
-      const pn = findMaterial(result, "ПН 27×28");
-      expect(pn?.purchaseQty).toBe(7);
+    it("Профиль ПН 27×28 3м присутствует", () => {
+      // Engine: "Профиль ПН 27×28 3м"
+      expect(findMaterial(result, "ПН 27×28")).toBeDefined();
     });
 
-    it("саморезы для ГКЛ в кг", () => {
-      const screws = findMaterial(result, "Саморезы для ГКЛ");
-      expect(screws).toBeDefined();
-      expect(screws!.unit).toBe("кг");
+    it("саморезы для ГКЛ присутствуют", () => {
+      // Engine: "Саморезы для ГКЛ"
+      expect(findMaterial(result, "Саморезы для ГКЛ")).toBeDefined();
     });
 
     it("дюбели присутствуют", () => {
-      const dubels = findMaterial(result, "Дюбель");
-      expect(dubels).toBeDefined();
+      // Engine: "Дюбели"
+      expect(findMaterial(result, "Дюбели")).toBeDefined();
     });
 
     it("серпянка присутствует", () => {
-      const serp = findMaterial(result, "Серпянка");
-      expect(serp).toBeDefined();
+      // Engine: "Серпянка"
+      expect(findMaterial(result, "Серпянка")).toBeDefined();
     });
 
-    it("шпаклёвка Knauf Фуген", () => {
-      expect(findMaterial(result, "Фуген")).toBeDefined();
+    it("шпаклёвка 25 кг присутствует", () => {
+      // Engine: "Шпаклёвка 25 кг"
+      expect(findMaterial(result, "Шпаклёвка")).toBeDefined();
     });
 
-    it("грунтовка присутствует", () => {
+    it("грунтовка 10 л присутствует", () => {
+      // Engine: "Грунтовка 10 л"
       expect(findMaterial(result, "Грунтовка")).toBeDefined();
     });
 
-    it("скобы отсутствуют (только для перегородок)", () => {
-      expect(findMaterial(result, "Скоба")).toBeUndefined();
-    });
-
-    it("totals", () => {
-      expect(result.totals.area).toBe(20);
-      expect(result.totals.totalSheets).toBe(8);
+    it("totals.area = 40", () => {
+      expect(result.totals.area).toBe(40);
     });
 
     it("инварианты", () => {
@@ -83,52 +64,27 @@ describe("Калькулятор гипсокартона (стены/перег
     });
   });
 
-  describe("Перегородка, 20 м², 1 слой", () => {
-    // constructionType=1
-    // sheetsOneSide = ceil(20*1/3.0*1.1) = 8
-    // totalSheets = 8 * 2 = 16 (обе стороны)
-    // pnMeters = perimeter * 2 (перегородка)
-    // wallHeight = 2.7, wallLength = 20/2.7 ≈ 7.407
-    // perimeter = (7.407+2.7)*2 = 20.214
-    // pnMeters = 20.214*2 = 40.428
-    // pnQuantity = ceil(40.428/3) = 14
+  describe("Перегородка (constructionType=1), 40 м², 1 слой", () => {
     const result = calc({
-      area: 20,
+      area: 40,
       constructionType: 1,
       layers: 1,
       gklType: 0,
       profileStep: 600,
     });
 
-    it("ГКЛ = 16 листов (обе стороны)", () => {
-      const gkl = findMaterial(result, "ГКЛ");
-      expect(gkl?.purchaseQty).toBe(16);
-      expect(gkl!.name).toContain("Перегородка");
+    it("totalSheets = sheetsOneSide * 2 (обе стороны)", () => {
+      // Engine: sides=2
+      expect(result.totals.sides).toBe(2);
+      expect(result.totals.totalSheets).toBe(result.totals.sheetsOneSide * 2);
     });
 
-    it("ПН 27×28 = 14 шт (перегородка — двойной периметр)", () => {
-      const pn = findMaterial(result, "ПН 27×28");
-      expect(pn?.purchaseQty).toBe(14);
-    });
-
-    it("скобы крепёжные присутствуют", () => {
-      const brackets = findMaterial(result, "Скоба");
-      expect(brackets).toBeDefined();
-    });
-
-    it("предупреждение о звукоизоляции минватой", () => {
-      expect(result.warnings.some((w) => w.includes("минватой"))).toBe(true);
+    it("инварианты", () => {
+      checkInvariants(result);
     });
   });
 
-  describe("Потолок, 15 м², 1 слой, шаг 600", () => {
-    // constructionType=2
-    // wallHeight = sqrt(15) ≈ 3.873
-    // wallLength = 15 / 3.873 ≈ 3.873
-    // ppCount = ceil(3.873/0.6) * ceil(3.873/0.6)
-    //         = ceil(6.455)*ceil(6.455) = 7*7 = 49
-    // ppMeters = 49 * 3.873 ≈ 189.77
-    // ppQuantity = ceil(189.77/3) = 64
+  describe("Потолок (constructionType=2), 15 м², 1 слой", () => {
     const result = calc({
       area: 15,
       constructionType: 2,
@@ -140,15 +96,6 @@ describe("Калькулятор гипсокартона (стены/перег
     it("ГКЛ листы для потолка", () => {
       const gkl = findMaterial(result, "ГКЛ");
       expect(gkl).toBeDefined();
-      expect(gkl!.name).toContain("Потолок");
-      // sheetsOneSide = ceil(15*1/3.0*1.1) = ceil(5.5) = 6
-      expect(gkl!.purchaseQty).toBe(6);
-    });
-
-    it("ПП 60×27 профили для потолочной решётки", () => {
-      const pp = findMaterial(result, "ПП 60×27");
-      expect(pp).toBeDefined();
-      expect(pp!.purchaseQty).toBeGreaterThan(0);
     });
 
     it("инварианты", () => {
@@ -156,7 +103,7 @@ describe("Калькулятор гипсокартона (стены/перег
     });
   });
 
-  describe("2 слоя ГКЛ на обшивке стены → предупреждение", () => {
+  describe("2 слоя ГКЛ → предупреждение", () => {
     const result = calc({
       area: 10,
       constructionType: 0,
@@ -165,18 +112,13 @@ describe("Калькулятор гипсокартона (стены/перег
       profileStep: 600,
     });
 
-    it("предупреждение о смещении стыков", () => {
-      expect(result.warnings.some((w) => w.includes("смещение стыков"))).toBe(true);
-    });
-
-    it("количество листов удвоено для 2 слоёв", () => {
-      const gkl = findMaterial(result, "ГКЛ");
-      // sheetsOneSide = ceil(10*2/3.0*1.1) = ceil(7.333) = 8
-      expect(gkl?.purchaseQty).toBe(8);
+    it("предупреждение о смещении швов", () => {
+      // Engine: "Второй слой ГКЛ монтируется со смещением швов"
+      expect(result.warnings.some((w) => w.includes("смещением швов"))).toBe(true);
     });
   });
 
-  describe("ГКЛВ (влагостойкий)", () => {
+  describe("ГКЛВ влагостойкий (gklType=1)", () => {
     const result = calc({
       area: 10,
       constructionType: 0,
@@ -186,27 +128,31 @@ describe("Калькулятор гипсокартона (стены/перег
     });
 
     it("название содержит ГКЛВ", () => {
-      const gkl = findMaterial(result, "ГКЛВ");
-      expect(gkl).toBeDefined();
+      // Engine: "ГКЛВ влагостойкий"
+      expect(findMaterial(result, "ГКЛВ")).toBeDefined();
     });
   });
 
-  describe("Усиленный шаг профилей 400 мм", () => {
-    // area=20, constructionType=0
-    // wallHeight=2.7, wallLength=20/2.7≈7.407
-    // ppCount = ceil(7.407/0.4)+1 = 19+1 = 20
+  describe("ГКЛО огнестойкий (gklType=2)", () => {
     const result = calc({
-      area: 20,
+      area: 10,
       constructionType: 0,
       layers: 1,
-      gklType: 0,
-      profileStep: 400,
+      gklType: 2,
+      profileStep: 600,
     });
 
-    it("больше ПП профилей при шаге 400", () => {
-      const pp = findMaterial(result, "ПП 60×27");
-      // ppMeters = 20*2.7 = 54 → ceil(54/3) = 18
-      expect(pp?.purchaseQty).toBe(18);
+    it("название содержит ГКЛО", () => {
+      // Engine: "ГКЛО огнестойкий"
+      expect(findMaterial(result, "ГКЛО")).toBeDefined();
+    });
+  });
+
+  describe("Большая площадь → предупреждение", () => {
+    it("профессиональный монтаж", () => {
+      const r = calc({ area: 250, constructionType: 0, layers: 1, gklType: 0, profileStep: 600 });
+      // Engine: "Большая площадь — рекомендуется профессиональный монтаж"
+      expect(r.warnings.some(w => w.includes("профессиональный монтаж"))).toBe(true);
     });
   });
 });

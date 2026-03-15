@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalTileGrout } from "../../../../engine/tile-grout";
+import tilegroutSpec from "../../../../configs/calculators/tile-grout-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const tileGroutDef: CalculatorDefinition = {
   id: "floors_tile_grout",
@@ -90,65 +92,18 @@ export const tileGroutDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 20);
-    const tileW = Math.max(50, inputs.tileWidth ?? 300); // мм
-    const tileH = Math.max(50, inputs.tileHeight ?? 300); // мм
-    const tileT = Math.max(6, inputs.tileThickness ?? 8); // мм
-    const jointW = Math.max(1, inputs.jointWidth ?? 3); // мм
-    const groutType = Math.round(inputs.groutType ?? 0);
-    const bagSize = inputs.bagSize ?? 2;
-
-    // Длина швов на 1 м²: 1/W + 1/H (м/м²)
-    const jointLengthPerSqm = 1000 / Math.max(50, tileW) + 1000 / Math.max(50, tileH); // пм/м²
-
-    // Объём швов: jointLength × jointW × tileT (все в мм → переводим в л)
-    const jointVolumeLPerSqm = jointLengthPerSqm * (jointW / 1000) * (tileT / 1000) * 1000; // л/м²
-
-    // Плотность по типу: цемент ~1600, эпокси ~1400, полиуретан ~1200 кг/м³
-    const density: Record<number, number> = { 0: 1600, 1: 1400, 2: 1200 };
-    const rho = density[groutType] ?? 1600;
-
-    const kgPerSqm = jointVolumeLPerSqm * (rho / 1000); // кг/м²
-    const totalKg = area * kgPerSqm * 1.1; // +10% запас
-    const bags = Math.ceil(totalKg / bagSize);
-
-    const warnings: string[] = [];
-    if (groutType === 1) {
-      warnings.push("Эпоксидная затирка требует смешивания компонентов A+B — работайте небольшими порциями (25–30 минут жизнеспособность)");
-    }
-    if (jointW < 2 && groutType === 1) {
-      warnings.push("Эпоксидная затирка не рекомендуется для швов < 2 мм");
-    }
-    if (tileW > 600 || tileH > 600) {
-      warnings.push("Крупноформатная плитка: рекомендуется шов от 3 мм для компенсации тепловых расширений");
-    }
-
-    const groutNames = ["Затирка цементная", "Затирка эпоксидная", "Затирка полиуретановая"];
-
-    const scenarios = buildNativeScenarios({
-      id: "tile-grout-main",
-      title: "Tile grout main",
-      exactNeed: totalKg,
-      unit: "кг",
-      packageSizes: [bagSize],
-      packageLabelPrefix: "tile-grout-pack",
-    });
+  calculate(inputs) {
+    const spec = tilegroutSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalTileGrout(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `${groutNames[groutType] ?? groutNames[0]} (уп. ${bagSize} кг)`,
-          quantity: totalKg / bagSize,
-          unit: "уп.",
-          withReserve: bags,
-          purchaseQty: bags,
-          category: "Основное",
-        },
-      ],
-      totals: { area, kgPerSqm, totalKg } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

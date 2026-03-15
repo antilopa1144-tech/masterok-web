@@ -1,0 +1,58 @@
+{
+  "calculator_id": "strip-foundation",
+  "formula_version": "strip-foundation-canonical-v1",
+  "input_schema": [
+    { "key": "perimeter", "unit": "m", "default_value": 40, "min": 10, "max": 200 },
+    { "key": "width", "unit": "mm", "default_value": 400, "min": 200, "max": 600 },
+    { "key": "depth", "unit": "mm", "default_value": 700, "min": 300, "max": 2000 },
+    { "key": "aboveGround", "unit": "mm", "default_value": 300, "min": 0, "max": 600 },
+    { "key": "reinforcement", "default_value": 1, "min": 0, "max": 3 },
+    { "key": "deliveryMethod", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "м³",
+    "volume_step_m3": 0.1
+  },
+  "material_rules": {
+    "rebar_diameters": {
+      "0": 12,
+      "1": 12,
+      "2": 14,
+      "3": 12
+    },
+    "rebar_threads": {
+      "0": 2,
+      "1": 4,
+      "2": 4,
+      "3": 6
+    },
+    "weight_per_m": {
+      "12": 0.888,
+      "14": 1.21
+    },
+    "clamp_weight": 0.395,
+    "clamp_step": 0.4,
+    "tech_loss": {
+      "0": 0.5,
+      "1": 0,
+      "2": 0
+    },
+    "concrete_reserve": 1.07,
+    "overlap": 1.12
+  },
+  "warnings_rules": {
+    "shallow_depth_threshold_mm": 400,
+    "large_perimeter_threshold_m": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

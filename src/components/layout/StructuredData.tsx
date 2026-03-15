@@ -48,7 +48,10 @@ export function StructuredData() {
       url,
       potentialAction: {
         "@type": "SearchAction",
-        target: `${SITE_URL}${pathname}?q={search_term_string}`,
+        target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}${pathname}?q={search_term_string}`,
+      },
         "query-input": "named required QueryInputItem 1",
       },
     }

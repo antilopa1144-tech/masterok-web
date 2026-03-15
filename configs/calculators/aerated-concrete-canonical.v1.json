@@ -1,0 +1,49 @@
+{
+  "calculator_id": "aerated-concrete",
+  "formula_version": "aerated-concrete-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "wallWidth", "unit": "m", "default_value": 10, "min": 1, "max": 100 },
+    { "key": "wallHeight", "unit": "m", "default_value": 2.7, "min": 1, "max": 5 },
+    { "key": "area", "unit": "m2", "default_value": 27, "min": 1, "max": 500 },
+    { "key": "openingsArea", "unit": "m2", "default_value": 5, "min": 0, "max": 50 },
+    { "key": "blockThickness", "unit": "mm", "default_value": 200, "min": 100, "max": 400 },
+    { "key": "blockHeight", "unit": "mm", "default_value": 200, "min": 200, "max": 250 },
+    { "key": "blockLength", "unit": "mm", "default_value": 600, "min": 600, "max": 625 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "block_thickness_options": [100, 150, 200, 250, 300, 375, 400],
+    "block_height_options": [200, 250],
+    "block_length_options": [600, 625]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "glue_kg_per_m3": 28,
+    "glue_bag_kg": 25,
+    "block_reserve": 1.05,
+    "rebar_armoring_interval": 4,
+    "rebar_reserve": 1.1,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can_l": 10,
+    "corner_profile_length_m": 2.5,
+    "corner_profile_count": 4
+  },
+  "warnings_rules": {
+    "non_load_bearing_thickness_mm": 150,
+    "thermal_check_thickness_mm": 300
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

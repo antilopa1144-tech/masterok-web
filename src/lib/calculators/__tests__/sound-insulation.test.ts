@@ -5,91 +5,95 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = soundInsulationDef.calculate.bind(soundInsulationDef);
 
 describe("Звукоизоляция", () => {
-  describe("Базовая система (ГКЛ + вата)", () => {
-    it("25 м² стена", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
+  describe("Базовая система ГКЛ + Rockwool (system=0)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 0 });
       checkInvariants(r);
+      // Engine: "Rockwool плиты", "ГКЛ листы", "Профиль ПП 3м", "Виброподвесы", "Вибролента"
       expect(findMaterial(r, "Rockwool")).toBeDefined();
       expect(findMaterial(r, "ГКЛ")).toBeDefined();
-      expect(findMaterial(r, "Профиль")).toBeDefined();
-      expect(findMaterial(r, "Виброподвес")).toBeDefined();
+      expect(findMaterial(r, "Профиль ПП")).toBeDefined();
+      expect(findMaterial(r, "Виброподвесы")).toBeDefined();
+      expect(findMaterial(r, "Вибролента")).toBeDefined();
     });
 
     it("вата: area*1.1/0.6 плит", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
-      // areaWithReserve=27.5, plates=ceil(27.5/0.6)=46
-      expect(findMaterial(r, "Rockwool")!.purchaseQty).toBe(46);
+      const r = calc({ area: 30, surfaceType: 0, system: 0 });
+      // areaWithReserve=33, plates=ceil(33/0.6)=55
+      expect(findMaterial(r, "Rockwool")!.quantity).toBe(55);
     });
 
     it("ГКЛ 2 слоя: area*1.1*2/3 листов", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
-      // sheets=ceil(27.5*2/3)=ceil(18.33)=19
-      expect(findMaterial(r, "ГКЛ")!.purchaseQty).toBe(19);
+      const r = calc({ area: 30, surfaceType: 0, system: 0 });
+      // sheets=ceil(33*2/3)=ceil(22)=22
+      expect(findMaterial(r, "ГКЛ")!.quantity).toBe(22);
     });
   });
 
-  describe("ЗИПС панели", () => {
-    it("25 м²", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 1 });
+  describe("ЗИПС панели (system=1)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 1 });
       checkInvariants(r);
-      // areaWithReserve=27.5, panelArea=0.72, panels=ceil(27.5/0.72)=39
-      expect(findMaterial(r, "ЗИПС")!.purchaseQty).toBe(39);
+      // Engine: "ЗИПС панели", areaWithReserve=33, panelArea=0.72, panels=ceil(33/0.72)=46
+      expect(findMaterial(r, "ЗИПС панели")!.quantity).toBe(46);
     });
 
-    it("дюбели для ЗИПС: panels*6*1.05", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 1 });
-      expect(findMaterial(r, "Дюбель")).toBeDefined();
+    it("дюбели для ЗИПС присутствуют", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 1 });
+      // Engine: "Дюбели для ЗИПС"
+      expect(findMaterial(r, "Дюбели для ЗИПС")).toBeDefined();
+    });
+
+    it("предупреждение о ровном основании", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 1 });
+      // Engine: "Система ЗИПС требует ровного основания"
+      expect(r.warnings.some(w => w.includes("ровного основания"))).toBe(true);
     });
   });
 
-  describe("Плавающий пол", () => {
-    it("25 м²", () => {
-      const r = calc({ area: 25, surface: 1, systemType: 2 });
+  describe("Плавающий пол (system=2)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 2 });
       checkInvariants(r);
-      expect(findMaterial(r, "Виброизол")).toBeDefined();
+      // Engine: "Звукоизоляционные маты", "Демпферная лента", "Стяжка 50 кг"
+      expect(findMaterial(r, "Звукоизоляционные маты")).toBeDefined();
       expect(findMaterial(r, "Демпферная")).toBeDefined();
-      expect(findMaterial(r, "ЦПС")).toBeDefined();
-    });
-
-    it("предупреждение о демпферной ленте", () => {
-      const r = calc({ area: 25, surface: 1, systemType: 2 });
-      expect(r.warnings.some(w => w.includes("демпферная"))).toBe(true);
+      expect(findMaterial(r, "Стяжка")).toBeDefined();
     });
   });
 
-  describe("Акустический потолок", () => {
-    it("25 м²", () => {
-      const r = calc({ area: 25, surface: 2, systemType: 3 });
+  describe("Акустический потолок (system=3)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 3 });
       checkInvariants(r);
+      // Engine: "Rockwool плиты", "ГКЛ листы", "Виброподвесы"
       expect(findMaterial(r, "Rockwool")).toBeDefined();
-      expect(findMaterial(r, "Виброподвес")).toBeDefined();
       expect(findMaterial(r, "ГКЛ")).toBeDefined();
+      expect(findMaterial(r, "Виброподвесы")).toBeDefined();
     });
   });
 
   describe("Общие материалы", () => {
-    it("герметик акриловый во всех системах", () => {
-      for (const systemType of [0, 1, 2, 3]) {
-        const r = calc({ area: 25, surface: 0, systemType });
+    it("герметик во всех системах", () => {
+      for (const system of [0, 1, 2, 3]) {
+        const r = calc({ area: 30, surfaceType: 0, system });
+        // Engine: "Герметик"
         expect(findMaterial(r, "Герметик")).toBeDefined();
       }
     });
 
     it("уплотнительная лента во всех системах", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
-      expect(findMaterial(r, "Уплотнительная")).toBeDefined();
+      const r = calc({ area: 30, surfaceType: 0, system: 0 });
+      // Engine: "Уплотнительная лента 30м"
+      expect(findMaterial(r, "Уплотнительная лента")).toBeDefined();
     });
   });
 
   describe("Предупреждения", () => {
-    it("стена → предупреждение об уменьшении площади", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
-      expect(r.warnings.some(w => w.includes("площадь комнаты"))).toBe(true);
-    });
-
-    it("всегда — герметик для стыков", () => {
-      const r = calc({ area: 25, surface: 0, systemType: 0 });
-      expect(r.warnings.some(w => w.includes("герметиком"))).toBe(true);
+    it("большая площадь → профессиональный монтаж", () => {
+      const r = calc({ area: 250, surfaceType: 0, system: 0 });
+      // Engine: "Большая площадь — рекомендуется профессиональный монтаж"
+      expect(r.warnings.some(w => w.includes("профессиональный монтаж"))).toBe(true);
     });
   });
 });

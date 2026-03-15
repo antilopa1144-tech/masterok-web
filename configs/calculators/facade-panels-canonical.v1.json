@@ -1,0 +1,55 @@
+{
+  "calculator_id": "facade-panels",
+  "formula_version": "facade-panels-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 100, "min": 10, "max": 2000 },
+    { "key": "panelType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "substructure", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "insulationThickness", "unit": "mm", "default_value": 0, "min": 0, "max": 100 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "panel_types": [0, 1, 2, 3],
+    "substructure_types": [0, 1, 2],
+    "insulation_thicknesses": [0, 50, 100]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_areas": { "0": 3.6, "1": 0.72, "2": 2.928, "3": 0.23 },
+    "panel_reserve": 1.10,
+    "bracket_spacing_m2": 0.36,
+    "bracket_reserve": 1.1,
+    "guide_spacing": 0.6,
+    "guide_length": 3,
+    "guide_reserve": 1.1,
+    "fasteners_per_panel": 8,
+    "fastener_reserve": 1.05,
+    "anchor_per_bracket": 2,
+    "anchor_reserve": 1.05,
+    "insulation_plate": 0.72,
+    "insulation_reserve": 1.05,
+    "insulation_dowels_per_m2": 6,
+    "wind_membrane_roll": 50,
+    "membrane_reserve": 1.15,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can": 10,
+    "sealant_per_perim": 10
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 500,
+    "thick_insulation_threshold_mm": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

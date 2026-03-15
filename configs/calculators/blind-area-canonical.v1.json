@@ -1,0 +1,48 @@
+{
+  "calculator_id": "blind-area",
+  "formula_version": "blind-area-canonical-v1",
+  "input_schema": [
+    { "key": "perimeter", "unit": "m", "default_value": 40, "min": 10, "max": 200 },
+    { "key": "width", "unit": "m", "default_value": 1.0, "min": 0.6, "max": 1.5 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 70, "max": 150 },
+    { "key": "materialType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "withInsulation", "unit": "mm", "default_value": 0, "min": 0, "max": 100 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "material_types": [0, 1, 2],
+    "widths": [0.6, 0.8, 1.0, 1.2, 1.5],
+    "thicknesses": [70, 100, 150]
+  },
+  "packaging_rules": {
+    "unit": "м²",
+    "package_size": 1
+  },
+  "material_rules": {
+    "concrete_reserve": 1.05,
+    "mesh_reserve": 1.1,
+    "damper_reserve": 1.05,
+    "gravel_layer": 0.15,
+    "sand_layer": 0.1,
+    "tile_reserve": 1.08,
+    "tile_mix_kg_per_m2": 6,
+    "border_length": 0.5,
+    "membrane_reserve": 1.15,
+    "geotextile_roll": 50,
+    "epps_plate": 0.72,
+    "epps_reserve": 1.05
+  },
+  "warnings_rules": {
+    "narrow_width_threshold_m": 0.8,
+    "thin_concrete_threshold_mm": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "calculator_id": "stairs",
+  "formula_version": "stairs-canonical-v1",
+  "input_schema": [
+    { "key": "floorHeight", "unit": "m", "default_value": 2.8, "min": 2.0, "max": 6.0 },
+    { "key": "stepHeight", "unit": "mm", "default_value": 170, "min": 150, "max": 200 },
+    { "key": "stepWidth", "unit": "mm", "default_value": 280, "min": 250, "max": 320 },
+    { "key": "stairWidth", "unit": "m", "default_value": 1.0, "min": 0.6, "max": 2.0 },
+    { "key": "materialType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "stringer_board": "50×250",
+    "tread_board": "40×300",
+    "riser_board": "20×170",
+    "stringers_count": 2,
+    "railing_spacing": 0.15,
+    "concrete_density_for_stairs": 2400,
+    "rebar_kg_per_step_width": 10
+  },
+  "warnings_rules": {
+    "steep_step_threshold_mm": 190,
+    "max_steps_per_flight": 18
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

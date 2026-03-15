@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalBrick } from "../../../../engine/brick";
+import brickSpec from "../../../../configs/calculators/brick-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 // Кирпичей на 1 м² кладки (с учётом швов 10 мм), по СНиП 3.03.01-87
 const BRICKS_PER_SQM: Record<number, Record<number, number>> = {
   0: { 0: 51, 1: 102, 2: 153, 3: 204 },  // одинарный 250×120×65
@@ -126,125 +128,17 @@ export const brickDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    const brickType = Math.round(Math.min(2, Math.max(0, inputs.brickType ?? 0)));
-    const wallThickness = Math.round(Math.min(3, Math.max(0, inputs.wallThickness ?? 1)));
-    const conditions = Math.round(Math.min(4, Math.max(1, inputs.workingConditions ?? 1)));
-    const wasteMode = Math.round(inputs.wasteMode ?? 0);
-
-    let area: number;
-    let wallHeight: number;
-    let wallWidth: number;
-
-    if (inputMode === 1) {
-      area = Math.max(1, inputs.area ?? 20);
-      wallHeight = Math.sqrt(area); // оценка для расчёта армирования
-      wallWidth = wallHeight;
-    } else {
-      wallWidth = Math.max(0.5, inputs.wallWidth ?? 6);
-      wallHeight = Math.max(0.5, inputs.wallHeight ?? 2.7);
-      area = wallWidth * wallHeight;
-    }
-
-    const conditionsMultiplier: Record<number, number> = { 1: 1.0, 2: 1.05, 3: 1.10, 4: 1.08 };
-    const mult = conditionsMultiplier[conditions] ?? 1.0;
-
-    const wasteCoeffs = [1.05, 1.10, 1.03];
-    const wasteCoeff = wasteCoeffs[wasteMode] ?? 1.05;
-
-    const bricksPerM2 = BRICKS_PER_SQM[brickType]?.[wallThickness] ?? 102;
-    const exactBricks = area * bricksPerM2 * wasteCoeff;
-    const bricksNeeded = Math.ceil(exactBricks);
-
-    const mortarPerM2 = MORTAR_PER_SQM[brickType]?.[wallThickness] ?? 0.023;
-    const mortarVolume = area * mortarPerM2 * 1.12 * mult; // 12% запас на потери раствора
-    const mortarBags = Math.ceil(mortarVolume / 0.015); // мешок 25 кг → 0.015 м³
-
-    const cementKg = mortarVolume * 400; // М400 для раствора М150
-    const cementBags50 = Math.ceil(cementKg / 50);
-    const sandM3 = mortarVolume * 1.2; // коэффициент рыхлости песка
-
-    // Кладочная сетка
-    const brickHeightMm = BRICK_HEIGHT_MM[brickType] ?? 65;
-    const rowHeight = brickHeightMm + 10;
-    const totalRows = Math.ceil((wallHeight * 1000) / rowHeight);
-    const meshInterval = wallThickness === 0 ? 3 : 5;
-    const meshLayers = Math.ceil(totalRows / meshInterval);
-    const meshArea = Math.ceil(meshLayers * wallWidth * 1.1 * 10) / 10;
-
-    const warnings: string[] = [];
-    if (conditions === 3) warnings.push("При кладке в мороз: применяйте противоморозные добавки (ПМД) в раствор");
-    if (conditions === 4) warnings.push("При жаре: обязательно смачивайте кирпич водой, иначе он «выпьет» воду из раствора");
-    if (wallThickness === 0 && area > 15) warnings.push("Для перегородки в полкирпича такой площади обязательно армирование каждые 3 ряда");
-
-    const scenarios = buildNativeScenarios({
-      id: "brick-main",
-      title: "Brick main",
-      exactNeed: exactBricks,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "brick-piece",
-    });
+    const spec = brickSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalBrick(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Кирпич (${["одинарный", "полуторный", "двойной"][brickType]})`,
-          quantity: area * bricksPerM2,
-          unit: "шт",
-          withReserve: bricksNeeded,
-          purchaseQty: bricksNeeded,
-          category: "Основное",
-        },
-        {
-          name: "Цемент М400 (для раствора)",
-          quantity: cementKg,
-          unit: "кг",
-          withReserve: cementKg,
-          purchaseQty: cementBags50,
-          category: "Раствор",
-        },
-        {
-          name: "Песок строительный (сеяный)",
-          quantity: sandM3,
-          unit: "м³",
-          withReserve: Math.ceil(sandM3 * 1.1 * 10) / 10,
-          purchaseQty: Math.ceil(sandM3 * 1.1 * 10) / 10,
-          category: "Раствор",
-        },
-        {
-          name: "Кладочная сетка (ячейка 50х50)",
-          quantity: meshArea,
-          unit: "м²",
-          withReserve: meshArea,
-          purchaseQty: Math.ceil(meshArea),
-          category: "Армирование",
-        },
-        {
-          name: "Пластификатор для раствора",
-          quantity: Math.ceil(cementBags50 * 0.5),
-          unit: "л",
-          withReserve: Math.ceil(cementBags50 * 0.5),
-          purchaseQty: Math.ceil(cementBags50 * 0.5),
-          category: "Раствор",
-        },
-        ...(wallThickness >= 2 ? [{
-          name: "Гибкие связи (для облицовки)",
-          quantity: area * 5,
-          unit: "шт",
-          withReserve: Math.ceil(area * 5 * 1.05),
-          purchaseQty: Math.ceil(area * 5 * 1.05),
-          category: "Армирование",
-        }] : []),
-      ],
-      totals: {
-        area,
-        bricksNeeded,
-        mortarVolume,
-        wallThicknessMm: WALL_THICKNESS_MM[wallThickness] ?? 250,
-      },
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

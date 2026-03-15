@@ -1,0 +1,49 @@
+{
+  "calculator_id": "sewage",
+  "formula_version": "sewage-canonical-v1",
+  "input_schema": [
+    { "key": "residents", "default_value": 4, "min": 1, "max": 20 },
+    { "key": "septikType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "chambersCount", "default_value": 2, "min": 1, "max": 3 },
+    { "key": "pipeLength", "unit": "m", "default_value": 10, "min": 1, "max": 50 },
+    { "key": "groundType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "septik_types": [
+      { "id": 0, "key": "concrete_rings", "label": "Бетонные кольца" },
+      { "id": 1, "key": "plastic", "label": "Пластиковый септик" },
+      { "id": 2, "key": "eurocubes", "label": "Еврокубы" }
+    ],
+    "ground_types": [
+      { "id": 0, "key": "sand", "label": "Песок", "gravel_m3": 0 },
+      { "id": 1, "key": "loam", "label": "Суглинок", "gravel_m3": 2 },
+      { "id": 2, "key": "clay", "label": "Глина", "gravel_m3": 4 }
+    ]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "liters_per_person_per_day": 200,
+    "reserve_days": 3,
+    "ring_volume_m3": 0.71,
+    "eurocube_usable_m3": 0.8,
+    "pipe_section_m": 3,
+    "pipe_reserve": 1.05,
+    "default_elbows": 3,
+    "default_tees": 2,
+    "gravel_by_ground": { "0": 0, "1": 2, "2": 4 },
+    "geotextile_factor": 2,
+    "sand_backfill_factor": 0.5
+  },
+  "warnings_rules": {
+    "bio_treatment_residents_threshold": 10
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

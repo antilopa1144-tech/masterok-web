@@ -1,0 +1,61 @@
+{
+  "calculator_id": "facade-brick",
+  "formula_version": "facade-brick-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 80, "min": 5, "max": 1000 },
+    { "key": "brickType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "jointThickness", "unit": "mm", "default_value": 10, "min": 8, "max": 12 },
+    { "key": "withTie", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "brick_dims": {
+      "0": { "l": 250, "h": 65 },
+      "1": { "l": 250, "h": 88 },
+      "2": { "l": 250, "h": 138 },
+      "3": { "l": 250, "h": 65 }
+    }
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "brick_dims": {
+      "0": { "l": 250, "h": 65 },
+      "1": { "l": 250, "h": 88 },
+      "2": { "l": 250, "h": 138 },
+      "3": { "l": 250, "h": 65 }
+    },
+    "brick_reserve": 1.10,
+    "masonry_thickness": 0.12,
+    "mortar_volume_coeff": 0.23,
+    "cement_kg_per_m3_mortar": 430,
+    "cement_bag_kg": 50,
+    "sand_coeff": 1.4,
+    "ties_per_sqm": 5,
+    "ties_reserve": 1.05,
+    "hydro_coeff": 0.3,
+    "hydro_reserve": 1.15,
+    "hydro_roll_m2": 10,
+    "vent_box_step_m": 2,
+    "grout_kg_per_m2": 0.35,
+    "grout_bag_kg": 25,
+    "hydrophob_l_per_m2": 0.2,
+    "hydrophob_reserve": 1.1,
+    "hydrophob_can_l": 5
+  },
+  "warnings_rules": {
+    "clinker_max_joint_mm": 10,
+    "vent_gap_note": "20-40mm vent gap required per SP 15.13330"
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

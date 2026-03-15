@@ -19,9 +19,10 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов ГКЛ = 10", () => {
+    it("листов ГКЛ = 10.6 (REC ×1.06)", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      expect(sheets?.purchaseQty).toBe(10);
+      // baseSheetsNeeded=10, REC multiplier=1.06 → 10.6
+      expect(sheets?.purchaseQty).toBeCloseTo(10.6, 1);
     });
 
     it("профиль ПН присутствует", () => {
@@ -32,13 +33,13 @@ describe("Калькулятор гипсокартона", () => {
       expect(findMaterial(result, "ПП")).toBeDefined();
     });
 
-    it("саморезы для ГКЛ 3.5×25 в кг", () => {
-      const screws = findMaterial(result, "Саморезы для ГКЛ 3.5×25");
+    it("саморезы 3.5×25 мм в шт", () => {
+      const screws = findMaterial(result, "Саморезы 3.5×25");
       expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("кг");
+      expect(screws?.unit).toBe("шт");
     });
 
-    it("саморезы-клопы металл-металл в шт", () => {
+    it("саморезы-клопы 3.5×9.5 мм в шт", () => {
       const screws = findMaterial(result, "клопы");
       expect(screws).toBeDefined();
       expect(screws?.unit).toBe("шт");
@@ -52,8 +53,8 @@ describe("Калькулятор гипсокартона", () => {
       expect(findMaterial(result, "Серпянка")).toBeDefined();
     });
 
-    it("totals содержат sheetsNeeded = 10", () => {
-      expect(result.totals.sheetsNeeded).toBe(10);
+    it("totals содержат sheetsNeeded = 10.6 (REC ×1.06)", () => {
+      expect(result.totals.sheetsNeeded).toBeCloseTo(10.6, 1);
     });
 
     it("инварианты", () => {
@@ -72,9 +73,10 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов = 5 (одна сторона)", () => {
+    it("листов = 5.3 (одна сторона, REC ×1.06)", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      expect(sheets?.purchaseQty).toBe(5);
+      // baseSheetsNeeded=5, REC ×1.06 → 5.3
+      expect(sheets?.purchaseQty).toBeCloseTo(5.3, 1);
     });
   });
 
@@ -89,9 +91,10 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов = 20", () => {
+    it("листов = 21.2 (2 слоя, REC ×1.06)", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      expect(sheets?.purchaseQty).toBe(20);
+      // baseSheetsNeeded=20, REC ×1.06 → 21.2
+      expect(sheets?.purchaseQty).toBeCloseTo(21.2, 1);
     });
 
     it("предупреждение о смещении стыков", () => {
@@ -99,8 +102,8 @@ describe("Калькулятор гипсокартона", () => {
     });
   });
 
-  describe("Высота > 3.5 м → усиленный каркас", () => {
-    it("предупреждение об усиленном каркасе", () => {
+  describe("Высота > 3.5 м → профили 100 мм", () => {
+    it("предупреждение о широких профилях", () => {
       const result = calc({
         workType: 0,
         length: 5,
@@ -108,7 +111,7 @@ describe("Калькулятор гипсокартона", () => {
         layers: 1,
         profileStep: 0.6,
       });
-      expect(result.warnings.some((w) => w.includes("усиленный"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("профили шириной 100"))).toBe(true);
     });
   });
 });

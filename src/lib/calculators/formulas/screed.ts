@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalScreed } from "../../../../engine/screed";
+import screedSpec from "../../../../configs/calculators/screed-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const screedDef: CalculatorDefinition = {
   id: "screed",
   slug: "styazhka",
@@ -81,140 +83,19 @@ export const screedDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let area: number;
-    if (inputMode === 0) {
-      const l = Math.max(0.5, inputs.length ?? 5);
-      const w = Math.max(0.5, inputs.width ?? 4);
-      area = l * w;
-    } else {
-      area = Math.max(1, inputs.area ?? 20);
-    }
+  calculate(inputs) {
+    const spec = screedSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalScreed(spec, inputs, factorTable);
 
-    const thicknessMm = Math.max(30, Math.min(200, inputs.thickness ?? 50));
-    const thicknessM = thicknessMm / 1000;
-    const type = Math.round(inputs.screedType ?? 0);
-
-    const volume = area * thicknessM * 1.08; // +8% на неровности основания и потери
-
-    const warnings: string[] = [];
-    if (thicknessMm < 30) warnings.push("Минимальная толщина стяжки по СНиП — 30 мм");
-    if (thicknessMm > 100) warnings.push("При толщине > 100 мм рекомендуется армирование сеткой 150×150 мм");
-
-    if (type === 0) {
-      // ЦПС 1:3 (цемент М400 + песок)
-      const cementM3 = volume / 4; // 1 часть цемента из 4
-      const sandM3 = volume * 3 / 4;
-      const cementKg = cementM3 * 1300; // насыпная плотность ПЦ М400 — 1300 кг/м³
-      const cementBags = Math.ceil(cementKg / 50);
-      const sandTon = Math.ceil(sandM3 * 1.6 * 10) / 10;
-      const waterL = volume * 200; // ~200 л/м³
-
-      if (thicknessMm >= 80) {
-        warnings.push("При толщине ≥ 80 мм: укладывайте слоями по 50–60 мм с технологическим перерывом");
-      }
-
-      // Периметр для демпферной ленты
-      const perimeter = inputMode === 0
-        ? 2 * (Math.max(0.5, inputs.length ?? 5) + Math.max(0.5, inputs.width ?? 4))
-        : Math.sqrt(area) * 4;
-
-      // Армосетка при толщине >= 40 мм
-      const needMesh = thicknessMm >= 40;
-      const meshArea = needMesh ? Math.ceil(area * 1.15) : 0; // +15% нахлёст
-
-      const scenarios = buildNativeScenarios({
-        id: "screed-cement",
-        title: "Screed cement",
-        exactNeed: cementKg,
-        unit: "кг",
-        packageSizes: [50],
-        packageLabelPrefix: "screed-cement-bag",
-      });
-
-      return {
-        materials: [
-          { name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты" },
-          { name: "Песок строительный", quantity: sandM3 * 1.6, unit: "т", withReserve: sandTon, purchaseQty: Math.ceil(sandTon), category: "Компоненты" },
-          { name: "Вода", quantity: waterL, unit: "л", withReserve: waterL, purchaseQty: Math.ceil(waterL), category: "Компоненты" },
-          { name: "Плёнка полиэтиленовая (рулон 3×50 м)", quantity: area / 150, unit: "рулонов", withReserve: Math.ceil(area * 1.15 / 150), purchaseQty: Math.max(1, Math.ceil(area * 1.15 / 150)), category: "Гидроизоляция" },
-          ...(needMesh ? [{ name: "Сетка армировочная 150×150 Ø4 мм (карта 2×0.5 м)", quantity: meshArea, unit: "м²", withReserve: meshArea, purchaseQty: Math.ceil(meshArea), category: "Армирование" }] : []),
-          { name: "Маячковый профиль для стяжки 10 мм (3 м)", quantity: Math.ceil(perimeter / 1.2) * 2, unit: "шт", withReserve: Math.ceil(perimeter / 1.2 * 2 * 1.1), purchaseQty: Math.ceil(perimeter / 1.2 * 2 * 1.1), category: "Маяки" },
-          { name: "Демпферная лента (рулон 50 м)", quantity: perimeter / 50, unit: "рулонов", withReserve: Math.max(1, Math.ceil(perimeter / 50)), purchaseQty: Math.max(1, Math.ceil(perimeter / 50)), category: "Доп. материалы" },
-        ],
-        totals: { area, thicknessMm, volume, cementKg } as Record<string, number>,
-        warnings,
-        scenarios,
-      };
-    } else if (type === 1) {
-      // Готовая ЦПС М150
-      const cpsKgPerM3 = 2000; // насыпная плотность ~2000 кг/м³
-      const cpsTotalKg = volume * cpsKgPerM3;
-      const bags50 = Math.ceil(cpsTotalKg / 50);
-      const bags40 = Math.ceil(cpsTotalKg / 40);
-
-      const perimeter2 = inputMode === 0
-        ? 2 * (Math.max(0.5, inputs.length ?? 5) + Math.max(0.5, inputs.width ?? 4))
-        : Math.sqrt(area) * 4;
-      const needMesh2 = thicknessMm >= 40;
-      const meshArea2 = needMesh2 ? Math.ceil(area * 1.15) : 0;
-
-      const scenarios = buildNativeScenarios({
-        id: "screed-ready-mix",
-        title: "Screed ready mix",
-        exactNeed: cpsTotalKg,
-        unit: "кг",
-        packageSizes: [40, 50],
-        packageLabelPrefix: "screed-ready-bag",
-      });
-
-      return {
-        materials: [
-          { name: "ЦПС М150 (мешки 50 кг)", quantity: cpsTotalKg / 50, unit: "мешков", withReserve: bags50, purchaseQty: bags50, category: "Основное" },
-          { name: "ЦПС М150 (мешки 40 кг, альтернатива)", quantity: cpsTotalKg / 40, unit: "мешков", withReserve: bags40, purchaseQty: bags40, category: "Основное" },
-          { name: "Плёнка полиэтиленовая (рулон 3×50 м)", quantity: area / 150, unit: "рулонов", withReserve: Math.max(1, Math.ceil(area * 1.15 / 150)), purchaseQty: Math.max(1, Math.ceil(area * 1.15 / 150)), category: "Гидроизоляция" },
-          ...(needMesh2 ? [{ name: "Сетка армировочная 150×150 Ø4 мм (карта 2×0.5 м)", quantity: meshArea2, unit: "м²", withReserve: meshArea2, purchaseQty: Math.ceil(meshArea2), category: "Армирование" }] : []),
-          { name: "Маячковый профиль для стяжки 10 мм (3 м)", quantity: Math.ceil(perimeter2 / 1.2) * 2, unit: "шт", withReserve: Math.ceil(perimeter2 / 1.2 * 2 * 1.1), purchaseQty: Math.ceil(perimeter2 / 1.2 * 2 * 1.1), category: "Маяки" },
-          { name: "Демпферная лента (рулон 50 м)", quantity: perimeter2 / 50, unit: "рулонов", withReserve: Math.max(1, Math.ceil(perimeter2 / 50)), purchaseQty: Math.max(1, Math.ceil(perimeter2 / 50)), category: "Доп. материалы" },
-        ],
-        totals: { area, thicknessMm, volume, cpsTotalKg } as Record<string, number>,
-        warnings,
-        scenarios,
-      };
-    } else {
-      // Полусухая стяжка
-      const cpsKg = volume * 1800; // меньше воды → больше цемента относительно
-      const bags = Math.ceil(cpsKg / 50);
-      const fiberKg = area * 0.6; // фиброволокно 0.6 кг/м²
-
-      warnings.push("Полусухая стяжка требует специального оборудования (пневмонагнетатель)");
-
-      const scenarios = buildNativeScenarios({
-        id: "screed-semidry",
-        title: "Screed semi-dry",
-        exactNeed: cpsKg,
-        unit: "кг",
-        packageSizes: [50],
-        packageLabelPrefix: "screed-semidry-bag",
-      });
-
-      const perimeter3 = inputMode === 0
-        ? 2 * (Math.max(0.5, inputs.length ?? 5) + Math.max(0.5, inputs.width ?? 4))
-        : Math.sqrt(area) * 4;
-
-      return {
-        materials: [
-          { name: "ЦПС М150 для полусухой (мешки 50 кг)", quantity: cpsKg / 50, unit: "мешков", withReserve: bags, purchaseQty: bags, category: "Основное" },
-          { name: "Фиброволокно полипропиленовое", quantity: fiberKg, unit: "кг", withReserve: Math.ceil(fiberKg * 10) / 10, purchaseQty: Math.ceil(fiberKg), category: "Армирование" },
-          { name: "Плёнка полиэтиленовая (рулон 3×50 м)", quantity: area / 150, unit: "рулонов", withReserve: Math.max(1, Math.ceil(area * 1.15 / 150)), purchaseQty: Math.max(1, Math.ceil(area * 1.15 / 150)), category: "Гидроизоляция" },
-          { name: "Демпферная лента (рулон 50 м)", quantity: perimeter3 / 50, unit: "рулонов", withReserve: Math.max(1, Math.ceil(perimeter3 / 50)), purchaseQty: Math.max(1, Math.ceil(perimeter3 / 50)), category: "Доп. материалы" },
-        ],
-        totals: { area, thicknessMm, volume } as Record<string, number>,
-        warnings,
-        scenarios,
-      };
-    }
+    return {
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
+    };
   },
   formulaDescription: `
 **Расчёт стяжки:**

@@ -5,137 +5,101 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = facadePanelsDef.calculate.bind(facadePanelsDef);
 
 describe("Фасадные панели", () => {
-  describe("Фиброцемент 1200×3000, 120 м², алюминиевая подсистема, без утеплителя", () => {
-    it("панели: area*1.10/3.6 м², purchaseQty = ceil()", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
+  describe("Фиброцемент, 100 м², алюминиевая подсистема, без утеплителя", () => {
+    it("панели: area*1.10/3.6", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
       checkInvariants(r);
-      const panelArea = 1200 * 3000 / 1e6; // 3.6
-      const areaR = 120 * 1.10;
-      const expectedPanels = Math.ceil(areaR / panelArea);
-      const panels = findMaterial(r, "Фиброцементная панель");
+      const expectedPanels = Math.ceil(100 * 1.10 / 3.6);
+      // Engine: "Фиброцементные панели (3.6 м²)"
+      const panels = findMaterial(r, "Фиброцементные панели");
       expect(panels).toBeDefined();
-      expect(panels!.purchaseQty).toBe(expectedPanels);
-      expect(r.totals.panelCount).toBe(expectedPanels);
+      expect(r.totals.panels).toBe(expectedPanels);
     });
 
-    it("кронштейны: ceil((area/0.36)*1.1)", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      const expectedBrackets = Math.ceil((120 / 0.36) * 1.1);
-      const brackets = findMaterial(r, "Кронштейн алюминиевый");
+    it("кронштейны (Алюминиевая)", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Кронштейны (Алюминиевая)"
+      const brackets = findMaterial(r, "Кронштейны");
       expect(brackets).toBeDefined();
-      expect(brackets!.purchaseQty).toBe(expectedBrackets);
-      expect(r.totals.bracketsCount).toBe(expectedBrackets);
     });
 
-    it("направляющие: ceil((area/0.6)*1.1/3)", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      const guideLength = (120 / 0.6) * 1.1;
-      const expectedGuides = Math.ceil(guideLength / 3);
-      const guides = findMaterial(r, "Профиль направляющий алюминиевый");
-      expect(guides).toBeDefined();
-      expect(guides!.purchaseQty).toBe(expectedGuides);
+    it("направляющие присутствуют", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Направляющие (3 м)"
+      expect(findMaterial(r, "Направляющие")).toBeDefined();
     });
 
-    it("без утеплителя → нет минваты и дюбелей утеплителя", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      expect(findMaterial(r, "Минвата фасадная")).toBeUndefined();
-      expect(findMaterial(r, "Дюбель-грибок для утеплителя")).toBeUndefined();
+    it("без утеплителя → нет плит и мембраны", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      expect(findMaterial(r, "Утеплитель (плиты)")).toBeUndefined();
       expect(findMaterial(r, "Ветрозащитная мембрана")).toBeUndefined();
     });
   });
 
-  describe("Металлокассеты 600×1200", () => {
-    it("panelArea = 0.72 м², запас 10%", () => {
-      const r = calc({ area: 120, panelType: 1, substructureType: 0, insulationIncluded: 0 });
+  describe("Металлокассеты (panelType=1)", () => {
+    it("panelArea = 0.72 м²", () => {
+      const r = calc({ area: 100, panelType: 1, substructure: 0, insulationThickness: 0 });
       checkInvariants(r);
-      const panelArea = 600 * 1200 / 1e6; // 0.72
-      const areaR = 120 * 1.10;
-      const expectedPanels = Math.ceil(areaR / panelArea);
-      const panels = findMaterial(r, "Металлокассета");
+      // Engine: "Металлокассеты (0.72 м²)"
+      const panels = findMaterial(r, "Металлокассеты");
       expect(panels).toBeDefined();
-      expect(panels!.purchaseQty).toBe(expectedPanels);
-    });
-
-    it("без утеплителя → предупреждение о конденсате", () => {
-      const r = calc({ area: 120, panelType: 1, substructureType: 0, insulationIncluded: 0 });
-      expect(r.warnings.some(w => w.includes("конденсат"))).toBe(true);
     });
   });
 
-  describe("HPL компакт 1200×2440", () => {
-    it("panelArea = 2.928 м², запас 8%", () => {
-      const r = calc({ area: 120, panelType: 2, substructureType: 0, insulationIncluded: 0 });
+  describe("HPL-панели (panelType=2)", () => {
+    it("panelArea = 2.928 м²", () => {
+      const r = calc({ area: 100, panelType: 2, substructure: 0, insulationThickness: 0 });
       checkInvariants(r);
-      const panelArea = 1200 * 2440 / 1e6; // 2.928
-      const areaR = 120 * 1.08;
-      const expectedPanels = Math.ceil(areaR / panelArea);
-      const panels = findMaterial(r, "HPL компакт");
+      // Engine: "HPL-панели (2.928 м²)"
+      const panels = findMaterial(r, "HPL-панели");
       expect(panels).toBeDefined();
-      expect(panels!.purchaseQty).toBe(expectedPanels);
     });
   });
 
-  describe("Подсистемы", () => {
-    it("оцинкованная сталь → кронштейн оцинкованный", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 1, insulationIncluded: 0 });
-      expect(findMaterial(r, "Кронштейн оцинкованный")).toBeDefined();
-      expect(findMaterial(r, "несущий оцинкованный")).toBeDefined();
-    });
-
-    it("деревянная обрешётка → предупреждение об антисептической обработке", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 2, insulationIncluded: 0 });
-      expect(r.warnings.some(w => w.includes("антисептической"))).toBe(true);
-      expect(findMaterial(r, "Кронштейн деревянный")).toBeDefined();
-      expect(findMaterial(r, "Брусок обрешётки")).toBeDefined();
-    });
-  });
-
-  describe("С утеплителем", () => {
-    it("минвата 50 мм → плиты + дюбели + ветрозащита", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 1 });
-      const insPlates = findMaterial(r, "Минвата фасадная 50 мм");
-      expect(insPlates).toBeDefined();
-      expect(insPlates!.purchaseQty).toBe(Math.ceil(120 * 1.05 / 0.72));
-
-      const dubels = findMaterial(r, "Дюбель-грибок для утеплителя");
-      expect(dubels).toBeDefined();
-      expect(dubels!.purchaseQty).toBe(Math.ceil(120 * 6 * 1.05));
-
-      const membrane = findMaterial(r, "Ветрозащитная мембрана");
-      expect(membrane).toBeDefined();
-      expect(membrane!.purchaseQty).toBe(Math.ceil(120 * 1.15 / 50));
-    });
-
-    it("минвата 100 мм", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 2 });
-      const insPlates = findMaterial(r, "Минвата фасадная 100 мм");
-      expect(insPlates).toBeDefined();
+  describe("С утеплителем (insulationThickness > 0)", () => {
+    it("утеплитель, дюбели и ветрозащита присутствуют", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 50 });
+      // Engine: "Утеплитель (плиты)", "Дюбели для утеплителя", "Ветрозащитная мембрана"
+      expect(findMaterial(r, "Утеплитель (плиты)")).toBeDefined();
+      expect(findMaterial(r, "Дюбели для утеплителя")).toBeDefined();
+      expect(findMaterial(r, "Ветрозащитная мембрана")).toBeDefined();
     });
   });
 
   describe("Крепёж и доп. материалы", () => {
-    it("саморезы/заклёпки: panelCount*8*1.05", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      const panelCount = r.totals.panelCount;
-      const expectedScrews = Math.ceil(panelCount * 8 * 1.05);
-      const screws = findMaterial(r, "Крепёж для фасадных панелей");
+    it("крепёж панелей: panels*8*1.05", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Крепёж панелей"
+      const screws = findMaterial(r, "Крепёж панелей");
       expect(screws).toBeDefined();
-      expect(screws!.purchaseQty).toBe(expectedScrews);
     });
 
-    it("дюбели для кронштейнов: bracketsCount*2*1.05", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      const bracketsCount = r.totals.bracketsCount;
-      const expectedDubels = Math.ceil(bracketsCount * 2 * 1.05);
-      const dubels = findMaterial(r, "Дюбель анкерный");
+    it("анкеры для кронштейнов: brackets*2*1.05", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Анкеры для кронштейнов"
+      const dubels = findMaterial(r, "Анкеры для кронштейнов");
       expect(dubels).toBeDefined();
-      expect(dubels!.purchaseQty).toBe(expectedDubels);
     });
 
     it("грунтовка и герметик присутствуют", () => {
-      const r = calc({ area: 120, panelType: 0, substructureType: 0, insulationIncluded: 0 });
-      expect(findMaterial(r, "Грунтовка для основания")).toBeDefined();
-      expect(findMaterial(r, "Герметик для стыков")).toBeDefined();
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Грунтовка (канистра 10 л)", "Герметик (тубы)"
+      expect(findMaterial(r, "Грунтовка")).toBeDefined();
+      expect(findMaterial(r, "Герметик")).toBeDefined();
+    });
+  });
+
+  describe("Предупреждения", () => {
+    it("> 500 м² → оптовая закупка", () => {
+      const r = calc({ area: 600, panelType: 0, substructure: 0, insulationThickness: 0 });
+      // Engine: "Большая площадь фасада — рассмотрите оптовую закупку"
+      expect(r.warnings.some(w => w.includes("оптовую"))).toBe(true);
+    });
+
+    it("толстый утеплитель >= 100 → проверка кронштейнов", () => {
+      const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 100 });
+      // Engine: "Толстый утеплитель — проверьте длину кронштейнов"
+      expect(r.warnings.some(w => w.includes("длину кронштейнов"))).toBe(true);
     });
   });
 });

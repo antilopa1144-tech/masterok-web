@@ -20,10 +20,11 @@ describe("Калькулятор кладки кирпича", () => {
       mortarJoint: 10,
     });
 
-    it("кирпич ≈ 2357 шт", () => {
-      const bricks = findMaterial(result, "Кирпич рядовой одинарный");
+    it("кирпич ≈ 2499 шт (с запасом + REC ×1.06)", () => {
+      const bricks = findMaterial(result, "Кирпич одинарный");
       expect(bricks).toBeDefined();
-      expect(bricks!.purchaseQty).toBe(2357);
+      // totalBricks=2244, ×1.05=2357 (withReserve), ×1.06(REC)=2498.42 → ceil=2499
+      expect(bricks!.purchaseQty).toBe(2499);
     });
 
     it("поддоны кирпича", () => {
@@ -33,8 +34,8 @@ describe("Калькулятор кладки кирпича", () => {
       expect(pallets!.purchaseQty).toBe(5);
     });
 
-    it("кладочный раствор", () => {
-      expect(findMaterial(result, "Кладочный раствор")).toBeDefined();
+    it("раствор кладочный", () => {
+      expect(findMaterial(result, "Раствор кладочный")).toBeDefined();
     });
 
     it("кладочная сетка", () => {
@@ -42,12 +43,12 @@ describe("Калькулятор кладки кирпича", () => {
     });
 
     it("перемычки", () => {
-      expect(findMaterial(result, "Перемычка")).toBeDefined();
+      expect(findMaterial(result, "Перемычки")).toBeDefined();
     });
 
     it("totals", () => {
       expect(result.totals.netArea).toBe(22);
-      expect(result.totals.totalBricks).toBe(2357);
+      expect(result.totals.bricksWithReserve).toBe(2357);
     });
 
     it("инварианты", () => {
@@ -68,12 +69,12 @@ describe("Калькулятор кладки кирпича", () => {
     it("полуторный кирпич", () => {
       const bricks = findMaterial(result, "полуторный");
       expect(bricks).toBeDefined();
-      // netArea = 13, 13 × 39 = 507, × 1.05 = 533
-      expect(bricks!.purchaseQty).toBe(533);
+      // netArea = 13, 13 × 39 = 507, × 1.05 = 533, × 1.06(REC) = 564.98 → ceil = 565
+      expect(bricks!.purchaseQty).toBe(565);
     });
 
     it("предупреждение о ненесущих перегородках", () => {
-      expect(result.warnings.some((w) => w.includes("ненесущие"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("ненесущих"))).toBe(true);
     });
 
     it("инварианты", () => {
@@ -103,7 +104,7 @@ describe("Калькулятор кладки кирпича", () => {
     });
   });
 
-  describe("Без проёмов → нет перемычек", () => {
+  describe("Без проёмов → перемычек 0 шт", () => {
     const result = calc({
       inputMode: 0,
       wallLength: 5,
@@ -114,8 +115,10 @@ describe("Калькулятор кладки кирпича", () => {
       mortarJoint: 10,
     });
 
-    it("перемычки отсутствуют", () => {
-      expect(findMaterial(result, "Перемычка")).toBeUndefined();
+    it("перемычек 0 шт", () => {
+      const lintels = findMaterial(result, "Перемычки");
+      expect(lintels).toBeDefined();
+      expect(lintels!.purchaseQty).toBe(0);
     });
   });
 });

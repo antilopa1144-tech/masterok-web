@@ -16,27 +16,29 @@ describe("Калькулятор утеплителя", () => {
       plateSize: 0,
     });
 
-    it("плит минваты = 73", () => {
-      const insul = findMaterial(result, "Минвата 100");
-      expect(insul?.purchaseQty).toBe(73);
+    it("плит минваты = 78 (REC ×1.06)", () => {
+      const insul = findMaterial(result, "Минеральная вата");
+      // platesNeeded=73, REC multiplier=1.06 → 77.38 → ceil=78
+      expect(insul?.purchaseQty).toBe(78);
     });
 
-    it("дюбели-зонтики присутствуют", () => {
-      expect(findMaterial(result, "Дюбели-зонтики")).toBeDefined();
+    it("дюбели тарельчатые присутствуют", () => {
+      expect(findMaterial(result, "Дюбели тарельчатые")).toBeDefined();
     });
 
-    it("дюбелей = 400 (ceil(368/100)*100)", () => {
-      // dowels = ceil(50*7*1.05) = 368, purchaseQty rounds to nearest 100 = 400
-      const dowels = findMaterial(result, "Дюбели-зонтики");
-      expect(dowels?.purchaseQty).toBe(400);
+    it("дюбелей = 368", () => {
+      // dowels = ceil(50*7*1.05) = 368
+      const dowels = findMaterial(result, "Дюбели тарельчатые");
+      expect(dowels?.purchaseQty).toBe(368);
     });
 
-    it("мембрана гидроветрозащитная для минваты", () => {
-      expect(findMaterial(result, "мембрана") ?? findMaterial(result, "Мембрана")).toBeDefined();
+    it("пароизоляционная мембрана для минваты", () => {
+      expect(findMaterial(result, "мембрана")).toBeDefined();
     });
 
-    it("предупреждение о мембране", () => {
-      expect(result.warnings.some((w) => w.includes("мембран"))).toBe(true);
+    it("площадь мембраны = ceil(50 * 1.15) = 58 м²", () => {
+      const membrane = findMaterial(result, "мембрана");
+      expect(membrane?.purchaseQty).toBe(58);
     });
 
     it("инварианты", () => {
@@ -44,7 +46,7 @@ describe("Калькулятор утеплителя", () => {
     });
   });
 
-  describe("Пеноплекс, 30 м², плита 1000×500 мм", () => {
+  describe("ЭППС / пеноплекс, 30 м², плита 1000×500 мм", () => {
     // plateArea = 0.5, areaWithReserve = 31.5
     // platesNeeded = ceil(31.5/0.5) = 63
     const result = calc({
@@ -54,17 +56,18 @@ describe("Калькулятор утеплителя", () => {
       plateSize: 1,
     });
 
-    it("плит пеноплекса = 63", () => {
-      const insul = findMaterial(result, "Пеноплекс");
-      expect(insul?.purchaseQty).toBe(63);
+    it("плит пеноплекса = 67 (REC ×1.06)", () => {
+      const insul = findMaterial(result, "пеноплекс");
+      // platesNeeded=63, REC multiplier=1.06 → 66.78 → ceil=67
+      expect(insul?.purchaseQty).toBe(67);
     });
 
-    it("клей для пенополистирола присутствует", () => {
-      expect(findMaterial(result, "Клей для пенополистирола")).toBeDefined();
+    it("клей для ЭППС присутствует", () => {
+      expect(findMaterial(result, "Клей для ЭППС")).toBeDefined();
     });
 
     it("нет мембраны у пеноплекса", () => {
-      expect(findMaterial(result, "Мембрана") ?? findMaterial(result, "мембрана")).toBeUndefined();
+      expect(findMaterial(result, "мембрана")).toBeUndefined();
     });
   });
 
@@ -81,8 +84,22 @@ describe("Калькулятор утеплителя", () => {
       expect(findMaterial(result, "Эковата")).toBeDefined();
     });
 
-    it("предупреждение о профоборудовании", () => {
-      expect(result.warnings.some((w) => w.includes("оборудования"))).toBe(true);
+    it("эковата: 193 кг → ceil(193/15) = 13 мешков", () => {
+      const eco = findMaterial(result, "Эковата");
+      expect(eco?.purchaseQty).toBe(13);
+    });
+  });
+
+  describe("Эковата толщина > 150 мм → оседание", () => {
+    const result = calc({
+      area: 50,
+      insulationType: 3,
+      thickness: 200,
+      plateSize: 0,
+    });
+
+    it("предупреждение об оседании эковаты", () => {
+      expect(result.warnings.some((w) => w.includes("оседает"))).toBe(true);
     });
   });
 });

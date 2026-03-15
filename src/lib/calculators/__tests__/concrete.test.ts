@@ -17,9 +17,11 @@ describe("Калькулятор бетона", () => {
       expect(result.totals.totalVolume).toBeCloseTo(5.25, 2);
     });
 
-    it("purchaseQty бетона = 5.3 м³", () => {
+    it("объём бетона с учётом REC-сценария ≈ 5.6 м³", () => {
       const concrete = findMaterial(result, "Бетон М200");
-      expect(concrete?.purchaseQty).toBeCloseTo(5.3, 1);
+      // totalVolume=5.25, REC multiplier=1.06, exactNeed=5.565
+      // packaging step=0.1 → purchaseQuantity=5.6, packageCount=56
+      expect(concrete?.withReserve).toBeCloseTo(5.6, 1);
     });
 
     it("без manualMix — нет цемента в компонентах", () => {
@@ -58,14 +60,14 @@ describe("Калькулятор бетона", () => {
   });
 
   describe("Граничные условия", () => {
-    it("объём < 0.5 м³ → предупреждение о сухих смесях", () => {
+    it("объём < 0.5 м³ → предупреждение о малом объёме", () => {
       const result = calc({ concreteVolume: 0.3, concreteGrade: 3, manualMix: 0, reserve: 5 });
-      expect(result.warnings.some((w) => w.includes("сух"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("Малый объём"))).toBe(true);
     });
 
-    it("М300+ с manualMix → предупреждение о заказе готового", () => {
+    it("М300+ с manualMix → предупреждение о заводском бетоне", () => {
       const result = calc({ concreteVolume: 5, concreteGrade: 5, manualMix: 1, reserve: 5 });
-      expect(result.warnings.some((w) => w.includes("готового бетона"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("заводской"))).toBe(true);
     });
 
     it("без запаса (reserve=0): объём = объём", () => {

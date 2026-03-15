@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalRoofing } from "../../../../engine/roofing";
+import roofingSpec from "../../../../configs/calculators/roofing-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const roofingDef: CalculatorDefinition = {
   id: "roofing_unified",
@@ -94,112 +96,19 @@ export const roofingDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const type = Math.round(inputs.roofingType ?? 0);
-    const area = Math.max(10, inputs.area ?? 80);
-    const slope = Math.max(5, Math.min(60, inputs.slope ?? 30));
-    const ridgeLength = Math.max(1, inputs.ridgeLength ?? 8);
-    const sheetWidth = inputs.sheetWidth ?? 1.18;
-    const sheetLength = inputs.sheetLength ?? 2.5;
-    const complexity = Math.round(inputs.complexity ?? 0);
+  calculate(inputs) {
+    const spec = roofingSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalRoofing(spec, inputs, factorTable);
 
-    // Реальная площадь с учётом уклона
-    const slopeFactor = 1 / Math.max(0.01, Math.cos((slope * Math.PI) / 180));
-    const realArea = area * slopeFactor;
-
-    const perimeter = 4 * Math.sqrt(area);
-    const complexityExtra = [1.05, 1.15, 1.25]; // добавочный коэффициент на подрезку
-    const wasteCoeff = complexityExtra[complexity] ?? 1.05;
-
-    const warnings: string[] = [];
-    if (complexity >= 1) warnings.push("Для сложной кровли обязательно закажите профессиональный план раскладки листов");
-
-    // Расчёт по типу
-    if (type === 0) {
-      // Металлочерепица
-      const effectiveWidth = sheetWidth - 0.08; // полезная ширина (стандарт 1.18 -> 1.10)
-      const sheetArea = effectiveWidth * (sheetLength - 0.15); // полезная площадь с учетом нахлеста
-      const sheetsNeeded = Math.ceil((realArea / sheetArea) * wasteCoeff);
-
-      const snowGuards = Math.ceil(perimeter / 3); // шаг 3 метра
-      const screws = Math.ceil(realArea * 9); // 8-10 шт на м2
-      const waterproofing = Math.ceil(realArea * 1.15); // 15% на перехлесты пленки
-      const battens = Math.ceil((realArea / 0.35) * 1.1); // шаг 350мм + 10% запас
-
-      if (slope < 14) warnings.push("Для металлочерепицы рекомендуется уклон не менее 14°. При меньшем уклоне обязательна герметизация стыков.");
-
-      const scenariosMetal = buildNativeScenarios({
-        id: "roofing-metal",
-        title: "Roofing metal",
-        exactNeed: realArea,
-        unit: "m2",
-        packageSizes: [sheetArea],
-        packageLabelPrefix: "roofing-metal-sheet",
-      });
-
-      return {
-        materials: [
-          { name: "Металлочерепица (листы)", quantity: realArea / sheetArea, unit: "шт", withReserve: sheetsNeeded, purchaseQty: sheetsNeeded, category: "Кровля" },
-          { name: "Конёк плоский/круглый (2 м)", quantity: ridgeLength / 1.9, unit: "шт", withReserve: Math.ceil(ridgeLength / 1.85), purchaseQty: Math.ceil(ridgeLength / 1.85), category: "Доборные элементы" },
-          { name: "Снегозадержатели (комплект 3 м)", quantity: perimeter / 3, unit: "шт", withReserve: Math.ceil(perimeter / 3), purchaseQty: Math.ceil(perimeter / 3), category: "Доборные элементы" },
-          { name: "Саморезы кровельные 4.8×35 мм", quantity: screws, unit: "шт", withReserve: Math.ceil(screws * 1.1 / 250) * 250, purchaseQty: Math.ceil(screws * 1.1 / 250) * 250, category: "Крепёж" },
-          { name: "Супердиффузионная мембрана (рулон 75 м²)", quantity: realArea / 75, unit: "рулон", withReserve: Math.ceil(waterproofing / 75), purchaseQty: Math.ceil(waterproofing / 75), category: "Гидроизоляция" },
-          { name: "Обрешётка (доска 25×100×6000)", quantity: battens / 6, unit: "шт", withReserve: Math.ceil(battens / 6), purchaseQty: Math.ceil(battens / 6), category: "Обрешётка" },
-          { name: "Контрбрус (брусок 50×50×6000)", quantity: (realArea / 0.6) / 6, unit: "шт", withReserve: Math.ceil((realArea / 0.6) * 1.1 / 6), purchaseQty: Math.ceil((realArea / 0.6) * 1.1 / 6), category: "Обрешётка" },
-        ],
-        totals: { area, realArea, slope, sheetsNeeded } as Record<string, number>,
-        warnings,
-        scenarios: scenariosMetal,
-      };
-    } else if (type === 1) {
-      // Мягкая черепица
-      if (slope < 12) warnings.push("Мягкая черепица требует уклон не менее 12°. При 12-18° обязателен подкладочный ковёр по всей площади.");
-      const packArea = 3.0; 
-      const packs = Math.ceil((realArea / packArea) * wasteCoeff);
-      const osbSheets = Math.ceil((realArea * 1.05) / 3.125); // лист 2500х1250 = 3.125 м2
-      const scenariosSoft = buildNativeScenarios({
-        id: "roofing-soft",
-        title: "Roofing soft",
-        exactNeed: realArea,
-        unit: "m2",
-        packageSizes: [packArea],
-        packageLabelPrefix: "roofing-soft-pack",
-      });
-      return {
-        materials: [
-          { name: "Мягкая черепица (упаковки)", quantity: realArea / packArea, unit: "упак.", withReserve: packs, purchaseQty: packs, category: "Кровля" },
-          { name: "ОСБ-3 12 мм (2500х1250)", quantity: osbSheets, unit: "шт", withReserve: osbSheets, purchaseQty: osbSheets, category: "Основание" },
-          { name: "Подкладочный ковёр (рулон 20-40 м²)", quantity: realArea, unit: "м²", withReserve: Math.ceil(realArea * 1.15), purchaseQty: Math.ceil(realArea * 1.15 / 25), category: "Гидроизоляция" },
-          { name: "Гвозди ершёные кровельные", quantity: realArea * 0.5, unit: "кг", withReserve: Math.ceil(realArea * 0.6), purchaseQty: Math.ceil(realArea * 0.6), category: "Крепёж" },
-          { name: "Мастика битумная (фиксер)", quantity: realArea * 0.1, unit: "кг", withReserve: Math.ceil(realArea * 0.15), purchaseQty: Math.ceil(realArea * 0.15), category: "Расходники" },
-          { name: "Аэратор коньковый", quantity: ridgeLength, unit: "м.п.", withReserve: Math.ceil(ridgeLength), purchaseQty: Math.ceil(ridgeLength), category: "Вентиляция" },
-        ],
-        totals: { area, realArea, slope, packs } as Record<string, number>,
-        warnings,
-        scenarios: scenariosSoft,
-      };
-    } else {
-      // Упрощенный возврат для остальных типов (профнастил, ондулин и т.д.)
-      const sheetsNeeded = Math.ceil((realArea / 1.5) * wasteCoeff);
-      const scenariosGeneric = buildNativeScenarios({
-        id: "roofing-generic",
-        title: "Roofing generic",
-        exactNeed: realArea,
-        unit: "m2",
-        packageSizes: [1.5],
-        packageLabelPrefix: "roofing-generic-sheet",
-      });
-      return {
-        materials: [
-          { name: "Кровельный материал (листы)", quantity: realArea / 1.5, unit: "шт", withReserve: sheetsNeeded, purchaseQty: sheetsNeeded, category: "Кровля" },
-          { name: "Конёк", quantity: ridgeLength, unit: "м.п.", withReserve: Math.ceil(ridgeLength * 1.1), purchaseQty: Math.ceil(ridgeLength * 1.1), category: "Доборные элементы" },
-          { name: "Крепёж (саморезы/гвозди)", quantity: realArea * 8, unit: "шт", withReserve: Math.ceil(realArea * 10), purchaseQty: Math.ceil(realArea * 10), category: "Крепёж" },
-        ],
-        totals: { area, realArea, slope, sheetsNeeded } as Record<string, number>,
-        warnings,
-        scenarios: scenariosGeneric,
-      };
-    }
+    return {
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
+    };
   },
   formulaDescription: `
 **Расчёт кровли (практика РФ):**

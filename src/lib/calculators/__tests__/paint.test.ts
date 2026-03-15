@@ -73,7 +73,7 @@ describe("Калькулятор краски", () => {
 });
 
 describe("Canonical paint fixture parity", () => {
-  const cases = parityFixture.cases as Array<{
+  const cases = parityFixture.cases as unknown as Array<{
     id: string;
     inputs: Record<string, number>;
     expected: {

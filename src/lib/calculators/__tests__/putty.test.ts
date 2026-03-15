@@ -152,7 +152,7 @@ describe("Сценарный контракт shared engine", () => {
 });
 
 describe("Canonical putty fixture parity", () => {
-  const cases = parityFixture.cases as Array<{
+  const cases = parityFixture.cases as unknown as Array<{
     id: string;
     inputs: Record<string, number>;
     expected: {

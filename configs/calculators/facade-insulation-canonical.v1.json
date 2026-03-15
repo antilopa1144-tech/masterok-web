@@ -1,0 +1,62 @@
+{
+  "calculator_id": "facade-insulation",
+  "formula_version": "facade-insulation-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 100, "min": 10, "max": 2000 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 200 },
+    { "key": "insulationType", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "finishType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "insulation_types": [0, 1],
+    "finish_types": [0, 1, 2],
+    "thicknesses": [50, 80, 100, 120, 150, 200]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "plate_m2": 0.72,
+    "plate_reserve": 1.05,
+    "glue_kg_per_m2": {
+      "0": 4,
+      "1": 5
+    },
+    "glue_bag": 25,
+    "dowels_per_m2": {
+      "0": 6,
+      "1": 4
+    },
+    "dowel_reserve": 1.05,
+    "mesh_reserve": 1.15,
+    "mesh_roll": 50,
+    "armor_kg_per_m2": 4,
+    "armor_bag": 25,
+    "primer_l_per_m2": 0.25,
+    "primer_can_l": 10,
+    "primer_reserve": 1.1,
+    "decor_consumption": {
+      "0": 3.5,
+      "1": 4.5,
+      "2": 2.5
+    },
+    "decor_bag": 25,
+    "starter_length": 2,
+    "starter_reserve": 1.05
+  },
+  "warnings_rules": {
+    "thick_insulation_threshold_mm": 150,
+    "epps_adhesion_warning": true
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

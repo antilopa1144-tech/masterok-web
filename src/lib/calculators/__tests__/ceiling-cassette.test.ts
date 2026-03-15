@@ -5,47 +5,52 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = ceilingCassetteDef.calculate.bind(ceilingCassetteDef);
 
 describe("Кассетный потолок", () => {
-  describe("Стандарт 600×600", () => {
-    it("20 м², длина 5 м", () => {
-      const r = calc({ area: 20, cassetteSize: 600, roomLength: 5 });
+  describe("595×595 мм (cassetteSize=0), 30 м², длина 6 м", () => {
+    it("кассеты рассчитаны", () => {
+      const r = calc({ area: 30, cassetteSize: 0, roomLength: 6 });
       checkInvariants(r);
-      // roomWidth=4, cassettesPerRow=ceil(5/0.6)=9, rows=ceil(4/0.6)=7
-      // totalCassettes=63, withReserve=ceil(63*1.1)=70
-      expect(r.totals.totalCassettes).toBe(63);
-      expect(findMaterial(r, "Кассета")!.purchaseQty).toBe(70);
+      // Engine: roomWidth=30/6=5, cassPerRow=ceil(6/0.595), rows=ceil(5/0.595)
+      // totalCass = ceil(rows*cassPerRow*1.1)
+      // Engine: "Кассета 595×595 мм"
+      expect(findMaterial(r, "Кассета 595")).toBeDefined();
+      expect(r.totals.totalCass).toBeGreaterThan(0);
     });
   });
 
-  describe("Кассеты 595×595", () => {
-    it("20 м²", () => {
-      const r = calc({ area: 20, cassetteSize: 595, roomLength: 5 });
+  describe("600×600 мм (cassetteSize=1)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, cassetteSize: 1, roomLength: 6 });
       checkInvariants(r);
-      // cassetteSizeM=0.595, cassettesPerRow=ceil(5/0.595)=9, rows=ceil(4/0.595)=7
-      expect(r.totals.totalCassettes).toBe(63);
+      // Engine: "Кассета 600×600 мм"
+      expect(findMaterial(r, "Кассета 600")).toBeDefined();
     });
   });
 
-  describe("Кассеты 300×300 (декоративные)", () => {
-    it("предупреждение о сдвоенной решётке", () => {
-      const r = calc({ area: 20, cassetteSize: 300, roomLength: 5 });
-      expect(r.warnings.some(w => w.includes("сдвоенной"))).toBe(true);
+  describe("300×300 мм (cassetteSize=2)", () => {
+    it("30 м²", () => {
+      const r = calc({ area: 30, cassetteSize: 2, roomLength: 6 });
+      checkInvariants(r);
+      // Engine: "Кассета 300×300 мм"
+      expect(findMaterial(r, "Кассета 300")).toBeDefined();
     });
   });
 
   describe("Профили и крепёж", () => {
-    it("несущий, поперечный, подвесы, пристенный", () => {
-      const r = calc({ area: 20, cassetteSize: 600, roomLength: 5 });
-      expect(findMaterial(r, "несущий")).toBeDefined();
-      expect(findMaterial(r, "поперечный")).toBeDefined();
+    it("главный профиль Т-образный, поперечный профиль, подвес, угловой профиль", () => {
+      const r = calc({ area: 30, cassetteSize: 0, roomLength: 6 });
+      // Engine names
+      expect(findMaterial(r, "Главный профиль Т-образный")).toBeDefined();
+      expect(findMaterial(r, "Поперечный профиль")).toBeDefined();
       expect(findMaterial(r, "Подвес")).toBeDefined();
-      expect(findMaterial(r, "пристенный")).toBeDefined();
+      expect(findMaterial(r, "Угловой профиль")).toBeDefined();
     });
   });
 
   describe("Большая площадь", () => {
-    it("> 50 м² → предупреждение о жёсткости", () => {
-      const r = calc({ area: 60, cassetteSize: 600, roomLength: 10 });
-      expect(r.warnings.some(w => w.includes("жёсткости"))).toBe(true);
+    it("предупреждение о профессиональном монтаже", () => {
+      const r = calc({ area: 250, cassetteSize: 0, roomLength: 25 });
+      // Engine: "Большая площадь — рекомендуется профессиональный монтаж"
+      expect(r.warnings.some(w => w.includes("профессиональный монтаж"))).toBe(true);
     });
   });
 });

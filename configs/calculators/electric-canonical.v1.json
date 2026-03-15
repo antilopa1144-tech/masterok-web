@@ -1,0 +1,44 @@
+{
+  "calculator_id": "electric",
+  "formula_version": "electric-canonical-v1",
+  "input_schema": [
+    { "key": "apartmentArea", "unit": "m2", "default_value": 60, "min": 20, "max": 500 },
+    { "key": "roomsCount", "default_value": 3, "min": 1, "max": 10 },
+    { "key": "ceilingHeight", "unit": "m", "default_value": 2.7, "min": 2.4, "max": 4.0 },
+    { "key": "wiringType", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "hasKitchen", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "reserve", "unit": "%", "default_value": 15, "min": 5, "max": 30 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "installation_method", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "wiring_types": [
+      { "id": 0, "key": "hidden", "label": "Скрытая проводка" },
+      { "id": 1, "key": "open", "label": "Открытая проводка" }
+    ]
+  },
+  "packaging_rules": {
+    "cable_spool_m": 50,
+    "unit": "бухт"
+  },
+  "material_rules": {
+    "cable_15_rate": 1.1,
+    "cable_25_rate": 1.6,
+    "cable_6_kitchen_factor": 1.5,
+    "cable_6_reserve": 1.2,
+    "conduit_ratio": 0.8,
+    "outlets_per_m2": 0.6,
+    "outlets_per_room": 2,
+    "switches_base": 2,
+    "cable_spool_m": 50,
+    "socket_box_reserve": 1.1,
+    "ac_groups_divisor": 2
+  },
+  "warnings_rules": {
+    "three_phase_area_threshold": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

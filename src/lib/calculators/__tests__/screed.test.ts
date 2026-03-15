@@ -37,7 +37,7 @@ describe("Калькулятор стяжки пола", () => {
     });
 
     it("армосетка при 50 мм >= 40 мм", () => {
-      expect(findMaterial(result, "Сетка армировочная")).toBeDefined();
+      expect(findMaterial(result, "Сетка армирующая")).toBeDefined();
     });
 
     it("демпферная лента присутствует", () => {
@@ -65,7 +65,7 @@ describe("Калькулятор стяжки пола", () => {
     });
 
     it("мешков ЦПС 44", () => {
-      const cps = findMaterial(result, "ЦПС М150 (мешки 50 кг)");
+      const cps = findMaterial(result, "Готовая ЦПС М150");
       expect(cps?.purchaseQty).toBe(44);
     });
   });
@@ -79,24 +79,24 @@ describe("Калькулятор стяжки пола", () => {
       screedType: 2,
     });
 
-    it("предупреждение о спецоборудовании", () => {
-      expect(result.warnings.some((w) => w.includes("оборудования"))).toBe(true);
+    it("ЦПС полусухая присутствует", () => {
+      expect(findMaterial(result, "ЦПС полусухая")).toBeDefined();
     });
 
-    it("фиброволокно присутствует", () => {
+    it("фиброволокно ПП присутствует", () => {
       expect(findMaterial(result, "Фиброволокно")).toBeDefined();
     });
   });
 
   describe("Предупреждения", () => {
-    it("толщина >= 80 мм → укладка слоями", () => {
-      const result = calc({ inputMode: 1, area: 20, thickness: 80, screedType: 0 });
-      expect(result.warnings.some((w) => w.includes("слоями"))).toBe(true);
+    it("толщина > 100 мм → укладка слоями", () => {
+      const result = calc({ inputMode: 1, area: 20, thickness: 120, screedType: 0 });
+      expect(result.warnings.some((w) => w.includes("слои"))).toBe(true);
     });
 
-    it("толщина > 100 мм → армирование", () => {
-      const result = calc({ inputMode: 1, area: 20, thickness: 120, screedType: 0 });
-      expect(result.warnings.some((w) => w.includes("армирование"))).toBe(true);
+    it("площадь > 50 м² с ЦПС → рекомендация готовой ЦПС", () => {
+      const result = calc({ inputMode: 1, area: 60, thickness: 50, screedType: 0 });
+      expect(result.warnings.some((w) => w.includes("готовую ЦПС"))).toBe(true);
     });
   });
 });

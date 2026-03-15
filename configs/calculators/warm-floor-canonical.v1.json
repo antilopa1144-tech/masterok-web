@@ -1,0 +1,53 @@
+{
+  "calculator_id": "warm-floor",
+  "formula_version": "warm-floor-canonical-v1",
+  "input_schema": [
+    { "key": "roomArea", "unit": "m2", "default_value": 10, "min": 1, "max": 100 },
+    { "key": "furnitureArea", "unit": "m2", "default_value": 2, "min": 0, "max": 50 },
+    { "key": "heatingType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "powerDensity", "unit": "W/m2", "default_value": 150, "min": 100, "max": 200 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "heating_types": [
+      { "id": 0, "key": "mat", "label": "Нагревательный мат" },
+      { "id": 1, "key": "cable", "label": "Кабель в стяжку" },
+      { "id": 2, "key": "water_pipes", "label": "Водяные трубы" }
+    ]
+  },
+  "packaging_rules": {
+    "mat_unit": "шт",
+    "cable_unit": "м",
+    "pipe_unit": "м"
+  },
+  "material_rules": {
+    "mat_area": 2.0,
+    "cable_step_m": 0.15,
+    "cable_reserve": 1.05,
+    "pipe_step_m": 0.15,
+    "pipe_reserve": 1.05,
+    "substrate_reserve": 1.1,
+    "substrate_roll_m2": 25,
+    "corrugated_tube_m": 1,
+    "tile_adhesive_kg_per_m2": 5,
+    "tile_adhesive_bag_kg": 25,
+    "eps_sheet_m2": 0.72,
+    "eps_reserve": 1.1,
+    "screed_thickness_m": 0.04,
+    "screed_density": 2000,
+    "screed_bag_kg": 50,
+    "mesh_reserve": 1.05,
+    "mounting_tape_roll_m": 25,
+    "pipe_insulation_reserve": 1.0,
+    "max_circuit_m": 80
+  },
+  "warnings_rules": {
+    "separate_breaker_kw_threshold": 3.5,
+    "ineffective_coverage_ratio": 0.5
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

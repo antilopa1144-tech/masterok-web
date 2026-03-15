@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalWaterproofing } from "../../../../engine/waterproofing";
+import waterproofingSpec from "../../../../configs/calculators/waterproofing-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const waterproofingDef: CalculatorDefinition = {
   id: "bathroom_waterproof",
@@ -72,139 +74,18 @@ export const waterproofingDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const floorArea = Math.max(1, inputs.floorArea ?? 6);
-    const wallHeightMm = inputs.wallHeight ?? 200;
-    const perimeter = Math.max(4, inputs.roomPerimeter ?? 10);
-    const masticType = Math.round(inputs.masticType ?? 0);
-    const layers = Math.round(inputs.layers ?? 2);
-
-    const wallArea = perimeter * (wallHeightMm / 1000);
-    const totalArea = floorArea + wallArea;
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    // Расход мастики
-    let consumptionPerLayer: number; // кг/м²
-    let packageKg: number;
-    let masticName: string;
-
-    switch (masticType) {
-      case 0:
-        consumptionPerLayer = 1.0; packageKg = 15; masticName = "Гидроизоляционная мастика Ceresit CL 51 / Knauf Флэхендихт";
-        break;
-      case 1:
-        consumptionPerLayer = 1.2; packageKg = 20; masticName = "Жидкая резина 2-компонентная";
-        break;
-      default:
-        consumptionPerLayer = 0.8; packageKg = 15; masticName = "Полимерная гидроизоляционная мастика";
-    }
-
-    const totalMasticKg = totalArea * consumptionPerLayer * layers;
-    const masticBuckets = Math.ceil(totalMasticKg / packageKg);
-
-    materials.push({
-      name: `${masticName} (ведро ${packageKg} кг)`,
-      quantity: totalMasticKg / packageKg,
-      unit: "вёдер",
-      withReserve: masticBuckets,
-      purchaseQty: masticBuckets,
-      category: "Гидроизоляция",
-    });
-
-    // Гидроизоляционная лента для углов
-    // Внутренние углы: пол+стены = периметр + 4 угла × (wallHeight × 2)
-    const tapeLength = perimeter + (wallHeightMm > 0 ? perimeter * 1.2 : 0);
-    const tapeLengthWithReserve = Math.ceil(tapeLength * 1.1);
-    materials.push({
-      name: "Гидроизоляционная лента для углов и швов (50 мм)",
-      quantity: tapeLength,
-      unit: "м.п.",
-      withReserve: tapeLengthWithReserve,
-      purchaseQty: tapeLengthWithReserve,
-      category: "Лента",
-    });
-
-    // Герметик для примыкания ванной/поддона
-    // 1 картридж 310 мл ≈ 6 м.п.
-    const sealantCartridges = Math.ceil(perimeter / 6);
-    materials.push({
-      name: "Герметик силиконовый санитарный (картридж 310 мл)",
-      quantity: perimeter / 6,
-      unit: "шт",
-      withReserve: sealantCartridges + 1,
-      purchaseQty: sealantCartridges + 1,
-      category: "Герметик",
-    });
-
-    // Праймер (для цементных мастик — обязателен)
-    if (masticType === 0) {
-      const primerKg = totalArea * 0.15 * 1.1; // 150 мл/м²
-      const primerCans = Math.ceil(primerKg / 2); // канистра 2 кг
-      materials.push({
-        name: "Грунтовка адгезионная (концентрат) для основания (канистра 2 кг)",
-        quantity: primerKg / 2,
-        unit: "канистр",
-        withReserve: primerCans,
-        purchaseQty: primerCans,
-        category: "Грунтовка",
-      });
-    }
-
-    // Праймер битумный (для жидкой резины и полимерной мастики)
-    if (masticType >= 1) {
-      const primerBitumLiters = totalArea * 0.3 * 1.1; // 300 мл/м², запас 10%
-      const primerBitumCans = Math.ceil(primerBitumLiters / 20); // канистра 20 л
-      materials.push({
-        name: "Праймер битумный (канистра 20 л, ~300 мл/м²)",
-        quantity: primerBitumLiters / 20,
-        unit: "канистр",
-        withReserve: primerBitumCans,
-        purchaseQty: primerBitumCans,
-        category: "Грунтовка",
-      });
-    }
-
-    // Герметик для стыков и примыканий труб/коммуникаций
-    const sealantJointLength = perimeter * 0.5; // примыкания к стенам, трубам
-    const sealantJointTubes = Math.ceil(sealantJointLength / 10); // 1 туба на 10 м.п.
-    materials.push({
-      name: "Герметик для стыков и примыканий (туба 310 мл, ~10 м.п.)",
-      quantity: sealantJointTubes,
-      unit: "туб",
-      withReserve: sealantJointTubes,
-      purchaseQty: sealantJointTubes,
-      category: "Герметик",
-    });
-
-    if (layers < 2) {
-      warnings.push("Один слой гидроизоляции допустим только в нежилых или технических помещениях — для ванной минимум 2 слоя");
-    }
-    if (wallHeightMm === 0) {
-      warnings.push("Без обработки стен гидроизоляция пола не будет полноценной — рекомендуется поднять мастику на стены минимум на 200 мм");
-    }
-    warnings.push("Каждый слой мастики наносится после полного высыхания предыдущего (обычно 4–6 часов)");
-    warnings.push("Перед укладкой плитки дайте гидроизоляции набрать прочность 24–72 часа");
-
-    const scenarios = buildNativeScenarios({
-      id: "waterproofing-main",
-      title: "Waterproofing main",
-      exactNeed: totalMasticKg,
-      unit: "kg",
-      packageSizes: [packageKg],
-      packageLabelPrefix: "waterproofing-mastic",
-    });
+  calculate(inputs) {
+    const spec = waterproofingSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalWaterproofing(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        floorArea,
-        wallArea,
-        totalArea,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

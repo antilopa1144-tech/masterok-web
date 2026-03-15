@@ -1,0 +1,56 @@
+{
+  "calculator_id": "basement",
+  "formula_version": "basement-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 8, "min": 3, "max": 30 },
+    { "key": "width", "unit": "m", "default_value": 6, "min": 3, "max": 20 },
+    { "key": "depth", "unit": "m", "default_value": 2.5, "min": 1.5, "max": 4 },
+    { "key": "wallThickness", "unit": "mm", "default_value": 200, "min": 150, "max": 300 },
+    { "key": "floorThickness", "unit": "mm", "default_value": 150, "min": 100, "max": 200 },
+    { "key": "waterproofType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "waterproof_types": [0, 1, 2],
+    "wall_thicknesses": [150, 200, 250, 300],
+    "floor_thicknesses": [100, 150, 200]
+  },
+  "packaging_rules": {
+    "unit": "м³",
+    "package_size": 1
+  },
+  "material_rules": {
+    "floor_rebar_kg_per_m2": 22,
+    "wall_rebar_kg_per_m2": 18,
+    "wire_ratio": 0.01,
+    "formwork_sheet_m2": 2.88,
+    "formwork_reserve": 1.15,
+    "geotextile_roll": 50,
+    "drainage_membrane_roll": 20,
+    "mastic_kg_per_m2": 1.5,
+    "mastic_layers": 2,
+    "roll_reserve": 1.15,
+    "roll_m2": 10,
+    "pen_kg_per_m2": 0.4,
+    "pen_reserve": 1.1,
+    "vent_per_area": 10,
+    "min_vents": 4,
+    "gravel_layer": 0.15,
+    "sand_layer": 0.1,
+    "epps_plate": 0.72,
+    "epps_reserve": 1.05
+  },
+  "warnings_rules": {
+    "deep_basement_threshold_m": 3,
+    "thin_wall_threshold_mm": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

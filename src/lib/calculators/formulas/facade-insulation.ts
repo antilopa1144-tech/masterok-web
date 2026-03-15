@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalFacadeInsulation } from "../../../../engine/facade-insulation";
+import facadeinsulationSpec from "../../../../configs/calculators/facade-insulation-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const facadeInsulationDef: CalculatorDefinition = {
   id: "insulation_mineral_wool",
@@ -62,161 +64,18 @@ export const facadeInsulationDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(10, inputs.area ?? 100);
-    const thickness = inputs.thickness ?? 100;
-    const insulationType = Math.round(inputs.insulationType ?? 0);
-    const finishType = Math.round(inputs.finishType ?? 0);
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    // Утеплитель
-    const areaWithReserve = area * 1.05;
-
-    if (insulationType === 0) {
-      // Минвата фасадная, плиты 600×1200 мм = 0.72 м²
-      const platesNeeded = Math.ceil(areaWithReserve / 0.72);
-      materials.push({
-        name: `Минвата фасадная ${thickness} мм (плита 600×1200 мм, 0.72 м²)`,
-        quantity: areaWithReserve / 0.72,
-        unit: "плит",
-        withReserve: platesNeeded,
-        purchaseQty: platesNeeded,
-        category: "Утеплитель",
-      });
-    } else {
-      // ЭППС плиты 1200×600 мм = 0.72 м²
-      const platesNeeded = Math.ceil(areaWithReserve / 0.72);
-      materials.push({
-        name: `ЭППС ${thickness} мм (плита 1200×600 мм, 0.72 м²)`,
-        quantity: areaWithReserve / 0.72,
-        unit: "плит",
-        withReserve: platesNeeded,
-        purchaseQty: platesNeeded,
-        category: "Утеплитель",
-      });
-      warnings.push("ЭППС на фасаде не рекомендуется для жилых зданий — допустим только минвата (требование пожарных норм СП 2.13130)");
-    }
-
-    // Клей-пена или сухая клеевая смесь для минваты
-    // Расход клея: 4 кг/м² (смесь Ceresit CT 180, Weber.Therm)
-    const glueConsumption = insulationType === 0 ? 4 : 5; // кг/м²
-    const totalGlueKg = area * glueConsumption;
-    const glueBags = Math.ceil(totalGlueKg / 25);
-    materials.push({
-      name: `Клей для утеплителя (мешок 25 кг, расход ~${glueConsumption} кг/м²)`,
-      quantity: totalGlueKg / 25,
-      unit: "мешков",
-      withReserve: glueBags,
-      purchaseQty: glueBags,
-      category: "Клей",
-    });
-
-    // Дюбели-грибки TERMOCLIP 10×(100+thickness) мм
-    // 5–6 шт/м² для минваты, 4 шт/м² для ЭППС
-    const dubelsPerM2 = insulationType === 0 ? 6 : 4;
-    const dubelsTotal = Math.ceil(area * dubelsPerM2 * 1.05);
-    materials.push({
-      name: `Дюбель-грибок фасадный TERMOCLIP 10×${thickness + 60} мм`,
-      quantity: area * dubelsPerM2,
-      unit: "шт",
-      withReserve: dubelsTotal,
-      purchaseQty: dubelsTotal,
-      category: "Крепёж",
-    });
-
-    // Базовый штукатурный слой + армосетка
-    // Армосетка стеклотканевая 145 г/м², рулон 50 м²
-    const meshArea = area * 1.15; // нахлёст 15%
-    const meshRolls = Math.ceil(meshArea / 50);
-    materials.push({
-      name: "Сетка фасадная стеклотканевая 145 г/м² (рулон 50 м²)",
-      quantity: meshArea / 50,
-      unit: "рулонов",
-      withReserve: meshRolls,
-      purchaseQty: meshRolls,
-      category: "Армирование",
-    });
-
-    // Клеевой состав для армировки (Ceresit CT 85, Weber.Therm Armat) ~4 кг/м²
-    const armKg = area * 4;
-    const armBags = Math.ceil(armKg / 25);
-    materials.push({
-      name: "Штукатурно-клеевой состав для армировки (мешок 25 кг, ~4 кг/м²)",
-      quantity: armKg / 25,
-      unit: "мешков",
-      withReserve: armBags,
-      purchaseQty: armBags,
-      category: "Армирование",
-    });
-
-    // Грунтовка (Ceresit CT 16 или аналог) — 1 л на 4 м²
-    const primerLiters = area / 4 * 1.1;
-    const primerCans = Math.ceil(primerLiters / 10); // канистра 10 л
-    materials.push({
-      name: "Грунтовка адгезионная (канистра 10 л, ~0.25 л/м²)",
-      quantity: primerLiters / 10,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    });
-
-    // Декоративная штукатурка
-    let plasterConsumption: number; // кг/м²
-    let plasterName: string;
-    switch (finishType) {
-      case 0: plasterConsumption = 3.5; plasterName = "Декоративная штукатурка «короед» (мешок 25 кг, ~3.5 кг/м²)"; break;
-      case 1: plasterConsumption = 4.5; plasterName = "Декоративная штукатурка «шуба» (мешок 25 кг, ~4.5 кг/м²)"; break;
-      default: plasterConsumption = 2.5; plasterName = "Финишная штукатурка под покраску (мешок 25 кг, ~2.5 кг/м²)"; break;
-    }
-    const plasterKg = area * plasterConsumption;
-    const plasterBags = Math.ceil(plasterKg / 25);
-    materials.push({
-      name: plasterName,
-      quantity: plasterKg / 25,
-      unit: "мешков",
-      withReserve: plasterBags,
-      purchaseQty: plasterBags,
-      category: "Штукатурка",
-    });
-
-    // Профиль цокольный (стартовый) — погонные метры по периметру
-    // Предполагаем периметр ≈ √(area) × 4 (упрощение)
-    const perimeter = Math.sqrt(area) * 4;
-    const profileLength = perimeter * 1.05;
-    const profilePcs = Math.ceil(profileLength / 2); // профили по 2 м
-    materials.push({
-      name: "Профиль цокольный стартовый 2 м",
-      quantity: profileLength / 2,
-      unit: "шт",
-      withReserve: profilePcs,
-      purchaseQty: profilePcs,
-      category: "Комплектующие",
-    });
-
-    if (thickness < 100) {
-      warnings.push(`Толщина ${thickness} мм может не обеспечить нормативное сопротивление теплопередаче для жилых зданий — проверьте теплотехнический расчёт`);
-    }
-    if (area > 500) {
-      warnings.push("При площади >500 м² рекомендуется разбить фасад на захватки и использовать леса с допуском нагрузки");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "facade-insulation-main",
-      title: "Facade insulation main",
-      exactNeed: areaWithReserve,
-      unit: "м²",
-      packageSizes: [1],
-      packageLabelPrefix: "facade-insulation-m2",
-    });
+  calculate(inputs) {
+    const spec = facadeinsulationSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalFacadeInsulation(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: { area, thickness } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

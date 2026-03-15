@@ -1,0 +1,44 @@
+{
+  "calculator_id": "decor-plaster",
+  "formula_version": "decor-plaster-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 50, "min": 1, "max": 1000 },
+    { "key": "texture", "default_value": 0, "min": 0, "max": 4 },
+    { "key": "surface", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "bagWeight", "unit": "kg", "default_value": 25, "min": 15, "max": 25 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "textures": [0, 1, 2, 3, 4],
+    "surfaces": [0, 1]
+  },
+  "packaging_rules": {
+    "unit": "мешков",
+    "package_size": 1
+  },
+  "material_rules": {
+    "consumption_kg_per_m2": { "0": 2.5, "1": 3.5, "2": 3.0, "3": 4.0, "4": 1.2 },
+    "plaster_reserve": 1.05,
+    "primer_deep_l_per_m2": 0.2,
+    "primer_deep_reserve": 1.15,
+    "primer_can": 10,
+    "tinted_primer_l_per_m2": 0.15,
+    "tinted_can": 5,
+    "pigment_per_25kg": 1,
+    "wax_l_per_m2": 0.1,
+    "wax_can": 1
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 200,
+    "venetian_facade_texture_id": 4
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

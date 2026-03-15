@@ -1,0 +1,52 @@
+{
+  "calculator_id": "waterproofing",
+  "formula_version": "waterproofing-canonical-v1",
+  "input_schema": [
+    { "key": "floorArea", "unit": "m2", "default_value": 6, "min": 1, "max": 50 },
+    { "key": "wallHeight", "unit": "mm", "default_value": 200, "min": 0, "max": 2000 },
+    { "key": "roomPerimeter", "unit": "m", "default_value": 10, "min": 4, "max": 40 },
+    { "key": "masticType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "layers", "default_value": 2, "min": 1, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "surface_quality",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "mastic_types": [0, 1, 2],
+    "wall_heights": [0, 200, 300, 500, 2000]
+  },
+  "packaging_rules": {
+    "unit": "вёдер",
+    "package_size": 1
+  },
+  "material_rules": {
+    "consumption_per_layer": {
+      "0": 1.0,
+      "1": 1.2,
+      "2": 0.8
+    },
+    "bucket_kg": {
+      "0": 15,
+      "1": 20,
+      "2": 15
+    },
+    "tape_reserve": 1.10,
+    "silicone_m_per_tube": 6,
+    "primer_kg_per_m2": 0.15,
+    "primer_can_kg": 2,
+    "bitumen_l_per_m2": 0.3,
+    "bitumen_can_l": 20,
+    "joint_sealant_m_per_tube": 10
+  },
+  "warnings_rules": {
+    "min_layers_residential": 2,
+    "min_wall_height_mm": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}
