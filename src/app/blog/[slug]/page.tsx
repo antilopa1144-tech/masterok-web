@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     type: "article",
     publishedTime: post.date,
     tags: post.tags,
+    image: post.heroImage || undefined,
   });
 }
 
@@ -87,6 +88,30 @@ function renderContent(content: string) {
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    if (trimmed.startsWith("![")) {
+      flushParagraph();
+      flushList();
+      const match = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      if (match) {
+        elements.push(
+          <figure key={key++} className="my-6">
+            <img
+              src={match[2]}
+              alt={match[1]}
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700"
+              loading="lazy"
+            />
+            {match[1] && (
+              <figcaption className="text-center text-sm text-slate-400 dark:text-slate-500 mt-2">
+                {match[1]}
+              </figcaption>
+            )}
+          </figure>
+        );
+      }
+      continue;
+    }
 
     if (trimmed.startsWith("## ")) {
       flushParagraph();
@@ -176,6 +201,13 @@ export default async function BlogPostPage({ params }: Props) {
       "@id": `${baseUrl}/blog/${post.slug}/`,
     },
     keywords: post.tags.join(", "),
+    image: post.heroImage ? {
+      "@type": "ImageObject",
+      url: post.heroImage,
+      width: 1200,
+      height: 630,
+    } : undefined,
+    inLanguage: "ru",
   };
 
   return (
@@ -223,6 +255,17 @@ export default async function BlogPostPage({ params }: Props) {
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed max-w-2xl">
             {post.description}
           </p>
+
+          {post.heroImage && (
+            <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+              <img
+                src={post.heroImage}
+                alt={post.heroImageAlt}
+                className="w-full h-48 sm:h-64 md:h-80 object-cover"
+                loading="eager"
+              />
+            </div>
+          )}
         </div>
       </div>
 

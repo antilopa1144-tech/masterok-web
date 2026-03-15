@@ -12,6 +12,8 @@ interface BuildPageMetadataOptions {
   twitterTitle?: string;
   publishedTime?: string;
   tags?: string[];
+  /** Optional per-page OG image URL that overrides the site default */
+  image?: string;
 }
 
 export function buildPageMetadata({
@@ -23,7 +25,13 @@ export function buildPageMetadata({
   twitterTitle,
   publishedTime,
   tags,
+  image,
 }: BuildPageMetadataOptions): Metadata {
+  const ogImage = image
+    ? { url: image, width: 1200, height: 630 }
+    : { url: SITE_OG_IMAGE_URL, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT };
+  const twitterImage = image ?? SITE_OG_IMAGE_URL;
+
   return {
     title,
     description,
@@ -37,7 +45,7 @@ export function buildPageMetadata({
       siteName: SITE_NAME,
       locale: "ru_RU",
       type,
-      images: [{ url: SITE_OG_IMAGE_URL, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT }],
+      images: [ogImage],
       ...(publishedTime ? { publishedTime } : {}),
       ...(tags?.length ? { tags } : {}),
     },
@@ -45,7 +53,7 @@ export function buildPageMetadata({
       card: "summary_large_image",
       title: twitterTitle ?? title,
       description,
-      images: [SITE_OG_IMAGE_URL],
+      images: [twitterImage],
     },
   };
 }
