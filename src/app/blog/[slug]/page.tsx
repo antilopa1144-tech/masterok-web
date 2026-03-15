@@ -16,6 +16,8 @@ const UI_TEXT = {
   allArticles: "← Все статьи",
   allCalculators: "Все калькуляторы",
   calculatorCtaFallback: "Открыть калькулятор",
+  relatedPostsTitle: "Читайте также",
+  relatedPostsReadMore: "Читать →",
 } as const;
 
 interface Props {
@@ -169,6 +171,30 @@ function renderContent(content: string) {
   return elements;
 }
 
+function getRelatedPosts(post: { slug: string; category: string; tags: string[] }) {
+  // Prefer posts from the same category or with overlapping tags
+  const candidates = ALL_POSTS
+    .filter((p) => p.slug !== post.slug)
+    .map((p) => {
+      const categoryMatch = p.category === post.category ? 2 : 0;
+      const tagOverlap = p.tags.filter((t) => post.tags.includes(t)).length;
+      return { post: p, score: categoryMatch + tagOverlap };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const related = candidates.slice(0, 3).map((c) => c.post);
+
+  // If not enough, fill with recent posts
+  if (related.length < 3) {
+    const remaining = ALL_POSTS
+      .filter((p) => p.slug !== post.slug && !related.some((r) => r.slug === p.slug))
+      .slice(0, 3 - related.length);
+    related.push(...remaining);
+  }
+
+  return related;
+}
+
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
@@ -178,6 +204,8 @@ export default async function BlogPostPage({ params }: Props) {
   const relatedCalculatorDef = post.relatedCalculator
     ? getCalculatorBySlug(post.relatedCalculator.slug)
     : undefined;
+
+  const relatedPosts = getRelatedPosts(post);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -302,6 +330,57 @@ export default async function BlogPostPage({ params }: Props) {
             >
               {relatedCalculatorDef?.title ?? UI_TEXT.calculatorCtaFallback} →
             </Link>
+          </div>
+        )}
+
+        {relatedPosts.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-slate-200 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-5">
+              {UI_TEXT.relatedPostsTitle}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {relatedPosts.map((rp) => (
+                <article
+                  key={rp.slug}
+                  className="card-hover flex flex-col overflow-hidden"
+                >
+                  {rp.heroImage && (
+                    <Link href={`/blog/${rp.slug}/`} className="block">
+                      <img
+                        src={rp.heroImage}
+                        alt={rp.heroImageAlt}
+                        className="w-full h-32 object-cover"
+                        loading="lazy"
+                      />
+                    </Link>
+                  )}
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
+                        {rp.category}
+                      </span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
+                        {rp.readTime}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug text-sm flex-1">
+                      <Link
+                        href={`/blog/${rp.slug}/`}
+                        className="no-underline hover:text-accent-600 transition-colors"
+                      >
+                        {rp.title}
+                      </Link>
+                    </h3>
+                    <Link
+                      href={`/blog/${rp.slug}/`}
+                      className="text-sm font-medium text-accent-600 hover:text-accent-700 no-underline transition-colors mt-auto"
+                    >
+                      {UI_TEXT.relatedPostsReadMore}
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         )}
 

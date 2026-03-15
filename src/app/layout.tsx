@@ -111,6 +111,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+        <link rel="alternate" type="application/rss+xml" title="Мастерок — Блог" href="/rss.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <StructuredData />
       </head>
