@@ -19,7 +19,6 @@ describe('Наливной пол', () => {
 
 runCanonicalParitySuite({
   suiteName: 'Canonical self-leveling fixture parity',
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cases: selfLevelingFixture.cases as any,
   calculate: calc,
   assertCase(result, expected: {

@@ -19,7 +19,6 @@ describe("Калькулятор паркетной доски", () => {
 
 runCanonicalParitySuite({
   suiteName: "Canonical parquet fixture parity",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cases: parquetFixture.cases as any,
   calculate: calc,
   assertCase(result, expected: {

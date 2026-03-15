@@ -19,7 +19,6 @@ describe("Калькулятор линолеума", () => {
 
 runCanonicalParitySuite({
   suiteName: "Canonical linoleum fixture parity",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cases: linoleumFixture.cases as any,
   calculate: calc,
   assertCase(result, expected: {
