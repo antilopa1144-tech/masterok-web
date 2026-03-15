@@ -196,6 +196,10 @@ export function computeCanonicalWaterproofing(
     warnings.push("Обработка стен обязательна минимум на 200 мм от пола");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Гидроизоляцию заводите на стены минимум на 200 мм — мокрые зоны защищайте полностью");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -226,6 +230,7 @@ export function computeCanonicalWaterproofing(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -163,6 +163,10 @@ export function computeCanonicalMdfPanels(
     });
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("МДФ панели боятся влаги — не ставьте в ванной и кухне возле мойки");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -191,6 +195,7 @@ export function computeCanonicalMdfPanels(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

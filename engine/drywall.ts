@@ -288,6 +288,15 @@ export function computeCanonicalDrywall(
     warnings.push("Второй слой ГКЛ монтируется со смещением 600 мм");
   }
 
+  const practicalNotes: string[] = [];
+  if (layers === 2) {
+    practicalNotes.push("Два слоя ГКЛ — смещайте стыки минимум на 400 мм, иначе трещина по шву гарантирована");
+  }
+  if (height > 3.5) {
+    practicalNotes.push(`Высота ${roundDisplay(height, 1)} м — ставьте профили CW-100, стандартные CW-75 будут гулять`);
+  }
+  practicalNotes.push("Между ГКЛ и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -338,6 +347,7 @@ export function computeCanonicalDrywall(
       maxPurchaseSheets: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

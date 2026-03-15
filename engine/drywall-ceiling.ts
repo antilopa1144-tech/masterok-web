@@ -250,6 +250,13 @@ export function computeCanonicalDrywallCeiling(
     },
   ];
 
+
+  const practicalNotes: string[] = [];
+  if (area > 50) {
+    practicalNotes.push(`Потолок ${roundDisplay(area, 0)} м² — обязательны деформационные швы, иначе трещины`);
+  }
+  practicalNotes.push("Подвесы — через каждые 700 мм вдоль каждого профиля, не реже");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -290,6 +297,7 @@ export function computeCanonicalDrywallCeiling(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

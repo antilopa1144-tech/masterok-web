@@ -210,6 +210,10 @@ export function computeCanonicalSiding(
     warnings.push("Большая площадь проёмов — проверьте количество доборных элементов");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Сайдинг не прибивайте плотно — оставляйте зазор в крепёжном отверстии для расширения");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -240,6 +244,7 @@ export function computeCanonicalSiding(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

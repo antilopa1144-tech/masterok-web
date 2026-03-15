@@ -203,6 +203,10 @@ export function computeCanonicalFasteners(
     warnings.push("Для вагонки используются кляймеры вместо саморезов");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Саморезы для ГКЛ — фосфатированные (чёрные). Оцинкованные для дерева, не путайте");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -228,6 +232,7 @@ export function computeCanonicalFasteners(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

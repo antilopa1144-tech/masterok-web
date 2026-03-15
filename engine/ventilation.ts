@@ -231,6 +231,10 @@ export function computeCanonicalVentilation(
     warnings.push("Для квартиры с числом жильцов более 6 рекомендуется приточно-вытяжная установка");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Приток без вытяжки = влага на окнах. Вытяжка без притока = не работает. Нужно и то, и другое");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -263,6 +267,7 @@ export function computeCanonicalVentilation(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

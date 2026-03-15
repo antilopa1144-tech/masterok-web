@@ -189,7 +189,7 @@ export function computeCanonicalAeratedConcrete(
       category: "Отделка",
     },
     {
-      name: "U-блоки (перемычки)",
+      name: "У-блоки (перемычки)",
       quantity: uBlocks,
       unit: "шт",
       withReserve: uBlocks,
@@ -205,6 +205,12 @@ export function computeCanonicalAeratedConcrete(
       category: "Проёмы",
     },
   ];
+
+  const practicalNotes: string[] = [];
+  if (blockThickness <= 150) {
+    practicalNotes.push(`Блок ${blockThickness} мм — только ненесущие перегородки, для наружных стен минимум 300 мм`);
+  }
+  practicalNotes.push("Газобетон любит влагу — защитите кладку плёнкой в дождь и зимой");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -243,6 +249,7 @@ export function computeCanonicalAeratedConcrete(
       maxPurchaseBlocks: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

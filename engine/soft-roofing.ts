@@ -236,6 +236,13 @@ export function computeCanonicalSoftRoofing(
     warnings.push("Ендовы — наиболее уязвимые места, рекомендуется усиленная гидроизоляция");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (slope < 18) {
+    practicalNotes.push(`Уклон ${roundDisplay(slope, 0)}° — нужен сплошной подкладочный ковёр по всей площади`);
+  }
+  practicalNotes.push("Мягкую кровлю монтируйте при температуре выше +5°C — на морозе гонты становятся хрупкими");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -265,6 +272,7 @@ export function computeCanonicalSoftRoofing(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

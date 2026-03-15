@@ -209,6 +209,10 @@ export function computeCanonicalCeilingInsulation(
     warnings.push("Большая площадь — рекомендуется профессиональный монтаж");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Утеплитель на потолке — пароизоляция снизу обязательна, иначе конденсат сгноит перекрытие");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -229,6 +233,7 @@ export function computeCanonicalCeilingInsulation(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

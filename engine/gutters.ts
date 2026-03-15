@@ -214,6 +214,10 @@ export function computeCanonicalGutters(
     warnings.push(`Недостаточно воронок: рекомендуется минимум ${recommendedFunnels} шт. (1 на каждые ${RECOMMENDED_FUNNEL_INTERVAL_M} м периметра) для достаточного водоотведения`);
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Уклон желоба 3-5 мм на метр — иначе вода будет стоять и переливаться");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -244,6 +248,7 @@ export function computeCanonicalGutters(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

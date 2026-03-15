@@ -270,6 +270,12 @@ export function computeCanonicalBlindArea(
     warnings.push("Толщина бетона менее 100 мм — рекомендуется армосетка при увеличении толщины");
   }
 
+  const practicalNotes: string[] = [];
+  if (width < 0.8) {
+    practicalNotes.push(`Отмостка ${roundDisplay(width, 1)} м — маловато, минимум по СП 0.8 м, а лучше 1 м`);
+  }
+  practicalNotes.push("Обязательно уклон 2-3% от стены — иначе вода пойдёт к фундаменту");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -301,6 +307,7 @@ export function computeCanonicalBlindArea(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

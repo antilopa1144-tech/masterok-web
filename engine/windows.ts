@@ -280,6 +280,13 @@ export function computeCanonicalWindows(
     warnings.push("Толстые стены — проверьте глубину подоконника");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("ПСУЛ ленту клейте на раму до установки в проём — потом будет неудобно");
+  if (wallThickness > 400) {
+    practicalNotes.push(`Толстые стены ${wallThickness} мм — окно сажайте на 1/3 от наружного края для лучшей теплоизоляции`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -317,6 +324,7 @@ export function computeCanonicalWindows(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

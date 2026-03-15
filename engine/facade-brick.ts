@@ -232,6 +232,12 @@ export function computeCanonicalFacadeBrick(
   }
   warnings.push("Необходим вентиляционный зазор 20–40 мм между облицовкой и несущей стеной (СП 15.13330)");
 
+  const practicalNotes: string[] = [];
+  if (withTie === 0) {
+    practicalNotes.push("Без гибких связей облицовка со временем отойдёт от несущей стены");
+  }
+  practicalNotes.push("Вентзазор 20-40 мм между облицовкой и стеной — иначе влага разрушит утеплитель");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -265,6 +271,7 @@ export function computeCanonicalFacadeBrick(
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

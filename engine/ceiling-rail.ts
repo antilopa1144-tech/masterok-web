@@ -174,6 +174,10 @@ export function computeCanonicalCeilingRail(
     warnings.push("Большая площадь — рекомендуется профессиональный монтаж");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Рейки монтируйте перпендикулярно окну — так свет скроет стыки");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -200,6 +204,7 @@ export function computeCanonicalCeilingRail(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

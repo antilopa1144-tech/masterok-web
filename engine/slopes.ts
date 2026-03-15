@@ -290,6 +290,10 @@ export function computeCanonicalSlopes(
     warnings.push("Большое количество проёмов — рассмотрите оптовую закупку");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Откос — слабое место для мостика холода. Утеплите его минимум 20 мм пенопласта перед отделкой");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -325,6 +329,7 @@ export function computeCanonicalSlopes(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

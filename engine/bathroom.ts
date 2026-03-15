@@ -263,6 +263,10 @@ export function computeCanonicalBathroom(
     warnings.push("Гидроизоляция обязательна согласно СП 29.13330");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("В ванной гидроизоляцию делайте по всему полу и по стенам на высоту 200 мм. В зоне душа — до потолка");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -299,6 +303,7 @@ export function computeCanonicalBathroom(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

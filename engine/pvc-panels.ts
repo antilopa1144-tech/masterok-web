@@ -176,6 +176,10 @@ export function computeCanonicalPvcPanels(
     },
   );
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("ПВХ панели — оставляйте зазор 5 мм по периметру для температурного расширения");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -205,6 +209,7 @@ export function computeCanonicalPvcPanels(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

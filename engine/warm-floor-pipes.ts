@@ -212,6 +212,13 @@ export function computeCanonicalWarmFloorPipes(
     warnings.push("Площадь более 40 м² — рекомендуется профессиональный расчёт теплопотерь");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (pipeLength > 80) {
+    practicalNotes.push(`Контур ${roundDisplay(pipeLength, 0)} м — разбейте на ${circuits} петель, иначе котёл не продавит теплоноситель`);
+  }
+  practicalNotes.push("Тёплый пол — не основное отопление, а дополнительный комфорт. Радиаторы всё равно нужны");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -243,6 +250,7 @@ export function computeCanonicalWarmFloorPipes(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

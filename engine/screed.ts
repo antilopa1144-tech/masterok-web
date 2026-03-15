@@ -383,6 +383,17 @@ export function computeCanonicalScreed(
     warnings.push('При площади более 50 м² рекомендуется использовать готовую ЦПС');
   }
 
+  const practicalNotes: string[] = [];
+  if (thickness >= 80) {
+    practicalNotes.push(`Стяжка ${roundDisplay(thickness, 0)} мм — обязательно армирование сеткой ВР-1, иначе потрескается`);
+  }
+  if (area > 30) {
+    practicalNotes.push(`На ${roundDisplay(area, 0)} м² ставьте маяки через 1.2-1.5 м — ровнее не будет, а переделывать дороже`);
+  }
+  if (screedType.id === 2) {
+    practicalNotes.push(`Полусухая стяжка — затирочная машина обязательна, ручная затирка на ${roundDisplay(area, 0)} м² нереальна`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -414,6 +425,7 @@ export function computeCanonicalScreed(
       maxPurchaseKg: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

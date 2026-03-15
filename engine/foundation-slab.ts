@@ -178,6 +178,17 @@ export function computeCanonicalFoundationSlab(
     warnings.push("Большая площадь плиты — рекомендуется профессиональный расчёт нагрузок");
   }
 
+  const practicalNotes: string[] = [];
+  if (thickness <= 150) {
+    practicalNotes.push(`Плита ${roundDisplay(thickness, 0)} мм — только для лёгких каркасных конструкций, для кирпичного дома минимум 250 мм`);
+  }
+  if (area > 100) {
+    practicalNotes.push(`Плита ${roundDisplay(area, 0)} м² — обязательно непрерывная заливка, иначе холодный шов ослабит конструкцию`);
+  }
+  if (rebarStep > 200) {
+    practicalNotes.push(`Шаг арматуры ${roundDisplay(rebarStep, 0)} мм — для плиты под жилой дом рекомендую не более 200 мм`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -219,6 +230,7 @@ export function computeCanonicalFoundationSlab(
       maxPurchaseM3: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

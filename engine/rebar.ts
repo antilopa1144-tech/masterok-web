@@ -337,6 +337,10 @@ export function computeCanonicalRebar(
 
   const recScenario = scenarios.REC;
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Арматуру вяжите проволокой, не сваривайте — сварка ослабляет прутки");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -382,6 +386,7 @@ export function computeCanonicalRebar(
       maxPurchaseRods: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

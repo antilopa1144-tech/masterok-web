@@ -48,8 +48,8 @@ describe("Калькулятор газобетона", () => {
       expect(findMaterial(result, "Грунтовка")).toBeDefined();
     });
 
-    it("U-блоки для перемычек присутствуют", () => {
-      expect(findMaterial(result, "U-блок")).toBeDefined();
+    it("У-блоки для перемычек присутствуют", () => {
+      expect(findMaterial(result, "У-блок")).toBeDefined();
     });
 
     it("инварианты", () => {

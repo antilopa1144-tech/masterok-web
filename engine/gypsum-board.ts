@@ -234,6 +234,12 @@ export function computeCanonicalGypsumBoard(
     warnings.push("Второй слой ГКЛ монтируется со смещением швов");
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Между ГКЛ и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
+  if (layers === 2) {
+    practicalNotes.push("При двух слоях второй крепите саморезами 35 мм, не 25 мм — иначе не дотянете до профиля");
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -266,6 +272,7 @@ export function computeCanonicalGypsumBoard(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

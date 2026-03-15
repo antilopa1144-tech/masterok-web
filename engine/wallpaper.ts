@@ -300,6 +300,10 @@ export function computeCanonicalWallpaper(
     warnings.push("Из одного рулона получается мало полос. Проверьте высоту стены, длину рулона и раппорт");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Начинайте от окна и идите в глубину комнаты — стыки будут менее заметны при боковом свете");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -345,6 +349,7 @@ export function computeCanonicalWallpaper(
       maxPurchaseRolls: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

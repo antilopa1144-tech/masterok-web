@@ -276,6 +276,13 @@ export function computeCanonicalSewage(
     warnings.push("Одна камера — минимум, рекомендуется 2-3 камеры");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (residents > 6) {
+    practicalNotes.push(`На ${residents} человек рассмотрите станцию биоочистки вместо обычного септика`);
+  }
+  practicalNotes.push("Труба канализации — уклон 2 см на метр, не больше и не меньше");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -312,6 +319,7 @@ export function computeCanonicalSewage(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

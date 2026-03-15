@@ -194,6 +194,10 @@ export function computeCanonicalTerrace(
     warnings.push("Для террас большой площади рекомендуется профессиональный монтаж");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Лаги террасы не должны лежать на земле — поднимите на столбики или регулируемые опоры");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -227,6 +231,7 @@ export function computeCanonicalTerrace(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

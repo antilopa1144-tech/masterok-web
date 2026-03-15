@@ -88,7 +88,7 @@ export function computeCanonicalSoundInsulation(
     primaryLabel = "rockwool-plate";
 
     materials.push(
-      { name: "Rockwool плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
+      { name: "Минераловатные плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
       { name: "ГКЛ листы", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
       { name: "Профиль ПП 3м", quantity: ppPcs, unit: "шт", withReserve: ppPcs, purchaseQty: ppPcs, category: "Каркас" },
       { name: "Виброподвесы", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
@@ -142,7 +142,7 @@ export function computeCanonicalSoundInsulation(
     primaryLabel = "acoustic-ceiling";
 
     materials.push(
-      { name: "Rockwool плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
+      { name: "Минераловатные плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
       { name: "ГКЛ листы", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
       { name: "Виброподвесы", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
     );
@@ -205,6 +205,10 @@ export function computeCanonicalSoundInsulation(
     warnings.push("Система ЗИПС требует ровного основания");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Звукоизоляция работает только когда нет щелей — даже маленькая щель убивает эффект");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -225,6 +229,7 @@ export function computeCanonicalSoundInsulation(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

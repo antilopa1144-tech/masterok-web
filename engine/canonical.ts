@@ -25,6 +25,7 @@ export interface CanonicalCalculatorResult {
   totals: Record<string, number>;
   warnings: string[];
   scenarios: ScenarioBundle;
+  practicalNotes?: string[];
 }
 
 export interface CanonicalCalculatorSpecBase {

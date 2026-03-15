@@ -212,6 +212,10 @@ export function computeCanonicalWoodWall(
     },
   ];
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Дерево обязательно обработайте антисептиком перед монтажом — потом не доберётесь");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -242,6 +246,7 @@ export function computeCanonicalWoodWall(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -324,6 +324,13 @@ export function computeCanonicalPaint(
   const tapeMeters = roundDisplay(work.estimatedPerimeter * spec.material_rules.tape_runs_per_room * spec.material_rules.tape_reserve_factor, 3);
   const tapeRolls = tapeMeters > 0 ? Math.max(1, Math.ceil(tapeMeters / spec.material_rules.tape_roll_length_m)) : 0;
 
+
+  const practicalNotes: string[] = [];
+  if (coats === 1) {
+    practicalNotes.push("Один слой — только если предыдущий цвет совпадает. Для перекраски — минимум 2 слоя");
+  }
+  practicalNotes.push("Красьте стену целиком за один приём — стыки подсохшей и свежей краски будут видны");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -369,6 +376,7 @@ export function computeCanonicalPaint(
       maxPurchaseL: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

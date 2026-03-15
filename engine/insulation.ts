@@ -249,6 +249,13 @@ export function computeCanonicalInsulation(
     warnings.push("При площади более 100 м² рекомендуется профессиональный монтаж");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (thickness < 100) {
+    practicalNotes.push(`Утеплитель ${thickness} мм — для средней полосы России минимум 100-150 мм`);
+  }
+  practicalNotes.push("Стыки плит утеплителя не должны совпадать с стыками предыдущего слоя — укладывайте вразбежку");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -279,6 +286,7 @@ export function computeCanonicalInsulation(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

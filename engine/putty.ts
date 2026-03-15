@@ -291,6 +291,10 @@ export function computeCanonicalPutty(
     qualityProfile.key,
   );
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Между слоями шпаклёвки — грунтовка и полная просушка. Минимум 12 часов между слоями");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -310,6 +314,7 @@ export function computeCanonicalPutty(
       maxPurchaseKg: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

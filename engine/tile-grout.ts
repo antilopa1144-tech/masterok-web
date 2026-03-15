@@ -135,6 +135,13 @@ export function computeCanonicalTileGrout(
     warnings.push("Широкие швы — рекомендуется крупнозернистая затирка");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (jointWidth > 5) {
+    practicalNotes.push(`Широкий шов ${jointWidth} мм — используйте затирку с песком, обычная будет трескаться`);
+  }
+  practicalNotes.push("Затирайте диагональными движениями, а не вдоль шва — так не вымоете затирку");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -161,6 +168,7 @@ export function computeCanonicalTileGrout(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

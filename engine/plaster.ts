@@ -256,6 +256,13 @@ export function computeCanonicalPlaster(
     warnings.push("Маленькая площадь — лучше использовать готовую шпаклёвку из ведра");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (thickness > 30) {
+    practicalNotes.push(`Слой ${roundDisplay(thickness, 0)} мм — ставьте маяки и наносите в 2-3 захода с просушкой`);
+  }
+  practicalNotes.push("На стыке разных материалов (кирпич/бетон) — обязательно армирующая сетка");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -285,6 +292,7 @@ export function computeCanonicalPlaster(
       maxPurchaseKg: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

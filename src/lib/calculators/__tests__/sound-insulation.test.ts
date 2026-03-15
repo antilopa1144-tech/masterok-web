@@ -5,12 +5,12 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = soundInsulationDef.calculate.bind(soundInsulationDef);
 
 describe("Звукоизоляция", () => {
-  describe("Базовая система ГКЛ + Rockwool (system=0)", () => {
+  describe("Базовая система ГКЛ + Минераловатные (system=0)", () => {
     it("30 м²", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 0 });
       checkInvariants(r);
-      // Engine: "Rockwool плиты", "ГКЛ листы", "Профиль ПП 3м", "Виброподвесы", "Вибролента"
-      expect(findMaterial(r, "Rockwool")).toBeDefined();
+      // Engine: "Минераловатные плиты", "ГКЛ листы", "Профиль ПП 3м", "Виброподвесы", "Вибролента"
+      expect(findMaterial(r, "Минераловатные")).toBeDefined();
       expect(findMaterial(r, "ГКЛ")).toBeDefined();
       expect(findMaterial(r, "Профиль ПП")).toBeDefined();
       expect(findMaterial(r, "Виброподвесы")).toBeDefined();
@@ -20,7 +20,7 @@ describe("Звукоизоляция", () => {
     it("вата: area*1.1/0.6 плит", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 0 });
       // areaWithReserve=33, plates=ceil(33/0.6)=55
-      expect(findMaterial(r, "Rockwool")!.quantity).toBe(55);
+      expect(findMaterial(r, "Минераловатные")!.quantity).toBe(55);
     });
 
     it("ГКЛ 2 слоя: area*1.1*2/3 листов", () => {
@@ -66,8 +66,8 @@ describe("Звукоизоляция", () => {
     it("30 м²", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 3 });
       checkInvariants(r);
-      // Engine: "Rockwool плиты", "ГКЛ листы", "Виброподвесы"
-      expect(findMaterial(r, "Rockwool")).toBeDefined();
+      // Engine: "Минераловатные плиты", "ГКЛ листы", "Виброподвесы"
+      expect(findMaterial(r, "Минераловатные")).toBeDefined();
       expect(findMaterial(r, "ГКЛ")).toBeDefined();
       expect(findMaterial(r, "Виброподвесы")).toBeDefined();
     });

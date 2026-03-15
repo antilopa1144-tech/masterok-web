@@ -201,6 +201,9 @@ export function computeCanonicalParquet(
     });
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Паркет — живой материал, оставляйте зазор 10-15 мм у стен для температурного расширения");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -234,6 +237,7 @@ export function computeCanonicalParquet(
       maxPurchaseArea: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

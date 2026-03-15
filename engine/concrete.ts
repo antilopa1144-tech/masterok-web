@@ -226,6 +226,18 @@ export function computeCanonicalConcrete(
 
   const recScenario = scenarios.REC;
 
+  const practicalNotes: string[] = [];
+  if (totalVolume > 5) {
+    practicalNotes.push(`При ${roundDisplay(totalVolume, 1)} м³ не обойтись без бетононасоса — ручная подача на таком объёме замучает бригаду`);
+  }
+  if (manualMix && totalVolume > 2) {
+    const batches = Math.ceil(totalVolume / 0.15);
+    practicalNotes.push(`Замесить ${roundDisplay(totalVolume, 1)} м³ вручную — это примерно ${batches} замесов в бетономешалке. Серьёзно подумайте о заводском бетоне`);
+  }
+  if (concreteGrade >= 5) {
+    practicalNotes.push(`Марка ${gradeLabel} — обязательно вибрирование, иначе потеряете до 30% прочности`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -281,6 +293,7 @@ export function computeCanonicalConcrete(
       maxPurchaseM3: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

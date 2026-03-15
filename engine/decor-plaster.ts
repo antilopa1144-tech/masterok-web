@@ -177,6 +177,9 @@ export function computeCanonicalDecorPlaster(
     warnings.push("Венецианская штукатурка на фасаде — требуется защитный лак");
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Декоративная штукатурка наносится только на подготовленную поверхность — грунт + шпаклёвка обязательны");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -201,6 +204,7 @@ export function computeCanonicalDecorPlaster(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

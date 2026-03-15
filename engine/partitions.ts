@@ -208,6 +208,9 @@ export function computeCanonicalPartitions(
     warnings.push("Гипсовые ПГП толще 100 мм — проверьте наличие нужного размера");
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Звукоизоляция перегородки — заполните каркас минватой, без неё перегородка будет как барабан");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -236,6 +239,7 @@ export function computeCanonicalPartitions(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -164,6 +164,12 @@ export function computeCanonicalSelfLeveling(
     warnings.push('При площади > 30 м² необходимо устройство деформационных швов');
   }
 
+  const practicalNotes: string[] = [];
+  if (thickness > 10) {
+    practicalNotes.push(`Наливной пол ${roundDisplay(thickness, 0)} мм — лейте за один приём, не давайте подсыхать краям`);
+  }
+  practicalNotes.push("Прокатайте игольчатым валиком — выгоните пузырьки воздуха, иначе поверхность будет как наждачка");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -190,6 +196,7 @@ export function computeCanonicalSelfLeveling(
       maxPurchaseKg: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

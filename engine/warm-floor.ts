@@ -328,6 +328,10 @@ export function computeCanonicalWarmFloor(
     warnings.push("Обогреваемая площадь менее 50% — неэффективное покрытие");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Тёплый пол — не основное отопление, а дополнительный комфорт. Радиаторы всё равно нужны");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -360,6 +364,7 @@ export function computeCanonicalWarmFloor(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

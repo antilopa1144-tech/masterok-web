@@ -235,6 +235,10 @@ export function computeCanonicalFacadePanels(
     warnings.push("Толстый утеплитель — проверьте длину кронштейнов");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Панели крепите с зазором 2-3 мм для температурного расширения — иначе покоробит");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -263,6 +267,7 @@ export function computeCanonicalFacadePanels(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

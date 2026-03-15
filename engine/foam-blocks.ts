@@ -194,7 +194,7 @@ export function computeCanonicalFoamBlocks(
     },
     reinforcementMaterial,
     {
-      name: "U-блоки (перемычки)",
+      name: "У-блоки (перемычки)",
       quantity: uBlocks,
       unit: "шт",
       withReserve: uBlocks,
@@ -210,6 +210,12 @@ export function computeCanonicalFoamBlocks(
       category: "Отделка",
     },
   ];
+
+  const practicalNotes: string[] = [];
+  if (t <= 100) {
+    practicalNotes.push(`Толщина ${t} мм — только перегородки, для несущих стен минимум 200 мм`);
+  }
+  practicalNotes.push("Первый ряд — на раствор по уровню, остальное на клей. Первый ряд — самый важный");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -246,6 +252,7 @@ export function computeCanonicalFoamBlocks(
       maxPurchaseBlocks: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

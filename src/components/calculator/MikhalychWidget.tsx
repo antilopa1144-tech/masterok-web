@@ -5,6 +5,7 @@ import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
   OPENROUTER_MODEL,
+  MAX_TOKENS,
   checkRateLimit,
   getApiKey,
   getApiHeaders,
@@ -85,7 +86,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             ...lastMessages.map((m) => ({ role: m.role, content: m.content })),
           ],
           temperature: 0.7,
-          max_tokens: 1024,
+          max_tokens: MAX_TOKENS,
         }),
       });
 

@@ -171,6 +171,12 @@ export function computeCanonicalDecorStone(
     });
   }
 
+  const practicalNotes: string[] = [];
+  if (stoneType === 2) {
+    practicalNotes.push("Натуральный камень тяжёлый — убедитесь что стена выдержит нагрузку");
+  }
+  practicalNotes.push("Клей наносите и на стену, и на камень — так называемый двойной промаз");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -199,6 +205,7 @@ export function computeCanonicalDecorStone(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -38,18 +38,18 @@ describe("Калькулятор каркасного дома", () => {
       expect(strapping?.purchaseQty).toBe(11);
     });
 
-    it("наружная обшивка OSB-9 мм = 25 листов", () => {
-      // Engine: "Наружная обшивка — OSB-9 мм"
+    it("наружная обшивка ОСП-9 мм = 25 листов", () => {
+      // Engine: "Наружная обшивка — ОСП-9 мм"
       const outer = findMaterial(result, "Наружная обшивка");
       expect(outer?.purchaseQty).toBe(25);
-      expect(outer!.name).toContain("OSB-9 мм");
+      expect(outer!.name).toContain("ОСП-9 мм");
     });
 
-    it("внутренняя обшивка OSB-9 мм = 25 листов", () => {
-      // Engine: "Внутренняя обшивка — OSB-9 мм"
+    it("внутренняя обшивка ОСП-9 мм = 25 листов", () => {
+      // Engine: "Внутренняя обшивка — ОСП-9 мм"
       const inner = findMaterial(result, "Внутренняя обшивка");
       expect(inner?.purchaseQty).toBe(25);
-      expect(inner!.name).toContain("OSB-9 мм");
+      expect(inner!.name).toContain("ОСП-9 мм");
     });
 
     it("утеплитель минвата = 39 упаковок", () => {

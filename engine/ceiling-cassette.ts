@@ -170,6 +170,10 @@ export function computeCanonicalCeilingCassette(
     warnings.push("Большая площадь — рекомендуется профессиональный монтаж");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Кассетный потолок — оставьте доступ к коммуникациям, не зашивайте наглухо");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -196,6 +200,7 @@ export function computeCanonicalCeilingCassette(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

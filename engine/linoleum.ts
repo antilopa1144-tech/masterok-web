@@ -199,6 +199,9 @@ export function computeCanonicalLinoleum(
     });
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Линолеум раскатайте и дайте отлежаться сутки перед подрезкой — он примет форму пола");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -237,6 +240,7 @@ export function computeCanonicalLinoleum(
       maxPurchaseLinearM: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -90,6 +90,7 @@ export interface CalculatorResult {
   scenarios?: CalculatorScenarios;
   formulaVersion?: string;
   canonicalSpecId?: string;
+  practicalNotes?: string[];
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;

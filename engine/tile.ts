@@ -241,6 +241,17 @@ export function computeCanonicalTile(
     warnings.push("Укладка ёлочкой на большой площади сильно увеличивает отходы и требования к раскладке");
   }
 
+  const practicalNotes: string[] = [];
+  if (averageTileSizeCm > 60) {
+    practicalNotes.push(`Крупноформат ${Math.round(tileWidthCm * 10)}×${Math.round(tileHeightCm * 10)} мм — двойное нанесение клея обязательно, иначе пустоты и трещины`);
+  }
+  if (layout.id === 4) {
+    practicalNotes.push("Ёлочка красиво, но отходы до 20% — закупайте с хорошим запасом");
+  }
+  if (layout.id === 2) {
+    practicalNotes.push("Диагональ начинайте от центра комнаты — так подрезка у стен будет равномерной");
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -291,6 +302,7 @@ export function computeCanonicalTile(
       maxPurchaseTiles: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

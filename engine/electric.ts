@@ -231,6 +231,13 @@ export function computeCanonicalElectric(
   }
   warnings.push("Все розетки в ванной и кухне — через УЗО 10-30 мА");
 
+
+  const practicalNotes: string[] = [];
+  if (apartmentArea > 100) {
+    practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод (380В), на однофазном будете постоянно выбивать автоматы`);
+  }
+  practicalNotes.push("Каждая розеточная группа — через своё УЗО на 30 мА. Ванная — отдельное УЗО на 10 мА");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -266,6 +273,7 @@ export function computeCanonicalElectric(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

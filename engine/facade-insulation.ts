@@ -220,6 +220,13 @@ export function computeCanonicalFacadeInsulation(
     warnings.push("ЭППС — обязательна обработка поверхности для адгезии штукатурки");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Дюбели — не менее 6 штук на 1 м². На углах и у окон — 8 штук");
+  if (insulationType === 1) {
+    practicalNotes.push("ЭППС на фасаде — обязательно царапайте поверхность ножовкой, иначе штукатурка не ляжет");
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -245,6 +252,7 @@ export function computeCanonicalFacadeInsulation(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

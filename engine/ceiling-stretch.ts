@@ -168,6 +168,10 @@ export function computeCanonicalCeilingStretch(
     warnings.push("Много светильников — рекомендуется усиленное крепление");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Натяжной потолок опускает высоту на 3-5 см. Учитывайте при выборе люстры");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -190,6 +194,7 @@ export function computeCanonicalCeilingStretch(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

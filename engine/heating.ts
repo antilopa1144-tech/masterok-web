@@ -178,6 +178,13 @@ export function computeCanonicalHeating(
     warnings.push("Слабая изоляция + холодная зона — рекомендуется профессиональный теплотехнический расчёт");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (totalPowerKW > 20) {
+    practicalNotes.push(`Мощность ${totalPowerKW} кВт — газовый котёл с запасом 15-20%, не впритык`);
+  }
+  practicalNotes.push("Радиаторы ставьте под каждым окном — это отсекает холодный воздух от стекла");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -207,6 +214,7 @@ export function computeCanonicalHeating(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -249,6 +249,13 @@ export function computeCanonicalStairs(
     warnings.push("Большое количество ступеней — рекомендуется устройство промежуточной площадки");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (stepHeight > 190) {
+    practicalNotes.push(`Высота ступени ${stepHeight} мм — превышает ГОСТ (190 мм), будет неудобно и опасно`);
+  }
+  practicalNotes.push("Ширина проступи минимум 250 мм, оптимально 280-300 мм — нога должна полностью вставать");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -273,6 +280,7 @@ export function computeCanonicalStairs(
       maxPurchaseSteps: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

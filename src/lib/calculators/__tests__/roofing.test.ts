@@ -104,7 +104,7 @@ describe("Калькулятор кровли", () => {
 
     it("ОСБ для сплошной обрешётки присутствует", () => {
       // Engine: "Плиты OSB (1250×2500=3.125 м²)"
-      expect(findMaterial(result, "OSB")).toBeDefined();
+      expect(findMaterial(result, "ОСП")).toBeDefined();
     });
 
     it("гвозди кровельные в кг", () => {

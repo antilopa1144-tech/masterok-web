@@ -238,6 +238,12 @@ export function computeCanonicalLaminate(
 
   const recScenario = scenarios.REC;
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Ламинат должен акклиматизироваться в комнате минимум 48 часов перед укладкой");
+  if (layoutProfile.id === 4) {
+    practicalNotes.push("Диагональная укладка добавит 15% отходов — не экономьте на запасе");
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -289,6 +295,7 @@ export function computeCanonicalLaminate(
       maxPurchaseArea: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

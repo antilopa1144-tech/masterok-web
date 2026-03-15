@@ -322,6 +322,26 @@ function copyMaterialsAsText(materials: CalculatorResult["materials"]): void {
   void navigator.clipboard.writeText(text);
 }
 
+// ── Практические советы прораба ──────────────────────────────────────────────
+
+function PracticalNotes({ notes }: { notes: string[] }) {
+  if (!notes || notes.length === 0) return null;
+  return (
+    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 rounded-2xl p-4 space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-base">💡</span>
+        <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">Совет прораба</span>
+      </div>
+      {notes.map((note, i) => (
+        <div key={i} className="flex items-start gap-2 text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+          <span className="shrink-0 mt-0.5">•</span>
+          <span>{note}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Блок результата (warnings + materials + totals + share) ──────────────────
 
 export function ResultBlock({
@@ -376,6 +396,12 @@ export function ResultBlock({
         </div>
 
         <MaterialList materials={result.materials} />
+
+        {result.practicalNotes && result.practicalNotes.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <PracticalNotes notes={result.practicalNotes} />
+          </div>
+        )}
       </div>
 
       {/* Итоги */}

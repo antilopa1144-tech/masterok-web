@@ -164,6 +164,17 @@ export function computeCanonicalStripFoundation(
     warnings.push("Большой периметр — рекомендуется разделить на секции с деформационными швами");
   }
 
+  const practicalNotes: string[] = [];
+  if (depth < 600) {
+    practicalNotes.push(`Глубина ${roundDisplay(depth, 0)} мм — мелкозаглублённый фундамент, работает только на непучинистых грунтах`);
+  }
+  if (volReserve > 10) {
+    practicalNotes.push(`Объём ${roundDisplay(volReserve, 1)} м³ — заказывайте бетон с доставкой, ручной замес на таком объёме нерентабелен`);
+  }
+  if (width < 300) {
+    practicalNotes.push(`Ширина ленты ${roundDisplay(width, 0)} мм — для каменных стен минимум 400 мм`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -206,6 +217,7 @@ export function computeCanonicalStripFoundation(
       maxPurchaseM3: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

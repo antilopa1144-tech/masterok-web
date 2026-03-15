@@ -64,6 +64,7 @@ export const wallPanelsDef: CalculatorDefinition = {
       scenarios: canonical.scenarios,
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
+      practicalNotes: canonical.practicalNotes ?? [],
     };
   },
   formulaDescription: `

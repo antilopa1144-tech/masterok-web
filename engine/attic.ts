@@ -250,6 +250,13 @@ export function computeCanonicalAttic(
     warnings.push("Без пароизоляции утеплитель подвержен намоканию и потере свойств");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (insulationThickness < 200) {
+    practicalNotes.push(`Утеплитель ${insulationThickness} мм — для мансарды маловато, рекомендую минимум 200 мм`);
+  }
+  practicalNotes.push("Пароизоляция мансарды — со стороны помещения, не путайте с ветрозащитой");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -279,6 +286,7 @@ export function computeCanonicalAttic(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

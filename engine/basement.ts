@@ -246,6 +246,12 @@ export function computeCanonicalBasement(
     warnings.push("Толщина стен менее 200 мм — допустима только для неглубоких погребов");
   }
 
+  const practicalNotes: string[] = [];
+  if (depth > 3) {
+    practicalNotes.push(`Глубина ${roundDisplay(depth, 1)} м — на таких глубинах обязательна профессиональная геология и проект`);
+  }
+  practicalNotes.push("Гидроизоляция подвала — это не экономия. Лучше переплатить сейчас, чем вычерпывать воду потом");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -281,6 +287,7 @@ export function computeCanonicalBasement(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

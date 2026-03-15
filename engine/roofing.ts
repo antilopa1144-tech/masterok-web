@@ -211,7 +211,7 @@ export function computeCanonicalRoofing(
       category: "Доборные",
     });
     materials.push({
-      name: "Плиты OSB (1250×2500=3.125 м²)",
+      name: "Плиты ОСП (1250×2500=3.125 м²)",
       quantity: osbSheets,
       unit: "листов",
       withReserve: osbSheets,
@@ -355,6 +355,13 @@ export function computeCanonicalRoofing(
     warnings.push("Большая площадь крыши — рекомендуется доставка краном");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (slope < 15) {
+    practicalNotes.push(`Уклон ${roundDisplay(slope, 0)}° — критически мало для металлочерепицы, минимум 14° по СП`);
+  }
+  practicalNotes.push("Не экономьте на гидроизоляции подкровельного пространства — протечка на чердаке обойдётся дороже рулона мембраны");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -380,6 +387,7 @@ export function computeCanonicalRoofing(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -37,13 +37,13 @@ const INSULATION_TYPE_LABELS: Record<number, string> = {
 };
 
 const OUTER_SHEATHING_LABELS: Record<number, string> = {
-  0: "OSB-9 мм",
-  1: "OSB-12 мм",
+  0: "ОСП-9 мм",
+  1: "ОСП-12 мм",
   2: "ЦСП-12 мм",
 };
 
 const INNER_SHEATHING_LABELS: Record<number, string> = {
-  0: "OSB-9 мм",
+  0: "ОСП-9 мм",
   1: "ГКЛ",
   2: "Вагонка",
 };
@@ -253,6 +253,13 @@ export function computeCanonicalFrameHouse(
     warnings.push("Для высоких стен рекомендуется минеральная вата вместо ПСБ");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (studStep === 400) {
+    practicalNotes.push("Шаг стоек 400 мм — усиленный каркас, обязателен для двухэтажных домов");
+  }
+  practicalNotes.push("Все деревянные элементы каркаса обработайте антисептиком до монтажа — потом не доберётесь");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -291,6 +298,7 @@ export function computeCanonicalFrameHouse(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

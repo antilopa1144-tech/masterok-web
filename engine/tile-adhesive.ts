@@ -160,6 +160,12 @@ export function computeCanonicalTileAdhesive(
     warnings.push("Укладка на старую плитку — обязателен контактный грунт");
   }
 
+  const practicalNotes: string[] = [];
+  if (tileSize === 2) {
+    practicalNotes.push("Крупная плитка — используйте гребёнку 10-12 мм и клей класса С2");
+  }
+  practicalNotes.push("Не замешивайте больше клея, чем уложите за 30 минут — он теряет адгезию");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -185,6 +191,7 @@ export function computeCanonicalTileAdhesive(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

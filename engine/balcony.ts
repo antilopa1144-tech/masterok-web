@@ -160,6 +160,10 @@ export function computeCanonicalBalcony(
     warnings.push("Без утепления — на балконе будет значительный перепад температур");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Утепление балкона без замены остекления на тёплое — деньги на ветер");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -197,6 +201,7 @@ export function computeCanonicalBalcony(
       maxPurchasePanels: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

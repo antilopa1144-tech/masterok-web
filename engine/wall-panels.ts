@@ -243,6 +243,9 @@ export function computeCanonicalWallPanels(
     warnings.push("3D-панели на клей — убедитесь в ровности основания");
   }
 
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Обрешётку проверяйте уровнем в двух плоскостях — кривая обрешётка = кривые панели");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -274,6 +277,7 @@ export function computeCanonicalWallPanels(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

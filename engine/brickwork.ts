@@ -215,6 +215,15 @@ export function computeCanonicalBrickwork(
     warnings.push("Двойной кирпич в полкирпича (120 мм) — нестандартное решение, проверьте проект");
   }
 
+  const practicalNotes: string[] = [];
+  if (wallThicknessIdx >= 2 && wallHeight > 3) {
+    practicalNotes.push(`Стена в ${wallThicknessIdx === 2 ? "1.5" : "2"} кирпича высотой ${roundDisplay(wallHeight, 1)} м — армопояс по верху обязателен`);
+  }
+  if (mortarBags > 50) {
+    practicalNotes.push(`Раствора ${mortarBags} мешков — замешивайте порциями, не давайте схватываться в корыте`);
+  }
+  practicalNotes.push("Кладку начинайте с углов, проверяйте горизонт каждые 3-4 ряда");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -257,6 +266,7 @@ export function computeCanonicalBrickwork(
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

@@ -205,6 +205,10 @@ export function computeCanonicalPanels3d(
     });
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("3D-панели клейте на ровную стену — неровности будут видны как на ладони");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -237,6 +241,7 @@ export function computeCanonicalPanels3d(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

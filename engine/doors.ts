@@ -204,6 +204,13 @@ export function computeCanonicalDoors(
     warnings.push("Большое количество дверей — рассмотрите оптовую закупку");
   }
 
+
+  const practicalNotes: string[] = [];
+  if (wallThickness > 200) {
+    practicalNotes.push(`Стена ${wallThickness} мм — понадобятся доборы. Измерьте толщину до покупки коробки`);
+  }
+  practicalNotes.push("Пена вокруг коробки — непрерывным контуром, без пропусков. Иначе будет дуть");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -233,6 +240,7 @@ export function computeCanonicalDoors(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

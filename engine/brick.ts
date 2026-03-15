@@ -213,6 +213,15 @@ export function computeCanonicalBrick(
     warnings.push("Большой объём раствора — ручное замешивание будет затруднено, рекомендуется бетономешалка");
   }
 
+  const practicalNotes: string[] = [];
+  if (wallThickness === 0) {
+    practicalNotes.push("Полкирпича (120 мм) — только перегородки, для несущей стены минимум 250 мм");
+  }
+  if (recScenario.exact_need > 5000) {
+    practicalNotes.push(`При объёме ${Math.round(recScenario.exact_need)} кирпичей заказывайте с 7-10% запасом — бой при разгрузке неизбежен`);
+  }
+  practicalNotes.push("Кладку начинайте с углов, проверяйте горизонт каждые 3-4 ряда");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -260,6 +269,7 @@ export function computeCanonicalBrick(
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

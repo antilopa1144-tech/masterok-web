@@ -149,6 +149,10 @@ export function computeCanonicalPrimer(
     warnings.push("Для впитывающих оснований обычно рекомендуют 2 слоя грунтовки");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Грунтовка — не опция, а обязательный этап. Без неё шпаклёвка и краска отвалятся");
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -177,6 +181,7 @@ export function computeCanonicalPrimer(
       dryingTimeHours: spec.material_rules.drying_time_hours_by_type[String(primerType.id)] ?? 4,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }

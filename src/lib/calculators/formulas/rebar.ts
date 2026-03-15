@@ -117,6 +117,7 @@ export const rebarDef: CalculatorDefinition = {
       scenarios: canonical.scenarios,
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
+      practicalNotes: canonical.practicalNotes ?? [],
     };
   },
 

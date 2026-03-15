@@ -266,6 +266,13 @@ export function computeCanonicalFence(
     warnings.push("При наличии ворот рекомендуются усиленные столбы 80×80 или 100×100 мм");
   }
 
+
+  const practicalNotes: string[] = [];
+  practicalNotes.push("Столбы бетонируйте ниже глубины промерзания — в средней полосе это 1.2-1.5 м");
+  if (postsCount > 20) {
+    practicalNotes.push(`При ${postsCount} столбах — замешивайте бетон порциями и устанавливайте по 5-6 столбов в день`);
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -301,6 +308,7 @@ export function computeCanonicalFence(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
+    practicalNotes,
     scenarios,
   };
 }
