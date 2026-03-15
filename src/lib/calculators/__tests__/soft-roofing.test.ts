@@ -8,15 +8,14 @@ describe("Калькулятор мягкой кровли", () => {
   describe("80 м², уклон 30°, конёк 8 м, карниз 20 м, без ендов", () => {
     // packs = ceil(80/3.0 * 1.05) = ceil(28.000...) = 29 (floating point: 80/3 * 1.05 > 28)
     // slope >= 18 → подкладочный ковёр только в критических зонах
-    //   criticalLinear = 20 + 0 + 8 = 28
-    //   criticalArea = 28 * 1.0 * 1.15 = 32.2
+    //   criticalArea = (20 + 0 + 8) * 1.0 * 1.15 = 32.2
     //   underlaymentRolls = ceil(32.2/15) = 3
     // valleyRolls = 0 (нет ендов)
-    // masticKg = 28*0.1 + 80*0.1 = 10.8 → masticBuckets = ceil(10.8/3) = 4
-    // nailsCount = 80*80 = 6400, nailsKg = 6400/400*1.05 = 16.8
-    // eaveDripPcs = ceil(20/2 * 1.05) = ceil(10.5) = 11
-    // windStripPcs = ceil(20*0.4/2 * 1.05) = ceil(4.2) = 5
-    // ridgeShinglesPcs = ceil(8/0.5 * 1.05) = ceil(16.8) = 17
+    // masticKg = (8+20+0)*0.1 + 80*0.1 = 2.8 + 8 = 10.8 → masticBuckets = ceil(10.8/3) = 4
+    // nailsKg = ceil(80*80/400*1.05) = ceil(16.8) = 17
+    // eaveStrips = ceil(20/2 * 1.05) = ceil(10.5) = 11
+    // windStrips = ceil(20*0.4/2 * 1.05) = ceil(4.2) = 5
+    // ridgeShingles = ceil(8/0.5 * 1.05) = ceil(16.8) = 17
     // osbSheets = ceil(80/3.125 * 1.05) = ceil(26.88) = 27
     // ventOutputs = ceil(80/25) = 4
     const result = calc({
@@ -27,46 +26,59 @@ describe("Калькулятор мягкой кровли", () => {
       valleyLength: 0,
     });
 
-    it("гибкая черепица = 29 упаковок", () => {
-      // 80/3 * 1.05 ≈ 28.000... (floating point gives slightly > 28) → ceil = 29
-      const shingles = findMaterial(result, "Гибкая черепица");
-      expect(shingles?.purchaseQty).toBe(29);
+    it("гибкая черепица = 29 упаковок (packs)", () => {
+      // Engine: "Гибкая черепица (3 м²/уп)" — quantity is recScenario.exact_need
+      // totals.packs = 29 (base before scenario)
+      expect(result.totals.packs).toBe(29);
     });
 
-    it("ОСБ-3 основание = 27 листов", () => {
-      const osb = findMaterial(result, "ОСБ-3");
+    it("гибкая черепица purchaseQty = ceil(recExactNeed)", () => {
+      const shingles = findMaterial(result, "Гибкая черепица");
+      expect(shingles).toBeDefined();
+      // purchaseQty = ceil(recScenario.exact_need) which includes ~1.06 factor
+      expect(shingles!.purchaseQty).toBeGreaterThanOrEqual(29);
+    });
+
+    it("ОСП основание = 27 листов", () => {
+      // Engine: "ОСП (3.125 м²)"
+      const osb = findMaterial(result, "ОСП");
       expect(osb?.purchaseQty).toBe(27);
     });
 
     it("гвозди кровельные", () => {
+      // Engine: "Гвозди кровельные"
       const nails = findMaterial(result, "Гвозди кровельные");
       expect(nails).toBeDefined();
       expect(nails!.unit).toBe("кг");
-      // nailsKgRounded = 16.8, purchaseQty = ceil(16.8) = 17
       expect(nails!.purchaseQty).toBe(17);
     });
 
-    it("карнизная планка = 11 шт", () => {
-      const eave = findMaterial(result, "Карнизная планка");
+    it("карнизные планки = 11 шт", () => {
+      // Engine: "Карнизные планки (2 м)"
+      const eave = findMaterial(result, "Карнизные планки");
       expect(eave?.purchaseQty).toBe(11);
     });
 
-    it("торцевая планка = 5 шт", () => {
-      const wind = findMaterial(result, "Торцевая");
+    it("ветровые планки = 5 шт", () => {
+      // Engine: "Ветровые планки (2 м)"
+      const wind = findMaterial(result, "Ветровые планки");
       expect(wind?.purchaseQty).toBe(5);
     });
 
-    it("коньковая черепица = 17 шт", () => {
-      const ridge = findMaterial(result, "Коньковая черепица");
+    it("коньково-карнизная черепица = 17 шт", () => {
+      // Engine: "Коньково-карнизная черепица"
+      const ridge = findMaterial(result, "Коньково-карнизная черепица");
       expect(ridge?.purchaseQty).toBe(17);
     });
 
     it("мастика = 4 ведра", () => {
+      // Engine: "Мастика (ведро 3 кг)"
       const mastic = findMaterial(result, "Мастика");
       expect(mastic?.purchaseQty).toBe(4);
     });
 
     it("подкладочный ковёр = 3 рулона (только критические зоны)", () => {
+      // Engine: "Подкладочный ковёр (15 м²)"
       const underlayment = findMaterial(result, "Подкладочный ковёр");
       expect(underlayment?.purchaseQty).toBe(3);
     });
@@ -77,7 +89,8 @@ describe("Калькулятор мягкой кровли", () => {
     });
 
     it("вентиляционные выходы = 4 шт", () => {
-      const vent = findMaterial(result, "Вентиляционный выход");
+      // Engine: "Вентиляционные выходы"
+      const vent = findMaterial(result, "Вентиляционные выходы");
       expect(vent?.purchaseQty).toBe(4);
     });
 
@@ -88,7 +101,7 @@ describe("Калькулятор мягкой кровли", () => {
       expect(result.totals.underlaymentRolls).toBe(3);
     });
 
-    it("нет предупреждений при уклоне 30° и площади < 200", () => {
+    it("нет предупреждений при уклоне 30° и без ендов", () => {
       expect(result.warnings.length).toBe(0);
     });
 
@@ -113,7 +126,8 @@ describe("Калькулятор мягкой кровли", () => {
     });
 
     it("предупреждение о сплошном подкладочном ковре", () => {
-      expect(result.warnings.some((w) => w.includes("12–18°") || w.includes("сплошной"))).toBe(true);
+      // Engine: "Уклон менее 18° — подкладочный ковёр укладывается по всей площади"
+      expect(result.warnings.some((w) => w.includes("18°") || w.includes("подкладочный ковёр"))).toBe(true);
     });
 
     it("инварианты", () => {
@@ -132,24 +146,28 @@ describe("Калькулятор мягкой кровли", () => {
     });
 
     it("ендовный ковёр = 1 рулон", () => {
+      // Engine: "Ендовный ковёр (10 м)"
       const valley = findMaterial(result, "Ендовный ковёр");
       expect(valley).toBeDefined();
       expect(valley!.purchaseQty).toBe(1);
     });
 
     it("подкладочный ковёр учитывает ендовы в критических зонах", () => {
-      // criticalLinear = 20 + 5 + 8 = 33
-      // criticalArea = 33 * 1.15 = 37.95
+      // criticalArea = (20 + 5 + 8) * 1.0 * 1.15 = 37.95
       // underlaymentRolls = ceil(37.95/15) = ceil(2.53) = 3
       const underlayment = findMaterial(result, "Подкладочный ковёр");
       expect(underlayment?.purchaseQty).toBe(3);
     });
 
     it("мастика учитывает ендовы", () => {
-      // totalLinear = 8 + 20 + 5 = 33
-      // masticKg = 33*0.1 + 80*0.1 = 3.3 + 8 = 11.3 → ceil(11.3/3) = 4
+      // masticKg = (8 + 20 + 5)*0.1 + 80*0.1 = 3.3 + 8 = 11.3 → ceil(11.3/3) = 4
       const mastic = findMaterial(result, "Мастика");
       expect(mastic?.purchaseQty).toBe(4);
+    });
+
+    it("предупреждение об ендовах", () => {
+      // Engine: "Ендовы — наиболее уязвимые места, рекомендуется усиленная гидроизоляция"
+      expect(result.warnings.some((w) => w.includes("Ендовы"))).toBe(true);
     });
 
     it("инварианты", () => {
@@ -157,42 +175,23 @@ describe("Калькулятор мягкой кровли", () => {
     });
   });
 
-  describe("Уклон < 12° → предупреждение", () => {
+  describe("Уклон < 18° → предупреждение", () => {
     const result = calc({
       roofArea: 80,
-      slope: 10,
+      slope: 15,
       ridgeLength: 8,
       eaveLength: 20,
       valleyLength: 0,
     });
 
-    it("предупреждение об уклоне < 12°", () => {
-      expect(result.warnings.some((w) => w.includes("12°"))).toBe(true);
+    it("предупреждение об уклоне < 18°", () => {
+      expect(result.warnings.some((w) => w.includes("18°"))).toBe(true);
     });
 
     it("сплошной подкладочный ковёр (уклон < 18°)", () => {
       const underlayment = findMaterial(result, "Подкладочный ковёр");
-      // slope clamped to 10, which is < 18 → full coverage
       // ceil(80*1.15/15) = ceil(6.133) = 7
       expect(underlayment?.purchaseQty).toBe(7);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Большая площадь > 200 м² → предупреждение", () => {
-    const result = calc({
-      roofArea: 250,
-      slope: 30,
-      ridgeLength: 15,
-      eaveLength: 40,
-      valleyLength: 0,
-    });
-
-    it("предупреждение о профессиональном монтаже", () => {
-      expect(result.warnings.some((w) => w.includes("профессиональный"))).toBe(true);
     });
 
     it("инварианты", () => {

@@ -7,10 +7,10 @@ const calc = roofingDef.calculate.bind(roofingDef);
 describe("Калькулятор кровли", () => {
   describe("Металлочерепица: 80 м² (в плане), уклон 30°, лист 1.18×2.5 м", () => {
     // slopeFactor = 1/cos(30°) ≈ 1.1547
-    // realArea = 80 * 1.1547 ≈ 92.38
-    // effectiveWidth = 1.18 * 0.92 = 1.0856
-    // sheetArea = 1.0856 * 2.5 = 2.714
-    // sheetsNeeded = ceil((92.38/2.714)*1.10) = ceil(37.44) = 38
+    // realArea = 80 * 1.1547 ≈ 92.376
+    // effectiveWidth = 1.18 - 0.08 = 1.10
+    // sheetArea = 1.10 * (2.5 - 0.15) = 1.10 * 2.35 = 2.585
+    // sheetsNeeded = ceil((92.376/2.585)*1.05) = ceil(37.53) = 38
     const result = calc({
       roofingType: 0,
       area: 80,
@@ -24,35 +24,45 @@ describe("Калькулятор кровли", () => {
       expect(result.totals.realArea).toBeGreaterThan(80);
     });
 
-    it("реальная площадь ≈ 92.38 м²", () => {
-      expect(result.totals.realArea).toBeCloseTo(92.38, 1);
+    it("реальная площадь ≈ 92.376 м²", () => {
+      expect(result.totals.realArea).toBeCloseTo(92.376, 1);
     });
 
-    it("листов металлочерепицы = 38", () => {
+    it("листов металлочерепицы ≈ 38", () => {
+      // Engine: "Металлочерепица (1.18×2.5 м)"
       const sheets = findMaterial(result, "Металлочерепица");
       expect(sheets?.purchaseQty).toBe(38);
     });
 
-    it("конёк присутствует", () => {
-      expect(findMaterial(result, "Конёк")).toBeDefined();
+    it("коньковые элементы присутствуют", () => {
+      // Engine: "Коньковые элементы (2 м)"
+      expect(findMaterial(result, "Коньковые элементы")).toBeDefined();
     });
 
     it("снегозадержатели присутствуют", () => {
       expect(findMaterial(result, "Снегозадержатели")).toBeDefined();
     });
 
-    it("саморезы кровельные в шт", () => {
-      const screws = findMaterial(result, "Саморезы кровельные");
+    it("кровельные саморезы в шт", () => {
+      // Engine: "Кровельные саморезы"
+      const screws = findMaterial(result, "Кровельные саморезы");
       expect(screws).toBeDefined();
       expect(screws?.unit).toBe("шт");
     });
 
     it("гидроизоляция присутствует", () => {
-      expect(findMaterial(result, "мембрана")).toBeDefined();
+      // Engine: "Гидроизоляция (рулон 75 м²)"
+      expect(findMaterial(result, "Гидроизоляция")).toBeDefined();
     });
 
     it("обрешётка присутствует", () => {
+      // Engine: "Обрешётка (доска 25×100, шаг ~350 мм)"
       expect(findMaterial(result, "Обрешётка")).toBeDefined();
+    });
+
+    it("контробрешётка присутствует", () => {
+      // Engine: "Контробрешётка (брусок 50×50)"
+      expect(findMaterial(result, "Контробрешётка")).toBeDefined();
     });
 
     it("инварианты", () => {
@@ -74,9 +84,9 @@ describe("Калькулятор кровли", () => {
     });
   });
 
-  describe("Мягкая черепица", () => {
-    // realArea ≈ 92.38, packArea=3.0
-    // packs = ceil((92.38/3.0)*1.10) = ceil(33.87) = 34
+  describe("Мягкая черепица (через roofing calc)", () => {
+    // realArea ≈ 92.376, packArea=3.0
+    // packs = ceil((92.376/3.0)*1.05) = ceil(32.33) = 33
     const result = calc({
       roofingType: 1,
       area: 80,
@@ -86,19 +96,20 @@ describe("Калькулятор кровли", () => {
       sheetLength: 2.5,
     });
 
-    it("мягкая черепица в упаковках", () => {
-      const packs = findMaterial(result, "Мягкая черепица");
-      // realArea ≈ 92.38, wasteCoeff=1.05 (простая)
-      // packs = ceil(92.38 / 3.0 * 1.05) = ceil(32.33) = 33
+    it("мягкая кровля в упаковках", () => {
+      // Engine: "Мягкая кровля (упаковка 3 м²)"
+      const packs = findMaterial(result, "Мягкая кровля");
       expect(packs?.purchaseQty).toBe(33);
     });
 
     it("ОСБ для сплошной обрешётки присутствует", () => {
-      expect(findMaterial(result, "ОСБ")).toBeDefined();
+      // Engine: "Плиты OSB (1250×2500=3.125 м²)"
+      expect(findMaterial(result, "OSB")).toBeDefined();
     });
 
     it("гвозди кровельные в кг", () => {
-      const nails = findMaterial(result, "Гвозди ершёные");
+      // Engine: "Кровельные гвозди"
+      const nails = findMaterial(result, "Кровельные гвозди");
       expect(nails).toBeDefined();
       expect(nails?.unit).toBe("кг");
     });
@@ -115,11 +126,13 @@ describe("Калькулятор кровли", () => {
     });
 
     it("кровельный материал присутствует", () => {
-      expect(findMaterial(result, "Кровельный материал")).toBeDefined();
+      // Engine: "Профнастил (1.18×2.5 м)"
+      expect(findMaterial(result, "Профнастил")).toBeDefined();
     });
 
     it("крепеж присутствует", () => {
-      const screws = findMaterial(result, "Крепёж");
+      // Engine: "Крепёж кровельный"
+      const screws = findMaterial(result, "Крепёж кровельный");
       expect(screws).toBeDefined();
     });
   });
@@ -135,11 +148,13 @@ describe("Калькулятор кровли", () => {
     });
 
     it("кровельный материал присутствует", () => {
-      expect(findMaterial(result, "Кровельный материал")).toBeDefined();
+      // Engine: "Шифер (лист 1.13×1.75 м)"
+      expect(findMaterial(result, "Шифер")).toBeDefined();
     });
 
     it("крепеж присутствует", () => {
-      const nails = findMaterial(result, "Крепёж");
+      // Engine: "Крепёж кровельный"
+      const nails = findMaterial(result, "Крепёж кровельный");
       expect(nails).toBeDefined();
     });
   });

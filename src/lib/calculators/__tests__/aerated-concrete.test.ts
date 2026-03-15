@@ -29,9 +29,10 @@ describe("Калькулятор газобетона", () => {
       expect(result.totals.netArea).toBeCloseTo(22, 1);
     });
 
-    it("блоков газобетонных = 193 шт", () => {
-      const blocks = findMaterial(result, "Блок газобетонный");
-      expect(blocks?.purchaseQty).toBe(193);
+    it("блоков газобетонных = 205 шт (REC ×1.06)", () => {
+      const blocks = findMaterial(result, "Газоблок");
+      // blocksWithReserve=193, REC multiplier=1.06 → 204.58 → ceil=205
+      expect(blocks?.purchaseQty).toBe(205);
     });
 
     it("клей для газобетона 5 мешков", () => {
@@ -70,7 +71,7 @@ describe("Калькулятор газобетона", () => {
       expect(result.warnings.some((w) => w.includes("перегородок"))).toBe(true);
     });
 
-    it("блок >= 300 мм → теплотехнический расчёт", () => {
+    it("блок >= 300 мм → проверка теплоизоляции", () => {
       const result = calc({
         inputMode: 0,
         wallWidth: 10,
@@ -80,7 +81,7 @@ describe("Калькулятор газобетона", () => {
         blockHeight: 200,
         blockLength: 600,
       });
-      expect(result.warnings.some((w) => w.includes("теплотехнический"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("теплоизоляцию"))).toBe(true);
     });
   });
 

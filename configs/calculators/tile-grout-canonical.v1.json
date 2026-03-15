@@ -1,0 +1,44 @@
+{
+  "calculator_id": "tile-grout",
+  "formula_version": "tile-grout-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 20, "min": 1, "max": 500 },
+    { "key": "tileWidth", "unit": "mm", "default_value": 300, "min": 50, "max": 1200 },
+    { "key": "tileHeight", "unit": "mm", "default_value": 300, "min": 50, "max": 1200 },
+    { "key": "tileThickness", "unit": "mm", "default_value": 8, "min": 6, "max": 25 },
+    { "key": "jointWidth", "unit": "mm", "default_value": 3, "min": 1, "max": 20 },
+    { "key": "groutType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "bagSize", "unit": "kg", "default_value": 2, "min": 1, "max": 5 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "grout_types": [0, 1, 2],
+    "bag_sizes": [1, 2, 5]
+  },
+  "packaging_rules": {
+    "unit": "мешков",
+    "default_bag_size": 2,
+    "allowed_bag_sizes": [1, 2, 5]
+  },
+  "material_rules": {
+    "grout_density": {
+      "0": 1600,
+      "1": 1400,
+      "2": 1200
+    },
+    "grout_reserve": 1.1
+  },
+  "warnings_rules": {
+    "wide_joint_threshold_mm": 10,
+    "epoxy_warning": true
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

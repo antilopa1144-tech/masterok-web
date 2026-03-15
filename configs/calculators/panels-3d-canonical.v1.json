@@ -1,0 +1,44 @@
+{
+  "calculator_id": "panels-3d",
+  "formula_version": "panels-3d-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "area", "unit": "m2", "default_value": 10, "min": 1, "max": 500 },
+    { "key": "length", "unit": "m", "default_value": 4, "min": 1, "max": 12 },
+    { "key": "height", "unit": "m", "default_value": 2.7, "min": 2, "max": 4 },
+    { "key": "panelSize", "unit": "cm", "default_value": 50, "min": 25, "max": 100 },
+    { "key": "paintable", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "withVarnish", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_reserve": 1.10,
+    "glue_kg_per_m2": 5.0,
+    "primer_l_per_m2": 0.18,
+    "putty_kg_per_m2": 1.0,
+    "paint_l_per_m2": 0.24,
+    "varnish_l_per_m2": 0.08,
+    "glue_bag": 5,
+    "primer_can": 5,
+    "putty_bag": 5,
+    "paint_can": 3,
+    "varnish_can": 1
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalFoamBlocks } from "../../../../engine/foam-blocks";
+import foamblocksSpec from "../../../../configs/calculators/foam-blocks-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 // Размеры блоков [длина мм, высота мм, толщина мм]
 const BLOCK_SIZES: Record<number, [number, number, number, string]> = {
@@ -101,164 +103,17 @@ export const foamBlocksDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let wallArea: number;
-    let wallLength: number;
-    let wallHeight: number;
-
-    if (inputMode === 0) {
-      wallLength = Math.max(1, inputs.wallLength ?? 10);
-      wallHeight = Math.max(1, inputs.wallHeight ?? 2.7);
-      wallArea = wallLength * wallHeight;
-    } else {
-      wallArea = Math.max(1, inputs.area ?? 27);
-      wallHeight = 2.7;
-      wallLength = wallArea / wallHeight;
-    }
-
-    const openings = Math.max(0, inputs.openingsArea ?? 5);
-    const netArea = Math.max(0.5, wallArea - openings);
-
-    const blockSizeIdx = Math.round(inputs.blockSize ?? 0);
-    const [blockL, blockH, blockT, blockName] = BLOCK_SIZES[blockSizeIdx] ?? BLOCK_SIZES[0];
-    const mortarType = Math.round(inputs.mortarType ?? 0);
-
-    const isKeramzit = blockSizeIdx >= 2;
-
-    // Площадь грани блока
-    const blockFaceArea = (blockL / 1000) * (blockH / 1000);
-    const blocksNet = netArea / blockFaceArea;
-    const blocksWithReserve = Math.ceil(blocksNet * 1.05);
-
-    // Объём кладки
-    const volume = netArea * (blockT / 1000);
-
-    // Раствор/клей
-    let mortarName: string;
-    let mortarQty: number;
-    let mortarBags: number;
-    let mortarUnit: string;
-    if (mortarType === 0) {
-      // Клей: 25 кг/м³ кладки, мешки 25 кг
-      const glueKg = volume * 25;
-      mortarName = "Клей для блоков (мешки 25 кг)";
-      mortarQty = glueKg;
-      mortarBags = Math.ceil(glueKg / 25);
-      mortarUnit = "мешков";
-    } else {
-      // ЦПС: 0.25 м³/м³ кладки, плотность 1700 кг/м³, мешки 50 кг
-      const cpsM3 = volume * 0.25;
-      const cpsKg = cpsM3 * 1700;
-      mortarName = "ЦПС (мешки 50 кг)";
-      mortarQty = cpsKg;
-      mortarBags = Math.ceil(cpsKg / 50);
-      mortarUnit = "мешков";
-    }
-
-    // Армирование
-    const rows = Math.ceil(wallHeight / (blockH / 1000));
-    const rebarRows = Math.ceil(rows / 4);
-
-    const materials: Array<{
-      name: string; quantity: number; unit: string;
-      withReserve: number; purchaseQty: number; category: string;
-    }> = [
-      {
-        name: blockName,
-        quantity: blocksNet,
-        unit: "шт",
-        withReserve: blocksWithReserve,
-        purchaseQty: blocksWithReserve,
-        category: "Блоки",
-      },
-      {
-        name: mortarName,
-        quantity: mortarQty,
-        unit: mortarUnit,
-        withReserve: mortarBags,
-        purchaseQty: mortarBags,
-        category: "Раствор",
-      },
-    ];
-
-    if (isKeramzit) {
-      // Керамзитоблок: кладочная сетка 50×50×3 мм каждые 3-4 ряда
-      const meshRows = Math.ceil(rows / 3);
-      const meshArea = wallLength * (meshRows * (blockT / 1000));
-      const meshWithReserve = Math.ceil(meshArea * 1.1);
-      materials.push({
-        name: "Кладочная сетка 50×50×3 мм",
-        quantity: meshArea,
-        unit: "м²",
-        withReserve: meshWithReserve,
-        purchaseQty: meshWithReserve,
-        category: "Армирование",
-      });
-    } else {
-      // Пеноблок: арматура Ø8 в штробах, 2 прутка на ряд
-      const rebarLength = Math.ceil(wallLength * rebarRows * 2 * 1.1);
-      materials.push({
-        name: "Арматура Ø8 (штробы)",
-        quantity: wallLength * rebarRows * 2,
-        unit: "м.п.",
-        withReserve: rebarLength,
-        purchaseQty: rebarLength,
-        category: "Армирование",
-      });
-    }
-
-    // U-блоки для перемычек
-    const openingsCount = Math.max(1, Math.round(openings / 2)); // ~2 м² на проём
-    const uBlocksPerOpening = 2;
-    const uBlocks = Math.ceil(openingsCount * uBlocksPerOpening * 1.1);
-    if (openings > 0) {
-      materials.push({
-        name: isKeramzit ? "Перемычка бетонная (2 м)" : "U-блок для перемычек",
-        quantity: openingsCount * uBlocksPerOpening,
-        unit: "шт",
-        withReserve: uBlocks,
-        purchaseQty: uBlocks,
-        category: "Перемычки",
-      });
-    }
-
-    // Грунтовка
-    const primerL = netArea * 0.15;
-    const primerCans = Math.ceil(primerL * 1.15 / 10);
-    materials.push({
-      name: "Грунтовка глубокого проникновения (канистра 10 л)",
-      quantity: primerL,
-      unit: "шт",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    });
-
-    const warnings: string[] = [];
-    if (blockT <= 100) {
-      warnings.push("Блоки толщиной ≤ 100 мм — только для ненесущих перегородок");
-    }
-    if (blockT > 100 && isKeramzit) {
-      warnings.push("Для наружных стен из керамзитоблоков требуется утепление (минвата от 100 мм)");
-    }
-    if (mortarType === 1 && !isKeramzit) {
-      warnings.push("Для пеноблоков рекомендуется специальный клей (шов 2–3 мм) вместо ЦПС — меньше мостиков холода");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "foam-blocks-main",
-      title: "Foam blocks main",
-      exactNeed: blocksNet * 1.05,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "foam-block-piece",
-    });
+    const spec = foamblocksSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalFoamBlocks(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: { wallArea, netArea, blocksNet, volume } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

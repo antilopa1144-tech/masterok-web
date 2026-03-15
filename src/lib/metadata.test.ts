@@ -18,11 +18,11 @@ describe("buildPageMetadata", () => {
     expect(metadata.openGraph?.url).toBe("https://example.test/page/");
     expect(metadata.openGraph?.siteName).toBe(SITE_NAME);
     expect(metadata.openGraph?.locale).toBe("ru_RU");
-    expect(metadata.openGraph?.type).toBe("website");
+    expect((metadata.openGraph as any)?.type).toBe("website");
     expect(metadata.openGraph?.images).toEqual([
       { url: SITE_OG_IMAGE_URL, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT },
     ]);
-    expect(metadata.twitter?.card).toBe("summary_large_image");
+    expect((metadata.twitter as any)?.card).toBe("summary_large_image");
     expect(metadata.twitter?.title).toBe("Тестовая страница");
     expect(metadata.twitter?.description).toBe("Описание страницы");
     expect(metadata.twitter?.images).toEqual([SITE_OG_IMAGE_URL]);
@@ -40,10 +40,10 @@ describe("buildPageMetadata", () => {
       tags: ["ремонт", "плитка"],
     });
 
-    expect(metadata.openGraph?.type).toBe("article");
+    expect((metadata.openGraph as any)?.type).toBe("article");
     expect(metadata.openGraph?.title).toBe("Статья");
-    expect(metadata.openGraph?.publishedTime).toBe("2026-03-12");
-    expect(metadata.openGraph?.tags).toEqual(["ремонт", "плитка"]);
+    expect((metadata.openGraph as any)?.publishedTime).toBe("2026-03-12");
+    expect((metadata.openGraph as any)?.tags).toEqual(["ремонт", "плитка"]);
     expect(metadata.twitter?.title).toBe("Статья | Мастерок");
     expect(metadata.alternates?.canonical).toBe("https://example.test/article/");
   });

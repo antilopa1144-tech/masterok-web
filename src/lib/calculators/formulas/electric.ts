@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalElectric } from "../../../../engine/electric";
+import electricSpec from "../../../../configs/calculators/electric-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const electricDef: CalculatorDefinition = {
   id: "engineering_electrics",
   slug: "elektrika",
@@ -74,152 +76,18 @@ export const electricDef: CalculatorDefinition = {
       hint: "На спуски к розеткам, петли в коробках и ошибки монтажа",
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(20, inputs.apartmentArea ?? 60);
-    const rooms = Math.max(1, Math.round(inputs.roomsCount ?? 3));
-    const height = Math.max(2.4, inputs.ceilingHeight ?? 2.7);
-    const hasKitchen = (inputs.hasKitchen ?? 1) > 0;
-    const reserve = (inputs.reserve ?? 15) / 100;
-
-    // Группы: освещение (1.5 мм²), розетки (2.5 мм²), сплит-системы (2.5 мм²), плита (4 или 6 мм²)
-    const lightingGroups = rooms + 1; // по комнате + общий коридор
-    const outletGroups = rooms + 2;   // по комнате + кухня + ванная
-    const acGroups = Math.ceil(rooms / 2);
-
-    // Эмпирическая формула прораба: 
-    // Кабель 3х2.5 ≈ Площадь * 1.5 (для розеток)
-    // Кабель 3х1.5 ≈ Площадь * 1.0 (для света)
-    const distFromPanel = Math.sqrt(area) * 1.5; 
-    
-    const cable15length = area * 1.1 + (lightingGroups * height);
-    const cable25length = area * 1.6 + (outletGroups * height * 1.5);
-    const cable6length = hasKitchen ? (distFromPanel + height) * 1.2 : 0;
-
-    // Щиток: автоматы
-    const breakersCount = lightingGroups + outletGroups + acGroups + (hasKitchen ? 1 : 0);
-    const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0) + 1; // + общее УЗО
-
-    // Гофра / кабель-канал
-    const conduitLength = Math.ceil((cable15length + cable25length + cable6length) * 0.8); // не всё в гофре
-
-    // Розетки и выключатели
-    const outletsCount = Math.ceil(area * 0.6) + (rooms * 2); // ~0.6 розетки/м² + по 2 у кроватей
-    const switchesCount = rooms + 2; // по одному на комнату + проходные
-
-    const warnings: string[] = [];
-    if (area > 100) warnings.push("Для площади > 100 м² рекомендуется трёхфазный ввод 380В (15 кВт)");
-    if (hasKitchen) warnings.push("Линия на электроплиту: ВВГнг-LS 3×6 мм² с автоматом 32А и УЗО 40А/30мА");
-    warnings.push("Все розетки в ванной и на кухне должны быть защищены УЗО с током утечки 10-30 мА");
-
-    const totalCableNeed = cable15length + cable25length + cable6length;
-    const scenarios = buildNativeScenarios({
-      id: "electric-cable",
-      title: "Electric cable",
-      exactNeed: totalCableNeed,
-      unit: "м.п.",
-      packageSizes: [50],
-      packageLabelPrefix: "electric-cable-roll",
-    });
+  calculate(inputs) {
+    const spec = electricSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalElectric(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: "Кабель ВВГнг-LS 3×1.5 (освещение)",
-          quantity: cable15length,
-          unit: "м.п.",
-          withReserve: Math.ceil(cable15length * (1 + reserve)),
-          purchaseQty: Math.ceil(cable15length * (1 + reserve) / 50) * 50, // бухты по 50м
-          category: "Кабель",
-        },
-        {
-          name: "Кабель ВВГнг-LS 3×2.5 (розетки)",
-          quantity: cable25length,
-          unit: "м.п.",
-          withReserve: Math.ceil(cable25length * (1 + reserve)),
-          purchaseQty: Math.ceil(cable25length * (1 + reserve) / 50) * 50, // бухты по 50м
-          category: "Кабель",
-        },
-        ...(hasKitchen ? [{
-          name: "Кабель ВВГнг-LS 3×6 (плита/варочная)",
-          quantity: cable6length,
-          unit: "м.п.",
-          withReserve: Math.ceil(cable6length * 1.1),
-          purchaseQty: Math.ceil(cable6length * 1.1),
-          category: "Кабель",
-        }] : []),
-        {
-          name: "Щит распределительный (навесной/встраиваемый)",
-          quantity: 1,
-          unit: "шт",
-          withReserve: 1,
-          purchaseQty: 1,
-          category: "Щиток",
-        },
-        {
-          name: "Автоматический выключатель (10А/16А)",
-          quantity: breakersCount,
-          unit: "шт",
-          withReserve: breakersCount + 2,
-          purchaseQty: breakersCount + 2,
-          category: "Щиток",
-        },
-        {
-          name: "УЗО / Дифавтомат (30мА)",
-          quantity: uzoCount,
-          unit: "шт",
-          withReserve: uzoCount,
-          purchaseQty: uzoCount,
-          category: "Щиток",
-        },
-        {
-          name: "Розетки (внутренние, с заземлением)",
-          quantity: outletsCount,
-          unit: "шт",
-          withReserve: Math.ceil(outletsCount * 1.05),
-          purchaseQty: Math.ceil(outletsCount * 1.05),
-          category: "Механизмы",
-        },
-        {
-          name: "Выключатели (1-клавишные/2-клавишные)",
-          quantity: switchesCount,
-          unit: "шт",
-          withReserve: Math.ceil(switchesCount * 1.05),
-          purchaseQty: Math.ceil(switchesCount * 1.05),
-          category: "Механизмы",
-        },
-        {
-          name: "Подрозетники (стаканы)",
-          quantity: outletsCount + switchesCount,
-          unit: "шт",
-          withReserve: Math.ceil((outletsCount + switchesCount) * 1.1),
-          purchaseQty: Math.ceil((outletsCount + switchesCount) * 1.1),
-          category: "Монтаж",
-        },
-        {
-          name: "Гофра ПВХ Ø20 мм с протяжкой",
-          quantity: conduitLength,
-          unit: "м.п.",
-          withReserve: conduitLength,
-          purchaseQty: Math.ceil(conduitLength / 50) * 50,
-          category: "Защита кабеля",
-        },
-        {
-          name: "Гипс/алебастр (для фиксации подрозетников)",
-          quantity: Math.ceil((outletsCount + switchesCount) / 5),
-          unit: "кг",
-          withReserve: Math.ceil((outletsCount + switchesCount) / 5),
-          purchaseQty: Math.ceil((outletsCount + switchesCount) / 5),
-          category: "Монтаж",
-        },
-      ],
-      totals: {
-        area,
-        cable15length: Math.ceil(cable15length),
-        cable25length: Math.ceil(cable25length),
-        breakersCount,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

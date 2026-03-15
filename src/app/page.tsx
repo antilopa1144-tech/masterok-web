@@ -147,8 +147,27 @@ export default function HomePage() {
     description: SITE_WEBPAGE_DESCRIPTION,
     potentialAction: {
       "@type": "SearchAction",
-      target: "/?q={search_term_string}",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+      },
       "query-input": "required name=search_term_string",
+    },
+  };
+
+  const organizationLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo-512x512.png`,
+    description: SITE_WEBPAGE_DESCRIPTION,
+    foundingDate: "2024",
+    sameAs: [],
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      availableLanguage: "Russian",
     },
   };
 
@@ -159,6 +178,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
       />
 
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
@@ -311,6 +334,11 @@ export default function HomePage() {
               </Link>
             );
           })}
+        </div>
+        <div className="text-center mt-6">
+          <Link href="/kalkulyatory/" className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline">
+            Все калькуляторы →
+          </Link>
         </div>
       </section>
 

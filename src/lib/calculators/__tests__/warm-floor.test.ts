@@ -5,10 +5,7 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = warmFloorDef.calculate.bind(warmFloorDef);
 
 describe("Калькулятор тёплого пола", () => {
-  describe("Нагревательный мат, 10 м² комната, 2 м² мебель, 150 Вт/м²", () => {
-    // heatingArea = 8, totalPowerW = 1200
-    // matsTotal = ceil(8/2) = 4
-    // insulationArea = ceil(8*1.1) = 9
+  describe("Нагревательный мат (heatingType=0), 10 м² комната, 2 м² мебель, 150 Вт/м²", () => {
     const result = calc({
       roomArea: 10,
       furnitureArea: 2,
@@ -24,17 +21,26 @@ describe("Калькулятор тёплого пола", () => {
       expect(result.totals.totalPowerW).toBeCloseTo(1200, 1);
     });
 
-    it("матов = 4 шт", () => {
-      const mat = findMaterial(result, "мат");
-      expect(mat?.purchaseQty).toBe(4);
+    it("матов = ceil(8/2) = 4 шт", () => {
+      // Engine: "Нагревательный мат"
+      const mat = findMaterial(result, "Нагревательный мат");
+      expect(mat).toBeDefined();
+      expect(mat!.quantity).toBe(4);
     });
 
     it("терморегулятор присутствует", () => {
+      // Engine: "Терморегулятор"
       expect(findMaterial(result, "Терморегулятор")).toBeDefined();
     });
 
-    it("теплоотражающая подложка присутствует", () => {
-      expect(findMaterial(result, "Теплоотражающая")).toBeDefined();
+    it("подложка (рулоны) присутствует", () => {
+      // Engine: "Подложка (рулоны)"
+      expect(findMaterial(result, "Подложка")).toBeDefined();
+    });
+
+    it("плиточный клей присутствует", () => {
+      // Engine: "Плиточный клей (мешки 25 кг)"
+      expect(findMaterial(result, "Плиточный клей")).toBeDefined();
     });
 
     it("инварианты", () => {
@@ -42,9 +48,7 @@ describe("Калькулятор тёплого пола", () => {
     });
   });
 
-  describe("Греющий кабель в стяжку", () => {
-    // heatingArea = 8, cableStep = 0.15
-    // cableLength = ceil((8/0.15)*1.05) = ceil(56) = 56
+  describe("Кабель в стяжке (heatingType=1)", () => {
     const result = calc({
       roomArea: 10,
       furnitureArea: 2,
@@ -52,24 +56,32 @@ describe("Калькулятор тёплого пола", () => {
       powerDensity: 150,
     });
 
-    it("греющий кабель присутствует", () => {
-      expect(findMaterial(result, "Греющий кабель")).toBeDefined();
+    it("нагревательный кабель присутствует", () => {
+      // Engine: "Нагревательный кабель"
+      expect(findMaterial(result, "Нагревательный кабель")).toBeDefined();
     });
 
-    it("длина кабеля в totals", () => {
+    it("длина кабеля в totals > 0", () => {
       expect(result.totals.cableLength).toBeGreaterThan(0);
     });
 
-    it("стяжка поверх кабеля присутствует", () => {
-      expect(findMaterial(result, "Стяжка")).toBeDefined();
+    it("стяжка ЦПС присутствует", () => {
+      // Engine: "Стяжка ЦПС (мешки 50 кг)"
+      expect(findMaterial(result, "Стяжка ЦПС")).toBeDefined();
     });
 
-    it("утеплитель ЭПС присутствует", () => {
-      expect(findMaterial(result, "ЭПС")).toBeDefined();
+    it("утеплитель ЕПС присутствует", () => {
+      // Engine: "Утеплитель ЕПС (листы 1200×600)"
+      expect(findMaterial(result, "ЕПС")).toBeDefined();
+    });
+
+    it("монтажная лента присутствует", () => {
+      // Engine: "Монтажная лента (рулоны)"
+      expect(findMaterial(result, "Монтажная лента")).toBeDefined();
     });
   });
 
-  describe("Водяной тёплый пол", () => {
+  describe("Водяной тёплый пол (heatingType=2)", () => {
     const result = calc({
       roomArea: 10,
       furnitureArea: 2,
@@ -77,12 +89,19 @@ describe("Калькулятор тёплого пола", () => {
       powerDensity: 150,
     });
 
-    it("труба PE-Xa присутствует", () => {
-      expect(findMaterial(result, "PE-Xa")).toBeDefined();
+    it("труба для тёплого пола присутствует", () => {
+      // Engine: "Труба для тёплого пола"
+      expect(findMaterial(result, "Труба для тёплого пола")).toBeDefined();
     });
 
-    it("предупреждение о согласовании для МКД", () => {
-      expect(result.warnings.some((w) => w.includes("МКД"))).toBe(true);
+    it("коллектор присутствует", () => {
+      // Engine: "Коллектор"
+      expect(findMaterial(result, "Коллектор")).toBeDefined();
+    });
+
+    it("армирующая сетка присутствует", () => {
+      // Engine: "Армирующая сетка"
+      expect(findMaterial(result, "Армирующая сетка")).toBeDefined();
     });
   });
 
@@ -94,18 +113,18 @@ describe("Калькулятор тёплого пола", () => {
         heatingType: 0,
         powerDensity: 150,
       });
-      // heatingArea = 28, totalPowerKW = 4.2 > 3.5
-      expect(result.warnings.some((w) => w.includes("автомата"))).toBe(true);
+      // Engine: "Мощность более 3.5 кВт — требуется отдельный автомат"
+      expect(result.warnings.some((w) => w.includes("автомат"))).toBe(true);
     });
 
-    it("< 50% площади под обогревом → малоэффективно", () => {
+    it("< 50% площади → неэффективное покрытие", () => {
       const result = calc({
         roomArea: 10,
         furnitureArea: 7,
         heatingType: 0,
         powerDensity: 150,
       });
-      // heatingArea = 3 / 10 = 30% < 50%
+      // Engine: "Обогреваемая площадь менее 50% — неэффективное покрытие"
       expect(result.warnings.some((w) => w.includes("50%"))).toBe(true);
     });
   });

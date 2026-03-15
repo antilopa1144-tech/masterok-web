@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalCeilingCassette } from "../../../../engine/ceiling-cassette";
+import ceilingcassetteSpec from "../../../../configs/calculators/ceiling-cassette-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const ceilingCassetteDef: CalculatorDefinition = {
   id: "ceilings_cassette",
@@ -48,97 +50,18 @@ export const ceilingCassetteDef: CalculatorDefinition = {
       defaultValue: 5,
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 20);
-    const cassetteSize = inputs.cassetteSize ?? 600; // мм
-    const cassetteSizeM = cassetteSize / 1000;
-    const roomLength = Math.max(2, inputs.roomLength ?? 5);
-    const roomWidth = area / roomLength;
-
-    // Кассеты: +10% на подрезку крайних рядов
-    const cassettesPerRow = Math.ceil(roomLength / cassetteSizeM);
-    const rows = Math.ceil(roomWidth / cassetteSizeM);
-    const totalCassettes = cassettesPerRow * rows;
-    const cassettesWithReserve = Math.ceil(totalCassettes * 1.1);
-
-    // Главный несущий профиль (1200 мм, монтируется через 1200 мм)
-    const mainSpacing = 1.2;
-    const mainRows = Math.ceil(roomWidth / mainSpacing) + 1;
-    const mainProfileLength = 1.2; // м
-    const mainProfilePcs = Math.ceil((mainRows * roomLength) / mainProfileLength);
-
-    // Поперечный профиль (600 мм), монтируется между главными
-    const crossProfileLength = 0.6; // м
-    const crossPerRow = Math.ceil(roomLength / crossProfileLength);
-    const crossProfilePcs = Math.ceil(mainRows * crossPerRow * cassetteSizeM / crossProfileLength);
-
-    // Подвесы: 1 на 1.2 м вдоль главного профиля
-    const hangersPerMainRow = Math.ceil(roomLength / 1.2) + 1;
-    const hangers = mainRows * hangersPerMainRow;
-
-    const warnings: string[] = [];
-    if (cassetteSize === 300) {
-      warnings.push("Кассеты 300×300 требуют сдвоенной решётки профилей — умножьте количество профилей на 2");
-    }
-    if (area > 50) {
-      warnings.push("Для больших площадей рекомендуйте устанавливать профили с шагом 600 мм для жёсткости");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "ceiling-cassette-main",
-      title: "Ceiling cassette main",
-      exactNeed: totalCassettes * 1.1,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "ceiling-cassette",
-    });
+  calculate(inputs) {
+    const spec = ceilingcassetteSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalCeilingCassette(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Кассета ${cassetteSize}×${cassetteSize} мм`,
-          quantity: totalCassettes,
-          unit: "шт",
-          withReserve: cassettesWithReserve,
-          purchaseQty: cassettesWithReserve,
-          category: "Кассеты",
-        },
-        {
-          name: "Профиль несущий Т-24 (1200 мм)",
-          quantity: mainProfilePcs,
-          unit: "шт",
-          withReserve: Math.ceil(mainProfilePcs * 1.05),
-          purchaseQty: Math.ceil(mainProfilePcs * 1.05),
-          category: "Профили",
-        },
-        {
-          name: "Профиль поперечный Т-24 (600 мм)",
-          quantity: crossProfilePcs,
-          unit: "шт",
-          withReserve: Math.ceil(crossProfilePcs * 1.05),
-          purchaseQty: Math.ceil(crossProfilePcs * 1.05),
-          category: "Профили",
-        },
-        {
-          name: "Подвес прямой",
-          quantity: hangers,
-          unit: "шт",
-          withReserve: Math.ceil(hangers * 1.1),
-          purchaseQty: Math.ceil(hangers * 1.1),
-          category: "Крепёж",
-        },
-        {
-          name: "Профиль пристенный L-образный",
-          quantity: Math.ceil((roomLength + roomWidth) * 2 * 1.05 / 3),
-          unit: "шт (3 м)",
-          withReserve: Math.ceil((roomLength + roomWidth) * 2 * 1.1 / 3),
-          purchaseQty: Math.ceil((roomLength + roomWidth) * 2 * 1.1 / 3),
-          category: "Профили",
-        },
-      ],
-      totals: { area, totalCassettes, hangers } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

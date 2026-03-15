@@ -1,0 +1,48 @@
+{
+  "calculator_id": "wall-panels",
+  "formula_version": "wall-panels-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 20, "min": 1, "max": 200 },
+    { "key": "panelType", "default_value": 0, "min": 0, "max": 4 },
+    { "key": "mountMethod", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "height", "unit": "m", "default_value": 2.7, "min": 2, "max": 4 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "panel_types": [0, 1, 2, 3, 4],
+    "mount_methods": [0, 1]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_areas": { "0": 0.75, "1": 0.494, "2": 0.25, "3": 0.3, "4": 0.5 },
+    "panel_reserve": 1.1,
+    "glue_coverage": 4,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can": 10,
+    "batten_spacing": { "0": 0.5, "1": 0.5, "2": 0.4, "3": 0.4, "4": 0.4 },
+    "batten_length": 3,
+    "batten_reserve": 1.05,
+    "dubel_step": 0.5,
+    "klaymer_per_m2": 5,
+    "molding_length": 3,
+    "molding_reserve": 1.05,
+    "sealant_per_perim": 10
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 100,
+    "flat_surface_warning_panel_types": [2]
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalConcrete } from "../../../../engine/concrete";
+import concreteSpec from "../../../../configs/calculators/concrete-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 // Пропорции на 1 м³ бетона (цемент М400, по СНиП)
 // [цемент кг, песок м³, щебень м³, вода л]
@@ -78,129 +80,17 @@ export const concreteDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const volume = inputs.concreteVolume ?? 5;
-    const grade = Math.min(7, Math.max(1, Math.round(inputs.concreteGrade ?? 3)));
-    const manualMix = (inputs.manualMix ?? 0) > 0;
-    const reserve = inputs.reserve ?? 5;
-
-    const totalVolume = volume * (1 + reserve / 100);
-    const [cementKg, sandM3, gravelM3, waterL] = PROPORTIONS[grade] ?? PROPORTIONS[3];
-
-    const warnings: string[] = [];
-    if (volume < 0.5) warnings.push("Для малых объёмов (< 0.5 м³) удобнее использовать готовые сухие смеси");
-    if (grade >= 5 && manualMix) warnings.push("Бетон М300+ сложно приготовить вручную. Рекомендуется заказ готового бетона");
-
-    const scenarios = buildNativeScenarios({
-      id: "concrete-main",
-      title: "Concrete main",
-      exactNeed: totalVolume,
-      unit: "м³",
-      packageSizes: [0.1],
-      packageLabelPrefix: "concrete-volume",
-    });
-
-    const materials = [
-      {
-        name: `Бетон ${GRADE_LABELS[grade] ?? "М200"}`,
-        quantity: totalVolume,
-        unit: "м³",
-        withReserve: totalVolume,
-        purchaseQty: Math.ceil(totalVolume * 10) / 10,
-        category: "Основное",
-      },
-    ];
-
-    // Гидроизоляция обмазочная (битумная мастика): 1 кг/м², по периметру × высоту
-    // Оценка: из объёма получаем площадь верхней поверхности, а периметр и высоту — через толщину
-    // Для универсального калькулятора принимаем условную толщину 0.2 м (фундамент / стяжка)
-    const estimatedThickness = 0.2; // м — условная толщина заливки
-    const topSurfaceArea = totalVolume / estimatedThickness;
-    const estimatedSide = Math.sqrt(topSurfaceArea);
-    const estimatedPerimeter = estimatedSide * 4;
-    const estimatedHeight = estimatedThickness; // высота заливки
-    const waterproofArea = estimatedPerimeter * estimatedHeight;
-    const masticKg = waterproofArea * 1.0 * 1.15; // 1 кг/м² × reserve 15%
-    const masticBuckets = Math.ceil(masticKg / 20); // ведро 20 кг
-
-    materials.push({
-      name: "Гидроизоляция обмазочная (мастика битумная, ведро 20 кг)",
-      quantity: waterproofArea * 1.0,
-      unit: "ведро",
-      withReserve: masticKg,
-      purchaseQty: masticBuckets,
-      category: "Гидроизоляция",
-    });
-
-    // Плёнка полиэтиленовая для укрытия бетона при наборе прочности
-    const filmArea = topSurfaceArea * 1.1; // reserve 10%
-    const filmRolls = Math.ceil(filmArea / 30); // 1 рулон = 30 м²
-
-    materials.push({
-      name: "Плёнка полиэтиленовая (для укрытия бетона, рулон 30 м²)",
-      quantity: topSurfaceArea,
-      unit: "рулон",
-      withReserve: filmArea,
-      purchaseQty: filmRolls,
-      category: "Уход за бетоном",
-    });
-
-    if (manualMix) {
-      const cementTotal = totalVolume * cementKg;
-      const cementBags = Math.ceil(cementTotal / 50);
-      materials.push(
-        {
-          name: "Цемент М400",
-          quantity: cementTotal,
-          unit: "кг",
-          withReserve: cementTotal,
-          purchaseQty: cementBags,
-          category: "Компоненты",
-        },
-        {
-          name: "Мешки цемента (50 кг)",
-          quantity: cementBags,
-          unit: "мешков",
-          withReserve: cementBags,
-          purchaseQty: cementBags,
-          category: "Компоненты",
-        },
-        {
-          name: "Песок строительный",
-          quantity: totalVolume * sandM3,
-          unit: "м³",
-          withReserve: totalVolume * sandM3 * 1.05,
-          purchaseQty: Math.ceil(totalVolume * sandM3 * 1.05 * 10) / 10,
-          category: "Компоненты",
-        },
-        {
-          name: "Щебень (фр. 5–20 мм)",
-          quantity: totalVolume * gravelM3,
-          unit: "м³",
-          withReserve: totalVolume * gravelM3 * 1.05,
-          purchaseQty: Math.ceil(totalVolume * gravelM3 * 1.05 * 10) / 10,
-          category: "Компоненты",
-        },
-        {
-          name: "Вода",
-          quantity: totalVolume * waterL,
-          unit: "л",
-          withReserve: totalVolume * waterL,
-          purchaseQty: Math.ceil(totalVolume * waterL),
-          category: "Компоненты",
-        }
-      );
-    }
+    const spec = concreteSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalConcrete(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        volume,
-        totalVolume,
-        grade,
-        reserve,
-      },
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

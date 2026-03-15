@@ -14,9 +14,9 @@ describe("Подвесной потолок из ГКЛ", () => {
       profileStep: 600,
     });
 
-    it("ГКЛ: ceil(20/3×1.10) = 8 листов", () => {
+    it("ГКЛ: sheets=8, REC ×1.06 → ceil(8.48) = 9 листов", () => {
       const gkl = findMaterial(r, "ГКЛ")!;
-      expect(gkl.purchaseQty).toBe(8);
+      expect(gkl.purchaseQty).toBe(9);
     });
 
     it("ПП 60×27: 20 шт (3 м)", () => {
@@ -47,7 +47,7 @@ describe("Подвесной потолок из ГКЛ", () => {
 
     it("Саморезы ГКЛ: 0.2 кг", () => {
       // 8×23=184, ceil(184×1.05/1000×10)/10 = ceil(1.932)/10 = 0.2
-      const screws = findMaterial(r, "Саморезы для ГКЛ")!;
+      const screws = findMaterial(r, "Саморезы 3.5×25")!;
       expect(screws.withReserve).toBe(0.2);
     });
 
@@ -57,9 +57,9 @@ describe("Подвесной потолок из ГКЛ", () => {
       expect(clop.purchaseQty).toBe(252);
     });
 
-    it("Дюбель-гвозди: 150 шт", () => {
+    it("Дюбели: 150 шт", () => {
       // 56×2 + ceil(18.9/0.5) = 112+38 = 150
-      const dowels = findMaterial(r, "Дюбель")!;
+      const dowels = findMaterial(r, "Дюбели")!;
       expect(dowels.purchaseQty).toBe(150);
     });
 
@@ -69,9 +69,9 @@ describe("Подвесной потолок из ГКЛ", () => {
       expect(serp.purchaseQty).toBe(1);
     });
 
-    it("Шпаклёвка Knauf Фуген: 1 мешок (25 кг)", () => {
+    it("Шпаклёвка Knauf Fugen: 1 мешок (25 кг)", () => {
       // ceil(27×0.25)=7 кг → ceil(7/25)=1
-      const putty = findMaterial(r, "Фуген")!;
+      const putty = findMaterial(r, "Fugen")!;
       expect(putty.purchaseQty).toBe(1);
     });
 
@@ -81,10 +81,10 @@ describe("Подвесной потолок из ГКЛ", () => {
       expect(primer.purchaseQty).toBe(1);
     });
 
-    it("totals содержат area, sheets, ppPieces, suspCount, crabCount", () => {
+    it("totals содержат area, sheets, ppPcs, suspCount, crabCount", () => {
       expect(r.totals.area).toBe(20);
       expect(r.totals.sheets).toBe(8);
-      expect(r.totals.ppPieces).toBe(20);
+      expect(r.totals.ppPcs).toBe(20);
       expect(r.totals.suspCount).toBe(56);
       expect(r.totals.crabCount).toBe(35);
     });
@@ -103,12 +103,12 @@ describe("Подвесной потолок из ГКЛ", () => {
         layers: 2,
         profileStep: 600,
       });
-      expect(r.warnings.some((w) => w.includes("смещением стыков"))).toBe(
+      expect(r.warnings.some((w) => w.includes("смещением"))).toBe(
         true,
       );
     });
 
-    it("листов в 2 раза больше чем при 1 слое", () => {
+    it("листов в 2 раза больше чем при 1 слое (с REC ×1.06)", () => {
       const r1 = calc({
         inputMode: 0,
         length: 5,
@@ -125,9 +125,10 @@ describe("Подвесной потолок из ГКЛ", () => {
       });
       const gkl1 = findMaterial(r1, "ГКЛ")!;
       const gkl2 = findMaterial(r2, "ГКЛ")!;
-      // 1 слой: ceil(20/3×1.1)=8, 2 слоя: ceil(40/3×1.1)=ceil(14.667)=15
-      expect(gkl1.purchaseQty).toBe(8);
-      expect(gkl2.purchaseQty).toBe(15);
+      // 1 слой: sheets=8, ×1.06=8.48→ceil=9
+      // 2 слоя: sheets=15, ×1.06=15.9→ceil=16
+      expect(gkl1.purchaseQty).toBe(9);
+      expect(gkl2.purchaseQty).toBe(16);
     });
   });
 
@@ -152,7 +153,7 @@ describe("Подвесной потолок из ГКЛ", () => {
       // step 600: 20 шт, step 400: ceil((50+20)×1.05/3)=ceil(24.5)=25
       expect(pp600.purchaseQty).toBe(20);
       expect(pp400.purchaseQty).toBe(25);
-      expect(pp400.purchaseQty).toBeGreaterThan(pp600.purchaseQty);
+      expect(pp400.purchaseQty).toBeGreaterThan(pp600.purchaseQty!);
     });
 
     it("больше подвесов при шаге 400", () => {
@@ -192,7 +193,7 @@ describe("Подвесной потолок из ГКЛ", () => {
   });
 
   describe("По площади (inputMode=1)", () => {
-    it("area=20 → length=width=sqrt(20), sheets=8", () => {
+    it("area=20 → sheets=8, purchaseQty=9 (REC ×1.06)", () => {
       const r = calc({
         inputMode: 1,
         area: 20,
@@ -201,8 +202,8 @@ describe("Подвесной потолок из ГКЛ", () => {
       });
       checkInvariants(r);
       const gkl = findMaterial(r, "ГКЛ")!;
-      // area=20, ceil(20/3×1.1)=8
-      expect(gkl.purchaseQty).toBe(8);
+      // sheets=8, ×1.06=8.48 → ceil=9
+      expect(gkl.purchaseQty).toBe(9);
       expect(r.totals.area).toBeCloseTo(20, 5);
     });
 
@@ -213,7 +214,7 @@ describe("Подвесной потолок из ГКЛ", () => {
         layers: 1,
         profileStep: 600,
       });
-      expect(r.warnings.some((w) => w.includes("деформационных швов"))).toBe(
+      expect(r.warnings.some((w) => w.includes("деформационные швы"))).toBe(
         true,
       );
     });

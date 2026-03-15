@@ -1,0 +1,52 @@
+{
+  "calculator_id": "doors",
+  "formula_version": "doors-canonical-v1",
+  "input_schema": [
+    { "key": "doorCount", "default_value": 3, "min": 1, "max": 20 },
+    { "key": "doorType", "default_value": 0, "min": 0, "max": 4 },
+    { "key": "wallThickness", "unit": "mm", "default_value": 120, "min": 80, "max": 380 },
+    { "key": "withNalichnik", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "door_types": [0, 1, 2, 3, 4],
+    "wall_thicknesses": [80, 100, 120, 200, 250, 380]
+  },
+  "packaging_rules": {
+    "unit": "баллонов",
+    "package_size": 1
+  },
+  "material_rules": {
+    "door_dims": {
+      "0": [700, 2000],
+      "1": [800, 2000],
+      "2": [900, 2000],
+      "3": [860, 2050],
+      "4": [700, 2100]
+    },
+    "box_depth": 70,
+    "foam_ml_per_m": 100,
+    "foam_can_ml": 750,
+    "screws_per_door": 12,
+    "dubels_per_door": 6,
+    "glue_cartridge_per_door": 0.5,
+    "dobor_standard_h": 2200,
+    "nalichnik_standard_h": 2200,
+    "foam_reserve": 1.1,
+    "screw_pack": 50,
+    "dubel_pack": 20
+  },
+  "warnings_rules": {
+    "thick_wall_threshold_mm": 200,
+    "bulk_door_threshold": 10
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

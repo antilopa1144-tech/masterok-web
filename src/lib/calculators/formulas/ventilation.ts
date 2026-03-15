@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalVentilation } from "../../../../engine/ventilation";
+import ventilationSpec from "../../../../configs/calculators/ventilation-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const ventilationDef: CalculatorDefinition = {
   id: "engineering_ventilation",
@@ -72,145 +74,18 @@ export const ventilationDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const totalArea = Math.max(10, inputs.totalArea ?? 80);
-    const ceilingHeightMm = inputs.ceilingHeight ?? 270;
-    const buildingType = Math.round(inputs.buildingType ?? 0);
-    const peopleCount = Math.max(1, Math.round(inputs.peopleCount ?? 3));
-    const ductType = Math.round(inputs.ductType ?? 0);
-
-    const ceilingH = ceilingHeightMm / 1000;
-    const volume = totalArea * ceilingH;
-
-    // Нормы воздухообмена по СП 54.13330 и СП 118.13330
-    // Кратность воздухообмена
-    const exchangeRates = [1.5, 2.0, 3.0, 5.0][buildingType]; // крат/час
-    const airByVolume = volume * exchangeRates; // м³/час
-
-    // Норма по людям: 30 м³/час на человека (СП 54.13330)
-    const airByPeople = peopleCount * 30; // 30 м³/час/чел (жилые помещения)
-    const requiredAirflow = Math.max(airByVolume, airByPeople);
-    const requiredAirflowRounded = Math.ceil(requiredAirflow / 50) * 50;
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    // Вентилятор
-    // Запас по производительности 20%
-    const fanCapacity = Math.ceil(requiredAirflowRounded * 1.2 / 50) * 50;
-    const fanDiameter = fanCapacity <= 300 ? 100 : fanCapacity <= 500 ? 125 : fanCapacity <= 800 ? 150 : 200;
-    materials.push({
-      name: `Вентилятор канальный ∅${fanDiameter} мм (~${fanCapacity} м³/ч)`,
-      quantity: 1,
-      unit: "шт",
-      withReserve: 1,
-      purchaseQty: 1,
-      category: "Вентилятор",
-    });
-
-    // Воздуховоды
-    // Длина основной магистрали ≈ √(area) × 2 + 15% ответвления
-    const mainDuctLength = Math.sqrt(totalArea) * 2.5 * 1.15;
-    const ductPcs = Math.ceil(mainDuctLength / 3); // секции по 3 м
-
-    const ductNames = [
-      `Воздуховод круглый оцинкованный ∅${fanDiameter} мм (секция 3 м)`,
-      "Воздуховод прямоугольный 200×100 мм (секция 3 м)",
-      "Гофра гибкая ∅125 мм (бухта 10 м)",
-    ];
-
-    if (ductType <= 1) {
-      materials.push({
-        name: ductNames[ductType],
-        quantity: mainDuctLength / 3,
-        unit: "шт",
-        withReserve: ductPcs,
-        purchaseQty: ductPcs,
-        category: "Воздуховод",
-      });
-    } else {
-      const hoflaBuhtas = Math.ceil(mainDuctLength / 10);
-      materials.push({
-        name: ductNames[2],
-        quantity: mainDuctLength / 10,
-        unit: "бухт",
-        withReserve: hoflaBuhtas,
-        purchaseQty: hoflaBuhtas,
-        category: "Воздуховод",
-      });
-    }
-
-    // Фасонные части (отводы 90°, тройники, переходники)
-    const fittingsCount = Math.ceil(ductPcs * 0.5 * 1.1);
-    materials.push({
-      name: `Отвод 90° ∅${fanDiameter} мм / тройник`,
-      quantity: ductPcs * 0.5,
-      unit: "шт",
-      withReserve: fittingsCount,
-      purchaseQty: fittingsCount,
-      category: "Фасонные части",
-    });
-
-    // Решётки вентиляционные
-    const grateCount = Math.ceil(totalArea / 15) + 1; // 1 решётка на 15 м² + 1 входная
-    materials.push({
-      name: `Решётка вентиляционная 150×150 мм (или круглый диффузор ∅${fanDiameter} мм)`,
-      quantity: grateCount,
-      unit: "шт",
-      withReserve: grateCount,
-      purchaseQty: grateCount,
-      category: "Решётки",
-    });
-
-    // Хомуты и крепёж
-    const clampsCount = Math.ceil(ductPcs * 2 * 1.1);
-    materials.push({
-      name: `Хомут крепёжный ∅${fanDiameter} мм с шпилькой`,
-      quantity: ductPcs * 2,
-      unit: "шт",
-      withReserve: clampsCount,
-      purchaseQty: clampsCount,
-      category: "Крепёж",
-    });
-
-    // Шумоглушитель (для жилых помещений)
-    if (buildingType <= 1) {
-      materials.push({
-        name: `Шумоглушитель цилиндрический ∅${fanDiameter} мм`,
-        quantity: 1,
-        unit: "шт",
-        withReserve: 1,
-        purchaseQty: 1,
-        category: "Шумоглушение",
-      });
-    }
-
-    if (requiredAirflow > 2000) {
-      warnings.push("Производительность >2000 м³/ч — рекомендуется проектирование системы специалистом");
-    }
-    if (buildingType === 0 && peopleCount > 6) {
-      warnings.push("Для квартиры с >6 жильцами стандартной вытяжной вентиляции недостаточно — нужна приточно-вытяжная установка");
-    }
-    warnings.push(`Расчётный воздухообмен: ${requiredAirflowRounded} м³/ч (кратность ${exchangeRates}×/ч + 60 м³/ч/чел)`);
-
-    const scenarios = buildNativeScenarios({
-      id: "ventilation-main",
-      title: "Ventilation main",
-      exactNeed: requiredAirflowRounded,
-      unit: "м³/ч",
-      packageSizes: [50],
-      packageLabelPrefix: "ventilation-airflow",
-    });
+  calculate(inputs) {
+    const spec = ventilationSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalVentilation(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        requiredAirflow: requiredAirflowRounded,
-        volume,
-        exchangeRate: exchangeRates,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

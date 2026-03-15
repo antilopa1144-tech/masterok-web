@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalGutters } from "../../../../engine/gutters";
+import guttersSpec from "../../../../configs/calculators/gutters-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const guttersDef: CalculatorDefinition = {
   id: "roofing_gutters",
@@ -71,132 +73,18 @@ export const guttersDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const perimeter = Math.max(5, inputs.roofPerimeter ?? 40);
-    const height = Math.max(2, inputs.roofHeight ?? 5);
-    const funnels = Math.max(1, Math.round(inputs.funnels ?? 4));
-    const elemLen = inputs.gutterLength ?? 3;
-
-    // Желоба
-    const gutterPcs = Math.ceil((perimeter / elemLen) * 1.05);
-
-    // Трубы (на каждую воронку — труба от карниза до земли)
-    const pipePerFunnel = Math.ceil(height / elemLen) + 1; // +1 на изгиб у земли
-    const pipePcs = pipePerFunnel * funnels;
-
-    // Соединители желобов
-    const gutterJoints = Math.ceil(perimeter / elemLen) - 1;
-
-    // Держатели желоба: через каждые 600 мм
-    const gutterHooks = Math.ceil((perimeter / 0.6) * 1.05);
-
-    // Хомуты для трубы: через каждые 1.5 м
-    const pipeClamps = Math.ceil((height / 1.5) * funnels * 1.05);
-
-    // Угловые элементы: по 2 на угол здания (≈4 угла)
-    const corners = 8; // 4 наружных угла × 2
-
-    const warnings: string[] = [];
-    const recommendedFunnels = Math.ceil(perimeter / 11);
-    if (funnels < recommendedFunnels) {
-      warnings.push(`Рекомендуется ${recommendedFunnels} воронок (1 на 10–12 м желоба)`);
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "gutters-main",
-      title: "Gutters main",
-      exactNeed: gutterPcs,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "gutters-piece",
-    });
+  calculate(inputs) {
+    const spec = guttersSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalGutters(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Желоб ${inputs.gutterDia ?? 90} мм (${elemLen} м)`,
-          quantity: perimeter / elemLen,
-          unit: "шт",
-          withReserve: gutterPcs,
-          purchaseQty: gutterPcs,
-          category: "Желоб",
-        },
-        {
-          name: `Труба водосточная ${inputs.gutterDia ?? 90} мм (${elemLen} м)`,
-          quantity: (height / elemLen) * funnels,
-          unit: "шт",
-          withReserve: pipePcs,
-          purchaseQty: pipePcs,
-          category: "Труба",
-        },
-        {
-          name: "Воронка",
-          quantity: funnels,
-          unit: "шт",
-          withReserve: funnels,
-          purchaseQty: funnels,
-          category: "Фитинги",
-        },
-        {
-          name: "Соединитель желобов",
-          quantity: gutterJoints,
-          unit: "шт",
-          withReserve: Math.ceil(gutterJoints * 1.05),
-          purchaseQty: Math.ceil(gutterJoints * 1.05),
-          category: "Фитинги",
-        },
-        {
-          name: "Колено сливное",
-          quantity: funnels,
-          unit: "шт",
-          withReserve: funnels,
-          purchaseQty: funnels,
-          category: "Фитинги",
-        },
-        {
-          name: "Заглушки торцевые (пара)",
-          quantity: funnels,
-          unit: "пар",
-          withReserve: funnels,
-          purchaseQty: funnels,
-          category: "Фитинги",
-        },
-        {
-          name: "Держатель желоба",
-          quantity: perimeter / 0.6,
-          unit: "шт",
-          withReserve: gutterHooks,
-          purchaseQty: gutterHooks,
-          category: "Крепёж",
-        },
-        {
-          name: "Хомут трубы",
-          quantity: (height / 1.5) * funnels,
-          unit: "шт",
-          withReserve: pipeClamps,
-          purchaseQty: pipeClamps,
-          category: "Крепёж",
-        },
-        {
-          name: "Угловой элемент желоба",
-          quantity: corners,
-          unit: "шт",
-          withReserve: corners,
-          purchaseQty: corners,
-          category: "Углы",
-        },
-        {
-          name: "Герметик для стыков водосточной системы (туба 310 мл, ~20 соединений)",
-          quantity: (gutterJoints + funnels * 2) / 20,
-          unit: "туб",
-          withReserve: Math.ceil((gutterJoints + funnels * 2) / 20),
-          purchaseQty: Math.max(1, Math.ceil((gutterJoints + funnels * 2) / 20)),
-          category: "Герметик",
-        },
-      ],
-      totals: { perimeter, funnels, pipePcs, gutterPcs } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

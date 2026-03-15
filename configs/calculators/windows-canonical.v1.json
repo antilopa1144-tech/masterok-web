@@ -1,0 +1,53 @@
+{
+  "calculator_id": "windows",
+  "formula_version": "windows-canonical-v1",
+  "input_schema": [
+    { "key": "windowCount", "default_value": 5, "min": 1, "max": 20 },
+    { "key": "windowWidth", "unit": "mm", "default_value": 1200, "min": 600, "max": 2100 },
+    { "key": "windowHeight", "unit": "mm", "default_value": 1400, "min": 900, "max": 2000 },
+    { "key": "wallThickness", "unit": "mm", "default_value": 500, "min": 200, "max": 600 },
+    { "key": "slopeType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "slope_types": [0, 1, 2],
+    "window_widths": [600, 900, 1200, 1500, 1800, 2100],
+    "window_heights": [900, 1200, 1400, 1600, 2000]
+  },
+  "packaging_rules": {
+    "unit": "баллонов",
+    "package_size": 1
+  },
+  "material_rules": {
+    "psul_roll_m": 5.6,
+    "iflul_roll_m": 8.5,
+    "psul_reserve": 1.1,
+    "anchor_step": 0.7,
+    "foam_per_perim": 0.333,
+    "foam_reserve": 1.1,
+    "windowsill_overhang": 0.15,
+    "windowsill_roll": 6,
+    "sandwich_panel_m2": 3.6,
+    "gkl_sheet_m2": 3.0,
+    "plaster_kg_per_m2": 10,
+    "plaster_bag": 25,
+    "slope_sandwich_reserve": 1.1,
+    "slope_gkl_reserve": 1.12,
+    "anchor_reserve": 1.05,
+    "screw_reserve": 1.05,
+    "f_profile_length": 3
+  },
+  "warnings_rules": {
+    "wide_window_threshold_mm": 1800,
+    "thick_wall_threshold_mm": 500
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

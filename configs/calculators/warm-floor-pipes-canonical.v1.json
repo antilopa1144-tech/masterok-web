@@ -1,0 +1,52 @@
+{
+  "calculator_id": "warm-floor-pipes",
+  "formula_version": "warm-floor-pipes-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 30 },
+    { "key": "width", "unit": "m", "default_value": 4, "min": 1, "max": 30 },
+    { "key": "area", "unit": "m2", "default_value": 20, "min": 1, "max": 300 },
+    { "key": "pipeStep", "unit": "mm", "default_value": 200, "min": 100, "max": 300 },
+    { "key": "pipeType", "default_value": 0, "min": 0, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "pipe_types": [
+      { "id": 0, "key": "pex_a", "label": "PEX-a" },
+      { "id": 1, "key": "pex_b", "label": "PEX-b" },
+      { "id": 2, "key": "pe_rt", "label": "PE-RT" },
+      { "id": 3, "key": "metalplastic", "label": "Металлопластик" }
+    ],
+    "allowed_pipe_steps_mm": [100, 150, 200, 250, 300]
+  },
+  "packaging_rules": {
+    "unit": "м",
+    "coil_length_m": 200
+  },
+  "material_rules": {
+    "furniture_reduction": 0.85,
+    "collector_addition_m": 3,
+    "max_circuit_m": 80,
+    "pipe_reserve": 1.05,
+    "pipe_coil_m": 200,
+    "epps_sheet_m2": 0.72,
+    "epps_reserve": 1.05,
+    "damper_tape_roll_m": 25,
+    "damper_reserve": 1.05,
+    "anchor_step_m": 0.3,
+    "anchor_reserve": 1.05,
+    "anchor_pack": 100,
+    "screed_thickness_m": 0.05,
+    "screed_density": 1500,
+    "screed_bag_kg": 25
+  },
+  "warnings_rules": {
+    "multiple_circuits_pipe_threshold_m": 80,
+    "professional_heat_loss_area_threshold_m2": 40
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

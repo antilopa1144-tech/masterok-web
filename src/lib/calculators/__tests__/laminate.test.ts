@@ -41,16 +41,21 @@ describe("Калькулятор ламината", () => {
 
 runCanonicalParitySuite({
   suiteName: "Canonical laminate fixture parity",
-  cases: laminateFixture.cases,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cases: laminateFixture.cases as any,
   calculate: calc,
-  assertCase(result, expected) {
+  assertCase(result, expected: {
+    formulaVersion: string; area: number; perimeter: number; wastePercent: number; warningsCount: number;
+    materials: { packs: number; underlaymentRolls?: number; plinthPieces: number; thresholds: number };
+    recScenario: { packageSize: number; exactNeed: number; purchaseQuantity: number };
+  }) {
     expect(result.formulaVersion).toBe(expected.formulaVersion);
     expect(result.totals.area).toBeCloseTo(expected.area, 1);
     expect(result.totals.perimeter).toBeCloseTo(expected.perimeter, 1);
     expect(result.totals.wastePercent).toBeCloseTo(expected.wastePercent, 5);
     expect(result.warnings).toHaveLength(expected.warningsCount);
 
-    const recScenario = result.scenarios.REC;
+    const recScenario = result.scenarios!.REC;
     expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
     expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 5);
     expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 5);

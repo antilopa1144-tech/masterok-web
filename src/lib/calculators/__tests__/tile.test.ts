@@ -13,7 +13,7 @@ describe("Калькулятор плитки", () => {
   describe("Canonical tile fixture parity", () => {
     for (const fixtureCase of tileFixture.cases) {
       it(fixtureCase.id, () => {
-        const result = calc(fixtureCase.inputs);
+        const result = calc(fixtureCase.inputs as unknown as Record<string, number>);
         const expected = fixtureCase.expected;
 
         expect(result.formulaVersion).toBe(expected.formulaVersion);
@@ -21,7 +21,7 @@ describe("Калькулятор плитки", () => {
         expect(result.totals.wastePercent).toBeCloseTo(expected.wastePercent, 2);
         expect(result.warnings).toHaveLength(expected.warningsCount);
 
-        const recScenario = result.scenarios.REC;
+        const recScenario = result.scenarios!.REC;
         expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
         expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 5);
         expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 5);

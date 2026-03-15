@@ -1,0 +1,56 @@
+{
+  "calculator_id": "partitions",
+  "formula_version": "partitions-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 5, "min": 1, "max": 50 },
+    { "key": "height", "unit": "m", "default_value": 2.7, "min": 2, "max": 4 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 75, "max": 200 },
+    { "key": "blockType", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "block_types": [0, 1, 2],
+    "thicknesses": [75, 100, 150, 200]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "block_dims": {
+      "0": [625, 250],
+      "1": [625, 250],
+      "2": [667, 500]
+    },
+    "glue_rate": {
+      "0": 1.5,
+      "1": 1.5,
+      "2": 0
+    },
+    "gypsum_milk_rate": 0.8,
+    "gypsum_bag": 20,
+    "glue_bag": 25,
+    "block_reserve": 1.05,
+    "mesh_interval": 0.75,
+    "mesh_reserve": 1.05,
+    "mesh_roll": 50,
+    "foam_per_perim": 5,
+    "foam_can": 750,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can": 10,
+    "seal_tape_reserve": 1.1
+  },
+  "warnings_rules": {
+    "high_wall_threshold_m": 3.5
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

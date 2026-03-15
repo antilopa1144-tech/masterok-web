@@ -1,0 +1,52 @@
+{
+  "calculator_id": "fence",
+  "formula_version": "fence-canonical-v1",
+  "input_schema": [
+    { "key": "fenceLength", "unit": "m", "default_value": 50, "min": 5, "max": 500 },
+    { "key": "fenceHeight", "unit": "m", "default_value": 2, "min": 1, "max": 3 },
+    { "key": "fenceType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "postStep", "unit": "m", "default_value": 2.5, "min": 2.0, "max": 3.0 },
+    { "key": "gatesCount", "default_value": 1, "min": 0, "max": 5 },
+    { "key": "wicketsCount", "default_value": 1, "min": 0, "max": 5 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "fence_types": [0, 1, 2],
+    "post_steps": [2.0, 2.5, 3.0]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "post_burial_m": 0.9,
+    "profnastil_useful_width": 1.15,
+    "profnastil_reserve": 1.02,
+    "profnastil_screws_per_sheet": 7,
+    "screws_pack": 200,
+    "primer_spray_m_per_can": 20,
+    "post_concrete_m3": 0.03,
+    "caps_reserve": 1.05,
+    "rabica_roll_m": 10,
+    "tension_wire_reserve": 1.05,
+    "slat_width": 0.1,
+    "slat_gap": 0.03,
+    "slat_reserve": 1.05,
+    "antiseptic_l_per_m2": 0.15,
+    "antiseptic_can_l": 5,
+    "gate_width": 4,
+    "wicket_width": 1
+  },
+  "warnings_rules": {
+    "reinforced_post_gate_threshold": 0
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

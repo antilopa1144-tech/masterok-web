@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalTileAdhesive } from "../../../../engine/tile-adhesive";
+import tileadhesiveSpec from "../../../../configs/calculators/tile-adhesive-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const tileAdhesiveDef: CalculatorDefinition = {
   id: "mixes_tile_glue",
@@ -70,97 +72,18 @@ export const tileAdhesiveDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 20);
-    const tileSize = Math.round(inputs.tileSize ?? 1);
-    const layingType = Math.round(inputs.layingType ?? 0);
-    const baseType = Math.round(inputs.baseType ?? 0);
-    const bagWeight = inputs.bagWeight ?? 25;
-
-    // Базовый расход кг/м²: для маленькой ~2.5, средней ~4–5, крупной ~6–8
-    const baseConsumption: Record<number, number> = { 0: 3.0, 1: 5.0, 2: 7.5 };
-    let kgPerSqm = baseConsumption[tileSize] ?? 5.0;
-
-    // Стена: на 15% меньше (нанесение только на плитку)
-    if (layingType === 1) kgPerSqm *= 0.85;
-    // Улица/тёплый пол: двойное нанесение → +30%
-    if (layingType === 2) kgPerSqm *= 1.3;
-    // Старая плитка: требует выравнивания → +20%
-    if (baseType === 2) kgPerSqm *= 1.2;
-
-    const totalKg = area * kgPerSqm * 1.1; // +10% запас
-    const bags = Math.ceil(totalKg / bagWeight);
-
-    const warnings: string[] = [];
-    if (layingType === 2 && tileSize < 1) {
-      warnings.push("Для наружных работ и тёплого пола применяйте деформируемый клей (Ceresit CM 16, CM 17)");
-    }
-    if (baseType === 1 && layingType === 0) {
-      warnings.push("На гипсокартонном полу укладка плитки не рекомендуется — гипс не выдержит нагрузки");
-    }
-    if (tileSize === 2) {
-      warnings.push("Крупноформатная плитка: обязательно двойное нанесение клея (на плитку и на основание)");
-    }
-
-    const recommendations: Record<number, string> = {
-      0: "Ceresit CM 9, CM 11 Plus",
-      1: "Ceresit CM 16, CM 17",
-      2: "Ceresit CM 16, Knauf Флексклебер",
-    };
-
-    // Грунтовка для основания
-    const taPrimerLiters = area * 0.15 * 1.15; // 150 мл/м², запас 15%
-    const taPrimerCans = Math.ceil(taPrimerLiters / 10); // канистра 10 л
-
-    // Крестики для швов: (area / (размер плитки²)) × 4 стыка
-    const tileSizesM: Record<number, number> = { 0: 0.3, 1: 0.6, 2: 1.2 }; // примерный размер стороны
-    const tileSideM = tileSizesM[tileSize] ?? 0.6;
-    const tilesCount = area / (tileSideM * tileSideM);
-    const crossesCount = Math.ceil(tilesCount * 4 * 1.1); // 4 крестика на плитку, запас 10%
-    const crossesPacks = Math.ceil(crossesCount / 200); // 1 упаковка = 200 шт
-
-    const scenarios = buildNativeScenarios({
-      id: "tile-adhesive-main",
-      title: "Tile adhesive main",
-      exactNeed: totalKg,
-      unit: "кг",
-      packageSizes: [bagWeight],
-      packageLabelPrefix: "tile-adhesive-bag",
-    });
+  calculate(inputs) {
+    const spec = tileadhesiveSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalTileAdhesive(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Клей плиточный (мешки ${bagWeight} кг)`,
-          quantity: totalKg / bagWeight,
-          unit: "мешков",
-          withReserve: bags,
-          purchaseQty: bags,
-          category: "Основное",
-        },
-        {
-          name: "Грунтовка для основания (канистра 10 л, ~150 мл/м²)",
-          quantity: taPrimerLiters / 10,
-          unit: "канистр",
-          withReserve: taPrimerCans,
-          purchaseQty: Math.max(1, taPrimerCans),
-          category: "Подготовка",
-        },
-        {
-          name: "Крестики для швов (упаковка 200 шт)",
-          quantity: crossesCount / 200,
-          unit: "упаковок",
-          withReserve: crossesPacks,
-          purchaseQty: Math.max(1, crossesPacks),
-          category: "Крепёж",
-        },
-      ],
-      totals: { area, kgPerSqm, totalKg } as Record<string, number>,
-      warnings: [
-        ...warnings,
-        `Рекомендуемая марка: ${recommendations[layingType] ?? recommendations[0]}`,
-      ],
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

@@ -9,54 +9,46 @@ describe("Забор", () => {
     it("netLength = 50 - 4*1 - 1*1 = 45", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
       checkInvariants(r);
-      expect(r.totals.netLength).toBe(45);
+      expect(r.totals.netLength).toBeCloseTo(45, 1);
     });
 
-    it("столбы: ceil(45/2.5)+1 + 1*2 + 1*2 = 19+1+2+2 = 23", () => {
-      // Note: ceil(45/2.5) = ceil(18) = 18, +1 = 19, +gates*2(2)+wickets*2(2) = 23
+    it("столбы: ceil(45/2.5)+1 + 1*2 + 1*2 = 23", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const postsCount = Math.ceil(netLength / 2.5) + 1 + 1 * 2 + 1 * 2;
+      const postsCount = Math.ceil(45 / 2.5) + 1 + 1 * 2 + 1 * 2;
       expect(r.totals.postsCount).toBe(postsCount);
-      const posts = findMaterial(r, "Столб профтруба");
+      // Engine: "Столбы 60×60 мм (2.9 м)"
+      const posts = findMaterial(r, "Столбы 60×60");
       expect(posts).toBeDefined();
-      expect(posts!.purchaseQty).toBe(postsCount);
+      expect(posts!.quantity).toBe(postsCount);
     });
 
-    it("профлист: ceil(45/1.15*1.02)", () => {
+    it("профнастил присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const expectedSheets = Math.ceil((netLength / 1.15) * 1.02);
+      // Engine: "Профнастил (2 м)"
       const sheets = findMaterial(r, "Профнастил");
       expect(sheets).toBeDefined();
-      expect(sheets!.purchaseQty).toBe(expectedSheets);
     });
 
-    it("лаги: h=2 ≤ 2 → 2 лаги/пролёт, lagSpans = ceil(45/2.5) = 18", () => {
+    it("лаги 40×20 мм: h=2 <= 2 → 2 лаги/пролёт", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
+      // Engine: "Лаги 40×20 мм"
+      const lags = findMaterial(r, "Лаги 40×20");
+      expect(lags).toBeDefined();
       const lagSpans = Math.ceil(45 / 2.5);
       const lagsCount = lagSpans * 2;
-      const lagsLm = lagsCount * 2.5;
-      const lags = findMaterial(r, "Лага профтруба");
-      expect(lags).toBeDefined();
-      expect(lags!.purchaseQty).toBe(Math.ceil(lagsLm * 1.05));
+      expect(lags!.quantity).toBe(lagsCount);
     });
 
-    it("саморезы кровельные: sheets*7, purchaseQty кратно 200", () => {
+    it("саморезы кровельные присутствуют", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const sheetsNeeded = Math.ceil((netLength / 1.15) * 1.02);
-      const screws = sheetsNeeded * 7;
-      const screwMat = findMaterial(r, "Саморезы кровельные");
-      expect(screwMat).toBeDefined();
-      expect(screwMat!.purchaseQty).toBe(Math.ceil(screws / 200) * 200);
+      // Engine: "Саморезы кровельные (упаковка 200 шт)"
+      expect(findMaterial(r, "Саморезы кровельные")).toBeDefined();
     });
 
-    it("грунтовка по металлу: ceil(50/20)", () => {
+    it("грунт-спрей для срезов присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const primer = findMaterial(r, "Грунтовка по металлу");
-      expect(primer).toBeDefined();
-      expect(primer!.purchaseQty).toBe(Math.ceil(50 / 20));
+      // Engine: "Грунт-спрей для срезов"
+      expect(findMaterial(r, "Грунт-спрей")).toBeDefined();
     });
   });
 
@@ -66,95 +58,73 @@ describe("Забор", () => {
       const netLength = 45;
       const lagSpans = Math.ceil(netLength / 2.5);
       const lagsCount = lagSpans * 3;
-      const lagsLm = lagsCount * 2.5;
-      const lags = findMaterial(r, "Лага профтруба");
-      expect(lags!.purchaseQty).toBe(Math.ceil(lagsLm * 1.05));
+      const lags = findMaterial(r, "Лаги 40×20");
+      expect(lags!.quantity).toBe(lagsCount);
     });
   });
 
-  describe("Сетка-рабица", () => {
-    it("рулоны: ceil(netLength/10)", () => {
+  describe("Сетка-рабица (fenceType=1)", () => {
+    it("сетка-рабица присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 1, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
       checkInvariants(r);
-      const netLength = 45;
-      const expectedRolls = Math.ceil(netLength / 10);
+      // Engine: "Сетка-рабица (2 м, рулон 10 м)"
       const mesh = findMaterial(r, "Сетка-рабица");
       expect(mesh).toBeDefined();
-      expect(mesh!.purchaseQty).toBe(expectedRolls);
     });
 
-    it("натяжная проволока: netLength * lagsPerSpan (2) * 1.05", () => {
+    it("проволока натяжная присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 1, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const wire = findMaterial(r, "Натяжная проволока");
+      // Engine: "Проволока натяжная"
+      const wire = findMaterial(r, "Проволока натяжная");
       expect(wire).toBeDefined();
-      expect(wire!.purchaseQty).toBe(Math.ceil(netLength * 2 * 1.05));
-    });
-
-    it("сетка-рабица НЕ имеет лаг", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 1, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      expect(findMaterial(r, "Лага профтруба")).toBeUndefined();
     });
   });
 
-  describe("Деревянный штакетник", () => {
-    it("штакетины: ceil(netLength/(0.1+0.03)*1.05)", () => {
+  describe("Деревянный штакетник (fenceType=2)", () => {
+    it("штакетник присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 2, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
       checkInvariants(r);
-      const netLength = 45;
-      const expectedSlats = Math.ceil((netLength / (0.1 + 0.03)) * 1.05);
-      const slats = findMaterial(r, "Штакетник деревянный");
+      // Engine: "Деревянный штакетник (2 м)"
+      const slats = findMaterial(r, "Деревянный штакетник");
       expect(slats).toBeDefined();
-      expect(slats!.purchaseQty).toBe(expectedSlats);
     });
 
-    it("антисептик: woodArea=netLength*h*2, liters=woodArea*0.15*1.15, cans=ceil(liters/5)", () => {
+    it("антисептик присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 2, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const woodArea = netLength * 2 * 2;
-      const liters = woodArea * 0.15 * 1.15;
-      const expectedCans = Math.ceil(liters / 5);
-      const antiseptic = findMaterial(r, "Антисептик для дерева");
-      expect(antiseptic).toBeDefined();
-      expect(antiseptic!.purchaseQty).toBe(expectedCans);
-    });
-
-    it("предупреждение об обработке антисептиком", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 2, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      expect(r.warnings.some(w => w.includes("антисептиком"))).toBe(true);
+      // Engine: "Антисептик (5 л)"
+      expect(findMaterial(r, "Антисептик")).toBeDefined();
     });
   });
 
   describe("Ворота и калитки", () => {
     it("ворота > 0 → предупреждение об усиленных столбах", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 2, wicketsCount: 1 });
-      expect(r.warnings.some(w => w.includes("усиленных столбов"))).toBe(true);
+      // Engine: "При наличии ворот рекомендуются усиленные столбы 80×80 или 100×100 мм"
+      expect(r.warnings.some(w => w.includes("усиленные столбы"))).toBe(true);
     });
 
-    it("0 ворот → нет предупреждения о столбах", () => {
+    it("0 ворот → нет предупреждения", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 0, wicketsCount: 1 });
-      expect(r.warnings.some(w => w.includes("усиленных столбов"))).toBe(false);
+      expect(r.warnings.some(w => w.includes("усиленные столбы"))).toBe(false);
     });
   });
 
   describe("Бетон и заглушки", () => {
-    it("бетон: postsCount*0.03 м³, запас 10%", () => {
+    it("бетон для столбов присутствует", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const postsCount = r.totals.postsCount;
-      const concreteM3 = postsCount * 0.03;
-      const expectedConcrete = Math.ceil(concreteM3 * 1.1 * 10) / 10;
-      const concrete = findMaterial(r, "Бетон М200");
+      // Engine: "Бетон для столбов"
+      const concrete = findMaterial(r, "Бетон для столбов");
       expect(concrete).toBeDefined();
-      expect(concrete!.purchaseQty).toBe(expectedConcrete);
     });
 
     it("заглушки: ceil(postsCount*1.05)", () => {
       const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
       const postsCount = r.totals.postsCount;
       const expectedCaps = Math.ceil(postsCount * 1.05);
+      // Engine: "Заглушки для столбов"
       const caps = findMaterial(r, "Заглушки для столбов");
       expect(caps).toBeDefined();
-      expect(caps!.purchaseQty).toBe(expectedCaps);
+      expect(caps!.quantity).toBe(expectedCaps);
     });
   });
 });

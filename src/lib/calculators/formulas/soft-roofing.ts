@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalSoftRoofing } from "../../../../engine/soft-roofing";
+import softroofingSpec from "../../../../configs/calculators/soft-roofing-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const softRoofingDef: CalculatorDefinition = {
   id: "soft_roofing",
@@ -69,195 +71,18 @@ export const softRoofingDef: CalculatorDefinition = {
       hint: "Ендова — внутренний стык скатов. Если нет — оставьте 0",
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const roofArea = Math.max(10, inputs.roofArea ?? 80);
-    const slope = Math.max(5, Math.min(60, inputs.slope ?? 30));
-    const ridgeLength = Math.max(0, inputs.ridgeLength ?? 8);
-    const eaveLength = Math.max(0, inputs.eaveLength ?? 20);
-    const valleyLength = Math.max(0, inputs.valleyLength ?? 0);
-
-    const warnings: string[] = [];
-
-    // --- Гибкая черепица ---
-    const packArea = 3.0; // 1 упаковка = 3 м²
-    const packs = Math.ceil(roofArea / packArea * 1.05); // +5% запас
-
-    // --- Подкладочный ковёр ---
-    let underlaymentRolls: number;
-    const underlaymentRollArea = 15; // рулон 15 м²
-
-    if (slope < 18) {
-      // Сплошной подкладочный ковёр по всей площади
-      underlaymentRolls = Math.ceil(roofArea * 1.15 / underlaymentRollArea);
-      warnings.push("При уклоне 12–18° сплошной подкладочный ковёр обязателен по всей площади");
-    } else {
-      // Только критические зоны: карнизы, ендовы, конёк
-      const criticalLinear = eaveLength + valleyLength + ridgeLength;
-      // Ширина рулона ~1 м, длина = линейные метры с нахлёстом
-      const criticalArea = criticalLinear * 1.0 * 1.15; // ширина 1 м, +15% нахлёст
-      underlaymentRolls = Math.ceil(criticalArea / underlaymentRollArea);
-      if (criticalLinear > 0 && underlaymentRolls < 1) {
-        underlaymentRolls = 1;
-      }
-    }
-
-    // --- Ендовный ковёр ---
-    let valleyRolls = 0;
-    if (valleyLength > 0) {
-      valleyRolls = Math.ceil(valleyLength * 1.15 / 10); // рулон 10 м.п.
-    }
-
-    // --- Мастика битумная ---
-    const totalLinear = ridgeLength + eaveLength + valleyLength;
-    const masticKg = totalLinear * 0.1 + roofArea * 0.1; // 100 г/м.п. примыканий + 100 г/м² площади
-    const masticBuckets = Math.ceil(masticKg / 3); // ведро 3 кг
-
-    // --- Кровельные гвозди ---
-    // 80 гвоздей на м², 400 гвоздей в 1 кг
-    const nailsCount = roofArea * 80;
-    const nailsKg = nailsCount / 400 * 1.05; // +5% запас
-    const nailsKgRounded = Math.ceil(nailsKg * 10) / 10;
-
-    // --- Карнизная планка ---
-    const eaveDripPcs = Math.ceil(eaveLength / 2 * 1.05); // планки по 2 м, +5%
-
-    // --- Торцевая (ветровая) планка ---
-    // Оценка: ~40% от длины карнизов
-    const windStripPcs = Math.ceil(eaveLength * 0.4 / 2 * 1.05); // планки по 2 м
-
-    // --- Коньковая черепица ---
-    // 1 элемент закрывает ~0.5 м.п. конька
-    const ridgeShinglesPcs = Math.ceil(ridgeLength / 0.5 * 1.05);
-
-    // --- ОСБ-3 основание 9 мм ---
-    const osbSheetArea = 3.125; // 1250×2500 мм
-    const osbSheets = Math.ceil(roofArea / osbSheetArea * 1.05);
-
-    // --- Вентиляционные выходы ---
-    // 1 на каждые 25 м²
-    const ventOutputs = Math.ceil(roofArea / 25);
-
-    // Предупреждения
-    if (slope < 12) {
-      warnings.push("Уклон < 12° не рекомендуется для гибкой черепицы");
-    }
-    if (roofArea > 200) {
-      warnings.push("При большой площади кровли рекомендуется профессиональный монтаж");
-    }
-
-    const materials: Array<{
-      name: string; quantity: number; unit: string;
-      withReserve?: number; purchaseQty?: number; category?: string;
-    }> = [
-      {
-        name: "Гибкая черепица (упаковка 3 м²)",
-        quantity: roofArea / packArea,
-        unit: "упак.",
-        withReserve: packs,
-        purchaseQty: packs,
-        category: "Кровля",
-      },
-      {
-        name: "ОСБ-3 9 мм (1250×2500) — сплошное основание",
-        quantity: roofArea / osbSheetArea,
-        unit: "листов",
-        withReserve: osbSheets,
-        purchaseQty: osbSheets,
-        category: "Основание",
-      },
-      {
-        name: "Подкладочный ковёр (рулон 15 м²)",
-        quantity: slope < 18 ? roofArea / underlaymentRollArea : (eaveLength + valleyLength + ridgeLength) / underlaymentRollArea,
-        unit: "рулонов",
-        withReserve: underlaymentRolls,
-        purchaseQty: underlaymentRolls,
-        category: "Гидроизоляция",
-      },
-    ];
-
-    if (valleyLength > 0) {
-      materials.push({
-        name: "Ендовный ковёр (рулон 10 м.п.)",
-        quantity: valleyLength / 10,
-        unit: "рулонов",
-        withReserve: valleyRolls,
-        purchaseQty: valleyRolls,
-        category: "Гидроизоляция",
-      });
-    }
-
-    materials.push(
-      {
-        name: "Мастика битумная (ведро 3 кг)",
-        quantity: masticKg / 3,
-        unit: "вёдер",
-        withReserve: masticBuckets,
-        purchaseQty: masticBuckets,
-        category: "Герметизация",
-      },
-      {
-        name: "Гвозди кровельные ершёные 3.2×30 мм",
-        quantity: nailsCount / 400,
-        unit: "кг",
-        withReserve: nailsKgRounded,
-        purchaseQty: Math.max(1, Math.ceil(nailsKgRounded)),
-        category: "Крепёж",
-      },
-      {
-        name: "Карнизная планка (2 м)",
-        quantity: eaveLength / 2,
-        unit: "шт",
-        withReserve: eaveDripPcs,
-        purchaseQty: eaveDripPcs,
-        category: "Доборные элементы",
-      },
-      {
-        name: "Торцевая (ветровая) планка (2 м)",
-        quantity: eaveLength * 0.4 / 2,
-        unit: "шт",
-        withReserve: windStripPcs,
-        purchaseQty: windStripPcs,
-        category: "Доборные элементы",
-      },
-      {
-        name: "Коньковая черепица",
-        quantity: ridgeLength / 0.5,
-        unit: "шт",
-        withReserve: ridgeShinglesPcs,
-        purchaseQty: ridgeShinglesPcs,
-        category: "Доборные элементы",
-      },
-      {
-        name: "Вентиляционный выход кровельный",
-        quantity: ventOutputs,
-        unit: "шт",
-        withReserve: ventOutputs,
-        purchaseQty: ventOutputs,
-        category: "Вентиляция",
-      },
-    );
-
-    const scenarios = buildNativeScenarios({
-      id: "soft-roofing-main",
-      title: "Soft roofing main",
-      exactNeed: packs,
-      unit: "упак.",
-      packageSizes: [1],
-      packageLabelPrefix: "soft-roofing-pack",
-    });
+  calculate(inputs) {
+    const spec = softroofingSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalSoftRoofing(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        roofArea,
-        slope,
-        packs,
-        osbSheets,
-        underlaymentRolls,
-        totalLinear,
-      },
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

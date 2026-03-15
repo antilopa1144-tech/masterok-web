@@ -1,0 +1,69 @@
+{
+  "calculator_id": "bathroom",
+  "formula_version": "bathroom-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 2.5, "min": 1, "max": 10 },
+    { "key": "width", "unit": "m", "default_value": 1.7, "min": 1, "max": 10 },
+    { "key": "height", "unit": "m", "default_value": 2.5, "min": 2, "max": 3.5 },
+    { "key": "floorTileSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "wallTileSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "hasWaterproofing", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "doorWidth", "unit": "m", "default_value": 0.7, "min": 0.6, "max": 1.0 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "floor_tile_sizes": {
+      "0": { "w": 0.3, "h": 0.3 },
+      "1": { "w": 0.45, "h": 0.45 },
+      "2": { "w": 0.6, "h": 0.6 }
+    },
+    "wall_tile_sizes": {
+      "0": { "w": 0.2, "h": 0.3 },
+      "1": { "w": 0.25, "h": 0.4 },
+      "2": { "w": 0.3, "h": 0.6 }
+    }
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "floor_tile_sizes": {
+      "0": { "w": 0.3, "h": 0.3 },
+      "1": { "w": 0.45, "h": 0.45 },
+      "2": { "w": 0.6, "h": 0.6 }
+    },
+    "wall_tile_sizes": {
+      "0": { "w": 0.2, "h": 0.3 },
+      "1": { "w": 0.25, "h": 0.4 },
+      "2": { "w": 0.3, "h": 0.6 }
+    },
+    "tile_reserve": 1.10,
+    "floor_adhesive_kg_per_m2": 5,
+    "wall_adhesive_kg_per_m2": 3.5,
+    "adhesive_bag_kg": 25,
+    "grout_kg_per_m2": 0.5,
+    "grout_bag_kg": 2,
+    "waterproof_mastic_kg_per_m2": 1.5,
+    "waterproof_bucket_kg": 4,
+    "waterproof_wall_height": 0.2,
+    "primer_l_per_m2": 0.2,
+    "primer_can_l": 5,
+    "crosses_per_tile": 3,
+    "crosses_pack": 100,
+    "silicone_m_per_tube": 3
+  },
+  "warnings_rules": {
+    "small_floor_area_threshold_m2": 2,
+    "waterproofing_mandatory_code": "SP 29.13330"
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

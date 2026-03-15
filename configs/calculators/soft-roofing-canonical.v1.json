@@ -1,0 +1,54 @@
+{
+  "calculator_id": "soft-roofing",
+  "formula_version": "soft-roofing-canonical-v1",
+  "input_schema": [
+    { "key": "roofArea", "unit": "m²", "default_value": 80, "min": 10, "max": 500 },
+    { "key": "slope", "unit": "°", "default_value": 30, "min": 12, "max": 60 },
+    { "key": "ridgeLength", "unit": "m", "default_value": 8, "min": 0, "max": 50 },
+    { "key": "eaveLength", "unit": "m", "default_value": 20, "min": 0, "max": 100 },
+    { "key": "valleyLength", "unit": "m", "default_value": 0, "min": 0, "max": 30 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "упаковок",
+    "package_size": 1
+  },
+  "material_rules": {
+    "pack_area": 3.0,
+    "pack_reserve": 1.05,
+    "underlayment_roll": 15,
+    "underlayment_full_reserve": 1.15,
+    "slope_threshold": 18,
+    "critical_zone_width": 1.0,
+    "valley_roll": 10,
+    "valley_reserve": 1.15,
+    "mastic_linear_rate": 0.1,
+    "mastic_area_rate": 0.1,
+    "mastic_bucket": 3,
+    "nails_per_m2": 80,
+    "nails_per_kg": 400,
+    "nail_reserve": 1.05,
+    "eave_strip_length": 2,
+    "eave_reserve": 1.05,
+    "wind_strip_ratio": 0.4,
+    "ridge_shingle_step": 0.5,
+    "ridge_reserve": 1.05,
+    "osb_sheet": 3.125,
+    "osb_reserve": 1.05,
+    "vent_per_area": 25
+  },
+  "warnings_rules": {
+    "low_slope_threshold": 18,
+    "valley_warning": true
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

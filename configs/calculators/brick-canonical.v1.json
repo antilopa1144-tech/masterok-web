@@ -1,0 +1,59 @@
+{
+  "calculator_id": "brick",
+  "formula_version": "brick-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "wallWidth", "unit": "m", "default_value": 5, "min": 0.5, "max": 50 },
+    { "key": "wallHeight", "unit": "m", "default_value": 3, "min": 0.5, "max": 10 },
+    { "key": "area", "unit": "m2", "default_value": 15, "min": 1, "max": 500 },
+    { "key": "brickType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "wallThickness", "default_value": 1, "min": 0, "max": 3 },
+    { "key": "workingConditions", "default_value": 1, "min": 1, "max": 4 },
+    { "key": "wasteMode", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "bricks_per_sqm": {
+      "0": { "0": 51, "1": 102, "2": 153, "3": 204 },
+      "1": { "0": 39, "1": 78, "2": 117, "3": 156 },
+      "2": { "0": 26, "1": 52, "2": 78, "3": 104 }
+    },
+    "mortar_per_sqm": {
+      "0": { "0": 0.019, "1": 0.023, "2": 0.034, "3": 0.045 },
+      "1": { "0": 0.016, "1": 0.020, "2": 0.029, "3": 0.038 },
+      "2": { "0": 0.013, "1": 0.017, "2": 0.024, "3": 0.031 }
+    },
+    "wall_thickness_mm": { "0": 120, "1": 250, "2": 380, "3": 510 },
+    "brick_height_mm": { "0": 65, "1": 88, "2": 138 },
+    "conditions_multiplier": { "1": 1.0, "2": 1.05, "3": 1.10, "4": 1.08 },
+    "waste_coeffs": { "0": 1.05, "1": 1.10, "2": 1.03 }
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "mortar_loss_factor": 1.12,
+    "cement_kg_per_m3": 400,
+    "cement_bag_kg": 50,
+    "sand_m3_per_m3_mortar": 1.2,
+    "mesh_joint_mm": 10,
+    "mesh_overlap_factor": 1.1,
+    "plasticizer_l_per_m3": 0.5,
+    "flexible_ties_per_m2": 4,
+    "flexible_ties_wall_thickness_threshold": 2
+  },
+  "warnings_rules": {
+    "non_load_bearing_wall_thickness": 0,
+    "manual_mix_grade_threshold": 5
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

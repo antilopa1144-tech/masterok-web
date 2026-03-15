@@ -1,0 +1,53 @@
+{
+  "calculator_id": "concrete",
+  "formula_version": "concrete-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "concreteVolume", "unit": "m3", "default_value": 5, "min": 0.1, "max": 500 },
+    { "key": "concreteGrade", "default_value": 3, "min": 1, "max": 7 },
+    { "key": "manualMix", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "reserve", "unit": "%", "default_value": 10, "min": 0, "max": 50 },
+    { "key": "area", "unit": "m2", "default_value": 20, "min": 0.1, "max": 1000 },
+    { "key": "thickness", "unit": "mm", "default_value": 200, "min": 50, "max": 1000 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "proportions": [
+      { "grade": 1, "label": "М100 (В7.5)", "cement_kg": 170, "sand_m3": 0.56, "gravel_m3": 0.88, "water_l": 210 },
+      { "grade": 2, "label": "М150 (В12.5)", "cement_kg": 215, "sand_m3": 0.54, "gravel_m3": 0.86, "water_l": 200 },
+      { "grade": 3, "label": "М200 (В15)", "cement_kg": 290, "sand_m3": 0.50, "gravel_m3": 0.82, "water_l": 190 },
+      { "grade": 4, "label": "М250 (В20)", "cement_kg": 340, "sand_m3": 0.47, "gravel_m3": 0.80, "water_l": 185 },
+      { "grade": 5, "label": "М300 (В22.5)", "cement_kg": 380, "sand_m3": 0.44, "gravel_m3": 0.78, "water_l": 180 },
+      { "grade": 6, "label": "М350 (В25)", "cement_kg": 420, "sand_m3": 0.41, "gravel_m3": 0.76, "water_l": 175 },
+      { "grade": 7, "label": "М400 (В30)", "cement_kg": 480, "sand_m3": 0.38, "gravel_m3": 0.73, "water_l": 170 }
+    ]
+  },
+  "packaging_rules": {
+    "unit": "м³",
+    "volume_step_m3": 0.1,
+    "cement_bag_kg": 50,
+    "mastic_bucket_kg": 20,
+    "film_roll_m2": 30
+  },
+  "material_rules": {
+    "waterproof_mastic_kg_per_m2": 1.0,
+    "waterproof_reserve_factor": 1.15,
+    "film_reserve_factor": 1.1,
+    "sand_reserve_factor": 1.05,
+    "gravel_reserve_factor": 1.05,
+    "estimated_slab_thickness_m": 0.2
+  },
+  "warnings_rules": {
+    "small_volume_threshold_m3": 0.5,
+    "manual_mix_max_grade": 5
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

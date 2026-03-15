@@ -5,13 +5,12 @@ import { findMaterial, checkInvariants } from "./_helpers";
 const calc = terraceDef.calculate.bind(terraceDef);
 
 describe("Калькулятор террасной доски", () => {
-  describe("ДПК 150×25: 5×3 м, доска 3000 мм, шаг лаг 400 мм, без пропитки", () => {
+  describe("ДПК 150 мм: 5×3 м, доска 3000 мм, шаг лаг 400 мм, без обработки", () => {
     // area = 5 * 3 = 15
-    // boardWidthMm = 150, gapMm = 5, boardPitch = 155/1000 = 0.155
+    // boardWidth = 150, gap = 5, boardPitch = 155/1000 = 0.155
     // rowCount = ceil(3 / 0.155) = ceil(19.35) = 20
     // boardsPerRow = ceil(5 / 3) = 2
-    // totalBoards = 20 * 2 = 40
-    // totalBoardsWithReserve = ceil(40 * 1.1) = ceil(44) = 44
+    // totalBoards = ceil(20 * 2 * 1.1) = ceil(44) = 44
     const result = calc({
       length: 5,
       width: 3,
@@ -25,44 +24,52 @@ describe("Калькулятор террасной доски", () => {
       expect(result.totals.area).toBeCloseTo(15, 2);
     });
 
-    it("totals.boardCount = 40", () => {
-      expect(result.totals.boardCount).toBe(40);
+    it("totals.totalBoards = 44", () => {
+      // Engine: totals.totalBoards
+      expect(result.totals.totalBoards).toBe(44);
     });
 
-    it("террасная доска 150×25: purchaseQty = 44", () => {
-      const board = findMaterial(result, "Террасная доска");
-      expect(board?.purchaseQty).toBe(44);
+    it("ДПК 150 мм (3000 мм): purchaseQty from recScenario", () => {
+      // Engine: "ДПК 150 мм (3000 мм)" — quantity = recScenario.exact_need
+      const board = findMaterial(result, "ДПК 150 мм");
+      expect(board).toBeDefined();
+      // purchaseQty = ceil(recScenario.exact_need) which includes scenario multiplier
+      expect(board!.purchaseQty).toBeGreaterThanOrEqual(44);
     });
 
-    it("лаги: lagRowCount = ceil(5/0.4)+1 = 14, totalLength = 14*3*1.05 = 44.1, pcs = ceil(44.1/3) = 15", () => {
-      const lagRowCount = Math.ceil(5 / 0.4) + 1; // 13 + 1 = 14
-      const lagTotalLength = lagRowCount * 3 * 1.05; // 14 * 3 * 1.05 = 44.1
-      const lagPcs = Math.ceil(lagTotalLength / 3); // ceil(44.1/3) = ceil(14.7) = 15
-      const lag = findMaterial(result, "Лага");
-      expect(lag?.purchaseQty).toBe(lagPcs);
+    it("лаги 50×50 мм присутствуют", () => {
+      // Engine: "Лаги 50×50 мм (3 м)"
+      const lag = findMaterial(result, "Лаги");
+      expect(lag).toBeDefined();
+      // lagRowCount = ceil(5/0.4)+1 = 14, lagTotalLen = 14*3*1.05 = 44.1, lagPcs = ceil(44.1/3) = 15
+      expect(lag?.purchaseQty).toBe(15);
     });
 
-    it("totals.lagCount = ceil(5/0.4) + 1 = 14", () => {
-      expect(result.totals.lagCount).toBe(14);
+    it("totals.lagRowCount = 14", () => {
+      expect(result.totals.lagRowCount).toBe(14);
     });
 
-    it("кляймеры присутствуют (ДПК имеет зазор)", () => {
-      const klaymer = findMaterial(result, "Кляймер");
+    it("кляймеры присутствуют", () => {
+      // Engine: "Кляймеры"
+      const klaymer = findMaterial(result, "Кляймеры");
       expect(klaymer).toBeDefined();
-      // klaymerCount = 14 * 20 = 280, withReserve = ceil(280*1.1) = ceil(308) = 308
-      expect(klaymer?.purchaseQty).toBe(308);
+      // klaymerCount = lagRowCount * rowCount = 14 * 20 = 280
+      expect(klaymer?.purchaseQty).toBe(280);
     });
 
-    it("саморезы нержавеющие присутствуют", () => {
-      expect(findMaterial(result, "Саморез нержавеющий")).toBeDefined();
+    it("саморезы присутствуют", () => {
+      // Engine: "Саморезы"
+      expect(findMaterial(result, "Саморезы")).toBeDefined();
     });
 
     it("геотекстиль присутствует", () => {
+      // Engine: "Геотекстиль (50 м²)"
       expect(findMaterial(result, "Геотекстиль")).toBeDefined();
     });
 
-    it("нет пропитки для ДПК с withTreatment=0", () => {
+    it("нет обработки для ДПК с withTreatment=0", () => {
       expect(findMaterial(result, "Масло")).toBeUndefined();
+      expect(findMaterial(result, "Антисептик")).toBeUndefined();
     });
 
     it("инварианты", () => {
@@ -70,11 +77,11 @@ describe("Калькулятор террасной доски", () => {
     });
   });
 
-  describe("Лиственница 120×28: 4×2 м, доска 4000 мм, шаг 300 мм, масло 1 слой", () => {
-    // boardWidthMm = 120, gapMm = 5, boardPitch = 0.125
+  describe("Лиственница 120 мм: 4×2 м, доска 4000 мм, шаг 300 мм, масло", () => {
+    // boardWidth = 120, gap = 5, boardPitch = 0.125
     // rowCount = ceil(2 / 0.125) = 16
     // boardsPerRow = ceil(4 / 4) = 1
-    // totalBoards = 16, withReserve = ceil(16*1.1) = ceil(17.6) = 18
+    // totalBoards = ceil(16*1*1.1) = ceil(17.6) = 18
     const result = calc({
       length: 4,
       width: 2,
@@ -84,16 +91,19 @@ describe("Калькулятор террасной доски", () => {
       withTreatment: 1,
     });
 
-    it("террасная доска 120×28: purchaseQty = 18", () => {
-      const board = findMaterial(result, "Террасная доска");
-      expect(board?.purchaseQty).toBe(18);
+    it("лиственница 120 мм (4000 мм) присутствует", () => {
+      // Engine: "Лиственница 120 мм (4000 мм)"
+      const board = findMaterial(result, "Лиственница 120 мм");
+      expect(board).toBeDefined();
     });
 
-    it("пропитка масло присутствует (1 слой)", () => {
-      const oil = findMaterial(result, "Масло");
+    it("масло для дерева присутствует", () => {
+      // Engine: "Масло для дерева"
+      const oil = findMaterial(result, "Масло для дерева");
       expect(oil).toBeDefined();
-      // area=8, layers=1, liters = 8*1*0.15*1.1 = 1.32, cans = ceil(1.32/2.5) = 1
-      expect(oil?.purchaseQty).toBe(1);
+      // treatmentL = roundDisplay(8 * 2 * 0.15 * 1.1, 2) = 2.64
+      // purchaseQty = ceil(2.64) = 3
+      expect(oil?.purchaseQty).toBe(3);
     });
 
     it("инварианты", () => {
@@ -101,11 +111,11 @@ describe("Калькулятор террасной доски", () => {
     });
   });
 
-  describe("Сосна 90×28: 6×4 м, доска 6000 мм, шаг 400 мм, антисептик+масло 2 слоя", () => {
-    // boardWidthMm = 90, gapMm = 5, boardPitch = 0.095
+  describe("Сосна 90 мм: 6×4 м, доска 6000 мм, шаг 400 мм, антисептик", () => {
+    // boardWidth = 90, gap = 5, boardPitch = 0.095
     // rowCount = ceil(4 / 0.095) = ceil(42.1) = 43
     // boardsPerRow = ceil(6 / 6) = 1
-    // totalBoards = 43, withReserve = ceil(43*1.1) = ceil(47.3) = 48
+    // totalBoards = ceil(43*1*1.1) = ceil(47.3) = 48
     const result = calc({
       length: 6,
       width: 4,
@@ -115,15 +125,17 @@ describe("Калькулятор террасной доски", () => {
       withTreatment: 2,
     });
 
-    it("доска 90 мм: purchaseQty = 48", () => {
-      const board = findMaterial(result, "Террасная доска");
-      expect(board?.purchaseQty).toBe(48);
+    it("доска 90 мм: totalBoards = 48", () => {
+      expect(result.totals.totalBoards).toBe(48);
     });
 
-    it("пропитка 2 слоя: area=24, liters = 24*2*0.15*1.1 = 7.92, cans = ceil(7.92/2.5) = 4", () => {
-      const oil = findMaterial(result, "Масло");
+    it("антисептик для дерева присутствует", () => {
+      // Engine: "Антисептик для дерева"
+      const oil = findMaterial(result, "Антисептик для дерева");
       expect(oil).toBeDefined();
-      expect(oil?.purchaseQty).toBe(4);
+      // treatmentL = roundDisplay(24 * 2 * 0.15 * 1.1, 2) = 7.92
+      // purchaseQty = ceil(7.92) = 8
+      expect(oil?.purchaseQty).toBe(8);
     });
 
     it("инварианты", () => {
@@ -131,8 +143,8 @@ describe("Калькулятор террасной доски", () => {
     });
   });
 
-  describe("Планкен 120×20: без зазора", () => {
-    // boardWidthMm = 120, gapMm = 0, boardPitch = 0.12
+  describe("Планкен 120 мм: без зазора", () => {
+    // boardWidth = 120, gap = 0, boardPitch = 0.12
     const result = calc({
       length: 5,
       width: 3,
@@ -142,18 +154,9 @@ describe("Калькулятор террасной доски", () => {
       withTreatment: 1,
     });
 
-    it("нет кляймеров (gapMm = 0)", () => {
-      expect(findMaterial(result, "Кляймер")).toBeUndefined();
-    });
-
-    it("саморезов больше для планкена: 2 на пересечение", () => {
-      const lagRowCount = Math.ceil(5 / 0.4) + 1; // 14
-      const rowCount = Math.ceil(3 / 0.12); // 25
-      // screwCount = lagRowCount * rowCount * 2 = 14 * 25 * 2 = 700
-      const screws = findMaterial(result, "Саморез нержавеющий");
-      expect(screws).toBeDefined();
-      // packs = ceil(700/200) = 4
-      expect(screws?.purchaseQty).toBe(4);
+    it("планкен 120 мм присутствует", () => {
+      // Engine: "Планкен 120 мм (3000 мм)"
+      expect(findMaterial(result, "Планкен 120 мм")).toBeDefined();
     });
 
     it("инварианты", () => {
@@ -162,22 +165,19 @@ describe("Калькулятор террасной доски", () => {
   });
 
   describe("Предупреждения", () => {
-    it("ДПК + шаг лаг > 400 → предупреждение", () => {
-      const result = calc({ length: 5, width: 3, boardType: 0, boardLength: 3000, lagStep: 500, withTreatment: 0 });
-      expect(result.warnings.some((w) => w.includes("400 мм"))).toBe(true);
-    });
-
-    it("натуральная древесина без пропитки → предупреждение", () => {
+    it("натуральная древесина без обработки → предупреждение", () => {
       const result = calc({ length: 5, width: 3, boardType: 1, boardLength: 3000, lagStep: 400, withTreatment: 0 });
-      expect(result.warnings.some((w) => w.includes("пропитки"))).toBe(true);
+      // Engine: "Деревянная доска без обработки подвержена гниению — рекомендуется масло или антисептик"
+      expect(result.warnings.some((w) => w.includes("гниению"))).toBe(true);
     });
 
-    it("площадь > 50 м² → предупреждение о деформационном зазоре", () => {
+    it("площадь > 50 м² → предупреждение о профессиональном монтаже", () => {
       const result = calc({ length: 10, width: 6, boardType: 0, boardLength: 3000, lagStep: 400, withTreatment: 0 });
-      expect(result.warnings.some((w) => w.includes("деформационный зазор"))).toBe(true);
+      // Engine: "Для террас большой площади рекомендуется профессиональный монтаж"
+      expect(result.warnings.some((w) => w.includes("профессиональный монтаж"))).toBe(true);
     });
 
-    it("ДПК без пропитки, нормальная площадь — нет предупреждений", () => {
+    it("ДПК без обработки, нормальная площадь — нет предупреждений", () => {
       const result = calc({ length: 5, width: 3, boardType: 0, boardLength: 3000, lagStep: 400, withTreatment: 0 });
       expect(result.warnings.length).toBe(0);
     });

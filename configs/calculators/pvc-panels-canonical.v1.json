@@ -1,0 +1,40 @@
+{
+  "calculator_id": "pvc-panels",
+  "formula_version": "pvc-panels-canonical-v1",
+  "input_schema": [
+    { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "area", "unit": "m2", "default_value": 15, "min": 1, "max": 500 },
+    { "key": "wallWidth", "unit": "m", "default_value": 3, "min": 0.5, "max": 30 },
+    { "key": "wallHeight", "unit": "m", "default_value": 2.5, "min": 0.5, "max": 10 },
+    { "key": "panelWidth", "unit": "m", "default_value": 0.25, "min": 0.1, "max": 0.5 },
+    { "key": "panelType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "needProfile", "default_value": 1, "min": 0, "max": 1 },
+    { "key": "needCorners", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {},
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_reserve": 1.10,
+    "profile_reserve": 1.10,
+    "profile_step": 0.4,
+    "panel_lengths": [2.7, 3.0, 2.7],
+    "corner_profile_length": 3.0,
+    "standard_corners": 4
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 100
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "calculator_id": "ceiling-insulation",
+  "formula_version": "ceiling-insulation-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 40, "min": 1, "max": 500 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 200 },
+    { "key": "insulationType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "layers", "default_value": 1, "min": 1, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "insulation_types": [0, 1, 2, 3],
+    "thicknesses": [50, 100, 150, 200]
+  },
+  "packaging_rules": {
+    "unit": "упаковок",
+    "package_size": 1
+  },
+  "material_rules": {
+    "plate_pack_m2": 6,
+    "roll_areas": { "50": 9, "100": 5 },
+    "epps_plate": 0.72,
+    "ecowool_density": 35,
+    "ecowool_bag": 15,
+    "plate_reserve": 1.05,
+    "vapor_roll": 50,
+    "vapor_reserve": 1.15,
+    "tape_per_area": 50
+  },
+  "warnings_rules": {
+    "thin_insulation_threshold_mm": 50,
+    "large_area_threshold_m2": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

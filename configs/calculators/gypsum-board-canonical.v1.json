@@ -1,0 +1,49 @@
+{
+  "calculator_id": "gypsum-board",
+  "formula_version": "gypsum-board-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 40, "min": 1, "max": 1000 },
+    { "key": "constructionType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "layers", "default_value": 1, "min": 1, "max": 2 },
+    { "key": "gklType", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "profileStep", "unit": "mm", "default_value": 600, "min": 400, "max": 600 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "construction_types": [0, 1, 2],
+    "gkl_types": [0, 1, 2],
+    "profile_steps": [400, 600]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "sheet_area": 3.0,
+    "sheet_reserve": 1.1,
+    "pp_step_default": 600,
+    "screws_gkl_per_sheet": 24,
+    "dubel_step": 0.5,
+    "dubel_reserve": 1.1,
+    "serpyanka_reserve": 1.1,
+    "putty_per_serpyanka": 0.025,
+    "putty_bag": 25,
+    "primer_l_per_m2": 0.15,
+    "primer_reserve": 1.15,
+    "primer_can": 10,
+    "profile_length": 3
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 200,
+    "double_layer_note": true
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

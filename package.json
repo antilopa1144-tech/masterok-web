@@ -10,7 +10,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy:ci": "node deploy-ci.mjs",
-    "deploy:ci:skip-tests": "node deploy-ci.mjs --skip-tests"
+    "deploy:ci:skip-tests": "node deploy-ci.mjs --skip-tests",
+    "sync:specs": "npx tsx scripts/sync-specs-to-dart.ts",
+    "sync:parity": "npx tsx scripts/generate-parity-fixtures.ts",
+    "sync:all": "npm run sync:specs && npm run sync:parity",
+    "test:parity": "vitest run tests/parity.test.ts"
   },
   "dependencies": {
     "basic-ftp": "^5.1.0",

@@ -1,0 +1,419 @@
+import { computeEstimate, type EngineCalculatorConfig } from './compute';
+import type {
+  CanonicalCalculatorResult,
+  CanonicalMaterialResult,
+  ScreedCanonicalSpec,
+  ScreedTypeSpec,
+} from './canonical';
+import type { FactorTable } from './factors';
+import { roundDisplay } from './units';
+
+interface ScreedInputs {
+  inputMode?: number;
+  length?: number;
+  width?: number;
+  area?: number;
+  thickness?: number;
+  screedType?: number;
+}
+
+/* ─── constants ─── */
+const VOLUME_MULTIPLIER = 1.08;
+
+// Type 0 — ЦПС 1:3
+const CEMENT_DENSITY = 1300;   // kg/m³
+const CEMENT_FRACTION = 0.25;  // 1/4 volume
+const SAND_FRACTION = 0.75;    // 3/4 volume
+const SAND_DENSITY = 1.6;      // t/m³
+const WATER_PER_M3 = 200;      // L/m³
+
+// Type 1 — Ready CPS M150
+const CPS_DENSITY_READY = 2000; // kg/m³
+
+// Type 2 — Semi-dry
+const CPS_DENSITY_SEMIDRY = 1800; // kg/m³
+const FIBER_KG_PER_M2 = 0.6;
+
+// Ancillary
+const MESH_MARGIN = 1.15;       // 15%
+const FILM_MARGIN = 1.1;        // 10%
+const DAMPER_TAPE_RESERVE = 1.05;
+const BEACONS_AREA_PER_PIECE = 2; // 1 beacon profile per 2 m²
+
+const SCREED_FACTOR_TABLE: FactorTable = {
+  surface_quality: { min: 1, rec: 1, max: 1 },
+  geometry_complexity: { min: 0.98, rec: 1, max: 1.08 },
+  installation_method: { min: 1, rec: 1, max: 1 },
+  worker_skill: { min: 0.95, rec: 1, max: 1.1 },
+  waste_factor: { min: 0.98, rec: 1, max: 1.08 },
+  logistics_buffer: { min: 1, rec: 1, max: 1 },
+  packaging_rounding: { min: 1, rec: 1, max: 1 },
+};
+
+function getInputDefault(spec: ScreedCanonicalSpec, key: string, fallback: number): number {
+  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
+}
+
+function estimatePerimeter(area: number): number {
+  if (area <= 0) return 0;
+  return 4 * Math.sqrt(area);
+}
+
+function resolveArea(spec: ScreedCanonicalSpec, inputs: ScreedInputs) {
+  const inputMode = Math.round(inputs.inputMode ?? getInputDefault(spec, 'inputMode', 0));
+  if (inputMode === 0) {
+    const length = Math.max(0.1, inputs.length ?? getInputDefault(spec, 'length', 5));
+    const width = Math.max(0.1, inputs.width ?? getInputDefault(spec, 'width', 4));
+    return {
+      inputMode: 0,
+      area: roundDisplay(length * width, 3),
+      perimeter: roundDisplay(2 * (length + width), 3),
+    };
+  }
+
+  const area = Math.max(0.1, inputs.area ?? getInputDefault(spec, 'area', 20));
+  return {
+    inputMode: 1,
+    area: roundDisplay(area, 3),
+    perimeter: roundDisplay(estimatePerimeter(area), 3),
+  };
+}
+
+function resolveScreedType(spec: ScreedCanonicalSpec, rawType: number | undefined): ScreedTypeSpec {
+  const screedType = Math.max(0, Math.min(2, Math.round(rawType ?? getInputDefault(spec, 'screedType', 0))));
+  return spec.normative_formula.screed_types.find((item) => item.id === screedType) ?? spec.normative_formula.screed_types[0];
+}
+
+function toEngineConfig(spec: ScreedCanonicalSpec, bagWeight: number, consumptionKgPerM2Mm: number): EngineCalculatorConfig {
+  return {
+    id: spec.calculator_id,
+    title: spec.calculator_id,
+    baseFormula: 'putty_area_thickness',
+    baseParams: {
+      consumption_kg_per_m2_mm: consumptionKgPerM2Mm,
+    },
+    enabledFactors: spec.field_factors.enabled,
+    packaging: {
+      unit: spec.packaging_rules.unit,
+      options: [{ size: bagWeight, label: `screed-bag-${bagWeight}${spec.packaging_rules.unit}` }],
+    },
+  };
+}
+
+function buildMaterialsType0(
+  volume: number,
+  area: number,
+  thickness: number,
+  perimeter: number,
+  bags50Cement: number,
+  cementKg: number,
+  sandTons: number,
+  waterL: number,
+  meshArea: number,
+  filmArea: number,
+  beacons: number,
+  damperTapeM: number,
+): CanonicalMaterialResult[] {
+  const materials: CanonicalMaterialResult[] = [
+    {
+      name: 'Цемент М400 (мешки 50 кг)',
+      quantity: roundDisplay(cementKg, 3),
+      unit: 'кг',
+      withReserve: bags50Cement * 50,
+      purchaseQty: bags50Cement,
+      category: 'Основное',
+    },
+    {
+      name: 'Песок строительный',
+      quantity: sandTons,
+      unit: 'т',
+      withReserve: sandTons,
+      purchaseQty: Math.ceil(sandTons),
+      category: 'Основное',
+    },
+    {
+      name: 'Вода',
+      quantity: roundDisplay(waterL, 3),
+      unit: 'л',
+      withReserve: roundDisplay(waterL, 3),
+      purchaseQty: Math.ceil(waterL),
+      category: 'Основное',
+    },
+    {
+      name: 'Плёнка ПЭ',
+      quantity: filmArea,
+      unit: 'м²',
+      withReserve: filmArea,
+      purchaseQty: filmArea,
+      category: 'Подготовка',
+    },
+  ];
+
+  if (meshArea > 0) {
+    materials.push({
+      name: 'Сетка армирующая',
+      quantity: meshArea,
+      unit: 'м²',
+      withReserve: meshArea,
+      purchaseQty: meshArea,
+      category: 'Армирование',
+    });
+  }
+
+  materials.push(
+    {
+      name: 'Маячковый профиль',
+      quantity: beacons,
+      unit: 'шт',
+      withReserve: beacons,
+      purchaseQty: beacons,
+      category: 'Разметка',
+    },
+    {
+      name: 'Демпферная лента',
+      quantity: damperTapeM,
+      unit: 'м',
+      withReserve: damperTapeM,
+      purchaseQty: damperTapeM,
+      category: 'Подготовка',
+    },
+  );
+
+  return materials;
+}
+
+function buildMaterialsType1(
+  volume: number,
+  area: number,
+  thickness: number,
+  perimeter: number,
+  cpsKg: number,
+  bags50: number,
+  bags40: number,
+  meshArea: number,
+  filmArea: number,
+  beacons: number,
+  damperTapeM: number,
+): CanonicalMaterialResult[] {
+  const materials: CanonicalMaterialResult[] = [
+    {
+      name: 'Готовая ЦПС М150 (мешки 50 кг)',
+      quantity: roundDisplay(cpsKg, 3),
+      unit: 'кг',
+      withReserve: bags50 * 50,
+      purchaseQty: bags50,
+      category: 'Основное',
+    },
+    {
+      name: 'Плёнка ПЭ',
+      quantity: filmArea,
+      unit: 'м²',
+      withReserve: filmArea,
+      purchaseQty: filmArea,
+      category: 'Подготовка',
+    },
+  ];
+
+  if (meshArea > 0) {
+    materials.push({
+      name: 'Сетка армирующая',
+      quantity: meshArea,
+      unit: 'м²',
+      withReserve: meshArea,
+      purchaseQty: meshArea,
+      category: 'Армирование',
+    });
+  }
+
+  materials.push(
+    {
+      name: 'Маячковый профиль',
+      quantity: beacons,
+      unit: 'шт',
+      withReserve: beacons,
+      purchaseQty: beacons,
+      category: 'Разметка',
+    },
+    {
+      name: 'Демпферная лента',
+      quantity: damperTapeM,
+      unit: 'м',
+      withReserve: damperTapeM,
+      purchaseQty: damperTapeM,
+      category: 'Подготовка',
+    },
+  );
+
+  return materials;
+}
+
+function buildMaterialsType2(
+  volume: number,
+  area: number,
+  thickness: number,
+  perimeter: number,
+  cpsKg: number,
+  bags50: number,
+  fiberKg: number,
+  filmArea: number,
+  damperTapeM: number,
+): CanonicalMaterialResult[] {
+  return [
+    {
+      name: 'ЦПС полусухая (мешки 50 кг)',
+      quantity: roundDisplay(cpsKg, 3),
+      unit: 'кг',
+      withReserve: bags50 * 50,
+      purchaseQty: bags50,
+      category: 'Основное',
+    },
+    {
+      name: 'Фиброволокно ПП',
+      quantity: roundDisplay(fiberKg, 3),
+      unit: 'кг',
+      withReserve: roundDisplay(fiberKg, 3),
+      purchaseQty: Math.ceil(fiberKg),
+      category: 'Армирование',
+    },
+    {
+      name: 'Плёнка ПЭ',
+      quantity: filmArea,
+      unit: 'м²',
+      withReserve: filmArea,
+      purchaseQty: filmArea,
+      category: 'Подготовка',
+    },
+    {
+      name: 'Демпферная лента',
+      quantity: damperTapeM,
+      unit: 'м',
+      withReserve: damperTapeM,
+      purchaseQty: damperTapeM,
+      category: 'Подготовка',
+    },
+  ];
+}
+
+export function computeCanonicalScreed(
+  spec: ScreedCanonicalSpec,
+  inputs: ScreedInputs,
+  factorTable: FactorTable = SCREED_FACTOR_TABLE,
+): CanonicalCalculatorResult {
+  const work = resolveArea(spec, inputs);
+  const thickness = Math.max(
+    spec.material_rules.min_thickness_mm,
+    Math.min(spec.material_rules.max_thickness_mm, inputs.thickness ?? getInputDefault(spec, 'thickness', 50)),
+  );
+  const screedType = resolveScreedType(spec, inputs.screedType);
+
+  const area = work.area;
+  const perimeter = work.perimeter;
+  const volume = roundDisplay(area * (thickness / 1000) * VOLUME_MULTIPLIER, 6);
+
+  // Determine the effective consumption for the engine (kg per m2 per mm)
+  // We compute the total kg directly, then derive an effective consumption for the scenario engine
+  let primaryKg: number;
+  let effectiveConsumptionKgPerM2Mm: number;
+
+  if (screedType.id === 0) {
+    // ЦПС 1:3 — total volume based
+    primaryKg = roundDisplay(volume * CEMENT_FRACTION * CEMENT_DENSITY, 3); // cement kg
+    effectiveConsumptionKgPerM2Mm = (CEMENT_FRACTION * CEMENT_DENSITY * VOLUME_MULTIPLIER) / 1000;
+  } else if (screedType.id === 1) {
+    primaryKg = roundDisplay(volume * CPS_DENSITY_READY, 3);
+    effectiveConsumptionKgPerM2Mm = (CPS_DENSITY_READY * VOLUME_MULTIPLIER) / 1000;
+  } else {
+    primaryKg = roundDisplay(volume * CPS_DENSITY_SEMIDRY, 3);
+    effectiveConsumptionKgPerM2Mm = (CPS_DENSITY_SEMIDRY * VOLUME_MULTIPLIER) / 1000;
+  }
+
+  const bagWeight = 50;
+
+  const scenarios = computeEstimate(
+    toEngineConfig(spec, bagWeight, effectiveConsumptionKgPerM2Mm),
+    {
+      area_m2: area,
+      thickness_mm: thickness,
+    },
+    factorTable,
+  );
+
+  const recScenario = scenarios.REC;
+
+  // Compute ancillary quantities
+  const cementKg = roundDisplay(volume * CEMENT_FRACTION * CEMENT_DENSITY, 3);
+  const bags50Cement = Math.ceil(cementKg / 50);
+  const sandTons = roundDisplay(Math.ceil(volume * SAND_FRACTION * SAND_DENSITY * 10) / 10, 3);
+  const waterL = roundDisplay(volume * WATER_PER_M3, 3);
+
+  const cpsKgReady = roundDisplay(volume * CPS_DENSITY_READY, 3);
+  const bags50Ready = Math.ceil(cpsKgReady / 50);
+  const bags40Ready = Math.ceil(cpsKgReady / 40);
+
+  const cpsKgSemidry = roundDisplay(volume * CPS_DENSITY_SEMIDRY, 3);
+  const bags50Semidry = Math.ceil(cpsKgSemidry / 50);
+  const fiberKg = roundDisplay(area * FIBER_KG_PER_M2, 3);
+
+  const meshArea = thickness >= spec.material_rules.mesh_thickness_threshold_mm
+    ? Math.ceil(area * MESH_MARGIN)
+    : 0;
+  const filmArea = Math.ceil(area * FILM_MARGIN);
+  const beacons = Math.ceil(area / BEACONS_AREA_PER_PIECE);
+  const damperTapeM = Math.ceil(perimeter * DAMPER_TAPE_RESERVE);
+
+  // Build materials list per type
+  let materials: CanonicalMaterialResult[];
+  if (screedType.id === 0) {
+    materials = buildMaterialsType0(volume, area, thickness, perimeter, bags50Cement, cementKg, sandTons, waterL, meshArea, filmArea, beacons, damperTapeM);
+  } else if (screedType.id === 1) {
+    materials = buildMaterialsType1(volume, area, thickness, perimeter, cpsKgReady, bags50Ready, bags40Ready, meshArea, filmArea, beacons, damperTapeM);
+  } else {
+    materials = buildMaterialsType2(volume, area, thickness, perimeter, cpsKgSemidry, bags50Semidry, fiberKg, filmArea, damperTapeM);
+  }
+
+  // Warnings
+  const warnings: string[] = [];
+  if (thickness < spec.warnings_rules.thin_threshold_mm) {
+    warnings.push('Толщина менее 30 мм — слишком тонкая для выравнивания пола');
+  }
+  if (thickness > spec.warnings_rules.thick_threshold_mm) {
+    warnings.push('При толщине более 100 мм рекомендуется разделить заливку на слои');
+  }
+  if (screedType.id === 0 && area > spec.warnings_rules.large_area_cps_threshold_m2) {
+    warnings.push('При площади более 50 м² рекомендуется использовать готовую ЦПС');
+  }
+
+  return {
+    canonicalSpecId: spec.calculator_id,
+    formulaVersion: spec.formula_version,
+    materials,
+    totals: {
+      area,
+      perimeter,
+      inputMode: work.inputMode,
+      thickness: roundDisplay(thickness, 3),
+      screedType: screedType.id,
+      volume: roundDisplay(volume, 6),
+      cementKg: screedType.id === 0 ? cementKg : 0,
+      bags50Cement: screedType.id === 0 ? bags50Cement : 0,
+      sandTons: screedType.id === 0 ? sandTons : 0,
+      waterL: screedType.id === 0 ? waterL : 0,
+      cpsKg: screedType.id === 1 ? cpsKgReady : screedType.id === 2 ? cpsKgSemidry : 0,
+      bags50: screedType.id === 1 ? bags50Ready : screedType.id === 2 ? bags50Semidry : 0,
+      bags40: screedType.id === 1 ? bags40Ready : 0,
+      fiberKg: screedType.id === 2 ? fiberKg : 0,
+      meshArea,
+      filmArea,
+      beacons,
+      damperTapeM,
+      minExactNeedKg: scenarios.MIN.exact_need,
+      recExactNeedKg: recScenario.exact_need,
+      maxExactNeedKg: scenarios.MAX.exact_need,
+      minPurchaseKg: scenarios.MIN.purchase_quantity,
+      recPurchaseKg: recScenario.purchase_quantity,
+      maxPurchaseKg: scenarios.MAX.purchase_quantity,
+    },
+    warnings,
+    scenarios,
+  };
+}

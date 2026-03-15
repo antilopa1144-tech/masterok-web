@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalCeilingStretch } from "../../../../engine/ceiling-stretch";
+import ceilingstretchSpec from "../../../../configs/calculators/ceiling-stretch-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const ceilingStretchDef: CalculatorDefinition = {
   id: "ceilings_stretch",
@@ -58,103 +60,18 @@ export const ceilingStretchDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 20);
-    const corners = Math.round(inputs.corners ?? 4);
-    const fixtures = Math.round(inputs.fixtures ?? 6);
-    const ceilingType = Math.round(inputs.ceilingType ?? 0);
-
-    // Периметр из площади и числа углов (прямоугольник: периметр ≈ 4×√area для квадрата)
-    // Используем упрощённую формулу: периметр = 2×(√(area×R) + √(area/R)), R зависит от углов
-    // Для простого расчёта: периметр ≈ √(area × 4)  (квадратная комната)
-    const side = Math.sqrt(area);
-    const perimeter = side * 4; // упрощение — для прямоугольной комнаты достаточно
-
-    // Багет: по периметру + 10% на подрезку и стыки
-    const baguetLength = perimeter * 1.1;
-
-    // Разметочный шнур = периметр
-    const stringLength = perimeter;
-
-    // Стартовый профиль (алюминиевый Г-образный, 2.5м хлысты)
-    const profilePcs = Math.ceil(baguetLength / 2.5);
-
-    const typeNames = ["Глянцевое ПВХ", "Матовое ПВХ", "Тканевое"];
-
-    const warnings: string[] = [];
-    if (area > 100) {
-      warnings.push("Для больших площадей (>100 м²) используются составные полотна со швом — учтите при заказе");
-    }
-    if (ceilingType === 2) {
-      warnings.push("Тканевый натяжной потолок можно монтировать без нагрева — безопаснее для деревянных перекрытий");
-    }
-    if (fixtures > 0) {
-      warnings.push(`Для ${fixtures} светильников: устанавливайте закладные платформы ДО натяжки полотна`);
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "ceiling-stretch-main",
-      title: "Ceiling stretch main",
-      exactNeed: area,
-      unit: "м²",
-      packageSizes: [1],
-      packageLabelPrefix: "ceiling-stretch-m2",
-    });
+  calculate(inputs) {
+    const spec = ceilingstretchSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalCeilingStretch(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `Полотно натяжного потолка — ${typeNames[ceilingType] ?? "ПВХ"}`,
-          quantity: area,
-          unit: "м²",
-          withReserve: area,
-          purchaseQty: Math.ceil(area),
-          category: "Полотно",
-        },
-        {
-          name: "Профиль стартовый (багет) алюминиевый 2.5 м",
-          quantity: baguetLength / 2.5,
-          unit: "шт",
-          withReserve: profilePcs,
-          purchaseQty: profilePcs,
-          category: "Профиль",
-        },
-        {
-          name: "Декоративная вставка в багет (гарпун/клипса)",
-          quantity: perimeter,
-          unit: "м.п.",
-          withReserve: Math.ceil(perimeter * 1.1),
-          purchaseQty: Math.ceil(perimeter * 1.1),
-          category: "Профиль",
-        },
-        ...(fixtures > 0 ? [{
-          name: "Закладная платформа для светильника",
-          quantity: fixtures,
-          unit: "шт",
-          withReserve: fixtures,
-          purchaseQty: fixtures,
-          category: "Светильники",
-        }] : []),
-        {
-          name: "Маскировочная лента (заглушка, бухта 50 м)",
-          quantity: perimeter,
-          unit: "м.п.",
-          withReserve: Math.ceil(perimeter * 1.1 * 10) / 10,
-          purchaseQty: Math.ceil(perimeter * 1.1 / 50),
-          category: "Профиль",
-        },
-        {
-          name: "Обвод для труб",
-          quantity: 2,
-          unit: "шт",
-          withReserve: 2,
-          purchaseQty: 2,
-          category: "Доборные",
-        },
-      ],
-      totals: { area, perimeter, fixtures } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

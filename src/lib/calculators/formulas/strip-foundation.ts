@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalStripFoundation } from "../../../../engine/strip-foundation";
+import stripfoundationSpec from "../../../../configs/calculators/strip-foundation-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const stripFoundationDef: CalculatorDefinition = {
   id: "strip_foundation",
@@ -82,86 +84,17 @@ export const stripFoundationDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs) {
-    const perimeter = Math.max(10, inputs.perimeter ?? 40);
-    const widthMm = Math.max(200, inputs.width ?? 400);
-    const depthMm = Math.max(300, inputs.depth ?? 700);
-    const aboveMm = Math.max(0, inputs.aboveGround ?? 300);
-    const reinforcement = Math.round(inputs.reinforcement ?? 1);
-    const delivery = Math.round(inputs.deliveryMethod ?? 0);
-
-    const widthM = widthMm / 1000;
-    const totalHeightM = (depthMm + aboveMm) / 1000;
-
-    // Объём бетона
-    let volume = perimeter * widthM * totalHeightM;
-    
-    // Технологические потери
-    let techLoss = 0;
-    if (delivery === 1) techLoss = 0.5; // остаток в системе насоса
-    
-    const volumeWithReserve = (volume + techLoss) * 1.07; // 7% на усадку и недовоз
-
-    // Арматура
-    const rebarDiamMm = reinforcement === 2 ? 14 : 12;
-    let rebarThreads = 4;
-    if (reinforcement === 0) rebarThreads = 2;
-    if (reinforcement === 3) rebarThreads = 6;
-
-    // Продольные нитки (нахлест 30-40 диаметров ~ 10% длины)
-    const longitudinalLength = perimeter * rebarThreads * 1.12;
-
-    // Поперечные хомуты (шаг 300-400 мм)
-    const clampStep = 0.4;
-    const clampCount = Math.ceil(perimeter / clampStep);
-    // Длина хомута: 2*(W-0.1) + 2*(H-0.1) + 0.3 (загибы)
-    const clampPerimeter = 2 * (widthM - 0.1 + totalHeightM - 0.1) + 0.3; 
-    const clampLength = clampCount * Math.max(0.8, clampPerimeter) * 1.05;
-
-    const totalRebarLength = longitudinalLength + clampLength;
-    const rebarWeightKg = longitudinalLength * (rebarDiamMm === 14 ? 1.21 : 0.888) + clampLength * 0.395; // Ø8 = 0.395 кг/м
-
-    // Вязальная проволока: ~0.05 кг на соединение
-    const connections = clampCount * rebarThreads;
-    const wireKg = Math.ceil(connections * 0.05 * 1.1 * 10) / 10;
-
-    // Опалубка (две стороны)
-    const formworkArea = 2 * perimeter * (aboveMm / 1000 + 0.1); // цоколь + 10см в землю
-    const boardsPcs = Math.ceil(formworkArea / (0.15 * 6)); // доска 150×25×6000 мм
-
-    const warnings: string[] = [];
-    if (depthMm < 600 && perimeter > 30) warnings.push("Глубина менее 600 мм рискованна для отапливаемого здания. Проверьте глубину промерзания грунта");
-    if (widthMm < 300) warnings.push("Ширина ленты менее 300 мм не рекомендуется для несущих стен из кирпича или блоков");
-    if (delivery === 1 && volume < 5) warnings.push("Заказ бетононасоса для объёма < 5 м³ экономически невыгоден");
-
-    const materials = [
-      { name: "Бетон М250 (В20)", quantity: volume, unit: "м³", withReserve: Math.ceil(volumeWithReserve * 10) / 10, purchaseQty: Math.ceil(volumeWithReserve * 10) / 10, category: "Бетон" },
-      { name: `Арматура Ø${rebarDiamMm} мм (рабочая)`, quantity: longitudinalLength, unit: "м.п.", withReserve: Math.ceil(longitudinalLength), purchaseQty: Math.ceil(longitudinalLength), category: "Арматура" },
-      { name: "Арматура Ø8 мм (хомуты)", quantity: clampLength, unit: "м.п.", withReserve: Math.ceil(clampLength), purchaseQty: Math.ceil(clampLength), category: "Арматура" },
-      { name: "Вязальная проволока (отожженная)", quantity: wireKg, unit: "кг", withReserve: wireKg, purchaseQty: Math.ceil(wireKg), category: "Арматура" },
-      { name: "Доска опалубки 25×150×6000 мм", quantity: boardsPcs, unit: "шт", withReserve: boardsPcs, purchaseQty: boardsPcs, category: "Опалубка" },
-      { name: "Брус 50×50 мм (распорки/колья)", quantity: Math.ceil(perimeter / 2), unit: "шт", withReserve: Math.ceil(perimeter / 2), purchaseQty: Math.ceil(perimeter / 2), category: "Опалубка" },
-      { name: "Саморезы по дереву 70-90 мм", quantity: boardsPcs * 4, unit: "шт", withReserve: boardsPcs * 4, purchaseQty: Math.ceil(boardsPcs * 4 / 100) * 100, category: "Опалубка" },
-    ];
-
-    if (delivery === 2) {
-      const cementBags = Math.ceil(volumeWithReserve * 300 / 50);
-      materials.push({ name: "Цемент М400 (мешки 50 кг)", quantity: cementBags, unit: "мешков", withReserve: cementBags, purchaseQty: cementBags, category: "Компоненты (замес)" });
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "strip-foundation-main",
-      title: "Strip foundation main",
-      exactNeed: volumeWithReserve,
-      unit: "м³",
-      packageSizes: [0.1],
-      packageLabelPrefix: "strip-foundation-concrete",
-    });
+    const spec = stripfoundationSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalStripFoundation(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: { perimeter, widthMm, totalHeightM, volume, rebarWeightKg },
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

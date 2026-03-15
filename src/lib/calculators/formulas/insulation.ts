@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalInsulation } from "../../../../engine/insulation";
+import insulationSpec from "../../../../configs/calculators/insulation-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const insulationDef: CalculatorDefinition = {
   id: "insulation",
@@ -63,140 +65,18 @@ export const insulationDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 50);
-    const type = Math.round(inputs.insulationType ?? 0);
-    const thickness = inputs.thickness ?? 100;
-    const sizeOption = Math.round(inputs.plateSize ?? 0);
-
-    const plateSizes: Record<number, [number, number]> = {
-      0: [1.2, 0.6],   // 1200×600 = 0.72 м²
-      1: [1.0, 0.5],   // 1000×500 = 0.5 м²
-      2: [2.0, 1.0],   // 2000×1000 = 2.0 м²
-    };
-    const [pw, ph] = plateSizes[sizeOption] ?? [1.2, 0.6];
-    const plateArea = pw * ph;
-
-    const warnings: string[] = [];
-
-    if (type === 3) {
-      // Эковата
-      const density = 35; // кг/м³
-      const volume = area * (thickness / 1000);
-      const ecoWoolKg = Math.ceil(volume * density * 1.1);
-      warnings.push("Эковата требует профессионального оборудования для напыления");
-      const scenarios = buildNativeScenarios({
-        id: "insulation-ecowool",
-        title: "Insulation ecowool",
-        exactNeed: ecoWoolKg,
-        unit: "kg",
-        packageSizes: [15],
-        packageLabelPrefix: "insulation-ecowool-bag",
-      });
-      return {
-        materials: [
-          { name: "Эковата (мешки 15 кг)", quantity: ecoWoolKg / 15, unit: "мешков", withReserve: Math.ceil(ecoWoolKg / 15), purchaseQty: Math.ceil(ecoWoolKg / 15), category: "Основное" },
-        ],
-        totals: { area, thickness, volume, ecoWoolKg },
-        warnings,
-        scenarios,
-      };
-    }
-
-    const areaWithReserve = area * 1.05;
-    const platesNeeded = Math.ceil(areaWithReserve / plateArea);
-
-    // Дюбели для крепления: 5–8 шт/м² в зависимости от типа
-    const dowelsPerSqm: Record<number, number> = { 0: 7, 1: 5, 2: 6 };
-    const dowels = Math.ceil(area * (dowelsPerSqm[type] ?? 6) * 1.05);
-
-    const materials = [
-      {
-        name: `${["Минвата", "Пеноплекс", "Пенопласт ППС"][type]} ${thickness} мм`,
-        quantity: area / plateArea,
-        unit: "плит",
-        withReserve: platesNeeded,
-        purchaseQty: platesNeeded,
-        category: "Основное",
-      },
-      {
-        name: "Дюбели-зонтики (тарельчатые)",
-        quantity: dowels,
-        unit: "шт",
-        withReserve: dowels,
-        purchaseQty: Math.ceil(dowels / 100) * 100,
-        category: "Крепёж",
-      },
-    ];
-
-    if (type === 0) {
-      // Минвата: нужна гидроветрозащитная мембрана и пароизоляция
-      const membraneArea = Math.ceil(area * 1.15);
-      materials.push({
-        name: "Гидроветрозащитная мембрана",
-        quantity: area,
-        unit: "м²",
-        withReserve: membraneArea,
-        purchaseQty: Math.ceil(membraneArea / 50),
-        category: "Мембрана",
-      });
-      warnings.push("Минвата требует гидро- и ветрозащитной мембраны с внешней стороны");
-    }
-
-    if (type >= 1) {
-      // ЭППС/ППС: нужен клей-пена или клей на цементной основе
-      const glueKg = area * 2.5; // ~2.5 кг/м²
-      const glueBags = Math.ceil(glueKg / 25);
-      materials.push({
-        name: "Клей для пенополистирола (мешки 25 кг)",
-        quantity: glueKg / 25,
-        unit: "мешков",
-        withReserve: glueBags,
-        purchaseQty: glueBags,
-        category: "Клей",
-      });
-    }
-
-    // Грунтовка для основания перед утеплением
-    const primerLiters = area * 0.15 * 1.15; // 150 мл/м², запас 15%
-    const primerCans = Math.ceil(primerLiters / 10); // канистра 10 л
-    materials.push({
-      name: "Грунтовка для основания (канистра 10 л, ~150 мл/м²)",
-      quantity: primerLiters / 10,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Подготовка",
-    });
-
-    // Скотч алюминиевый для стыков фольгированного утеплителя (если минвата с фольгой)
-    if (type === 0) {
-      const jointLengthEstimate = area * 2; // примерная длина стыков, м
-      const aluTapeRolls = Math.ceil(jointLengthEstimate / 50); // 1 рулон = 50 м
-      materials.push({
-        name: "Скотч алюминиевый для стыков утеплителя (рулон 50 м)",
-        quantity: jointLengthEstimate / 50,
-        unit: "рулонов",
-        withReserve: aluTapeRolls,
-        purchaseQty: aluTapeRolls,
-        category: "Монтаж",
-      });
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "insulation-main",
-      title: "Insulation main",
-      exactNeed: areaWithReserve,
-      unit: "m2",
-      packageSizes: [plateArea],
-      packageLabelPrefix: "insulation-plate-area",
-    });
+  calculate(inputs) {
+    const spec = insulationSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalInsulation(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: { area, thickness, platesNeeded, plateArea },
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

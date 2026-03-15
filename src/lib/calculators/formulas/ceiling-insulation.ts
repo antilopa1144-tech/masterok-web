@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalCeilingInsulation } from "../../../../engine/ceiling-insulation";
+import ceilinginsulationSpec from "../../../../configs/calculators/ceiling-insulation-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const ceilingInsulationDef: CalculatorDefinition = {
   id: "ceilings_insulation",
@@ -61,114 +63,18 @@ export const ceilingInsulationDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 30);
-    const thickness = inputs.thickness ?? 100; // мм
-    const insulationType = Math.round(inputs.insulationType ?? 0);
-    const layers = Math.round(inputs.layers ?? 1);
-
-    // Запас +5% на подрезку
-    const areaWithReserve = area * 1.05;
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    if (insulationType === 0) {
-      // Минвата плиты (1200×600 мм, пачка = 6 м²)
-      const packArea = 6.0; // м² в пачке (100 мм)
-      const packsNeeded = Math.ceil(areaWithReserve / packArea) * layers;
-      materials.push({
-        name: `Минвата плиты ${thickness} мм (пачка ≈6 м²)`,
-        quantity: areaWithReserve / packArea,
-        unit: "пачек",
-        withReserve: packsNeeded,
-        purchaseQty: packsNeeded,
-        category: "Утеплитель",
-      });
-    } else if (insulationType === 1) {
-      // Минвата рулон (9 м²/рулон для 50 мм, 5 м²/рулон для 100 мм)
-      const rollArea = thickness <= 50 ? 9 : 5;
-      const rollsNeeded = Math.ceil(areaWithReserve * layers / rollArea);
-      materials.push({
-        name: `Минвата рулон ${thickness} мм (≈${rollArea} м²/рулон)`,
-        quantity: areaWithReserve * layers / rollArea,
-        unit: "рулонов",
-        withReserve: rollsNeeded,
-        purchaseQty: rollsNeeded,
-        category: "Утеплитель",
-      });
-    } else if (insulationType === 2) {
-      // ЭППС плиты 1200×600 мм
-      const plateArea = 0.72; // 1 плита = 1.2×0.6
-      const platesNeeded = Math.ceil(areaWithReserve * layers / plateArea);
-      materials.push({
-        name: `ЭППС ${thickness} мм (плита 1200×600 мм)`,
-        quantity: areaWithReserve * layers / plateArea,
-        unit: "плит",
-        withReserve: platesNeeded,
-        purchaseQty: platesNeeded,
-        category: "Утеплитель",
-      });
-      if (thickness < 100) {
-        warnings.push("ЭППС менее 100 мм не рекомендуется для жилых помещений — рассмотрите 100 мм");
-      }
-    } else {
-      // Эковата: расход ~35 кг/м³
-      const density = 35; // кг/м³
-      const volume = area * (thickness / 1000) * layers;
-      const kgNeeded = volume * density;
-      const bagsNeeded = Math.ceil(kgNeeded / 15); // 15 кг/мешок
-      materials.push({
-        name: "Эковата (мешок 15 кг)",
-        quantity: kgNeeded / 15,
-        unit: "мешков",
-        withReserve: bagsNeeded,
-        purchaseQty: bagsNeeded,
-        category: "Утеплитель",
-      });
-      warnings.push("Эковата требует специального оборудования для задувки — наём подрядчика");
-    }
-
-    // Пароизоляция (только для минваты)
-    if (insulationType <= 1) {
-      const paroRolls = Math.ceil(area * 1.15 / 50); // рулон 50 м², нахлёст 15%
-      materials.push({
-        name: "Пароизоляция (плёнка, рулон 50 м²)",
-        quantity: area * 1.15 / 50,
-        unit: "рулонов",
-        withReserve: paroRolls,
-        purchaseQty: paroRolls,
-        category: "Изоляция",
-      });
-      materials.push({
-        name: "Лента бутиловая для проклейки стыков",
-        quantity: Math.ceil(area / 50) * 10,
-        unit: "м.п.",
-        withReserve: Math.ceil(area / 50) * 12,
-        purchaseQty: Math.ceil(area / 50) * 12,
-        category: "Изоляция",
-      });
-      warnings.push("Пароизоляция монтируется с тёплой стороны утеплителя (под потолком жилого помещения)");
-    }
-
-    if (insulationType === 2) {
-      warnings.push("ЭППС не паропроницаем — пароизоляция не требуется, но обеспечьте вентиляцию чердака");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "ceiling-insulation-main",
-      title: "Ceiling insulation main",
-      exactNeed: areaWithReserve * layers,
-      unit: "м²",
-      packageSizes: [1],
-      packageLabelPrefix: "ceiling-insulation-m2",
-    });
+  calculate(inputs) {
+    const spec = ceilinginsulationSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalCeilingInsulation(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: { area, thickness } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

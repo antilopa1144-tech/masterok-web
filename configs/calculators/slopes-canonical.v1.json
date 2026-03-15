@@ -1,0 +1,52 @@
+{
+  "calculator_id": "slopes",
+  "formula_version": "slopes-canonical-v1",
+  "input_schema": [
+    { "key": "openingCount", "default_value": 5, "min": 1, "max": 30 },
+    { "key": "openingType", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "slopeWidth", "unit": "mm", "default_value": 350, "min": 150, "max": 500 },
+    { "key": "finishType", "default_value": 0, "min": 0, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "opening_types": [0, 1, 2, 3],
+    "finish_types": [0, 1, 2, 3],
+    "opening_dims": {
+      "0": [1200, 1400, 3],
+      "1": [900, 1200, 3],
+      "2": [800, 2000, 2],
+      "3": [900, 2000, 3]
+    }
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "panel_m2": 3.6,
+    "gkl_m2": 3.0,
+    "plaster_kg_per_m2": 12,
+    "putty_kg_per_m2": 1.2,
+    "primer_l_per_m2": 0.15,
+    "corner_profile_m": 3,
+    "f_profile_m": 3,
+    "panel_reserve": 1.12,
+    "plaster_reserve": 1.1,
+    "putty_reserve": 1.1,
+    "gkl_reserve": 1.12,
+    "primer_reserve": 1.15
+  },
+  "warnings_rules": {
+    "wide_slope_threshold_mm": 400,
+    "bulk_opening_threshold": 15
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

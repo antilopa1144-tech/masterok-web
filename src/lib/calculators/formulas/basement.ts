@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalBasement } from "../../../../engine/basement";
+import basementSpec from "../../../../configs/calculators/basement-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const basementDef: CalculatorDefinition = {
   id: "foundation_basement",
@@ -81,257 +83,18 @@ export const basementDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const length = Math.max(3, inputs.length ?? 8);
-    const width = Math.max(3, inputs.width ?? 6);
-    const depth = Math.max(1.5, inputs.depth ?? 2.5);
-    const wallThicknessMm = inputs.wallThickness ?? 200;
-    const floorThicknessMm = inputs.floorThickness ?? 150;
-    const waterproofType = Math.round(inputs.waterproofType ?? 1);
-
-    const wallThickness = wallThicknessMm / 1000;
-    const floorThickness = floorThicknessMm / 1000;
-
-    const floorArea = length * width;
-    const wallPerimeter = 2 * (length + width);
-    const wallArea = wallPerimeter * depth;
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    // Бетон для плиты пола
-    const floorVolume = floorArea * floorThickness;
-    const floorConcreteM3 = Math.ceil(floorVolume * 1.05 * 10) / 10;
-    materials.push({
-      name: "Бетон М300 (В22.5) для плиты пола",
-      quantity: floorVolume,
-      unit: "м³",
-      withReserve: floorConcreteM3,
-      purchaseQty: floorConcreteM3,
-      category: "Бетон",
-    });
-
-    // Бетон для стен подвала
-    const wallVolume = wallArea * wallThickness;
-    const wallConcreteM3 = Math.ceil(wallVolume * 1.03 * 10) / 10;
-    materials.push({
-      name: "Бетон М350 (В25) для стен подвала",
-      quantity: wallVolume,
-      unit: "м³",
-      withReserve: wallConcreteM3,
-      purchaseQty: wallConcreteM3,
-      category: "Бетон",
-    });
-
-    // Арматура для плиты пола А500С ∅12 мм
-    // Сетка 200×200 мм, 2 сетки = масса ≈ 22 кг/м²
-    const floorRebarKg = floorArea * 22;
-    const floorRebarT = Math.ceil(floorRebarKg / 1000 * 10) / 10;
-    materials.push({
-      name: "Арматура А500С ∅12 мм для плиты пола (сетка 200×200 мм, 2 ряда)",
-      quantity: floorRebarKg / 1000,
-      unit: "т",
-      withReserve: floorRebarT,
-      purchaseQty: floorRebarT,
-      category: "Арматура",
-    });
-
-    // Арматура для стен ∅12 мм, сетка 200×200 мм
-    const wallRebarKg = wallArea * 18; // 2 сетки по 9 кг/м²
-    const wallRebarT = Math.ceil(wallRebarKg / 1000 * 10) / 10;
-    materials.push({
-      name: "Арматура А500С ∅12 мм для стен (сетка 200×200 мм, 2 ряда)",
-      quantity: wallRebarKg / 1000,
-      unit: "т",
-      withReserve: wallRebarT,
-      purchaseQty: wallRebarT,
-      category: "Арматура",
-    });
-
-    // Проволока вязальная
-    const wireKg = Math.ceil((floorRebarKg + wallRebarKg) * 0.01);
-    materials.push({
-      name: "Проволока вязальная ∅0.8–1.2 мм",
-      quantity: (floorRebarKg + wallRebarKg) * 0.01,
-      unit: "кг",
-      withReserve: wireKg,
-      purchaseQty: wireKg,
-      category: "Арматура",
-    });
-
-    // Щебень для подготовки под плиту (150 мм)
-    const gravelM3 = Math.ceil(floorArea * 0.15 * 1.1 * 10) / 10;
-    materials.push({
-      name: "Щебень фракция 20–40 мм (подготовка под фундамент 150 мм)",
-      quantity: floorArea * 0.15,
-      unit: "м³",
-      withReserve: gravelM3,
-      purchaseQty: gravelM3,
-      category: "Основание",
-    });
-
-    // Песок (100 мм)
-    const sandM3 = Math.ceil(floorArea * 0.1 * 1.1 * 10) / 10;
-    materials.push({
-      name: "Песок строительный (подсыпка 100 мм)",
-      quantity: floorArea * 0.1,
-      unit: "м³",
-      withReserve: sandM3,
-      purchaseQty: sandM3,
-      category: "Основание",
-    });
-
-    // Опалубка для стен (фанера 18 мм или несъёмная из ЦСП)
-    const formworkArea = wallArea * 2 * 1.15; // 2 стороны + запас
-    const formworkSheets = Math.ceil(formworkArea / 2.88); // лист фанеры 1200×2400 = 2.88 м²
-    materials.push({
-      name: "Фанера ФСФ 18 мм (лист 1200×2400 мм) для опалубки",
-      quantity: formworkArea / 2.88,
-      unit: "листов",
-      withReserve: formworkSheets,
-      purchaseQty: formworkSheets,
-      category: "Опалубка",
-    });
-
-    // Гидроизоляция
-    switch (waterproofType) {
-      case 0: {
-        // Обмазочная мастика
-        const masticKg = (wallArea + floorArea) * 2 * 1.5; // 1.5 кг/м² за слой × 2 слоя
-        const masticBuckets = Math.ceil(masticKg / 20);
-        materials.push({
-          name: "Мастика битумно-полимерная (ведро 20 кг, ~1.5 кг/м² × 2 слоя)",
-          quantity: masticKg / 20,
-          unit: "вёдер",
-          withReserve: masticBuckets,
-          purchaseQty: masticBuckets,
-          category: "Гидроизоляция",
-        });
-        break;
-      }
-      case 1: {
-        // Рулонная + обмазка
-        const rollArea = (wallArea + floorArea) * 1.15;
-        const rollCount = Math.ceil(rollArea / 10 * 2); // рулон 10 м², 2 слоя
-        materials.push({
-          name: "Гидроизоляция рулонная (Технониколь, рулон 10 м², 2 слоя)",
-          quantity: rollArea / 10 * 2,
-          unit: "рулонов",
-          withReserve: rollCount,
-          purchaseQty: rollCount,
-          category: "Гидроизоляция",
-        });
-        const masticKgBase = (wallArea + floorArea) * 1.5;
-        const masticBucketsBase = Math.ceil(masticKgBase / 20);
-        materials.push({
-          name: "Праймер битумный / мастика под рулонную (ведро 20 кг)",
-          quantity: masticKgBase / 20,
-          unit: "вёдер",
-          withReserve: masticBucketsBase,
-          purchaseQty: masticBucketsBase,
-          category: "Гидроизоляция",
-        });
-        break;
-      }
-      case 2: {
-        // Проникающая
-        const penKg = (wallArea + floorArea) * 0.4 * 1.1; // ~0.4 кг/м²
-        const penBags = Math.ceil(penKg / 10); // мешки 10 кг
-        materials.push({
-          name: "Гидроизоляция проникающая Пенетрон/Кальматрон (мешок 10 кг, ~0.4 кг/м²)",
-          quantity: penKg / 10,
-          unit: "мешков",
-          withReserve: penBags,
-          purchaseQty: penBags,
-          category: "Гидроизоляция",
-        });
-        break;
-      }
-    }
-
-    // ЭППС утепление снаружи стен (рекомендуется 50–100 мм)
-    const eppsPlattes = Math.ceil(wallArea * 1.05 / 0.72);
-    materials.push({
-      name: "ЭППС 50–100 мм для утепления стен снаружи (плита 1200×600 мм)",
-      quantity: wallArea * 1.05 / 0.72,
-      unit: "плит",
-      withReserve: eppsPlattes,
-      purchaseQty: eppsPlattes,
-      category: "Утеплитель",
-    });
-
-    // Геотекстиль: защита гидроизоляции и утеплителя от грунта (по наружным стенам)
-    const geotextileArea = wallArea * 1.15; // reserve 15% на нахлёсты
-    const geotextileRolls = Math.ceil(geotextileArea / 50); // 1 рулон = 50 м²
-    materials.push({
-      name: "Геотекстиль 200 г/м² (защита гидроизоляции, рулон 50 м²)",
-      quantity: wallArea,
-      unit: "рулон",
-      withReserve: geotextileRolls,
-      purchaseQty: geotextileRolls,
-      category: "Гидроизоляция",
-    });
-
-    // Дренажная мембрана (профилированная): защита стен от давления грунта
-    const membranArea = wallArea * 1.1; // reserve 10%
-    const membranRolls = Math.ceil(membranArea / 20); // 1 рулон ≈ 20 м²
-    materials.push({
-      name: "Мембрана дренажная профилированная (рулон 20 м²)",
-      quantity: wallArea,
-      unit: "рулонов",
-      withReserve: membranRolls,
-      purchaseQty: membranRolls,
-      category: "Дренаж",
-    });
-
-    // Вентиляция подвала: продухи (гильзы) и вытяжная труба
-    // По СП 54.13330 — площадь продухов ≥ 1/400 площади подвала
-    // Минимум 2 продуха на противоположных стенах, обычно 4–6 шт
-    const ventCount = Math.max(4, Math.ceil(floorArea / 10)); // 1 продух на 10 м²
-    materials.push({
-      name: "Труба ПВХ ∅110 мм (гильзы для продухов, 0.3 м)",
-      quantity: ventCount,
-      unit: "шт",
-      withReserve: ventCount,
-      purchaseQty: ventCount,
-      category: "Вентиляция",
-    });
-    materials.push({
-      name: "Решётки вентиляционные 150×150 мм",
-      quantity: ventCount,
-      unit: "шт",
-      withReserve: ventCount,
-      purchaseQty: ventCount,
-      category: "Вентиляция",
-    });
-
-    if (depth > 3) {
-      warnings.push(`Глубина подвала ${depth} м — обязателен расчёт давления грунта на стены и проверка толщины ${wallThicknessMm} мм (рекомендуется ≥250 мм)`);
-    }
-    if (waterproofType === 0) {
-      warnings.push("Только обмазочная гидроизоляция рекомендуется при уровне грунтовых вод ниже пола подвала на ≥1 м. Иначе — рулонная или проникающая");
-    }
-    warnings.push("Для подвала обязательна ливневая и дренажная система вокруг фундамента");
-
-    const scenarios = buildNativeScenarios({
-      id: "basement-main",
-      title: "Basement main",
-      exactNeed: floorVolume + wallVolume,
-      unit: "м³",
-      packageSizes: [0.1],
-      packageLabelPrefix: "basement-concrete",
-    });
+  calculate(inputs) {
+    const spec = basementSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalBasement(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        floorArea,
-        wallArea,
-        floorVolume,
-        wallVolume,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

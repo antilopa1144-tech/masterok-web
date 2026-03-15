@@ -1,0 +1,39 @@
+{
+  "calculator_id": "ceiling-cassette",
+  "formula_version": "ceiling-cassette-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m²", "default_value": 30, "min": 1, "max": 500 },
+    { "key": "cassetteSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "roomLength", "unit": "m", "default_value": 6, "min": 2, "max": 50 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "cassette_sizes": [0, 1, 2]
+  },
+  "packaging_rules": {
+    "unit": "шт",
+    "package_size": 1
+  },
+  "material_rules": {
+    "cassette_areas": { "0": 0.354, "1": 0.36, "2": 0.09 },
+    "cassette_sizes": { "0": 0.595, "1": 0.6, "2": 0.3 },
+    "cassette_reserve": 1.1,
+    "main_profile_spacing": 1.2,
+    "cross_profile_spacing": 0.6,
+    "hanger_spacing": 1.2,
+    "wall_profile_length": 3,
+    "wall_profile_reserve": 1.05
+  },
+  "warnings_rules": {
+    "large_area_threshold_m2": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

@@ -19,15 +19,20 @@ describe('Наливной пол', () => {
 
 runCanonicalParitySuite({
   suiteName: 'Canonical self-leveling fixture parity',
-  cases: selfLevelingFixture.cases,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cases: selfLevelingFixture.cases as any,
   calculate: calc,
-  assertCase(result, expected) {
+  assertCase(result, expected: {
+    formulaVersion: string; area: number; perimeter: number; warningsCount: number;
+    materials: { bags: number; primerCans: number; tapeRolls: number };
+    recScenario: { packageSize: number; exactNeed: number; purchaseQuantity: number };
+  }) {
     expect(result.formulaVersion).toBe(expected.formulaVersion);
     expect(result.totals.area).toBeCloseTo(expected.area, 0.05);
     expect(result.totals.perimeter).toBeCloseTo(expected.perimeter, 0.05);
     expect(result.warnings).toHaveLength(expected.warningsCount);
 
-    const recScenario = result.scenarios.REC;
+    const recScenario = result.scenarios!.REC;
     expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
     expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 0.00001);
     expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 0.00001);

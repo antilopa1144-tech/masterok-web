@@ -22,9 +22,11 @@ describe("Калькулятор кирпича", () => {
       expect(brick).toBeDefined();
     });
 
-    it("кирпича 1736 шт (с 5% запасом)", () => {
+    it("кирпича 1840 шт (с запасом + REC-сценарий ×1.06)", () => {
       const brick = findMaterial(result, "Кирпич");
-      expect(brick?.purchaseQty).toBe(1736);
+      // baseBricksNeeded = 16.2 * 102 * 1.05 = 1735.02
+      // REC multiplier = 1.06 → 1839.12 → ceil = 1840
+      expect(brick?.purchaseQty).toBe(1840);
     });
 
     it("площадь в totals = 16.2 м²", () => {
@@ -55,37 +57,38 @@ describe("Калькулятор кирпича", () => {
       workingConditions: 1,
     });
 
-    it("кирпича 819 шт", () => {
+    it("кирпича 869 шт (с REC-сценарием ×1.06)", () => {
       const brick = findMaterial(result, "Кирпич");
-      expect(brick?.purchaseQty).toBe(819);
+      // baseBricksNeeded = 20 * 39 * 1.05 = 819, × 1.06 = 868.14 → ceil = 869
+      expect(brick?.purchaseQty).toBe(869);
     });
 
-    it("предупреждение о кладке > 15 м²", () => {
-      expect(result.warnings.some((w) => w.includes("армирование"))).toBe(true);
+    it("wallThickness=0 → предупреждение о ненесущих перегородках", () => {
+      expect(result.warnings.some((w) => w.includes("ненесущих перегородок"))).toBe(true);
     });
   });
 
-  describe("Условия работы", () => {
-    it("мороз → предупреждение о противоморозных добавках", () => {
+  describe("Предупреждения", () => {
+    it("wallThickness=0 → толщина 0.5 кирпича только для перегородок", () => {
       const result = calc({
         inputMode: 1,
         area: 10,
         brickType: 0,
-        wallThickness: 1,
-        workingConditions: 3,
+        wallThickness: 0,
+        workingConditions: 1,
       });
-      expect(result.warnings.some((w) => w.includes("мороз"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("ненесущих перегородок"))).toBe(true);
     });
 
-    it("жара → предупреждение о смачивании", () => {
+    it("большой объём раствора → предупреждение о бетономешалке", () => {
       const result = calc({
         inputMode: 1,
-        area: 10,
+        area: 40,
         brickType: 0,
         wallThickness: 1,
-        workingConditions: 4,
+        workingConditions: 1,
       });
-      expect(result.warnings.some((w) => w.includes("смачив"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("бетономешалка"))).toBe(true);
     });
   });
 

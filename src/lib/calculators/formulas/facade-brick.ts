@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalFacadeBrick } from "../../../../engine/facade-brick";
+import facadebrickSpec from "../../../../configs/calculators/facade-brick-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const facadeBrickDef: CalculatorDefinition = {
   id: "exterior_brick",
@@ -61,154 +63,18 @@ export const facadeBrickDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(5, inputs.area ?? 80);
-    const brickType = Math.round(inputs.brickType ?? 0);
-    const jointMm = inputs.jointThickness ?? 10;
-    const withTie = Math.round(inputs.withTie ?? 1);
-
-    // Размеры кирпичей (Д × В)
-    const dims: { l: number; h: number; label: string }[] = [
-      { l: 250, h: 65, label: "250×65" },   // одинарный
-      { l: 250, h: 88, label: "250×88" },   // полуторный
-      { l: 250, h: 138, label: "250×138" }, // двойной
-      { l: 250, h: 65, label: "250×65" },   // клинкер (тот же, но другая ширина)
-    ];
-
-    const dim = dims[brickType];
-    const l = (dim.l + jointMm) / 1000;
-    const h = (dim.h + jointMm) / 1000;
-    const bricksPerM2 = 1 / (l * h);
-
-    const totalBricks = area * bricksPerM2;
-    const totalWithReserve = Math.ceil(totalBricks * 1.10);
-
-    const materials = [];
-
-    const brickLabels = ["Одинарный кирпич 250×120×65 мм", "Полуторный кирпич 250×120×88 мм", "Двойной кирпич 250×120×138 мм", "Клинкерный кирпич 250×85×65 мм"];
-    materials.push({
-      name: `${brickLabels[brickType]} (шов ${jointMm} мм)`,
-      quantity: totalBricks,
-      unit: "шт",
-      withReserve: totalWithReserve,
-      purchaseQty: totalWithReserve,
-      category: "Кирпич",
-    });
-
-    // Раствор кладочный — расход ~0.23 м³ на 1 м³ кладки
-    // Кладка в полкирпича: толщина 120 мм → объём кладки = area × 0.12
-    const masonryVolume = area * 0.12;
-    const mortarVolume = masonryVolume * 0.23;
-    const cementBags = Math.ceil((mortarVolume * 430) / 50); // цемент 430 кг/м³ → мешки 50 кг
-    const sandM3 = Math.ceil(mortarVolume * 1.4 * 10) / 10; // песок 1.4 м³/м³
-
-    materials.push({
-      name: "Цемент М500 (мешок 50 кг) для кладочного раствора М100",
-      quantity: (mortarVolume * 430) / 50,
-      unit: "мешков",
-      withReserve: cementBags,
-      purchaseQty: cementBags,
-      category: "Раствор",
-    });
-    materials.push({
-      name: "Песок речной (м³)",
-      quantity: mortarVolume * 1.4,
-      unit: "м³",
-      withReserve: sandM3,
-      purchaseQty: sandM3,
-      category: "Раствор",
-    });
-
-    // Гибкие связи (анкеры) — 4 шт/м²
-    if (withTie > 0) {
-      const tiesCount = Math.ceil(area * 5 * 1.05);
-      materials.push({
-        name: withTie === 1 ? "Гибкая связь стеклопластиковая ТПА ∅6 мм, L=200 мм" : "Гибкая связь нержавеющая сталь ∅4 мм",
-        quantity: area * 5,
-        unit: "шт",
-        withReserve: tiesCount,
-        purchaseQty: tiesCount,
-        category: "Крепёж",
-      });
-    }
-
-    // Гидроизоляция цоколя — рулонная
-    const perimeterEst = Math.sqrt(area) * 4;
-    const hydroArea = perimeterEst * 0.3; // периметр × 0.3 м высоты
-    const hydroAreaWithReserve = hydroArea * 1.15;
-    const hydroRolls = Math.ceil(hydroAreaWithReserve / 10); // 1 рулон = 10 м²
-    materials.push({
-      name: "Гидроизоляция цоколя рулонная (рулон 10 м², ширина 0.3 м)",
-      quantity: hydroArea / 10,
-      unit: "рулонов",
-      withReserve: hydroRolls,
-      purchaseQty: hydroRolls,
-      category: "Гидроизоляция",
-    });
-
-    // Вентиляционные коробочки — 1 на 2 м.п. нижнего ряда
-    const ventBoxCount = Math.ceil(perimeterEst / 2);
-    materials.push({
-      name: "Вентиляционная коробочка для кирпичной кладки",
-      quantity: ventBoxCount,
-      unit: "шт",
-      withReserve: ventBoxCount,
-      purchaseQty: ventBoxCount,
-      category: "Вентиляция",
-    });
-
-    // Расшивка швов (затирка фасадная Weber.Vetonit или Ceresit CE 33)
-    // Расход ~0.3 кг/м² (шов 10 мм, кирпич одинарный)
-    const groutKg = area * 0.35;
-    const groutBags = Math.ceil(groutKg / 25);
-    materials.push({
-      name: "Кладочный раствор/затирка для расшивки швов (мешок 25 кг)",
-      quantity: groutKg / 25,
-      unit: "мешков",
-      withReserve: groutBags,
-      purchaseQty: groutBags,
-      category: "Затирка",
-    });
-
-    // Грунтовка гидрофобная для кирпича (финишная обработка)
-    const hydrophoberLiters = area * 0.2 * 1.1; // 0.2 л/м²
-    const hydrophoberCans = Math.ceil(hydrophoberLiters / 5);
-    materials.push({
-      name: "Гидрофобизатор для кирпича (канистра 5 л, ~0.2 л/м²)",
-      quantity: hydrophoberLiters / 5,
-      unit: "канистр",
-      withReserve: hydrophoberCans,
-      purchaseQty: hydrophoberCans,
-      category: "Защита",
-    });
-
-    const warnings: string[] = [];
-    if (brickType === 3 && jointMm > 10) {
-      warnings.push("Клинкерный кирпич традиционно укладывается со швом 8–10 мм — более толстый шов смотрится нехарактерно");
-    }
-    if (withTie === 0) {
-      warnings.push("Без гибких связей облицовочная кладка должна опираться на фундамент и иметь конструктивное крепление к стене");
-    }
-    warnings.push("Облицовочный кирпич укладывается с вентиляционным зазором 20–40 мм от несущей стены (СП 15.13330)");
-
-    const scenarios = buildNativeScenarios({
-      id: "facade-brick-main",
-      title: "Facade brick main",
-      exactNeed: totalBricks * 1.1,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "facade-brick-piece",
-    });
+  calculate(inputs) {
+    const spec = facadebrickSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalFacadeBrick(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        area,
-        bricksPerM2: Math.round(bricksPerM2),
-        totalBricks,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

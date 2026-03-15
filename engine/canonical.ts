@@ -502,6 +502,52 @@ export interface LinoleumCanonicalSpec {
   };
 }
 
+export interface ScreedTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  density_kg_per_m3: number;
+}
+
+export interface ScreedPackagingRules {
+  unit: string;
+  bag_weights: number[];
+}
+
+export interface ScreedMaterialRules {
+  volume_multiplier: number;
+  cement_density: number;
+  cement_fraction: number;
+  sand_fraction: number;
+  sand_density: number;
+  water_per_m3: number;
+  cps_density_ready: number;
+  cps_density_semidry: number;
+  fiber_kg_per_m2: number;
+  mesh_margin: number;
+  film_margin: number;
+  damper_tape_reserve: number;
+  beacons_area_per_piece: number;
+  mesh_thickness_threshold_mm: number;
+  min_thickness_mm: number;
+  max_thickness_mm: number;
+}
+
+export interface ScreedWarningRules {
+  thin_threshold_mm: number;
+  thick_threshold_mm: number;
+  large_area_cps_threshold_m2: number;
+}
+
+export interface ScreedCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    screed_types: ScreedTypeSpec[];
+  };
+  packaging_rules: ScreedPackagingRules;
+  material_rules: ScreedMaterialRules;
+  warnings_rules: ScreedWarningRules;
+}
+
 export interface SelfLevelingMixtureTypeSpec {
   id: number;
   key: string;
@@ -534,4 +580,2134 @@ export interface SelfLevelingCanonicalSpec extends CanonicalCalculatorSpecBase {
   packaging_rules: SelfLevelingPackagingRules;
   material_rules: SelfLevelingMaterialRules;
   warnings_rules: SelfLevelingWarningRules;
+}
+
+export interface BrickPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BrickMaterialRules {
+  mortar_loss_factor: number;
+  cement_kg_per_m3: number;
+  cement_bag_kg: number;
+  sand_m3_per_m3_mortar: number;
+  mesh_joint_mm: number;
+  mesh_overlap_factor: number;
+  plasticizer_l_per_m3: number;
+  flexible_ties_per_m2: number;
+  flexible_ties_wall_thickness_threshold: number;
+}
+
+export interface BrickWarningRules {
+  non_load_bearing_wall_thickness: number;
+  manual_mix_grade_threshold: number;
+}
+
+export interface BrickCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    bricks_per_sqm: Record<string, Record<string, number>>;
+    mortar_per_sqm: Record<string, Record<string, number>>;
+    wall_thickness_mm: Record<string, number>;
+    brick_height_mm: Record<string, number>;
+    conditions_multiplier: Record<string, number>;
+    waste_coeffs: Record<string, number>;
+  };
+  packaging_rules: BrickPackagingRules;
+  material_rules: BrickMaterialRules;
+  warnings_rules: BrickWarningRules;
+}
+
+export interface DrywallSheetSizeSpec {
+  id: number;
+  w: number;
+  h: number;
+  area: number;
+}
+
+export interface DrywallPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DrywallMaterialRules {
+  sheet_reserve: number;
+  profile_reserve: number;
+  screws_tf_per_m2: number;
+  screws_lb_per_profile: number;
+  dowels_step_m: number;
+  putty_start_kg_per_m2: number;
+  putty_finish_kg_per_m2: number;
+  putty_reserve: number;
+  putty_bag_kg: number;
+  serpyanka_m_per_sheet: number;
+  serpyanka_reserve: number;
+  serpyanka_roll_m: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can_l: number;
+  sandpaper_m2_per_sheet: number;
+  sandpaper_pack: number;
+  profile_length_m: number;
+  sealing_tape_roll_m: number;
+}
+
+export interface DrywallWarningRules {
+  wide_profile_height_threshold: number;
+}
+
+export interface DrywallCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    sheet_sizes: Record<string, DrywallSheetSizeSpec>;
+  };
+  packaging_rules: DrywallPackagingRules;
+  material_rules: DrywallMaterialRules;
+  warnings_rules: DrywallWarningRules;
+}
+
+export interface ConcreteProportionSpec {
+  grade: number;
+  label: string;
+  cement_kg: number;
+  sand_m3: number;
+  gravel_m3: number;
+  water_l: number;
+}
+
+export interface ConcretePackagingRules {
+  unit: string;
+  volume_step_m3: number;
+  cement_bag_kg: number;
+  mastic_bucket_kg: number;
+  film_roll_m2: number;
+}
+
+export interface ConcreteMaterialRules {
+  waterproof_mastic_kg_per_m2: number;
+  waterproof_reserve_factor: number;
+  film_reserve_factor: number;
+  sand_reserve_factor: number;
+  gravel_reserve_factor: number;
+  estimated_slab_thickness_m: number;
+}
+
+export interface ConcreteWarningRules {
+  small_volume_threshold_m3: number;
+  manual_mix_max_grade: number;
+}
+
+export interface ConcreteCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    proportions: ConcreteProportionSpec[];
+  };
+  packaging_rules: ConcretePackagingRules;
+  material_rules: ConcreteMaterialRules;
+  warnings_rules: ConcreteWarningRules;
+}
+
+export interface InsulationTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  dowels_per_sqm: number;
+}
+
+export interface InsulationPlateSizeSpec {
+  id: number;
+  key: string;
+  label: string;
+  area_m2: number;
+}
+
+export interface InsulationPackagingRules {
+  plate_unit: string;
+  ecowool_unit: string;
+}
+
+export interface InsulationMaterialRules {
+  plate_reserve: number;
+  dowel_reserve: number;
+  membrane_reserve: number;
+  alu_tape_m2_per_m2: number;
+  alu_tape_roll_m: number;
+  glue_kg_per_m2: number;
+  glue_bag_kg: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can_l: number;
+  ecowool_density: number;
+  ecowool_waste: number;
+  ecowool_bag_kg: number;
+}
+
+export interface InsulationWarningRules {
+  thin_thickness_threshold_mm: number;
+  ecowool_settle_threshold_mm: number;
+  professional_area_threshold_m2: number;
+}
+
+export interface InsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    insulation_types: InsulationTypeSpec[];
+    plate_sizes: InsulationPlateSizeSpec[];
+  };
+  packaging_rules: InsulationPackagingRules;
+  material_rules: InsulationMaterialRules;
+  warnings_rules: InsulationWarningRules;
+}
+
+export interface RebarPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface RebarMaterialRules {
+  slab_main_reserve_factor: number;
+  slab_vertical_tie_spacing_m: number;
+  slab_vertical_tie_extra_m: number;
+  slab_fixators_per_m2: number;
+  strip_rod_count: number;
+  strip_stirrup_spacing_m: number;
+  strip_assumed_width_m: number;
+  strip_stirrup_diameter: number;
+  belt_rod_count: number;
+  belt_height_m: number;
+  belt_width_m: number;
+  belt_stirrup_spacing_m: number;
+  belt_stirrup_diameter: number;
+  floor_main_reserve_factor: number;
+  floor_secondary_diameter: number;
+  floor_secondary_step_multiplier: number;
+}
+
+export interface RebarWarningRules {
+  slab_min_height_for_double_grid_m: number;
+  min_diameter_for_foundation_mm: number;
+  wide_step_threshold_mm: number;
+}
+
+export interface RebarCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    weight_per_meter: Record<string, number>;
+    standard_rod_length_m: number;
+    wire_length_per_intersection_m: number;
+    wire_kg_per_m: number;
+    rebar_overlap_factor: number;
+    allowed_diameters: number[];
+    allowed_grid_steps: number[];
+  };
+  packaging_rules: RebarPackagingRules;
+  material_rules: RebarMaterialRules;
+  warnings_rules: RebarWarningRules;
+}
+
+export interface RoofingTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+}
+
+export interface RoofingComplexitySpec {
+  id: number;
+  key: string;
+  label: string;
+  coefficient: number;
+}
+
+export interface RoofingGenericSheetSpec {
+  id: number;
+  key: string;
+  label: string;
+  effective_width: number;
+  effective_height: number;
+  area: number;
+  fasteners_per_m2: number;
+}
+
+export interface RoofingPackagingRules {
+  sheet_unit: string;
+  tile_unit: string;
+  pack_unit: string;
+}
+
+export interface RoofingMaterialRules {
+  metal_tile_overlap_horizontal_m: number;
+  metal_tile_overlap_vertical_m: number;
+  metal_tile_screws_per_m2: number;
+  metal_tile_ridge_element_m: number;
+  metal_tile_ridge_reserve: number;
+  metal_tile_snow_guard_spacing_m: number;
+  metal_tile_waterproofing_reserve: number;
+  metal_tile_waterproofing_roll_m2: number;
+  metal_tile_batten_step_m: number;
+  metal_tile_batten_reserve: number;
+  metal_tile_counter_batten_step_m: number;
+  metal_tile_counter_batten_reserve: number;
+  soft_pack_area_m2: number;
+  soft_underlayment_roll_m2: number;
+  soft_underlayment_reserve: number;
+  soft_mastic_bucket_kg: number;
+  soft_nails_per_m2: number;
+  soft_nails_per_kg: number;
+  soft_nails_reserve: number;
+  soft_ridge_element_m: number;
+  soft_ridge_reserve: number;
+  soft_osb_sheet_m2: number;
+  soft_osb_reserve: number;
+  soft_vent_area_m2: number;
+  soft_low_slope_threshold: number;
+  generic_ridge_element_m: number;
+  generic_ridge_reserve: number;
+  generic_waterproofing_reserve: number;
+  generic_waterproofing_roll_m2: number;
+}
+
+export interface RoofingWarningRules {
+  metal_tile_min_slope: number;
+  soft_roofing_min_slope: number;
+  large_roof_area_threshold: number;
+}
+
+export interface RoofingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    roofing_types: RoofingTypeSpec[];
+    complexity_profiles: RoofingComplexitySpec[];
+    generic_sheet_specs: RoofingGenericSheetSpec[];
+  };
+  packaging_rules: RoofingPackagingRules;
+  material_rules: RoofingMaterialRules;
+  warnings_rules: RoofingWarningRules;
+}
+
+export interface AeratedConcreteBlockSizeSpec {
+  l: number;
+  h: number;
+  t: number;
+  label: string;
+}
+
+export interface AeratedConcretePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface AeratedConcreteMaterialRules {
+  glue_kg_per_m3: number;
+  glue_bag_kg: number;
+  block_reserve: number;
+  rebar_armoring_interval: number;
+  rebar_reserve: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can_l: number;
+  corner_profile_length_m: number;
+  corner_profile_count: number;
+}
+
+export interface AeratedConcreteWarningRules {
+  non_load_bearing_thickness_mm: number;
+  thermal_check_thickness_mm: number;
+}
+
+export interface AeratedConcreteCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    block_thickness_options: number[];
+    block_height_options: number[];
+    block_length_options: number[];
+  };
+  packaging_rules: AeratedConcretePackagingRules;
+  material_rules: AeratedConcreteMaterialRules;
+  warnings_rules: AeratedConcreteWarningRules;
+}
+
+export interface FoamBlockSizeSpec {
+  l: number;
+  h: number;
+  t: number;
+  label: string;
+}
+
+export interface FoamBlocksPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FoamBlocksMaterialRules {
+  block_reserve: number;
+  glue_kg_per_m3: number;
+  glue_bag_kg: number;
+  cps_kg_per_m3: number;
+  cps_volume_per_m3: number;
+  cps_bag_kg: number;
+  mesh_interval: number;
+  rebar_interval: number;
+  rebar_reserve: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can_l: number;
+}
+
+export interface FoamBlocksWarningRules {
+  non_load_bearing_thickness_mm: number;
+}
+
+export interface FoamBlocksCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    block_sizes: Record<string, FoamBlockSizeSpec>;
+  };
+  packaging_rules: FoamBlocksPackagingRules;
+  material_rules: FoamBlocksMaterialRules;
+  warnings_rules: FoamBlocksWarningRules;
+}
+
+/* ─── Brickwork (кирпичная кладка) ─── */
+
+export interface BrickworkPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BrickworkMaterialRules {
+  bricks_per_sqm: Record<string, Record<string, number>>;
+  mortar_per_m3: Record<string, number>;
+  wall_thickness_mm: Record<string, number>;
+  brick_heights: Record<string, number>;
+  bricks_per_pallet: Record<string, number>;
+  block_reserve: number;
+  mortar_density: number;
+  mortar_bag_kg: number;
+}
+
+export interface BrickworkWarningRules {
+  non_load_bearing_wall_thickness: number;
+  armor_belt_height_threshold: number;
+  armor_belt_wall_thickness_threshold: number;
+}
+
+export interface BrickworkCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    bricks_per_sqm: Record<string, Record<string, number>>;
+    mortar_per_m3: Record<string, number>;
+    wall_thickness_mm: Record<string, number>;
+    brick_heights: Record<string, number>;
+    bricks_per_pallet: Record<string, number>;
+  };
+  packaging_rules: BrickworkPackagingRules;
+  material_rules: BrickworkMaterialRules;
+  warnings_rules: BrickworkWarningRules;
+}
+
+/* ─── Facade Brick (облицовочный кирпич) ─── */
+
+export interface FacadeBrickDimSpec {
+  l: number;
+  h: number;
+}
+
+export interface FacadeBrickPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FacadeBrickMaterialRules {
+  brick_dims: Record<string, FacadeBrickDimSpec>;
+  brick_reserve: number;
+  masonry_thickness: number;
+  mortar_volume_coeff: number;
+  cement_kg_per_m3_mortar: number;
+  cement_bag_kg: number;
+  sand_coeff: number;
+  ties_per_sqm: number;
+  ties_reserve: number;
+  hydro_coeff: number;
+  hydro_reserve: number;
+  hydro_roll_m2: number;
+  vent_box_step_m: number;
+  grout_kg_per_m2: number;
+  grout_bag_kg: number;
+  hydrophob_l_per_m2: number;
+  hydrophob_reserve: number;
+  hydrophob_can_l: number;
+}
+
+export interface FacadeBrickWarningRules {
+  clinker_max_joint_mm: number;
+  vent_gap_note: string;
+}
+
+export interface FacadeBrickCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    brick_dims: Record<string, FacadeBrickDimSpec>;
+  };
+  packaging_rules: FacadeBrickPackagingRules;
+  material_rules: FacadeBrickMaterialRules;
+  warnings_rules: FacadeBrickWarningRules;
+}
+
+/* ─── Fence (забор) ─── */
+
+export interface FencePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FenceMaterialRules {
+  post_burial_m: number;
+  profnastil_useful_width: number;
+  profnastil_reserve: number;
+  profnastil_screws_per_sheet: number;
+  screws_pack: number;
+  primer_spray_m_per_can: number;
+  post_concrete_m3: number;
+  caps_reserve: number;
+  rabica_roll_m: number;
+  tension_wire_reserve: number;
+  slat_width: number;
+  slat_gap: number;
+  slat_reserve: number;
+  antiseptic_l_per_m2: number;
+  antiseptic_can_l: number;
+  gate_width: number;
+  wicket_width: number;
+}
+
+export interface FenceWarningRules {
+  reinforced_post_gate_threshold: number;
+}
+
+export interface FenceCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    fence_types: number[];
+    post_steps: number[];
+  };
+  packaging_rules: FencePackagingRules;
+  material_rules: FenceMaterialRules;
+  warnings_rules: FenceWarningRules;
+}
+
+/* ─── Waterproofing (гидроизоляция) ─── */
+
+export interface WaterproofingPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface WaterproofingMaterialRules {
+  consumption_per_layer: Record<string, number>;
+  bucket_kg: Record<string, number>;
+  tape_reserve: number;
+  silicone_m_per_tube: number;
+  primer_kg_per_m2: number;
+  primer_can_kg: number;
+  bitumen_l_per_m2: number;
+  bitumen_can_l: number;
+  joint_sealant_m_per_tube: number;
+}
+
+export interface WaterproofingWarningRules {
+  min_layers_residential: number;
+  min_wall_height_mm: number;
+}
+
+export interface WaterproofingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    mastic_types: number[];
+    wall_heights: number[];
+  };
+  packaging_rules: WaterproofingPackagingRules;
+  material_rules: WaterproofingMaterialRules;
+  warnings_rules: WaterproofingWarningRules;
+}
+
+/* ─── Bathroom (ванная комната) ─── */
+
+export interface BathroomTileSizeSpec {
+  w: number;
+  h: number;
+}
+
+export interface BathroomPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BathroomMaterialRules {
+  floor_tile_sizes: Record<string, BathroomTileSizeSpec>;
+  wall_tile_sizes: Record<string, BathroomTileSizeSpec>;
+  tile_reserve: number;
+  floor_adhesive_kg_per_m2: number;
+  wall_adhesive_kg_per_m2: number;
+  adhesive_bag_kg: number;
+  grout_kg_per_m2: number;
+  grout_bag_kg: number;
+  waterproof_mastic_kg_per_m2: number;
+  waterproof_bucket_kg: number;
+  waterproof_wall_height: number;
+  primer_l_per_m2: number;
+  primer_can_l: number;
+  crosses_per_tile: number;
+  crosses_pack: number;
+  silicone_m_per_tube: number;
+}
+
+export interface BathroomWarningRules {
+  small_floor_area_threshold_m2: number;
+  waterproofing_mandatory_code: string;
+}
+
+export interface BathroomCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    floor_tile_sizes: Record<string, BathroomTileSizeSpec>;
+    wall_tile_sizes: Record<string, BathroomTileSizeSpec>;
+  };
+  packaging_rules: BathroomPackagingRules;
+  material_rules: BathroomMaterialRules;
+  warnings_rules: BathroomWarningRules;
+}
+
+/* ─── Warm Floor (тёплый пол) ─── */
+
+export interface WarmFloorHeatingTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+}
+
+export interface WarmFloorPackagingRules {
+  mat_unit: string;
+  cable_unit: string;
+  pipe_unit: string;
+}
+
+export interface WarmFloorMaterialRules {
+  mat_area: number;
+  cable_step_m: number;
+  cable_reserve: number;
+  pipe_step_m: number;
+  pipe_reserve: number;
+  substrate_reserve: number;
+  substrate_roll_m2: number;
+  corrugated_tube_m: number;
+  tile_adhesive_kg_per_m2: number;
+  tile_adhesive_bag_kg: number;
+  eps_sheet_m2: number;
+  eps_reserve: number;
+  screed_thickness_m: number;
+  screed_density: number;
+  screed_bag_kg: number;
+  mesh_reserve: number;
+  mounting_tape_roll_m: number;
+  pipe_insulation_reserve: number;
+  max_circuit_m: number;
+}
+
+export interface WarmFloorWarningRules {
+  separate_breaker_kw_threshold: number;
+  ineffective_coverage_ratio: number;
+}
+
+export interface WarmFloorCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    heating_types: WarmFloorHeatingTypeSpec[];
+  };
+  packaging_rules: WarmFloorPackagingRules;
+  material_rules: WarmFloorMaterialRules;
+  warnings_rules: WarmFloorWarningRules;
+}
+
+/* ─── Warm Floor Pipes (трубы тёплого пола) ─── */
+
+export interface WarmFloorPipesPipeTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+}
+
+export interface WarmFloorPipesPackagingRules {
+  unit: string;
+  coil_length_m: number;
+}
+
+export interface WarmFloorPipesMaterialRules {
+  furniture_reduction: number;
+  collector_addition_m: number;
+  max_circuit_m: number;
+  pipe_reserve: number;
+  pipe_coil_m: number;
+  epps_sheet_m2: number;
+  epps_reserve: number;
+  damper_tape_roll_m: number;
+  damper_reserve: number;
+  anchor_step_m: number;
+  anchor_reserve: number;
+  anchor_pack: number;
+  screed_thickness_m: number;
+  screed_density: number;
+  screed_bag_kg: number;
+}
+
+export interface WarmFloorPipesWarningRules {
+  multiple_circuits_pipe_threshold_m: number;
+  professional_heat_loss_area_threshold_m2: number;
+}
+
+export interface WarmFloorPipesCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    pipe_types: WarmFloorPipesPipeTypeSpec[];
+    allowed_pipe_steps_mm: number[];
+  };
+  packaging_rules: WarmFloorPipesPackagingRules;
+  material_rules: WarmFloorPipesMaterialRules;
+  warnings_rules: WarmFloorPipesWarningRules;
+}
+
+/* ─── Ventilation (вентиляция) ─── */
+
+export interface VentilationBuildingTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  exchange_rate: number;
+}
+
+export interface VentilationDuctTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+}
+
+export interface VentilationPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface VentilationMaterialRules {
+  exchange_rates: number[];
+  air_per_person: number;
+  fan_reserve: number;
+  airflow_rounding: number;
+  main_duct_length_coeff: number;
+  main_duct_reserve: number;
+  duct_section_m: number;
+  flex_duct_coil_m: number;
+  fittings_per_section: number;
+  fittings_reserve: number;
+  grille_area_m2: number;
+  grille_base: number;
+  clamps_per_section: number;
+  clamps_reserve: number;
+  silencer_count: number;
+}
+
+export interface VentilationWarningRules {
+  professional_airflow_threshold: number;
+  supply_exhaust_people_threshold: number;
+}
+
+export interface VentilationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    building_types: VentilationBuildingTypeSpec[];
+    duct_types: VentilationDuctTypeSpec[];
+  };
+  packaging_rules: VentilationPackagingRules;
+  material_rules: VentilationMaterialRules;
+  warnings_rules: VentilationWarningRules;
+}
+
+/* ─── Gutters (водосточная система) ─── */
+
+export interface GuttersPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface GuttersMaterialRules {
+  gutter_reserve: number;
+  hook_step_m: number;
+  hook_reserve: number;
+  pipe_clamp_step_m: number;
+  pipe_clamp_reserve: number;
+  building_corners: number;
+  connector_reserve: number;
+  sealant_connections_per_tube: number;
+  sealant_tube_ml: number;
+  recommended_funnel_interval_m: number;
+}
+
+export interface GuttersWarningRules {
+  recommended_funnel_interval_m: number;
+}
+
+export interface GuttersCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    gutter_diameters: number[];
+    gutter_lengths: number[];
+  };
+  packaging_rules: GuttersPackagingRules;
+  material_rules: GuttersMaterialRules;
+  warnings_rules: GuttersWarningRules;
+}
+
+/* ─── Electric (электрика) ─── */
+
+export interface ElectricPackagingRules {
+  cable_spool_m: number;
+  unit: string;
+}
+
+export interface ElectricMaterialRules {
+  cable_15_rate: number;
+  cable_25_rate: number;
+  cable_6_kitchen_factor: number;
+  cable_6_reserve: number;
+  conduit_ratio: number;
+  outlets_per_m2: number;
+  outlets_per_room: number;
+  switches_base: number;
+  cable_spool_m: number;
+  socket_box_reserve: number;
+  ac_groups_divisor: number;
+}
+
+export interface ElectricWarningRules {
+  three_phase_area_threshold: number;
+}
+
+export interface ElectricCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    wiring_types: { id: number; key: string; label: string }[];
+  };
+  packaging_rules: ElectricPackagingRules;
+  material_rules: ElectricMaterialRules;
+  warnings_rules: ElectricWarningRules;
+}
+
+/* ─── Heating (отопление) ─── */
+
+export interface HeatingClimateZoneSpec {
+  id: number;
+  key: string;
+  label: string;
+  power_per_m2: number;
+}
+
+export interface HeatingBuildingTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  coefficient: number;
+}
+
+export interface HeatingRadiatorTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  watt_per_unit: number;
+}
+
+export interface HeatingPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface HeatingMaterialRules {
+  power_per_m2_base: number[];
+  building_coeff: number[];
+  radiator_power: number[];
+  pp_pipe_stick_m: number;
+  pipe_rate: number;
+  pipe_reserve: number;
+  fittings_per_room: number;
+  fittings_reserve: number;
+  brackets_per_room: number;
+  brackets_reserve: number;
+}
+
+export interface HeatingWarningRules {
+  gas_boiler_power_threshold_kw: number;
+}
+
+export interface HeatingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    climate_zones: HeatingClimateZoneSpec[];
+    building_types: HeatingBuildingTypeSpec[];
+    radiator_types: HeatingRadiatorTypeSpec[];
+  };
+  packaging_rules: HeatingPackagingRules;
+  material_rules: HeatingMaterialRules;
+  warnings_rules: HeatingWarningRules;
+}
+
+/* ─── Sewage (канализация) ─── */
+
+export interface SewageSeptikTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+}
+
+export interface SewageGroundTypeSpec {
+  id: number;
+  key: string;
+  label: string;
+  gravel_m3: number;
+}
+
+export interface SewagePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SewageMaterialRules {
+  liters_per_person_per_day: number;
+  reserve_days: number;
+  ring_volume_m3: number;
+  eurocube_usable_m3: number;
+  pipe_section_m: number;
+  pipe_reserve: number;
+  default_elbows: number;
+  default_tees: number;
+  gravel_by_ground: Record<string, number>;
+  geotextile_factor: number;
+  sand_backfill_factor: number;
+}
+
+export interface SewageWarningRules {
+  bio_treatment_residents_threshold: number;
+}
+
+export interface SewageCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    septik_types: SewageSeptikTypeSpec[];
+    ground_types: SewageGroundTypeSpec[];
+  };
+  packaging_rules: SewagePackagingRules;
+  material_rules: SewageMaterialRules;
+  warnings_rules: SewageWarningRules;
+}
+
+/* ─── Foundation Slab (фундаментная плита) ─── */
+
+export interface FoundationSlabPackagingRules {
+  unit: string;
+  volume_step_m3: number;
+}
+
+export interface FoundationSlabMaterialRules {
+  weight_per_meter: Record<string, number>;
+  wire_per_joint: number;
+  epps_plate_m2: number;
+  geotextile_reserve: number;
+  formwork_reserve: number;
+  concrete_reserve: number;
+  gravel_layer: number;
+  sand_layer: number;
+  insulation_reserve: number;
+}
+
+export interface FoundationSlabWarningRules {
+  large_area_threshold_m2: number;
+  thin_slab_threshold_mm: number;
+}
+
+export interface FoundationSlabCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: FoundationSlabPackagingRules;
+  material_rules: FoundationSlabMaterialRules;
+  warnings_rules: FoundationSlabWarningRules;
+}
+
+/* ─── Strip Foundation (ленточный фундамент) ─── */
+
+export interface StripFoundationPackagingRules {
+  unit: string;
+  volume_step_m3: number;
+}
+
+export interface StripFoundationMaterialRules {
+  rebar_diameters: Record<string, number>;
+  rebar_threads: Record<string, number>;
+  weight_per_m: Record<string, number>;
+  clamp_weight: number;
+  clamp_step: number;
+  tech_loss: Record<string, number>;
+  concrete_reserve: number;
+  overlap: number;
+}
+
+export interface StripFoundationWarningRules {
+  shallow_depth_threshold_mm: number;
+  large_perimeter_threshold_m: number;
+}
+
+export interface StripFoundationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: StripFoundationPackagingRules;
+  material_rules: StripFoundationMaterialRules;
+  warnings_rules: StripFoundationWarningRules;
+}
+
+/* ─── Stairs (лестница) ─── */
+
+export interface StairsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface StairsMaterialRules {
+  stringer_board: string;
+  tread_board: string;
+  riser_board: string;
+  stringers_count: number;
+  railing_spacing: number;
+  concrete_density_for_stairs: number;
+  rebar_kg_per_step_width: number;
+}
+
+export interface StairsWarningRules {
+  steep_step_threshold_mm: number;
+  max_steps_per_flight: number;
+}
+
+export interface StairsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: StairsPackagingRules;
+  material_rules: StairsMaterialRules;
+  warnings_rules: StairsWarningRules;
+}
+
+/* ─── Balcony (балкон) ─── */
+
+export interface BalconyPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BalconyMaterialRules {
+  panel_areas: Record<string, number>;
+  batten_pitch: number;
+  insulation_plate: number;
+  insulation_reserve: number;
+  finish_reserve: number;
+  klaymer_per_panel: number;
+  klaymer_reserve: number;
+}
+
+export interface BalconyWarningRules {
+  large_balcony_area_threshold_m2: number;
+  uninsulated_warning_threshold: number;
+}
+
+export interface BalconyCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: BalconyPackagingRules;
+  material_rules: BalconyMaterialRules;
+  warnings_rules: BalconyWarningRules;
+}
+
+/* ─── Attic (мансарда) ─── */
+
+export interface AtticPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface AtticMaterialRules {
+  plate_thickness: Record<string, number>;
+  plate_area: Record<string, number>;
+  wind_membrane_roll: number;
+  vapor_roll: number;
+  tape_roll: number;
+  plate_reserve: number;
+  membrane_reserve: number;
+  tape_area_coeff: number;
+  panel_area: number;
+  panel_reserve: number;
+  batten_pitch: number;
+  gkl_sheet: number;
+  gkl_reserve: number;
+  profile_step: number;
+  putty_kg_per_m2: number;
+  putty_bag: number;
+}
+
+export interface AtticWarningRules {
+  thin_insulation_threshold_mm: number;
+}
+
+export interface AtticCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    insulation_types: number[];
+    finish_types: number[];
+    vapour_barrier_types: number[];
+  };
+  packaging_rules: AtticPackagingRules;
+  material_rules: AtticMaterialRules;
+  warnings_rules: AtticWarningRules;
+}
+
+/* ─── Terrace (терраса) ─── */
+
+export interface TerracePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface TerraceMaterialRules {
+  board_widths: Record<string, number>;
+  board_gaps: Record<string, number>;
+  lag_length: number;
+  treatment_l_per_m2: number;
+  treatment_layers: Record<string, number>;
+  geotextile_roll: number;
+  board_reserve: number;
+  lag_reserve: number;
+  klaymer_count_per_lag_row: number;
+}
+
+export interface TerraceWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface TerraceCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    board_types: number[];
+    board_lengths: number[];
+    lag_steps: number[];
+  };
+  packaging_rules: TerracePackagingRules;
+  material_rules: TerraceMaterialRules;
+  warnings_rules: TerraceWarningRules;
+}
+
+/* ─── Blind Area / Отмостка ─── */
+
+export interface BlindAreaPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BlindAreaMaterialRules {
+  concrete_reserve: number;
+  mesh_reserve: number;
+  damper_reserve: number;
+  gravel_layer: number;
+  sand_layer: number;
+  tile_reserve: number;
+  tile_mix_kg_per_m2: number;
+  border_length: number;
+  membrane_reserve: number;
+  geotextile_roll: number;
+  epps_plate: number;
+  epps_reserve: number;
+}
+
+export interface BlindAreaWarningRules {
+  narrow_width_threshold_m: number;
+  thin_concrete_threshold_mm: number;
+}
+
+export interface BlindAreaCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    material_types: number[];
+    widths: number[];
+    thicknesses: number[];
+  };
+  packaging_rules: BlindAreaPackagingRules;
+  material_rules: BlindAreaMaterialRules;
+  warnings_rules: BlindAreaWarningRules;
+}
+
+/* ─── Basement (подвал / цоколь) ─── */
+
+export interface BasementPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface BasementMaterialRules {
+  floor_rebar_kg_per_m2: number;
+  wall_rebar_kg_per_m2: number;
+  wire_ratio: number;
+  formwork_sheet_m2: number;
+  formwork_reserve: number;
+  geotextile_roll: number;
+  drainage_membrane_roll: number;
+  mastic_kg_per_m2: number;
+  mastic_layers: number;
+  roll_reserve: number;
+  roll_m2: number;
+  pen_kg_per_m2: number;
+  pen_reserve: number;
+  vent_per_area: number;
+  min_vents: number;
+  gravel_layer: number;
+  sand_layer: number;
+  epps_plate: number;
+  epps_reserve: number;
+}
+
+export interface BasementWarningRules {
+  deep_basement_threshold_m: number;
+  thin_wall_threshold_mm: number;
+}
+
+export interface BasementCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    waterproof_types: number[];
+    wall_thicknesses: number[];
+    floor_thicknesses: number[];
+  };
+  packaging_rules: BasementPackagingRules;
+  material_rules: BasementMaterialRules;
+  warnings_rules: BasementWarningRules;
+}
+
+/* ─── Frame House (каркасный дом) ─── */
+
+export interface FrameHousePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FrameHouseMaterialRules {
+  outer_sheet_area: Record<string, number>;
+  inner_sheet_area: Record<string, number>;
+  insulation_thickness: Record<string, number>;
+  plate_area: number;
+  pack_size: number;
+  vapor_roll: number;
+  wind_roll: number;
+  membrane_reserve: number;
+  outer_reserve: number;
+  inner_reserve: number;
+  screws_per_sheet: number;
+  nails_per_stud: number;
+  screw_per_kg: number;
+  nail_per_kg: number;
+  stud_reserve: number;
+  strapping_reserve: number;
+  plate_reserve: number;
+}
+
+export interface FrameHouseWarningRules {
+  large_wall_area_threshold_m2: number;
+}
+
+export interface FrameHouseCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    insulation_types: number[];
+    stud_steps: number[];
+  };
+  packaging_rules: FrameHousePackagingRules;
+  material_rules: FrameHouseMaterialRules;
+  warnings_rules: FrameHouseWarningRules;
+}
+
+/* ─── Doors (двери) ─── */
+
+export interface DoorsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DoorsMaterialRules {
+  door_dims: Record<string, [number, number]>;
+  box_depth: number;
+  foam_ml_per_m: number;
+  foam_can_ml: number;
+  screws_per_door: number;
+  dubels_per_door: number;
+  glue_cartridge_per_door: number;
+  dobor_standard_h: number;
+  nalichnik_standard_h: number;
+  foam_reserve: number;
+  screw_pack: number;
+  dubel_pack: number;
+}
+
+export interface DoorsWarningRules {
+  thick_wall_threshold_mm: number;
+  bulk_door_threshold: number;
+}
+
+export interface DoorsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    door_types: number[];
+    wall_thicknesses: number[];
+  };
+  packaging_rules: DoorsPackagingRules;
+  material_rules: DoorsMaterialRules;
+  warnings_rules: DoorsWarningRules;
+}
+
+/* ─── Windows (окна) ─── */
+
+export interface WindowsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface WindowsMaterialRules {
+  psul_roll_m: number;
+  iflul_roll_m: number;
+  psul_reserve: number;
+  anchor_step: number;
+  foam_per_perim: number;
+  foam_reserve: number;
+  windowsill_overhang: number;
+  windowsill_roll: number;
+  sandwich_panel_m2: number;
+  gkl_sheet_m2: number;
+  plaster_kg_per_m2: number;
+  plaster_bag: number;
+  slope_sandwich_reserve: number;
+  slope_gkl_reserve: number;
+  anchor_reserve: number;
+  screw_reserve: number;
+  f_profile_length: number;
+}
+
+export interface WindowsWarningRules {
+  wide_window_threshold_mm: number;
+  thick_wall_threshold_mm: number;
+}
+
+export interface WindowsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    slope_types: number[];
+    window_widths: number[];
+    window_heights: number[];
+  };
+  packaging_rules: WindowsPackagingRules;
+  material_rules: WindowsMaterialRules;
+  warnings_rules: WindowsWarningRules;
+}
+
+/* ─── Slopes (откосы) ─── */
+
+export interface SlopesPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SlopesMaterialRules {
+  panel_m2: number;
+  gkl_m2: number;
+  plaster_kg_per_m2: number;
+  putty_kg_per_m2: number;
+  primer_l_per_m2: number;
+  corner_profile_m: number;
+  f_profile_m: number;
+  panel_reserve: number;
+  plaster_reserve: number;
+  putty_reserve: number;
+  gkl_reserve: number;
+  primer_reserve: number;
+}
+
+export interface SlopesWarningRules {
+  wide_slope_threshold_mm: number;
+  bulk_opening_threshold: number;
+}
+
+export interface SlopesCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    opening_types: number[];
+    finish_types: number[];
+    opening_dims: Record<string, [number, number, number]>;
+  };
+  packaging_rules: SlopesPackagingRules;
+  material_rules: SlopesMaterialRules;
+  warnings_rules: SlopesWarningRules;
+}
+
+/* ─── Gypsum Board / ГВЛ ─── */
+
+export interface GypsumBoardPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface GypsumBoardMaterialRules {
+  sheet_area: number;
+  sheet_reserve: number;
+  pp_step_default: number;
+  screws_gkl_per_sheet: number;
+  dubel_step: number;
+  dubel_reserve: number;
+  serpyanka_reserve: number;
+  putty_per_serpyanka: number;
+  putty_bag: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  profile_length: number;
+}
+
+export interface GypsumBoardWarningRules {
+  large_area_threshold_m2: number;
+  double_layer_note: boolean;
+}
+
+export interface GypsumBoardCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    construction_types: number[];
+    gkl_types: number[];
+    profile_steps: number[];
+  };
+  packaging_rules: GypsumBoardPackagingRules;
+  material_rules: GypsumBoardMaterialRules;
+  warnings_rules: GypsumBoardWarningRules;
+}
+
+/* ─── Ceiling Cassette (кассетный потолок) ─── */
+
+export interface CeilingCassettePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface CeilingCassetteMaterialRules {
+  cassette_areas: Record<string, number>;
+  cassette_sizes: Record<string, number>;
+  cassette_reserve: number;
+  main_profile_spacing: number;
+  cross_profile_spacing: number;
+  hanger_spacing: number;
+  wall_profile_length: number;
+  wall_profile_reserve: number;
+}
+
+export interface CeilingCassetteWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface CeilingCassetteCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    cassette_sizes: number[];
+  };
+  packaging_rules: CeilingCassettePackagingRules;
+  material_rules: CeilingCassetteMaterialRules;
+  warnings_rules: CeilingCassetteWarningRules;
+}
+
+/* ─── Ceiling Insulation (утепление потолка) ─── */
+
+export interface CeilingInsulationPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface CeilingInsulationMaterialRules {
+  plate_pack_m2: number;
+  roll_areas: Record<string, number>;
+  epps_plate: number;
+  ecowool_density: number;
+  ecowool_bag: number;
+  plate_reserve: number;
+  vapor_roll: number;
+  vapor_reserve: number;
+  tape_per_area: number;
+}
+
+export interface CeilingInsulationWarningRules {
+  thin_insulation_threshold_mm: number;
+  large_area_threshold_m2: number;
+}
+
+export interface CeilingInsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    insulation_types: number[];
+    thicknesses: number[];
+  };
+  packaging_rules: CeilingInsulationPackagingRules;
+  material_rules: CeilingInsulationMaterialRules;
+  warnings_rules: CeilingInsulationWarningRules;
+}
+
+/* ─── Ceiling Rail (реечный потолок) ─── */
+
+export interface CeilingRailPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface CeilingRailMaterialRules {
+  rail_reserve: number;
+  t_profile_spacing: number;
+  t_profile_length: number;
+  t_reserve: number;
+  hanger_spacing: number;
+  screws_per_hanger: number;
+  screws_per_rail: number;
+}
+
+export interface CeilingRailWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface CeilingRailCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    rail_widths: number[];
+    rail_lengths: number[];
+  };
+  packaging_rules: CeilingRailPackagingRules;
+  material_rules: CeilingRailMaterialRules;
+  warnings_rules: CeilingRailWarningRules;
+}
+
+/* ─── Ceiling Stretch (натяжной потолок) ─── */
+
+export interface CeilingStretchPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface CeilingStretchMaterialRules {
+  baguet_reserve: number;
+  baguet_length: number;
+  insert_reserve: number;
+  masking_tape_roll: number;
+}
+
+export interface CeilingStretchWarningRules {
+  large_area_threshold_m2: number;
+  many_fixtures_threshold: number;
+}
+
+export interface CeilingStretchCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    ceiling_types: number[];
+  };
+  packaging_rules: CeilingStretchPackagingRules;
+  material_rules: CeilingStretchMaterialRules;
+  warnings_rules: CeilingStretchWarningRules;
+}
+
+/* ─── Sound Insulation (звукоизоляция) ─── */
+
+export interface SoundInsulationPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SoundInsulationMaterialRules {
+  rockwool_plate: number;
+  rockwool_reserve: number;
+  gkl_sheet: number;
+  gkl_reserve_2layers: number;
+  pp_spacing: number;
+  pp_length: number;
+  vibro_per_m2: number;
+  vibro_reserve: number;
+  vibro_tape_roll: number;
+  zips_plate: number;
+  zips_reserve: number;
+  zips_dubels_per_panel: number;
+  zips_dubel_reserve: number;
+  float_mat_roll: number;
+  float_reserve: number;
+  damp_tape_roll: number;
+  screed_thickness: number;
+  screed_density: number;
+  screed_bag: number;
+  sealant_per_perim: number;
+  seal_tape_roll: number;
+  seal_tape_reserve: number;
+}
+
+export interface SoundInsulationWarningRules {
+  large_area_threshold_m2: number;
+  professional_system_note: boolean;
+}
+
+export interface SoundInsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    surface_types: number[];
+    systems: number[];
+  };
+  packaging_rules: SoundInsulationPackagingRules;
+  material_rules: SoundInsulationMaterialRules;
+  warnings_rules: SoundInsulationWarningRules;
+}
+
+/* ─── Facade Panels (фасадные панели) ─── */
+
+export interface FacadePanelsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FacadePanelsMaterialRules {
+  panel_areas: Record<string, number>;
+  panel_reserve: number;
+  bracket_spacing_m2: number;
+  bracket_reserve: number;
+  guide_spacing: number;
+  guide_length: number;
+  guide_reserve: number;
+  fasteners_per_panel: number;
+  fastener_reserve: number;
+  anchor_per_bracket: number;
+  anchor_reserve: number;
+  insulation_plate: number;
+  insulation_reserve: number;
+  insulation_dowels_per_m2: number;
+  wind_membrane_roll: number;
+  membrane_reserve: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  sealant_per_perim: number;
+}
+
+export interface FacadePanelsWarningRules {
+  large_area_threshold_m2: number;
+  thick_insulation_threshold_mm: number;
+}
+
+export interface FacadePanelsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    panel_types: number[];
+    substructure_types: number[];
+    insulation_thicknesses: number[];
+  };
+  packaging_rules: FacadePanelsPackagingRules;
+  material_rules: FacadePanelsMaterialRules;
+  warnings_rules: FacadePanelsWarningRules;
+}
+
+/* ─── Siding (сайдинг) ─── */
+
+export interface SidingPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SidingMaterialRules {
+  panel_areas: Record<string, number>;
+  panel_reserve: number;
+  starter_length: number;
+  j_profile_length: number;
+  corner_length: number;
+  finish_length: number;
+  screws_per_m2: number;
+  screw_reserve: number;
+  batten_step: number;
+  batten_reserve: number;
+  membrane_roll: number;
+  membrane_reserve: number;
+  sealant_per_perim: number;
+  starter_reserve: number;
+  j_reserve: number;
+  corner_reserve: number;
+}
+
+export interface SidingWarningRules {
+  large_net_area_threshold_m2: number;
+  high_openings_ratio: number;
+}
+
+export interface SidingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    siding_types: number[];
+  };
+  packaging_rules: SidingPackagingRules;
+  material_rules: SidingMaterialRules;
+  warnings_rules: SidingWarningRules;
+}
+
+/* ─── Wall Panels (стеновые панели) ─── */
+
+export interface WallPanelsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface WallPanelsMaterialRules {
+  panel_areas: Record<string, number>;
+  panel_reserve: number;
+  glue_coverage: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  batten_spacing: Record<string, number>;
+  batten_length: number;
+  batten_reserve: number;
+  dubel_step: number;
+  klaymer_per_m2: number;
+  molding_length: number;
+  molding_reserve: number;
+  sealant_per_perim: number;
+}
+
+export interface WallPanelsWarningRules {
+  large_area_threshold_m2: number;
+  flat_surface_warning_panel_types: number[];
+}
+
+export interface WallPanelsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    panel_types: number[];
+    mount_methods: number[];
+  };
+  packaging_rules: WallPanelsPackagingRules;
+  material_rules: WallPanelsMaterialRules;
+  warnings_rules: WallPanelsWarningRules;
+}
+
+/* ─── Decorative Plaster (декоративная штукатурка) ─── */
+
+export interface DecorPlasterPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DecorPlasterMaterialRules {
+  consumption_kg_per_m2: Record<string, number>;
+  plaster_reserve: number;
+  primer_deep_l_per_m2: number;
+  primer_deep_reserve: number;
+  primer_can: number;
+  tinted_primer_l_per_m2: number;
+  tinted_can: number;
+  pigment_per_25kg: number;
+  wax_l_per_m2: number;
+  wax_can: number;
+}
+
+export interface DecorPlasterWarningRules {
+  large_area_threshold_m2: number;
+  venetian_facade_texture_id: number;
+}
+
+export interface DecorPlasterCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    textures: number[];
+    surfaces: number[];
+  };
+  packaging_rules: DecorPlasterPackagingRules;
+  material_rules: DecorPlasterMaterialRules;
+  warnings_rules: DecorPlasterWarningRules;
+}
+
+/* ─── Partitions (перегородки) ─── */
+
+export interface PartitionsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface PartitionsMaterialRules {
+  block_dims: Record<string, [number, number]>;
+  glue_rate: Record<string, number>;
+  gypsum_milk_rate: number;
+  gypsum_bag: number;
+  glue_bag: number;
+  block_reserve: number;
+  mesh_interval: number;
+  mesh_reserve: number;
+  mesh_roll: number;
+  foam_per_perim: number;
+  foam_can: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  seal_tape_reserve: number;
+}
+
+export interface PartitionsWarningRules {
+  high_wall_threshold_m: number;
+}
+
+export interface PartitionsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    block_types: number[];
+    thicknesses: number[];
+  };
+  packaging_rules: PartitionsPackagingRules;
+  material_rules: PartitionsMaterialRules;
+  warnings_rules: PartitionsWarningRules;
+}
+
+/* ─── Fasteners (крепёж) ─── */
+
+export interface FastenersPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FastenersMaterialRules {
+  screws_per_unit: Record<string, number>;
+  base_step: Record<string, number>;
+  screw_sizes: Record<string, string>;
+  per_kg: Record<string, number>;
+  unit_area: Record<string, number>;
+  screw_reserve: number;
+  klaymer_multiplier: number;
+  frame_screws_per_unit: number;
+  frame_screw_reserve: number;
+  dubel_step: number;
+  dubel_reserve: number;
+  bits_per_screws: number;
+}
+
+export interface FastenersWarningRules {
+  bulk_threshold: number;
+}
+
+export interface FastenersCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    material_types: number[];
+    fastener_steps: number[];
+  };
+  packaging_rules: FastenersPackagingRules;
+  material_rules: FastenersMaterialRules;
+  warnings_rules: FastenersWarningRules;
+}
+
+/* ─── Tile Adhesive (плиточный клей) ─── */
+
+export interface TileAdhesivePackagingRules {
+  unit: string;
+  default_bag_weight: number;
+  allowed_bag_weights: number[];
+}
+
+export interface TileAdhesiveMaterialRules {
+  base_consumption: Record<string, number>;
+  wall_factor: number;
+  street_factor: number;
+  old_tile_factor: number;
+  adhesive_reserve: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  tile_sizes_for_cross: Record<string, number>;
+  crosses_per_tile: number;
+  cross_reserve: number;
+  cross_pack: number;
+}
+
+export interface TileAdhesiveWarningRules {
+  large_tile_warning: boolean;
+  old_tile_primer_warning: boolean;
+}
+
+export interface TileAdhesiveCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    tile_sizes: number[];
+    laying_types: number[];
+    base_types: number[];
+  };
+  packaging_rules: TileAdhesivePackagingRules;
+  material_rules: TileAdhesiveMaterialRules;
+  warnings_rules: TileAdhesiveWarningRules;
+}
+
+/* ─── Tile Grout (затирка для плитки) ─── */
+
+export interface TileGroutPackagingRules {
+  unit: string;
+  default_bag_size: number;
+  allowed_bag_sizes: number[];
+}
+
+export interface TileGroutMaterialRules {
+  grout_density: Record<string, number>;
+  grout_reserve: number;
+}
+
+export interface TileGroutWarningRules {
+  wide_joint_threshold_mm: number;
+  epoxy_warning: boolean;
+}
+
+export interface TileGroutCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    grout_types: number[];
+    bag_sizes: number[];
+  };
+  packaging_rules: TileGroutPackagingRules;
+  material_rules: TileGroutMaterialRules;
+  warnings_rules: TileGroutWarningRules;
+}
+
+/* ─── Soft Roofing (гибкая черепица) ─── */
+
+export interface SoftRoofingPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SoftRoofingMaterialRules {
+  pack_area: number;
+  pack_reserve: number;
+  underlayment_roll: number;
+  underlayment_full_reserve: number;
+  slope_threshold: number;
+  critical_zone_width: number;
+  valley_roll: number;
+  valley_reserve: number;
+  mastic_linear_rate: number;
+  mastic_area_rate: number;
+  mastic_bucket: number;
+  nails_per_m2: number;
+  nails_per_kg: number;
+  nail_reserve: number;
+  eave_strip_length: number;
+  eave_reserve: number;
+  wind_strip_ratio: number;
+  ridge_shingle_step: number;
+  ridge_reserve: number;
+  osb_sheet: number;
+  osb_reserve: number;
+  vent_per_area: number;
+}
+
+export interface SoftRoofingWarningRules {
+  low_slope_threshold: number;
+  valley_warning: boolean;
+}
+
+export interface SoftRoofingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: SoftRoofingPackagingRules;
+  material_rules: SoftRoofingMaterialRules;
+  warnings_rules: SoftRoofingWarningRules;
+}
+
+/* ─── Facade Insulation (утепление фасада) ─── */
+
+export interface FacadeInsulationPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface FacadeInsulationMaterialRules {
+  plate_m2: number;
+  plate_reserve: number;
+  glue_kg_per_m2: Record<string, number>;
+  glue_bag: number;
+  dowels_per_m2: Record<string, number>;
+  dowel_reserve: number;
+  mesh_reserve: number;
+  mesh_roll: number;
+  armor_kg_per_m2: number;
+  armor_bag: number;
+  primer_l_per_m2: number;
+  primer_can_l: number;
+  primer_reserve: number;
+  decor_consumption: Record<string, number>;
+  decor_bag: number;
+  starter_length: number;
+  starter_reserve: number;
+}
+
+export interface FacadeInsulationWarningRules {
+  thick_insulation_threshold_mm: number;
+  epps_adhesion_warning: boolean;
+}
+
+export interface FacadeInsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    insulation_types: number[];
+    finish_types: number[];
+    thicknesses: number[];
+  };
+  packaging_rules: FacadeInsulationPackagingRules;
+  material_rules: FacadeInsulationMaterialRules;
+  warnings_rules: FacadeInsulationWarningRules;
+}
+
+/* ─── Drywall Ceiling ─── */
+
+export interface DrywallCeilingPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DrywallCeilingMaterialRules {
+  sheet_area: number;
+  sheet_reserve: number;
+  profile_reserve: number;
+  cross_step: number;
+  suspension_step: number;
+  screws_per_sheet: number;
+  screws_per_kg: number;
+  screw_reserve: number;
+  clop_per_susp: number;
+  clop_per_crab: number;
+  dowel_step: number;
+  serpyanka_coeff: number;
+  serpyanka_reserve: number;
+  serpyanka_roll: number;
+  putty_kg_per_m: number;
+  putty_bag: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  profile_length: number;
+}
+
+export interface DrywallCeilingWarningRules {
+  deformation_joint_area_threshold_m2: number;
+}
+
+export interface DrywallCeilingCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: DrywallCeilingPackagingRules;
+  material_rules: DrywallCeilingMaterialRules;
+  warnings_rules: DrywallCeilingWarningRules;
+}
+
+/* ─── 3D Panels ─── */
+
+export interface Panels3dPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface Panels3dMaterialRules {
+  panel_reserve: number;
+  glue_kg_per_m2: number;
+  primer_l_per_m2: number;
+  putty_kg_per_m2: number;
+  paint_l_per_m2: number;
+  varnish_l_per_m2: number;
+  glue_bag: number;
+  primer_can: number;
+  putty_bag: number;
+  paint_can: number;
+  varnish_can: number;
+}
+
+export interface Panels3dWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface Panels3dCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: Panels3dPackagingRules;
+  material_rules: Panels3dMaterialRules;
+  warnings_rules: Panels3dWarningRules;
+}
+
+/* ─── MDF Panels ─── */
+
+export interface MdfPanelsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface MdfPanelsMaterialRules {
+  panel_reserve: number;
+  profile_reserve: number;
+  profile_step: number;
+  standard_panel_length: number;
+  clips_per_panel: number;
+  plinth_length: number;
+  plinth_extra: number;
+}
+
+export interface MdfPanelsWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface MdfPanelsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: MdfPanelsPackagingRules;
+  material_rules: MdfPanelsMaterialRules;
+  warnings_rules: MdfPanelsWarningRules;
+}
+
+/* ─── PVC Panels ─── */
+
+export interface PvcPanelsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface PvcPanelsMaterialRules {
+  panel_reserve: number;
+  profile_reserve: number;
+  profile_step: number;
+  panel_lengths: number[];
+  corner_profile_length: number;
+  standard_corners: number;
+}
+
+export interface PvcPanelsWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface PvcPanelsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: PvcPanelsPackagingRules;
+  material_rules: PvcPanelsMaterialRules;
+  warnings_rules: PvcPanelsWarningRules;
+}
+
+/* ─── Wood Wall ─── */
+
+export interface WoodWallPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface WoodWallMaterialRules {
+  board_reserve: number;
+  antiseptic_l_per_m2: number;
+  finish_l_per_m2: number;
+  finish_layers: number;
+  primer_l_per_m2: number;
+  fasteners_per_board: number;
+  clamps_per_board: number;
+  batten_step: number;
+  plinth_reserve: number;
+  corner_ratio: number;
+  corner_reserve: number;
+}
+
+export interface WoodWallWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface WoodWallCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: WoodWallPackagingRules;
+  material_rules: WoodWallMaterialRules;
+  warnings_rules: WoodWallWarningRules;
+}
+
+/* ─── Decor Stone ─── */
+
+export interface DecorStonePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DecorStoneMaterialRules {
+  stone_reserve: number;
+  glue_kg_per_m2: number[];
+  glue_reserve: number;
+  glue_bag: number;
+  primer_l_per_m2: number;
+  primer_reserve: number;
+  primer_can: number;
+  grout_base_factor: number;
+  grout_reserve: number;
+  grout_bag: number;
+}
+
+export interface DecorStoneWarningRules {
+  large_area_threshold_m2: number;
+}
+
+export interface DecorStoneCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: Record<string, never>;
+  packaging_rules: DecorStonePackagingRules;
+  material_rules: DecorStoneMaterialRules;
+  warnings_rules: DecorStoneWarningRules;
 }

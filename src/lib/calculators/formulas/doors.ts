@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalDoors } from "../../../../engine/doors";
+import doorsSpec from "../../../../configs/calculators/doors-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const doorsDef: CalculatorDefinition = {
   id: "doors_install",
@@ -64,139 +66,18 @@ export const doorsDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const doorCount = Math.max(1, Math.round(inputs.doorCount ?? 3));
-    const doorType = Math.round(inputs.doorType ?? 0);
-    const wallThicknessMm = inputs.wallThickness ?? 120;
-    const withNalichnik = Math.round(inputs.withNalichnik ?? 1);
-
-    // Размеры дверей (Ш × В)
-    const doorDims = [
-      { w: 700, h: 2000 }, // 0
-      { w: 800, h: 2000 }, // 1
-      { w: 900, h: 2000 }, // 2
-      { w: 860, h: 2050 }, // 3 входная
-      { w: 700, h: 2100 }, // 4 балконная
-    ];
-    const dim = doorDims[doorType];
-
-    const warnings: string[] = [];
-    const materials = [];
-
-    // Монтажная пена
-    // Периметр проёма × 2 (зазор с каждой стороны)
-    const openingPerimeterM = (2 * (dim.w + dim.h)) / 1000;
-    const foamPerDoor = openingPerimeterM * 0.1; // ~100 мл/м.п. периметра
-    const foamCanVolume = 0.75; // 750 мл = ~0.75 л выход
-    const foamCansPerDoor = Math.ceil(foamPerDoor / foamCanVolume);
-    const totalFoamCans = Math.ceil(doorCount * foamCansPerDoor * 1.1);
-
-    materials.push({
-      name: "Монтажная пена профессиональная (баллон 750 мл)",
-      quantity: doorCount * foamCansPerDoor,
-      unit: "баллонов",
-      withReserve: totalFoamCans,
-      purchaseQty: totalFoamCans,
-      category: "Монтаж",
-    });
-
-    // Доборы (если толщина стены > стандартной коробки 70 мм)
-    // Стандартная коробка = 70 мм, добор нужен при wallThickness > 70 мм
-    const standardBoxDepth = 70; // мм
-    const needDobor = wallThicknessMm > standardBoxDepth;
-    if (needDobor) {
-      const doborWidth = wallThicknessMm - standardBoxDepth;
-      // Периметр коробки: 2 вертикали + 1 горизонталь
-      const doborLengthPerDoor = (2 * dim.h + dim.w) / 1000 * 1.05;
-      // Доборы по 2.2 м
-      const doborPcs = Math.ceil((doborLengthPerDoor / 2.2)) * doorCount;
-
-      materials.push({
-        name: `Добор дверной ${doborWidth} мм × 2200 мм (расширение коробки)`,
-        quantity: doborLengthPerDoor / 2.2 * doorCount,
-        unit: "шт",
-        withReserve: doborPcs,
-        purchaseQty: doborPcs,
-        category: "Добор",
-      });
-    }
-
-    // Наличники
-    if (withNalichnik > 0) {
-      // Периметр наличника: 2 вертикали + 1 горизонталь (снизу нет)
-      const nalichnikLengthPerDoor = (2 * dim.h + dim.w) / 1000 * 1.05;
-      const nalichnikPcsPerDoor = Math.ceil(nalichnikLengthPerDoor / 2.2); // по 2.2 м
-      const totalNalichnikPcs = nalichnikPcsPerDoor * doorCount * 2; // 2 стороны
-
-      materials.push({
-        name: "Наличник дверной 70×10 мм × 2200 мм",
-        quantity: nalichnikLengthPerDoor / 2.2 * doorCount * 2,
-        unit: "шт",
-        withReserve: totalNalichnikPcs,
-        purchaseQty: totalNalichnikPcs,
-        category: "Наличники",
-      });
-
-      // Жидкие гвозди для наличников
-      const glueCartridges = Math.ceil(doorCount * 0.5); // 0.5 картриджа на дверь
-      materials.push({
-        name: "Жидкие гвозди (картридж 310 мл)",
-        quantity: doorCount * 0.5,
-        unit: "шт",
-        withReserve: glueCartridges,
-        purchaseQty: glueCartridges,
-        category: "Клей",
-      });
-    }
-
-    // Шурупы для коробки
-    const screwsPerDoor = 12; // ~12 точек крепления
-    const screwPacks = Math.ceil(doorCount * screwsPerDoor / 50); // пачки 50 шт
-    materials.push({
-      name: "Шуруп 5×80 мм (пачка 50 шт) для крепления коробки",
-      quantity: doorCount * screwsPerDoor / 50,
-      unit: "пачек",
-      withReserve: screwPacks,
-      purchaseQty: screwPacks,
-      category: "Крепёж",
-    });
-
-    // Дюбели
-    const dubelsPerDoor = 6;
-    const dubelsPacks = Math.ceil(doorCount * dubelsPerDoor / 20);
-    materials.push({
-      name: "Дюбель 8×80 мм (пачка 20 шт)",
-      quantity: doorCount * dubelsPerDoor / 20,
-      unit: "пачек",
-      withReserve: dubelsPacks,
-      purchaseQty: dubelsPacks,
-      category: "Крепёж",
-    });
-
-    if (doorType === 3) {
-      warnings.push("Входная дверь — монтажная пена должна быть непрерывным контуром для теплоизоляции; снаружи закройте гидроизоляционной лентой");
-    }
-    if (wallThicknessMm > 200 && !needDobor) {
-      warnings.push("Проверьте, что ширина коробки соответствует толщине стены — возможно нужны доборы");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "doors-main",
-      title: "Doors main",
-      exactNeed: doorCount,
-      unit: "шт",
-      packageSizes: [1],
-      packageLabelPrefix: "doors-piece",
-    });
+  calculate(inputs) {
+    const spec = doorsSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalDoors(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        doorCount,
-        totalFoamCans,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

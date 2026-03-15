@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalWarmFloorPipes } from "../../../../engine/warm-floor-pipes";
+import warmfloorpipesSpec from "../../../../configs/calculators/warm-floor-pipes-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const warmFloorPipesDef: CalculatorDefinition = {
   id: "warm_floor_pipes",
@@ -86,161 +88,18 @@ export const warmFloorPipesDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const inputMode = Math.round(inputs.inputMode ?? 0);
-    let area: number;
-    let length: number;
-    let width: number;
-
-    if (inputMode === 0) {
-      length = Math.max(1, inputs.length ?? 5);
-      width = Math.max(1, inputs.width ?? 4);
-      area = length * width;
-    } else {
-      area = Math.max(1, inputs.area ?? 20);
-      // Estimate dimensions for perimeter (aspect ratio ~5:4)
-      length = Math.sqrt(area * 1.25);
-      width = area / length;
-    }
-
-    const perimeter = 2 * (length + width);
-    const pipeStep = inputs.pipeStep ?? 200; // мм
-    const pipeType = Math.round(inputs.pipeType ?? 0);
-
-    // Полезная площадь: минус ~15% под мебель и отступы от стен
-    const usefulArea = area * 0.85;
-
-    // Длина трубы: площадь / шаг + подводка к коллектору (~3 м)
-    const pipeStepM = pipeStep / 1000;
-    const pipeLength = usefulArea / pipeStepM + 3;
-
-    // Максимальная длина контура для трубы 16 мм — 80 м
-    const maxCircuit = 80;
-    const circuits = Math.max(1, Math.ceil(pipeLength / maxCircuit));
-
-    // Итоговая длина трубы с запасом 5%
-    const totalPipe = pipeLength * 1.05;
-
-    // Бухты по 200 м
-    const coils = Math.ceil(totalPipe / 200);
-
-    // Название трубы
-    const pipeNames: Record<number, string> = {
-      0: "PEX-a 16 мм",
-      1: "PEX-b 16 мм",
-      2: "PE-RT 16 мм",
-      3: "Металлопластик 16 мм (PEX-AL-PEX)",
-    };
-    const pipeName = pipeNames[pipeType] ?? "PEX-a 16 мм";
-
-    // Утеплитель ЭППС 30 мм (плиты 1200×600 мм = 0.72 м²)
-    const insulationSheets = Math.ceil(area * 1.05 / 0.72);
-
-    // Демпферная лента (рулоны по 25 м)
-    const damperLength = perimeter * 1.05;
-    const damperRolls = Math.ceil(damperLength / 25);
-
-    // Якорные скобы: через каждые 0.3 м трубы, запас 5%, упаковки по 100 шт
-    const clipsRaw = Math.ceil(totalPipe / 0.3) * 1.05;
-    const clipsPacks = Math.ceil(clipsRaw / 100);
-    const clipsTotal = clipsPacks * 100;
-
-    // Коллекторная группа
-    const collectorOutputs = circuits;
-
-    // Стяжка ЦПС: толщина 50 мм (0.05 м), плотность раствора ~1500 кг/м³, мешки 25 кг
-    const screedMass = area * 0.05 * 1500;
-    const screedBags = Math.ceil(screedMass / 25);
-
-    const materials: import("../types").MaterialResult[] = [
-      {
-        name: `Труба ${pipeName}`,
-        quantity: Math.round(pipeLength * 100) / 100,
-        unit: "м.п.",
-        withReserve: Math.round(totalPipe * 100) / 100,
-        purchaseQty: coils * 200,
-        category: "Труба",
-      },
-      {
-        name: `Труба ${pipeName} (бухта 200 м)`,
-        quantity: totalPipe / 200,
-        unit: "бухт",
-        withReserve: coils,
-        purchaseQty: coils,
-        category: "Труба",
-      },
-      {
-        name: "Утеплитель ЭППС 30 мм (плита 1200×600 мм)",
-        quantity: Math.round(area / 0.72 * 100) / 100,
-        unit: "шт",
-        withReserve: insulationSheets,
-        purchaseQty: insulationSheets,
-        category: "Теплоизоляция",
-      },
-      {
-        name: "Демпферная лента (рулон 25 м)",
-        quantity: Math.round(perimeter / 25 * 100) / 100,
-        unit: "рулонов",
-        withReserve: damperRolls,
-        purchaseQty: damperRolls,
-        category: "Монтаж",
-      },
-      {
-        name: "Якорные скобы (упак. 100 шт)",
-        quantity: Math.ceil(totalPipe / 0.3),
-        unit: "шт",
-        withReserve: Math.round(clipsRaw),
-        purchaseQty: clipsTotal,
-        category: "Крепёж",
-      },
-      {
-        name: `Коллекторная группа на ${collectorOutputs} контуров`,
-        quantity: 1,
-        unit: "шт",
-        withReserve: 1,
-        purchaseQty: 1,
-        category: "Коллектор",
-      },
-      {
-        name: "Стяжка ЦПС (мешок 25 кг)",
-        quantity: Math.round(screedMass / 25 * 100) / 100,
-        unit: "мешков",
-        withReserve: screedBags,
-        purchaseQty: screedBags,
-        category: "Стяжка",
-      },
-    ];
-
-    const warnings: string[] = [];
-    if (pipeLength > maxCircuit) {
-      warnings.push(`Рекомендуется ${circuits} контуров для равномерного нагрева (макс. ${maxCircuit} м на контур для трубы 16 мм)`);
-    }
-    if (area > 40) {
-      warnings.push("При площади > 40 м² рекомендуется проектный расчёт теплопотерь");
-    }
-
-    const scenarios = buildNativeScenarios({
-      id: "warm-floor-pipes-main",
-      title: "Warm floor pipes main",
-      exactNeed: totalPipe,
-      unit: "м.п.",
-      packageSizes: [200],
-      packageLabelPrefix: "warm-floor-pipe-coil",
-    });
+  calculate(inputs) {
+    const spec = warmfloorpipesSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalWarmFloorPipes(spec, inputs, factorTable);
 
     return {
-      materials,
-      totals: {
-        area,
-        usefulArea,
-        perimeter,
-        pipeLength: Math.round(pipeLength * 100) / 100,
-        totalPipe: Math.round(totalPipe * 100) / 100,
-        circuits,
-        coils,
-      } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

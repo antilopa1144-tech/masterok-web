@@ -1,6 +1,8 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { buildNativeScenarios } from "../scenario-native";
+import { computeCanonicalDecorPlaster } from "../../../../engine/decor-plaster";
+import decorplasterSpec from "../../../../configs/calculators/decor-plaster-canonical.v1.json";
+import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const decorPlasterDef: CalculatorDefinition = {
   id: "walls_decor_plaster",
@@ -60,102 +62,18 @@ export const decorPlasterDef: CalculatorDefinition = {
       ],
     },
   ],
-  calculate(inputs): import("../types").CalculatorResult {
-    const area = Math.max(1, inputs.area ?? 50);
-    const textureType = Math.round(inputs.textureType ?? 0);
-    const surface = Math.round(inputs.surface ?? 0);
-    const bagWeight = inputs.bagWeight ?? 25;
-
-    // Расход кг/м² по типу фактуры
-    const consumption: Record<number, number> = {
-      0: 2.5,  // короед 2 мм
-      1: 3.5,  // короед 3 мм
-      2: 3.0,  // камешковая 2.5 мм
-      3: 4.0,  // шуба
-      4: 1.2,  // венецианская (2 слоя по 0.6)
-    };
-    const kgPerSqm = consumption[textureType] ?? 2.5;
-    const totalKg = area * kgPerSqm * 1.05;
-    const bags = Math.ceil(totalKg / bagWeight);
-
-    // Грунтовка-краска под декоративную (окрашенная): совпадает по тону
-    const primerCans = Math.ceil(area * 0.15 / 5);
-
-    // Для венецианской: финишный воск
-    const waxCans = textureType === 4 ? Math.ceil(area * 0.1 / 1) : 0;
-
-    const warnings: string[] = [];
-    if (surface === 0 && textureType === 4) {
-      warnings.push("Венецианская штукатурка не предназначена для фасадов — используйте только внутри");
-    }
-    if (surface === 0) {
-      warnings.push("Для фасада используйте акриловую или силиконовую декоративную штукатурку с защитой от UV");
-    }
-
-    const textureNames = ["Короед (зерно 2 мм)", "Короед (зерно 3 мм)", "Камешковая 2.5 мм", "Шуба", "Венецианская"];
-
-    // Грунтовка глубокого проникновения для основания (200 мл/м²)
-    const deepPrimerLiters = area * 0.2 * 1.15; // 200 мл/м², запас 15%
-    const deepPrimerCans = Math.ceil(deepPrimerLiters / 10); // канистра 10 л
-
-    // Колер (пигмент) — 1 банка на каждые 25 кг смеси
-    const colorBanks = Math.ceil(totalKg / 25);
-
-    const scenarios = buildNativeScenarios({
-      id: "decor-plaster-main",
-      title: "Decor plaster main",
-      exactNeed: totalKg,
-      unit: "кг",
-      packageSizes: [bagWeight],
-      packageLabelPrefix: "decor-plaster-bag",
-    });
+  calculate(inputs) {
+    const spec = decorplasterSpec as any;
+    const factorTable = defaultFactorTables.factors as any;
+    const canonical = computeCanonicalDecorPlaster(spec, inputs, factorTable);
 
     return {
-      materials: [
-        {
-          name: `${textureNames[textureType] ?? textureNames[0]} (${bagWeight} кг)`,
-          quantity: totalKg / bagWeight,
-          unit: bagWeight === 15 ? "вёдер" : "мешков",
-          withReserve: bags,
-          purchaseQty: bags,
-          category: "Основное",
-        },
-        {
-          name: "Грунтовка глубокого проникновения (канистра 10 л, ~200 мл/м²)",
-          quantity: deepPrimerLiters / 10,
-          unit: "канистр",
-          withReserve: deepPrimerCans,
-          purchaseQty: deepPrimerCans,
-          category: "Подготовка",
-        },
-        {
-          name: "Грунтовка тонированная под штукатурку (5 л)",
-          quantity: area * 0.15 / 5,
-          unit: "шт",
-          withReserve: primerCans,
-          purchaseQty: primerCans,
-          category: "Подготовка",
-        },
-        {
-          name: "Колер (пигмент) — 1 банка на 25 кг смеси",
-          quantity: colorBanks,
-          unit: "банок",
-          withReserve: colorBanks,
-          purchaseQty: colorBanks,
-          category: "Колеровка",
-        },
-        ...(textureType === 4 && waxCans > 0 ? [{
-          name: "Воск финишный для венецианской (1 л)",
-          quantity: waxCans,
-          unit: "шт",
-          withReserve: waxCans,
-          purchaseQty: waxCans,
-          category: "Финиш",
-        }] : []),
-      ],
-      totals: { area, kgPerSqm, totalKg } as Record<string, number>,
-      warnings,
-      scenarios,
+      materials: canonical.materials,
+      totals: canonical.totals,
+      warnings: canonical.warnings,
+      scenarios: canonical.scenarios,
+      formulaVersion: canonical.formulaVersion,
+      canonicalSpecId: canonical.canonicalSpecId,
     };
   },
   formulaDescription: `

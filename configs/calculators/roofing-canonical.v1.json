@@ -1,0 +1,81 @@
+{
+  "calculator_id": "roofing",
+  "formula_version": "roofing-canonical-v1",
+  "input_schema": [
+    { "key": "roofingType", "default_value": 0, "min": 0, "max": 5 },
+    { "key": "area", "unit": "m2", "default_value": 80, "min": 10, "max": 500 },
+    { "key": "slope", "unit": "deg", "default_value": 30, "min": 5, "max": 60 },
+    { "key": "ridgeLength", "unit": "m", "default_value": 8, "min": 1, "max": 30 },
+    { "key": "sheetWidth", "unit": "m", "default_value": 1.18, "min": 0.8, "max": 1.5 },
+    { "key": "sheetLength", "unit": "m", "default_value": 2.5, "min": 1, "max": 8 },
+    { "key": "complexity", "default_value": 0, "min": 0, "max": 2 }
+  ],
+  "field_factors": {
+    "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
+  },
+  "normative_formula": {
+    "roofing_types": [
+      { "id": 0, "key": "metal_tile", "label": "Металлочерепица" },
+      { "id": 1, "key": "soft", "label": "Мягкая кровля" },
+      { "id": 2, "key": "profnastil", "label": "Профнастил" },
+      { "id": 3, "key": "ondulin", "label": "Ондулин" },
+      { "id": 4, "key": "shale", "label": "Шифер" },
+      { "id": 5, "key": "ceramic", "label": "Керамическая черепица" }
+    ],
+    "complexity_profiles": [
+      { "id": 0, "key": "simple", "label": "Простая", "coefficient": 1.05 },
+      { "id": 1, "key": "medium", "label": "Средняя", "coefficient": 1.15 },
+      { "id": 2, "key": "complex", "label": "Сложная", "coefficient": 1.25 }
+    ],
+    "generic_sheet_specs": [
+      { "id": 2, "key": "profnastil", "label": "Профнастил", "effective_width": 0, "effective_height": 0, "area": 0, "fasteners_per_m2": 10 },
+      { "id": 3, "key": "ondulin", "label": "Ондулин", "effective_width": 0.83, "effective_height": 1.85, "area": 1.5355, "fasteners_per_m2": 20 },
+      { "id": 4, "key": "shale", "label": "Шифер", "effective_width": 0.98, "effective_height": 1.55, "area": 1.519, "fasteners_per_m2": 4 },
+      { "id": 5, "key": "ceramic", "label": "Керамическая черепица", "effective_width": 0, "effective_height": 0, "area": 0.07692, "fasteners_per_m2": 4 }
+    ]
+  },
+  "packaging_rules": {
+    "sheet_unit": "листов",
+    "tile_unit": "шт",
+    "pack_unit": "упаковок"
+  },
+  "material_rules": {
+    "metal_tile_overlap_horizontal_m": 0.08,
+    "metal_tile_overlap_vertical_m": 0.15,
+    "metal_tile_screws_per_m2": 9,
+    "metal_tile_ridge_element_m": 2,
+    "metal_tile_ridge_reserve": 1.05,
+    "metal_tile_snow_guard_spacing_m": 3,
+    "metal_tile_waterproofing_reserve": 1.15,
+    "metal_tile_waterproofing_roll_m2": 75,
+    "metal_tile_batten_step_m": 0.35,
+    "metal_tile_batten_reserve": 1.1,
+    "metal_tile_counter_batten_step_m": 1.0,
+    "metal_tile_counter_batten_reserve": 1.1,
+    "soft_pack_area_m2": 3.0,
+    "soft_underlayment_roll_m2": 15,
+    "soft_underlayment_reserve": 1.15,
+    "soft_mastic_bucket_kg": 3,
+    "soft_nails_per_m2": 80,
+    "soft_nails_per_kg": 400,
+    "soft_nails_reserve": 1.05,
+    "soft_ridge_element_m": 0.5,
+    "soft_ridge_reserve": 1.05,
+    "soft_osb_sheet_m2": 3.125,
+    "soft_osb_reserve": 1.05,
+    "soft_vent_area_m2": 25,
+    "soft_low_slope_threshold": 18,
+    "generic_ridge_element_m": 0.33,
+    "generic_ridge_reserve": 1.05,
+    "generic_waterproofing_reserve": 1.15,
+    "generic_waterproofing_roll_m2": 75
+  },
+  "warnings_rules": {
+    "metal_tile_min_slope": 14,
+    "soft_roofing_min_slope": 12,
+    "large_roof_area_threshold": 200
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  }
+}

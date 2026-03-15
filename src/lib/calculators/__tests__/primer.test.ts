@@ -37,7 +37,7 @@ describe("Грунтовка", () => {
 });
 
 describe("Canonical primer fixture parity", () => {
-  const cases = parityFixture.cases as Array<{
+  const cases = parityFixture.cases as unknown as Array<{
     id: string;
     inputs: Record<string, number>;
     expected: {
