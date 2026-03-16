@@ -110,6 +110,11 @@ export interface CalculatorDefinition extends CalculatorMeta {
     question: string;
     answer: string;
   }[];
+  /** SEO/GEO/AEO-контент: экспертное описание (HTML) + расширенный FAQ (HTML-ответы) */
+  seoContent?: {
+    descriptionHtml: string;
+    faq: { question: string; answer: string }[];
+  };
 }
 
 

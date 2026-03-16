@@ -17,6 +17,7 @@ interface CalculatorJsonLdProps {
     faq?: Array<{ question: string; answer: string }>;
     howToUse?: string[];
     expertTips?: Array<{ title: string; content: string; author?: string }>;
+    seoContent?: { descriptionHtml: string; faq: Array<{ question: string; answer: string }> };
   };
   categoryLabel?: string;
   canonicalUrl: string;
@@ -67,11 +68,18 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     ],
   };
 
-  // FAQPage schema (AEO optimized)
-  const faqLd = calc.faq && calc.faq.length > 0 ? {
+  // FAQPage schema (AEO optimized) — merges regular FAQ + seoContent FAQ
+  const allFaqItems = [
+    ...(calc.faq ?? []),
+    ...((calc.seoContent?.faq ?? []).map(item => ({
+      question: item.question,
+      answer: item.answer.replace(/<[^>]+>/g, ""), // strip HTML for schema
+    }))),
+  ];
+  const faqLd = allFaqItems.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: calc.faq.map(item => ({
+    mainEntity: allFaqItems.map(item => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: {

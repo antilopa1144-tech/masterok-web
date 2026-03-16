@@ -10,6 +10,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
+import SeoContentBlock from "@/components/seo/SeoContentBlock";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -227,6 +228,15 @@ export default async function CalculatorPage({ params }: PageProps) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* SEO/GEO/AEO контент-блок */}
+            {calc.seoContent && (
+              <SeoContentBlock
+                calculatorId={calc.id}
+                descriptionHtml={calc.seoContent.descriptionHtml}
+                faq={calc.seoContent.faq}
+              />
             )}
           </div>
 
