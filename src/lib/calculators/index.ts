@@ -66,6 +66,7 @@ import { warmFloorPipesDef } from "./formulas/warm-floor-pipes";
 import { sewageDef } from "./formulas/sewage";
 import { frameHouseDef } from "./formulas/frame-house";
 import { softRoofingDef } from "./formulas/soft-roofing";
+import { decorStoneDef } from "./formulas/decor-stone";
 
 export const ALL_CALCULATORS: CalculatorDefinition[] = [
   // Фундамент
@@ -113,6 +114,7 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   facadePanelsDef,
   facadeBrickDef,
   decorPlasterDef,
+  decorStoneDef,
   fenceDef,
   terraceDef,
   stairsDef,

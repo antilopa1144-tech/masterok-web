@@ -33,6 +33,7 @@ const FORMULA_MAP: Record<string, string> = {
   elektrika: "electric",
   zabor: "fence",
   "dekorativnaya-shtukaturka": "decor-plaster",
+  "dekorativnyj-kamen": "decor-stone",
   "natyazhnoj-potolok": "ceiling-stretch",
   "reechnyj-potolok": "ceiling-rail",
   "kassetnyi-potolok": "ceiling-cassette",
