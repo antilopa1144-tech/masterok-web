@@ -73,7 +73,8 @@ jobs:
             set mirror:overwrite true;
             open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST;
             echo '=== Step 1: Clean _next/static/ before upload ===';
-            rm -r /Masterok/public_html/_next/static/ || true;
+            glob -a rm -r /Masterok/public_html/_next/static/* || true;
+            glob -a rm -r /Masterok/public_html/_next/static/ || true;
             echo '=== Step 2: Upload fresh build ===';
             mirror -R --delete --overwrite --verbose --parallel=4 --no-perms --exclude-glob=kalkulyatory/engineering --exclude-glob=kalkulyatory/engineering/** --exclude-glob=kalkulyatory/interior --exclude-glob=kalkulyatory/interior/** ./out /Masterok/public_html;
             quit
