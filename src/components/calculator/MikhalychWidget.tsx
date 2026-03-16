@@ -43,8 +43,16 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Safety: reset loading if stuck for more than 30 seconds
+  useEffect(() => {
+    if (!loading) return;
+    const timeout = setTimeout(() => setLoading(false), 30_000);
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim()) return;
+    if (loading) return; // debounce while request in flight
 
     if (!USE_PROXY && !getApiKey()) {
       setMessages((prev) => [

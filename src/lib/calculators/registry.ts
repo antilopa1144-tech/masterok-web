@@ -1,104 +1,37 @@
 /**
  * Client-side registry of calculator functions.
- * Uses dynamic imports for code splitting — each formula is loaded only when needed.
+ * Uses static imports from index.ts — reliable in all Next.js environments.
  */
 import type { CalculateFn } from "./types";
+import { ALL_CALCULATORS } from "./index";
 import { withScenarioContract } from "./scenario-adapter";
 
-/** Маппинг slug → имя файла формулы */
-const FORMULA_MAP: Record<string, string> = {
-  beton: "concrete",
-  kirpich: "brick",
-  krovlya: "roofing",
-  plitka: "tile",
-  laminat: "laminate",
-  oboi: "wallpaper",
-  styazhka: "screed",
-  kraska: "paint",
-  uteplenie: "insulation",
-  gipsokarton: "drywall",
-  "lentochnyy-fundament": "strip-foundation",
-  "teplyy-pol": "warm-floor",
-  shtukaturka: "plaster",
-  gruntovka: "primer",
-  shpaklevka: "putty",
-  linoleum: "linoleum",
-  gazobeton: "aerated-concrete",
-  vodostok: "gutters",
-  zatirka: "tile-grout",
-  "klej-dlya-plitki": "tile-adhesive",
-  parket: "parquet",
-  "nalivnoy-pol": "self-leveling",
-  sayding: "siding",
-  elektrika: "electric",
-  zabor: "fence",
-  "dekorativnaya-shtukaturka": "decor-plaster",
-  "dekorativnyj-kamen": "decor-stone",
-  "natyazhnoj-potolok": "ceiling-stretch",
-  "reechnyj-potolok": "ceiling-rail",
-  "kassetnyi-potolok": "ceiling-cassette",
-  "uteplenie-potolka": "ceiling-insulation",
-  "gipsokarton-potolok": "gypsum-board",
-  "paneli-dlya-sten": "wall-panels",
-  "peregorodki-iz-blokov": "partitions",
-  "plitnyj-fundament": "foundation-slab",
-  otmostka: "blind-area",
-  "podval-fundamenta": "basement",
-  "kalkulyator-terrasnoy-doski": "terrace",
-  "uteplenie-fasada-minvatoj": "facade-insulation",
-  "oblitsovochnyj-kirpich": "facade-brick",
-  "fasadnye-paneli": "facade-panels",
-  "kalkulyator-lestnicy": "stairs",
-  "otoplenie-radiatory": "heating",
-  ventilyaciya: "ventilation",
-  "gidroizolyaciya-vlagozaschita": "waterproofing",
-  "ustanovka-dverej": "doors",
-  "ustanovka-okon": "windows",
-  "otkosy-okon-i-dverej": "slopes",
-  zvukoizolyaciya: "sound-insulation",
-  "otdelka-balkona": "balcony",
-  "otdelka-mansardy": "attic",
-  // Новые калькуляторы (10 шт)
-  krepezh: "fasteners",
-  penobloki: "foam-blocks",
-  "kladka-kirpicha": "brickwork",
-  armatura: "rebar",
-  "vannaya-komnata": "bathroom",
-  "podvesnoy-potolok-gkl": "drywall-ceiling",
-  "vodyanoy-teplyy-pol": "warm-floor-pipes",
-  septik: "sewage",
-  "karkasnyj-dom": "frame-house",
-  "myagkaya-krovlya": "soft-roofing",
-};
-
-/** Кеш загруженных функций */
+/** Кеш обёрнутых функций расчёта */
 const cache = new Map<string, CalculateFn>();
 
 /**
  * Получить функцию расчёта по slug.
- * При первом вызове загружает модуль динамически (code splitting),
- * при повторных — отдаёт из кеша.
+ * Использует статические импорты, поэтому всегда доступна без async.
  */
 export async function getCalculateFn(slug: string): Promise<CalculateFn | undefined> {
   if (cache.has(slug)) return cache.get(slug);
 
-  const file = FORMULA_MAP[slug];
-  if (!file) return undefined;
+  const calc = ALL_CALCULATORS.find((c) => c.slug === slug);
+  if (!calc) return undefined;
 
-  try {
-    const mod = await import(`./formulas/${file}.ts`);
-    // Каждый модуль экспортирует xyzDef с полем calculate
-    const def = Object.values(mod)[0] as { calculate: CalculateFn };
-    const wrappedCalculate = withScenarioContract(slug, def.calculate);
-    cache.set(slug, wrappedCalculate);
-    return wrappedCalculate;
-  } catch {
-    return undefined;
-  }
+  const wrapped = withScenarioContract(slug, calc.calculate);
+  cache.set(slug, wrapped);
+  return wrapped;
 }
 
-/** Синхронная версия — только из кеша (для обратной совместимости) */
+/** Синхронная версия — сначала пробует кеш, потом ищет напрямую */
 export function getCalculateFnSync(slug: string): CalculateFn | undefined {
-  return cache.get(slug);
-}
+  if (cache.has(slug)) return cache.get(slug);
 
+  const calc = ALL_CALCULATORS.find((c) => c.slug === slug);
+  if (!calc) return undefined;
+
+  const wrapped = withScenarioContract(slug, calc.calculate);
+  cache.set(slug, wrapped);
+  return wrapped;
+}
