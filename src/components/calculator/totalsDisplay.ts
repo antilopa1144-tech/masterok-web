@@ -49,9 +49,48 @@ export const TOTAL_LABELS: Record<string, string> = {
   requiredAirflow: "Воздухообмен", exchangeRate: "Кратность",
   // Кровля
   slope: "Уклон",
+  // Бетон / фундамент
+  sourceVolume: "Объём (чистый)", concreteGrade: "Марка бетона",
+  masticKg: "Мастика", filmArea: "Плёнка",
+  sandM3: "Песок", gravelM3: "Щебень", waterL: "Вода",
+  cementBags: "Мешков цемента", masticBuckets: "Вёдер мастики", filmRolls: "Рулонов плёнки",
+  floorConcrete: "Бетон пола", wallConcrete: "Бетон стен",
+  // Стяжка
+  screedType: "Тип стяжки", meshArea: "Сетка армирующая",
+  damperTapeM: "Демпферная лента", beaconProfiles: "Маяки",
+  fiberKg: "Фиброволокно",
+  // Плитка
+  averageTileSizeCm: "Средний размер плитки", jointWidth: "Ширина шва",
+  groutDepth: "Глубина затирки", crossesNeeded: "Крестиков/СВП",
+  glueNeededKg: "Клей", groutNeededKg: "Затирка",
+  // Кладка
+  bricksWithReserve: "Кирпичей с запасом", mortarBags: "Мешков раствора",
+  wallThickness: "Толщина стены", meshRows: "Рядов сетки", pallets: "Поддонов",
+  // Газобетон / пеноблоки
+  blocksWithReserve: "Блоков с запасом", glueBags: "Мешков клея",
+  // Гипсокартон
+  totalSheetArea: "Площадь обшивки", ppPieces: "Профилей ПП",
+  pnPieces: "Профилей ПН", serpyankaRolls: "Рулонов серпянки",
+  primerCans: "Канистр грунтовки",
+  // Кровля
+  slopeFactor: "Коэфф. уклона", ridgeLength: "Конёк",
+  // Утепление
+  insulationLayers: "Слоёв утеплителя",
+  // Тёплый пол
+  circuits: "Контуров", totalPipe: "Длина трубы",
+  // Электрика
+  outletsCount: "Розеток", switchesCount: "Выключателей",
+  uzoCount: "Кол-во УЗО",
+  // Отопление
+  radiatorSections: "Секций радиаторов", totalUnits: "Радиаторов",
+  // Канализация
+  totalVolumeM3: "Объём септика", ringsTotal: "Колец",
   // Разное
   wastePercent: "Отходы", reserve: "Запас", cable15length: "Кабель 1.5 мм²",
   cable25length: "Кабель 2.5 мм²", layerCount: "Слоёв",
+  packsNeeded: "Упаковок", packArea: "Площадь упаковки",
+  doorThresholds: "Порожков", plinthPieces: "Плинтусов",
+  underlaymentRolls: "Рулонов подложки", wedgesNeeded: "Клиньев",
 };
 
 export const TOTAL_UNITS: Record<string, string> = {
@@ -85,6 +124,25 @@ export const TOTAL_UNITS: Record<string, string> = {
   requiredAirflow: "м³/ч", exchangeRate: "раз/ч",
   // Кровля
   slope: "°",
+  // Бетон / фундамент
+  sourceVolume: "м³", masticKg: "кг", filmArea: "м²",
+  sandM3: "м³", gravelM3: "м³", waterL: "л",
+  floorConcrete: "м³", wallConcrete: "м³",
+  // Стяжка
+  meshArea: "м²", damperTapeM: "м.п.", fiberKg: "кг",
+  // Плитка
+  averageTileSizeCm: "см", jointWidth: "мм", groutDepth: "мм",
+  glueNeededKg: "кг", groutNeededKg: "кг",
+  // Кладка
+  wallThickness: "мм",
+  // Кровля
+  slopeFactor: "×", ridgeLength: "м.п.",
+  // Тёплый пол
+  totalPipe: "м",
+  // Канализация
+  totalVolumeM3: "м³",
+  // Ламинат/паркет
+  packArea: "м²",
   // Разное
   wastePercent: "%", reserve: "%",
 };

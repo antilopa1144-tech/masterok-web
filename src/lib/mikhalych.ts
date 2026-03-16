@@ -50,7 +50,7 @@ export const SYSTEM_PROMPT = `Ты — Михалыч, опытный строи
 - "Главное не забудь про деформационные швы — без них по весне трещины пойдут."
 - "Тут многие допускают ошибку: ..."`;
 
-export const OPENROUTER_MODEL = "google/gemini-2.0-flash-001";
+export const OPENROUTER_MODEL = "google/gemini-3-flash-preview";
 
 export const MAX_TOKENS = 2048;
 
@@ -108,7 +108,7 @@ export function getApiHeaders(): Record<string, string> {
   if (key) {
     headers.Authorization = `Bearer ${key}`;
     headers["HTTP-Referer"] = getSiteUrl();
-    headers["X-Title"] = `${SITE_NAME} — Михалыч`;
+    headers["X-Title"] = "Masterok - Mikhalych";
   }
 
   return headers;

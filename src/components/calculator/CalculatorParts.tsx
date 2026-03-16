@@ -413,7 +413,9 @@ export function ResultBlock({
             {CALCULATOR_UI_TEXT.total}
           </h4>
           <div className="grid grid-cols-2 gap-3">
-            {Object.entries(result.totals).map(([key, val]) => (
+            {Object.entries(result.totals)
+              .filter(([key]) => key in TOTAL_LABELS)
+              .map(([key, val]) => (
               <TotalItem key={key} name={key} value={val} />
             ))}
           </div>
