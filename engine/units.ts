@@ -21,6 +21,7 @@ export function convertValue(value: number, from: SupportedUnit, to: SupportedUn
 }
 
 export function roundDisplay(value: number, digits = 2): number {
+  if (!Number.isFinite(value)) return 0;
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
 }

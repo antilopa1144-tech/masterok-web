@@ -29,6 +29,8 @@ export function optimizePackaging(exactNeed: number, options: PackageOption[]): 
   let best: PackagingResult | undefined;
 
   for (const option of options) {
+    // Guard: skip options with zero or negative size to prevent Infinity/NaN
+    if (!option.size || option.size <= 0) continue;
     const packageCount = Math.ceil(safeNeed / option.size);
     const purchaseQuantity = packageCount * option.size;
     const leftover = purchaseQuantity - safeNeed;
