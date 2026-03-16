@@ -5,6 +5,22 @@ import { formatNumber, type HistoryEntry } from "./useCalculator";
 import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS } from "./totalsDisplay";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 
+// ── Округление материалов по единицам ────────────────────────────────────────
+
+/** Единицы, для которых количество всегда целое число */
+const INTEGER_UNITS = new Set(["шт", "мешков", "рулонов", "листов", "упаковок", "канистр", "уп", "упак.", "рулон", "ведро", "баллон"]);
+
+function formatMaterialQty(value: number, unit: string): string {
+  if (value === undefined || value === null || isNaN(value)) return "—";
+  // Целые единицы (штуки, мешки, рулоны) — всегда округляем вверх
+  if (INTEGER_UNITS.has(unit)) {
+    return Math.ceil(value).toLocaleString("ru-RU");
+  }
+  // Весовые/объёмные — до 1 знака
+  if (Number.isInteger(value)) return value.toLocaleString("ru-RU");
+  return value.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
+}
+
 // ── Компонент экспертных советов ─────────────────────────────────────────────
 
 export function ExpertTips({ tips }: { tips: NonNullable<CalculatorDefinition["expertTips"]> }) {
@@ -195,12 +211,12 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                 <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug">{m.name}</span>
                 <div className="text-right shrink-0">
                   <div className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    {formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)}{" "}
+                    {formatMaterialQty(m.purchaseQty ?? m.withReserve ?? m.quantity, m.unit)}{" "}
                     <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{m.unit}</span>
                   </div>
                   {m.withReserve && m.withReserve !== m.quantity && (
                     <div className="text-xs text-slate-400 dark:text-slate-500">
-                      {CALCULATOR_UI_TEXT.withoutReserve}: {formatNumber(m.quantity)} {m.unit}
+                      {CALCULATOR_UI_TEXT.withoutReserve}: {formatMaterialQty(m.quantity, m.unit)} {m.unit}
                     </div>
                   )}
                 </div>
@@ -237,9 +253,9 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
   if (!result.scenarios) return null;
 
   const scenarios = [
-    { key: "MIN", title: "MIN" },
-    { key: "REC", title: "REC" },
-    { key: "MAX", title: "MAX" },
+    { key: "MIN", title: "Минимум", color: "text-green-600 dark:text-green-400" },
+    { key: "REC", title: "Рекомендуемый", color: "text-accent-600 dark:text-accent-400" },
+    { key: "MAX", title: "Максимум", color: "text-orange-600 dark:text-orange-400" },
   ] as const;
 
   return (
@@ -254,7 +270,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
 
           return (
             <div key={s.key} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{s.title}</p>
+              <p className={`text-xs font-bold ${s.color}`}>{s.title}</p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
                 {CALCULATOR_UI_TEXT.scenarioLabels.need}: <span className="font-semibold">{formatNumber(item.exact_need)}</span>
               </p>
@@ -265,7 +281,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
                 {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: <span className="font-semibold">{formatNumber(item.leftover)}</span>
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                {CALCULATOR_UI_TEXT.scenarioLabels.plan}: {item.buy_plan.package_label}
+                {item.buy_plan.packages_count} {item.buy_plan.unit} × {item.buy_plan.package_size}
               </p>
             </div>
           );
