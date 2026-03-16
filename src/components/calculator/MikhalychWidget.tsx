@@ -91,7 +91,14 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
       });
 
       if (!res.ok) {
-        throw new Error(getMikhalychAssistantErrorMessage(res.status));
+        // Try to extract error details from OpenRouter response body
+        let errorDetail = "";
+        try {
+          const errorBody = await res.json();
+          errorDetail = errorBody?.error?.message ?? errorBody?.message ?? "";
+        } catch { /* ignore parse errors */ }
+        const baseMsg = getMikhalychAssistantErrorMessage(res.status);
+        throw new Error(errorDetail ? `${baseMsg} (${errorDetail})` : baseMsg);
       }
       const data = await res.json();
       const content =

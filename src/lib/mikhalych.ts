@@ -50,7 +50,7 @@ export const SYSTEM_PROMPT = `Ты — Михалыч, опытный строи
 - "Главное не забудь про деформационные швы — без них по весне трещины пойдут."
 - "Тут многие допускают ошибку: ..."`;
 
-export const OPENROUTER_MODEL = "google/gemini-3-flash-preview";
+export const OPENROUTER_MODEL = "google/gemini-2.0-flash-001";
 
 export const MAX_TOKENS = 2048;
 
