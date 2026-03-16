@@ -22,6 +22,8 @@ import {
   Lightbulb,
   MessageCircle,
   BookOpen,
+  Sun,
+  Moon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +55,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   chat: MessageCircle,
   book: BookOpen,
   wrench: Wrench,
+  sun: Sun,
+  moon: Moon,
 };
 
 interface CategoryIconProps {
