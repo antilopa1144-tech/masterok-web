@@ -68,14 +68,14 @@ jobs:
         run: |
           lftp -e "
             set ftp:ssl-allow no;
-            set net:max-retries 3;
+            set net:max-retries 5;
             set net:reconnect-interval-base 5;
+            set mirror:overwrite true;
             open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST;
-            echo 'Cleaning _next/ to prevent stale asset hashes...';
-            rm -rf /Masterok/public_html/_next/static/chunks;
-            rm -rf /Masterok/public_html/_next/static/css;
-            echo 'Uploading fresh build...';
-            mirror -R --delete --overwrite --verbose --parallel=4 --scan-all-first --ignore-time --no-perms --exclude-glob=kalkulyatory/engineering --exclude-glob=kalkulyatory/engineering/** --exclude-glob=kalkulyatory/interior --exclude-glob=kalkulyatory/interior/** ./out /Masterok/public_html;
+            echo '=== Step 1: Remove stale _next/static/ ===';
+            glob rm -rf /Masterok/public_html/_next/static/*;
+            echo '=== Step 2: Upload fresh build ===';
+            mirror -R --delete --overwrite --verbose --parallel=4 --no-perms --exclude-glob=kalkulyatory/engineering --exclude-glob=kalkulyatory/engineering/** --exclude-glob=kalkulyatory/interior --exclude-glob=kalkulyatory/interior/** ./out /Masterok/public_html;
             quit
           "
 
