@@ -75,7 +75,7 @@ export function FieldInput({
               <button
                 key={opt.value}
                 onClick={() => onChange(opt.value)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] ${
                   value === opt.value
                     ? "border-transparent text-white"
                     : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
@@ -111,12 +111,12 @@ export function FieldInput({
         </div>
         <button
           onClick={() => onChange(value > 0 ? 0 : 1)}
-          className={`relative w-11 h-6 rounded-full transition-colors ${
+          className={`relative w-12 h-7 rounded-full transition-colors ${
             value > 0 ? "" : "bg-slate-200 dark:bg-slate-700"
           }`}
           style={value > 0 ? { backgroundColor: accentColor } : {}}
         >
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-slate-100 rounded-full shadow-sm transition-transform ${value > 0 ? "translate-x-5" : ""}`} />
+          <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white dark:bg-slate-100 rounded-full shadow-sm transition-transform ${value > 0 ? "translate-x-5" : ""}`} />
         </button>
       </div>
     );
@@ -142,7 +142,7 @@ export function FieldInput({
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
             }}
-            className={`w-20 text-right text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 transition-colors ${
+            className={`w-20 text-right text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1.5 min-h-[36px] focus:outline-none focus:ring-2 transition-colors ${
               isOutOfRange
                 ? "text-red-600 border-red-300 focus:ring-red-500/30 focus:border-red-500"
                 : "text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 focus:ring-accent-500/30 focus:border-accent-500"

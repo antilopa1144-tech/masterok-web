@@ -83,7 +83,7 @@ export default function Header() {
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
             <button
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={UI_TEXT.menu}
               aria-expanded={menuOpen}
@@ -127,7 +127,7 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`block px-3 py-2.5 rounded-lg font-medium transition-colors no-underline ${
+                  className={`block px-3 py-3 rounded-lg font-medium transition-colors no-underline min-h-[44px] ${
                     active
                       ? "text-accent-600 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
                       : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -148,7 +148,7 @@ export default function Header() {
                 <Link
                   key={cat.id}
                   href={`/kalkulyatory/${cat.slug}/`}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 text-sm hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors no-underline"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-600 text-sm hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors no-underline min-h-[44px]"
                   onClick={() => setMenuOpen(false)}
                 >
                   <CategoryIcon icon={cat.icon} size={16} color={cat.color} />
