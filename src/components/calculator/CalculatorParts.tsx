@@ -2,9 +2,9 @@
 
 import type { CalculatorResult, CalculatorField, CalculatorDefinition } from "@/lib/calculators/types";
 import { formatNumber, type HistoryEntry } from "./useCalculator";
-import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS } from "./totalsDisplay";
+import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG_TOTAL_KEYS, TOTAL_LABEL_FORMS } from "./totalsDisplay";
 import { CALCULATOR_UI_TEXT } from "./uiText";
-import { pluralizePackageUnit } from "@/lib/format/pluralize";
+import { pluralizeRu, pluralizePackageUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 
 // ── Округление материалов по единицам ────────────────────────────────────────
@@ -247,13 +247,34 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
 
 export function TotalItem({ name, value }: { name: string; value: number }) {
   if (HIDDEN_TOTALS.has(name)) return null;
-  const label = TOTAL_LABELS[name] ?? name;
-  const unit = TOTAL_UNITS[name] ?? "";
+
+  const isInteger = INTEGER_TOTAL_KEYS.has(name);
+  const isWeightKg = WEIGHT_KG_TOTAL_KEYS.has(name);
+
+  // For countable items: ceil the value
+  const displayValue = isInteger ? Math.ceil(value) : value;
+
+  // Determine label — pluralize if forms exist, otherwise static label
+  const labelForms = TOTAL_LABEL_FORMS[name];
+  const label = labelForms ? pluralizeRu(displayValue, labelForms) : (TOTAL_LABELS[name] ?? name);
+
+  // Determine unit — for weight keys < 1 kg, convert to grams
+  let unit = TOTAL_UNITS[name] ?? "";
+  let formattedValue: string;
+
+  if (isWeightKg && value > 0 && value < 1) {
+    const [wVal, wUnit] = formatWeightParts(value);
+    formattedValue = wVal;
+    unit = wUnit;
+  } else {
+    formattedValue = formatNumber(displayValue);
+  }
+
   return (
     <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3">
       <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{label}</p>
       <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
-        {formatNumber(value)}
+        {formattedValue}
         {unit && <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-1">{unit}</span>}
       </p>
     </div>

@@ -156,3 +156,122 @@ export const HIDDEN_TOTALS = new Set([
   "puttyType",
   "qualityClass",
 ]);
+
+/**
+ * Totals keys that represent countable items — should be ceil'd and pluralized.
+ * Does NOT include keys like "bricksPerM2" (rate, not count).
+ */
+export const INTEGER_TOTAL_KEYS = new Set([
+  // Sheets / panels
+  "packs", "rolls", "sheetsNeeded", "sheets", "totalSheets",
+  "tiles", "tilesNeeded", "panelCount", "panelsNeeded", "piecesNeeded",
+  "totalCassettes", "hangers", "boardCount", "lagCount", "rowCount", "railPcs",
+  "stepCount", "doorCount", "windowCount", "openingCount", "platesNeeded",
+  "funnels", "pipePcs", "gutterPcs", "rollsNeeded", "stripsNeeded",
+  "fixtures", "ppQuantity", "totalFoamCans", "breakersCount",
+  "bracketsCount", "postsCount",
+  // Blocks / bricks
+  "blocksNeeded", "blocksNet", "bricksNeeded", "totalBricks", "bricksWithReserve",
+  "blocksWithReserve",
+  // Bags / cans / rolls
+  "cementBags", "masticBuckets", "filmRolls", "glueBags",
+  "mortarBags", "pallets", "meshRows",
+  // Profiles
+  "ppPieces", "pnPieces",
+  // Misc
+  "serpyankaRolls", "primerCans", "beaconProfiles",
+  "crossesNeeded", "insulationLayers",
+  "outletsCount", "switchesCount", "uzoCount",
+  "radiatorSections", "totalUnits", "ringsTotal",
+  "circuits",
+  "packsNeeded", "doorThresholds", "plinthPieces",
+  "underlaymentRolls", "wedgesNeeded",
+  "stripsPerRoll", "layerCount",
+]);
+
+/**
+ * Totals keys that represent weight in kg — show grams when < 1 kg.
+ */
+export const WEIGHT_KG_TOTAL_KEYS = new Set([
+  "totalKg", "cementKg", "cpsTotalKg", "ecoWoolKg",
+  "rebarWeightKg", "masticKg", "fiberKg",
+  "glueNeededKg", "groutNeededKg",
+]);
+
+/**
+ * Pluralization forms for total labels: key → [1, 2-4, 5+]
+ * Only for countable items where the label should change by number.
+ */
+export const TOTAL_LABEL_FORMS: Record<string, [string, string, string]> = {
+  // Листы
+  sheetsNeeded: ["Лист", "Листа", "Листов"],
+  sheets: ["Лист", "Листа", "Листов"],
+  totalSheets: ["Лист всего", "Листа всего", "Листов всего"],
+  // Плитки
+  tiles: ["Плитка", "Плитки", "Плиток"],
+  tilesNeeded: ["Плитка", "Плитки", "Плиток"],
+  // Блоки / кирпичи
+  blocksNeeded: ["Блок", "Блока", "Блоков"],
+  blocksNet: ["Блок (чисто)", "Блока (чисто)", "Блоков (чисто)"],
+  blocksWithReserve: ["Блок с запасом", "Блока с запасом", "Блоков с запасом"],
+  bricksNeeded: ["Кирпич", "Кирпича", "Кирпичей"],
+  totalBricks: ["Кирпич всего", "Кирпича всего", "Кирпичей всего"],
+  bricksWithReserve: ["Кирпич с запасом", "Кирпича с запасом", "Кирпичей с запасом"],
+  // Упаковки / мешки / рулоны / канистры
+  packs: ["Упаковка", "Упаковки", "Упаковок"],
+  packsNeeded: ["Упаковка", "Упаковки", "Упаковок"],
+  rolls: ["Рулон", "Рулона", "Рулонов"],
+  rollsNeeded: ["Рулон", "Рулона", "Рулонов"],
+  underlaymentRolls: ["Рулон подложки", "Рулона подложки", "Рулонов подложки"],
+  serpyankaRolls: ["Рулон серпянки", "Рулона серпянки", "Рулонов серпянки"],
+  filmRolls: ["Рулон плёнки", "Рулона плёнки", "Рулонов плёнки"],
+  cementBags: ["Мешок цемента", "Мешка цемента", "Мешков цемента"],
+  glueBags: ["Мешок клея", "Мешка клея", "Мешков клея"],
+  mortarBags: ["Мешок раствора", "Мешка раствора", "Мешков раствора"],
+  masticBuckets: ["Ведро мастики", "Ведра мастики", "Вёдер мастики"],
+  primerCans: ["Канистра грунтовки", "Канистры грунтовки", "Канистр грунтовки"],
+  // Профили
+  ppPieces: ["Профиль ПП", "Профиля ПП", "Профилей ПП"],
+  pnPieces: ["Профиль ПН", "Профиля ПН", "Профилей ПН"],
+  // Штуки
+  panelCount: ["Панель", "Панели", "Панелей"],
+  panelsNeeded: ["Панель", "Панели", "Панелей"],
+  piecesNeeded: ["Штука", "Штуки", "Штук"],
+  postsCount: ["Столб", "Столба", "Столбов"],
+  bracketsCount: ["Кронштейн", "Кронштейна", "Кронштейнов"],
+  totalCassettes: ["Кассета", "Кассеты", "Кассет"],
+  hangers: ["Подвес", "Подвеса", "Подвесов"],
+  boardCount: ["Доска", "Доски", "Досок"],
+  lagCount: ["Лага", "Лаги", "Лаг"],
+  railPcs: ["Рейка", "Рейки", "Реек"],
+  stepCount: ["Ступень", "Ступени", "Ступеней"],
+  doorCount: ["Дверь", "Двери", "Дверей"],
+  windowCount: ["Окно", "Окна", "Окон"],
+  openingCount: ["Проём", "Проёма", "Проёмов"],
+  platesNeeded: ["Плита", "Плиты", "Плит"],
+  funnels: ["Воронка", "Воронки", "Воронок"],
+  pipePcs: ["Труба", "Трубы", "Труб"],
+  gutterPcs: ["Жёлоб", "Жёлоба", "Желобов"],
+  fixtures: ["Светильник", "Светильника", "Светильников"],
+  totalFoamCans: ["Баллон пены", "Баллона пены", "Баллонов пены"],
+  breakersCount: ["Автомат", "Автомата", "Автоматов"],
+  beaconProfiles: ["Маяк", "Маяка", "Маяков"],
+  pallets: ["Поддон", "Поддона", "Поддонов"],
+  // Прочее
+  radiatorSections: ["Секция радиатора", "Секции радиаторов", "Секций радиаторов"],
+  totalUnits: ["Радиатор", "Радиатора", "Радиаторов"],
+  ringsTotal: ["Кольцо", "Кольца", "Колец"],
+  circuits: ["Контур", "Контура", "Контуров"],
+  doorThresholds: ["Порожек", "Порожка", "Порожков"],
+  plinthPieces: ["Плинтус", "Плинтуса", "Плинтусов"],
+  wedgesNeeded: ["Клин", "Клина", "Клиньев"],
+  crossesNeeded: ["Крестик/СВП", "Крестика/СВП", "Крестиков/СВП"],
+  outletsCount: ["Розетка", "Розетки", "Розеток"],
+  switchesCount: ["Выключатель", "Выключателя", "Выключателей"],
+  insulationLayers: ["Слой утеплителя", "Слоя утеплителя", "Слоёв утеплителя"],
+  layerCount: ["Слой", "Слоя", "Слоёв"],
+  rowCount: ["Ряд", "Ряда", "Рядов"],
+  meshRows: ["Ряд сетки", "Ряда сетки", "Рядов сетки"],
+  stripsNeeded: ["Полоса", "Полосы", "Полос"],
+  stripsPerRoll: ["Полоса в рулоне", "Полосы в рулоне", "Полос в рулоне"],
+};
