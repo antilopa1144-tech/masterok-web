@@ -158,7 +158,8 @@ export function computeCanonicalWarmFloorPipes(
       quantity: roundDisplay(totalPipe, 3),
       unit: "м",
       withReserve: coils * PIPE_COIL_M,
-      purchaseQty: coils,
+      purchaseQty: coils * PIPE_COIL_M,
+      packageInfo: { count: coils, size: PIPE_COIL_M, packageUnit: "бухт" },
       category: "Основное",
     },
     {
@@ -182,7 +183,8 @@ export function computeCanonicalWarmFloorPipes(
       quantity: anchorTotal,
       unit: "шт",
       withReserve: anchorPacks * ANCHOR_PACK,
-      purchaseQty: anchorPacks,
+      purchaseQty: anchorPacks * ANCHOR_PACK,
+      packageInfo: { count: anchorPacks, size: ANCHOR_PACK, packageUnit: "упаковок" },
       category: "Крепёж",
     },
     {
@@ -198,7 +200,8 @@ export function computeCanonicalWarmFloorPipes(
       quantity: roundDisplay(area * SCREED_THICKNESS_M * SCREED_DENSITY, 3),
       unit: "кг",
       withReserve: screedBags * SCREED_BAG_KG,
-      purchaseQty: screedBags,
+      purchaseQty: screedBags * SCREED_BAG_KG,
+      packageInfo: { count: screedBags, size: SCREED_BAG_KG, packageUnit: "мешков" },
       category: "Основное",
     },
   ];

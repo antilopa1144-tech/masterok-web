@@ -73,7 +73,8 @@ function buildMaterials(
       quantity: roundDisplay(recExactNeed, 3),
       unit: "м³",
       withReserve: roundDisplay(recPurchaseQuantity, 3),
-      purchaseQty: recPackageCount,
+      purchaseQty: roundDisplay(recPackageCount * recPackageSize, 3),
+      packageInfo: { count: recPackageCount, size: recPackageSize, packageUnit: "доставок" },
       category: "Основное",
     },
   ];
@@ -85,7 +86,8 @@ function buildMaterials(
         quantity: roundDisplay(cementKg, 3),
         unit: "кг",
         withReserve: roundDisplay(cementBags * spec.packaging_rules.cement_bag_kg, 3),
-        purchaseQty: cementBags,
+        purchaseQty: cementBags * spec.packaging_rules.cement_bag_kg,
+        packageInfo: { count: cementBags, size: spec.packaging_rules.cement_bag_kg, packageUnit: "мешков" },
         category: "Компоненты",
       },
       {
@@ -121,7 +123,8 @@ function buildMaterials(
       quantity: roundDisplay(masticKg, 3),
       unit: "кг",
       withReserve: roundDisplay(masticBuckets * spec.packaging_rules.mastic_bucket_kg, 3),
-      purchaseQty: masticBuckets,
+      purchaseQty: masticBuckets * spec.packaging_rules.mastic_bucket_kg,
+      packageInfo: { count: masticBuckets, size: spec.packaging_rules.mastic_bucket_kg, packageUnit: "вёдер" },
       category: "Гидроизоляция",
     },
     {
@@ -129,7 +132,8 @@ function buildMaterials(
       quantity: roundDisplay(filmArea, 3),
       unit: "м²",
       withReserve: roundDisplay(filmRolls * spec.packaging_rules.film_roll_m2, 3),
-      purchaseQty: filmRolls,
+      purchaseQty: filmRolls * spec.packaging_rules.film_roll_m2,
+      packageInfo: { count: filmRolls, size: spec.packaging_rules.film_roll_m2, packageUnit: "рулонов" },
       category: "Гидроизоляция",
     },
   );

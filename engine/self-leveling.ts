@@ -114,7 +114,8 @@ function buildMaterials(
       quantity: primerLiters,
       unit: 'л',
       withReserve: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 3),
-      purchaseQty: primerCans,
+      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 3),
+      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
       category: 'Подготовка',
     },
     {

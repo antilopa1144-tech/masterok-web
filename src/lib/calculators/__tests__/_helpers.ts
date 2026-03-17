@@ -14,5 +14,14 @@ export function checkInvariants(result: CalculatorResult) {
   for (const m of result.materials) {
     expect(m.purchaseQty, `purchaseQty <= 0 for "${m.name}"`).toBeGreaterThan(0);
     expect(m.quantity, `quantity < 0 for "${m.name}"`).toBeGreaterThanOrEqual(0);
+
+    // packageInfo consistency: count × size must equal purchaseQty
+    if (m.packageInfo) {
+      expect(m.packageInfo.count, `packageInfo.count <= 0 for "${m.name}"`).toBeGreaterThan(0);
+      expect(m.packageInfo.size, `packageInfo.size <= 0 for "${m.name}"`).toBeGreaterThan(0);
+      expect(m.packageInfo.packageUnit, `packageInfo.packageUnit empty for "${m.name}"`).toBeTruthy();
+      const expectedPurchaseQty = m.packageInfo.count * m.packageInfo.size;
+      expect(m.purchaseQty, `purchaseQty !== count×size for "${m.name}"`).toBeCloseTo(expectedPurchaseQty, 1);
+    }
   }
 }

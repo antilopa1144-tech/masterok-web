@@ -13,7 +13,7 @@
         "area": 50,
         "formulaVersion": "primer-canonical-v1",
         "materials": {
-          "primerCans": 2,
+          "primerCans": 10,
           "rollers": 2,
           "brushes": 2,
           "trays": 1
@@ -39,7 +39,7 @@
         "area": 50,
         "formulaVersion": "primer-canonical-v1",
         "materials": {
-          "primerCans": 3,
+          "primerCans": 30,
           "rollers": 2,
           "brushes": 2,
           "trays": 1
@@ -68,7 +68,7 @@
         "area": 48.6,
         "formulaVersion": "primer-canonical-v1",
         "materials": {
-          "primerCans": 1,
+          "primerCans": 15,
           "rollers": 2,
           "brushes": 2,
           "trays": 1

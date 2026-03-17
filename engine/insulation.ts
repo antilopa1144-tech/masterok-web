@@ -212,7 +212,8 @@ export function computeCanonicalInsulation(
       quantity: roundDisplay(glueKg, 3),
       unit: "кг",
       withReserve: glueBags * GLUE_BAG_KG,
-      purchaseQty: glueBags,
+      purchaseQty: glueBags * GLUE_BAG_KG,
+      packageInfo: { count: glueBags, size: GLUE_BAG_KG, packageUnit: "мешков" },
       category: "Клей",
     });
   }
@@ -223,7 +224,8 @@ export function computeCanonicalInsulation(
       quantity: ecowoolKg,
       unit: "кг",
       withReserve: ecowoolBags * ECOWOOL_BAG_KG,
-      purchaseQty: ecowoolBags,
+      purchaseQty: ecowoolBags * ECOWOOL_BAG_KG,
+      packageInfo: { count: ecowoolBags, size: ECOWOOL_BAG_KG, packageUnit: "мешков" },
       category: "Основное",
     });
   }
@@ -233,7 +235,8 @@ export function computeCanonicalInsulation(
     quantity: roundDisplay(area * PRIMER_L_PER_M2 * PRIMER_RESERVE, 3),
     unit: "л",
     withReserve: primerCans * PRIMER_CAN_L,
-    purchaseQty: primerCans,
+    purchaseQty: primerCans * PRIMER_CAN_L,
+    packageInfo: { count: primerCans, size: PRIMER_CAN_L, packageUnit: "канистр" },
     category: "Подготовка",
   });
 

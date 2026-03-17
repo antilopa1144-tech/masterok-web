@@ -127,7 +127,8 @@ export function computeCanonicalRoofing(
       quantity: waterproofingM2,
       unit: "м²",
       withReserve: waterproofingRolls * 75,
-      purchaseQty: waterproofingRolls,
+      purchaseQty: waterproofingRolls * 75,
+      packageInfo: { count: waterproofingRolls, size: 75, packageUnit: "рулонов" },
       category: "Изоляция",
     });
     materials.push({
@@ -191,7 +192,8 @@ export function computeCanonicalRoofing(
       quantity: roundDisplay(masticKg, 3),
       unit: "кг",
       withReserve: masticBuckets * 3,
-      purchaseQty: masticBuckets,
+      purchaseQty: masticBuckets * 3,
+      packageInfo: { count: masticBuckets, size: 3, packageUnit: "вёдер" },
       category: "Клей",
     });
     materials.push({
@@ -298,7 +300,8 @@ export function computeCanonicalRoofing(
       quantity: Math.ceil(realArea * 1.15),
       unit: "м²",
       withReserve: waterproofingRolls * 75,
-      purchaseQty: waterproofingRolls,
+      purchaseQty: waterproofingRolls * 75,
+      packageInfo: { count: waterproofingRolls, size: 75, packageUnit: "рулонов" },
       category: "Изоляция",
     });
   }

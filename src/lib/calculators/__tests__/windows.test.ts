@@ -53,10 +53,11 @@ describe("Калькулятор установки окон", () => {
       expect(anchors?.purchaseQty).toBe(42);
     });
 
-    it("саморезы для анкеров = 89 шт", () => {
+    it("саморезы для анкеров в кг", () => {
       // Engine: "Саморезы для анкеров"
       const screws = findMaterial(result, "Саморезы для анкеров");
-      expect(screws?.purchaseQty).toBe(89);
+      expect(screws?.unit).toBe("кг");
+      expect(screws?.purchaseQty).toBe(1);
     });
 
     it("подоконник ширина 650 мм", () => {

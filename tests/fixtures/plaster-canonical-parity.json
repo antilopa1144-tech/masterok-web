@@ -22,7 +22,7 @@
         "warningsCount": 0,
         "materials": {
           "plasterBags": 21,
-          "primerPackages": 3,
+          "primerPackages": 15,
           "beacons": 18,
           "hasMesh": 0
         },
@@ -52,7 +52,7 @@
         "warningsCount": 0,
         "materials": {
           "plasterBags": 127,
-          "primerPackages": 2,
+          "primerPackages": 10,
           "beacons": 20,
           "hasMesh": 0
         },
@@ -82,7 +82,7 @@
         "warningsCount": 3,
         "materials": {
           "plasterBags": 5,
-          "primerPackages": 1,
+          "primerPackages": 5,
           "beacons": 2,
           "hasMesh": 1
         },

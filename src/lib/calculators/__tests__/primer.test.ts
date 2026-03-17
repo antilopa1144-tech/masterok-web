@@ -16,7 +16,7 @@ describe("Грунтовка", () => {
 
     expect(result.formulaVersion).toBe("primer-canonical-v1");
     expect(result.totals.lPerSqm).toBeCloseTo(0.15, 3);
-    expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(2);
+    expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(10);
     expect(result.warnings.some((warning) => warning.includes("2 слоя"))).toBe(true);
   });
 
@@ -24,7 +24,7 @@ describe("Грунтовка", () => {
     const result = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 10 });
 
     expect(result.totals.lPerSqm).toBeCloseTo(0.525, 3);
-    expect(findMaterial(result, "контакт")?.purchaseQty).toBe(3);
+    expect(findMaterial(result, "контакт")?.purchaseQty).toBe(30);
     expect(result.warnings).toHaveLength(3);
   });
 
@@ -32,7 +32,7 @@ describe("Грунтовка", () => {
     const result = calc({ inputMode: 0, roomWidth: 4, roomLength: 5, roomHeight: 2.7, surfaceType: 1, primerType: 2, coats: 2, canSize: 15 });
 
     expect(result.totals.area).toBeCloseTo(48.6, 2);
-    expect(findMaterial(result, "ГКЛ")?.purchaseQty).toBe(1);
+    expect(findMaterial(result, "ГКЛ")?.purchaseQty).toBe(15);
   });
 });
 

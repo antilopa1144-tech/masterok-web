@@ -26,16 +26,16 @@ describe("Калькулятор каркасного дома", () => {
       innerSheathing: 0,
     });
 
-    it("стойки каркаса = 25 досок (purchaseQty = studBoards)", () => {
-      // Engine: "Стойки каркаса (шаг 600 мм)"
+    it("стойки каркаса = 25 досок × 6 м = 150 п.м.", () => {
+      // Engine: "Стойки каркаса (шаг 600 мм)" — purchaseQty = boards * boardLength
       const studs = findMaterial(result, "Стойки каркаса");
-      expect(studs?.purchaseQty).toBe(25);
+      expect(studs?.purchaseQty).toBe(150);
     });
 
-    it("обвязка = 11 досок", () => {
-      // Engine: "Обвязка (доски 6 м)"
+    it("обвязка = 11 досок × 6 м = 66 м", () => {
+      // Engine: "Обвязка (доски 6 м)" — purchaseQty = boards * boardLength
       const strapping = findMaterial(result, "Обвязка");
-      expect(strapping?.purchaseQty).toBe(11);
+      expect(strapping?.purchaseQty).toBe(66);
     });
 
     it("наружная обшивка ОСП-9 мм = 25 листов", () => {
@@ -115,9 +115,9 @@ describe("Калькулятор каркасного дома", () => {
       innerSheathing: 0,
     });
 
-    it("стоек больше — 36 досок", () => {
+    it("стоек больше — 36 досок × 6 м = 216 п.м.", () => {
       const studs = findMaterial(result, "Стойки каркаса");
-      expect(studs?.purchaseQty).toBe(36);
+      expect(studs?.purchaseQty).toBe(216);
     });
 
     it("количество стоек в totals = 76", () => {

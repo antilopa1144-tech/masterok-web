@@ -1,7 +1,7 @@
 {
   "calculator_id": "brick",
   "formula_version": "brick-canonical-v1",
-  "generated_at": "2026-03-15T00:33:45.036Z",
+  "generated_at": "2026-03-17T03:15:43.934Z",
   "cases": [
     {
       "id": "defaults",

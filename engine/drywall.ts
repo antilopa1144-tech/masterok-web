@@ -42,6 +42,8 @@ const SANDPAPER_M2_PER_SHEET = 5;
 const SANDPAPER_PACK = 10;
 const PROFILE_LENGTH_M = 3;
 const SEALING_TAPE_ROLL_M = 30;
+const SCREWS_TF_PER_KG = 1000;  // 3.5×25 мм
+const SCREWS_LB_PER_KG = 4000;  // 3.5×9.5 мм (клопы)
 
 function getInputDefault(spec: DrywallCanonicalSpec, key: string, fallback: number): number {
   return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
@@ -77,8 +79,8 @@ function buildMaterials(
   sheetsNeeded: number,
   pnPieces: number,
   ppPieces: number,
-  screwsTF: number,
-  screwsLB: number,
+  screwsTFkg: number,
+  screwsLBkg: number,
   dowels: number,
   sealingTapeRolls: number,
   puttyStartBags: number,
@@ -114,18 +116,18 @@ function buildMaterials(
     },
     {
       name: "Саморезы 3.5\u00d725 мм",
-      quantity: screwsTF,
-      unit: "шт",
-      withReserve: screwsTF,
-      purchaseQty: screwsTF,
+      quantity: screwsTFkg,
+      unit: "кг",
+      withReserve: screwsTFkg,
+      purchaseQty: Math.ceil(screwsTFkg),
       category: "Крепёж",
     },
     {
       name: "Саморезы-клопы 3.5\u00d79.5 мм",
-      quantity: screwsLB,
-      unit: "шт",
-      withReserve: screwsLB,
-      purchaseQty: screwsLB,
+      quantity: screwsLBkg,
+      unit: "кг",
+      withReserve: screwsLBkg,
+      purchaseQty: Math.ceil(screwsLBkg),
       category: "Крепёж",
     },
     {
@@ -216,9 +218,11 @@ export function computeCanonicalDrywall(
   const ppLength = ppCount * height * PROFILE_RESERVE;
   const ppPieces = Math.ceil(ppLength / PROFILE_LENGTH_M);
 
-  // Screws
-  const screwsTF = Math.ceil(totalSheetArea * SCREWS_TF_PER_M2 * PROFILE_RESERVE);
-  const screwsLB = Math.ceil(ppCount * SCREWS_LB_PER_PROFILE * PROFILE_RESERVE);
+  // Screws (in kg)
+  const screwsTFpcs = Math.ceil(totalSheetArea * SCREWS_TF_PER_M2 * PROFILE_RESERVE);
+  const screwsTFkg = Math.ceil(screwsTFpcs / SCREWS_TF_PER_KG * 10) / 10;
+  const screwsLBpcs = Math.ceil(ppCount * SCREWS_LB_PER_PROFILE * PROFILE_RESERVE);
+  const screwsLBkg = Math.ceil(screwsLBpcs / SCREWS_LB_PER_KG * 10) / 10;
 
   // Dowels
   const dowels = Math.ceil(pnPerimeter / DOWELS_STEP_M);
@@ -304,8 +308,8 @@ export function computeCanonicalDrywall(
       recScenario.exact_need,
       pnPieces,
       ppPieces,
-      screwsTF,
-      screwsLB,
+      screwsTFkg,
+      screwsLBkg,
       dowels,
       sealingTapeRolls,
       puttyStartBags,
@@ -330,8 +334,8 @@ export function computeCanonicalDrywall(
       pnPieces: pnPieces,
       ppCount: ppCount,
       ppPieces: ppPieces,
-      screwsTF: screwsTF,
-      screwsLB: screwsLB,
+      screwsTF: screwsTFkg,
+      screwsLB: screwsLBkg,
       dowels: dowels,
       sealingTapeRolls: sealingTapeRolls,
       puttyStartBags: puttyStartBags,

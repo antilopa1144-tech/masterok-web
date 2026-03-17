@@ -57,10 +57,10 @@ describe("Калькулятор установки дверей", () => {
       expect(screws?.purchaseQty).toBe(1);
     });
 
-    it("дюбели (упаковка 20 шт) = 1 пачка", () => {
-      // Engine: "Дюбели (упаковка 20 шт)"
+    it("дюбели (упаковка 20 шт) = 1 пачка × 20 = 20 шт", () => {
+      // Engine: "Дюбели (упаковка 20 шт)" — purchaseQty = packs * packSize
       const dubels = findMaterial(result, "Дюбели");
-      expect(dubels?.purchaseQty).toBe(1);
+      expect(dubels?.purchaseQty).toBe(20);
     });
 
     it("totals содержат doorCount и foamCans", () => {

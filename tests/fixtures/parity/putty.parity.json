@@ -1,7 +1,7 @@
 {
   "calculator_id": "putty",
   "formula_version": "putty-canonical-v1",
-  "generated_at": "2026-03-15T00:33:45.192Z",
+  "generated_at": "2026-03-17T03:15:44.150Z",
   "cases": [
     {
       "id": "defaults",

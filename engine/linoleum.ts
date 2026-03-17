@@ -145,7 +145,7 @@ export function computeCanonicalLinoleum(
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: spec.packaging_rules.linear_meter_unit,
       withReserve: recScenario.purchase_quantity,
-      purchaseQty: Math.round(recScenario.purchase_quantity * 10),
+      purchaseQty: Math.ceil(recScenario.purchase_quantity * 10) / 10,
       category: "Покрытие",
     },
     {
@@ -153,8 +153,9 @@ export function computeCanonicalLinoleum(
       quantity: primerLiters,
       unit: "л",
       withReserve: primerCans * spec.packaging_rules.primer_can_liters,
-      purchaseQty: primerCans,
+      purchaseQty: primerCans * spec.packaging_rules.primer_can_liters,
       category: "Подготовка",
+      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_liters, packageUnit: "канистр" },
     },
   ];
 
@@ -164,8 +165,9 @@ export function computeCanonicalLinoleum(
       quantity: glueKg,
       unit: "кг",
       withReserve: glueBuckets * spec.packaging_rules.glue_bucket_kg,
-      purchaseQty: glueBuckets,
+      purchaseQty: glueBuckets * spec.packaging_rules.glue_bucket_kg,
       category: "Клей",
+      packageInfo: { count: glueBuckets, size: spec.packaging_rules.glue_bucket_kg, packageUnit: "вёдер" },
     });
   }
   if (needPlinth) {

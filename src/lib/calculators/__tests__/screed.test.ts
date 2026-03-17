@@ -27,9 +27,9 @@ describe("Калькулятор стяжки пола", () => {
       expect(result.totals.volume).toBeCloseTo(1.08, 3);
     });
 
-    it("цемент 8 мешков 50 кг", () => {
+    it("цемент 8 мешков × 50 кг = 400 кг", () => {
       const cement = findMaterial(result, "Цемент");
-      expect(cement?.purchaseQty).toBe(8);
+      expect(cement?.purchaseQty).toBe(400);
     });
 
     it("песок присутствует", () => {
@@ -64,9 +64,9 @@ describe("Калькулятор стяжки пола", () => {
       expect(findMaterial(result, "ЦПС М150")).toBeDefined();
     });
 
-    it("мешков ЦПС 44", () => {
+    it("ЦПС 44 мешка × 50 кг = 2200 кг", () => {
       const cps = findMaterial(result, "Готовая ЦПС М150");
-      expect(cps?.purchaseQty).toBe(44);
+      expect(cps?.purchaseQty).toBe(2200);
     });
   });
 

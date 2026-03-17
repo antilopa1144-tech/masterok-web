@@ -148,28 +148,33 @@ export function computeCanonicalFasteners(
   const recScenario = scenarios.REC;
 
   /* ─── materials ─── */
+  const perKg = PER_KG[materialType] ?? 0;
+  const useKg = perKg > 0;
   const screwLabel = materialType === 3
     ? "Кляймеры"
     : `Саморезы ${SCREW_SIZES[materialType]}`;
 
+  const screwQtyKg = useKg ? Math.ceil(recScenario.exact_need / perKg * 10) / 10 : 0;
+
   const materials: CanonicalMaterialResult[] = [
     {
       name: screwLabel,
-      quantity: roundDisplay(recScenario.exact_need, 6),
-      unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      quantity: useKg ? screwQtyKg : roundDisplay(recScenario.exact_need, 6),
+      unit: useKg ? "кг" : "шт",
+      withReserve: useKg ? screwQtyKg : Math.ceil(recScenario.exact_need),
+      purchaseQty: useKg ? Math.ceil(screwQtyKg) : Math.ceil(recScenario.exact_need),
       category: "Крепёж",
     },
   ];
 
   if (frameScrews > 0) {
+    const frameScrewsKg = Math.ceil(frameScrews / (PER_KG[0] ?? 1000) * 10) / 10;
     materials.push({
       name: "Саморезы каркасные",
-      quantity: frameScrews,
-      unit: "шт",
-      withReserve: frameScrews,
-      purchaseQty: frameScrews,
+      quantity: frameScrewsKg,
+      unit: "кг",
+      withReserve: frameScrewsKg,
+      purchaseQty: Math.ceil(frameScrewsKg),
       category: "Крепёж",
     });
   }

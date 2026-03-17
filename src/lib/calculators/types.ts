@@ -63,6 +63,7 @@ export interface MaterialResult {
   withReserve?: number;
   purchaseQty?: number;
   category?: string;
+  packageInfo?: { count: number; size: number; packageUnit: string };
 }
 
 

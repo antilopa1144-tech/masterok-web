@@ -157,7 +157,8 @@ describe("Калькулятор откосов окон и дверей", () =>
       // Engine: "Саморезы для ГКЛ"
       const screws = findMaterial(result, "Саморезы для ГКЛ");
       expect(screws).toBeDefined();
-      expect(screws!.purchaseQty).toBe(42);
+      expect(screws!.unit).toBe("кг");
+      expect(screws!.purchaseQty).toBe(1);
     });
 
     it("шпаклёвка для ГКЛ присутствует", () => {

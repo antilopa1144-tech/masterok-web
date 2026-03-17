@@ -16,6 +16,7 @@ const FINISH_L_PER_M2 = 0.1;
 const FINISH_LAYERS = 2;
 const PRIMER_L_PER_M2 = 0.1;
 const FASTENERS_PER_BOARD = 9;
+const FASTENERS_PER_KG = 600;  // 3.5×35 мм
 const CLAMPS_PER_BOARD = 5;
 const BATTEN_STEP = 0.55;
 const PLINTH_RESERVE = 1.03;
@@ -79,7 +80,8 @@ export function computeCanonicalWoodWall(
   const primerL = area * PRIMER_L_PER_M2;
 
   /* ─── fasteners ─── */
-  const fasteners = boards * FASTENERS_PER_BOARD;
+  const fastenersPcs = boards * FASTENERS_PER_BOARD;
+  const fastenersKg = Math.ceil(fastenersPcs / FASTENERS_PER_KG * 10) / 10;
   const clamps = boards * CLAMPS_PER_BOARD;
 
   /* ─── scenarios ─── */
@@ -196,10 +198,10 @@ export function computeCanonicalWoodWall(
     },
     {
       name: "Крепёж (саморезы/гвозди)",
-      quantity: fasteners,
-      unit: "шт",
-      withReserve: fasteners,
-      purchaseQty: fasteners,
+      quantity: fastenersKg,
+      unit: "кг",
+      withReserve: fastenersKg,
+      purchaseQty: Math.ceil(fastenersKg),
       category: "Крепёж",
     },
     {
@@ -236,7 +238,7 @@ export function computeCanonicalWoodWall(
       antisepticL: roundDisplay(antisepticL, 3),
       finishL: roundDisplay(finishL, 3),
       primerL: roundDisplay(primerL, 3),
-      fasteners,
+      fasteners: fastenersKg,
       clamps,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,

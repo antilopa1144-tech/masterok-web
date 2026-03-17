@@ -20,6 +20,8 @@ function getInputDefault(spec: StairsCanonicalSpec, key: string, fallback: numbe
   return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
+const WOOD_SCREWS_PER_KG = 600;  // 3.5×35 мм
+
 function buildWoodMaterials(
   spec: StairsCanonicalSpec,
   stepCount: number,
@@ -28,7 +30,8 @@ function buildWoodMaterials(
   balyasiny: number,
 ): CanonicalMaterialResult[] {
   const stringerBoard = Math.ceil(stringerLen * 1.1) * spec.material_rules.stringers_count;
-  const screws = stepCount * 8;
+  const screwsPcs = stepCount * 8;
+  const screwsKg = Math.ceil(screwsPcs / WOOD_SCREWS_PER_KG * 10) / 10;
   return [
     {
       name: `Тетива/косоур (${spec.material_rules.stringer_board})`,
@@ -56,10 +59,10 @@ function buildWoodMaterials(
     },
     {
       name: "Саморезы",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screws,
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {

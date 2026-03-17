@@ -23,6 +23,7 @@ const CORNER_LENGTH = 3.0;
 const FINISH_LENGTH = 3.66;
 const SCREWS_PER_M2 = 12;
 const SCREW_RESERVE = 1.05;
+const SCREWS_PER_KG = 700;  // 4.2×19 мм (сайдинг)
 const BATTEN_STEP = 0.5;
 const BATTEN_RESERVE = 1.05;
 const MEMBRANE_ROLL = 75;
@@ -81,7 +82,8 @@ export function computeCanonicalSiding(
   const jProfile = Math.ceil((Math.sqrt(openingsArea) * 4 * 2 + perimeter) * J_RESERVE / J_PROFILE_LENGTH);
   const corners = Math.ceil(height * exteriorCorners * CORNER_RESERVE / CORNER_LENGTH);
   const finish = Math.ceil(perimeter * STARTER_RESERVE / FINISH_LENGTH);
-  const screws = Math.ceil(netArea * SCREWS_PER_M2 * SCREW_RESERVE);
+  const screwsPcs = Math.ceil(netArea * SCREWS_PER_M2 * SCREW_RESERVE);
+  const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
   const battens = Math.ceil(netArea / BATTEN_STEP * BATTEN_RESERVE);
   const membrane = Math.ceil(netArea * MEMBRANE_RESERVE / MEMBRANE_ROLL);
   const sealant = Math.ceil(Math.sqrt(netArea) * 4 / SEALANT_PER_PERIM);
@@ -169,10 +171,10 @@ export function computeCanonicalSiding(
     },
     {
       name: "Саморезы",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screws,
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {
@@ -232,7 +234,7 @@ export function computeCanonicalSiding(
       jProfile,
       corners,
       finish,
-      screws,
+      screws: screwsKg,
       battens,
       membrane,
       sealant,

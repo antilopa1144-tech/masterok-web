@@ -24,6 +24,7 @@ const T_RESERVE = 1.05;
 const HANGER_SPACING = 1.2;
 const SCREWS_PER_HANGER = 4;
 const SCREWS_PER_RAIL = 2;
+const SCREWS_PER_KG = 1000;  // 3.5×25 мм
 
 /* ─── helpers ─── */
 
@@ -82,7 +83,8 @@ export function computeCanonicalCeilingRail(
   const hangers = Math.ceil((roomWidth / HANGER_SPACING) + 1) * guideCount;
 
   /* Screws & dubels */
-  const screws = hangers * SCREWS_PER_HANGER + railPcs * SCREWS_PER_RAIL;
+  const screwsPcs = hangers * SCREWS_PER_HANGER + railPcs * SCREWS_PER_RAIL;
+  const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
   const dubels = hangers;
 
   /* ─── scenarios ─── */
@@ -152,10 +154,10 @@ export function computeCanonicalCeilingRail(
     },
     {
       name: "Саморезы",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screws,
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {
@@ -194,7 +196,7 @@ export function computeCanonicalCeilingRail(
       guideCount,
       guidePcs,
       hangers,
-      screws,
+      screws: screwsKg,
       dubels,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,

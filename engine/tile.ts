@@ -104,7 +104,8 @@ function buildMaterials(
       quantity: roundDisplay(glueKg, 6),
       unit: "кг",
       withReserve: glueBags * spec.packaging_rules.glue_bag_kg,
-      purchaseQty: glueBags,
+      purchaseQty: glueBags * spec.packaging_rules.glue_bag_kg,
+      packageInfo: { count: glueBags, size: spec.packaging_rules.glue_bag_kg, packageUnit: "мешков" },
       category: "Клей",
     },
     {
@@ -112,7 +113,8 @@ function buildMaterials(
       quantity: roundDisplay(groutKg, 6),
       unit: "кг",
       withReserve: groutBags * spec.packaging_rules.grout_bag_kg,
-      purchaseQty: groutBags,
+      purchaseQty: groutBags * spec.packaging_rules.grout_bag_kg,
+      packageInfo: { count: groutBags, size: spec.packaging_rules.grout_bag_kg, packageUnit: "мешков" },
       category: "Затирка",
     },
     {
@@ -120,7 +122,8 @@ function buildMaterials(
       quantity: roundDisplay(primerLiters, 6),
       unit: "л",
       withReserve: primerCans * spec.packaging_rules.primer_can_l,
-      purchaseQty: primerCans,
+      purchaseQty: primerCans * spec.packaging_rules.primer_can_l,
+      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
       category: "Подготовка",
     },
   ];

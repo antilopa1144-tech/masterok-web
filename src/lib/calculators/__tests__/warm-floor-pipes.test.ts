@@ -61,8 +61,8 @@ describe("Калькулятор водяного тёплого пола", () =
       // Engine: "Стяжка полусухая (мешки 25 кг)"
       const screed = findMaterial(result, "Стяжка полусухая");
       expect(screed).toBeDefined();
-      // 20 * 0.05 * 1500 / 25 = 60 мешков
-      expect(screed!.purchaseQty).toBe(60);
+      // 20 * 0.05 * 1500 / 25 = 60 мешков × 25 кг = 1500 кг
+      expect(screed!.purchaseQty).toBe(1500);
     });
 
     it("предупреждение о контурах (>80 м)", () => {

@@ -212,7 +212,9 @@ describe("Все калькуляторы — все нули → MIN <= REC <= 
 // что может быть нецелым числом. Это проверяется отдельно для каждого калькулятора, кроме drywall.
 
 describe("Все калькуляторы — defaults → все purchaseQty целые числа (кроме scenario-derived)", () => {
-  const calcsMostlyIntegerPurchaseQty = calculators.filter((c) => c.name !== "drywall (гипсокартон)");
+  // concrete and drywall may have non-integer purchaseQty (e.g., м³ concrete, ГКЛ листы)
+  const nonIntegerPurchaseQtyCalcs = ["drywall (гипсокартон)", "concrete (бетон)"];
+  const calcsMostlyIntegerPurchaseQty = calculators.filter((c) => !nonIntegerPurchaseQtyCalcs.includes(c.name));
 
   for (const calc of calcsMostlyIntegerPurchaseQty) {
     it(`${calc.name}: purchaseQty — целые`, () => {
@@ -225,13 +227,15 @@ describe("Все калькуляторы — defaults → все purchaseQty ц
     });
   }
 
-  it("drywall (гипсокартон): purchaseQty — конечные числа >= 0", () => {
-    const result = calculators.find((c) => c.name === "drywall (гипсокартон)")!.compute({});
-    for (const mat of result.materials) {
-      if (mat.purchaseQty !== undefined) {
-        expect(mat.purchaseQty).toBeGreaterThanOrEqual(0);
-        expect(Number.isFinite(mat.purchaseQty)).toBe(true);
+  for (const name of nonIntegerPurchaseQtyCalcs) {
+    it(`${name}: purchaseQty — конечные числа >= 0`, () => {
+      const result = calculators.find((c) => c.name === name)!.compute({});
+      for (const mat of result.materials) {
+        if (mat.purchaseQty !== undefined) {
+          expect(mat.purchaseQty).toBeGreaterThanOrEqual(0);
+          expect(Number.isFinite(mat.purchaseQty)).toBe(true);
+        }
       }
-    }
-  });
+    });
+  }
 });

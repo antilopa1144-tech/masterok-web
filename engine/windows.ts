@@ -26,6 +26,7 @@ const SLOPE_SANDWICH_RESERVE = 1.1;
 const SLOPE_GKL_RESERVE = 1.12;
 const ANCHOR_RESERVE = 1.05;
 const SCREW_RESERVE = 1.05;
+const SCREWS_PER_KG = 1000;  // 3.5×25 мм
 const F_PROFILE_LENGTH = 3;
 
 /* ─── labels ─── */
@@ -78,7 +79,8 @@ export function computeCanonicalWindows(
   /* ─── anchors & screws ─── */
   const anchorsPerWindow = Math.ceil(perimM / ANCHOR_STEP);
   const totalAnchors = Math.ceil(anchorsPerWindow * windowCount * ANCHOR_RESERVE);
-  const screws = Math.ceil(totalAnchors * 2 * SCREW_RESERVE);
+  const screwsPcs = Math.ceil(totalAnchors * 2 * SCREW_RESERVE);
+  const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
 
   /* ─── windowsill ─── */
   const sillWidth = wallThickness / 1000 + WINDOWSILL_OVERHANG;
@@ -107,7 +109,8 @@ export function computeCanonicalWindows(
     cornerPcs = Math.ceil(perimM * 0.75 * windowCount * PSUL_RESERVE / 3);
   } else {
     gklSheets = Math.ceil(totalSlopeArea * SLOPE_GKL_RESERVE / GKL_SHEET_M2);
-    screwsGKL = Math.ceil(gklSheets * 20 * SCREW_RESERVE);
+    const screwsGKLpcs = Math.ceil(gklSheets * 20 * SCREW_RESERVE);
+    screwsGKL = Math.ceil(screwsGKLpcs / SCREWS_PER_KG * 10) / 10;
     puttyBags = Math.ceil(totalSlopeArea * 1.2 / PLASTER_BAG);
   }
 
@@ -188,10 +191,10 @@ export function computeCanonicalWindows(
     },
     {
       name: "Саморезы для анкеров",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screws,
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {
@@ -255,9 +258,9 @@ export function computeCanonicalWindows(
       {
         name: "Саморезы для ГКЛ",
         quantity: screwsGKL,
-        unit: "шт",
+        unit: "кг",
         withReserve: screwsGKL,
-        purchaseQty: screwsGKL,
+        purchaseQty: Math.ceil(screwsGKL),
         category: "Крепёж",
       },
       {
@@ -303,7 +306,7 @@ export function computeCanonicalWindows(
       foamCans,
       anchorsPerWindow,
       totalAnchors,
-      screws,
+      screws: screwsKg,
       sillWidth: roundDisplay(sillWidth, 3),
       sillPcs,
       slopeSideArea: roundDisplay(slopeSideArea, 4),

@@ -185,7 +185,8 @@ export function computeCanonicalBathroom(
       quantity: roundDisplay(floorArea * FLOOR_ADHESIVE_KG_PER_M2, 3),
       unit: "кг",
       withReserve: floorAdhesiveBags * ADHESIVE_BAG_KG,
-      purchaseQty: floorAdhesiveBags,
+      purchaseQty: floorAdhesiveBags * ADHESIVE_BAG_KG,
+      packageInfo: { count: floorAdhesiveBags, size: ADHESIVE_BAG_KG, packageUnit: "мешков" },
       category: "Клей",
     },
     {
@@ -193,7 +194,8 @@ export function computeCanonicalBathroom(
       quantity: roundDisplay(wallArea * WALL_ADHESIVE_KG_PER_M2, 3),
       unit: "кг",
       withReserve: wallAdhesiveBags * ADHESIVE_BAG_KG,
-      purchaseQty: wallAdhesiveBags,
+      purchaseQty: wallAdhesiveBags * ADHESIVE_BAG_KG,
+      packageInfo: { count: wallAdhesiveBags, size: ADHESIVE_BAG_KG, packageUnit: "мешков" },
       category: "Клей",
     },
     {
@@ -201,7 +203,8 @@ export function computeCanonicalBathroom(
       quantity: roundDisplay((floorArea + wallArea) * GROUT_KG_PER_M2, 3),
       unit: "кг",
       withReserve: groutBags * GROUT_BAG_KG,
-      purchaseQty: groutBags,
+      purchaseQty: groutBags * GROUT_BAG_KG,
+      packageInfo: { count: groutBags, size: GROUT_BAG_KG, packageUnit: "мешков" },
       category: "Затирка",
     },
   ];
@@ -213,7 +216,8 @@ export function computeCanonicalBathroom(
         quantity: roundDisplay((floorArea + perimeter * WATERPROOF_WALL_HEIGHT) * WATERPROOF_MASTIC_KG_PER_M2, 3),
         unit: "кг",
         withReserve: masticBuckets * WATERPROOF_BUCKET_KG,
-        purchaseQty: masticBuckets,
+        purchaseQty: masticBuckets * WATERPROOF_BUCKET_KG,
+        packageInfo: { count: masticBuckets, size: WATERPROOF_BUCKET_KG, packageUnit: "вёдер" },
         category: "Гидроизоляция",
       },
       {
@@ -221,7 +225,8 @@ export function computeCanonicalBathroom(
         quantity: roundDisplay(perimeter + 1.2, 3),
         unit: "м",
         withReserve: tapeRolls * 10,
-        purchaseQty: tapeRolls,
+        purchaseQty: tapeRolls * 10,
+        packageInfo: { count: tapeRolls, size: 10, packageUnit: "рулонов" },
         category: "Гидроизоляция",
       },
     );
@@ -233,7 +238,8 @@ export function computeCanonicalBathroom(
       quantity: roundDisplay((floorArea + wallArea) * PRIMER_L_PER_M2, 3),
       unit: "л",
       withReserve: primerCans * PRIMER_CAN_L,
-      purchaseQty: primerCans,
+      purchaseQty: primerCans * PRIMER_CAN_L,
+      packageInfo: { count: primerCans, size: PRIMER_CAN_L, packageUnit: "канистр" },
       category: "Подготовка",
     },
     {
@@ -241,7 +247,8 @@ export function computeCanonicalBathroom(
       quantity: (tilesFloor + tilesWall) * CROSSES_PER_TILE,
       unit: "шт",
       withReserve: crossesPacks * CROSSES_PACK,
-      purchaseQty: crossesPacks,
+      purchaseQty: crossesPacks * CROSSES_PACK,
+      packageInfo: { count: crossesPacks, size: CROSSES_PACK, packageUnit: "упаковок" },
       category: "Крепёж",
     },
     {

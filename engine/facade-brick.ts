@@ -193,7 +193,8 @@ export function computeCanonicalFacadeBrick(
       quantity: roundDisplay(hydroArea, 3),
       unit: "м²",
       withReserve: hydroRolls * HYDRO_ROLL_M2,
-      purchaseQty: hydroRolls,
+      purchaseQty: hydroRolls * HYDRO_ROLL_M2,
+      packageInfo: { count: hydroRolls, size: HYDRO_ROLL_M2, packageUnit: "рулонов" },
       category: "Изоляция",
     },
     {

@@ -18,7 +18,7 @@ describe("Калькулятор краски", () => {
     expect(result.totals.area).toBeCloseTo(40, 2);
     expect(result.totals.lPerSqm).toBeCloseTo(0.2, 3);
     expect(result.scenarios?.REC.buy_plan.package_size).toBe(3);
-    expect(result.materials.find((material) => material.category === "Основное")?.purchaseQty).toBe(3);
+    expect(result.materials.find((material) => material.category === "Основное")?.purchaseQty).toBeCloseTo(9, 0);
   });
 
   it("учитывает подготовку основания и насыщенность цвета", () => {

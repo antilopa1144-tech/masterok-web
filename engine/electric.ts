@@ -122,9 +122,10 @@ export function computeCanonicalElectric(
     {
       name: "Щиток (модулей)",
       quantity: breakersCount + uzoCount + 2,
-      unit: "шт",
+      unit: "модулей",
       withReserve: breakersCount + uzoCount + 2,
-      purchaseQty: 1,
+      purchaseQty: breakersCount + uzoCount + 2,
+      packageInfo: { count: 1, size: breakersCount + uzoCount + 2, packageUnit: "щитков" },
       category: "Щиток",
     },
     {

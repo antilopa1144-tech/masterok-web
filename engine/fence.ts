@@ -14,7 +14,7 @@ const POST_BURIAL_M = 0.9;
 const PROFNASTIL_USEFUL_WIDTH = 1.15;
 const PROFNASTIL_RESERVE = 1.02;
 const PROFNASTIL_SCREWS_PER_SHEET = 7;
-const SCREWS_PACK = 200;
+const ROOF_SCREWS_PER_KG = 250;  // 4.8×35 мм (кровельные)
 const PRIMER_SPRAY_M_PER_CAN = 20;
 const POST_CONCRETE_M3 = 0.03;
 const CAPS_RESERVE = 1.05;
@@ -95,7 +95,7 @@ export function computeCanonicalFence(
     /* profnastil */
     sheets = Math.ceil(netLength / PROFNASTIL_USEFUL_WIDTH * PROFNASTIL_RESERVE);
     screws = Math.ceil(sheets * PROFNASTIL_SCREWS_PER_SHEET);
-    screwPacks = Math.ceil(screws / SCREWS_PACK);
+    screwPacks = Math.ceil(screws / ROOF_SCREWS_PER_KG * 10) / 10; // now kg
     primerCans = Math.ceil(fenceLength / PRIMER_SPRAY_M_PER_CAN);
   } else if (fenceType === 1) {
     /* rabica */
@@ -185,11 +185,11 @@ export function computeCanonicalFence(
         category: "Покрытие",
       },
       {
-        name: `Саморезы кровельные (упаковка ${SCREWS_PACK} шт)`,
-        quantity: screws,
-        unit: "шт",
-        withReserve: screwPacks * SCREWS_PACK,
-        purchaseQty: screwPacks,
+        name: "Саморезы кровельные",
+        quantity: screwPacks,
+        unit: "кг",
+        withReserve: screwPacks,
+        purchaseQty: Math.ceil(screwPacks),
         category: "Крепёж",
       },
       {

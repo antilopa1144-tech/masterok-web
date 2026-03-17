@@ -84,9 +84,9 @@ describe("Калькулятор утеплителя", () => {
       expect(findMaterial(result, "Эковата")).toBeDefined();
     });
 
-    it("эковата: 193 кг → ceil(193/15) = 13 мешков", () => {
+    it("эковата: 193 кг → ceil(193/15) = 13 мешков × 15 кг = 195 кг", () => {
       const eco = findMaterial(result, "Эковата");
-      expect(eco?.purchaseQty).toBe(13);
+      expect(eco?.purchaseQty).toBe(195);
     });
   });
 

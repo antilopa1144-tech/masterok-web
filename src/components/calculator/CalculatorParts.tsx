@@ -8,7 +8,7 @@ import { CALCULATOR_UI_TEXT } from "./uiText";
 // ── Округление материалов по единицам ────────────────────────────────────────
 
 /** Единицы, для которых количество всегда целое число */
-const INTEGER_UNITS = new Set(["шт", "мешков", "рулонов", "листов", "упаковок", "канистр", "уп", "упак.", "рулон", "ведро", "баллон"]);
+const INTEGER_UNITS = new Set(["шт", "мешков", "рулонов", "листов", "упаковок", "канистр", "уп", "упак.", "рулон", "ведро", "баллон", "вёдер", "банок", "туб"]);
 
 function formatMaterialQty(value: number, unit: string): string {
   if (value === undefined || value === null || isNaN(value)) return "—";
@@ -208,13 +208,18 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
           <div className="space-y-2">
             {items.map((m, i) => (
               <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug">{m.name}</span>
-                <div className="text-right shrink-0">
+                <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug min-w-0 break-words">{m.name}</span>
+                <div className="text-right shrink-0 max-w-[50%]">
                   <div className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {formatMaterialQty(m.purchaseQty ?? m.withReserve ?? m.quantity, m.unit)}{" "}
                     <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{m.unit}</span>
                   </div>
-                  {m.withReserve && m.withReserve !== m.quantity && (
+                  {m.packageInfo && (
+                    <div className="text-xs text-slate-400 dark:text-slate-500">
+                      {m.packageInfo.count} {m.packageInfo.packageUnit} × {m.packageInfo.size} {m.unit}
+                    </div>
+                  )}
+                  {!m.packageInfo && m.withReserve != null && m.withReserve !== m.quantity && (
                     <div className="text-xs text-slate-400 dark:text-slate-500">
                       {CALCULATOR_UI_TEXT.withoutReserve}: {formatMaterialQty(m.quantity, m.unit)} {m.unit}
                     </div>
@@ -332,7 +337,10 @@ export function HistoryPanel({
 function copyMaterialsAsText(materials: CalculatorResult["materials"]): void {
   const lines = materials.map((m) => {
     const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
-    return `• ${m.name}: ${formatNumber(qty)} ${m.unit}`;
+    const pkgSuffix = m.packageInfo
+      ? ` (${m.packageInfo.count} ${m.packageInfo.packageUnit} × ${m.packageInfo.size} ${m.unit})`
+      : "";
+    return `• ${m.name}: ${formatNumber(qty)} ${m.unit}${pkgSuffix}`;
   });
   const text = `${CALCULATOR_UI_TEXT.copyMaterialsHeading}\n\n${lines.join("\n")}`;
   void navigator.clipboard.writeText(text);

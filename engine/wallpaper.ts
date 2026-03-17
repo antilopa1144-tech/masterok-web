@@ -160,7 +160,8 @@ function buildMaterials(
       quantity: roundDisplay(pasteNeeded, 6),
       unit: "кг",
       withReserve: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
-      purchaseQty: pastePacks,
+      purchaseQty: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
+      packageInfo: { count: pastePacks, size: spec.packaging_rules.paste_pack_kg, packageUnit: "уп" },
       category: "Клей",
     },
     {
@@ -168,7 +169,8 @@ function buildMaterials(
       quantity: roundDisplay(primerNeeded, 6),
       unit: "л",
       withReserve: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
-      purchaseQty: primerCans,
+      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
+      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
       category: "Грунтовка",
     },
     {

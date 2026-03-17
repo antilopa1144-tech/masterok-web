@@ -88,7 +88,8 @@ function buildMaterials(
       quantity: roundDisplay(recExactNeed, 3),
       unit: "л",
       withReserve: roundDisplay(recPurchaseQuantity, 3),
-      purchaseQty: Math.ceil(recPurchaseQuantity / canSize),
+      purchaseQty: roundDisplay(Math.ceil(recPurchaseQuantity / canSize) * canSize, 3),
+      packageInfo: { count: Math.ceil(recPurchaseQuantity / canSize), size: canSize, packageUnit: "канистр" },
       category: "Основное",
     },
     {

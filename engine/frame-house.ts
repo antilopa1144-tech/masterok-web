@@ -156,18 +156,20 @@ export function computeCanonicalFrameHouse(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Стойки каркаса (шаг ${studStep} мм)`,
-      quantity: studs,
-      unit: "шт",
-      withReserve: studBoards,
-      purchaseQty: studBoards,
+      quantity: roundDisplay(studMeters, 2),
+      unit: "п.м.",
+      withReserve: studBoards * 6,
+      purchaseQty: studBoards * 6,
+      packageInfo: { count: studBoards, size: 6, packageUnit: "досок" },
       category: "Каркас",
     },
     {
       name: "Обвязка (доски 6 м)",
       quantity: roundDisplay(strappingM, 2),
       unit: "м",
-      withReserve: strappingBoards,
-      purchaseQty: strappingBoards,
+      withReserve: strappingBoards * 6,
+      purchaseQty: strappingBoards * 6,
+      packageInfo: { count: strappingBoards, size: 6, packageUnit: "досок" },
       category: "Каркас",
     },
     {
@@ -190,8 +192,9 @@ export function computeCanonicalFrameHouse(
       name: `Утеплитель — ${INSULATION_TYPE_LABELS[insulationType]}`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "плит",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: packs,
+      withReserve: Math.ceil(recScenario.exact_need / PACK_SIZE) * PACK_SIZE,
+      purchaseQty: Math.ceil(recScenario.exact_need / PACK_SIZE) * PACK_SIZE,
+      packageInfo: { count: Math.ceil(recScenario.exact_need / PACK_SIZE), size: PACK_SIZE, packageUnit: "упаковок" },
       category: "Утепление",
     },
     {

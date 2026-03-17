@@ -21,8 +21,8 @@
         "formulaVersion": "wallpaper-canonical-v1",
         "materials": {
           "rolls": 10,
-          "pastePacks": 1,
-          "primerCans": 2
+          "pastePacks": 0.25,
+          "primerCans": 10
         },
         "warningsCount": 0,
         "recScenario": {
@@ -53,8 +53,8 @@
         "formulaVersion": "wallpaper-canonical-v1",
         "materials": {
           "rolls": 6,
-          "pastePacks": 2,
-          "primerCans": 2
+          "pastePacks": 0.5,
+          "primerCans": 10
         },
         "warningsCount": 2,
         "recScenario": {
@@ -84,8 +84,8 @@
         "formulaVersion": "wallpaper-canonical-v1",
         "materials": {
           "rolls": 10,
-          "pastePacks": 2,
-          "primerCans": 2
+          "pastePacks": 0.5,
+          "primerCans": 10
         },
         "warningsCount": 0,
         "recScenario": {

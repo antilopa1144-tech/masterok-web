@@ -137,16 +137,18 @@ export function computeCanonicalWaterproofing(
       quantity: roundDisplay(masticKg, 3),
       unit: "кг",
       withReserve: masticBuckets * bucketKg,
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      purchaseQty: masticBuckets * bucketKg,
       category: "Основное",
+      packageInfo: { count: masticBuckets, size: bucketKg, packageUnit: "вёдер" },
     },
     {
       name: "Лента гидроизоляционная (10 м)",
       quantity: roundDisplay(tapeM, 3),
       unit: "м",
       withReserve: tapeRolls * 10,
-      purchaseQty: tapeRolls,
+      purchaseQty: tapeRolls * 10,
       category: "Лента",
+      packageInfo: { count: tapeRolls, size: 10, packageUnit: "рулонов" },
     },
     {
       name: "Силиконовый герметик",
@@ -164,8 +166,9 @@ export function computeCanonicalWaterproofing(
       quantity: roundDisplay(primerKg, 3),
       unit: "кг",
       withReserve: primerCans * PRIMER_CAN_KG,
-      purchaseQty: primerCans,
+      purchaseQty: primerCans * PRIMER_CAN_KG,
       category: "Подготовка",
+      packageInfo: { count: primerCans, size: PRIMER_CAN_KG, packageUnit: "банок" },
     });
   } else {
     materials.push({
@@ -173,8 +176,9 @@ export function computeCanonicalWaterproofing(
       quantity: roundDisplay(bitumenL, 3),
       unit: "л",
       withReserve: bitumenCans * BITUMEN_CAN_L,
-      purchaseQty: bitumenCans,
+      purchaseQty: bitumenCans * BITUMEN_CAN_L,
       category: "Подготовка",
+      packageInfo: { count: bitumenCans, size: BITUMEN_CAN_L, packageUnit: "канистр" },
     });
   }
 

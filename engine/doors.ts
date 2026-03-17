@@ -21,12 +21,12 @@ const BOX_DEPTH = 70;
 const FOAM_ML_PER_M = 100;
 const FOAM_CAN_ML = 750;
 const SCREWS_PER_DOOR = 12;
+const SCREWS_PER_KG = 600;  // 4×40 мм (монтажные)
 const DUBELS_PER_DOOR = 6;
 const GLUE_CARTRIDGE_PER_DOOR = 0.5;
 const DOBOR_STANDARD_H = 2200;
 const NALICHNIK_STANDARD_H = 2200;
 const FOAM_RESERVE = 1.1;
-const SCREW_PACK = 50;
 const DUBEL_PACK = 20;
 
 /* ─── labels ─── */
@@ -94,7 +94,8 @@ export function computeCanonicalDoors(
   const glueCarts = Math.ceil(doorCount * GLUE_CARTRIDGE_PER_DOOR);
 
   /* ─── fasteners ─── */
-  const screwPacks = Math.ceil(doorCount * SCREWS_PER_DOOR / SCREW_PACK);
+  const screwsPcs = doorCount * SCREWS_PER_DOOR;
+  const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
   const dubelPacks = Math.ceil(doorCount * DUBELS_PER_DOOR / DUBEL_PACK);
 
   /* ─── scenarios ─── */
@@ -148,11 +149,11 @@ export function computeCanonicalDoors(
       category: "Монтаж",
     },
     {
-      name: `Саморезы (упаковка ${SCREW_PACK} шт)`,
-      quantity: doorCount * SCREWS_PER_DOOR,
-      unit: "шт",
-      withReserve: screwPacks * SCREW_PACK,
-      purchaseQty: screwPacks,
+      name: "Саморезы монтажные",
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {
@@ -160,7 +161,8 @@ export function computeCanonicalDoors(
       quantity: doorCount * DUBELS_PER_DOOR,
       unit: "шт",
       withReserve: dubelPacks * DUBEL_PACK,
-      purchaseQty: dubelPacks,
+      purchaseQty: dubelPacks * DUBEL_PACK,
+      packageInfo: { count: dubelPacks, size: DUBEL_PACK, packageUnit: "упаковок" },
       category: "Крепёж",
     },
     {
@@ -230,7 +232,7 @@ export function computeCanonicalDoors(
       doborPcs,
       nalichnikPcs,
       glueCarts,
-      screwPacks,
+      screwsKg,
       dubelPacks,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,

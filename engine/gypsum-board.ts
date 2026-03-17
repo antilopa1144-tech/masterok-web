@@ -22,6 +22,7 @@ const SHEET_AREA = 3.0;
 const SHEET_RESERVE = 1.1;
 const PP_STEP_DEFAULT = 600;
 const SCREWS_GKL_PER_SHEET = 24;
+const SCREWS_PER_KG = 1000;  // 3.5×25 мм
 const DUBEL_STEP = 0.5;
 const DUBEL_RESERVE = 1.1;
 const SERPYANKA_RESERVE = 1.1;
@@ -100,7 +101,8 @@ export function computeCanonicalGypsumBoard(
   const guidePcs = Math.ceil(guideM * 1.05 / PROFILE_LENGTH);
 
   /* Screws & dubels */
-  const screws = totalSheets * SCREWS_GKL_PER_SHEET;
+  const screwsPcs = totalSheets * SCREWS_GKL_PER_SHEET;
+  const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
   const dubels = Math.ceil(guideM / DUBEL_STEP * 2 * DUBEL_RESERVE);
 
   /* Serpyanka */
@@ -185,10 +187,10 @@ export function computeCanonicalGypsumBoard(
     },
     {
       name: "Саморезы для ГКЛ",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screws,
+      quantity: screwsKg,
+      unit: "кг",
+      withReserve: screwsKg,
+      purchaseQty: Math.ceil(screwsKg),
       category: "Крепёж",
     },
     {
@@ -259,7 +261,7 @@ export function computeCanonicalGypsumBoard(
       ppPcs,
       guidePcs,
       guideM: roundDisplay(guideM, 3),
-      screws,
+      screws: screwsKg,
       dubels,
       jointsM,
       puttyBags,

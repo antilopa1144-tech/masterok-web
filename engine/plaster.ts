@@ -145,7 +145,8 @@ function buildMaterials(
       quantity: primerNeed,
       unit: substrate.primer_type === 2 ? "кг" : "л",
       withReserve: roundDisplay(primerPackages * spec.material_rules.primer_package_size, 3),
-      purchaseQty: primerPackages,
+      purchaseQty: roundDisplay(primerPackages * spec.material_rules.primer_package_size, 3),
+      packageInfo: { count: primerPackages, size: spec.material_rules.primer_package_size, packageUnit: substrate.primer_type === 2 ? "вёдер" : "канистр" },
       category: "Подготовка",
     },
     ...(meshArea > 0 ? [{

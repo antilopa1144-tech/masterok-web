@@ -202,7 +202,8 @@ function buildMaterials(
       quantity: roundDisplay(recExactNeed, 3),
       unit: "л",
       withReserve: roundDisplay(recPurchaseQuantity, 3),
-      purchaseQty: recPackageCount,
+      purchaseQty: roundDisplay(recPurchaseQuantity, 3),
+      packageInfo: { count: recPackageCount, size: recPackageSize, packageUnit: "банок" },
       category: "Основное",
     },
     {
@@ -210,7 +211,8 @@ function buildMaterials(
       quantity: primerExact,
       unit: "л",
       withReserve: primerPurchase,
-      purchaseQty: primerPurchaseQty,
+      purchaseQty: primerPurchase,
+      packageInfo: { count: primerPurchaseQty, size: materialRules.primer_package_size_l, packageUnit: "канистр" },
       category: "Подготовка",
     },
     {

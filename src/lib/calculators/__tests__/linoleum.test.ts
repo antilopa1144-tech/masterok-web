@@ -23,7 +23,7 @@ runCanonicalParitySuite({
   calculate: calc,
   assertCase(result, expected: {
     formulaVersion: string; area: number; linearMeters: number; wastePercent: number; warningsCount: number;
-    materials: { linearMetersX10: number; primerCans: number; glueBuckets?: number; plinthPieces: number; tapeMeters: number; coldWeldingTubes?: number };
+    materials: { linearMeters: number; primerLiters: number; glueKg?: number; plinthPieces: number; tapeMeters: number; coldWeldingTubes?: number };
     recScenario: { packageSize: number; exactNeed: number; purchaseQuantity: number };
   }) {
     expect(result.formulaVersion).toBe(expected.formulaVersion);
@@ -37,10 +37,10 @@ runCanonicalParitySuite({
     expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 5);
     expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 5);
 
-    expect(findMaterial(result, 'Линолеум')?.purchaseQty).toBe(expected.materials.linearMetersX10);
-    expect(findMaterial(result, 'Грунтовка')?.purchaseQty).toBe(expected.materials.primerCans);
-    if (expected.materials.glueBuckets !== undefined) {
-      expect(findMaterial(result, 'Клей')?.purchaseQty).toBe(expected.materials.glueBuckets);
+    expect(findMaterial(result, 'Линолеум')?.purchaseQty).toBe(expected.materials.linearMeters);
+    expect(findMaterial(result, 'Грунтовка')?.purchaseQty).toBe(expected.materials.primerLiters);
+    if (expected.materials.glueKg !== undefined) {
+      expect(findMaterial(result, 'Клей')?.purchaseQty).toBe(expected.materials.glueKg);
     }
     expect(findMaterial(result, 'Плинтус')?.purchaseQty).toBe(expected.materials.plinthPieces);
     expect(findMaterial(result, 'скотч')?.purchaseQty ?? findMaterial(result, 'Скотч')?.purchaseQty).toBe(expected.materials.tapeMeters);

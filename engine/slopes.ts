@@ -28,6 +28,7 @@ const PLASTER_RESERVE = 1.1;
 const PUTTY_RESERVE = 1.1;
 const GKL_RESERVE = 1.12;
 const PRIMER_RESERVE = 1.15;
+const SCREWS_PER_KG = 1000;  // 3.5×25 мм
 
 /* ─── labels ─── */
 
@@ -110,7 +111,8 @@ export function computeCanonicalSlopes(
   } else {
     /* GKL */
     gklSheets = Math.ceil(totalArea * GKL_RESERVE / GKL_M2);
-    screwsGKL = Math.ceil(gklSheets * 20 * 1.05);
+    const screwsGKLpcs = Math.ceil(gklSheets * 20 * 1.05);
+    screwsGKL = Math.ceil(screwsGKLpcs / SCREWS_PER_KG * 10) / 10;
     puttyBagsGKL = Math.ceil(totalArea * PUTTY_KG_PER_M2 * PUTTY_RESERVE / 25);
   }
 
@@ -246,9 +248,9 @@ export function computeCanonicalSlopes(
       {
         name: "Саморезы для ГКЛ",
         quantity: screwsGKL,
-        unit: "шт",
+        unit: "кг",
         withReserve: screwsGKL,
-        purchaseQty: screwsGKL,
+        purchaseQty: Math.ceil(screwsGKL),
         category: "Крепёж",
       },
       {

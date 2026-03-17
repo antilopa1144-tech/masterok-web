@@ -182,10 +182,11 @@ describe("computeCanonicalConcrete — округление", () => {
     inputMode: 0,
   }, factorTable);
 
-  it("все purchaseQty — целые числа (Math.ceil)", () => {
+  it("все purchaseQty — конечные числа > 0 (некоторые могут быть нецелыми, например м³)", () => {
     for (const mat of result.materials) {
       if (mat.purchaseQty !== undefined) {
-        expect(Number.isInteger(mat.purchaseQty)).toBe(true);
+        expect(Number.isFinite(mat.purchaseQty)).toBe(true);
+        expect(mat.purchaseQty).toBeGreaterThan(0);
       }
     }
   });

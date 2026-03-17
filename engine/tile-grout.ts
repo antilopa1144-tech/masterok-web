@@ -120,9 +120,10 @@ export function computeCanonicalTileGrout(
       name: `${groutTypeLabels[groutType]} ${bagSize}кг`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "кг",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.purchase_quantity / bagSize),
+      withReserve: roundDisplay(recScenario.purchase_quantity, 6),
+      purchaseQty: Math.ceil(recScenario.purchase_quantity / bagSize) * bagSize,
       category: "Основное",
+      packageInfo: { count: Math.ceil(recScenario.purchase_quantity / bagSize), size: bagSize, packageUnit: "мешков" },
     },
   ];
 

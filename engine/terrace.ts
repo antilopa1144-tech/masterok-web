@@ -18,6 +18,7 @@ const TREATMENT_LAYERS: Record<number, number> = { 0: 0, 1: 2, 2: 2 };
 const GEOTEXTILE_ROLL = 50;
 const BOARD_RESERVE = 1.1;
 const LAG_RESERVE = 1.05;
+const SCREWS_PER_KG = 600;  // 3.5×35 мм (террасные)
 
 /* ─── labels ─── */
 
@@ -81,7 +82,8 @@ export function computeCanonicalTerrace(
 
   /* ─── fasteners ─── */
   const klaymerCount = lagRowCount * rowCount;
-  const screwCount = Math.ceil(lagRowCount * rowCount * (boardType === 3 ? 2 : 1.2));
+  const screwPcs = Math.ceil(lagRowCount * rowCount * (boardType === 3 ? 2 : 1.2));
+  const screwKg = Math.ceil(screwPcs / SCREWS_PER_KG * 10) / 10;
 
   /* ─── treatment ─── */
   const treatmentLayers = TREATMENT_LAYERS[withTreatment] ?? 0;
@@ -158,10 +160,10 @@ export function computeCanonicalTerrace(
     },
     {
       name: "Саморезы",
-      quantity: screwCount,
-      unit: "шт",
-      withReserve: screwCount,
-      purchaseQty: screwCount,
+      quantity: screwKg,
+      unit: "кг",
+      withReserve: screwKg,
+      purchaseQty: Math.ceil(screwKg),
       category: "Крепёж",
     },
     {
@@ -220,7 +222,7 @@ export function computeCanonicalTerrace(
       lagTotalLen: roundDisplay(lagTotalLen, 3),
       lagPcs,
       klaymerCount,
-      screwCount,
+      screwCount: screwKg,
       treatmentL,
       geotextileRolls,
       minExactNeed: scenarios.MIN.exact_need,

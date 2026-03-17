@@ -129,9 +129,10 @@ export function computeCanonicalTileAdhesive(
       name: `Плиточный клей ${bagWeight}кг`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "кг",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.purchase_quantity / bagWeight),
+      withReserve: roundDisplay(recScenario.purchase_quantity, 6),
+      purchaseQty: Math.ceil(recScenario.purchase_quantity / bagWeight) * bagWeight,
       category: "Основное",
+      packageInfo: { count: Math.ceil(recScenario.purchase_quantity / bagWeight), size: bagWeight, packageUnit: "мешков" },
     },
     {
       name: `Грунтовка (канистра ${PRIMER_CAN} л)`,

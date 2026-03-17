@@ -102,7 +102,8 @@ function buildMaterialsMats(
       quantity: roundDisplay(heatingArea * TILE_ADHESIVE_KG_PER_M2, 3),
       unit: "кг",
       withReserve: adhesiveBags * TILE_ADHESIVE_BAG_KG,
-      purchaseQty: adhesiveBags,
+      purchaseQty: adhesiveBags * TILE_ADHESIVE_BAG_KG,
+      packageInfo: { count: adhesiveBags, size: TILE_ADHESIVE_BAG_KG, packageUnit: "мешков" },
       category: "Основное",
     },
   ];
@@ -155,7 +156,8 @@ function buildMaterialsCable(
       quantity: roundDisplay(heatingArea * SCREED_THICKNESS_M * SCREED_DENSITY, 3),
       unit: "кг",
       withReserve: screedBags * SCREED_BAG_KG,
-      purchaseQty: screedBags,
+      purchaseQty: screedBags * SCREED_BAG_KG,
+      packageInfo: { count: screedBags, size: SCREED_BAG_KG, packageUnit: "мешков" },
       category: "Основное",
     },
   ];

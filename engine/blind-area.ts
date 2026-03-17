@@ -151,8 +151,8 @@ export function computeCanonicalBlindArea(
         name: `Бетон (${thickness} мм)`,
         quantity: roundDisplay(recScenario.exact_need, 6),
         unit: "м³",
-        withReserve: concreteM3,
-        purchaseQty: Math.ceil(concreteM3 * 10) / 10,
+        withReserve: Math.ceil(concreteM3),
+        purchaseQty: Math.ceil(concreteM3),
         category: "Бетон",
       },
     );

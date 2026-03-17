@@ -90,7 +90,7 @@ export default function PrilozheniePage() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href="https://www.rustore.ru/catalog/app/ru.masterok.calc"
+                  href="https://www.rustore.ru/catalog/app/ru.masterok.app"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-primary text-base px-8 py-3.5"
@@ -164,7 +164,7 @@ export default function PrilozheniePage() {
             {UI_TEXT.ctaDescription}
           </p>
           <a
-            href="https://www.rustore.ru/catalog/app/ru.masterok.calc"
+            href="https://www.rustore.ru/catalog/app/ru.masterok.app"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-white text-accent-600 font-bold px-8 py-3.5 rounded-xl hover:bg-accent-50 transition-colors no-underline"

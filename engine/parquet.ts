@@ -196,7 +196,8 @@ export function computeCanonicalParquet(
       quantity: glueKg,
       unit: "кг",
       withReserve: glueBuckets * spec.packaging_rules.glue_bucket_kg,
-      purchaseQty: glueBuckets,
+      purchaseQty: glueBuckets * spec.packaging_rules.glue_bucket_kg,
+      packageInfo: { count: glueBuckets, size: spec.packaging_rules.glue_bucket_kg, packageUnit: "вёдер" },
       category: "Клей",
     });
   }

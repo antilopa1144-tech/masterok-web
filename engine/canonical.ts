@@ -16,6 +16,7 @@ export interface CanonicalMaterialResult {
   withReserve?: number;
   purchaseQty?: number;
   category?: string;
+  packageInfo?: { count: number; size: number; packageUnit: string };
 }
 
 export interface CanonicalCalculatorResult {

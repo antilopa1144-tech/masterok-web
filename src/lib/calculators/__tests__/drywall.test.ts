@@ -33,16 +33,16 @@ describe("Калькулятор гипсокартона", () => {
       expect(findMaterial(result, "ПП")).toBeDefined();
     });
 
-    it("саморезы 3.5×25 мм в шт", () => {
+    it("саморезы 3.5×25 мм в кг", () => {
       const screws = findMaterial(result, "Саморезы 3.5×25");
       expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("шт");
+      expect(screws?.unit).toBe("кг");
     });
 
-    it("саморезы-клопы 3.5×9.5 мм в шт", () => {
+    it("саморезы-клопы 3.5×9.5 мм в кг", () => {
       const screws = findMaterial(result, "клопы");
       expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("шт");
+      expect(screws?.unit).toBe("кг");
     });
 
     it("шпаклёвка финишная Knauf присутствует", () => {

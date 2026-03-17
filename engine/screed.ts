@@ -120,7 +120,8 @@ function buildMaterialsType0(
       quantity: roundDisplay(cementKg, 3),
       unit: 'кг',
       withReserve: bags50Cement * 50,
-      purchaseQty: bags50Cement,
+      purchaseQty: bags50Cement * 50,
+      packageInfo: { count: bags50Cement, size: 50, packageUnit: "мешков" },
       category: 'Основное',
     },
     {
@@ -201,7 +202,8 @@ function buildMaterialsType1(
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
-      purchaseQty: bags50,
+      purchaseQty: bags50 * 50,
+      packageInfo: { count: bags50, size: 50, packageUnit: "мешков" },
       category: 'Основное',
     },
     {
@@ -264,7 +266,8 @@ function buildMaterialsType2(
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
-      purchaseQty: bags50,
+      purchaseQty: bags50 * 50,
+      packageInfo: { count: bags50, size: 50, packageUnit: "мешков" },
       category: 'Основное',
     },
     {

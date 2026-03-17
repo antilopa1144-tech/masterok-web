@@ -17,8 +17,8 @@
         "area": 40,
         "formulaVersion": "paint-canonical-v1",
         "materials": {
-          "paintCans": 2,
-          "primerCans": 1,
+          "paintCans": 10,
+          "primerCans": 10,
           "tapeRolls": 2,
           "rollers": 1,
           "brushes": 1,
@@ -48,8 +48,8 @@
         "area": 35,
         "formulaVersion": "paint-canonical-v1",
         "materials": {
-          "paintCans": 1,
-          "primerCans": 1,
+          "paintCans": 10,
+          "primerCans": 10,
           "tapeRolls": 2,
           "rollers": 1,
           "brushes": 1,
@@ -83,8 +83,8 @@
         "area": 44.6,
         "formulaVersion": "paint-canonical-v1",
         "materials": {
-          "paintCans": 4,
-          "primerCans": 1,
+          "paintCans": 40,
+          "primerCans": 10,
           "tapeRolls": 1,
           "rollers": 1,
           "brushes": 1,

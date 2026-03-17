@@ -20,9 +20,9 @@
         "formulaVersion": "tile-canonical-v1",
         "materials": {
           "tiles": 147,
-          "glueBags": 2,
-          "groutBags": 2,
-          "primerCans": 1,
+          "glueBags": 50,
+          "groutBags": 4,
+          "primerCans": 5,
           "crosses": 177
         },
         "warningsCount": 0,
@@ -50,9 +50,9 @@
         "formulaVersion": "tile-canonical-v1",
         "materials": {
           "tiles": 40,
-          "glueBags": 6,
-          "groutBags": 2,
-          "primerCans": 1,
+          "glueBags": 150,
+          "groutBags": 4,
+          "primerCans": 5,
           "svpPackages": 1
         },
         "warningsCount": 2,
@@ -80,9 +80,9 @@
         "formulaVersion": "tile-canonical-v1",
         "materials": {
           "tiles": 2275,
-          "glueBags": 5,
-          "groutBags": 9,
-          "primerCans": 2,
+          "glueBags": 125,
+          "groutBags": 18,
+          "primerCans": 10,
           "crosses": 2730
         },
         "warningsCount": 1,
