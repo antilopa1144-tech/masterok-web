@@ -74,14 +74,14 @@ export const fastenersDef: CalculatorDefinition = {
       ],
     },
     {
-      key: "hasFrameScrews",
+      key: "withFrameScrews",
       label: "Саморезы для каркаса (клопы)",
       type: "switch",
       defaultValue: 1,
       hint: "Саморезы-клопы 3.5×9 мм для соединения металлопрофилей",
     },
     {
-      key: "hasDowels",
+      key: "withDubels",
       label: "Дюбели для крепления к бетону/кирпичу",
       type: "switch",
       defaultValue: 0,

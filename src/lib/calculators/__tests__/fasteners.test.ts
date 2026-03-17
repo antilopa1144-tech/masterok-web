@@ -124,4 +124,36 @@ describe("Калькулятор крепежа", () => {
       expect(r.warnings.some((w) => w.includes("оптовую упаковку"))).toBe(true);
     });
   });
+
+  describe("Регрессия: не падает при пустых/частичных данных", () => {
+    it("не падает без входных данных", () => {
+      expect(() => calc({})).not.toThrow();
+      const r = calc({});
+      expect(r.materials.length).toBeGreaterThan(0);
+    });
+
+    it("не падает с минимальными данными", () => {
+      expect(() => calc({ materialType: 0 })).not.toThrow();
+    });
+
+    it("withFrameScrews=1 генерирует каркасные саморезы", () => {
+      const r = calc({ materialType: 0, sheetCount: 10, withFrameScrews: 1 });
+      expect(findMaterial(r, "Саморезы каркасные")).toBeDefined();
+    });
+
+    it("withDubels=1 генерирует дюбели", () => {
+      const r = calc({ materialType: 0, sheetCount: 10, withDubels: 1 });
+      expect(findMaterial(r, "Дюбели")).toBeDefined();
+    });
+
+    it("поле калькулятора использует withFrameScrews, а не hasFrameScrews", () => {
+      const field = fastenersDef.fields.find((f) => f.label.includes("каркаса"));
+      expect(field?.key).toBe("withFrameScrews");
+    });
+
+    it("поле калькулятора использует withDubels, а не hasDowels", () => {
+      const field = fastenersDef.fields.find((f) => f.label.includes("Дюбели"));
+      expect(field?.key).toBe("withDubels");
+    });
+  });
 });

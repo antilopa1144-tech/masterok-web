@@ -83,9 +83,9 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
 
   // ── Новые калькуляторы ───────────────────────────
   krepezh: [
-    { label: "ГКЛ 10 листов", values: { materialType: 0, sheetCount: 10, fastenerStep: 250, hasFrameScrews: 1, hasDowels: 0 } },
-    { label: "ОСБ 20 листов", values: { materialType: 1, sheetCount: 20, fastenerStep: 200, hasFrameScrews: 1, hasDowels: 1 } },
-    { label: "Профлист 50 м²", values: { materialType: 2, sheetCount: 50, fastenerStep: 300, hasFrameScrews: 0, hasDowels: 0 } },
+    { label: "ГКЛ 10 листов", values: { materialType: 0, sheetCount: 10, fastenerStep: 250, withFrameScrews: 1, withDubels: 0 } },
+    { label: "ОСБ 20 листов", values: { materialType: 1, sheetCount: 20, fastenerStep: 200, withFrameScrews: 1, withDubels: 1 } },
+    { label: "Профлист 50 м²", values: { materialType: 2, sheetCount: 50, fastenerStep: 300, withFrameScrews: 0, withDubels: 0 } },
   ],
   penobloki: [
     { label: "Дом 10×2.7 м", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, blockSize: 0, mortarType: 0 } },
