@@ -1,7 +1,7 @@
 {
   "calculator_id": "ceiling-rail",
   "formula_version": "ceiling-rail-canonical-v1",
-  "generated_at": "2026-03-17T03:15:43.951Z",
+  "generated_at": "2026-03-17T05:41:35.382Z",
   "cases": [
     {
       "id": "defaults",
