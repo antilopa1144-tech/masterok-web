@@ -4,15 +4,17 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
 import type { CalculatorMeta } from "@/lib/calculators/types";
-import type { AccuracyMode } from "../../../engine/accuracy";
-import { DEFAULT_ACCURACY_MODE } from "../../../engine/accuracy";
+import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
+import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
+import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackComparisonOpen } from "@/lib/analytics";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const HISTORY_KEY = "masterok-calc-history";
+const ACCURACY_MODE_KEY = "masterok-accuracy-mode";
 const MAX_HISTORY = 10;
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -46,6 +48,22 @@ function loadHistory(): HistoryEntry[] {
   } catch {
     return [];
   }
+}
+
+function loadSavedAccuracyMode(): AccuracyMode | null {
+  try {
+    const saved = localStorage.getItem(ACCURACY_MODE_KEY);
+    if (saved === "basic" || saved === "realistic" || saved === "professional") return saved;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAccuracyMode(mode: AccuracyMode) {
+  try {
+    localStorage.setItem(ACCURACY_MODE_KEY, mode);
+  } catch {}
 }
 
 function saveHistory(entry: HistoryEntry) {
@@ -84,9 +102,14 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>(
-    (searchParams.get("accuracyMode") as AccuracyMode) || DEFAULT_ACCURACY_MODE
-  );
+  const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>(() => {
+    const fromUrl = searchParams.get("accuracyMode") as AccuracyMode | null;
+    if (fromUrl === "basic" || fromUrl === "realistic" || fromUrl === "professional") return fromUrl;
+    return loadSavedAccuracyMode() ?? DEFAULT_ACCURACY_MODE;
+  });
+  const [comparisonResults, setComparisonResults] = useState<Record<AccuracyMode, CalculatorResult> | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [customModifiers, setCustomModifiersState] = useState<Partial<AccuracyModifiers>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const category = getCategoryById(calculator.category);
@@ -115,6 +138,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   // Автоматический перерасчёт при изменении значений (debounce 300ms)
   const accuracyModeRef = useRef(accuracyMode);
   accuracyModeRef.current = accuracyMode;
+  const showComparisonRef = useRef(showComparison);
+  showComparisonRef.current = showComparison;
 
   const runAutoCalc = useCallback((newValues: Record<string, number>) => {
     clearTimeout(debounceRef.current);
@@ -124,6 +149,14 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         const res = fn({ ...newValues, accuracyMode: accuracyModeRef.current as unknown as number });
         setResult(res);
         setHasCalculated(true);
+        // Update comparison if panel is open
+        if (showComparisonRef.current) {
+          const cmp = {} as Record<AccuracyMode, CalculatorResult>;
+          for (const m of ACCURACY_MODES) {
+            cmp[m] = fn({ ...newValues, accuracyMode: m as unknown as number });
+          }
+          setComparisonResults(cmp);
+        }
       });
     }, 300);
   }, [calculator.slug]);
@@ -141,7 +174,11 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   // Recalculate when accuracy mode changes
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
+    trackAccuracyModeChange(calculator.slug, accuracyMode, mode);
     setAccuracyMode(mode);
+    if (mode !== "custom") saveAccuracyMode(mode);
+    // Apply or clear custom modifiers
+    setCustomModifiers(mode === "custom" ? customModifiers : null);
     // Trigger recalculation with new mode
     clearTimeout(debounceRef.current);
     void getCalculateFn(calculator.slug).then((fn) => {
@@ -159,6 +196,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
       setResult(res);
       setHasCalculated(true);
+      trackAccuracyModeCalculation(calculator.slug, accuracyMode);
 
       // Сохраняем в историю только при явном нажатии кнопки
       const entry: HistoryEntry = {
@@ -218,6 +256,63 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     });
   }, [runAutoCalc]);
 
+  // Handle custom modifier changes
+  const handleCustomModifiersChange = useCallback((mods: Partial<AccuracyModifiers>) => {
+    setCustomModifiersState(mods);
+    setCustomModifiers(mods);
+    // Recalculate if in custom mode
+    if (accuracyModeRef.current === "custom") {
+      runAutoCalc(values);
+    }
+  }, [values, runAutoCalc]);
+
+  // Contextual accuracy mode hint based on current inputs
+  const accuracyHint = (() => {
+    const complexity = values.roomComplexity ?? -1;
+    const layingMethod = values.layingMethod ?? values.layoutPattern ?? -1;
+    const tileW = values.tileWidth ?? 0;
+    const tileH = values.tileHeight ?? 0;
+    const area = values.area ?? (values.length ?? 0) * (values.width ?? 0);
+
+    // Complex room + diagonal/herringbone → professional
+    if (complexity >= 2 || layingMethod >= 1) {
+      return { suggested: "professional" as AccuracyMode, reason: CALCULATOR_UI_TEXT.hintComplexLayout };
+    }
+    // Large tile format → professional
+    if ((tileW > 600 || tileH > 600) && tileW > 0) {
+      return { suggested: "professional" as AccuracyMode, reason: CALCULATOR_UI_TEXT.hintLargeTile };
+    }
+    // Large area → at least realistic
+    if (area > 100 && accuracyMode === "basic") {
+      return { suggested: "realistic" as AccuracyMode, reason: CALCULATOR_UI_TEXT.hintLargeArea };
+    }
+    // Small simple job → basic may be enough
+    if (area > 0 && area < 5 && complexity <= 0 && accuracyMode !== "basic") {
+      return { suggested: "basic" as AccuracyMode, reason: CALCULATOR_UI_TEXT.hintSmallArea };
+    }
+    return null;
+  })();
+
+  // Compute comparison results across all three accuracy modes
+  const computeComparison = useCallback(async (inputValues: Record<string, number>) => {
+    const fn = await getCalculateFn(calculator.slug);
+    if (!fn) return;
+    const results = {} as Record<AccuracyMode, CalculatorResult>;
+    for (const mode of ACCURACY_MODES) {
+      results[mode] = fn({ ...inputValues, accuracyMode: mode as unknown as number });
+    }
+    setComparisonResults(results);
+  }, [calculator.slug]);
+
+  const handleToggleComparison = useCallback(() => {
+    const next = !showComparison;
+    setShowComparison(next);
+    if (next && hasCalculated) {
+      trackComparisonOpen(calculator.slug);
+      void computeComparison(values);
+    }
+  }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
+
   // Фильтруем поля по inputMode
   const inputMode = Math.round(values.inputMode ?? 0);
   const visibleFields = calculator.fields.filter((f) => {
@@ -241,12 +336,18 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     visibleFields,
     calcHistory,
     accuracyMode,
+    accuracyHint,
+    comparisonResults,
+    showComparison,
     handleChange,
     handleCalculate,
     handleReset,
     handleShare,
     handleRestoreHistory,
     handleAccuracyModeChange,
+    handleToggleComparison,
+    handleCustomModifiersChange,
+    customModifiers,
     applyPreset,
   };
 }

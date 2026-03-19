@@ -1,0 +1,517 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "tile": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.03,
+        "cutting": 1.02,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.01,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.05,
+        "cutting": 1.04,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "tile_adhesive": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.0,
+        "unevenness": 1.05,
+        "overconsumption": 1.04,
+        "errorMargin": 1.0,
+        "topUp": 1.02,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.10,
+        "overconsumption": 1.07,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      }
+    },
+    "grout": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.05,
+        "errorMargin": 1.0,
+        "topUp": 1.02,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.05,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.08,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      }
+    },
+    "primer": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.0,
+        "unevenness": 1.03,
+        "overconsumption": 1.05,
+        "errorMargin": 1.0,
+        "topUp": 1.02,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.08,
+        "overconsumption": 1.08,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      }
+    },
+    "wallpaper": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.03,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.06,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "putty": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.05,
+        "overconsumption": 1.04,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.05,
+        "cutting": 1.0,
+        "unevenness": 1.10,
+        "overconsumption": 1.07,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "paint": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.0,
+        "unevenness": 1.03,
+        "overconsumption": 1.05,
+        "errorMargin": 1.0,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.07,
+        "overconsumption": 1.08,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "plaster": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.08,
+        "overconsumption": 1.05,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.05,
+        "cutting": 1.0,
+        "unevenness": 1.15,
+        "overconsumption": 1.08,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "decorative_stone": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.03,
+        "cutting": 1.04,
+        "unevenness": 1.0,
+        "overconsumption": 1.03,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.05,
+        "cutting": 1.07,
+        "unevenness": 1.0,
+        "overconsumption": 1.05,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "drywall": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.03,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.02,
+        "topUp": 1.01,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.06,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.03,
+        "topUp": 1.02,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "fasteners": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.03,
+        "errorMargin": 1.02,
+        "topUp": 1.03,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.05,
+        "errorMargin": 1.03,
+        "topUp": 1.05,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "insulation": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.05,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.08,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "flooring": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.04,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.07,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "concrete": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.0,
+        "unevenness": 1.03,
+        "overconsumption": 1.03,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.0,
+        "unevenness": 1.05,
+        "overconsumption": 1.05,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      }
+    },
+    "waterproofing": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.03,
+        "unevenness": 1.05,
+        "overconsumption": 1.05,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.05,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.03,
+        "cutting": 1.05,
+        "unevenness": 1.10,
+        "overconsumption": 1.08,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.10,
+        "packagingRound": 1.0
+      }
+    },
+    "generic": {
+      "basic": {
+        "waste": 1.0,
+        "cutting": 1.0,
+        "unevenness": 1.0,
+        "overconsumption": 1.0,
+        "errorMargin": 1.0,
+        "topUp": 1.0,
+        "accessories": 1.0,
+        "packagingRound": 1.0
+      },
+      "realistic": {
+        "waste": 1.02,
+        "cutting": 1.02,
+        "unevenness": 1.03,
+        "overconsumption": 1.03,
+        "errorMargin": 1.02,
+        "topUp": 1.02,
+        "accessories": 1.03,
+        "packagingRound": 1.0
+      },
+      "professional": {
+        "waste": 1.04,
+        "cutting": 1.04,
+        "unevenness": 1.06,
+        "overconsumption": 1.05,
+        "errorMargin": 1.03,
+        "topUp": 1.03,
+        "accessories": 1.08,
+        "packagingRound": 1.0
+      }
+    }
+  }
+}

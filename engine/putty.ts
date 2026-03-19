@@ -14,6 +14,7 @@ import {
   DEFAULT_ACCURACY_MODE,
   applyAccuracyMode,
   getAccessoriesMultiplier,
+  getLayerRecommendation,
 } from "./accuracy";
 
 const SCENARIO_NAMES: ScenarioName[] = ["MIN", "REC", "MAX"];
@@ -267,9 +268,19 @@ export function computeCanonicalPutty(
   const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "putty" };
   const workArea = resolveWorkArea(spec, inputs);
   const puttyType = Math.max(0, Math.min(2, Math.round(inputs.puttyType ?? getInputDefault(spec, "puttyType", 0))));
+  const hasFinish = puttyType === 0 || puttyType === 1;
+  const layerRec = getLayerRecommendation(accuracyMode, { finishForPaint: hasFinish });
   const bagWeight = resolveBagWeight(spec, inputs.bagWeight);
   const qualityProfile = resolveQualityProfile(spec, inputs.qualityClass);
   const resolvedComponents = resolveComponents(spec, inputs, puttyType, qualityProfile);
+  // Apply extra layers from accuracy mode
+  if (layerRec.puttyExtraLayers > 0) {
+    for (const rc of resolvedComponents) {
+      if (rc.component.key === "finish") {
+        rc.layers += layerRec.puttyExtraLayers;
+      }
+    }
+  }
 
   const scenarioBundles = resolvedComponents.map((resolved) =>
     computeEstimate(
@@ -315,6 +326,9 @@ export function computeCanonicalPutty(
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Между слоями шпаклёвки — грунтовка и полная просушка. Минимум 12 часов между слоями");
+  if (layerRec.note) {
+    practicalNotes.push(layerRec.note);
+  }
 
   // Build accuracy explanation
   const { explanation } = applyAccuracyMode(workArea, "putty", accuracyMode);

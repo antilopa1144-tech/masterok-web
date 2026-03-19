@@ -5,6 +5,7 @@ import { useEstimateExport, type Material } from '@/lib/export';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import type { CalculatorResult } from '@/lib/calculators/types';
 import { CALCULATOR_UI_TEXT } from './uiText';
+import { ACCURACY_MODE_LABELS } from '../../../engine/accuracy';
 
 interface ExportButtonsProps {
   calculatorName: string;
@@ -22,11 +23,14 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
     waste: m.waste ?? 0,
   }));
 
+  const accuracyLabel = result.accuracyMode ? ACCURACY_MODE_LABELS[result.accuracyMode] : undefined;
+
   const handleExportPDF = () => {
     const exporter = exportEstimate(
       materials,
       result.totals,
-      result.warnings
+      result.warnings,
+      accuracyLabel
     );
     exporter.toPDF();
   };
@@ -35,7 +39,8 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
     const exporter = exportEstimate(
       materials,
       result.totals,
-      result.warnings
+      result.warnings,
+      accuracyLabel
     );
     exporter.toExcel();
   };

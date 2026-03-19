@@ -16,6 +16,7 @@ interface EstimateData {
   materials: Material[];
   totals?: Record<string, number>;
   warnings?: string[];
+  accuracyModeLabel?: string;
 }
 
 const EXPORT_TITLE = `${SITE_NAME} — Смета материалов`;
@@ -32,6 +33,9 @@ export function exportToPDF(data: EstimateData): void {
   doc.setTextColor(100);
   doc.text(`Калькулятор: ${data.calculatorName}`, 14, 32);
   doc.text(`Дата расчёта: ${data.date}`, 14, 38);
+  if (data.accuracyModeLabel) {
+    doc.text(`Режим точности: ${data.accuracyModeLabel}`, 14, 44);
+  }
 
   const tableData = data.materials.map((m) => [
     m.name,
@@ -40,7 +44,7 @@ export function exportToPDF(data: EstimateData): void {
   ]);
 
   autoTable(doc, {
-    startY: 45,
+    startY: data.accuracyModeLabel ? 51 : 45,
     head: [['Материал', 'Количество', 'Запас']],
     body: tableData,
     theme: 'striped',
@@ -109,6 +113,7 @@ export function exportToExcel(data: EstimateData): void {
     [''],
     ['Калькулятор:', data.calculatorName],
     ['Дата расчёта:', data.date],
+    ...(data.accuracyModeLabel ? [['Режим точности:', data.accuracyModeLabel]] : []),
     [''],
     ['Материалы:'],
   ];
@@ -161,7 +166,8 @@ export function useEstimateExport(calculatorName: string) {
   const exportEstimate = (
     materials: Material[],
     totals?: Record<string, number>,
-    warnings?: string[]
+    warnings?: string[],
+    accuracyModeLabel?: string
   ) => {
     const data: EstimateData = {
       calculatorName,
@@ -169,6 +175,7 @@ export function useEstimateExport(calculatorName: string) {
       materials,
       totals,
       warnings,
+      accuracyModeLabel,
     };
 
     return {

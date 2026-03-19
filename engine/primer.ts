@@ -13,6 +13,7 @@ import {
   DEFAULT_ACCURACY_MODE,
   applyAccuracyMode,
   getAccessoriesMultiplier,
+  getLayerRecommendation,
 } from "./accuracy";
 
 interface PrimerInputs {
@@ -135,7 +136,10 @@ export function computeCanonicalPrimer(
   const workArea = resolveWorkArea(spec, inputs);
   const surface = resolveSurface(spec, inputs.surfaceType);
   const primerType = resolvePrimerType(spec, inputs.primerType);
-  const coats = Math.max(1, Math.min(3, Math.round(inputs.coats ?? getInputDefault(spec, "coats", 1))));
+  const userCoats = Math.max(1, Math.min(3, Math.round(inputs.coats ?? getInputDefault(spec, "coats", 1))));
+  const surfaceAbsorbent = spec.warnings_rules.absorbent_surface_ids.includes(surface.id);
+  const layerRec = getLayerRecommendation(accuracyMode, { surfaceAbsorbent });
+  const coats = Math.min(4, userCoats + layerRec.primerExtraCoats);
   const canSize = resolveCanSize(spec, inputs.canSize);
   const lPerSqm = primerType.base_l_per_m2 * surface.multiplier;
 
@@ -166,6 +170,9 @@ export function computeCanonicalPrimer(
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Грунтовка — не опция, а обязательный этап. Без неё шпаклёвка и краска отвалятся");
+  if (layerRec.note) {
+    practicalNotes.push(layerRec.note);
+  }
 
   // Build explanation
   const { explanation } = applyAccuracyMode(workArea * lPerSqm * coats, "primer", accuracyMode);
