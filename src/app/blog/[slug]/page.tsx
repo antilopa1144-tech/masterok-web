@@ -238,11 +238,25 @@ export default async function BlogPostPage({ params }: Props) {
     inLanguage: "ru",
   };
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: `${baseUrl}/` },
+      { "@type": "ListItem", position: 2, name: "Блог", item: `${baseUrl}/blog/` },
+      { "@type": "ListItem", position: 3, name: post.title, item: `${baseUrl}/blog/${post.slug}/` },
+    ],
+  };
+
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
@@ -291,6 +305,7 @@ export default async function BlogPostPage({ params }: Props) {
                 alt={post.heroImageAlt}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
                 loading="eager"
+                fetchPriority="high"
               />
             </div>
           )}

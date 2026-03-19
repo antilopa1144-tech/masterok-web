@@ -3,6 +3,7 @@ import { ALL_CALCULATORS } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { ALL_POSTS } from "@/lib/blog";
+import { ALL_TOOLS } from "@/lib/tools";
 import { SITE_URL } from "@/lib/site";
 
 const BASE_URL = SITE_URL;
@@ -90,15 +91,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: calc.popularity >= 75 ? 0.9 : 0.7,
   }));
 
-  // ── 4. Tools pages ─────────────────────────────────────────────────────────
+  // ── 4. Tools pages (dynamic from registry) ──────────────────────────────────
 
-  const toolPages: MetadataRoute.Sitemap = [
-    { url: `${BASE_URL}/instrumenty/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE_URL}/instrumenty/konverter/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.6 },
-    { url: `${BASE_URL}/instrumenty/ploshchad-komnaty/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.6 },
-    { url: `${BASE_URL}/instrumenty/kalkulyator/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.5 },
-    { url: `${BASE_URL}/instrumenty/chek-listy/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.7 },
-  ];
+  const toolPages: MetadataRoute.Sitemap = ALL_TOOLS.map((tool) => ({
+    url: `${BASE_URL}/instrumenty/${tool.slug ? tool.slug + "/" : ""}`,
+    lastModified: buildDate,
+    changeFrequency: "monthly" as const,
+    priority: tool.priority,
+  }));
 
   // ── 5. Individual checklist pages ──────────────────────────────────────────
 
