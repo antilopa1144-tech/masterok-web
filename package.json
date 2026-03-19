@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "curl -s -o /dev/null -w 'Yandex sitemap ping: HTTP %{http_code}' 'https://blogs.yandex.ru/pings/?status=success&url=https://getmasterok.ru/sitemap.xml' && echo '' && echo 'Note: Google ping deprecated since 2023 — use Search Console for indexing'",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

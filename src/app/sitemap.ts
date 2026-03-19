@@ -10,84 +10,123 @@ const BASE_URL = SITE_URL;
 // Required for output: "export"
 export const dynamic = "force-static";
 
+/**
+ * Dynamic sitemap covering ALL content types:
+ *  1. Static pages (home, about, app download)
+ *  2. Calculator hub + 8 category pages + 61 individual calculators
+ *  3. Blog listing + individual blog posts
+ *  4. Tools pages + individual checklists
+ *
+ * Priorities:
+ *  1.0  — homepage
+ *  0.9  — calculator hub, top calculators (popularity ≥ 75)
+ *  0.8  — category pages, popular calculators, core static pages
+ *  0.7  — regular calculators, blog posts, tools hub
+ *  0.6  — checklists, tool sub-pages
+ *  0.5  — low-priority utilities
+ *
+ * lastModified: build timestamp for static pages, post.date for blog,
+ * build timestamp for calculators (formulas update with each deploy).
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date().toISOString();
+  const buildDate = new Date().toISOString();
 
-  // Главная и статические страницы
+  // Derive latest blog date for blog listing page
+  const latestPostDate = ALL_POSTS.length > 0
+    ? ALL_POSTS.reduce((latest, p) => (p.date > latest ? p.date : latest), ALL_POSTS[0].date)
+    : buildDate;
+
+  // ── 1. Static pages ────────────────────────────────────────────────────────
+
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${BASE_URL}/`,
-      lastModified: now,
+      lastModified: buildDate,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
+      url: `${BASE_URL}/kalkulyatory/`,
+      lastModified: buildDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${BASE_URL}/mikhalych/`,
-      lastModified: now,
+      lastModified: buildDate,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/prilozhenie/`,
-      lastModified: now,
+      lastModified: buildDate,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${BASE_URL}/blog/`,
-      lastModified: now,
+      lastModified: latestPostDate,
       changeFrequency: "weekly",
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/kalkulyatory/`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      priority: 0.8,
     },
   ];
 
-  // Страницы категорий
+  // ── 2. Calculator category pages ───────────────────────────────────────────
+
   const categoryPages: MetadataRoute.Sitemap = CATEGORIES.map((cat) => ({
     url: `${BASE_URL}/kalkulyatory/${cat.slug}/`,
-    lastModified: now,
-    changeFrequency: "monthly" as const,
+    lastModified: buildDate,
+    changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
-  // Страницы калькуляторов
+  // ── 3. Individual calculator pages ─────────────────────────────────────────
+  //    Priority scales with popularity: top calculators get 0.9, rest 0.7
+
   const calculatorPages: MetadataRoute.Sitemap = ALL_CALCULATORS.map((calc) => ({
     url: `${BASE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`,
-    lastModified: now,
-    changeFrequency: "monthly" as const,
-    priority: 0.9,
+    lastModified: buildDate,
+    changeFrequency: "weekly" as const,
+    priority: calc.popularity >= 75 ? 0.9 : 0.7,
   }));
 
-  // Страницы инструментов
+  // ── 4. Tools pages ─────────────────────────────────────────────────────────
+
   const toolPages: MetadataRoute.Sitemap = [
-    { url: `${BASE_URL}/instrumenty/`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE_URL}/instrumenty/konverter/`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
-    { url: `${BASE_URL}/instrumenty/ploshchad-komnaty/`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
-    { url: `${BASE_URL}/instrumenty/kalkulyator/`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.5 },
-    { url: `${BASE_URL}/instrumenty/chek-listy/`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
+    { url: `${BASE_URL}/instrumenty/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.7 },
+    { url: `${BASE_URL}/instrumenty/konverter/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.6 },
+    { url: `${BASE_URL}/instrumenty/ploshchad-komnaty/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.6 },
+    { url: `${BASE_URL}/instrumenty/kalkulyator/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.5 },
+    { url: `${BASE_URL}/instrumenty/chek-listy/`, lastModified: buildDate, changeFrequency: "monthly" as const, priority: 0.7 },
   ];
 
-  // Страницы чек-листов
+  // ── 5. Individual checklist pages ──────────────────────────────────────────
+
   const checklistPages: MetadataRoute.Sitemap = ALL_CHECKLISTS.map((cl) => ({
     url: `${BASE_URL}/instrumenty/chek-listy/${cl.slug}/`,
-    lastModified: now,
+    lastModified: buildDate,
     changeFrequency: "monthly" as const,
     priority: 0.6,
   }));
 
-  // Страницы блога
+  // ── 6. Blog post pages ─────────────────────────────────────────────────────
+  //    lastModified from post.date, priority 0.7 for SEO content value
+
   const blogPages: MetadataRoute.Sitemap = ALL_POSTS.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
     lastModified: post.date,
     changeFrequency: "monthly" as const,
-    priority: 0.6,
+    priority: 0.7,
   }));
 
-  return [...staticPages, ...toolPages, ...categoryPages, ...calculatorPages, ...checklistPages, ...blogPages];
-}
+  // ── Merge all sections ─────────────────────────────────────────────────────
 
+  return [
+    ...staticPages,
+    ...categoryPages,
+    ...calculatorPages,
+    ...toolPages,
+    ...checklistPages,
+    ...blogPages,
+  ];
+}
