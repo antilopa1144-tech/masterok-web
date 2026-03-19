@@ -5,6 +5,7 @@ import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
+import { ALL_TOOLS } from "@/lib/tools";
 
 const META = {
   title: `Инструменты строителя — конвертер, площадь, чек-листы | ${SITE_NAME}`,
@@ -68,9 +69,39 @@ const TOOLS = [
   },
 ];
 
+function InstrumentyCollectionJsonLd() {
+  const toolPages = ALL_TOOLS.filter((t) => t.slug !== "");
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: META.title,
+    description: META.description,
+    url: PAGE_URL,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: toolPages.length,
+      itemListElement: toolPages.map((tool, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${SITE_URL}/instrumenty/${tool.slug}/`,
+        name: tool.title,
+      })),
+    },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Инструменты", item: PAGE_URL },
+      ],
+    },
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+}
+
 export default function InstrumentyPage() {
   return (
     <>
+      <InstrumentyCollectionJsonLd />
       {/* Hero */}
       <section className="border-b border-slate-200 dark:border-slate-800 bg-linear-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900">
         <div className="page-container-wide py-10 md:py-14">

@@ -29,9 +29,38 @@ const UI_TEXT = {
   askMikhalych: "Спросить Михалыча",
 } as const;
 
+function BlogCollectionJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: META.title,
+    description: META.description,
+    url: PAGE_URL,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: ALL_POSTS.length,
+      itemListElement: ALL_POSTS.slice(0, 20).map((post, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${SITE_URL}/blog/${post.slug}/`,
+        name: post.title,
+      })),
+    },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Блог", item: PAGE_URL },
+      ],
+    },
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+}
+
 export default function BlogPage() {
   return (
     <div>
+      <BlogCollectionJsonLd />
       {/* Hero */}
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-8">
