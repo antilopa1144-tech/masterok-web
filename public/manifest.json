@@ -11,13 +11,13 @@
   "icons": [
     {
       "src": "/apple-touch-icon.png",
-      "sizes": "192x192",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/apple-touch-icon.png",
-      "sizes": "192x192",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "maskable"
     },
@@ -38,22 +38,22 @@
       "name": "Калькулятор кирпича",
       "short_name": "Кирпич",
       "description": "Рассчитать кирпич для стены",
-      "url": "/instrumenty/kalkulyator/brick",
-      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+      "url": "/kalkulyatory/steny/kirpich/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
     },
     {
       "name": "Калькулятор штукатурки",
       "short_name": "Штукатурка",
       "description": "Рассчитать штукатурку для стен",
-      "url": "/instrumenty/kalkulyator/plaster",
-      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+      "url": "/kalkulyatory/steny/shtukaturka/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
     },
     {
       "name": "Калькулятор плитки",
       "short_name": "Плитка",
       "description": "Рассчитать плитку для пола/стены",
-      "url": "/instrumenty/kalkulyator/tile",
-      "icons": [{"src": "/favicon.svg", "sizes": "192x192"}]
+      "url": "/kalkulyatory/poly/plitka/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
     }
   ],
   "screenshots": [

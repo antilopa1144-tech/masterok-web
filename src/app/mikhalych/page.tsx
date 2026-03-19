@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import MikhalychChat from "@/components/mikhalych/MikhalychChat";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
   title: `Михалыч — AI-ассистент строителя | ${SITE_NAME}`,
@@ -10,10 +11,11 @@ const META = {
     "Спросите Михалыча — опытного строительного ИИ-мастера. Расчёты, технологии, советы по материалам. Отвечает как настоящий прораб.",
 } as const;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: META.title,
   description: META.description,
-};
+  url: `${SITE_URL}/mikhalych/`,
+});
 
 const UI_TEXT = {
   heroTitle: "Михалыч — AI-ассистент строителя",

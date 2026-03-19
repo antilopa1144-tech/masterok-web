@@ -206,37 +206,37 @@ export default function KalkulyatorPage() {
           {/* Кнопки */}
           <div className="grid grid-cols-4 gap-2 p-3 bg-slate-50 dark:bg-slate-900">
             {/* Ряд 1 */}
-            <button onClick={clear} className={`${BTN} col-span-2 bg-red-100 text-red-700 hover:bg-red-200 text-base`}>C</button>
-            <button onClick={backspace} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xl`}>⌫</button>
-            <button onClick={() => append("÷")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>÷</button>
+            <button onClick={clear} className={`${BTN} col-span-2 bg-red-100 text-red-700 hover:bg-red-200 text-base`} aria-label="Очистить">C</button>
+            <button onClick={backspace} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xl`} aria-label="Удалить последний символ">⌫</button>
+            <button onClick={() => append("÷")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`} aria-label="Разделить">÷</button>
 
             {/* Ряд 2 */}
             <button onClick={() => append("7")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>7</button>
             <button onClick={() => append("8")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>8</button>
             <button onClick={() => append("9")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>9</button>
-            <button onClick={() => append("×")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>×</button>
+            <button onClick={() => append("×")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`} aria-label="Умножить">×</button>
 
             {/* Ряд 3 */}
             <button onClick={() => append("4")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>4</button>
             <button onClick={() => append("5")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>5</button>
             <button onClick={() => append("6")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>6</button>
-            <button onClick={() => append("-")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>−</button>
+            <button onClick={() => append("-")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`} aria-label="Вычесть">−</button>
 
             {/* Ряд 4 */}
             <button onClick={() => append("1")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>1</button>
             <button onClick={() => append("2")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>2</button>
             <button onClick={() => append("3")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>3</button>
-            <button onClick={() => append("+")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`}>+</button>
+            <button onClick={() => append("+")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`} aria-label="Сложить">+</button>
 
             {/* Ряд 5 */}
-            <button onClick={toggleSign} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm`}>+/−</button>
+            <button onClick={toggleSign} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm`} aria-label="Сменить знак">+/−</button>
             <button onClick={() => append("0")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>0</button>
             <button onClick={() => append(".")} className={`${BTN} bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700`}>,</button>
             <button
               onClick={calculate}
               className={`${BTN} text-white`}
               style={{ backgroundColor: "#f97316" }}
-            >=</button>
+            aria-label="Вычислить">=</button>
           </div>
         </div>
 

@@ -94,7 +94,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // ── 4. Tools pages (dynamic from registry) ──────────────────────────────────
 
   const toolPages: MetadataRoute.Sitemap = ALL_TOOLS.map((tool) => ({
-    url: `${BASE_URL}/instrumenty/${tool.slug ? tool.slug + "/" : ""}`,
+    url: tool.slug ? `${BASE_URL}/instrumenty/${tool.slug}/` : `${BASE_URL}/instrumenty/`,
     lastModified: buildDate,
     changeFrequency: "monthly" as const,
     priority: tool.priority,

@@ -18,6 +18,7 @@ export async function GET() {
       <pubDate>${new Date(post.date).toUTCString()}</pubDate>
       <guid isPermaLink="true">${SITE_URL}/blog/${post.slug}/</guid>
       <category>${post.category}</category>
+      <author>info@getmasterok.ru (${SITE_NAME})</author>
     </item>`,
     )
     .join("");

@@ -89,6 +89,8 @@ export default function BlogPage() {
                     src={post.heroImage}
                     alt={post.heroImageAlt}
                     className="w-full h-40 object-cover"
+                    width={400}
+                    height={160}
                     loading="lazy"
                   />
                 </Link>

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+
+export const metadata: Metadata = {
+  title: "Страница не найдена | Мастерок",
+  description: "Запрошенная страница не найдена. Перейдите к каталогу строительных калькуляторов или на главную.",
+  robots: { index: false, follow: true },
+};
 
 const POPULAR = ALL_CALCULATORS.filter((c) => c.popularity >= 9).slice(0, 6);
 

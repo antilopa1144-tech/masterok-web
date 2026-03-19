@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
   title: `Скачать приложение ${SITE_NAME} — строительные калькуляторы`,
@@ -8,10 +9,11 @@ const META = {
     `Скачайте бесплатное приложение ${SITE_NAME} для Android. 50+ строительных калькуляторов, работает без интернета, сохранение расчётов, AI-ассистент Михалыч.`,
 } as const;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: META.title,
   description: META.description,
-};
+  url: `${SITE_URL}/prilozhenie/`,
+});
 
 const UI_TEXT = {
   storeBadge: "📱 Доступно в RuStore",

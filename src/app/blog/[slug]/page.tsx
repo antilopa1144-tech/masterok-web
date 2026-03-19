@@ -261,7 +261,7 @@ export default async function BlogPostPage({ params }: Props) {
 
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6 max-w-3xl">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-4 flex-wrap">
+          <nav className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-4 flex-wrap">
             <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300 no-underline">
               {UI_TEXT.breadcrumbHome}
             </Link>
@@ -304,6 +304,8 @@ export default async function BlogPostPage({ params }: Props) {
                 src={post.heroImage}
                 alt={post.heroImageAlt}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
+                width={800}
+                height={320}
                 loading="eager"
                 fetchPriority="high"
               />
@@ -365,6 +367,8 @@ export default async function BlogPostPage({ params }: Props) {
                         src={rp.heroImage}
                         alt={rp.heroImageAlt}
                         className="w-full h-32 object-cover"
+                        width={400}
+                        height={128}
                         loading="lazy"
                       />
                     </Link>
