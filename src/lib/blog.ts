@@ -2827,3 +2827,29 @@ export function getPostBySlug(slug: string): BlogPost | undefined {
   return ALL_POSTS.find((p) => p.slug === slug);
 }
 
+/** Get all unique tags across all posts, sorted alphabetically */
+export function getAllTags(): string[] {
+  const tags = new Set<string>();
+  for (const post of ALL_POSTS) {
+    for (const tag of post.tags) tags.add(tag);
+  }
+  return [...tags].sort();
+}
+
+/** Get posts filtered by tag */
+export function getPostsByTag(tag: string): BlogPost[] {
+  return ALL_POSTS.filter((p) => p.tags.includes(tag));
+}
+
+/** Convert tag string to URL-safe slug */
+export function tagToSlug(tag: string): string {
+  return encodeURIComponent(tag.toLowerCase().replace(/\s+/g, "-"));
+}
+
+/** Convert slug back to tag (find matching tag from ALL_POSTS) */
+export function slugToTag(slug: string): string | undefined {
+  const decoded = decodeURIComponent(slug);
+  const allTags = getAllTags();
+  return allTags.find((t) => t.toLowerCase().replace(/\s+/g, "-") === decoded);
+}
+

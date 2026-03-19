@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
-import { ALL_POSTS } from "@/lib/blog";
+import { ALL_POSTS, getAllTags, tagToSlug } from "@/lib/blog";
 import { ALL_TOOLS } from "@/lib/tools";
 import { SITE_URL } from "@/lib/site";
 
@@ -119,6 +119,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  // ── 7. Blog tag pages ───────────────────────────────────────────────────────
+
+  const tagPages: MetadataRoute.Sitemap = getAllTags().map((tag) => ({
+    url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
+    lastModified: latestPostDate,
+    changeFrequency: "weekly" as const,
+    priority: 0.5,
+  }));
+
   // ── Merge all sections ─────────────────────────────────────────────────────
 
   return [
@@ -128,5 +137,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...toolPages,
     ...checklistPages,
     ...blogPages,
+    ...tagPages,
   ];
 }

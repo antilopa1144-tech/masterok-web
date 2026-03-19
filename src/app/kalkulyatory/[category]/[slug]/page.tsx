@@ -26,7 +26,10 @@ const UI_TEXT = {
   relatedTitle: "Похожие калькуляторы",
   maybeUsefulTitle: "Может пригодиться",
   crossCategoryTitle: "Другие популярные калькуляторы",
+  updatedLabel: "Обновлено",
 } as const;
+
+const BUILD_DATE = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -137,6 +140,9 @@ export default async function CalculatorPage({ params }: PageProps) {
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.standardsBadge}
+                </span>
+                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                  {UI_TEXT.updatedLabel} {BUILD_DATE}
                 </span>
               </div>
             </div>

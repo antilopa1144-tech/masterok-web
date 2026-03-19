@@ -42,6 +42,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       priceCurrency: "RUB",
       availability: "https://schema.org/InStock",
     },
+    dateModified: new Date().toISOString().split("T")[0],
     author: {
       "@type": "Organization",
       name: SITE_NAME,

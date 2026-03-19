@@ -171,6 +171,38 @@ export default function HomePage() {
     },
   };
 
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Калькуляторы бесплатные?",
+        acceptedAnswer: { "@type": "Answer", text: "Да, все калькуляторы полностью бесплатные, без регистрации и ограничений. Расчёты доступны онлайн на сайте и в мобильном приложении." },
+      },
+      {
+        "@type": "Question",
+        name: "По каким нормам считают калькуляторы?",
+        acceptedAnswer: { "@type": "Answer", text: "Расчёты основаны на актуальных нормативах: ГОСТ, СНиП, СП. Нормы расхода материалов берутся из технических паспортов производителей и строительных справочников." },
+      },
+      {
+        "@type": "Question",
+        name: "Можно ли доверять результатам?",
+        acceptedAnswer: { "@type": "Answer", text: "Калькуляторы показывают три сценария (минимум, рекомендуемый, максимум) и позволяют выбрать режим точности — от базового до профессионального. Это даёт вилку для закупки, а не одну цифру." },
+      },
+      {
+        "@type": "Question",
+        name: "Есть ли мобильное приложение?",
+        acceptedAnswer: { "@type": "Answer", text: "Да, приложение Мастерок для Android доступно в RuStore. Все 60+ калькуляторов работают без интернета, расчёты сохраняются в истории." },
+      },
+      {
+        "@type": "Question",
+        name: "Кто такой Михалыч?",
+        acceptedAnswer: { "@type": "Answer", text: "Михалыч — AI-ассистент строителя. Отвечает на вопросы по материалам, технологиям и нормам расхода. Работает прямо в калькуляторах и видит ваши параметры расчёта." },
+      },
+    ],
+  };
+
   const stats = [{ val: `${totalCount}+`, label: "Калькуляторов" }, ...UI_TEXT.stats];
 
   return (
@@ -182,6 +214,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
