@@ -68,7 +68,7 @@ export const insulationDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = insulationSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalInsulation(spec, inputs, factorTable);
+    const canonical = computeCanonicalInsulation(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

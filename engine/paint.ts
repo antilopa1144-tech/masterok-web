@@ -11,6 +11,7 @@ import type {
   PaintSurfaceSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface PaintInputs {
   inputMode?: number;
@@ -32,6 +33,7 @@ interface PaintInputs {
   coats?: number;
   coverage?: number;
   canSize?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 interface WorkAreaResolution {
@@ -255,6 +257,8 @@ export function computeCanonicalPaint(
   inputs: PaintInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const work = resolveWorkArea(spec, inputs);
   const paintType = resolvePaintType(spec, inputs.paintType);
   const effectiveWallArea = work.wallArea;
@@ -268,7 +272,9 @@ export function computeCanonicalPaint(
   const lPerSqm = (coats * surface.multiplier * preparation.multiplier * color.multiplier) / coverage;
   const wallBaseExactNeed = effectiveWallArea * lPerSqm;
   const ceilingBaseExactNeed = effectiveCeilingArea * lPerSqm * spec.material_rules.ceiling_premium_factor;
-  const baseExactNeed = wallBaseExactNeed + ceilingBaseExactNeed;
+  const baseExactNeedRaw = wallBaseExactNeed + ceilingBaseExactNeed;
+  const accuracyMult = getPrimaryMultiplier("paint", accuracyMode);
+  const baseExactNeed = baseExactNeedRaw * accuracyMult;
   const packageOptions = resolvePackagingOptions(spec, inputs.canSize).map((option) => ({
     size: option.size,
     label: option.label,
@@ -380,5 +386,7 @@ export function computeCanonicalPaint(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactNeedRaw, "paint", accuracyMode).explanation,
   };
 }

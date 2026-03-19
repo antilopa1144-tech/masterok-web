@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { tileAdhesiveDef } from "../formulas/tile-adhesive";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = tileAdhesiveDef.calculate.bind(tileAdhesiveDef);
+const calc = withBasicAccuracy(tileAdhesiveDef.calculate.bind(tileAdhesiveDef));
 
 describe("Плиточный клей", () => {
   describe("Стандартный расчёт", () => {

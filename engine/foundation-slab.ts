@@ -7,6 +7,7 @@ import type {
   FoundationSlabCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface FoundationSlabInputs {
   area?: number;
@@ -14,6 +15,7 @@ interface FoundationSlabInputs {
   rebarDiam?: number;
   rebarStep?: number;
   insulationThickness?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: FoundationSlabCanonicalSpec, key: string, fallback: number): number {
@@ -110,6 +112,9 @@ export function computeCanonicalFoundationSlab(
   inputs: FoundationSlabInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = Math.max(10, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 60)));
   const thickness = Math.max(150, Math.min(300, inputs.thickness ?? getInputDefault(spec, "thickness", 200)));
   const rebarDiam = Math.max(10, Math.min(16, inputs.rebarDiam ?? getInputDefault(spec, "rebarDiam", 12)));
@@ -119,7 +124,8 @@ export function computeCanonicalFoundationSlab(
   const weightPerMeter = spec.material_rules.weight_per_meter[String(rebarDiam)] ?? 0.888;
   const side = Math.sqrt(area);
   const perimeter = side * 4;
-  const concreteM3 = roundDisplay(area * (thickness / 1000) * spec.material_rules.concrete_reserve, 6);
+  const concreteM3Raw = roundDisplay(area * (thickness / 1000) * spec.material_rules.concrete_reserve, 6);
+  const concreteM3 = roundDisplay(concreteM3Raw * accuracyMult, 6);
   const barsPerDir = Math.ceil(side / (rebarStep / 1000)) + 1;
   const totalBarLen = barsPerDir * side * 2 * 2;
   const rebarKg = roundDisplay(totalBarLen * weightPerMeter, 6);
@@ -232,5 +238,7 @@ export function computeCanonicalFoundationSlab(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(concreteM3Raw, "generic", accuracyMode).explanation,
   };
 }

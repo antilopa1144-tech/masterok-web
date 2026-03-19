@@ -1,7 +1,7 @@
 "use client";
 
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
-import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ } from "./CalculatorParts";
+import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -23,11 +23,13 @@ export default function CalculatorWidget({ calculator }: Props) {
     category,
     visibleFields,
     calcHistory,
+    accuracyMode,
     handleChange,
     handleCalculate,
     handleReset,
     handleShare,
     handleRestoreHistory,
+    handleAccuracyModeChange,
     applyPreset,
   } = useCalculator(calculator);
 
@@ -88,6 +90,12 @@ export default function CalculatorWidget({ calculator }: Props) {
             accentColor={accentColor}
           />
         ))}
+
+        <AccuracyModeSelector
+          mode={accuracyMode}
+          onChange={handleAccuracyModeChange}
+          accentColor={accentColor}
+        />
 
         <button
           onClick={handleCalculate}

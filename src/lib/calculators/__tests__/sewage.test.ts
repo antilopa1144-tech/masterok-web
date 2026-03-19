@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { sewageDef } from "../formulas/sewage";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = sewageDef.calculate.bind(sewageDef);
+const calc = withBasicAccuracy(sewageDef.calculate.bind(sewageDef));
 
 describe("Калькулятор септика", () => {
   describe("4 человека, бетонные кольца, 2 камеры, песок", () => {

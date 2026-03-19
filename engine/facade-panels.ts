@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -59,6 +60,7 @@ interface FacadePanelsInputs {
   panelType?: number;
   substructure?: number;
   insulationThickness?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -74,6 +76,9 @@ export function computeCanonicalFacadePanels(
   inputs: FacadePanelsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = Math.max(10, Math.min(2000, Math.round(inputs.area ?? getInputDefault(spec, "area", 100))));
   const panelType = Math.max(0, Math.min(3, Math.round(inputs.panelType ?? getInputDefault(spec, "panelType", 0))));
   const substructure = Math.max(0, Math.min(2, Math.round(inputs.substructure ?? getInputDefault(spec, "substructure", 0))));
@@ -83,7 +88,8 @@ export function computeCanonicalFacadePanels(
   const panelArea = PANEL_AREAS[panelType] ?? PANEL_AREAS[0];
 
   /* ─── formulas ─── */
-  const panels = Math.ceil(area * PANEL_RESERVE / panelArea);
+  const panelsRaw = Math.ceil(area * PANEL_RESERVE / panelArea);
+  const panels = Math.ceil(panelsRaw * accuracyMult);
   const brackets = Math.ceil(area / BRACKET_SPACING_M2 * BRACKET_RESERVE);
   const guides = Math.ceil(area / GUIDE_SPACING * GUIDE_RESERVE / GUIDE_LENGTH);
   const fasteners = Math.ceil(panels * FASTENERS_PER_PANEL * FASTENER_RESERVE);
@@ -266,6 +272,8 @@ export function computeCanonicalFacadePanels(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(panelsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

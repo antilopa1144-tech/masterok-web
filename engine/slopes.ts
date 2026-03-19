@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -53,6 +54,7 @@ interface SlopesInputs {
   openingType?: number;
   slopeWidth?: number;
   finishType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -68,6 +70,9 @@ export function computeCanonicalSlopes(
   inputs: SlopesInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const openingCount = Math.max(1, Math.min(30, Math.round(inputs.openingCount ?? getInputDefault(spec, "openingCount", 5))));
   const openingType = Math.max(0, Math.min(3, Math.round(inputs.openingType ?? getInputDefault(spec, "openingType", 0))));
   const slopeWidth = Math.max(150, Math.min(500, Math.round(inputs.slopeWidth ?? getInputDefault(spec, "slopeWidth", 350))));
@@ -138,6 +143,9 @@ export function computeCanonicalSlopes(
     packageLabel = "gkl-sheet";
     packageUnit = "листов";
   }
+
+  const basePrimaryRaw = basePrimary;
+  basePrimary = Math.ceil(basePrimary * accuracyMult);
 
   const packageOptions = [{
     size: 1,
@@ -333,5 +341,7 @@ export function computeCanonicalSlopes(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

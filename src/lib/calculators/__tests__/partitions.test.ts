@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { partitionsDef } from "../formulas/partitions";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = partitionsDef.calculate.bind(partitionsDef);
+const calc = withBasicAccuracy(partitionsDef.calculate.bind(partitionsDef));
 
 describe("Калькулятор перегородок из блоков", () => {
   describe("Газобетон D500 (blockType=0), 5x2.7 м, толщина 100 мм", () => {

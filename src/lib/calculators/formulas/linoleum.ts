@@ -91,6 +91,7 @@ export const linoleumDef: CalculatorDefinition = {
         needGlue: inputs.withGlue ?? 0,
         needPlinth: inputs.withPlinth ?? 1,
         needTape: inputs.needTape ?? 1,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

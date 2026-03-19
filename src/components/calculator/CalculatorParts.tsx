@@ -6,6 +6,7 @@ import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { pluralizeRu, pluralizePackageUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
+import { ACCURACY_MODES, ACCURACY_MODE_LABELS, ACCURACY_MODE_DESCRIPTIONS, type AccuracyMode } from "../../../engine/accuracy";
 
 // ── Округление материалов по единицам ────────────────────────────────────────
 
@@ -21,6 +22,48 @@ function formatMaterialQty(value: number, unit: string): string {
   // Весовые/объёмные — до 1 знака
   if (Number.isInteger(value)) return value.toLocaleString("ru-RU");
   return value.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
+}
+
+// ── Селектор точности расчёта ────────────────────────────────────────────────
+
+export function AccuracyModeSelector({
+  mode,
+  onChange,
+  accentColor,
+}: {
+  mode: AccuracyMode;
+  onChange: (mode: AccuracyMode) => void;
+  accentColor: string;
+}) {
+  return (
+    <div>
+      <label className="input-label">{CALCULATOR_UI_TEXT.accuracyModeTitle}</label>
+      <div className="grid grid-cols-3 gap-2">
+        {ACCURACY_MODES.map((m) => {
+          const isActive = mode === m;
+          return (
+            <button
+              key={m}
+              onClick={() => onChange(m)}
+              className={`relative px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                isActive
+                  ? "border-transparent text-white shadow-sm"
+                  : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+              }`}
+              style={isActive ? { backgroundColor: accentColor } : {}}
+            >
+              <span className="block">{ACCURACY_MODE_LABELS[m]}</span>
+              <span className={`block text-[10px] font-normal mt-0.5 ${
+                isActive ? "text-white/80" : "text-slate-400 dark:text-slate-500"
+              }`}>
+                {ACCURACY_MODE_DESCRIPTIONS[m]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ── Компонент экспертных советов ─────────────────────────────────────────────
@@ -420,6 +463,25 @@ export function ResultBlock({
               <span className="shrink-0">⚠️</span>
               <span>{w}</span>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Режим точности */}
+      {result.accuracyExplanation && result.accuracyExplanation.appliedModifiers.length > 0 && (
+        <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl p-4 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+              {result.accuracyExplanation.modeLabel} режим
+            </span>
+            {result.accuracyExplanation.combinedMultiplier !== 1 && (
+              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">
+                &times;{result.accuracyExplanation.combinedMultiplier.toFixed(3)}
+              </span>
+            )}
+          </div>
+          {result.accuracyExplanation.notes.map((note, i) => (
+            <p key={i} className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">{note}</p>
           ))}
         </div>
       )}

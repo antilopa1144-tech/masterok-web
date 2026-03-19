@@ -7,6 +7,7 @@ import type {
   RebarCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface RebarInputs {
   structureType?: number;
@@ -15,6 +16,7 @@ interface RebarInputs {
   height?: number;
   mainDiameter?: number;
   gridStep?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 // GOST 5781-82 weight table (kg per linear meter)
@@ -246,6 +248,9 @@ export function computeCanonicalRebar(
   inputs: RebarInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const structureType = Math.max(0, Math.min(3, Math.round(inputs.structureType ?? getInputDefault(spec, "structureType", 0))));
   const length = Math.max(1, Math.min(50, inputs.length ?? getInputDefault(spec, "length", 10)));
   const width = Math.max(1, Math.min(50, inputs.width ?? getInputDefault(spec, "width", 8)));
@@ -284,7 +289,8 @@ export function computeCanonicalRebar(
 
   const wireLength = calc.intersections * WIRE_LENGTH_PER_INTERSECTION;
   const wireKg = wireLength * WIRE_KG_PER_M;
-  const mainRebarKg = calc.mainRebarLength * (WEIGHT_PER_METER[mainDiameter] ?? WEIGHT_PER_METER[12]);
+  const mainRebarKgRaw = calc.mainRebarLength * (WEIGHT_PER_METER[mainDiameter] ?? WEIGHT_PER_METER[12]);
+  const mainRebarKg = roundDisplay(mainRebarKgRaw * accuracyMult, 6);
   const mainRods = Math.ceil(calc.mainRebarLength / STANDARD_ROD_LENGTH);
   const tieRebarKg = calc.tieRebarLength * (WEIGHT_PER_METER[calc.secondaryDiameter] ?? WEIGHT_PER_METER[6]);
 
@@ -390,5 +396,7 @@ export function computeCanonicalRebar(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(mainRebarKgRaw, "generic", accuracyMode).explanation,
   };
 }

@@ -161,6 +161,7 @@ export const laminateDef: CalculatorDefinition = {
         hasUnderlayment: inputs.hasUnderlayment,
         underlaymentRollArea: inputs.underlaymentRoll,
         doorThresholds: inputs.doorThresholds,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

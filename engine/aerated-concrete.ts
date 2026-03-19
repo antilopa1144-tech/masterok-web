@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface AeratedConcreteInputs {
   inputMode?: number;
@@ -17,6 +18,7 @@ interface AeratedConcreteInputs {
   blockThickness?: number;
   blockHeight?: number;
   blockLength?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: AeratedConcreteCanonicalSpec, key: string, fallback: number): number {
@@ -72,6 +74,9 @@ export function computeCanonicalAeratedConcrete(
   inputs: AeratedConcreteInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const areaInfo = resolveArea(spec, inputs);
   const openingsArea = Math.max(0, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 5));
   const blockThickness = resolveBlockThickness(spec, inputs);
@@ -84,7 +89,7 @@ export function computeCanonicalAeratedConcrete(
   const blockFaceArea = (blockHeight / 1000) * (blockLength / 1000);
   const blocksPerSqm = 1 / blockFaceArea;
   const blocksNet = netArea * blocksPerSqm;
-  const blocksWithReserve = Math.ceil(blocksNet * spec.material_rules.block_reserve);
+  const blocksWithReserve = Math.ceil(blocksNet * spec.material_rules.block_reserve * accuracyMult);
 
   const volume = roundDisplay(netArea * (blockThickness / 1000), 6);
 
@@ -248,6 +253,8 @@ export function computeCanonicalAeratedConcrete(
       recPurchaseBlocks: recScenario.purchase_quantity,
       maxPurchaseBlocks: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(Math.ceil(blocksNet * spec.material_rules.block_reserve), "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -50,6 +51,7 @@ interface SidingInputs {
   height?: number;
   sidingType?: number;
   exteriorCorners?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -65,6 +67,9 @@ export function computeCanonicalSiding(
   inputs: SidingInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const facadeArea = Math.max(10, Math.min(1000, Math.round(inputs.facadeArea ?? getInputDefault(spec, "facadeArea", 100))));
   const openingsArea = Math.max(0, Math.min(100, Math.round(inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 10))));
   const perimeter = Math.max(10, Math.min(200, Math.round(inputs.perimeter ?? getInputDefault(spec, "perimeter", 40))));
@@ -77,7 +82,8 @@ export function computeCanonicalSiding(
 
   /* ─── formulas ─── */
   const netArea = facadeArea - openingsArea;
-  const panels = Math.ceil(netArea / panelArea * PANEL_RESERVE);
+  const panelsRaw = Math.ceil(netArea / panelArea * PANEL_RESERVE);
+  const panels = Math.ceil(panelsRaw * accuracyMult);
   const starter = Math.ceil((perimeter + Math.sqrt(openingsArea) * 4) / STARTER_LENGTH);
   const jProfile = Math.ceil((Math.sqrt(openingsArea) * 4 * 2 + perimeter) * J_RESERVE / J_PROFILE_LENGTH);
   const corners = Math.ceil(height * exteriorCorners * CORNER_RESERVE / CORNER_LENGTH);
@@ -245,6 +251,8 @@ export function computeCanonicalSiding(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(panelsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ceilingInsulationDef } from "../formulas/ceiling-insulation";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = ceilingInsulationDef.calculate.bind(ceilingInsulationDef);
+const calc = withBasicAccuracy(ceilingInsulationDef.calculate.bind(ceilingInsulationDef));
 
 describe("Утепление потолка", () => {
   describe("Минераловатные плиты (insulationType=0)", () => {

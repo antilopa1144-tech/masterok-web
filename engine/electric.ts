@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface ElectricInputs {
   apartmentArea?: number;
@@ -15,6 +16,7 @@ interface ElectricInputs {
   wiringType?: number;
   hasKitchen?: number;
   reserve?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -56,6 +58,9 @@ export function computeCanonicalElectric(
   inputs: ElectricInputs,
   factorTable: FactorTable = ELECTRIC_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const apartmentArea = Math.max(20, Math.min(500, inputs.apartmentArea ?? getInputDefault(spec, "apartmentArea", 60)));
   const roomsCount = Math.max(1, Math.min(10, Math.round(inputs.roomsCount ?? getInputDefault(spec, "roomsCount", 3))));
   const ceilingHeight = Math.max(2.4, Math.min(4.0, inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7)));
@@ -187,7 +192,8 @@ export function computeCanonicalElectric(
   );
 
   /* ─── scenarios ─── */
-  const basePrimary = cable15spools + cable25spools;
+  const basePrimaryRaw = cable15spools + cable25spools;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{ size: 1, label: "electric-cable-spool", unit: "бухт" }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
@@ -276,5 +282,7 @@ export function computeCanonicalElectric(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

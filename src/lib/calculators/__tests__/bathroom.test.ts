@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { bathroomDef } from "../formulas/bathroom";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = bathroomDef.calculate.bind(bathroomDef);
+const calc = withBasicAccuracy(bathroomDef.calculate.bind(bathroomDef));
 
 describe("Калькулятор ванной комнаты", () => {
   describe("Стандартная ванная 2.5x1.7, h=2.5, плитка 300x300/200x300, гидроизоляция", () => {

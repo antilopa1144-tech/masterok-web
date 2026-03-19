@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface BrickInputs {
   inputMode?: number;
@@ -17,6 +18,7 @@ interface BrickInputs {
   wallThickness?: number;
   workingConditions?: number;
   wasteMode?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: BrickCanonicalSpec, key: string, fallback: number): number {
@@ -134,6 +136,9 @@ export function computeCanonicalBrick(
   inputs: BrickInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const areaInfo = resolveArea(spec, inputs);
   const brickType = resolveBrickType(spec, inputs);
   const wallThickness = resolveWallThickness(spec, inputs);
@@ -147,7 +152,7 @@ export function computeCanonicalBrick(
   const wasteCoeff = spec.normative_formula.waste_coeffs[String(wasteMode)] ?? 1.05;
 
   const area = areaInfo.area;
-  const baseBricksNeeded = area * bricksPerSqm * wasteCoeff;
+  const baseBricksNeeded = area * bricksPerSqm * wasteCoeff * accuracyMult;
 
   const mortarVolume = roundDisplay(area * mortarPerSqm * spec.material_rules.mortar_loss_factor * conditionsMultiplier, 6);
   const cementKg = roundDisplay(mortarVolume * spec.material_rules.cement_kg_per_m3, 3);
@@ -268,6 +273,8 @@ export function computeCanonicalBrick(
       recPurchaseBricks: recScenario.purchase_quantity,
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(area * bricksPerSqm * wasteCoeff, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

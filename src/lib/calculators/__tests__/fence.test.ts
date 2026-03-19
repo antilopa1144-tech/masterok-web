@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { fenceDef } from "../formulas/fence";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = fenceDef.calculate.bind(fenceDef);
+const calc = withBasicAccuracy(fenceDef.calculate.bind(fenceDef));
 
 describe("Забор", () => {
   describe("Профнастил, 50 м, высота 2 м, шаг 2.5 м, 1 ворота, 1 калитка", () => {

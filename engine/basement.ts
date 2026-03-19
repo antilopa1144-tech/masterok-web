@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -47,6 +48,7 @@ interface BasementInputs {
   wallThickness?: number;
   floorThickness?: number;
   waterproofType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -62,6 +64,9 @@ export function computeCanonicalBasement(
   inputs: BasementInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const length = Math.max(3, Math.min(30, inputs.length ?? getInputDefault(spec, "length", 8)));
   const width = Math.max(3, Math.min(20, inputs.width ?? getInputDefault(spec, "width", 6)));
   const depth = Math.max(1.5, Math.min(4, inputs.depth ?? getInputDefault(spec, "depth", 2.5)));
@@ -108,7 +113,8 @@ export function computeCanonicalBasement(
 
   /* ─── scenarios ─── */
   const totalConcrete = roundDisplay(floorConcrete + wallConcrete, 3);
-  const basePrimary = totalConcrete;
+  const basePrimaryRaw = totalConcrete;
+  const basePrimary = roundDisplay(basePrimaryRaw * accuracyMult, 3);
   const packageOptions = [{
     size: 1,
     label: "concrete-m3",
@@ -289,5 +295,7 @@ export function computeCanonicalBasement(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { rebarDef } from "../formulas/rebar";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = rebarDef.calculate.bind(rebarDef);
+const calc = withBasicAccuracy(rebarDef.calculate.bind(rebarDef));
 
 describe("Калькулятор арматуры", () => {
   describe("Плита 10×8, h=0.3, Ø12, шаг 200", () => {

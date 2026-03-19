@@ -80,7 +80,7 @@ export const primerDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs): import("../types").CalculatorResult {
-    return computeCanonicalPrimer(primerCanonicalSpec, inputs, factorTables.factors);
+    return computeCanonicalPrimer(primerCanonicalSpec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTables.factors);
   },
   formulaDescription: `
 **Расход грунтовки:**

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { wallPanelsDef } from "../formulas/wall-panels";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = wallPanelsDef.calculate.bind(wallPanelsDef);
+const calc = withBasicAccuracy(wallPanelsDef.calculate.bind(wallPanelsDef));
 
 describe("Калькулятор панелей для стен", () => {
   describe("ПВХ панели (panelType=0), 20 м², на клей (mountMethod=0)", () => {

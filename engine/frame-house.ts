@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -58,6 +59,7 @@ interface FrameHouseInputs {
   insulationType?: number;
   outerSheathing?: number;
   innerSheathing?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -73,6 +75,9 @@ export function computeCanonicalFrameHouse(
   inputs: FrameHouseInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const wallLength = Math.max(1, Math.min(100, inputs.wallLength ?? getInputDefault(spec, "wallLength", 30)));
   const wallHeight = Math.max(2, Math.min(4, inputs.wallHeight ?? getInputDefault(spec, "wallHeight", 2.7)));
   const openingsArea = Math.max(0, Math.min(50, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 10)));
@@ -113,7 +118,8 @@ export function computeCanonicalFrameHouse(
   const nailsKg = Math.ceil(studs * NAILS_PER_STUD * STUD_RESERVE / NAIL_PER_KG * 10) / 10;
 
   /* ─── scenarios ─── */
-  const basePrimary = totalPlates;
+  const basePrimaryRaw = totalPlates;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{
     size: PACK_SIZE,
     label: "insulation-pack-8",
@@ -303,5 +309,7 @@ export function computeCanonicalFrameHouse(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

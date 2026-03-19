@@ -91,7 +91,7 @@ export const drywallDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = drywallSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalDrywall(spec, inputs, factorTable);
+    const canonical = computeCanonicalDrywall(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

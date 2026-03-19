@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -56,6 +57,7 @@ interface FacadeBrickInputs {
   brickType?: number;
   jointThickness?: number;
   withTie?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -71,6 +73,9 @@ export function computeCanonicalFacadeBrick(
   inputs: FacadeBrickInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = Math.max(5, Math.min(1000, inputs.area ?? getInputDefault(spec, "area", 80)));
   const brickType = Math.max(0, Math.min(3, Math.round(inputs.brickType ?? getInputDefault(spec, "brickType", 0))));
   const jointThickness = Math.max(8, Math.min(12, inputs.jointThickness ?? getInputDefault(spec, "jointThickness", 10)));
@@ -83,7 +88,7 @@ export function computeCanonicalFacadeBrick(
   const h = (dim.h + jointMm) / 1000;
   const bricksPerM2 = roundDisplay(1 / (l * h), 3);
   const totalBricks = roundDisplay(area * bricksPerM2, 3);
-  const bricksWithReserve = Math.ceil(totalBricks * BRICK_RESERVE);
+  const bricksWithReserve = Math.ceil(totalBricks * BRICK_RESERVE * accuracyMult);
 
   /* ─── mortar / cement / sand ─── */
   const masonryVolume = roundDisplay(area * MASONRY_THICKNESS, 6);
@@ -271,6 +276,8 @@ export function computeCanonicalFacadeBrick(
       recPurchaseBricks: recScenario.purchase_quantity,
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(Math.ceil(totalBricks * BRICK_RESERVE), "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { sidingDef } from "../formulas/siding";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = sidingDef.calculate.bind(sidingDef);
+const calc = withBasicAccuracy(sidingDef.calculate.bind(sidingDef));
 
 describe("Сайдинг", () => {
   describe("Виниловый, 100 м² фасад, 10 м² проёмов, периметр 40 м, высота 5 м", () => {

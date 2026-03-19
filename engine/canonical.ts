@@ -1,5 +1,6 @@
 import type { FieldFactorName } from "./factors";
 import type { ScenarioBundle } from "./scenarios";
+import type { AccuracyMode, AccuracyExplanation } from "./accuracy";
 
 export interface CanonicalInputField {
   key: string;
@@ -27,6 +28,8 @@ export interface CanonicalCalculatorResult {
   warnings: string[];
   scenarios: ScenarioBundle;
   practicalNotes?: string[];
+  accuracyMode?: AccuracyMode;
+  accuracyExplanation?: AccuracyExplanation;
 }
 
 export interface CanonicalCalculatorSpecBase {

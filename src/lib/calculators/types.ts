@@ -92,6 +92,8 @@ export interface CalculatorResult {
   formulaVersion?: string;
   canonicalSpecId?: string;
   practicalNotes?: string[];
+  accuracyMode?: import("../../../engine/accuracy").AccuracyMode;
+  accuracyExplanation?: import("../../../engine/accuracy").AccuracyExplanation;
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;

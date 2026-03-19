@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { heatingDef } from "../formulas/heating";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = heatingDef.calculate.bind(heatingDef);
+const calc = withBasicAccuracy(heatingDef.calculate.bind(heatingDef));
 
 describe("Отопление и радиаторы", () => {
   describe("Секционный радиатор (radiatorType=0)", () => {

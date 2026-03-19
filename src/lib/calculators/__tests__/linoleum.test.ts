@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import linoleumFixture from "../../../../tests/fixtures/linoleum-canonical-parity.json";
 import { linoleumDef } from "../formulas/linoleum";
 import { runCanonicalParitySuite } from "./canonical-parity";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
-const calc = linoleumDef.calculate.bind(linoleumDef);
+const calc = withBasicAccuracy(linoleumDef.calculate.bind(linoleumDef));
 
 describe("Калькулятор линолеума", () => {
   it("декларирует formulaVersion для canonical linoleum", () => {

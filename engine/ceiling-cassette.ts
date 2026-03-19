@@ -7,11 +7,13 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface CeilingCassetteInputs {
   area?: number;
   cassetteSize?: number;
   roomLength?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -50,6 +52,9 @@ export function computeCanonicalCeilingCassette(
   inputs: CeilingCassetteInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const cassetteSize = resolveCassetteSize(spec, inputs);
   const roomLength = resolveRoomLength(spec, inputs);
@@ -60,7 +65,8 @@ export function computeCanonicalCeilingCassette(
   /* Cassettes */
   const cassPerRow = Math.ceil(roomLength / cassetteDim);
   const rows = Math.ceil(roomWidth / cassetteDim);
-  const totalCass = Math.ceil(rows * cassPerRow * CASSETTE_RESERVE);
+  const totalCassRaw = Math.ceil(rows * cassPerRow * CASSETTE_RESERVE);
+  const totalCass = Math.ceil(totalCassRaw * accuracyMult);
 
   /* Main profiles (T-bar) */
   const mainRows = Math.ceil(roomWidth / MAIN_PROFILE_SPACING) + 1;
@@ -199,6 +205,8 @@ export function computeCanonicalCeilingCassette(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalCassRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

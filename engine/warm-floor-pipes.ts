@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface WarmFloorPipesInputs {
   inputMode?: number;
@@ -15,6 +16,7 @@ interface WarmFloorPipesInputs {
   area?: number;
   pipeStep?: number;
   pipeType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -93,6 +95,9 @@ export function computeCanonicalWarmFloorPipes(
   inputs: WarmFloorPipesInputs,
   factorTable: FactorTable = WARM_FLOOR_PIPES_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const work = resolveArea(spec, inputs);
   const area = work.area;
   const perimeter = work.perimeter;
@@ -116,7 +121,8 @@ export function computeCanonicalWarmFloorPipes(
   const screedBags = Math.ceil(area * SCREED_THICKNESS_M * SCREED_DENSITY / SCREED_BAG_KG);
 
   /* ─── scenarios ─── */
-  const basePrimary = totalPipe;
+  const basePrimaryRaw = totalPipe;
+  const basePrimary = roundDisplay(basePrimaryRaw * accuracyMult, 3);
   const packageOptions = [{ size: PIPE_COIL_M, label: `pipe-coil-${PIPE_COIL_M}m`, unit: "м" }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
@@ -255,5 +261,7 @@ export function computeCanonicalWarmFloorPipes(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

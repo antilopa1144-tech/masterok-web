@@ -40,6 +40,17 @@ export const CALCULATOR_UI_TEXT = {
   printTitle: "Распечатать",
   print: "Печать",
   total: "Итого",
+  accuracyModeTitle: "Точность расчёта",
+  accuracyModes: {
+    basic: "Базовый",
+    realistic: "Реальный",
+    professional: "Профессиональный",
+  },
+  accuracyModeDescriptions: {
+    basic: "для быстрой оценки",
+    realistic: "для обычного ремонта",
+    professional: "для сложных условий и закупки с запасом",
+  },
   copyLinkPrompt: "Скопируйте ссылку:",
   mikhalychContextBase: (calculatorTitle: string, fieldLines: string) => `Калькулятор "${calculatorTitle}". Параметры: ${fieldLines}.`,
   mikhalychContextResult: (matLines: string) => ` Результат расчёта: ${matLines}.`,

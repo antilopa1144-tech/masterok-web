@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ceilingStretchDef } from "../formulas/ceiling-stretch";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = ceilingStretchDef.calculate.bind(ceilingStretchDef);
+const calc = withBasicAccuracy(ceilingStretchDef.calculate.bind(ceilingStretchDef));
 
 describe("Натяжной потолок", () => {
   describe("Стандартная комната 20 м², ПВХ глянец (type=0)", () => {

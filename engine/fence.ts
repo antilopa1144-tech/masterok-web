@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -45,6 +46,7 @@ interface FenceInputs {
   postStep?: number;
   gatesCount?: number;
   wicketsCount?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -60,6 +62,9 @@ export function computeCanonicalFence(
   inputs: FenceInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const fenceLength = Math.max(5, Math.min(500, inputs.fenceLength ?? getInputDefault(spec, "fenceLength", 50)));
   const fenceHeight = Math.max(1, Math.min(3, inputs.fenceHeight ?? getInputDefault(spec, "fenceHeight", 2)));
   const fenceType = Math.max(0, Math.min(2, Math.round(inputs.fenceType ?? getInputDefault(spec, "fenceType", 0))));
@@ -108,7 +113,8 @@ export function computeCanonicalFence(
   }
 
   /* ─── scenarios ─── */
-  const basePrimary = fenceType === 0 ? sheets : fenceType === 1 ? rolls : slats;
+  const basePrimaryRaw = fenceType === 0 ? sheets : fenceType === 1 ? rolls : slats;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageUnit = fenceType === 0 ? "шт" : fenceType === 1 ? "рулонов" : "шт";
   const packageLabel = fenceType === 0
     ? "profnastil-sheet"
@@ -307,6 +313,8 @@ export function computeCanonicalFence(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { frameHouseDef } from "../formulas/frame-house";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = frameHouseDef.calculate.bind(frameHouseDef);
+const calc = withBasicAccuracy(frameHouseDef.calculate.bind(frameHouseDef));
 
 describe("Калькулятор каркасного дома", () => {
   describe("Периметр 30 м, h=2.7, проёмы 10 м², шаг 600, минвата 150, OSB/OSB", () => {

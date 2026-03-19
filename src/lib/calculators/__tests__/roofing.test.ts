@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { roofingDef } from "../formulas/roofing";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = roofingDef.calculate.bind(roofingDef);
+const calc = withBasicAccuracy(roofingDef.calculate.bind(roofingDef));
 
 describe("Калькулятор кровли", () => {
   describe("Металлочерепица: 80 м² (в плане), уклон 30°, лист 1.18×2.5 м", () => {

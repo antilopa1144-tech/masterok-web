@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import parquetFixture from "../../../../tests/fixtures/parquet-canonical-parity.json";
 import { parquetDef } from "../formulas/parquet";
 import { runCanonicalParitySuite } from "./canonical-parity";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
-const calc = parquetDef.calculate.bind(parquetDef);
+const calc = withBasicAccuracy(parquetDef.calculate.bind(parquetDef));
 
 describe("Калькулятор паркетной доски", () => {
   it("декларирует formulaVersion для canonical parquet", () => {

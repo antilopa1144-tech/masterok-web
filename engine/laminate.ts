@@ -8,6 +8,7 @@ import type {
   LaminateLayoutProfileSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface LaminateInputs {
   inputMode?: number;
@@ -24,6 +25,7 @@ interface LaminateInputs {
   underlayType?: number;
   laminateClass?: number;
   laminateThickness?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: LaminateCanonicalSpec, key: string, fallback: number): number {
@@ -164,6 +166,8 @@ export function computeCanonicalLaminate(
   inputs: LaminateInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const geometry = resolveArea(spec, inputs);
   const packArea = Math.max(0.5, Math.min(5, inputs.packArea ?? getInputDefault(spec, "packArea", 2.397)));
   const layoutProfile = resolveLayoutProfile(spec, inputs);
@@ -172,7 +176,9 @@ export function computeCanonicalLaminate(
     ? (spec.material_rules.small_room_threshold_m2 - geometry.area) * spec.material_rules.small_room_waste_per_m2_percent
     : 0;
   const effectiveWastePercent = Math.max(layoutProfile.waste_percent + smallRoomAdjustment, reservePercent);
-  const baseExactNeedArea = roundDisplay(geometry.area * (1 + effectiveWastePercent / 100), 6);
+  const baseExactNeedAreaRaw = roundDisplay(geometry.area * (1 + effectiveWastePercent / 100), 6);
+  const accuracyMult = getPrimaryMultiplier("flooring", accuracyMode);
+  const baseExactNeedArea = roundDisplay(baseExactNeedAreaRaw * accuracyMult, 6);
   const packageOptions = [{
     size: packArea,
     label: `laminate-pack-${roundDisplay(packArea, 3)}`,
@@ -297,5 +303,7 @@ export function computeCanonicalLaminate(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactNeedAreaRaw, "flooring", accuracyMode).explanation,
   };
 }

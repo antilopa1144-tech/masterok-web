@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -43,6 +44,7 @@ interface PartitionsInputs {
   height?: number;
   thickness?: number;
   blockType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -58,6 +60,9 @@ export function computeCanonicalPartitions(
   inputs: PartitionsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const length = Math.max(1, Math.min(50, inputs.length ?? getInputDefault(spec, "length", 5)));
   const height = Math.max(2, Math.min(4, inputs.height ?? getInputDefault(spec, "height", 2.7)));
   const thickness = Math.max(75, Math.min(200, Math.round(inputs.thickness ?? getInputDefault(spec, "thickness", 100))));
@@ -92,6 +97,8 @@ export function computeCanonicalPartitions(
   const sealTape = Math.ceil((length * 2 + height * 2) * SEAL_TAPE_RESERVE);
 
   /* ─── scenarios ─── */
+  const blocksRaw = blocks;
+  const blocksAdj = Math.ceil(blocks * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "partition-block",
@@ -100,7 +107,7 @@ export function computeCanonicalPartitions(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(blocks * multiplier, 6);
+    const exactNeed = roundDisplay(blocksAdj * multiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -241,5 +248,7 @@ export function computeCanonicalPartitions(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(blocksRaw, "generic", accuracyMode).explanation,
   };
 }

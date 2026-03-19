@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { fastenersDef } from "../formulas/fasteners";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = fastenersDef.calculate.bind(fastenersDef);
+const calc = withBasicAccuracy(fastenersDef.calculate.bind(fastenersDef));
 
 describe("Калькулятор крепежа", () => {
   describe("ГКЛ (materialType=0), 10 листов, шаг 200 мм", () => {

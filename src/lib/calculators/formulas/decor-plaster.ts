@@ -65,7 +65,7 @@ export const decorPlasterDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = decorplasterSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalDecorPlaster(spec, inputs, factorTable);
+    const canonical = computeCanonicalDecorPlaster(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

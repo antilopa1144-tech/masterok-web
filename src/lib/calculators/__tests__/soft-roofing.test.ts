@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { softRoofingDef } from "../formulas/soft-roofing";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = softRoofingDef.calculate.bind(softRoofingDef);
+const calc = withBasicAccuracy(softRoofingDef.calculate.bind(softRoofingDef));
 
 describe("Калькулятор мягкой кровли", () => {
   describe("80 м², уклон 30°, конёк 8 м, карниз 20 м, без ендов", () => {

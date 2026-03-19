@@ -1,6 +1,7 @@
-import { computeEstimate, type EngineCalculatorConfig } from "../../../engine/compute";
+import { computeEstimate, type EngineCalculatorConfig, type AccuracyModeOption } from "../../../engine/compute";
 import type { FactorTable, FieldFactorName } from "../../../engine/factors";
 import type { CalculatorScenarios } from "./types";
+import { type AccuracyMode, type MaterialCategory, DEFAULT_ACCURACY_MODE } from "../../../engine/accuracy";
 
 const ENABLED_FACTORS: FieldFactorName[] = [
   "surface_quality",
@@ -29,6 +30,8 @@ interface BuildNativeScenariosParams {
   unit: string;
   packageSizes: number[];
   packageLabelPrefix: string;
+  accuracyMode?: AccuracyMode;
+  materialCategory?: MaterialCategory;
 }
 
 export function buildNativeScenarios(params: BuildNativeScenariosParams): CalculatorScenarios {
@@ -54,6 +57,11 @@ export function buildNativeScenarios(params: BuildNativeScenariosParams): Calcul
     },
   };
 
+  const accuracyOpt: AccuracyModeOption = {
+    mode: params.accuracyMode ?? DEFAULT_ACCURACY_MODE,
+    materialCategory: params.materialCategory ?? "generic",
+  };
+
   return computeEstimate(
     config,
     {
@@ -61,6 +69,7 @@ export function buildNativeScenarios(params: BuildNativeScenariosParams): Calcul
       thickness_mm: 1,
     },
     NATIVE_FACTOR_TABLE,
+    accuracyOpt,
   );
 }
 

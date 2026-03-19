@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import selfLevelingFixture from '../../../../tests/fixtures/self-leveling-canonical-parity.json';
 import { selfLevelingDef } from '../formulas/self-leveling';
 import { runCanonicalParitySuite } from './canonical-parity';
-import { checkInvariants, findMaterial } from './_helpers';
+import { checkInvariants, findMaterial, withBasicAccuracy } from './_helpers';
 
-const calc = selfLevelingDef.calculate.bind(selfLevelingDef);
+const calc = withBasicAccuracy(selfLevelingDef.calculate.bind(selfLevelingDef));
 
 describe('Наливной пол', () => {
   it('декларирует formulaVersion для canonical self-leveling', () => {

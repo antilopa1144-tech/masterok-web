@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -55,6 +56,7 @@ interface AtticInputs {
   insulationType?: number;
   finishType?: number;
   withVapourBarrier?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -70,6 +72,9 @@ export function computeCanonicalAttic(
   inputs: AtticInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const roofArea = Math.max(10, Math.min(300, inputs.roofArea ?? getInputDefault(spec, "roofArea", 60)));
   const insulationThickness = Math.max(150, Math.min(250, inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 200)));
   const insulationType = Math.max(0, Math.min(2, Math.round(inputs.insulationType ?? getInputDefault(spec, "insulationType", 0))));
@@ -106,7 +111,8 @@ export function computeCanonicalAttic(
   }
 
   /* ─── scenarios ─── */
-  const basePrimary = insPlates;
+  const basePrimaryRaw = insPlates;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "insulation-plate",
@@ -288,5 +294,7 @@ export function computeCanonicalAttic(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { screedDef } from "../formulas/screed";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = screedDef.calculate.bind(screedDef);
+const calc = withBasicAccuracy(screedDef.calculate.bind(screedDef));
 
 describe("Калькулятор стяжки пола", () => {
   describe("ЦПС 1:3, 5×4 м, толщина 50 мм", () => {

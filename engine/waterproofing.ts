@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -36,6 +37,7 @@ interface WaterproofingInputs {
   roomPerimeter?: number;
   masticType?: number;
   layers?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -51,6 +53,8 @@ export function computeCanonicalWaterproofing(
   inputs: WaterproofingInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const floorArea = Math.max(1, Math.min(50, inputs.floorArea ?? getInputDefault(spec, "floorArea", 6)));
   const wallHeightMm = Math.max(0, Math.min(2000, inputs.wallHeight ?? getInputDefault(spec, "wallHeight", 200)));
   const roomPerimeter = Math.max(4, Math.min(40, inputs.roomPerimeter ?? getInputDefault(spec, "roomPerimeter", 10)));
@@ -65,7 +69,9 @@ export function computeCanonicalWaterproofing(
   const consumption = CONSUMPTION_PER_LAYER[masticType] ?? 1.0;
   const bucketKg = BUCKET_KG[masticType] ?? 15;
   const masticKg = roundDisplay(totalArea * consumption * layers, 3);
-  const masticBuckets = Math.ceil(masticKg / bucketKg);
+  const masticBucketsRaw = Math.ceil(masticKg / bucketKg);
+  const accuracyMult = getPrimaryMultiplier("waterproofing", accuracyMode);
+  const masticBuckets = masticBucketsRaw * accuracyMult;
 
   /* ─── tape ─── */
   const tapeM = roundDisplay((roomPerimeter + (wallHeightMm > 0 ? roomPerimeter * 1.2 : 0)) * TAPE_RESERVE, 3);
@@ -236,5 +242,7 @@ export function computeCanonicalWaterproofing(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(masticBucketsRaw, "waterproofing", accuracyMode).explanation,
   };
 }

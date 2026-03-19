@@ -1,5 +1,13 @@
 import { expect } from 'vitest';
-import type { CalculatorResult } from "../types";
+import type { CalculateFn, CalculatorResult } from "../types";
+
+/**
+ * Wrap a calculator's calculate() to inject accuracyMode: "basic".
+ * Use in existing normative/parity tests to preserve old baseline.
+ */
+export function withBasicAccuracy(fn: CalculateFn): CalculateFn {
+  return (inputs) => fn({ ...inputs, accuracyMode: "basic" as unknown as number });
+}
 
 /** Find a material by partial name match */
 export function findMaterial(result: CalculatorResult, namePart: string) {

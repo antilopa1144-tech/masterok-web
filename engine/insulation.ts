@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface InsulationInputs {
   area?: number;
@@ -14,6 +15,7 @@ interface InsulationInputs {
   thickness?: number;
   plateSize?: number;
   reserve?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -70,6 +72,8 @@ export function computeCanonicalInsulation(
   inputs: InsulationInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 40)));
   const insulationType = resolveInsulationType(spec, inputs);
   const thickness = Math.max(50, Math.min(200, inputs.thickness ?? getInputDefault(spec, "thickness", 100)));
@@ -117,7 +121,9 @@ export function computeCanonicalInsulation(
   }
 
   /* ── scenarios (plates are the primary packaging unit for types 0-2) ── */
-  const basePrimary = insulationType <= 2 ? platesNeeded : ecowoolBags;
+  const basePrimaryRaw = insulationType <= 2 ? platesNeeded : ecowoolBags;
+  const accuracyMult = getPrimaryMultiplier("insulation", accuracyMode);
+  const basePrimary = basePrimaryRaw * accuracyMult;
   const packageSize = 1;
   const packageUnit = insulationType <= 2 ? "шт" : "мешков";
   const packageLabel = insulationType <= 2
@@ -291,5 +297,7 @@ export function computeCanonicalInsulation(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "insulation", accuracyMode).explanation,
   };
 }

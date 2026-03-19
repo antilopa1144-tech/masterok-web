@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -45,6 +46,7 @@ interface WindowsInputs {
   windowHeight?: number;
   wallThickness?: number;
   slopeType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -60,6 +62,9 @@ export function computeCanonicalWindows(
   inputs: WindowsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const windowCount = Math.max(1, Math.min(20, Math.round(inputs.windowCount ?? getInputDefault(spec, "windowCount", 5))));
   const windowWidth = Math.max(600, Math.min(2100, Math.round(inputs.windowWidth ?? getInputDefault(spec, "windowWidth", 1200))));
   const windowHeight = Math.max(900, Math.min(2000, Math.round(inputs.windowHeight ?? getInputDefault(spec, "windowHeight", 1400))));
@@ -115,7 +120,8 @@ export function computeCanonicalWindows(
   }
 
   /* ─── scenarios ─── */
-  const basePrimary = foamCans;
+  const basePrimaryRaw = foamCans;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "foam-can",
@@ -329,5 +335,7 @@ export function computeCanonicalWindows(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

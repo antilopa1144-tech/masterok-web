@@ -77,7 +77,7 @@ export const waterproofingDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = waterproofingSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalWaterproofing(spec, inputs, factorTable);
+    const canonical = computeCanonicalWaterproofing(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

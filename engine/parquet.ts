@@ -8,6 +8,7 @@ import type {
   ParquetLayoutProfileSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface ParquetInputs {
   inputMode?: number;
@@ -23,6 +24,7 @@ interface ParquetInputs {
   needGlue?: number;
   underlaymentRollArea?: number;
   doorThresholds?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: ParquetCanonicalSpec, key: string, fallback: number): number {
@@ -65,12 +67,16 @@ export function computeCanonicalParquet(
   inputs: ParquetInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const geometry = resolveGeometry(spec, inputs);
   const packArea = Math.max(0.5, Math.min(4, inputs.packArea ?? getInputDefault(spec, "packArea", 1.892)));
   const layoutProfile = resolveLayout(spec, inputs);
   const reservePercent = Math.max(0, Math.min(20, inputs.reservePercent ?? getInputDefault(spec, "reservePercent", spec.material_rules.reserve_percent_default)));
   const effectiveWastePercent = Math.max(layoutProfile.waste_percent, reservePercent);
-  const baseExactNeedArea = roundDisplay(geometry.area * (1 + effectiveWastePercent / 100), 6);
+  const baseExactNeedAreaRaw = roundDisplay(geometry.area * (1 + effectiveWastePercent / 100), 6);
+  const accuracyMult = getPrimaryMultiplier("flooring", accuracyMode);
+  const baseExactNeedArea = roundDisplay(baseExactNeedAreaRaw * accuracyMult, 6);
   const packageOptions = [{
     size: packArea,
     label: `parquet-pack-${roundDisplay(packArea, 3)}`,
@@ -240,6 +246,8 @@ export function computeCanonicalParquet(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactNeedAreaRaw, "flooring", accuracyMode).explanation,
   };
 }
 

@@ -2,6 +2,12 @@ import type { CalculateFn, CalculatorResult, MaterialResult, CalculatorScenarios
 import factorTables from "../../../configs/factor-tables.json";
 import { combineScenarioFactors, REQUIRED_FACTORS, type FactorTable } from "../../../engine/factors";
 import { roundDisplay } from "../../../engine/units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  getPrimaryMultiplier,
+  applyAccuracyMode,
+} from "../../../engine/accuracy";
 
 const PRIMARY_CATEGORY_PRIORITY = [
   "Основное",
@@ -70,10 +76,13 @@ function buildScenariosFromPrimary(
   slug: string,
   result: CalculatorResult,
   primary: MaterialResult | undefined,
+  accuracyMode?: AccuracyMode,
 ): CalculatorScenarios {
-  const baseExact = Math.max(0, primary?.quantity ?? getFallbackExactNeed(result));
+  const mode = accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", mode);
+  const baseExact = Math.max(0, primary?.quantity ?? getFallbackExactNeed(result)) * accuracyMult;
   const basePurchaseRaw = primary?.purchaseQty ?? primary?.withReserve ?? baseExact;
-  const basePurchase = Math.max(baseExact, basePurchaseRaw);
+  const basePurchase = Math.max(baseExact, basePurchaseRaw * accuracyMult);
   const purchaseRatio = baseExact > 0 ? basePurchase / baseExact : 1;
 
   const packageSize = decimalPlaces(basePurchase) === 0 ? 1 : 1 / (10 ** decimalPlaces(basePurchase));
@@ -90,6 +99,7 @@ function buildScenariosFromPrimary(
     const assumptions = [
       `legacy_adapter:${slug}`,
       `primary_material:${packageLabel}`,
+      `accuracy_mode:${mode}`,
     ];
 
     acc[scenarioName] = {
@@ -99,6 +109,7 @@ function buildScenariosFromPrimary(
       assumptions,
       key_factors: {
         ...keyFactors,
+        accuracy_multiplier: roundDisplay(accuracyMult, 6),
         field_multiplier: roundDisplay(multiplier, 6),
       },
       buy_plan: {
@@ -113,22 +124,37 @@ function buildScenariosFromPrimary(
   }, {} as CalculatorScenarios);
 }
 
-export function ensureScenarioContract(slug: string, result: CalculatorResult): CalculatorResult {
-  if (hasCompleteScenarios(result)) return result;
+export function ensureScenarioContract(slug: string, result: CalculatorResult, accuracyMode?: AccuracyMode): CalculatorResult {
+  const mode = accuracyMode ?? result.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  if (hasCompleteScenarios(result)) {
+    // Even if scenarios exist, attach accuracy info
+    if (!result.accuracyMode) {
+      return { ...result, accuracyMode: mode };
+    }
+    return result;
+  }
 
   const primary = pickPrimaryMaterial(result.materials);
-  const scenarios = buildScenariosFromPrimary(slug, result, primary);
+  const scenarios = buildScenariosFromPrimary(slug, result, primary, mode);
+  const { explanation } = applyAccuracyMode(
+    primary?.quantity ?? getFallbackExactNeed(result),
+    "generic",
+    mode,
+  );
 
   return {
     ...result,
     scenarios,
+    accuracyMode: mode,
+    accuracyExplanation: result.accuracyExplanation ?? explanation,
   };
 }
 
 export function withScenarioContract(slug: string, calculate: CalculateFn): CalculateFn {
   return (inputs) => {
     const result = calculate(inputs);
-    return ensureScenarioContract(slug, result);
+    const mode = (inputs.accuracyMode as unknown as AccuracyMode) ?? DEFAULT_ACCURACY_MODE;
+    return ensureScenarioContract(slug, result, mode);
   };
 }
 

@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface RoofingInputs {
   roofingType?: number;
@@ -16,6 +17,7 @@ interface RoofingInputs {
   sheetWidth?: number;
   sheetLength?: number;
   complexity?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* --- constants --- */
@@ -52,6 +54,9 @@ export function computeCanonicalRoofing(
   inputs: RoofingInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const roofingType = clampInt(inputs.roofingType ?? getInputDefault(spec, "roofingType", 0), 0, 5);
   const area = clampFloat(inputs.area ?? getInputDefault(spec, "area", 80), 10, 500);
   const slope = clampFloat(inputs.slope ?? getInputDefault(spec, "slope", 30), 5, 60);
@@ -306,6 +311,10 @@ export function computeCanonicalRoofing(
     });
   }
 
+  /* ── accuracy mode adjustment ── */
+  const primaryQuantityRaw = primaryQuantity;
+  primaryQuantity = Math.ceil(primaryQuantity * accuracyMult);
+
   /* ── scenarios (primary material used for packaging) ── */
   const packageOptions = [{
     size: 1,
@@ -389,6 +398,8 @@ export function computeCanonicalRoofing(
       recPurchase: scenarios.REC.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(primaryQuantityRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

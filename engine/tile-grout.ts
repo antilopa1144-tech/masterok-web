@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -28,6 +29,7 @@ interface TileGroutInputs {
   jointWidth?: number;
   groutType?: number;
   bagSize?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -43,6 +45,8 @@ export function computeCanonicalTileGrout(
   inputs: TileGroutInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 20)));
   const tileWidth = Math.max(50, Math.min(1200, Math.round(inputs.tileWidth ?? getInputDefault(spec, "tileWidth", 300))));
   const tileHeight = Math.max(50, Math.min(1200, Math.round(inputs.tileHeight ?? getInputDefault(spec, "tileHeight", 300))));
@@ -64,7 +68,9 @@ export function computeCanonicalTileGrout(
   const density = (GROUT_DENSITY[groutType] ?? GROUT_DENSITY[0]) / 1000;
 
   const kgPerM2 = jointVolPerM2 * density;
-  const totalKg = area * kgPerM2 * GROUT_RESERVE;
+  const totalKgRaw = area * kgPerM2 * GROUT_RESERVE;
+  const accuracyMult = getPrimaryMultiplier("grout", accuracyMode);
+  const totalKg = totalKgRaw * accuracyMult;
   const bags = Math.ceil(totalKg / bagSize);
 
   /* ─── scenarios ─── */
@@ -171,5 +177,7 @@ export function computeCanonicalTileGrout(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalKgRaw, "grout", accuracyMode).explanation,
   };
 }

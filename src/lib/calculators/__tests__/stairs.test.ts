@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { stairsDef } from "../formulas/stairs";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = stairsDef.calculate.bind(stairsDef);
+const calc = withBasicAccuracy(stairsDef.calculate.bind(stairsDef));
 
 describe("Калькулятор лестницы", () => {
   describe("Деревянная: высота 2.8 м, ступень 170 мм, проступь 280 мм, ширина 1.0 м", () => {

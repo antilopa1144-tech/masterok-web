@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { facadePanelsDef } from "../formulas/facade-panels";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = facadePanelsDef.calculate.bind(facadePanelsDef);
+const calc = withBasicAccuracy(facadePanelsDef.calculate.bind(facadePanelsDef));
 
 describe("Фасадные панели", () => {
   describe("Фиброцемент, 100 м², алюминиевая подсистема, без утеплителя", () => {

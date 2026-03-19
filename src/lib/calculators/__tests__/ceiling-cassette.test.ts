@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ceilingCassetteDef } from "../formulas/ceiling-cassette";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = ceilingCassetteDef.calculate.bind(ceilingCassetteDef);
+const calc = withBasicAccuracy(ceilingCassetteDef.calculate.bind(ceilingCassetteDef));
 
 describe("Кассетный потолок", () => {
   describe("595×595 мм (cassetteSize=0), 30 м², длина 6 м", () => {

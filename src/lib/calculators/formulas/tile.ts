@@ -158,6 +158,7 @@ export const tileDef: CalculatorDefinition = {
         groutDepth: inputs.jointDepth,
         layoutPattern: inputs.layoutPattern ?? mapLegacyMethodToCanonical(inputs.layingMethod),
         roomComplexity: inputs.roomComplexity !== undefined ? mapLegacyComplexityToCanonical(inputs.roomComplexity) : 1,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

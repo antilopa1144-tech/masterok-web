@@ -75,7 +75,7 @@ export const tileAdhesiveDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = tileadhesiveSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalTileAdhesive(spec, inputs, factorTable);
+    const canonical = computeCanonicalTileAdhesive(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

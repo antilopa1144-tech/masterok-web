@@ -132,6 +132,7 @@ export const plasterDef: CalculatorDefinition = {
       bagWeight: inputs.bagWeight,
       substrateType: inputs.substrateType ?? 1,
       wallEvenness: inputs.wallEvenness ?? 1,
+      accuracyMode: inputs.accuracyMode as any,
     });
   },
   formulaDescription: `

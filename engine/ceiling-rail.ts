@@ -7,12 +7,14 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface CeilingRailInputs {
   area?: number;
   railWidth?: number;
   railLength?: number;
   roomLength?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -62,6 +64,9 @@ export function computeCanonicalCeilingRail(
   inputs: CeilingRailInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const railWidth = resolveRailWidth(spec, inputs);
   const railLength = resolveRailLength(spec, inputs);
@@ -72,7 +77,8 @@ export function computeCanonicalCeilingRail(
   /* Rails */
   const railRows = Math.ceil(roomWidth / (railWidth / 1000));
   const totalRailLen = railRows * roomLength * RAIL_RESERVE;
-  const railPcs = Math.ceil(totalRailLen / railLength);
+  const railPcsRaw = Math.ceil(totalRailLen / railLength);
+  const railPcs = Math.ceil(railPcsRaw * accuracyMult);
 
   /* T-profile guides */
   const guideCount = Math.ceil(roomLength / T_PROFILE_SPACING) + 1;
@@ -205,6 +211,8 @@ export function computeCanonicalCeilingRail(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(railPcsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

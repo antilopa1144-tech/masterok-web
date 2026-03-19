@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -50,6 +51,7 @@ interface DecorPlasterInputs {
   texture?: number;
   surface?: number;
   bagWeight?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -65,6 +67,8 @@ export function computeCanonicalDecorPlaster(
   inputs: DecorPlasterInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const area = Math.max(1, Math.min(1000, Math.round(inputs.area ?? getInputDefault(spec, "area", 50))));
   const texture = Math.max(0, Math.min(4, Math.round(inputs.texture ?? getInputDefault(spec, "texture", 0))));
   const surface = Math.max(0, Math.min(1, Math.round(inputs.surface ?? getInputDefault(spec, "surface", 0))));
@@ -75,7 +79,9 @@ export function computeCanonicalDecorPlaster(
 
   /* ─── formulas ─── */
   const totalKg = area * consumption * PLASTER_RESERVE;
-  const bags = Math.ceil(totalKg / bagWeight);
+  const bagsRaw = Math.ceil(totalKg / bagWeight);
+  const accuracyMult = getPrimaryMultiplier("plaster", accuracyMode);
+  const bags = bagsRaw * accuracyMult;
   const primerCans = Math.ceil(area * PRIMER_DEEP_L_PER_M2 * PRIMER_DEEP_RESERVE / PRIMER_CAN);
   const tintedPrimer = Math.ceil(area * TINTED_PRIMER_L_PER_M2 / TINTED_CAN);
   const pigmentBanks = Math.ceil(totalKg / 25);
@@ -206,5 +212,7 @@ export function computeCanonicalDecorPlaster(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(bagsRaw, "plaster", accuracyMode).explanation,
   };
 }

@@ -86,7 +86,7 @@ export const screedDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = screedSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalScreed(spec, inputs, factorTable);
+    const canonical = computeCanonicalScreed(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,
@@ -96,6 +96,8 @@ export const screedDef: CalculatorDefinition = {
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes: canonical.practicalNotes ?? [],
+      accuracyMode: canonical.accuracyMode,
+      accuracyExplanation: canonical.accuracyExplanation,
     };
   },
   formulaDescription: `

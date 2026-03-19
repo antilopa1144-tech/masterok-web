@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { plasterDef } from "../formulas/plaster";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = plasterDef.calculate.bind(plasterDef);
+const calc = withBasicAccuracy(plasterDef.calculate.bind(plasterDef));
 
 describe("Калькулятор штукатурки", () => {
   describe("По размерам: 5×4 м, h=2.7 м, проёмы 5 м², гипсовая 15 мм, мешок 30 кг", () => {

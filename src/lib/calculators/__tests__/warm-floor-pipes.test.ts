@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { warmFloorPipesDef } from "../formulas/warm-floor-pipes";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = warmFloorPipesDef.calculate.bind(warmFloorPipesDef);
+const calc = withBasicAccuracy(warmFloorPipesDef.calculate.bind(warmFloorPipesDef));
 
 describe("Калькулятор водяного тёплого пола", () => {
   describe("20 м², шаг 200, PEX-a", () => {

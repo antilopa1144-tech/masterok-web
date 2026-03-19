@@ -7,12 +7,14 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface WarmFloorInputs {
   roomArea?: number;
   furnitureArea?: number;
   heatingType?: number;
   powerDensity?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -215,6 +217,9 @@ export function computeCanonicalWarmFloor(
   inputs: WarmFloorInputs,
   factorTable: FactorTable = WARM_FLOOR_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const roomArea = Math.max(1, Math.min(100, inputs.roomArea ?? getInputDefault(spec, "roomArea", 10)));
   const furnitureArea = Math.max(0, Math.min(50, inputs.furnitureArea ?? getInputDefault(spec, "furnitureArea", 2)));
   const heatingType = Math.max(0, Math.min(2, Math.round(inputs.heatingType ?? getInputDefault(spec, "heatingType", 0))));
@@ -261,6 +266,8 @@ export function computeCanonicalWarmFloor(
   }
 
   /* ─── scenarios ─── */
+  const basePrimaryRaw = basePrimary;
+  basePrimary = Math.ceil(basePrimary * accuracyMult);
   const packageSize = 1;
   const packageUnit = heatingType === 0 ? "шт" : "м";
   const packageLabel = heatingType === 0 ? "warm-floor-mat" : heatingType === 1 ? "warm-floor-cable-m" : "warm-floor-pipe-m";
@@ -368,5 +375,7 @@ export function computeCanonicalWarmFloor(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

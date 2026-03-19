@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { primerDef } from "../formulas/primer";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 import parityFixture from "../../../../tests/fixtures/primer-canonical-parity.json";
 
-const calc = primerDef.calculate.bind(primerDef);
+const calc = withBasicAccuracy(primerDef.calculate.bind(primerDef));
 
 describe("Грунтовка", () => {
   it("декларирует formulaVersion для canonical primer", () => {

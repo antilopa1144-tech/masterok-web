@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { tileGroutDef } from "../formulas/tile-grout";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = tileGroutDef.calculate.bind(tileGroutDef);
+const calc = withBasicAccuracy(tileGroutDef.calculate.bind(tileGroutDef));
 
 describe("Затирка для плитки", () => {
   describe("Цементная затирка (groutType=0)", () => {

@@ -7,11 +7,13 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface SoundInsulationInputs {
   area?: number;
   surfaceType?: number;
   system?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -64,6 +66,9 @@ export function computeCanonicalSoundInsulation(
   inputs: SoundInsulationInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const surfaceType = resolveSurfaceType(spec, inputs);
   const system = resolveSystem(spec, inputs);
@@ -158,6 +163,9 @@ export function computeCanonicalSoundInsulation(
   );
 
   /* ─── scenarios ─── */
+  const primaryQtyRaw = primaryQty;
+  primaryQty = Math.ceil(primaryQty * accuracyMult);
+
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
     label: primaryLabel,
@@ -231,5 +239,7 @@ export function computeCanonicalSoundInsulation(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(primaryQtyRaw, "generic", accuracyMode).explanation,
   };
 }

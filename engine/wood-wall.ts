@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -33,6 +34,7 @@ interface WoodWallInputs {
   boardWidth?: number;
   boardLength?: number;
   perimeter?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -48,6 +50,9 @@ export function computeCanonicalWoodWall(
   inputs: WoodWallInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const inputMode = Math.max(0, Math.min(1, Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0))));
   const areaInput = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 15)));
   const length = Math.max(1, Math.min(30, inputs.length ?? getInputDefault(spec, "length", 4)));
@@ -85,6 +90,9 @@ export function computeCanonicalWoodWall(
   const clamps = boards * CLAMPS_PER_BOARD;
 
   /* ─── scenarios ─── */
+  const boardsRaw = boards;
+  const boardsAdj = Math.ceil(boards * accuracyMult);
+
   const packageOptions = [{
     size: 1,
     label: "wood-board",
@@ -93,7 +101,7 @@ export function computeCanonicalWoodWall(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(boards * multiplier, 6);
+    const exactNeed = roundDisplay(boardsAdj * multiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -250,5 +258,7 @@ export function computeCanonicalWoodWall(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(boardsRaw, "generic", accuracyMode).explanation,
   };
 }

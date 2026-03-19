@@ -135,6 +135,7 @@ export const wallpaperDef: CalculatorDefinition = {
         wallpaperType: inputs.wallpaperType ?? 1,
         reserveRolls: inputs.reserveRolls ?? 1,
         reservePercent: inputs.reservePercent ?? 0,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

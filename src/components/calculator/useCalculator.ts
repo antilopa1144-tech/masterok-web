@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
 import type { CalculatorMeta } from "@/lib/calculators/types";
+import type { AccuracyMode } from "../../../engine/accuracy";
+import { DEFAULT_ACCURACY_MODE } from "../../../engine/accuracy";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -82,6 +84,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>(
+    (searchParams.get("accuracyMode") as AccuracyMode) || DEFAULT_ACCURACY_MODE
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const category = getCategoryById(calculator.category);
@@ -98,7 +103,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       void getCalculateFn(calculator.slug).then((fn) => {
         if (fn) {
           const initVals = getInitialValues();
-          const res = fn(initVals);
+          const res = fn({ ...initVals, accuracyMode: accuracyMode as unknown as number });
           setResult(res);
           setHasCalculated(true);
         }
@@ -108,12 +113,15 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   }, []);
 
   // Автоматический перерасчёт при изменении значений (debounce 300ms)
+  const accuracyModeRef = useRef(accuracyMode);
+  accuracyModeRef.current = accuracyMode;
+
   const runAutoCalc = useCallback((newValues: Record<string, number>) => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       void getCalculateFn(calculator.slug).then((fn) => {
         if (!fn) return;
-        const res = fn(newValues);
+        const res = fn({ ...newValues, accuracyMode: accuracyModeRef.current as unknown as number });
         setResult(res);
         setHasCalculated(true);
       });
@@ -131,11 +139,24 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     });
   }, [runAutoCalc]);
 
+  // Recalculate when accuracy mode changes
+  const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
+    setAccuracyMode(mode);
+    // Trigger recalculation with new mode
+    clearTimeout(debounceRef.current);
+    void getCalculateFn(calculator.slug).then((fn) => {
+      if (!fn) return;
+      const res = fn({ ...values, accuracyMode: mode as unknown as number });
+      setResult(res);
+      setHasCalculated(true);
+    });
+  }, [calculator.slug, values]);
+
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
     void getCalculateFn(calculator.slug).then((fn) => {
       if (!fn) return;
-      const res = fn(values);
+      const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
       setResult(res);
       setHasCalculated(true);
 
@@ -150,7 +171,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       saveHistory(entry);
       setHistory(loadHistory());
     });
-  }, [calculator.slug, calculator.id, calculator.title, values]);
+  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode]);
 
   const handleReset = useCallback(() => {
     const defaults = Object.fromEntries(
@@ -167,6 +188,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     const params = new URLSearchParams(
       Object.entries(values).map(([k, v]) => [k, String(v)])
     );
+    if (accuracyMode !== DEFAULT_ACCURACY_MODE) {
+      params.set("accuracyMode", accuracyMode);
+    }
     const url = `${window.location.origin}${window.location.pathname}?${params}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -175,7 +199,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     } catch {
       prompt(CALCULATOR_UI_TEXT.copyLinkPrompt, url);
     }
-  }, [values]);
+  }, [values, accuracyMode]);
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {
@@ -216,11 +240,13 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     category,
     visibleFields,
     calcHistory,
+    accuracyMode,
     handleChange,
     handleCalculate,
     handleReset,
     handleShare,
     handleRestoreHistory,
+    handleAccuracyModeChange,
     applyPreset,
   };
 }

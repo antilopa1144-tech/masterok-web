@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { guttersDef } from "../formulas/gutters";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = guttersDef.calculate.bind(guttersDef);
+const calc = withBasicAccuracy(guttersDef.calculate.bind(guttersDef));
 
 describe("Водосточная система", () => {
   describe("Стандарт: 40 м периметр, 5 м высота, 4 воронки, 90 мм, 3 м элементы", () => {

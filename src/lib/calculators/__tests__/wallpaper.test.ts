@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import wallpaperFixture from "../../../../tests/fixtures/wallpaper-canonical-parity.json";
 import { wallpaperDef } from "../formulas/wallpaper";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = wallpaperDef.calculate.bind(wallpaperDef);
+const calc = withBasicAccuracy(wallpaperDef.calculate.bind(wallpaperDef));
 
 describe("Калькулятор обоев", () => {
   it("декларирует formulaVersion для canonical wallpaper", () => {

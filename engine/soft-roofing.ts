@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -41,6 +42,7 @@ interface SoftRoofingInputs {
   ridgeLength?: number;
   eaveLength?: number;
   valleyLength?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -56,6 +58,9 @@ export function computeCanonicalSoftRoofing(
   inputs: SoftRoofingInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const roofArea = Math.max(10, Math.min(500, inputs.roofArea ?? getInputDefault(spec, "roofArea", 80)));
   const slope = Math.max(12, Math.min(60, inputs.slope ?? getInputDefault(spec, "slope", 30)));
   const ridgeLength = Math.max(0, Math.min(50, inputs.ridgeLength ?? getInputDefault(spec, "ridgeLength", 8)));
@@ -63,7 +68,8 @@ export function computeCanonicalSoftRoofing(
   const valleyLength = Math.max(0, Math.min(30, inputs.valleyLength ?? getInputDefault(spec, "valleyLength", 0)));
 
   /* ─── formulas ─── */
-  const packs = Math.ceil(roofArea / PACK_AREA * PACK_RESERVE);
+  const packsRaw = Math.ceil(roofArea / PACK_AREA * PACK_RESERVE);
+  const packs = Math.ceil(packsRaw * accuracyMult);
 
   // Underlayment
   let underlaymentRolls: number;
@@ -271,6 +277,8 @@ export function computeCanonicalSoftRoofing(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(packsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

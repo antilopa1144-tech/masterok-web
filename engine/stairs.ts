@@ -7,6 +7,7 @@ import type {
   StairsCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface StairsInputs {
   floorHeight?: number;
@@ -14,6 +15,7 @@ interface StairsInputs {
   stepWidth?: number;
   stairWidth?: number;
   materialType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: StairsCanonicalSpec, key: string, fallback: number): number {
@@ -180,6 +182,9 @@ export function computeCanonicalStairs(
   inputs: StairsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const floorHeight = Math.max(2.0, Math.min(6.0, inputs.floorHeight ?? getInputDefault(spec, "floorHeight", 2.8)));
   const stepHeight = Math.max(150, Math.min(200, inputs.stepHeight ?? getInputDefault(spec, "stepHeight", 170)));
   const stepWidth = Math.max(250, Math.min(320, inputs.stepWidth ?? getInputDefault(spec, "stepWidth", 280)));
@@ -205,7 +210,8 @@ export function computeCanonicalStairs(
     materials = buildWoodMaterials(spec, stepCount, stringerLen, railingLen, balyasiny);
   }
 
-  const baseExactNeed = stepCount;
+  const baseExactNeedRaw = stepCount;
+  const baseExactNeed = Math.ceil(baseExactNeedRaw * accuracyMult);
 
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
@@ -285,5 +291,7 @@ export function computeCanonicalStairs(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactNeedRaw, "generic", accuracyMode).explanation,
   };
 }

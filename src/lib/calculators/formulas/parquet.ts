@@ -106,6 +106,7 @@ export const parquetDef: CalculatorDefinition = {
         needGlue: inputs.needGlue ?? 0,
         underlaymentRollArea: inputs.underlaymentRollArea,
         doorThresholds: inputs.doorThresholds ?? 1,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

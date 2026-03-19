@@ -99,6 +99,8 @@ export const terraceDef: CalculatorDefinition = {
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes: canonical.practicalNotes ?? [],
+      accuracyMode: canonical.accuracyMode,
+      accuracyExplanation: canonical.accuracyExplanation,
     };
   },
   formulaDescription: `

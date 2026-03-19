@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ceilingRailDef } from "../formulas/ceiling-rail";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = ceilingRailDef.calculate.bind(ceilingRailDef);
+const calc = withBasicAccuracy(ceilingRailDef.calculate.bind(ceilingRailDef));
 
 describe("Реечный потолок", () => {
   describe("Стандартный расчёт: 20 м², рейка 100 мм x 3 м, длина 5 м", () => {

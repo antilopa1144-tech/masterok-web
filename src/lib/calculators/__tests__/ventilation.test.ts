@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ventilationDef } from "../formulas/ventilation";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = ventilationDef.calculate.bind(ventilationDef);
+const calc = withBasicAccuracy(ventilationDef.calculate.bind(ventilationDef));
 
 describe("Вентиляция", () => {
   describe("Квартира (buildingType=0)", () => {

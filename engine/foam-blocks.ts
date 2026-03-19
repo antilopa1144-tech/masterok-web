@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface FoamBlocksInputs {
   inputMode?: number;
@@ -16,6 +17,7 @@ interface FoamBlocksInputs {
   openingsArea?: number;
   blockSize?: number;
   mortarType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: FoamBlocksCanonicalSpec, key: string, fallback: number): number {
@@ -51,6 +53,9 @@ export function computeCanonicalFoamBlocks(
   inputs: FoamBlocksInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const areaInfo = resolveArea(spec, inputs);
   const openingsArea = Math.max(0, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 5));
   const blockSize = resolveBlockSize(spec, inputs);
@@ -69,7 +74,7 @@ export function computeCanonicalFoamBlocks(
 
   const blockFaceArea = (l / 1000) * (h / 1000);
   const blocksNet = netArea / blockFaceArea;
-  const blocksWithReserve = Math.ceil(blocksNet * spec.material_rules.block_reserve);
+  const blocksWithReserve = Math.ceil(blocksNet * spec.material_rules.block_reserve * accuracyMult);
 
   const volume = roundDisplay(netArea * (t / 1000), 6);
 
@@ -251,6 +256,8 @@ export function computeCanonicalFoamBlocks(
       recPurchaseBlocks: recScenario.purchase_quantity,
       maxPurchaseBlocks: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(Math.ceil(blocksNet * spec.material_rules.block_reserve), "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

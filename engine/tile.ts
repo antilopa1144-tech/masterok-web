@@ -9,6 +9,13 @@ import type {
   TileRoomComplexitySpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 interface TileInputs {
   inputMode?: number;
@@ -21,6 +28,7 @@ interface TileInputs {
   groutDepth?: number;
   layoutPattern?: number;
   roomComplexity?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: TileCanonicalSpec, key: string, fallback: number): number {
@@ -165,6 +173,7 @@ export function computeCanonicalTile(
   inputs: TileInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const area = resolveArea(spec, inputs);
   const tileWidthCm = Math.max(5, Math.min(200, inputs.tileWidthCm ?? getInputDefault(spec, "tileWidthCm", 30)));
   const tileHeightCm = Math.max(5, Math.min(200, inputs.tileHeightCm ?? getInputDefault(spec, "tileHeightCm", 30)));
@@ -175,15 +184,29 @@ export function computeCanonicalTile(
   const sizeAdjustment = resolveTileSizeAdjustment(spec, averageTileSizeCm);
   const wastePercent = roundDisplay(layout.waste_percent + roomComplexity.waste_bonus_percent + sizeAdjustment, 3);
   const tileAreaM2 = roundDisplay((tileWidthCm / 100) * (tileHeightCm / 100), 6);
-  const baseExactNeed = tileAreaM2 > 0 ? roundDisplay((area.area / tileAreaM2) * (1 + wastePercent / 100), 6) : 0;
+
+  // Apply accuracy mode to tile quantity (tile-specific modifiers)
+  const tilePrimaryMult = getPrimaryMultiplier("tile", accuracyMode);
+  const baseExactNeed = tileAreaM2 > 0 ? roundDisplay((area.area / tileAreaM2) * (1 + wastePercent / 100) * tilePrimaryMult, 6) : 0;
+
   const groutDepthMm = resolveGroutDepth(averageTileSizeCm, inputs.groutDepth);
   const tileWidthM = tileWidthCm / 100;
   const tileHeightM = tileHeightCm / 100;
   const jointsLength = (1 / tileWidthM) + (1 / tileHeightM);
-  const groutKg = roundDisplay(area.area * jointsLength * (jointWidthMm / 1000) * (groutDepthMm / 1000) * spec.material_rules.grout_density_kg_per_m3 * spec.material_rules.grout_loss_factor, 6);
+
+  // Apply accuracy mode to adhesive (tile_adhesive-specific modifiers)
+  const gluePrimaryMult = getPrimaryMultiplier("tile_adhesive", accuracyMode);
   const glueRate = resolveGlueRate(spec, averageTileSizeCm);
-  const glueKg = roundDisplay(area.area * glueRate, 6);
-  const primerLiters = roundDisplay(area.area * spec.material_rules.primer_l_per_m2, 6);
+  const glueKg = roundDisplay(area.area * glueRate * gluePrimaryMult, 6);
+
+  // Apply accuracy mode to grout (grout-specific modifiers)
+  const groutPrimaryMult = getPrimaryMultiplier("grout", accuracyMode);
+  const groutKg = roundDisplay(area.area * jointsLength * (jointWidthMm / 1000) * (groutDepthMm / 1000) * spec.material_rules.grout_density_kg_per_m3 * spec.material_rules.grout_loss_factor * groutPrimaryMult, 6);
+
+  // Apply accuracy mode to primer
+  const primerPrimaryMult = getPrimaryMultiplier("primer", accuracyMode);
+  const primerLiters = roundDisplay(area.area * spec.material_rules.primer_l_per_m2 * primerPrimaryMult, 6);
+
   const packageOptions = [{
     size: spec.packaging_rules.tile_package_size,
     label: `tile-piece-${spec.packaging_rules.tile_package_size}`,
@@ -203,10 +226,12 @@ export function computeCanonicalTile(
         `formula_version:${spec.formula_version}`,
         `layout:${layout.key}`,
         `room:${roomComplexity.key}`,
+        `accuracy_mode:${accuracyMode}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
         ...keyFactors,
+        accuracy_multiplier: roundDisplay(tilePrimaryMult, 6),
         field_multiplier: roundDisplay(multiplier, 6),
       },
       buy_plan: {
@@ -221,10 +246,14 @@ export function computeCanonicalTile(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+
+  // Accessories multiplier for consumables
+  const accessoriesMult = getAccessoriesMultiplier("tile", accuracyMode);
+
   const glueBags = glueKg > 0 ? Math.max(1, Math.ceil(glueKg / spec.packaging_rules.glue_bag_kg)) : 0;
   const groutBags = groutKg > 0 ? Math.max(1, Math.ceil(groutKg / spec.packaging_rules.grout_bag_kg)) : 0;
   const primerCans = primerLiters > 0 ? Math.max(1, Math.ceil(primerLiters / spec.packaging_rules.primer_can_l)) : 0;
-  const crossesNeeded = Math.ceil(recScenario.purchase_quantity * spec.material_rules.crosses_reserve_factor);
+  const crossesNeeded = Math.ceil(recScenario.purchase_quantity * spec.material_rules.crosses_reserve_factor * accessoriesMult);
   const svpPackages = averageTileSizeCm >= spec.material_rules.svp_threshold_cm
     ? Math.max(1, Math.ceil(crossesNeeded / spec.packaging_rules.svp_pack_size))
     : 0;
@@ -254,6 +283,9 @@ export function computeCanonicalTile(
   if (layout.id === 2) {
     practicalNotes.push("Диагональ начинайте от центра комнаты — так подрезка у стен будет равномерной");
   }
+
+  // Build accuracy explanation for the tile (primary material)
+  const { explanation } = applyAccuracyMode(baseExactNeed / tilePrimaryMult, "tile", accuracyMode);
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -307,5 +339,7 @@ export function computeCanonicalTile(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: explanation,
   };
 }

@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface HeatingInputs {
   totalArea?: number;
@@ -15,6 +16,7 @@ interface HeatingInputs {
   buildingType?: number;
   radiatorType?: number;
   roomCount?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -55,6 +57,9 @@ export function computeCanonicalHeating(
   inputs: HeatingInputs,
   factorTable: FactorTable = HEATING_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const totalArea = Math.max(10, Math.min(500, inputs.totalArea ?? getInputDefault(spec, "totalArea", 80)));
   const ceilingHeight = Math.max(2.5, Math.min(3.5, inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7)));
   const climateZone = Math.max(0, Math.min(3, Math.round(inputs.climateZone ?? getInputDefault(spec, "climateZone", 1))));
@@ -133,7 +138,8 @@ export function computeCanonicalHeating(
   ];
 
   /* ─── scenarios ─── */
-  const basePrimary = totalUnits;
+  const basePrimaryRaw = totalUnits;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{ size: 1, label: "radiator-unit", unit: "шт" }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
@@ -216,5 +222,7 @@ export function computeCanonicalHeating(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

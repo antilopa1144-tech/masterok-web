@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { puttyDef } from "../formulas/putty";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 import parityFixture from "../../../../tests/fixtures/putty-canonical-parity.json";
 
-const calc = puttyDef.calculate.bind(puttyDef);
+const calc = withBasicAccuracy(puttyDef.calculate.bind(puttyDef));
 
 describe("Калькулятор шпаклёвки", () => {
   describe("Только финишная, стены, 5x4x2.7 м, мешок 20 кг", () => {

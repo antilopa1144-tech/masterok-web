@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { facadeBrickDef } from "../formulas/facade-brick";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = facadeBrickDef.calculate.bind(facadeBrickDef);
+const calc = withBasicAccuracy(facadeBrickDef.calculate.bind(facadeBrickDef));
 
 describe("Облицовочный кирпич", () => {
   describe("Одинарный кирпич 250×65, шов 10 мм, 80 м²", () => {

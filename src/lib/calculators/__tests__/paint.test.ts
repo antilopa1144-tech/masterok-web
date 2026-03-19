@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { paintDef } from "../formulas/paint";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 import parityFixture from "../../../../tests/fixtures/paint-canonical-parity.json";
 
-const calc = paintDef.calculate.bind(paintDef);
+const calc = withBasicAccuracy(paintDef.calculate.bind(paintDef));
 
 describe("Калькулятор краски", () => {
   it("декларирует formulaVersion для canonical paint", () => {

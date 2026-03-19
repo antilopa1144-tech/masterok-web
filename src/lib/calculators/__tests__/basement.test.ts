@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { basementDef } from "../formulas/basement";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = basementDef.calculate.bind(basementDef);
+const calc = withBasicAccuracy(basementDef.calculate.bind(basementDef));
 
 describe("Калькулятор подвала и цоколя", () => {
   describe("Стандарт: 8×6 м, глубина 2.5 м, стены 200 мм, пол 150 мм, обмазочная гидро", () => {

@@ -112,6 +112,7 @@ export const paintDef: CalculatorDefinition = {
         coats: inputs.coats,
         coverage: inputs.coverage ?? inputs.consumption,
         canSize: inputs.canSize,
+        accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );

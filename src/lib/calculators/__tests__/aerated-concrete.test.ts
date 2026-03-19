@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { aeratedConcreteDef } from "../formulas/aerated-concrete";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = aeratedConcreteDef.calculate.bind(aeratedConcreteDef);
+const calc = withBasicAccuracy(aeratedConcreteDef.calculate.bind(aeratedConcreteDef));
 
 describe("Калькулятор газобетона", () => {
   describe("По размерам: 10×2.7 м, проёмы 5 м², блок 200×200×600, толщина 200 мм", () => {

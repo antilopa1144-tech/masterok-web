@@ -8,17 +8,22 @@ import factorTablesJson from "../../configs/factor-tables.json";
 const spec = concreteSpec as unknown as ConcreteCanonicalSpec;
 const factorTable = factorTablesJson.factors as unknown as FactorTable;
 
+/** Wrap inputs to use basic accuracy mode (preserves pre-accuracy-mode baseline) */
+function calc(inputs: Parameters<typeof computeCanonicalConcrete>[1]) {
+  return computeCanonicalConcrete(spec, { ...inputs, accuracyMode: "basic" }, factorTable);
+}
+
 // ─── 1. Positive tests (стандартные входные данные) ───
 
 describe("computeCanonicalConcrete — стандартные входные данные", () => {
   it("Объём 5 м³, марка M200 (grade=3), запас 10%, без ручного замеса → totalVolume = 5.5, материал «Бетон М200»", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: 5,
       concreteGrade: 3,
       reserve: 10,
       manualMix: 0,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.totalVolume).toBe(5.5);
     expect(result.totals.sourceVolume).toBe(5);
@@ -29,13 +34,13 @@ describe("computeCanonicalConcrete — стандартные входные д�
   });
 
   it("Объём 5 м³, марка M200, ручной замес → цемент, песок, щебень, вода в materials", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: 5,
       concreteGrade: 3,
       reserve: 10,
       manualMix: 1,
       inputMode: 0,
-    }, factorTable);
+    });
 
     const names = result.materials.map((m) => m.name);
     expect(names.some((n) => n.includes("Цемент"))).toBe(true);
@@ -45,11 +50,11 @@ describe("computeCanonicalConcrete — стандартные входные д�
   });
 
   it("Площадь 20 м², толщина 200 мм (inputMode=1) → sourceVolume = 4.0", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       inputMode: 1,
       area: 20,
       thickness: 200,
-    }, factorTable);
+    });
 
     expect(result.totals.sourceVolume).toBe(4);
     expect(result.totals.inputMode).toBe(1);
@@ -59,13 +64,13 @@ describe("computeCanonicalConcrete — стандартные входные д�
     const gradeResults: Record<number, ReturnType<typeof computeCanonicalConcrete>> = {};
 
     for (let grade = 1; grade <= 7; grade++) {
-      gradeResults[grade] = computeCanonicalConcrete(spec, {
+      gradeResults[grade] = calc({
         concreteVolume: 10,
         concreteGrade: grade,
         reserve: 0,
         manualMix: 1,
         inputMode: 0,
-      }, factorTable);
+      });
     }
 
     it("цемент кг/м³ растёт с повышением марки", () => {
@@ -90,41 +95,41 @@ describe("computeCanonicalConcrete — стандартные входные д�
 
 describe("computeCanonicalConcrete — нулевые и граничные значения", () => {
   it("Объём 0 → clamp до 0.1", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: 0,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.sourceVolume).toBeGreaterThanOrEqual(0.1);
   });
 
   it("Площадь 0 → clamp до 0.1", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       area: 0,
       inputMode: 1,
       thickness: 200,
-    }, factorTable);
+    });
 
     // area is clamped to 0.1, sourceVolume = 0.1 * 0.2 = 0.02 (or clamped further)
     expect(result.totals.sourceVolume).toBeGreaterThan(0);
   });
 
   it("Запас 0 → totalVolume === sourceVolume", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: 5,
       reserve: 0,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.totalVolume).toBe(result.totals.sourceVolume);
   });
 
   it("Запас 50 (максимум) → totalVolume = sourceVolume * 1.5", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: 10,
       reserve: 50,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.totalVolume).toBe(15);
   });
@@ -134,38 +139,38 @@ describe("computeCanonicalConcrete — нулевые и граничные зн
 
 describe("computeCanonicalConcrete — отрицательные входные данные", () => {
   it("Объём -10 → clamp до 0.1", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteVolume: -10,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.sourceVolume).toBeGreaterThanOrEqual(0.1);
   });
 
   it("Площадь -5 → clamp до 0.1", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       area: -5,
       inputMode: 1,
       thickness: 200,
-    }, factorTable);
+    });
 
     expect(result.totals.sourceVolume).toBeGreaterThan(0);
   });
 
   it("Марка -1 → clamp до 1", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteGrade: -1,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.concreteGrade).toBe(1);
   });
 
   it("Марка 99 → clamp до 7", () => {
-    const result = computeCanonicalConcrete(spec, {
+    const result = calc({
       concreteGrade: 99,
       inputMode: 0,
-    }, factorTable);
+    });
 
     expect(result.totals.concreteGrade).toBe(7);
   });
@@ -174,13 +179,13 @@ describe("computeCanonicalConcrete — отрицательные входные
 // ─── 4. Тесты округления ───
 
 describe("computeCanonicalConcrete — округление", () => {
-  const result = computeCanonicalConcrete(spec, {
+  const result = calc({
     concreteVolume: 7.777,
     concreteGrade: 4,
     reserve: 13,
     manualMix: 1,
     inputMode: 0,
-  }, factorTable);
+  });
 
   it("все purchaseQty — конечные числа > 0 (некоторые могут быть нецелыми, например м³)", () => {
     for (const mat of result.materials) {
@@ -211,13 +216,13 @@ describe("computeCanonicalConcrete — округление", () => {
 // ─── 5. Тесты структуры ───
 
 describe("computeCanonicalConcrete — структура результата", () => {
-  const result = computeCanonicalConcrete(spec, {
+  const result = calc({
     concreteVolume: 5,
     concreteGrade: 3,
     reserve: 10,
     manualMix: 0,
     inputMode: 0,
-  }, factorTable);
+  });
 
   it("результат содержит canonicalSpecId, formulaVersion, materials, totals, warnings, scenarios, practicalNotes", () => {
     expect(result).toHaveProperty("canonicalSpecId");

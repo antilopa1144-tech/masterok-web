@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { terraceDef } from "../formulas/terrace";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = terraceDef.calculate.bind(terraceDef);
+const calc = withBasicAccuracy(terraceDef.calculate.bind(terraceDef));
 
 describe("Калькулятор террасной доски", () => {
   describe("ДПК 150 мм: 5×3 м, доска 3000 мм, шаг лаг 400 мм, без обработки", () => {

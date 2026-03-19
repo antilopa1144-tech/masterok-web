@@ -1,4 +1,4 @@
-import { computeEstimate, type EngineCalculatorConfig } from "./compute";
+import { computeEstimate, type EngineCalculatorConfig, type AccuracyModeOption } from "./compute";
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -9,6 +9,13 @@ import type {
 } from "./canonical";
 import type { FactorTable } from "./factors";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 interface PlasterInputs {
   inputMode?: number;
@@ -22,6 +29,7 @@ interface PlasterInputs {
   bagWeight?: number;
   substrateType?: number;
   wallEvenness?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 interface WorkAreaResolution {
@@ -221,6 +229,7 @@ export function computeCanonicalPlaster(
   inputs: PlasterInputs,
   factorTable: FactorTable = PLASTER_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const work = resolveWorkArea(spec, inputs);
   const plasterType = resolvePlasterType(spec, inputs.plasterType);
   const substrate = resolveSubstrate(spec, inputs.substrateType);
@@ -228,6 +237,7 @@ export function computeCanonicalPlaster(
   const thickness = resolveThickness(spec, inputs.thickness);
   const bagWeight = resolveBagWeight(spec, plasterType, inputs.bagWeight);
   const consumptionKgPerM2Mm = (plasterType.base_kg_per_m2_10mm / 10) * substrate.multiplier * evenness.multiplier * spec.material_rules.reserve_factor;
+  const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "plaster" };
   const scenarios = computeEstimate(
     toEngineConfig(spec, bagWeight, consumptionKgPerM2Mm),
     {
@@ -235,6 +245,7 @@ export function computeCanonicalPlaster(
       thickness_mm: thickness,
     },
     factorTable,
+    accuracyOpt,
   );
   const recScenario = scenarios.REC;
   const totalKg = roundDisplay(recScenario.exact_need, 3);
@@ -263,6 +274,9 @@ export function computeCanonicalPlaster(
     practicalNotes.push(`Слой ${roundDisplay(thickness, 0)} мм — ставьте маяки и наносите в 2-3 захода с просушкой`);
   }
   practicalNotes.push("На стыке разных материалов (кирпич/бетон) — обязательно армирующая сетка");
+
+  // Build accuracy explanation
+  const { explanation } = applyAccuracyMode(work.netArea * consumptionKgPerM2Mm * thickness, "plaster", accuracyMode);
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -295,7 +309,7 @@ export function computeCanonicalPlaster(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: explanation,
   };
 }
-
-

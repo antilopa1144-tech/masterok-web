@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { electricDef } from "../formulas/electric";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = electricDef.calculate.bind(electricDef);
+const calc = withBasicAccuracy(electricDef.calculate.bind(electricDef));
 
 describe("Электропроводка", () => {
   describe("Стандартная квартира", () => {

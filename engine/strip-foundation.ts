@@ -7,6 +7,7 @@ import type {
   StripFoundationCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface StripFoundationInputs {
   perimeter?: number;
@@ -15,6 +16,7 @@ interface StripFoundationInputs {
   aboveGround?: number;
   reinforcement?: number;
   deliveryMethod?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: StripFoundationCanonicalSpec, key: string, fallback: number): number {
@@ -89,6 +91,9 @@ export function computeCanonicalStripFoundation(
   inputs: StripFoundationInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const perimeter = Math.max(10, Math.min(200, inputs.perimeter ?? getInputDefault(spec, "perimeter", 40)));
   const width = Math.max(200, Math.min(600, inputs.width ?? getInputDefault(spec, "width", 400)));
   const depth = Math.max(300, Math.min(2000, inputs.depth ?? getInputDefault(spec, "depth", 700)));
@@ -103,7 +108,8 @@ export function computeCanonicalStripFoundation(
   const totalH = (depth + aboveGround) / 1000;
   const vol = perimeter * (width / 1000) * totalH;
   const techLoss = spec.material_rules.tech_loss[String(deliveryMethod)] ?? 0;
-  const volReserve = roundDisplay((vol + techLoss) * spec.material_rules.concrete_reserve, 6);
+  const volReserveRaw = roundDisplay((vol + techLoss) * spec.material_rules.concrete_reserve, 6);
+  const volReserve = roundDisplay(volReserveRaw * accuracyMult, 6);
 
   const longLen = roundDisplay(perimeter * threads * spec.material_rules.overlap, 6);
   const longWeightKg = roundDisplay(longLen * weightPerM, 6);
@@ -219,5 +225,7 @@ export function computeCanonicalStripFoundation(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(volReserveRaw, "generic", accuracyMode).explanation,
   };
 }

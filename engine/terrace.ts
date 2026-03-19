@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -44,6 +45,7 @@ interface TerraceInputs {
   boardLength?: number;
   lagStep?: number;
   withTreatment?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -65,6 +67,9 @@ export function computeCanonicalTerrace(
   const boardLength = Math.max(2000, Math.min(6000, inputs.boardLength ?? getInputDefault(spec, "boardLength", 3000)));
   const lagStep = Math.max(300, Math.min(600, inputs.lagStep ?? getInputDefault(spec, "lagStep", 400)));
   const withTreatment = Math.max(0, Math.min(2, Math.round(inputs.withTreatment ?? getInputDefault(spec, "withTreatment", 0))));
+
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("flooring", accuracyMode);
 
   /* ─── geometry ─── */
   const area = length * width;
@@ -93,7 +98,8 @@ export function computeCanonicalTerrace(
   const geotextileRolls = Math.ceil(area * 1.05 / GEOTEXTILE_ROLL);
 
   /* ─── scenarios ─── */
-  const basePrimary = totalBoards;
+  const basePrimaryRaw = totalBoards;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "terrace-board",
@@ -235,5 +241,7 @@ export function computeCanonicalTerrace(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "flooring", accuracyMode).explanation,
   };
 }

@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -55,6 +56,7 @@ interface FacadeInsulationInputs {
   thickness?: number;
   insulationType?: number;
   finishType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -70,13 +72,17 @@ export function computeCanonicalFacadeInsulation(
   inputs: FacadeInsulationInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("insulation", accuracyMode);
+
   const area = Math.max(10, Math.min(2000, inputs.area ?? getInputDefault(spec, "area", 100)));
   const thickness = Math.max(50, Math.min(200, Math.round(inputs.thickness ?? getInputDefault(spec, "thickness", 100))));
   const insulationType = Math.max(0, Math.min(1, Math.round(inputs.insulationType ?? getInputDefault(spec, "insulationType", 0))));
   const finishType = Math.max(0, Math.min(2, Math.round(inputs.finishType ?? getInputDefault(spec, "finishType", 0))));
 
   /* ─── formulas ─── */
-  const plates = Math.ceil(area * PLATE_RESERVE / PLATE_M2);
+  const platesRaw = Math.ceil(area * PLATE_RESERVE / PLATE_M2);
+  const plates = Math.ceil(platesRaw * accuracyMult);
 
   const glueRate = GLUE_KG_PER_M2[insulationType] ?? GLUE_KG_PER_M2[0];
   const glueBags = Math.ceil(area * glueRate / GLUE_BAG);
@@ -254,5 +260,7 @@ export function computeCanonicalFacadeInsulation(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(platesRaw, "insulation", accuracyMode).explanation,
   };
 }

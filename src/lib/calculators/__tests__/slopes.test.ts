@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { slopesDef } from "../formulas/slopes";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = slopesDef.calculate.bind(slopesDef);
+const calc = withBasicAccuracy(slopesDef.calculate.bind(slopesDef));
 
 describe("Калькулятор откосов окон и дверей", () => {
   describe("5 окон 1200×1400, ширина откоса 350, сэндвич-панели", () => {

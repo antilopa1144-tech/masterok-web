@@ -91,7 +91,7 @@ export const fastenersDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = fastenersSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalFasteners(spec, inputs, factorTable);
+    const canonical = computeCanonicalFasteners(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

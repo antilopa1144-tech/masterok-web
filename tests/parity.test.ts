@@ -9,6 +9,10 @@ const FACTOR_TABLE = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, "../configs/factor-tables.json"), "utf-8"),
 ).factors;
 
+// Parity tests verify normative baseline (matching Flutter).
+// Accuracy mode "basic" = no practical modifiers = normative parity.
+const PARITY_ACCURACY_INPUTS = { accuracyMode: "basic" };
+
 function getEngineFunctionName(calcId: string): string {
   const pascal = calcId
     .split(/[-_]/)
@@ -36,7 +40,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           const engineUrl = new URL(`file:///${enginePath.replace(/\\/g, "/")}`).href;
           const engineModule = await import(engineUrl);
           const fnName = getEngineFunctionName(calcId);
-          const result = engineModule[fnName](config, testCase.inputs, FACTOR_TABLE);
+          const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
 
           expect(result.materials.length).toBe(testCase.expected_materials_count);
         });
@@ -48,7 +52,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           const engineUrl = new URL(`file:///${enginePath.replace(/\\/g, "/")}`).href;
           const engineModule = await import(engineUrl);
           const fnName = getEngineFunctionName(calcId);
-          const result = engineModule[fnName](config, testCase.inputs, FACTOR_TABLE);
+          const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
 
           expect(result.scenarios.REC.exact_need).toBeCloseTo(
             testCase.expected_scenarios.REC.exact_need,
@@ -63,7 +67,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           const engineUrl = new URL(`file:///${enginePath.replace(/\\/g, "/")}`).href;
           const engineModule = await import(engineUrl);
           const fnName = getEngineFunctionName(calcId);
-          const result = engineModule[fnName](config, testCase.inputs, FACTOR_TABLE);
+          const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
 
           expect(result.warnings.length).toBe(testCase.expected_warnings_count);
         });

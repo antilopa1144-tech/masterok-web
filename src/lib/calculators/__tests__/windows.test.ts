@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { windowsDef } from "../formulas/windows";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = windowsDef.calculate.bind(windowsDef);
+const calc = withBasicAccuracy(windowsDef.calculate.bind(windowsDef));
 
 describe("Калькулятор установки окон", () => {
   describe("5 окон 1200×1400, стена 500 мм, сэндвич-панели ПВХ откосы", () => {

@@ -7,12 +7,14 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface CeilingInsulationInputs {
   area?: number;
   thickness?: number;
   insulationType?: number;
   layers?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -59,6 +61,9 @@ export function computeCanonicalCeilingInsulation(
   inputs: CeilingInsulationInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("insulation", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const thickness = resolveThickness(spec, inputs);
   const insulationType = resolveInsulationType(spec, inputs);
@@ -161,6 +166,9 @@ export function computeCanonicalCeilingInsulation(
   });
 
   /* ─── scenarios ─── */
+  const primaryQtyRaw = primaryQty;
+  primaryQty = Math.ceil(primaryQty * accuracyMult);
+
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
     label: primaryLabel,
@@ -235,5 +243,7 @@ export function computeCanonicalCeilingInsulation(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(primaryQtyRaw, "insulation", accuracyMode).explanation,
   };
 }

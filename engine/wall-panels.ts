@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -60,6 +61,7 @@ interface WallPanelsInputs {
   panelType?: number;
   mountMethod?: number;
   height?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -75,6 +77,9 @@ export function computeCanonicalWallPanels(
   inputs: WallPanelsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = Math.max(1, Math.min(200, Math.round(inputs.area ?? getInputDefault(spec, "area", 20))));
   const panelType = Math.max(0, Math.min(4, Math.round(inputs.panelType ?? getInputDefault(spec, "panelType", 0))));
   const mountMethod = Math.max(0, Math.min(1, Math.round(inputs.mountMethod ?? getInputDefault(spec, "mountMethod", 0))));
@@ -85,7 +90,8 @@ export function computeCanonicalWallPanels(
   const battenSpacing = BATTEN_SPACING[panelType] ?? BATTEN_SPACING[0];
 
   /* ─── common formulas ─── */
-  const panels = Math.ceil(area * PANEL_RESERVE / panelArea);
+  const panelsRaw = Math.ceil(area * PANEL_RESERVE / panelArea);
+  const panels = Math.ceil(panelsRaw * accuracyMult);
   const perim = Math.sqrt(area) * 4;
 
   /* ─── mount-specific ─── */
@@ -276,6 +282,8 @@ export function computeCanonicalWallPanels(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(panelsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

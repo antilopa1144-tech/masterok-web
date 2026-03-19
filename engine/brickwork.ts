@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -47,6 +48,7 @@ interface BrickworkInputs {
   brickFormat?: number;
   wallThickness?: number;
   mortarJoint?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -78,6 +80,9 @@ export function computeCanonicalBrickwork(
   inputs: BrickworkInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const areaInfo = resolveArea(spec, inputs);
   const openingsArea = Math.max(0, Math.min(50, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 5)));
   const brickFormat = Math.max(0, Math.min(2, Math.round(inputs.brickFormat ?? getInputDefault(spec, "brickFormat", 0))));
@@ -93,7 +98,7 @@ export function computeCanonicalBrickwork(
   const jointCoeff = mortarJoint === 10 ? 1.0 : (10 / mortarJoint) * 0.97 + 0.03;
   const bricksPerSqm = baseBricks * jointCoeff;
   const totalBricks = netArea * bricksPerSqm;
-  const bricksWithReserve = Math.ceil(totalBricks * BLOCK_RESERVE);
+  const bricksWithReserve = Math.ceil(totalBricks * BLOCK_RESERVE * accuracyMult);
 
   /* ─── mortar ─── */
   const wallThicknessMm = WALL_THICKNESS_MM[wallThicknessIdx] ?? 250;
@@ -265,6 +270,8 @@ export function computeCanonicalBrickwork(
       recPurchaseBricks: recScenario.purchase_quantity,
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(Math.ceil(totalBricks * BLOCK_RESERVE), "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

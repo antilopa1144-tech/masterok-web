@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -29,6 +30,7 @@ interface GuttersInputs {
   funnels?: number;
   gutterDia?: number;
   gutterLength?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -44,6 +46,9 @@ export function computeCanonicalGutters(
   inputs: GuttersInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const roofPerimeter = Math.max(5, Math.min(200, inputs.roofPerimeter ?? getInputDefault(spec, "roofPerimeter", 40)));
   const roofHeight = Math.max(2, Math.min(15, inputs.roofHeight ?? getInputDefault(spec, "roofHeight", 5)));
   const funnels = Math.max(1, Math.min(20, Math.round(inputs.funnels ?? getInputDefault(spec, "funnels", 4))));
@@ -82,7 +87,8 @@ export function computeCanonicalGutters(
   const sealantTubes = Math.ceil((gutterJoints + funnels * 2) / SEALANT_CONNECTIONS_PER_TUBE);
 
   /* ─── primary quantity for scenarios ─── */
-  const primaryQuantity = gutterPcs;
+  const primaryQuantityRaw = gutterPcs;
+  const primaryQuantity = Math.ceil(primaryQuantityRaw * accuracyMult);
   const primaryUnit = "шт";
   const primaryLabel = `gutter-${gutterDia}mm-${gutterLength}m`;
 
@@ -250,5 +256,7 @@ export function computeCanonicalGutters(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(primaryQuantityRaw, "generic", accuracyMode).explanation,
   };
 }

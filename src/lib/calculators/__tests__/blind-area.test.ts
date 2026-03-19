@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { blindAreaDef } from "../formulas/blind-area";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = blindAreaDef.calculate.bind(blindAreaDef);
+const calc = withBasicAccuracy(blindAreaDef.calculate.bind(blindAreaDef));
 
 describe("Калькулятор отмостки", () => {
   describe("Бетонная отмостка: периметр 40 м, ширина 1.0 м, толщина 100 мм", () => {

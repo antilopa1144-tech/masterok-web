@@ -123,7 +123,7 @@ export const puttyDef: CalculatorDefinition = {
     },
   ],
   calculate(inputs): import("../types").CalculatorResult {
-    return computeCanonicalPutty(puttyCanonicalSpec, inputs, factorTables.factors);
+    return computeCanonicalPutty(puttyCanonicalSpec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTables.factors);
   },
   formulaDescription: `
 **Нормы расхода шпаклёвки:**

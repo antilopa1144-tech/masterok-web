@@ -98,7 +98,7 @@ export const decorStoneDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = decorstoneSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalDecorStone(spec, inputs, factorTable);
+    const canonical = computeCanonicalDecorStone(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

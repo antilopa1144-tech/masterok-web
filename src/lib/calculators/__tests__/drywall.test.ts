@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { drywallDef } from "../formulas/drywall";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = drywallDef.calculate.bind(drywallDef);
+const calc = withBasicAccuracy(drywallDef.calculate.bind(drywallDef));
 
 describe("Калькулятор гипсокартона", () => {
   describe("Перегородка 5×2.7 м, 1 слой, шаг 600 мм", () => {

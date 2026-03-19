@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { foundationSlabDef } from "../formulas/foundation-slab";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = foundationSlabDef.calculate.bind(foundationSlabDef);
+const calc = withBasicAccuracy(foundationSlabDef.calculate.bind(foundationSlabDef));
 
 describe("Калькулятор плитного фундамента", () => {
   describe("Стандарт: 60 м², толщина 200 мм, Ø12, шаг 200 мм, без утепления", () => {

@@ -106,6 +106,7 @@ export const selfLevelingDef: CalculatorDefinition = {
       thickness: inputs.thickness,
       mixtureType: inputs.mixtureType,
       bagWeight: inputs.bagWeight,
+      accuracyMode: inputs.accuracyMode as any,
     });
   },
   formulaDescription: `

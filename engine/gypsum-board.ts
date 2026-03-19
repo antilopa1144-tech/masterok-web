@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface GypsumBoardInputs {
   area?: number;
@@ -14,6 +15,7 @@ interface GypsumBoardInputs {
   layers?: number;
   gklType?: number;
   profileStep?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -68,6 +70,9 @@ export function computeCanonicalGypsumBoard(
   inputs: GypsumBoardInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const constructionType = resolveConstructionType(spec, inputs);
   const layers = resolveLayers(spec, inputs);
@@ -113,6 +118,9 @@ export function computeCanonicalGypsumBoard(
   const primerCans = Math.ceil(area * sides * PRIMER_L_PER_M2 * PRIMER_RESERVE / PRIMER_CAN);
 
   /* ─── scenarios ─── */
+  const totalSheetsRaw = totalSheets;
+  const totalSheetsAdj = Math.ceil(totalSheets * accuracyMult);
+
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
     label: `gkl-sheet-${spec.packaging_rules.package_size}`,
@@ -121,7 +129,7 @@ export function computeCanonicalGypsumBoard(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(totalSheets * multiplier, 6);
+    const exactNeed = roundDisplay(totalSheetsAdj * multiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -276,5 +284,7 @@ export function computeCanonicalGypsumBoard(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalSheetsRaw, "generic", accuracyMode).explanation,
   };
 }

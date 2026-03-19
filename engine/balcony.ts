@@ -7,6 +7,7 @@ import type {
   BalconyCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface BalconyInputs {
   length?: number;
@@ -14,6 +15,7 @@ interface BalconyInputs {
   height?: number;
   finishType?: number;
   insulationType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 const FINISH_LABELS: Record<number, string> = {
@@ -93,6 +95,9 @@ export function computeCanonicalBalcony(
   inputs: BalconyInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const length = Math.max(1, Math.min(10, inputs.length ?? getInputDefault(spec, "length", 3)));
   const width = Math.max(0.6, Math.min(3, inputs.width ?? getInputDefault(spec, "width", 1.2)));
   const height = Math.max(2, Math.min(3, inputs.height ?? getInputDefault(spec, "height", 2.5)));
@@ -112,7 +117,8 @@ export function computeCanonicalBalcony(
   const battenRows = Math.ceil(totalFinishArea / spec.material_rules.batten_pitch);
   const klaymerCount = Math.ceil(panelCount * spec.material_rules.klaymer_per_panel * spec.material_rules.klaymer_reserve);
 
-  const baseExactNeed = panelCount;
+  const baseExactNeedRaw = panelCount;
+  const baseExactNeed = Math.ceil(baseExactNeedRaw * accuracyMult);
 
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
@@ -203,5 +209,7 @@ export function computeCanonicalBalcony(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactNeedRaw, "generic", accuracyMode).explanation,
   };
 }

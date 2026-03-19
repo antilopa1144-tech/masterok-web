@@ -7,6 +7,13 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -61,6 +68,7 @@ interface FastenersInputs {
   fastenerStep?: number;
   withFrameScrews?: number;
   withDubels?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -76,6 +84,7 @@ export function computeCanonicalFasteners(
   inputs: FastenersInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const materialType = Math.max(0, Math.min(3, Math.round(inputs.materialType ?? getInputDefault(spec, "materialType", 0))));
   const sheetCount = Math.max(1, Math.min(200, Math.round(inputs.sheetCount ?? getInputDefault(spec, "sheetCount", 10))));
   const fastenerStep = Math.max(150, Math.min(300, Math.round(inputs.fastenerStep ?? getInputDefault(spec, "fastenerStep", 200))));
@@ -83,11 +92,13 @@ export function computeCanonicalFasteners(
   const withDubels = Math.round(inputs.withDubels ?? getInputDefault(spec, "withDubels", 0)) === 1 ? 1 : 0;
 
   /* ─── formulas ─── */
+  const primaryMult = getPrimaryMultiplier("fasteners", accuracyMode);
+  const accessoriesMult = getAccessoriesMultiplier("fasteners", accuracyMode);
   const baseStep = BASE_STEP[materialType] ?? BASE_STEP[0];
   const stepCoeff = baseStep / fastenerStep;
   const baseScrews = SCREWS_PER_UNIT[materialType] ?? SCREWS_PER_UNIT[0];
   const screwsPerUnit = Math.ceil(baseScrews * stepCoeff);
-  let totalScrews = Math.ceil(sheetCount * screwsPerUnit * SCREW_RESERVE);
+  let totalScrews = Math.ceil(sheetCount * screwsPerUnit * SCREW_RESERVE * primaryMult);
 
   // For paneling: klaimers
   const klaimers = materialType === 3 ? Math.ceil(totalScrews * KLAYMER_MULTIPLIER) : 0;
@@ -105,8 +116,8 @@ export function computeCanonicalFasteners(
     ? Math.ceil(sheetCount * 2 / DUBEL_STEP * DUBEL_RESERVE)
     : 0;
 
-  // Bits
-  const bits = Math.ceil(totalScrews / BITS_PER_SCREWS);
+  // Bits (accessories-driven)
+  const bits = Math.ceil(totalScrews / BITS_PER_SCREWS * accessoriesMult);
 
   /* ─── scenarios ─── */
   const packageOptions = [{
@@ -128,6 +139,7 @@ export function computeCanonicalFasteners(
         `formula_version:${spec.formula_version}`,
         `materialType:${materialType}`,
         `fastenerStep:${fastenerStep}`,
+        `accuracy_mode:${accuracyMode}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
@@ -239,5 +251,7 @@ export function computeCanonicalFasteners(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalScrews / primaryMult, "fasteners", accuracyMode).explanation,
   };
 }

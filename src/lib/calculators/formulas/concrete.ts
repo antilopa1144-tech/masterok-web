@@ -82,7 +82,7 @@ export const concreteDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = concreteSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalConcrete(spec, inputs, factorTable);
+    const canonical = computeCanonicalConcrete(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

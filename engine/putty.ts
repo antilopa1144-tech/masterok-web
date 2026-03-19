@@ -1,4 +1,4 @@
-import { computeEstimate, type EngineCalculatorConfig } from "./compute";
+import { computeEstimate, type EngineCalculatorConfig, type AccuracyModeOption } from "./compute";
 import type { FactorTable } from "./factors";
 import type {
   CanonicalCalculatorResult,
@@ -9,6 +9,12 @@ import type {
 } from "./canonical";
 import type { ScenarioBundle, ScenarioName } from "./scenarios";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 const SCENARIO_NAMES: ScenarioName[] = ["MIN", "REC", "MAX"];
 
@@ -25,6 +31,7 @@ interface PuttyInputs {
   layers?: number;
   startLayers?: number;
   finishLayers?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 interface ResolvedPuttyComponent {
@@ -256,6 +263,8 @@ export function computeCanonicalPutty(
   inputs: PuttyInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "putty" };
   const workArea = resolveWorkArea(spec, inputs);
   const puttyType = Math.max(0, Math.min(2, Math.round(inputs.puttyType ?? getInputDefault(spec, "puttyType", 0))));
   const bagWeight = resolveBagWeight(spec, inputs.bagWeight);
@@ -270,12 +279,25 @@ export function computeCanonicalPutty(
         thickness_mm: resolved.layers,
       },
       factorTable,
+      accuracyOpt,
     ),
   );
 
+  // Apply accessories multiplier to auxiliary materials
+  const accessoriesMult = getAccessoriesMultiplier("putty", accuracyMode);
+
+  const auxMaterials = buildAuxiliaryMaterials(spec, workArea, puttyType);
+  // Scale auxiliary quantities by accessories multiplier
+  const scaledAuxMaterials = auxMaterials.map((m) => ({
+    ...m,
+    quantity: roundDisplay(m.quantity * accessoriesMult, 3),
+    withReserve: typeof m.withReserve === "number" ? Math.ceil(m.withReserve * accessoriesMult) : m.withReserve,
+    purchaseQty: typeof m.purchaseQty === "number" ? Math.ceil(m.purchaseQty * accessoriesMult) : m.purchaseQty,
+  }));
+
   const materials = [
     ...resolvedComponents.map((resolved, index) => buildComponentMaterial(resolved, scenarioBundles[index], bagWeight)),
-    ...buildAuxiliaryMaterials(spec, workArea, puttyType),
+    ...scaledAuxMaterials,
   ];
 
   const warnings: string[] = [];
@@ -291,9 +313,11 @@ export function computeCanonicalPutty(
     qualityProfile.key,
   );
 
-
   const practicalNotes: string[] = [];
   practicalNotes.push("Между слоями шпаклёвки — грунтовка и полная просушка. Минимум 12 часов между слоями");
+
+  // Build accuracy explanation
+  const { explanation } = applyAccuracyMode(workArea, "putty", accuracyMode);
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -316,5 +340,7 @@ export function computeCanonicalPutty(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: explanation,
   };
 }

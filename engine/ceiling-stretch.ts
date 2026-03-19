@@ -7,12 +7,14 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface CeilingStretchInputs {
   area?: number;
   corners?: number;
   fixtures?: number;
   type?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -51,6 +53,9 @@ export function computeCanonicalCeilingStretch(
   inputs: CeilingStretchInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const area = resolveArea(spec, inputs);
   const corners = resolveCorners(spec, inputs);
   const fixtures = resolveFixtures(spec, inputs);
@@ -61,7 +66,8 @@ export function computeCanonicalCeilingStretch(
 
   /* Baguette profiles */
   const baguetLen = perim * BAGUET_RESERVE;
-  const profilePcs = Math.ceil(baguetLen / BAGUET_LENGTH);
+  const profilePcsRaw = Math.ceil(baguetLen / BAGUET_LENGTH);
+  const profilePcs = Math.ceil(profilePcsRaw * accuracyMult);
 
   /* Decorative insert */
   const insertLen = perim * INSERT_RESERVE;
@@ -193,6 +199,8 @@ export function computeCanonicalCeilingStretch(
       recPurchase: recScenario.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(profilePcsRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,

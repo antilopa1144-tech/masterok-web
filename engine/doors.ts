@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -46,6 +47,7 @@ interface DoorsInputs {
   doorType?: number;
   wallThickness?: number;
   withNalichnik?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -61,6 +63,9 @@ export function computeCanonicalDoors(
   inputs: DoorsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const doorCount = Math.max(1, Math.min(20, Math.round(inputs.doorCount ?? getInputDefault(spec, "doorCount", 3))));
   const doorType = Math.max(0, Math.min(4, Math.round(inputs.doorType ?? getInputDefault(spec, "doorType", 0))));
   const wallThickness = Math.max(80, Math.min(380, Math.round(inputs.wallThickness ?? getInputDefault(spec, "wallThickness", 120))));
@@ -99,7 +104,8 @@ export function computeCanonicalDoors(
   const dubelPacks = Math.ceil(doorCount * DUBELS_PER_DOOR / DUBEL_PACK);
 
   /* ─── scenarios ─── */
-  const basePrimary = foamCans;
+  const basePrimaryRaw = foamCans;
+  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "foam-can-750ml",
@@ -244,5 +250,7 @@ export function computeCanonicalDoors(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

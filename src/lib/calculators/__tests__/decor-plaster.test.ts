@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { decorPlasterDef } from "../formulas/decor-plaster";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = decorPlasterDef.calculate.bind(decorPlasterDef);
+const calc = withBasicAccuracy(decorPlasterDef.calculate.bind(decorPlasterDef));
 
 describe("Калькулятор декоративной штукатурки", () => {
   describe("Короед 2 мм (texture=0), фасад, 50 м², мешки 25 кг", () => {

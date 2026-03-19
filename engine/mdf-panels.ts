@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -29,6 +30,7 @@ interface MdfPanelsInputs {
   panelType?: number;
   needProfile?: number;
   needPlinth?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -44,6 +46,9 @@ export function computeCanonicalMdfPanels(
   inputs: MdfPanelsInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const inputMode = Math.max(0, Math.min(1, Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0))));
   const areaInput = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 20)));
   const wallWidth = Math.max(0.5, Math.min(30, inputs.wallWidth ?? getInputDefault(spec, "wallWidth", 4)));
@@ -72,6 +77,9 @@ export function computeCanonicalMdfPanels(
   const plinthPcs = Math.ceil(plinthLen / PLINTH_LENGTH);
 
   /* ─── scenarios ─── */
+  const panelsRaw = panels;
+  const panelsAdj = Math.ceil(panels * accuracyMult);
+
   const packageOptions = [{
     size: 1,
     label: "mdf-panel",
@@ -80,7 +88,7 @@ export function computeCanonicalMdfPanels(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(panels * multiplier, 6);
+    const exactNeed = roundDisplay(panelsAdj * multiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -197,5 +205,7 @@ export function computeCanonicalMdfPanels(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(panelsRaw, "generic", accuracyMode).explanation,
   };
 }

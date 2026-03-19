@@ -8,6 +8,7 @@ import type {
   ConcreteProportionSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface ConcreteInputs {
   concreteVolume?: number;
@@ -17,6 +18,7 @@ interface ConcreteInputs {
   inputMode?: number;
   area?: number;
   thickness?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 const GRADE_LABELS: Record<number, string> = {
@@ -146,6 +148,8 @@ export function computeCanonicalConcrete(
   inputs: ConcreteInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const volume = resolveVolume(spec, inputs);
   const concreteGrade = Math.max(1, Math.min(7, Math.round(inputs.concreteGrade ?? getInputDefault(spec, "concreteGrade", 3))));
   const manualMix = Math.round(inputs.manualMix ?? getInputDefault(spec, "manualMix", 0)) === 1 ? 1 : 0;
@@ -154,7 +158,9 @@ export function computeCanonicalConcrete(
   const gradeLabel = GRADE_LABELS[concreteGrade] ?? GRADE_LABELS[3];
 
   const sourceVolume = volume.sourceVolume;
-  const totalVolume = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
+  const totalVolumeRaw = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
+  const accuracyMult = getPrimaryMultiplier("concrete", accuracyMode);
+  const totalVolume = roundDisplay(totalVolumeRaw * accuracyMult, 6);
 
   // Waterproofing calculations
   const estimatedThickness = spec.material_rules.estimated_slab_thickness_m;
@@ -299,5 +305,7 @@ export function computeCanonicalConcrete(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalVolumeRaw, "concrete", accuracyMode).explanation,
   };
 }

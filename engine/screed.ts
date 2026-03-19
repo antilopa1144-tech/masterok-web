@@ -1,4 +1,4 @@
-import { computeEstimate, type EngineCalculatorConfig } from './compute';
+import { computeEstimate, type EngineCalculatorConfig, type AccuracyModeOption } from './compute';
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -7,6 +7,13 @@ import type {
 } from './canonical';
 import type { FactorTable } from './factors';
 import { roundDisplay } from './units';
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 interface ScreedInputs {
   inputMode?: number;
@@ -15,6 +22,7 @@ interface ScreedInputs {
   area?: number;
   thickness?: number;
   screedType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -302,6 +310,7 @@ export function computeCanonicalScreed(
   inputs: ScreedInputs,
   factorTable: FactorTable = SCREED_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const work = resolveArea(spec, inputs);
   const thickness = Math.max(
     spec.material_rules.min_thickness_mm,
@@ -332,6 +341,7 @@ export function computeCanonicalScreed(
 
   const bagWeight = 50;
 
+  const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "concrete" };
   const scenarios = computeEstimate(
     toEngineConfig(spec, bagWeight, effectiveConsumptionKgPerM2Mm),
     {
@@ -339,6 +349,7 @@ export function computeCanonicalScreed(
       thickness_mm: thickness,
     },
     factorTable,
+    accuracyOpt,
   );
 
   const recScenario = scenarios.REC;
@@ -397,6 +408,9 @@ export function computeCanonicalScreed(
     practicalNotes.push(`Полусухая стяжка — затирочная машина обязательна, ручная затирка на ${roundDisplay(area, 0)} м² нереальна`);
   }
 
+  // Build accuracy explanation
+  const { explanation } = applyAccuracyMode(area * effectiveConsumptionKgPerM2Mm * thickness, "concrete", accuracyMode);
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
@@ -430,5 +444,7 @@ export function computeCanonicalScreed(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: explanation,
   };
 }

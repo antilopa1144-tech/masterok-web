@@ -1,4 +1,4 @@
-import { computeEstimate, type EngineCalculatorConfig } from './compute';
+import { computeEstimate, type EngineCalculatorConfig, type AccuracyModeOption } from './compute';
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -7,6 +7,13 @@ import type {
 } from './canonical';
 import type { FactorTable } from './factors';
 import { roundDisplay } from './units';
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 interface SelfLevelingInputs {
   inputMode?: number;
@@ -17,6 +24,7 @@ interface SelfLevelingInputs {
   mixtureType?: number;
   consumptionOverride?: number;
   bagWeight?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 const SELF_LEVELING_FACTOR_TABLE: FactorTable = {
@@ -134,11 +142,13 @@ export function computeCanonicalSelfLeveling(
   inputs: SelfLevelingInputs,
   factorTable: FactorTable = SELF_LEVELING_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const work = resolveArea(spec, inputs);
   const thickness = Math.max(3, Math.min(100, inputs.thickness ?? getInputDefault(spec, 'thickness', 10)));
   const mixtureType = resolveMixtureType(spec, inputs.mixtureType);
   const bagWeight = resolveBagWeight(spec, inputs.bagWeight);
   const consumptionKgPerM2Mm = resolveConsumption(spec, mixtureType, inputs.consumptionOverride) * spec.material_rules.reserve_factor;
+  const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "concrete" };
   const scenarios = computeEstimate(
     toEngineConfig(spec, bagWeight, consumptionKgPerM2Mm),
     {
@@ -146,6 +156,7 @@ export function computeCanonicalSelfLeveling(
       thickness_mm: thickness,
     },
     factorTable,
+    accuracyOpt,
   );
   const recScenario = scenarios.REC;
   const totalKg = roundDisplay(recScenario.exact_need, 3);
@@ -170,6 +181,9 @@ export function computeCanonicalSelfLeveling(
     practicalNotes.push(`Наливной пол ${roundDisplay(thickness, 0)} мм — лейте за один приём, не давайте подсыхать краям`);
   }
   practicalNotes.push("Прокатайте игольчатым валиком — выгоните пузырьки воздуха, иначе поверхность будет как наждачка");
+
+  // Build accuracy explanation
+  const { explanation } = applyAccuracyMode(work.area * consumptionKgPerM2Mm * thickness, "concrete", accuracyMode);
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -199,5 +213,7 @@ export function computeCanonicalSelfLeveling(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: explanation,
   };
 }

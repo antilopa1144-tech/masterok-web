@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 interface SewageInputs {
   residents?: number;
@@ -14,6 +15,7 @@ interface SewageInputs {
   chambersCount?: number;
   pipeLength?: number;
   groundType?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
@@ -55,6 +57,9 @@ export function computeCanonicalSewage(
   inputs: SewageInputs,
   factorTable: FactorTable = SEWAGE_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const residents = Math.max(1, Math.min(20, Math.round(inputs.residents ?? getInputDefault(spec, "residents", 4))));
   const septikType = Math.max(0, Math.min(2, Math.round(inputs.septikType ?? getInputDefault(spec, "septikType", 0))));
   const chambersCount = Math.max(1, Math.min(3, Math.round(inputs.chambersCount ?? getInputDefault(spec, "chambersCount", 2))));
@@ -229,6 +234,8 @@ export function computeCanonicalSewage(
   }
 
   /* ─── scenarios ─── */
+  const basePrimaryRaw = basePrimary;
+  basePrimary = Math.ceil(basePrimary * accuracyMult);
   const packageOptions = [{ size: 1, label: "sewage-unit", unit: "шт" }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
@@ -321,5 +328,7 @@ export function computeCanonicalSewage(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

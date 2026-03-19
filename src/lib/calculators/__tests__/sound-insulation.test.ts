@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { soundInsulationDef } from "../formulas/sound-insulation";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = soundInsulationDef.calculate.bind(soundInsulationDef);
+const calc = withBasicAccuracy(soundInsulationDef.calculate.bind(soundInsulationDef));
 
 describe("Звукоизоляция", () => {
   describe("Базовая система ГКЛ + Минераловатные (system=0)", () => {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { balconyDef } from "../formulas/balcony";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = balconyDef.calculate.bind(balconyDef);
+const calc = withBasicAccuracy(balconyDef.calculate.bind(balconyDef));
 
 describe("Калькулятор отделки балкона", () => {
   describe("Стандарт: 3×1.2 м, высота 2.5 м, вагонка, ПСБ (insulationType=1)", () => {

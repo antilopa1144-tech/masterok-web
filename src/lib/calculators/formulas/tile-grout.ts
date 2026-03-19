@@ -95,7 +95,7 @@ export const tileGroutDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = tilegroutSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalTileGrout(spec, inputs, factorTable);
+    const canonical = computeCanonicalTileGrout(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     return {
       materials: canonical.materials,

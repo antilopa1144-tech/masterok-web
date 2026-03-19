@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -32,6 +33,7 @@ interface DecorStoneInputs {
   jointWidth?: number;
   needGrout?: number;
   needPrimer?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -47,6 +49,8 @@ export function computeCanonicalDecorStone(
   inputs: DecorStoneInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const inputMode = Math.max(0, Math.min(1, Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0))));
   const areaInput = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 15)));
   const wallWidth = Math.max(0.5, Math.min(30, inputs.wallWidth ?? getInputDefault(spec, "wallWidth", 4)));
@@ -60,7 +64,9 @@ export function computeCanonicalDecorStone(
   const area = inputMode === 1 ? roundDisplay(wallWidth * wallHeight, 3) : areaInput;
 
   /* ─── stone ─── */
-  const stoneM2 = area * STONE_RESERVE;
+  const stoneM2Raw = area * STONE_RESERVE;
+  const accuracyMult = getPrimaryMultiplier("decorative_stone", accuracyMode);
+  const stoneM2 = stoneM2Raw * accuracyMult;
 
   /* ─── glue ─── */
   const glueRate = GLUE_KG_PER_M2[stoneType] ?? GLUE_KG_PER_M2[0];
@@ -207,5 +213,7 @@ export function computeCanonicalDecorStone(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(stoneM2Raw, "decorative_stone", accuracyMode).explanation,
   };
 }

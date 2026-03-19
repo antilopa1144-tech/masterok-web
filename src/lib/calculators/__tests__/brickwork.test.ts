@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { brickworkDef } from "../formulas/brickwork";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = brickworkDef.calculate.bind(brickworkDef);
+const calc = withBasicAccuracy(brickworkDef.calculate.bind(brickworkDef));
 
 describe("Калькулятор кладки кирпича", () => {
   describe("Одинарный кирпич, в кирпич (250 мм), 10×2.7 м, проёмы 5 м²", () => {

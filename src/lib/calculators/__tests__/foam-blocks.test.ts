@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { foamBlocksDef } from "../formulas/foam-blocks";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = foamBlocksDef.calculate.bind(foamBlocksDef);
+const calc = withBasicAccuracy(foamBlocksDef.calculate.bind(foamBlocksDef));
 
 describe("Калькулятор пеноблоков и керамзитоблоков", () => {
   describe("Пеноблок 600×300×200, стена 10×2.7, проёмы 5 м²", () => {

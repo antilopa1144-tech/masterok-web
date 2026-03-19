@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -40,6 +41,7 @@ interface DrywallCeilingInputs {
   area?: number;
   layers?: number;
   profileStep?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -55,6 +57,8 @@ export function computeCanonicalDrywallCeiling(
   inputs: DrywallCeilingInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const inputMode = Math.max(0, Math.min(1, Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0))));
   const length = Math.max(1, Math.min(20, inputs.length ?? getInputDefault(spec, "length", 5)));
   const width = Math.max(1, Math.min(20, inputs.width ?? getInputDefault(spec, "width", 4)));
@@ -68,7 +72,9 @@ export function computeCanonicalDrywallCeiling(
   const area = inputMode === 0 ? roundDisplay(length * width, 3) : areaInput;
 
   /* ─── sheets ─── */
-  const sheets = Math.ceil(area * layers / SHEET_AREA * SHEET_RESERVE);
+  const sheetsRaw = Math.ceil(area * layers / SHEET_AREA * SHEET_RESERVE);
+  const accuracyMult = getPrimaryMultiplier("drywall", accuracyMode);
+  const sheets = sheetsRaw * accuracyMult;
 
   /* ─── profiles ─── */
   const mainProfileRows = Math.ceil(width / (profileStep / 1000));
@@ -299,5 +305,7 @@ export function computeCanonicalDrywallCeiling(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(sheetsRaw, "drywall", accuracyMode).explanation,
   };
 }

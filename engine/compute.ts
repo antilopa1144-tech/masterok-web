@@ -3,6 +3,12 @@ import { combineScenarioFactors, type FactorTable, type FieldFactorName } from "
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  type MaterialCategory,
+  DEFAULT_ACCURACY_MODE,
+  getPrimaryMultiplier,
+} from "./accuracy";
 
 export interface EnginePackagingConfig {
   unit: string;
@@ -38,15 +44,27 @@ function coatingAreaRateFormula(inputs: FormulaInputs, consumptionPerM2: number)
   return area * consumptionPerM2;
 }
 
+export interface AccuracyModeOption {
+  mode?: AccuracyMode;
+  materialCategory?: MaterialCategory;
+}
+
 export function computeEstimate(
   config: EngineCalculatorConfig,
   inputs: FormulaInputs,
   factorTable: FactorTable = DEFAULT_TABLE,
+  accuracyOption?: AccuracyModeOption,
 ): ScenarioBundle {
-  const baseExactNeed =
+  const rawBaseExactNeed =
     config.baseFormula === "coating_area_rate"
       ? coatingAreaRateFormula(inputs, config.baseParams.consumption_kg_per_m2_mm)
       : puttyAreaThicknessFormula(inputs, config.baseParams.consumption_kg_per_m2_mm);
+
+  // Apply accuracy mode multiplier to base need (before scenario factors)
+  const accuracyMode = accuracyOption?.mode ?? DEFAULT_ACCURACY_MODE;
+  const materialCategory = accuracyOption?.materialCategory ?? "generic";
+  const accuracyMultiplier = getPrimaryMultiplier(materialCategory, accuracyMode);
+  const baseExactNeed = rawBaseExactNeed * accuracyMultiplier;
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, config.enabledFactors, scenario);
@@ -68,10 +86,13 @@ export function computeEstimate(
       assumptions: [
         `base_formula:${config.baseFormula}`,
         `consumption_kg_per_m2_mm:${config.baseParams.consumption_kg_per_m2_mm}`,
+        `accuracy_mode:${accuracyMode}`,
+        `accuracy_multiplier:${roundDisplay(accuracyMultiplier, 6)}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
         ...keyFactors,
+        accuracy_multiplier: roundDisplay(accuracyMultiplier, 6),
         field_multiplier: roundDisplay(multiplier, 6),
       },
       buy_plan: {

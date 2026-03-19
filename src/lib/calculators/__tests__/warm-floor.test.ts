@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { warmFloorDef } from "../formulas/warm-floor";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = warmFloorDef.calculate.bind(warmFloorDef);
+const calc = withBasicAccuracy(warmFloorDef.calculate.bind(warmFloorDef));
 
 describe("Калькулятор тёплого пола", () => {
   describe("Нагревательный мат (heatingType=0), 10 м² комната, 2 м² мебель, 150 Вт/м²", () => {

@@ -8,6 +8,13 @@ import type {
   WallpaperTypeSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import {
+  type AccuracyMode,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+  getAccessoriesMultiplier,
+} from "./accuracy";
 
 interface WallpaperInputs {
   inputMode?: number;
@@ -31,6 +38,7 @@ interface WallpaperInputs {
   wallpaperType?: number;
   reservePercent?: number;
   reserveRolls?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 interface WallpaperGeometry {
@@ -229,6 +237,7 @@ export function computeCanonicalWallpaper(
   inputs: WallpaperInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const geometry = resolveGeometry(spec, inputs);
   const wallpaperType = resolveWallpaperType(spec, inputs);
   const rollWidth = resolveRollWidth(spec, inputs);
@@ -243,7 +252,8 @@ export function computeCanonicalWallpaper(
   const stripsNeeded = geometry.wallHeight > 0 && rollWidth > 0
     ? Math.ceil(geometry.netArea / (rollWidth * geometry.wallHeight))
     : 0;
-  const baseExactRolls = stripsPerRoll > 0 ? stripsNeeded / stripsPerRoll : 0;
+  const wallpaperPrimaryMult = getPrimaryMultiplier("wallpaper", accuracyMode);
+  const baseExactRolls = stripsPerRoll > 0 ? (stripsNeeded / stripsPerRoll) * wallpaperPrimaryMult : 0;
   const reserveMultiplier = 1 + reservePercent / 100;
   const packageOptions = [{
     size: spec.packaging_rules.roll_package_size,
@@ -263,6 +273,7 @@ export function computeCanonicalWallpaper(
       assumptions: [
         `formula_version:${spec.formula_version}`,
         `wallpaper:${wallpaperType.key}`,
+        `accuracy_mode:${accuracyMode}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
@@ -283,9 +294,11 @@ export function computeCanonicalWallpaper(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
-  const pasteNeeded = geometry.netArea * wallpaperType.paste_kg_per_m2 * spec.material_rules.paste_reserve_factor;
+  const accessoriesMult = getAccessoriesMultiplier("wallpaper", accuracyMode);
+  const pasteNeeded = geometry.netArea * wallpaperType.paste_kg_per_m2 * spec.material_rules.paste_reserve_factor * accessoriesMult;
   const pastePacks = pasteNeeded > 0 ? Math.max(1, Math.ceil(pasteNeeded / spec.packaging_rules.paste_pack_kg)) : 0;
-  const primerNeeded = geometry.netArea * spec.material_rules.primer_l_per_m2 * spec.material_rules.primer_reserve_factor;
+  const primerPrimaryMult = getPrimaryMultiplier("primer", accuracyMode);
+  const primerNeeded = geometry.netArea * spec.material_rules.primer_l_per_m2 * spec.material_rules.primer_reserve_factor * primerPrimaryMult;
   const primerCans = primerNeeded > 0 ? Math.max(1, Math.ceil(primerNeeded / spec.packaging_rules.primer_can_l)) : 0;
 
   const warnings: string[] = [];
@@ -353,5 +366,7 @@ export function computeCanonicalWallpaper(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseExactRolls / wallpaperPrimaryMult, "wallpaper", accuracyMode).explanation,
   };
 }

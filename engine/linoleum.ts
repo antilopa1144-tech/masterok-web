@@ -6,6 +6,7 @@ import type {
   LinoleumCanonicalSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface LinoleumInputs {
   inputMode?: number;
@@ -20,6 +21,7 @@ interface LinoleumInputs {
   needGlue?: number;
   needPlinth?: number;
   needTape?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 function getInputDefault(spec: LinoleumCanonicalSpec, key: string, fallback: number): number {
@@ -68,6 +70,8 @@ export function computeCanonicalLinoleum(
   inputs: LinoleumInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const geometry = resolveGeometry(spec, inputs);
   const rollWidth = Math.max(1.5, Math.min(spec.warnings_rules.max_single_roll_width_m, inputs.rollWidth ?? getInputDefault(spec, "rollWidth", 3)));
   const hasPattern = (inputs.hasPattern ?? getInputDefault(spec, "hasPattern", 0)) > 0;
@@ -80,9 +84,11 @@ export function computeCanonicalLinoleum(
   const shorterSide = Math.min(geometry.roomLength, geometry.roomWidth);
   const stripsNeeded = Math.max(1, Math.ceil(shorterSide / rollWidth));
   const stripLengthBase = longerSide + spec.material_rules.trim_allowance_m;
-  const totalLinearM = hasPattern && stripsNeeded > 1
+  const totalLinearMRaw = hasPattern && stripsNeeded > 1
     ? stripLengthBase + (stripLengthBase + patternRepeatM) * (stripsNeeded - 1)
     : stripLengthBase * stripsNeeded;
+  const accuracyMult = getPrimaryMultiplier("flooring", accuracyMode);
+  const totalLinearM = totalLinearMRaw * accuracyMult;
   const linearMetersRounded = roundLinearMeters(totalLinearM, spec.packaging_rules.linear_meter_step_m);
   const totalCoverageArea = roundDisplay(linearMetersRounded * rollWidth, 6);
   const wastePercent = geometry.area > 0 ? roundDisplay(((totalCoverageArea - geometry.area) / geometry.area) * 100, 3) : 0;
@@ -244,5 +250,7 @@ export function computeCanonicalLinoleum(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalLinearMRaw, "flooring", accuracyMode).explanation,
   };
 }

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { atticDef } from "../formulas/attic";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = atticDef.calculate.bind(atticDef);
+const calc = withBasicAccuracy(atticDef.calculate.bind(atticDef));
 
 describe("Калькулятор мансарды", () => {
   describe("Стандарт: 60 м², 200 мм, минвата плиты, вагонка, стандартная пароизоляция", () => {

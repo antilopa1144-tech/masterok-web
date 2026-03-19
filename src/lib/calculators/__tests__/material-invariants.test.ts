@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ALL_CALCULATORS } from "../../calculators";
+import { withBasicAccuracy } from "./_helpers";
 
 /**
  * Cross-cutting material invariant tests for all 65 calculators.
@@ -18,7 +19,8 @@ describe("Material invariants — all calculators", () => {
   for (const calc of ALL_CALCULATORS) {
     describe(calc.id, () => {
       const inputs = buildDefaultInputs(calc);
-      const result = calc.calculate(inputs);
+      const calculate = withBasicAccuracy(calc.calculate.bind(calc));
+      const result = calculate(inputs);
 
       it("all materials have finite purchaseQty > 0", () => {
         for (const m of result.materials) {

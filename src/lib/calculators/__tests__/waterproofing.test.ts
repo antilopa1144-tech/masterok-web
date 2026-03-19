@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { waterproofingDef } from "../formulas/waterproofing";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = waterproofingDef.calculate.bind(waterproofingDef);
+const calc = withBasicAccuracy(waterproofingDef.calculate.bind(waterproofingDef));
 
 describe("Гидроизоляция", () => {
   describe("Ceresit CL 51 (masticType=0, стандарт)", () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import tileFixture from "../../../../tests/fixtures/tile-canonical-parity.json";
 import { tileDef } from "../formulas/tile";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = tileDef.calculate.bind(tileDef);
+const calc = withBasicAccuracy(tileDef.calculate.bind(tileDef));
 
 describe("Калькулятор плитки", () => {
   it("декларирует formulaVersion для canonical tile", () => {

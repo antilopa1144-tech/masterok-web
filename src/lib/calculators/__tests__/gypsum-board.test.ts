@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { gypsumBoardDef } from "../formulas/gypsum-board";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = gypsumBoardDef.calculate.bind(gypsumBoardDef);
+const calc = withBasicAccuracy(gypsumBoardDef.calculate.bind(gypsumBoardDef));
 
 describe("Калькулятор гипсокартона", () => {
   describe("Обшивка стены (constructionType=0), 40 м², 1 слой, шаг 600", () => {

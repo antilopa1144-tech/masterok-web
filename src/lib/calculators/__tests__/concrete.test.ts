@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { concreteDef } from "../formulas/concrete";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = concreteDef.calculate.bind(concreteDef);
+const calc = withBasicAccuracy(concreteDef.calculate.bind(concreteDef));
 
 describe("Калькулятор бетона", () => {
   describe("Стандартный расчёт М200, 5 м³, запас 5%", () => {

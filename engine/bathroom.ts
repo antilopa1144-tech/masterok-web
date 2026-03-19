@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -61,6 +62,7 @@ interface BathroomInputs {
   wallTileSize?: number;
   hasWaterproofing?: number;
   doorWidth?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -76,6 +78,9 @@ export function computeCanonicalBathroom(
   inputs: BathroomInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const length = Math.max(1, Math.min(10, inputs.length ?? getInputDefault(spec, "length", 2.5)));
   const width = Math.max(1, Math.min(10, inputs.width ?? getInputDefault(spec, "width", 1.7)));
   const height = Math.max(2, Math.min(3.5, inputs.height ?? getInputDefault(spec, "height", 2.5)));
@@ -122,7 +127,8 @@ export function computeCanonicalBathroom(
   const siliconeTubes = Math.ceil(perimeter / SILICONE_M_PER_TUBE);
 
   /* ─── scenarios (tiles as primary unit) ─── */
-  const totalTiles = tilesFloor + tilesWall;
+  const totalTilesBase = tilesFloor + tilesWall;
+  const totalTiles = Math.ceil(totalTilesBase * accuracyMult);
   const packageOptions = [{
     size: 1,
     label: "bathroom-tile-piece",
@@ -312,5 +318,7 @@ export function computeCanonicalBathroom(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalTilesBase, "generic", accuracyMode).explanation,
   };
 }

@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import laminateFixture from "../../../../tests/fixtures/laminate-canonical-parity.json";
 import { laminateDef } from "../formulas/laminate";
 import { runCanonicalParitySuite } from "./canonical-parity";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
-const calc = laminateDef.calculate.bind(laminateDef);
+const calc = withBasicAccuracy(laminateDef.calculate.bind(laminateDef));
 
 describe("Калькулятор ламината", () => {
   it("декларирует formulaVersion для canonical laminate", () => {

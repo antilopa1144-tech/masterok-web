@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { insulationDef } from "../formulas/insulation";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = insulationDef.calculate.bind(insulationDef);
+const calc = withBasicAccuracy(insulationDef.calculate.bind(insulationDef));
 
 describe("Калькулятор утеплителя", () => {
   describe("Минвата 100 мм, 50 м², плита 1200×600 мм", () => {

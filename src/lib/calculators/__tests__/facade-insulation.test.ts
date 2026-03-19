@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { facadeInsulationDef } from "../formulas/facade-insulation";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = facadeInsulationDef.calculate.bind(facadeInsulationDef);
+const calc = withBasicAccuracy(facadeInsulationDef.calculate.bind(facadeInsulationDef));
 
 describe("Утепление фасада", () => {
   describe("Минвата 100 мм, 100 м², короед", () => {

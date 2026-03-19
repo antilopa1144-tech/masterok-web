@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -43,6 +44,7 @@ interface TileAdhesiveInputs {
   laying?: number;
   base?: number;
   bagWeight?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -58,6 +60,8 @@ export function computeCanonicalTileAdhesive(
   inputs: TileAdhesiveInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 20)));
   const tileSize = Math.max(0, Math.min(2, Math.round(inputs.tileSize ?? getInputDefault(spec, "tileSize", 0))));
   const laying = Math.max(0, Math.min(2, Math.round(inputs.laying ?? getInputDefault(spec, "laying", 0))));
@@ -70,7 +74,9 @@ export function computeCanonicalTileAdhesive(
   if (laying === 2) adjustedRate *= STREET_FACTOR;
   if (base === 2) adjustedRate *= OLD_TILE_FACTOR;
 
-  const totalKg = area * adjustedRate * ADHESIVE_RESERVE;
+  const totalKgRaw = area * adjustedRate * ADHESIVE_RESERVE;
+  const accuracyMult = getPrimaryMultiplier("tile_adhesive", accuracyMode);
+  const totalKg = totalKgRaw * accuracyMult;
   const bags = Math.ceil(totalKg / bagWeight);
 
   // Primer
@@ -194,5 +200,7 @@ export function computeCanonicalTileAdhesive(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(totalKgRaw, "tile_adhesive", accuracyMode).explanation,
   };
 }

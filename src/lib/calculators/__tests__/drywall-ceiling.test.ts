@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { drywallCeilingDef } from "../formulas/drywall-ceiling";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = drywallCeilingDef.calculate.bind(drywallCeilingDef);
+const calc = withBasicAccuracy(drywallCeilingDef.calculate.bind(drywallCeilingDef));
 
 describe("Подвесной потолок из ГКЛ", () => {
   describe("Потолок 5×4 м, 1 слой, шаг 600", () => {

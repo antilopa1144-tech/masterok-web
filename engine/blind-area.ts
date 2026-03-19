@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 
 /* ─── constants ─── */
 
@@ -39,6 +40,7 @@ interface BlindAreaInputs {
   thickness?: number;
   materialType?: number;
   withInsulation?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 /* ─── helpers ─── */
@@ -54,6 +56,9 @@ export function computeCanonicalBlindArea(
   inputs: BlindAreaInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+
   const perimeter = Math.max(10, Math.min(200, inputs.perimeter ?? getInputDefault(spec, "perimeter", 40)));
   const width = Math.max(0.6, Math.min(1.5, inputs.width ?? getInputDefault(spec, "width", 1.0)));
   const thickness = Math.max(70, Math.min(150, inputs.thickness ?? getInputDefault(spec, "thickness", 100)));
@@ -96,7 +101,8 @@ export function computeCanonicalBlindArea(
   const eppsPlates = withInsulation > 0 ? Math.ceil(area * EPPS_RESERVE / EPPS_PLATE) : 0;
 
   /* ─── scenarios ─── */
-  const basePrimary = materialType === 0 ? concreteM3 : materialType === 1 ? tileM2 : membraneM2;
+  const basePrimaryRaw = materialType === 0 ? concreteM3 : materialType === 1 ? tileM2 : membraneM2;
+  const basePrimary = roundDisplay(basePrimaryRaw * accuracyMult, 6);
   const packageUnit = materialType === 0 ? "м³" : "м²";
   const packageLabel = materialType === 0
     ? "concrete-m3"
@@ -309,5 +315,7 @@ export function computeCanonicalBlindArea(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

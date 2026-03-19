@@ -7,6 +7,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
 interface DrywallInputs {
   workType?: number;
@@ -15,6 +16,7 @@ interface DrywallInputs {
   layers?: number;
   sheetSize?: number;
   profileStep?: number;
+  accuracyMode?: AccuracyMode;
 }
 
 const SHEET_SIZES: Record<number, { w: number; h: number; area: number }> = {
@@ -194,6 +196,8 @@ export function computeCanonicalDrywall(
   inputs: DrywallInputs,
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
+  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
   const workType = resolveWorkType(spec, inputs);
   const length = resolveLength(spec, inputs);
   const height = resolveHeight(spec, inputs);
@@ -206,7 +210,9 @@ export function computeCanonicalDrywall(
   const totalSheetArea = area * sides * layers;
 
   const gklArea = SHEET_SIZES[sheetSize]?.area ?? SHEET_SIZES[0].area;
-  const baseSheetsNeeded = Math.ceil(totalSheetArea / gklArea * SHEET_RESERVE);
+  const baseSheetsNeededRaw = Math.ceil(totalSheetArea / gklArea * SHEET_RESERVE);
+  const accuracyMult = getPrimaryMultiplier("drywall", accuracyMode);
+  const baseSheetsNeeded = baseSheetsNeededRaw * accuracyMult;
 
   // Profile PN (perimeter)
   const pnPerimeter = 2 * (length + height);
@@ -353,5 +359,7 @@ export function computeCanonicalDrywall(
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: applyAccuracyMode(baseSheetsNeededRaw, "drywall", accuracyMode).explanation,
   };
 }

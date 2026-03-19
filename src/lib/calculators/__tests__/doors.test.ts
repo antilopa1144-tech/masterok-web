@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { doorsDef } from "../formulas/doors";
-import { findMaterial, checkInvariants } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = doorsDef.calculate.bind(doorsDef);
+const calc = withBasicAccuracy(doorsDef.calculate.bind(doorsDef));
 
 describe("Калькулятор установки дверей", () => {
   describe("3 двери 700×2000, стена 120 мм, с наличниками", () => {
