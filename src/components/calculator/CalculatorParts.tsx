@@ -525,6 +525,66 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
 }
 
 
+// ── Блок итогов (адаптивный) ─────────────────────────────────────────────────
+
+function TotalsBlock({ totals }: { totals: CalculatorResult["totals"] }) {
+  const visibleEntries = Object.entries(totals).filter(([key]) => key in TOTAL_LABELS && !HIDDEN_TOTALS.has(key));
+
+  if (visibleEntries.length === 0) return null;
+
+  // 1-2 значения — компактная строка без карточки
+  if (visibleEntries.length <= 2) {
+    return (
+      <div className="flex items-center gap-4 flex-wrap text-sm text-slate-600 dark:text-slate-300">
+        {visibleEntries.map(([key, val]) => (
+          <TotalInline key={key} name={key} value={val} />
+        ))}
+      </div>
+    );
+  }
+
+  // 3+ значений — карточка с сеткой
+  return (
+    <div className="card p-5">
+      <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+        {CALCULATOR_UI_TEXT.total}
+      </h4>
+      <div className="grid grid-cols-2 gap-3">
+        {visibleEntries.map(([key, val]) => (
+          <TotalItem key={key} name={key} value={val} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TotalInline({ name, value }: { name: string; value: number }) {
+  if (HIDDEN_TOTALS.has(name)) return null;
+
+  const isInteger = INTEGER_TOTAL_KEYS.has(name);
+  const isWeightKg = WEIGHT_KG_TOTAL_KEYS.has(name);
+  const displayValue = isInteger ? Math.ceil(value) : value;
+  const labelForms = TOTAL_LABEL_FORMS[name];
+  const label = labelForms ? pluralizeRu(displayValue, labelForms) : (TOTAL_LABELS[name] ?? name);
+  let unit = TOTAL_UNITS[name] ?? "";
+  let formattedValue: string;
+
+  if (isWeightKg && value > 0 && value < 1) {
+    const [wVal, wUnit] = formatWeightParts(value);
+    formattedValue = wVal;
+    unit = wUnit;
+  } else {
+    formattedValue = formatNumber(displayValue);
+  }
+
+  return (
+    <span>
+      {label}: <span className="font-semibold text-slate-900 dark:text-slate-100">{formattedValue}</span>
+      {unit && <span className="text-slate-400 dark:text-slate-500 ml-0.5 text-xs">{unit}</span>}
+    </span>
+  );
+}
+
 // ── {CALCULATOR_UI_TEXT.scenariosTitle} ───────────────────────────────────────────────────
 
 function ScenarioBlock({ result }: { result: CalculatorResult }) {
@@ -599,6 +659,17 @@ export function FeedbackPanel({
 }) {
   const [value, setValue] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isReturningUser] = useState(() => {
+    try {
+      const key = `masterok-calc-visited-${calculatorSlug}`;
+      const visited = localStorage.getItem(key);
+      if (visited) return true;
+      localStorage.setItem(key, Date.now().toString());
+      return false;
+    } catch {
+      return false;
+    }
+  });
 
   if (!primaryMaterial || submitted) {
     if (submitted) {
@@ -610,6 +681,9 @@ export function FeedbackPanel({
     }
     return null;
   }
+
+  // Don't show to first-time visitors
+  if (!isReturningUser) return null;
 
   const handleSubmit = () => {
     if (!value.trim()) return;
@@ -800,58 +874,47 @@ export function ResultBlock({
 
       {/* Карточка результатов */}
       <div className="result-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.materialsListTitle}</h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => copyMaterialsAsText(result.materials)}
-              className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
-            >
-              📋 <span className="hidden sm:inline">{CALCULATOR_UI_TEXT.copy}</span>
-            </button>
-            <button
-              onClick={onShare}
-              className="flex items-center gap-1.5 text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title={CALCULATOR_UI_TEXT.shareLinkTitle}
-            >
-              {shareState === "copied" ? "✓" : "🔗"} <span className="hidden sm:inline">{shareState === "copied" ? CALCULATOR_UI_TEXT.copied : CALCULATOR_UI_TEXT.share}</span>
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center text-xs bg-accent-50 dark:bg-accent-900/30 hover:bg-accent-100 dark:hover:bg-accent-900/50 text-accent-700 dark:text-accent-300 px-3 py-2 sm:py-1.5 rounded-lg transition-colors"
-              title={CALCULATOR_UI_TEXT.printTitle}
-            >
-              🖨 <span className="hidden sm:inline ml-1.5">{CALCULATOR_UI_TEXT.print}</span>
-            </button>
-          </div>
-        </div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{CALCULATOR_UI_TEXT.materialsListTitle}</h3>
 
         <MaterialList materials={result.materials} />
 
-        {result.practicalNotes && result.practicalNotes.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-            <PracticalNotes notes={result.practicalNotes} />
-          </div>
-        )}
+        {/* Кнопки действий — компактная полоса под материалами */}
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button
+            onClick={() => copyMaterialsAsText(result.materials)}
+            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
+          >
+            📋 {CALCULATOR_UI_TEXT.copy}
+          </button>
+          <span className="text-slate-200 dark:text-slate-700">|</span>
+          <button
+            onClick={onShare}
+            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            title={CALCULATOR_UI_TEXT.shareLinkTitle}
+          >
+            {shareState === "copied" ? "✓" : "🔗"} {shareState === "copied" ? CALCULATOR_UI_TEXT.copied : CALCULATOR_UI_TEXT.share}
+          </button>
+          <span className="text-slate-200 dark:text-slate-700">|</span>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            title={CALCULATOR_UI_TEXT.printTitle}
+          >
+            🖨 {CALCULATOR_UI_TEXT.print}
+          </button>
+        </div>
       </div>
 
-      {/* Итоги */}
+      {/* Сколько покупать */}
       {result.scenarios && (<ScenarioBlock result={result} />)}
 
-      {Object.keys(result.totals).length > 0 && (
-        <div className="card p-5">
-          <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            {CALCULATOR_UI_TEXT.total}
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            {Object.entries(result.totals)
-              .filter(([key]) => key in TOTAL_LABELS)
-              .map(([key, val]) => (
-              <TotalItem key={key} name={key} value={val} />
-            ))}
-          </div>
-        </div>
+      {/* Итого — компактный, скрывается если пусто */}
+      <TotalsBlock totals={result.totals} />
+
+      {/* Советы прораба — после итогов */}
+      {result.practicalNotes && result.practicalNotes.length > 0 && (
+        <PracticalNotes notes={result.practicalNotes} />
       )}
     </div>
   );
