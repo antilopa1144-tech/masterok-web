@@ -175,73 +175,28 @@ export default async function CalculatorPage({ params }: PageProps) {
             }} />
             </Suspense>
 
-            {/* Формулы */}
-            {calc.formulaDescription && (
-              <div className="card p-6">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  {UI_TEXT.formulasTitle}
-                </h2>
-                <div className="prose prose-sm max-w-none text-slate-600 dark:text-slate-300">
-                  <pre className="whitespace-pre-wrap text-sm font-normal leading-relaxed bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                    {calc.formulaDescription.trim()}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {/* Как пользоваться */}
-            {calc.howToUse && calc.howToUse.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  {UI_TEXT.howToUseTitle}
-                </h2>
-                <ol className="space-y-2">
-                  {calc.howToUse.map((step, i) => (
-                    <li id={`${calc.id}-step-${i + 1}`} key={i} className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
-                      <span
-                        className="flex w-6 h-6 rounded-full text-xs font-bold items-center justify-center shrink-0 mt-0.5 text-white"
-                        style={{ backgroundColor: accentColor }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="text-sm leading-relaxed">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {/* FAQ */}
-            {calc.faq && calc.faq.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  {UI_TEXT.faqTitle}
-                </h2>
-                <div className="space-y-3">
-                  {calc.faq.map((item, i) => (
-                    <details
-                      key={`${calc.id}-faq-${i}`}
-                      className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
-                    >
-                      <summary className="relative cursor-pointer list-none pr-6 font-medium text-slate-900 dark:text-slate-100">
-                        {item.question}
-                        <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">+</span>
-                      </summary>
-                      <p data-faq-answer className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                        {item.answer}
-                      </p>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* SEO/GEO/AEO контент-блок */}
+            {/* SEO/GEO/AEO контент — объединённый блок */}
             {calc.seoContent && (
               <SeoContentBlock
                 calculatorId={calc.id}
                 descriptionHtml={calc.seoContent.descriptionHtml}
                 faq={calc.seoContent.faq}
+                formulaDescription={calc.formulaDescription}
+                howToUse={calc.howToUse}
+                inlineFaq={calc.faq}
+                accentColor={accentColor}
+              />
+            )}
+
+            {/* Fallback: если нет seoContent, показать формулы + howToUse + FAQ отдельно */}
+            {!calc.seoContent && (calc.formulaDescription || (calc.howToUse && calc.howToUse.length > 0) || (calc.faq && calc.faq.length > 0)) && (
+              <SeoContentBlock
+                calculatorId={calc.id}
+                descriptionHtml=""
+                faq={calc.faq ?? []}
+                formulaDescription={calc.formulaDescription}
+                howToUse={calc.howToUse}
+                accentColor={accentColor}
               />
             )}
           </div>
