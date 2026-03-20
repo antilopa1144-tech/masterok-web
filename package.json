@@ -18,8 +18,8 @@
     "test:parity": "vitest run tests/parity.test.ts"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "basic-ftp": "^5.1.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
