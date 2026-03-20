@@ -33,7 +33,7 @@ const UI_TEXT = {
 const TOOLS = [
   {
     href: "/instrumenty/stoimost-remonta/",
-    icon: "calculator",
+    icon: "cost",
     title: "Стоимость ремонта",
     desc: "Примерная смета на ремонт квартиры. Косметический, стандартный, капитальный — материалы и работы.",
     badge: "Новый",

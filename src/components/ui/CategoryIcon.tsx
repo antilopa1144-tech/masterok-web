@@ -24,6 +24,12 @@ import {
   BookOpen,
   Sun,
   Moon,
+  Timer,
+  Beaker,
+  BarChart3,
+  Grid3X3,
+  DollarSign,
+  Droplets,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +49,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   area: Ruler,
   calculator: Calculator,
   checklist: ClipboardCheck,
+  timer: Timer,
+  measure: Beaker,
+  compare: BarChart3,
+  tile: Grid3X3,
+  cost: DollarSign,
+  primer: Droplets,
   // UI
   trophy: Trophy,
   bot: Bot,
