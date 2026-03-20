@@ -115,33 +115,47 @@ export default function CalculatorWithMikhalych({
 
         {/* Результат */}
         {result && (
-          <>
-            <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
-
-            {/* 3D-модель лестницы */}
-            {calculator.slug === "kalkulyator-lestnicy" && (
-              <Staircase3DWrapper
-                stepCount={result.totals.stepCount ?? 16}
-                stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
-                stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
-                stairWidthM={result.totals.stairWidth ?? 1}
-                floorHeightM={result.totals.floorHeight ?? 2.8}
-                materialType={result.totals.materialType ?? 0}
-              />
-            )}
-
-            {/* 3D-модель кровли */}
-            {calculator.slug === "krovlya" && (
-              <Roof3DWrapper
-                spanM={(result.totals.ridgeLength ?? 8) > 0 ? (result.totals.area ?? 80) / (result.totals.ridgeLength ?? 8) : 8}
-                lengthM={result.totals.ridgeLength ?? 8}
-                slopeAngle={result.totals.slope ?? 30}
-                roofType={result.totals.roofingType ?? 0}
-                overhangM={0.5}
-              />
-            )}
-          </>
+          <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
         )}
+
+        {/* 3D-модель лестницы — обновляется при каждом изменении полей */}
+        {calculator.slug === "kalkulyator-lestnicy" && hasCalculated && (() => {
+          const floorH = Number(values.floorHeight) || 2.8;
+          const stepH = Number(values.stepHeight) || 170;
+          const stepW = Number(values.stepWidth) || 280;
+          const stairW = Number(values.stairWidth) || 1;
+          const matType = Number(values.materialType) || 0;
+          const steps = Math.max(1, Math.round(floorH * 1000 / stepH));
+          const realStepH = floorH / steps;
+          return (
+            <Staircase3DWrapper
+              stepCount={steps}
+              stepHeightM={realStepH}
+              stepWidthM={stepW / 1000}
+              stairWidthM={stairW}
+              floorHeightM={floorH}
+              materialType={matType}
+            />
+          );
+        })()}
+
+        {/* 3D-модель кровли — обновляется при каждом изменении полей */}
+        {calculator.slug === "krovlya" && hasCalculated && (() => {
+          const area = Number(values.area) || 80;
+          const slope = Number(values.slope) || 30;
+          const ridgeLen = Number(values.ridgeLength) || 8;
+          const roofType = Number(values.roofingType) || 0;
+          const spanEst = ridgeLen > 0 ? area / ridgeLen : 8;
+          return (
+            <Roof3DWrapper
+              spanM={spanEst}
+              lengthM={ridgeLen}
+              slopeAngle={slope}
+              roofType={roofType}
+              overhangM={0.5}
+            />
+          );
+        })()}
       </div>
 
       {/* Михалыч */}
