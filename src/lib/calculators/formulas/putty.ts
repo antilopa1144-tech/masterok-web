@@ -102,12 +102,13 @@ export const puttyDef: CalculatorDefinition = {
       key: "qualityClass",
       label: "Класс подготовки",
       type: "select",
-      defaultValue: 0,
+      defaultValue: 2,
+      hint: "Определяет толщину слоя и количество нанесений шпаклёвки",
       options: [
-        { value: 0, label: "Базовый web-профиль" },
-        { value: 1, label: "Эконом" },
-        { value: 2, label: "Стандарт" },
-        { value: 3, label: "Премиум" },
+        { value: 0, label: "Базовый — 1 слой, минимальная обработка" },
+        { value: 1, label: "Эконом — 1 слой старта + 1 финиша" },
+        { value: 2, label: "Стандарт — 2 слоя старта + 1 финиша" },
+        { value: 3, label: "Премиум — 2 слоя старта + 2 финиша (под покраску)" },
       ],
     },
     {

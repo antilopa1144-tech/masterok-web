@@ -5,7 +5,7 @@ import type { CalculatorResult, CalculatorField, CalculatorDefinition } from "@/
 import { formatNumber, type HistoryEntry } from "./useCalculator";
 import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG_TOTAL_KEYS, TOTAL_LABEL_FORMS } from "./totalsDisplay";
 import { CALCULATOR_UI_TEXT } from "./uiText";
-import { pluralizeRu, pluralizePackageUnit } from "@/lib/format/pluralize";
+import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 import {
   ACCURACY_MODES,
@@ -34,9 +34,15 @@ function formatMaterialQty(value: number, unit: string): string {
 // ── Русские названия для key_factors ─────────────────────────────────────────
 
 const KEY_FACTOR_LABELS: Record<string, string> = {
+  // Core scenario factors (from engine/factors.ts)
+  surface_quality: "Качество основания",
   geometry_complexity: "Сложность геометрии",
+  installation_method: "Способ монтажа",
   worker_skill: "Уровень мастера",
   waste_factor: "Отходы",
+  logistics_buffer: "Запас на доставку",
+  packaging_rounding: "Округление упаковки",
+  // Other possible factors
   base_consumption: "Базовый расход",
   area_factor: "Площадь",
   volume_factor: "Объём",
@@ -437,6 +443,12 @@ export function FieldInput({
 
 // ── Список материалов ────────────────────────────────────────────────────────
 
+/** Pluralize a material unit by quantity */
+function pluralizeUnit(qty: number, unit: string): string {
+  const forms = PACKAGE_UNIT_FORMS[unit];
+  return forms ? pluralizeRu(Math.ceil(qty), forms) : unit;
+}
+
 export function MaterialList({ materials }: { materials: CalculatorResult["materials"] }) {
   const groups: Record<string, typeof materials> = {};
   for (const m of materials) {
@@ -456,7 +468,11 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
               const useGrams = m.unit === "кг" && rawQty > 0 && rawQty < 1;
               const [displayVal, displayUnit] = useGrams
                 ? formatWeightParts(rawQty)
-                : [formatMaterialQty(rawQty, m.unit), m.unit];
+                : [formatMaterialQty(rawQty, m.unit), pluralizeUnit(rawQty, m.unit)];
+              // "без запаса" line
+              const reserveQty = m.quantity;
+              const reserveUnit = useGrams ? formatWeightParts(reserveQty)[1] : pluralizeUnit(reserveQty, m.unit);
+              const reserveVal = useGrams ? formatWeightParts(reserveQty)[0] : formatMaterialQty(reserveQty, m.unit);
               return (
                 <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
                   <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug min-w-0 break-words">{m.name}</span>
@@ -472,7 +488,7 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                     )}
                     {!m.packageInfo && m.withReserve != null && m.withReserve !== m.quantity && (
                       <div className="text-xs text-slate-400 dark:text-slate-500">
-                        {CALCULATOR_UI_TEXT.withoutReserve}: {formatMaterialQty(m.quantity, m.unit)} {m.unit}
+                        {CALCULATOR_UI_TEXT.withoutReserve}: {reserveVal} {reserveUnit}
                       </div>
                     )}
                   </div>
@@ -595,6 +611,12 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
   const max = result.scenarios.MAX;
   if (!rec) return null;
 
+  // Get unit from buy_plan or primary material
+  const rawUnit = rec.buy_plan?.unit ?? result.materials[0]?.unit ?? "";
+  const recUnit = pluralizeUnit(rec.purchase_quantity, rawUnit) || rawUnit;
+  const minUnit = min ? (pluralizeUnit(min.purchase_quantity, rawUnit) || rawUnit) : rawUnit;
+  const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, rawUnit) || rawUnit) : rawUnit;
+
   return (
     <div className="card p-5">
       <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
@@ -607,7 +629,8 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
           <div>
             <p className="text-xs font-semibold text-accent-600 dark:text-accent-400 mb-1">{CALCULATOR_UI_TEXT.scenarioLabels.recommended}</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {formatNumber(rec.purchase_quantity)}
+              {formatNumber(rec.purchase_quantity)}{" "}
+              <span className="text-base font-normal text-slate-500 dark:text-slate-400">{recUnit}</span>
             </p>
           </div>
           <div className="text-right">
@@ -633,12 +656,12 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-400 dark:bg-green-500 shrink-0" />
-            <span>{CALCULATOR_UI_TEXT.scenarioLabels.minimum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(min.purchase_quantity)}</span></span>
+            <span>{CALCULATOR_UI_TEXT.scenarioLabels.minimum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(min.purchase_quantity)}</span> {minUnit}</span>
           </div>
           <span className="text-slate-300 dark:text-slate-600">—</span>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-orange-400 dark:bg-orange-500 shrink-0" />
-            <span>{CALCULATOR_UI_TEXT.scenarioLabels.maximum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(max.purchase_quantity)}</span></span>
+            <span>{CALCULATOR_UI_TEXT.scenarioLabels.maximum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(max.purchase_quantity)}</span> {maxUnit}</span>
           </div>
         </div>
       )}
