@@ -155,6 +155,30 @@ export const HIDDEN_TOTALS = new Set([
   "inputMode",
   "puttyType",
   "qualityClass",
+  // Input dimensions — already visible in the form, no need to repeat
+  "length",
+  "width",
+  "height",
+  "thickness",
+  "thicknessMm",
+  "wallThicknessMm",
+  "widthMm",
+  "insulationThicknessMm",
+  // Rates/coefficients — not useful as totals
+  "slopeFactor",
+  "concreteGrade",
+  "screedType",
+  "averageTileSizeCm",
+  "jointWidth",
+  "groutDepth",
+  "wallThickness",
+  "exchangeRate",
+  "bricksPerM2",
+  "kgPerSqm",
+  "lPerSqm",
+  "slope",
+  "wastePercent",
+  "reserve",
 ]);
 
 /**

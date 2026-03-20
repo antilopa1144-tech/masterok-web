@@ -31,6 +31,27 @@ function formatMaterialQty(value: number, unit: string): string {
   return value.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
 }
 
+// ── Русские названия для key_factors ─────────────────────────────────────────
+
+const KEY_FACTOR_LABELS: Record<string, string> = {
+  geometry_complexity: "Сложность геометрии",
+  worker_skill: "Уровень мастера",
+  waste_factor: "Отходы",
+  base_consumption: "Базовый расход",
+  area_factor: "Площадь",
+  volume_factor: "Объём",
+  layer_factor: "Слои",
+  thickness_factor: "Толщина",
+  coverage_rate: "Норма покрытия",
+  material_density: "Плотность материала",
+  joint_factor: "Фактор швов",
+  overlap_factor: "Нахлёст",
+  cutting_factor: "Подрезка",
+  reserve_factor: "Запас",
+  packaging_factor: "Упаковка",
+  round_up: "Округление",
+};
+
 // ── Селектор точности расчёта ────────────────────────────────────────────────
 
 const CUSTOM_SLIDER_KEYS: Array<{ key: keyof AccuracyModifiers; label: string; min: number; max: number }> = [
@@ -509,43 +530,58 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
 function ScenarioBlock({ result }: { result: CalculatorResult }) {
   if (!result.scenarios) return null;
 
-  const scenarios = [
-    { key: "MIN", title: "Минимум", color: "text-green-600 dark:text-green-400" },
-    { key: "REC", title: "Рекомендуемый", color: "text-accent-600 dark:text-accent-400" },
-    { key: "MAX", title: "Максимум", color: "text-orange-600 dark:text-orange-400" },
-  ] as const;
+  const rec = result.scenarios.REC;
+  const min = result.scenarios.MIN;
+  const max = result.scenarios.MAX;
+  if (!rec) return null;
 
   return (
     <div className="card p-5">
       <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
         {CALCULATOR_UI_TEXT.scenariosTitle}
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {scenarios.map((s) => {
-          const item = result.scenarios?.[s.key];
-          if (!item) return null;
 
-          return (
-            <div key={s.key} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1">
-              <p className={`text-xs font-bold ${s.color}`}>{s.title}</p>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {CALCULATOR_UI_TEXT.scenarioLabels.need}: <span className="font-semibold">{formatNumber(item.exact_need)}</span>
+      {/* Рекомендуемый — крупно */}
+      <div className="bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4 mb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-accent-600 dark:text-accent-400 mb-1">{CALCULATOR_UI_TEXT.scenarioLabels.recommended}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {formatNumber(rec.purchase_quantity)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)}
+            </p>
+            {rec.leftover > 0 && (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {CALCULATOR_UI_TEXT.scenarioLabels.buy}: <span className="font-semibold">{formatNumber(item.purchase_quantity)}</span>
+            )}
+            {rec.buy_plan && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                {rec.buy_plan.packages_count} {pluralizePackageUnit(rec.buy_plan.packages_count, rec.buy_plan.unit)} × {rec.buy_plan.package_size}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: <span className="font-semibold">{formatNumber(item.leftover)}</span>
-              </p>
-              {item.buy_plan && (
-                <p className="text-xs text-slate-400 dark:text-slate-500">
-                  {item.buy_plan.packages_count} {pluralizePackageUnit(item.buy_plan.packages_count, item.buy_plan.unit)} × {item.buy_plan.package_size}
-                </p>
-              )}
-            </div>
-          );
-        })}
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Диапазон MIN — MAX, компактно */}
+      {min && max && (
+        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 dark:bg-green-500 shrink-0" />
+            <span>{CALCULATOR_UI_TEXT.scenarioLabels.minimum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(min.purchase_quantity)}</span></span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-600">—</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-orange-400 dark:bg-orange-500 shrink-0" />
+            <span>{CALCULATOR_UI_TEXT.scenarioLabels.maximum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(max.purchase_quantity)}</span></span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -720,70 +756,42 @@ export function ResultBlock({
         </div>
       )}
 
-      {/* Режим точности — расшифровка */}
+      {/* Режим точности — компактная расшифровка */}
       {result.accuracyExplanation && result.accuracyExplanation.appliedModifiers.length > 0 && (
-        <details className="group bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 rounded-2xl overflow-hidden">
-          <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                {result.accuracyExplanation.modeLabel} режим
+        <details className="group">
+          <summary className="flex items-center gap-2 cursor-pointer list-none text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-1">
+            <span className="font-medium text-slate-500 dark:text-slate-400">
+              {result.accuracyExplanation.modeLabel}
+            </span>
+            {result.accuracyExplanation.combinedMultiplier !== 1 && (
+              <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded text-[10px]">
+                &times;{result.accuracyExplanation.combinedMultiplier.toFixed(2)}
               </span>
-              {result.accuracyExplanation.combinedMultiplier !== 1 && (
-                <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">
-                  &times;{result.accuracyExplanation.combinedMultiplier.toFixed(3)}
-                </span>
-              )}
-              <span className="text-[10px] text-indigo-400 dark:text-indigo-500">
-                {CALCULATOR_UI_TEXT.howCalculated}
-              </span>
-            </div>
-            <span className="text-indigo-400 group-open:rotate-180 transition-transform text-xs">▼</span>
+            )}
+            <span>{CALCULATOR_UI_TEXT.howCalculated}</span>
+            <span className="group-open:rotate-180 transition-transform ml-auto">▼</span>
           </summary>
-          <div className="px-4 pb-4 space-y-3 border-t border-indigo-200/50 dark:border-indigo-800/50 pt-3">
-            {/* Notes summary */}
-            {result.accuracyExplanation.notes.map((note, i) => (
-              <p key={i} className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">{note}</p>
-            ))}
-
-            {/* Detailed modifiers table */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wider">
-                {CALCULATOR_UI_TEXT.appliedModifiers}
-              </p>
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 mt-1 space-y-2 border border-slate-200 dark:border-slate-700">
+            {/* Поправки — компактной строкой */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
               {result.accuracyExplanation.appliedModifiers.map((mod, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-indigo-700 dark:text-indigo-300 font-medium">{mod.label}</span>
-                    <span className="text-indigo-400 dark:text-indigo-500 ml-1.5">— {mod.reason}</span>
-                  </div>
-                  <span className="text-indigo-600 dark:text-indigo-400 font-semibold ml-3 shrink-0">
-                    +{Math.round((mod.value - 1) * 100)}%
-                  </span>
-                </div>
+                <span key={i} className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {mod.label} <span className="font-semibold text-slate-700 dark:text-slate-200">+{Math.round((mod.value - 1) * 100)}%</span>
+                </span>
               ))}
             </div>
 
-            {/* Scenario factors */}
+            {/* Факторы расчёта — если есть */}
             {result.scenarios?.REC?.key_factors && (
-              <div className="space-y-1.5 pt-2 border-t border-indigo-200/50 dark:border-indigo-800/50">
-                <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wider">
-                  {CALCULATOR_UI_TEXT.scenarioFactors}
-                </p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1.5 border-t border-slate-200 dark:border-slate-700">
                 {Object.entries(result.scenarios.REC.key_factors)
                   .filter(([k]) => k !== "field_multiplier" && k !== "accuracy_multiplier")
                   .map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between text-xs">
-                      <span className="text-indigo-500 dark:text-indigo-400">{key.replace(/_/g, " ")}</span>
-                      <span className="text-indigo-600 dark:text-indigo-400 font-mono">{(value as number).toFixed(2)}</span>
-                    </div>
+                    <span key={key} className="text-[11px] text-slate-400 dark:text-slate-500">
+                      {KEY_FACTOR_LABELS[key] ?? key}: <span className="font-mono">{(value as number).toFixed(2)}</span>
+                    </span>
                   ))
                 }
-                <div className="flex items-center justify-between text-xs font-semibold pt-1 border-t border-indigo-200/30 dark:border-indigo-800/30">
-                  <span className="text-indigo-700 dark:text-indigo-300">{CALCULATOR_UI_TEXT.totalMultiplier}</span>
-                  <span className="text-indigo-700 dark:text-indigo-300 font-mono">
-                    &times;{((result.scenarios.REC.key_factors.accuracy_multiplier ?? 1) * (result.scenarios.REC.key_factors.field_multiplier ?? 1)).toFixed(4)}
-                  </span>
-                </div>
               </div>
             )}
           </div>
