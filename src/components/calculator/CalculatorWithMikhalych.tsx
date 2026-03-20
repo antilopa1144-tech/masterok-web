@@ -9,6 +9,8 @@ import {
 } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
+import Staircase3DWrapper from "./Staircase3DWrapper";
+import Roof3DWrapper from "./Roof3DWrapper";
 
 export type { CalculatorWidgetProps };
 
@@ -113,7 +115,32 @@ export default function CalculatorWithMikhalych({
 
         {/* Результат */}
         {result && (
-          <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+          <>
+            <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+
+            {/* 3D-модель лестницы */}
+            {calculator.slug === "kalkulyator-lestnicy" && (
+              <Staircase3DWrapper
+                stepCount={result.totals.stepCount ?? 16}
+                stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
+                stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
+                stairWidthM={result.totals.stairWidth ?? 1}
+                floorHeightM={result.totals.floorHeight ?? 2.8}
+                materialType={result.totals.materialType ?? 0}
+              />
+            )}
+
+            {/* 3D-модель кровли */}
+            {calculator.slug === "krovlya" && (
+              <Roof3DWrapper
+                spanM={(result.totals.ridgeLength ?? 8) > 0 ? (result.totals.area ?? 80) / (result.totals.ridgeLength ?? 8) : 8}
+                lengthM={result.totals.ridgeLength ?? 8}
+                slopeAngle={result.totals.slope ?? 30}
+                roofType={result.totals.roofingType ?? 0}
+                overhangM={0.5}
+              />
+            )}
+          </>
         )}
       </div>
 
