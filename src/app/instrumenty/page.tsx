@@ -41,6 +41,15 @@ const TOOLS = [
     bg: "#D1FAE5",
   },
   {
+    href: "/instrumenty/raskladka-plitki/",
+    icon: "tile",
+    title: "Раскладка плитки",
+    desc: "Визуальная раскладка плитки на стену или пол. Подрезка, отход, количество — видно сразу.",
+    badge: "Новый",
+    color: "#F97316",
+    bg: "#FFF7ED",
+  },
+  {
     href: "/instrumenty/normy-raskhoda/",
     icon: "book",
     title: "Нормы расхода",

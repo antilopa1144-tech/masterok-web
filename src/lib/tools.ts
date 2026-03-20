@@ -24,6 +24,12 @@ export const ALL_TOOLS: ToolPage[] = [
     priority: 0.7,
   },
   {
+    slug: "raskladka-plitki",
+    title: "Генератор раскладки плитки",
+    description: "Визуализация раскладки плитки на стену или пол с расчётом подрезки и отхода",
+    priority: 0.7,
+  },
+  {
     slug: "normy-raskhoda",
     title: "Нормы расхода материалов",
     description: "Справочник расхода на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, клей по ГОСТ",
