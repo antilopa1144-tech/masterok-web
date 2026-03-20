@@ -5,6 +5,8 @@ import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, Accur
 import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
+import Staircase3DWrapper from "./Staircase3DWrapper";
+import Roof3DWrapper from "./Roof3DWrapper";
 
 export type { CalculatorWidgetProps };
 
@@ -143,6 +145,34 @@ export default function CalculatorWidget({ calculator }: Props) {
             </div>
           </div>
           <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+
+          {/* 3D-модель лестницы */}
+          {calculator.slug === "kalkulyator-lestnicy" && result.totals.stepCount > 0 && (
+            <Staircase3DWrapper
+              stepCount={result.totals.stepCount}
+              stepHeightM={(result.totals.realStepH ?? result.totals.stepHeight ?? 170) / 1000}
+              stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
+              stairWidthM={result.totals.stairWidth ?? 1}
+              floorHeightM={result.totals.floorHeight ?? 2.8}
+              materialType={result.totals.materialType ?? 0}
+            />
+          )}
+
+          {/* 3D-модель кровли */}
+          {calculator.slug === "krovlya" && result.totals.realArea > 0 && (() => {
+            const ridgeLen = result.totals.ridgeLength ?? 8;
+            const planArea = result.totals.area ?? 80;
+            const spanEst = ridgeLen > 0 ? planArea / ridgeLen : 8;
+            return (
+              <Roof3DWrapper
+                spanM={spanEst}
+                lengthM={ridgeLen}
+                slopeAngle={result.totals.slope ?? 30}
+                roofType={result.totals.roofingType ?? 0}
+                overhangM={0.5}
+              />
+            );
+          })()}
 
           {/* Сравнение режимов */}
           {showComparison && comparisonResults && (
