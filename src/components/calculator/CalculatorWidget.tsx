@@ -147,9 +147,9 @@ export default function CalculatorWidget({ calculator }: Props) {
           <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
 
           {/* 3D-модель лестницы */}
-          {calculator.slug === "kalkulyator-lestnicy" && result.totals.stepCount > 0 && (
+          {calculator.slug === "kalkulyator-lestnicy" && (
             <Staircase3DWrapper
-              stepCount={result.totals.stepCount}
+              stepCount={result.totals.stepCount ?? 16}
               stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
               stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
               stairWidthM={result.totals.stairWidth ?? 1}
@@ -159,20 +159,15 @@ export default function CalculatorWidget({ calculator }: Props) {
           )}
 
           {/* 3D-модель кровли */}
-          {calculator.slug === "krovlya" && result.totals.realArea > 0 && (() => {
-            const ridgeLen = result.totals.ridgeLength ?? 8;
-            const planArea = result.totals.area ?? 80;
-            const spanEst = ridgeLen > 0 ? planArea / ridgeLen : 8;
-            return (
-              <Roof3DWrapper
-                spanM={spanEst}
-                lengthM={ridgeLen}
-                slopeAngle={result.totals.slope ?? 30}
-                roofType={result.totals.roofingType ?? 0}
-                overhangM={0.5}
-              />
-            );
-          })()}
+          {calculator.slug === "krovlya" && (
+            <Roof3DWrapper
+              spanM={(result.totals.ridgeLength ?? 8) > 0 ? (result.totals.area ?? 80) / (result.totals.ridgeLength ?? 8) : 8}
+              lengthM={result.totals.ridgeLength ?? 8}
+              slopeAngle={result.totals.slope ?? 30}
+              roofType={result.totals.roofingType ?? 0}
+              overhangM={0.5}
+            />
+          )}
 
           {/* Сравнение режимов */}
           {showComparison && comparisonResults && (
