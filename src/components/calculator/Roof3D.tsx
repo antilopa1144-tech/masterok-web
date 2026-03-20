@@ -106,8 +106,7 @@ export default function Roof3D(props: Roof3DProps) {
 
   return (
     <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-sky-50 to-sky-100 dark:from-slate-800 dark:to-slate-900">
-      <Canvas shadows>
-        <perspectiveCamera position={[d * 0.8, d * 0.6, d * 0.8]} />
+      <Canvas shadows camera={{ position: [d * 0.8, d * 0.6, d * 0.8], fov: 40 }}>
         <OrbitControls enablePan={false} minDistance={2} maxDistance={d * 3} />
         <ambientLight intensity={0.45} />
         <directionalLight position={[8, 12, 6]} intensity={1.3} castShadow />

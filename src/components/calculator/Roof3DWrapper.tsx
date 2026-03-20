@@ -20,21 +20,21 @@ interface Props {
   overhangM: number;
 }
 
-class ErrorBoundary extends Component<{ children: ReactNode; onError: () => void }, { hasError: boolean }> {
+class ErrorBoundary extends Component<{ children: ReactNode; onError: (msg: string) => void }, { hasError: boolean }> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(_e: Error, _info: ErrorInfo) { this.props.onError(); }
+  componentDidCatch(e: Error, _info: ErrorInfo) { console.error("3D Error:", e); this.props.onError(e?.message ?? "unknown"); }
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
 export default function Roof3DWrapper(props: Props) {
   const [visible, setVisible] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (error) {
     return (
       <div className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-center">
-        <p className="text-sm text-red-600 dark:text-red-400">3D-модель не поддерживается в этом браузере</p>
+        <p className="text-sm text-red-600 dark:text-red-400">Ошибка загрузки 3D: {error}</p>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export default function Roof3DWrapper(props: Props) {
 
   return (
     <div className="space-y-2">
-      <ErrorBoundary onError={() => setError(true)}>
+      <ErrorBoundary onError={(msg) => setError(msg)}>
         <Roof3D {...props} />
       </ErrorBoundary>
       <div className="flex items-center justify-between">

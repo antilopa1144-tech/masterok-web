@@ -102,8 +102,7 @@ export default function Staircase3D(props: Staircase3DProps) {
 
   return (
     <div className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
-      <Canvas shadows>
-        <perspectiveCamera position={[d * 0.7, d * 0.5, d * 0.7]} />
+      <Canvas shadows camera={{ position: [d * 0.7, d * 0.5, d * 0.7], fov: 45 }}>
         <OrbitControls enablePan={false} minDistance={1} maxDistance={d * 3} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 8, 5]} intensity={1.2} castShadow />
