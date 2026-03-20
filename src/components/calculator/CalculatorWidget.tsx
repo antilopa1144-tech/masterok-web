@@ -150,7 +150,7 @@ export default function CalculatorWidget({ calculator }: Props) {
           {calculator.slug === "kalkulyator-lestnicy" && result.totals.stepCount > 0 && (
             <Staircase3DWrapper
               stepCount={result.totals.stepCount}
-              stepHeightM={(result.totals.realStepH ?? result.totals.stepHeight ?? 170) / 1000}
+              stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
               stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
               stairWidthM={result.totals.stairWidth ?? 1}
               floorHeightM={result.totals.floorHeight ?? 2.8}
