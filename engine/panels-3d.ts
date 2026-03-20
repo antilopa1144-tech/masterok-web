@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   Panels3dCanonicalSpec,
   CanonicalCalculatorResult,
@@ -164,14 +165,7 @@ export function computeCanonicalPanels3d(
       purchaseQty: glueBags,
       category: "Монтаж",
     },
-    {
-      name: `Грунтовка (${PRIMER_CAN} л)`,
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    },
+    buildPrimerMaterial(primerL, { category: "Грунтовка" }),
     {
       name: `Шпаклёвка (${PUTTY_BAG} кг)`,
       quantity: puttyBags,

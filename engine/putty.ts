@@ -8,6 +8,7 @@ import type {
   PuttyQualityProfile,
 } from "./canonical";
 import type { ScenarioBundle, ScenarioName } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import { roundDisplay } from "./units";
 import {
   type AccuracyMode,
@@ -226,15 +227,7 @@ function buildAuxiliaryMaterials(
         ? rules.primer_coats.with_start
         : rules.primer_coats.start_only;
   const primerLiters = workArea * rules.primer_l_per_m2_per_coat * primerCoats;
-  const primerCans = Math.ceil(primerLiters / 10);
-  materials.push({
-    name: "Грунтовка глубокого проникновения (10 л)",
-    quantity: roundDisplay(primerLiters / 10, 3),
-    unit: "канистр",
-    withReserve: primerCans,
-    purchaseQty: primerCans,
-    category: "Подготовка",
-  });
+  materials.push(buildPrimerMaterial(primerLiters, { category: "Подготовка" }));
 
   if (rules.sandpaper_enabled_for_putty_types.includes(puttyType)) {
     const sandpaperSheets = Math.ceil(workArea / rules.sandpaper_m2_per_sheet);

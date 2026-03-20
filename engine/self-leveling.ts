@@ -7,6 +7,7 @@ import type {
 } from './canonical';
 import type { FactorTable } from './factors';
 import { roundDisplay } from './units';
+import { buildPrimerMaterial } from "./smart-packaging";
 import {
   type AccuracyMode,
   DEFAULT_ACCURACY_MODE,
@@ -117,15 +118,7 @@ function buildMaterials(
       purchaseQty: bags,
       category: 'Основное',
     },
-    {
-      name: `Грунтовка глубокого проникновения (${spec.packaging_rules.primer_can_l} л)`,
-      quantity: primerLiters,
-      unit: 'л',
-      withReserve: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 3),
-      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 3),
-      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
-      category: 'Подготовка',
-    },
+    buildPrimerMaterial(primerLiters),
     {
       name: `Демпферная лента (рулон ${spec.packaging_rules.tape_roll_m} м)`,
       quantity: roundDisplay(tapeLength / spec.packaging_rules.tape_roll_m, 3),

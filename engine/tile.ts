@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -125,15 +126,7 @@ function buildMaterials(
       packageInfo: { count: groutBags, size: spec.packaging_rules.grout_bag_kg, packageUnit: "мешков" },
       category: "Затирка",
     },
-    {
-      name: `Грунтовка глубокого проникновения (${spec.packaging_rules.primer_can_l} л)`,
-      quantity: roundDisplay(primerLiters, 6),
-      unit: "л",
-      withReserve: primerCans * spec.packaging_rules.primer_can_l,
-      purchaseQty: primerCans * spec.packaging_rules.primer_can_l,
-      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
-      category: "Подготовка",
-    },
+    buildPrimerMaterial(primerLiters),
   ];
 
   if (averageTileSizeCm >= spec.material_rules.svp_threshold_cm) {

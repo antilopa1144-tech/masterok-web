@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   PartitionsCanonicalSpec,
   CanonicalCalculatorResult,
@@ -188,14 +189,7 @@ export function computeCanonicalPartitions(
       purchaseQty: foamBottles,
       category: "Монтаж",
     },
-    {
-      name: `Грунтовка (канистра ${PRIMER_CAN} л)`,
-      quantity: primer,
-      unit: "канистр",
-      withReserve: primer,
-      purchaseQty: primer,
-      category: "Грунтовка",
-    },
+    buildPrimerMaterial(wallArea * 2 * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
     {
       name: "Уплотнительная лента",
       quantity: sealTape,

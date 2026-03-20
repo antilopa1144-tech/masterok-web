@@ -1,5 +1,6 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -154,15 +155,7 @@ export function computeCanonicalLinoleum(
       purchaseQty: Math.ceil(recScenario.purchase_quantity * 10) / 10,
       category: "Покрытие",
     },
-    {
-      name: `Грунтовка (${spec.packaging_rules.primer_can_liters} л)`,
-      quantity: primerLiters,
-      unit: "л",
-      withReserve: primerCans * spec.packaging_rules.primer_can_liters,
-      purchaseQty: primerCans * spec.packaging_rules.primer_can_liters,
-      category: "Подготовка",
-      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_liters, packageUnit: "канистр" },
-    },
+    buildPrimerMaterial(primerLiters),
   ];
 
   if (needGlue) {

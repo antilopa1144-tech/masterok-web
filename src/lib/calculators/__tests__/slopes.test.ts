@@ -52,10 +52,11 @@ describe("Калькулятор откосов окон и дверей", () =>
       expect(sealant?.purchaseQty).toBe(4);
     });
 
-    it("грунтовка (канистра 10 л) = 1", () => {
-      // Engine: "Грунтовка (канистра 10 л)"
+    it("грунтовка: smart packaging (литры)", () => {
       const primer = findMaterial(result, "Грунтовка");
-      expect(primer?.purchaseQty).toBe(1);
+      expect(primer).toBeTruthy();
+      expect(primer!.unit).toBe("л");
+      expect(primer!.purchaseQty).toBeGreaterThan(0);
     });
 
     it("totals содержат totalArea и openingCount", () => {

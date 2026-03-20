@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   SlopesCanonicalSpec,
   CanonicalCalculatorResult,
@@ -281,14 +282,7 @@ export function computeCanonicalSlopes(
       purchaseQty: sealantTubes,
       category: "Монтаж",
     },
-    {
-      name: "Грунтовка (канистра 10 л)",
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    },
+    buildPrimerMaterial(totalArea * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
   );
 
   /* ─── warnings ─── */

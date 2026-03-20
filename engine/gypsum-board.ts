@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   GypsumBoardCanonicalSpec,
   CanonicalCalculatorResult,
@@ -226,11 +227,7 @@ export function computeCanonicalGypsumBoard(
       category: "Отделка",
     },
     {
-      name: "Грунтовка 10 л",
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
+      ...buildPrimerMaterial(area * sides * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE }),
       category: "Отделка",
     },
   ];

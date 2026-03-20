@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   DrywallCeilingCanonicalSpec,
   CanonicalCalculatorResult,
@@ -247,11 +248,7 @@ export function computeCanonicalDrywallCeiling(
       category: "Отделка",
     },
     {
-      name: "Грунтовка 10л",
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
+      ...buildPrimerMaterial(primerL, { reserveFactor: PRIMER_RESERVE }),
       category: "Отделка",
     },
   ];

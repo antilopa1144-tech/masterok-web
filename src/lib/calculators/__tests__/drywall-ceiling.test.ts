@@ -75,10 +75,11 @@ describe("Подвесной потолок из ГКЛ", () => {
       expect(putty.purchaseQty).toBe(1);
     });
 
-    it("Грунтовка: 1 канистра (10 л)", () => {
-      // 20×0.15=3.0 л → ceil(3.0×1.15/10)=1
+    it("Грунтовка: smart packaging (литры)", () => {
+      // 20×0.15=3.0 л × 1.15 reserve = 3.45 л → 1×2 + 1×1 + 1×1 = 4л
       const primer = findMaterial(r, "Грунтовка")!;
-      expect(primer.purchaseQty).toBe(1);
+      expect(primer.unit).toBe("л");
+      expect(primer.purchaseQty).toBe(4);
     });
 
     it("totals содержат area, sheets, ppPcs, suspCount, crabCount", () => {

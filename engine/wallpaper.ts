@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -172,15 +173,7 @@ function buildMaterials(
       packageInfo: { count: pastePacks, size: spec.packaging_rules.paste_pack_kg, packageUnit: "уп" },
       category: "Клей",
     },
-    {
-      name: `Грунтовка глубокого проникновения (${spec.packaging_rules.primer_can_l} л)`,
-      quantity: roundDisplay(primerNeeded, 6),
-      unit: "л",
-      withReserve: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
-      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
-      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
-      category: "Грунтовка",
-    },
+    { ...buildPrimerMaterial(primerNeeded), category: "Грунтовка" },
     {
       name: "Валик для клея",
       quantity: spec.material_rules.glue_roller_count,

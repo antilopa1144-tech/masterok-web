@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   AeratedConcreteCanonicalSpec,
   CanonicalCalculatorResult,
@@ -185,14 +186,7 @@ export function computeCanonicalAeratedConcrete(
       purchaseQty: rebarLength,
       category: "Армирование",
     },
-    {
-      name: `Грунтовка (${spec.material_rules.primer_can_l} л)`,
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Отделка",
-    },
+    buildPrimerMaterial(netArea * spec.material_rules.primer_l_per_m2, { reserveFactor: spec.material_rules.primer_reserve, category: "Отделка" }),
     {
       name: "У-блоки (перемычки)",
       quantity: uBlocks,

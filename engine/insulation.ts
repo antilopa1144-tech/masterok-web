@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   InsulationCanonicalSpec,
   CanonicalCalculatorResult,
@@ -236,15 +237,7 @@ export function computeCanonicalInsulation(
     });
   }
 
-  materials.push({
-    name: `Грунтовка (${PRIMER_CAN_L} л)`,
-    quantity: roundDisplay(area * PRIMER_L_PER_M2 * PRIMER_RESERVE, 3),
-    unit: "л",
-    withReserve: primerCans * PRIMER_CAN_L,
-    purchaseQty: primerCans * PRIMER_CAN_L,
-    packageInfo: { count: primerCans, size: PRIMER_CAN_L, packageUnit: "канистр" },
-    category: "Подготовка",
-  });
+  materials.push(buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE }));
 
   /* ── warnings ── */
   const warnings: string[] = [];

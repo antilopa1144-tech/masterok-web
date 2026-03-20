@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   BathroomCanonicalSpec,
   CanonicalCalculatorResult,
@@ -239,15 +240,7 @@ export function computeCanonicalBathroom(
   }
 
   materials.push(
-    {
-      name: `Грунтовка (${PRIMER_CAN_L} л)`,
-      quantity: roundDisplay((floorArea + wallArea) * PRIMER_L_PER_M2, 3),
-      unit: "л",
-      withReserve: primerCans * PRIMER_CAN_L,
-      purchaseQty: primerCans * PRIMER_CAN_L,
-      packageInfo: { count: primerCans, size: PRIMER_CAN_L, packageUnit: "канистр" },
-      category: "Подготовка",
-    },
+    buildPrimerMaterial((floorArea + wallArea) * PRIMER_L_PER_M2),
     {
       name: `Крестики (упаковка ${CROSSES_PACK} шт)`,
       quantity: (tilesFloor + tilesWall) * CROSSES_PER_TILE,

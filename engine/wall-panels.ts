@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   WallPanelsCanonicalSpec,
   CanonicalCalculatorResult,
@@ -183,14 +184,7 @@ export function computeCanonicalWallPanels(
         purchaseQty: glueBottles,
         category: "Монтаж",
       },
-      {
-        name: `Грунтовка (канистра ${PRIMER_CAN} л)`,
-        quantity: primer,
-        unit: "канистр",
-        withReserve: primer,
-        purchaseQty: primer,
-        category: "Грунтовка",
-      },
+      buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
     );
   } else {
     materials.push(

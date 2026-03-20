@@ -5,7 +5,7 @@ import type { CalculatorResult, CalculatorField, CalculatorDefinition } from "@/
 import { formatNumber, type HistoryEntry } from "./useCalculator";
 import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG_TOTAL_KEYS, TOTAL_LABEL_FORMS } from "./totalsDisplay";
 import { CALCULATOR_UI_TEXT } from "./uiText";
-import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS } from "@/lib/format/pluralize";
+import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS, displayUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 import {
   ACCURACY_MODES,
@@ -611,11 +611,12 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
   const max = result.scenarios.MAX;
   if (!rec) return null;
 
-  // Get unit from buy_plan or primary material
+  // Get unit from buy_plan or primary material, translate to Russian
   const rawUnit = rec.buy_plan?.unit ?? result.materials[0]?.unit ?? "";
-  const recUnit = pluralizeUnit(rec.purchase_quantity, rawUnit) || rawUnit;
-  const minUnit = min ? (pluralizeUnit(min.purchase_quantity, rawUnit) || rawUnit) : rawUnit;
-  const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, rawUnit) || rawUnit) : rawUnit;
+  const translatedUnit = displayUnit(rawUnit);
+  const recUnit = pluralizeUnit(rec.purchase_quantity, translatedUnit) || translatedUnit;
+  const minUnit = min ? (pluralizeUnit(min.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
+  const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
 
   return (
     <div className="card p-5">
@@ -635,18 +636,28 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)}
+              {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)} {translatedUnit}
             </p>
             {rec.leftover > 0 && (
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)}
+                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)} {translatedUnit}
               </p>
             )}
-            {rec.buy_plan && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                {rec.buy_plan.packages_count} {pluralizePackageUnit(rec.buy_plan.packages_count, rec.buy_plan.unit)} × {rec.buy_plan.package_size}
-              </p>
-            )}
+            {rec.buy_plan && rec.buy_plan.packages_count > 0 && (() => {
+              const bpUnit = rec.buy_plan.unit;
+              // If buy_plan.unit is a raw unit (kg, l, m), show "N шт × size unit"
+              // If buy_plan.unit is a package type (мешков, канистр), pluralize it
+              const isRawUnit = !!({ kg: 1, g: 1, l: 1, m: 1, m2: 1 } as Record<string, number>)[bpUnit];
+              const countLabel = isRawUnit
+                ? pluralizeRu(rec.buy_plan.packages_count, ["шт.", "шт.", "шт."])
+                : pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit);
+              const sizeLabel = isRawUnit ? displayUnit(bpUnit) : "";
+              return (
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size}{sizeLabel ? ` ${sizeLabel}` : ""}
+                </p>
+              );
+            })()}
           </div>
         </div>
       </div>

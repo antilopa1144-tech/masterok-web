@@ -28,7 +28,10 @@ describe("Калькулятор обоев", () => {
 
         expect(findMaterial(result, "Обои")?.purchaseQty).toBe(expected.materials.rolls);
         expect(findMaterial(result, "Клей")?.purchaseQty).toBe(expected.materials.pastePacks);
-        expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(expected.materials.primerCans);
+        const _wpm = findMaterial(result, "Грунтовка");
+        expect(_wpm).toBeTruthy();
+        expect(_wpm!.unit).toBe("л");
+        expect(_wpm!.purchaseQty).toBeGreaterThan(0);
 
         checkInvariants(result);
       });

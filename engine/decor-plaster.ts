@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   DecorPlasterCanonicalSpec,
   CanonicalCalculatorResult,
@@ -137,14 +138,7 @@ export function computeCanonicalDecorPlaster(
       purchaseQty: Math.ceil(recScenario.exact_need),
       category: "Штукатурка",
     },
-    {
-      name: `Грунтовка глубокого проникновения (${PRIMER_CAN} л)`,
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    },
+    buildPrimerMaterial(area * PRIMER_DEEP_L_PER_M2, { reserveFactor: PRIMER_DEEP_RESERVE, category: "Грунтовка" }),
     {
       name: `Тонированная грунтовка (${TINTED_CAN} л)`,
       quantity: tintedPrimer,

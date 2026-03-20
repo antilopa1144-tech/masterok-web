@@ -36,3 +36,20 @@ export function pluralizePackageUnit(count: number, rawUnit: string): string {
   const forms = PACKAGE_UNIT_FORMS[rawUnit];
   return forms ? pluralizeRu(count, forms) : rawUnit;
 }
+
+/** Map internal/english unit keys to Russian display labels */
+const UNIT_DISPLAY: Record<string, string> = {
+  kg: "кг",
+  g: "г",
+  m2: "м²",
+  m: "м",
+  mm: "мм",
+  l: "л",
+  unit: "шт.",
+  pcs: "шт.",
+};
+
+/** Convert engine unit to Russian display string */
+export function displayUnit(rawUnit: string): string {
+  return UNIT_DISPLAY[rawUnit] ?? rawUnit;
+}

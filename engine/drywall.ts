@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   DrywallCanonicalSpec,
   CanonicalCalculatorResult,
@@ -88,7 +89,7 @@ function buildMaterials(
   puttyStartBags: number,
   puttyFinishBags: number,
   serpyankaRolls: number,
-  primerCans: number,
+  primerMat: CanonicalMaterialResult,
   sandpaperPacks: number,
 ): CanonicalMaterialResult[] {
   return [
@@ -172,14 +173,7 @@ function buildMaterials(
       purchaseQty: serpyankaRolls,
       category: "Отделка",
     },
-    {
-      name: "Грунтовка 10л",
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Отделка",
-    },
+    { ...primerMat, category: "Отделка" },
     {
       name: "Наждачная бумага P180",
       quantity: sandpaperPacks,
@@ -321,7 +315,7 @@ export function computeCanonicalDrywall(
       puttyStartBags,
       puttyFinishBags,
       serpyankaRolls,
-      primerCans,
+      buildPrimerMaterial(totalSheetArea * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE }),
       sandpaperPacks,
     ),
     totals: {

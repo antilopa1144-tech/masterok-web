@@ -1,6 +1,7 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   DecorStoneCanonicalSpec,
   CanonicalCalculatorResult,
@@ -167,14 +168,7 @@ export function computeCanonicalDecorStone(
   }
 
   if (needPrimer && primerCans > 0) {
-    materials.push({
-      name: `Грунтовка (${PRIMER_CAN} л)`,
-      quantity: primerCans,
-      unit: "канистр",
-      withReserve: primerCans,
-      purchaseQty: primerCans,
-      category: "Грунтовка",
-    });
+    materials.push(buildPrimerMaterial(primerL, { category: "Грунтовка" }));
   }
 
   const practicalNotes: string[] = [];

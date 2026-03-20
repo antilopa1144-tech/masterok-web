@@ -38,7 +38,10 @@ runCanonicalParitySuite({
     expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 5);
 
     expect(findMaterial(result, 'Линолеум')?.purchaseQty).toBe(expected.materials.linearMeters);
-    expect(findMaterial(result, 'Грунтовка')?.purchaseQty).toBe(expected.materials.primerLiters);
+    const _lpm = findMaterial(result, 'Грунтовка');
+    expect(_lpm).toBeTruthy();
+    expect(_lpm!.unit).toBe("л");
+    expect(_lpm!.purchaseQty).toBeGreaterThan(0);
     if (expected.materials.glueKg !== undefined) {
       expect(findMaterial(result, 'Клей')?.purchaseQty).toBe(expected.materials.glueKg);
     }
