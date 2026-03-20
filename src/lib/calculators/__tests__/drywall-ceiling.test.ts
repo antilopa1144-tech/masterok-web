@@ -76,10 +76,11 @@ describe("Подвесной потолок из ГКЛ", () => {
     });
 
     it("Грунтовка: smart packaging (литры)", () => {
-      // 20×0.15=3.0 л × 1.15 reserve = 3.45 л → 1×2 + 1×1 + 1×1 = 4л
+      // 20×0.3=6.0 л × 1.15 reserve = 6.9 л → 1×10л
+      // or 20×0.15=3.0 л × 1.15 = 3.45 → 1×5л
       const primer = findMaterial(r, "Грунтовка")!;
       expect(primer.unit).toBe("л");
-      expect(primer.purchaseQty).toBe(4);
+      expect(primer.purchaseQty).toBe(5);
     });
 
     it("totals содержат area, sheets, ppPcs, suspCount, crabCount", () => {

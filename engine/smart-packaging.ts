@@ -1,48 +1,40 @@
 /**
- * Smart packaging: pick optimal container sizes for liquid materials.
+ * Smart packaging: pick optimal container size for liquid materials.
  *
- * Instead of always dividing by a fixed container size (e.g. 10L),
- * this picks the best combination of available sizes to minimize waste.
+ * Strategy: как покупает человек в магазине.
+ * - Если нужно ≤ 10 л → одна канистра (ближайшая ≥ нужного)
+ * - Если нужно > 10 л → N одинаковых канистр самого большого размера
+ * - Максимум 2 разных типоразмера, не более
+ * - Никаких "1×10 + 1×5 + 1×2 + 1×1" — это абсурд
  *
- * Real-world container sizes for common building liquids:
- * - Primer (грунтовка): 1L, 2L, 5L, 10L
- * - Paint (краска): 0.9L, 2.5L, 5L, 10L, 20L
- * - Adhesive liquid: 1L, 5L, 10L
+ * Стандартные тары:
+ * - Грунтовка: 1, 5, 10 л (реально в продаже)
+ * - Краска: 0.9, 2.5, 5, 10, 20 л
  */
 
 import type { CanonicalMaterialResult } from "./canonical";
 
 export interface ContainerOption {
-  /** Container volume in base units (liters, kg, etc.) */
   size: number;
-  /** Display label, e.g. "10 л" */
   label: string;
 }
 
 export interface PackagingResult {
-  /** Total number of containers to buy */
   totalContainers: number;
-  /** Breakdown by container size: [{size, label, count}] */
   breakdown: Array<{ size: number; label: string; count: number }>;
-  /** Total volume purchased */
   totalVolume: number;
-  /** Leftover (waste) */
   leftover: number;
-  /** Human-readable name, e.g. "2 канистры по 5 л + 1 канистра 1 л" */
   displayName: string;
-  /** Unit label for material list */
-  unitLabel: string;
 }
 
-/** Standard primer container sizes (liters) */
+/** Realistic primer containers (what's actually sold in stores) */
 export const PRIMER_CONTAINERS: ContainerOption[] = [
   { size: 1, label: "1 л" },
-  { size: 2, label: "2 л" },
   { size: 5, label: "5 л" },
   { size: 10, label: "10 л" },
 ];
 
-/** Standard paint container sizes (liters) */
+/** Standard paint containers */
 export const PAINT_CONTAINERS: ContainerOption[] = [
   { size: 0.9, label: "0,9 л" },
   { size: 2.5, label: "2,5 л" },
@@ -52,88 +44,81 @@ export const PAINT_CONTAINERS: ContainerOption[] = [
 ];
 
 /**
- * Pick the optimal combination of containers for a given volume.
+ * Pick the simplest container combo for a given volume.
  *
- * Strategy: greedy from largest to smallest, then check if a single
- * larger container would be cheaper (less waste) than multiple small ones.
+ * Rules (how a real person shops):
+ * 1. Try single container of each size — pick smallest that fits
+ * 2. If no single container fits — use N of the largest size
+ * 3. Check if (N-1) large + 1 smaller is better (less waste)
+ * 4. Never use more than 2 different sizes
  */
 export function pickOptimalContainers(
   neededVolume: number,
   containers: ContainerOption[],
 ): PackagingResult {
   if (neededVolume <= 0) {
-    return { totalContainers: 0, breakdown: [], totalVolume: 0, leftover: 0, displayName: "", unitLabel: "" };
+    return { totalContainers: 0, breakdown: [], totalVolume: 0, leftover: 0, displayName: "" };
   }
 
-  // Sort descending by size
-  const sorted = [...containers].sort((a, b) => b.size - a.size);
+  const sorted = [...containers].sort((a, b) => a.size - b.size); // ascending
+  const largest = sorted[sorted.length - 1];
 
-  // Strategy 1: greedy fill from largest
-  const greedy = greedyFill(neededVolume, sorted);
-
-  // Strategy 2: single next-size-up (if one container covers it all)
-  const singleUp = sorted.find((c) => c.size >= neededVolume);
-  const singleResult = singleUp
-    ? { breakdown: [{ ...singleUp, count: 1 }], total: singleUp.size, containers: 1 }
-    : null;
-
-  // Pick the one with least waste, preferring fewer containers
-  let best = greedy;
-  if (singleResult && singleResult.total - neededVolume <= greedy.total - neededVolume) {
-    best = singleResult;
+  // Strategy 1: single container that covers the need
+  const singleFit = sorted.find((c) => c.size >= neededVolume);
+  if (singleFit) {
+    return buildResult([{ ...singleFit, count: 1 }], neededVolume);
   }
 
-  const totalVolume = best.total;
-  const leftover = Math.round((totalVolume - neededVolume) * 100) / 100;
-  const totalContainers = best.breakdown.reduce((sum, b) => sum + b.count, 0);
+  // Strategy 2: N identical containers of the largest size
+  const nLargest = Math.ceil(neededVolume / largest.size);
+  const allLargest = buildResult([{ ...largest, count: nLargest }], neededVolume);
 
-  // Build display name
-  const parts = best.breakdown
-    .filter((b) => b.count > 0)
-    .map((b) => `${b.count}×${b.label}`);
-  const displayName = parts.join(" + ");
+  // Strategy 3: (N-1) largest + 1 smaller (if less waste)
+  let bestCombo = allLargest;
 
-  // Build unit label (use the most common size)
-  const primarySize = best.breakdown.reduce((a, b) => (b.count > a.count ? b : a), best.breakdown[0]);
-  const unitLabel = `канистр (${primarySize.label})`;
+  if (nLargest >= 2) {
+    const remaining = neededVolume - (nLargest - 1) * largest.size;
+    if (remaining > 0) {
+      const filler = sorted.find((c) => c.size >= remaining && c.size < largest.size);
+      if (filler) {
+        const combo = buildResult(
+          filler.size === largest.size
+            ? [{ ...largest, count: nLargest }]
+            : [{ ...largest, count: nLargest - 1 }, { ...filler, count: 1 }],
+          neededVolume,
+        );
+        // Prefer combo if same or less waste
+        if (combo.totalVolume <= bestCombo.totalVolume) {
+          bestCombo = combo;
+        }
+      }
+    }
+  }
 
-  return { totalContainers, breakdown: best.breakdown, totalVolume, leftover, displayName, unitLabel };
+  return bestCombo;
 }
 
-function greedyFill(needed: number, sorted: ContainerOption[]) {
-  let remaining = needed;
-  const breakdown: Array<{ size: number; label: string; count: number }> = [];
-  let total = 0;
+function buildResult(
+  breakdown: Array<{ size: number; label: string; count: number }>,
+  needed: number,
+): PackagingResult {
+  const totalVolume = breakdown.reduce((sum, b) => sum + b.size * b.count, 0);
+  const leftover = Math.round((totalVolume - needed) * 100) / 100;
+  const totalContainers = breakdown.reduce((sum, b) => sum + b.count, 0);
 
-  for (const container of sorted) {
-    if (remaining <= 0) break;
-    const count = Math.floor(remaining / container.size);
-    if (count > 0) {
-      breakdown.push({ ...container, count });
-      remaining -= count * container.size;
-      total += count * container.size;
-    }
-  }
+  // Display: "2 × 10 л" or "1 × 10 л + 1 × 5 л"
+  const parts = breakdown
+    .filter((b) => b.count > 0)
+    .sort((a, b) => b.size - a.size) // largest first
+    .map((b) => b.count === 1 ? b.label : `${b.count} × ${b.label}`);
+  const displayName = parts.join(" + ");
 
-  // If there's remaining, add one of the smallest container that covers it
-  if (remaining > 0) {
-    // Find smallest container that exists
-    const smallest = sorted[sorted.length - 1];
-    const existing = breakdown.find((b) => b.size === smallest.size);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      breakdown.push({ ...smallest, count: 1 });
-    }
-    total += smallest.size;
-  }
-
-  return { breakdown, total, containers: breakdown.reduce((s, b) => s + b.count, 0) };
+  return { totalContainers, breakdown, totalVolume, leftover, displayName };
 }
 
 /**
  * Build a primer material result with smart container sizing.
- * Replaces all hardcoded "Math.ceil(liters / 10)" patterns across calculators.
+ * Drop-in replacement for hardcoded "Math.ceil(liters / 10)" across all calculators.
  */
 export function buildPrimerMaterial(
   litersNeeded: number,
