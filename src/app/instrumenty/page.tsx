@@ -32,6 +32,33 @@ const UI_TEXT = {
 
 const TOOLS = [
   {
+    href: "/instrumenty/stoimost-remonta/",
+    icon: "calculator",
+    title: "Стоимость ремонта",
+    desc: "Примерная смета на ремонт квартиры. Косметический, стандартный, капитальный — материалы и работы.",
+    badge: "Новый",
+    color: "#10B981",
+    bg: "#D1FAE5",
+  },
+  {
+    href: "/instrumenty/skolko-ostalos/",
+    icon: "measure",
+    title: "Сколько осталось?",
+    desc: "Обратный калькулятор: введите остаток материала — узнайте на какую площадь хватит.",
+    badge: "Новый",
+    color: "#3B82F6",
+    bg: "#DBEAFE",
+  },
+  {
+    href: "/instrumenty/tajmer-skhvatyvaniya/",
+    icon: "timer",
+    title: "Таймер схватывания",
+    desc: "Выберите материал — таймер покажет когда можно продолжать. Уведомление на телефон.",
+    badge: "Новый",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
+  },
+  {
     href: "/instrumenty/konverter/",
     icon: "converter",
     title: "Конвертер единиц",
