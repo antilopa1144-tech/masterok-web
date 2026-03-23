@@ -53,8 +53,6 @@ export default function YandexMetrika() {
             src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
             style={{ position: "absolute", left: "-9999px" }}
             alt=""
-            loading="lazy"
-            decoding="async"
           />
         </div>
       </noscript>

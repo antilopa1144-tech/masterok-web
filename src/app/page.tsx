@@ -16,6 +16,9 @@ const META = {
 export const metadata: Metadata = {
   title: META.title,
   description: META.description,
+  alternates: {
+    canonical: `${SITE_URL}/`,
+  },
 };
 
 const UI_TEXT = {
