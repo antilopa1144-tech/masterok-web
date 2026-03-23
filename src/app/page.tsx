@@ -289,7 +289,7 @@ export default function HomePage() {
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {s.val}
                 </div>
-                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{s.label}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
@@ -319,7 +319,7 @@ export default function HomePage() {
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
                   {cat.label}
                 </h3>
-                <p className="text-xs text-slate-400 dark:text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {count} {getCalculatorCountLabel(count)}
                 </p>
               </Link>
@@ -333,7 +333,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {UI_TEXT.popularTitle}
           </h2>
-          <span className="text-sm text-slate-400 dark:text-slate-500 hidden sm:block">
+          <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
             {UI_TEXT.popularMeta}
           </span>
         </div>
@@ -356,7 +356,7 @@ export default function HomePage() {
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
                   {calc.title}
                 </h3>
-                <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
                   {calc.description}
                 </p>
                 <div className="mt-3">
@@ -446,7 +446,7 @@ export default function HomePage() {
               <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
                 {tool.title}
               </div>
-              <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tool.desc}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tool.desc}</div>
             </Link>
           ))}
         </div>

@@ -149,10 +149,10 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-sm text-slate-500 dark:text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             © {year} {UI_TEXT.copyrightSuffix}
           </p>
-          <span className="text-sm text-slate-500 dark:text-slate-500">{UI_TEXT.standards}</span>
+          <span className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.standards}</span>
         </div>
       </div>
     </footer>

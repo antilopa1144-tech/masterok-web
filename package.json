@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@types/three": "^0.169.0",
-    "basic-ftp": "^5.1.0",
+
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.575.0",
