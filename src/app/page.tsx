@@ -160,12 +160,19 @@ export default function HomePage() {
 
   const organizationLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "HomeAndConstructionBusiness",
     name: SITE_NAME,
     url: SITE_URL,
     logo: `${SITE_URL}/logo-512x512.png`,
     description: SITE_WEBPAGE_DESCRIPTION,
     foundingDate: "2024",
+    areaServed: {
+      "@type": "Country",
+      name: "Россия",
+    },
+    serviceType: ["Строительные калькуляторы онлайн", "Расчёт строительных материалов"],
+    knowsLanguage: "ru",
+    priceRange: "Бесплатно",
     sameAs: [],
     contactPoint: {
       "@type": "ContactPoint",

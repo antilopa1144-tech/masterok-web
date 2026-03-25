@@ -209,11 +209,13 @@ export default async function BlogPostPage({ params }: Props) {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
     description: post.description,
     datePublished: post.date,
     dateModified: post.date,
+    wordCount: post.content.split(/\s+/).length,
+    articleSection: post.category,
     author: {
       "@type": "Organization",
       name: SITE_NAME,
@@ -227,6 +229,10 @@ export default async function BlogPostPage({ params }: Props) {
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `${baseUrl}/blog/${post.slug}/`,
+    },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["article h1", "article p:first-of-type"],
     },
     keywords: post.tags.join(", "),
     image: post.heroImage ? {

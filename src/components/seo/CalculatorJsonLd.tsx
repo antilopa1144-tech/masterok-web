@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
 
 interface CalculatorJsonLdProps {
   calc: {
@@ -42,6 +42,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       priceCurrency: "RUB",
       availability: "https://schema.org/InStock",
     },
+    datePublished: SITE_FOUNDING_DATE,
     dateModified: new Date().toISOString().split("T")[0],
     author: {
       "@type": "Organization",
@@ -94,6 +95,23 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     },
   } : null;
 
+  // QAPage schema for calculators with 5+ FAQ (better for AI citation engines)
+  const qaPageLd = allFaqItems.length >= 5 ? {
+    "@context": "https://schema.org",
+    "@type": "QAPage",
+    mainEntity: allFaqItems.slice(0, 1).map(item => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+        upvoteCount: 0,
+        dateCreated: SITE_FOUNDING_DATE,
+        author: { "@type": "Organization", name: SITE_NAME },
+      },
+    }))[0],
+  } : null;
+
   // HowTo schema
   const howToLd = calc.howToUse && calc.howToUse.length > 0 ? {
     "@context": "https://schema.org",
@@ -104,6 +122,10 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     url: canonicalUrl,
     totalTime: "PT3M",
     tool: [{ "@type": "HowToTool", name: "Веб-браузер" }],
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["[data-faq-answer]", ".prose h2", ".prose p"],
+    },
     step: calc.howToUse.map((step, i) => ({
       "@type": "HowToStep",
       position: i + 1,
@@ -138,6 +160,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />}
+      {qaPageLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(qaPageLd) }} />}
       {howToLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />}
       {expertTipsLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(expertTipsLd) }} />}
     </>

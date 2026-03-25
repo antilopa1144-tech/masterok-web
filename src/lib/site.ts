@@ -14,3 +14,4 @@ export const SITE_OG_IMAGE_WIDTH = 1200;
 export const SITE_OG_IMAGE_HEIGHT = 630;
 
 export const SITE_FOOTER_DESCRIPTION = `${SITE_WEBPAGE_DESCRIPTION}. Точный расчёт материалов по ГОСТ и СНиП.`;
+export const SITE_FOUNDING_DATE = "2024-06-01";

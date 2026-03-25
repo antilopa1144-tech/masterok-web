@@ -129,6 +129,11 @@ export default function Footer() {
                   {UI_TEXT.app}
                 </Link>
               </li>
+              <li>
+                <Link href="/o-proekte/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                  О проекте
+                </Link>
+              </li>
             </ul>
 
             <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -152,7 +157,12 @@ export default function Footer() {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             © {year} {UI_TEXT.copyrightSuffix}
           </p>
-          <span className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.standards}</span>
+          <div className="flex items-center gap-4">
+            <Link href="/politika-konfidencialnosti/" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+              Конфиденциальность
+            </Link>
+            <span className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.standards}</span>
+          </div>
         </div>
       </div>
     </footer>

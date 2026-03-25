@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { StructuredData } from "@/components/layout/StructuredData";
+
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
 const THEME_INIT_SCRIPT = `(() => {
@@ -97,6 +97,13 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
     "mobile-web-app-capable": "yes",
+    "geo.region": "RU",
+    "geo.position": "55.7558;37.6173",
+    "ICBM": "55.7558, 37.6173",
+    "geo.placename": "Россия",
+    "citation_title": SITE_DEFAULT_TITLE,
+    "citation_author": SITE_NAME,
+    "citation_language": "ru",
   },
 };
 
@@ -114,7 +121,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <StructuredData />
+
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <a
