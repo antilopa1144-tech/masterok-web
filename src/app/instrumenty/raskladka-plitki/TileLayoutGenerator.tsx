@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -281,6 +281,30 @@ export default function TileLayoutGenerator() {
   const [tileH, setTileH] = useState(600);
   const [groutMm, setGroutMm] = useState(2);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("straight");
+  const svgContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPNG = useCallback(() => {
+    const svgEl = svgContainerRef.current?.querySelector("svg");
+    if (!svgEl) return;
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width * 2;
+      canvas.height = img.height * 2;
+      ctx.scale(2, 2);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(0, 0, img.width, img.height);
+      ctx.drawImage(img, 0, 0);
+      const link = document.createElement("a");
+      link.download = "tile-layout.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+  }, []);
 
   const result = useMemo(
     () => calculateLayout(surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode),
@@ -392,11 +416,21 @@ export default function TileLayoutGenerator() {
 
       {/* Visual layout */}
       <div className="card p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-          Раскладка
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Раскладка
+          </h3>
+          <button
+            onClick={handleExportPNG}
+            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-600 transition-colors"
+          >
+            📥 Скачать PNG
+          </button>
+        </div>
 
-        <TileLayoutSVG result={result} tileW={tileW} tileH={tileH} groutMm={groutMm} />
+        <div ref={svgContainerRef}>
+          <TileLayoutSVG result={result} tileW={tileW} tileH={tileH} groutMm={groutMm} />
+        </div>
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 text-xs text-slate-500">
