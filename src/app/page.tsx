@@ -50,36 +50,52 @@ const UI_TEXT = {
 
 const TOOLS = [
   {
-    href: "/instrumenty/konverter/",
-    icon: "converter",
-    title: "Конвертер",
-    desc: "мм → м → дюйм",
+    href: "/instrumenty/stoimost-remonta/",
+    icon: "engineering",
+    title: "Стоимость ремонта",
+    desc: "Смета по типу отделки",
+    bg: "#FEE2E2",
+    color: "#EF4444",
+  },
+  {
+    href: "/instrumenty/raskladka-plitki/",
+    icon: "area",
+    title: "Раскладка плитки",
+    desc: "Визуализация подрезки",
     bg: "#DBEAFE",
     color: "#3B82F6",
   },
   {
-    href: "/instrumenty/ploshchad-komnaty/",
-    icon: "area",
-    title: "Площадь комнаты",
-    desc: "Г, Т, трапеция",
+    href: "/instrumenty/normy-raskhoda/",
+    icon: "target",
+    title: "Нормы расхода",
+    desc: "Справочник по ГОСТ",
     bg: "#D1FAE5",
     color: "#10B981",
   },
   {
-    href: "/instrumenty/kalkulyator/",
-    icon: "calculator",
-    title: "Калькулятор",
-    desc: "Как на телефоне",
+    href: "/instrumenty/sravnenie-materialov/",
+    icon: "hammer",
+    title: "Сравнение материалов",
+    desc: "Цена, срок, монтаж",
     bg: "#FEF3C7",
     color: "#F59E0B",
+  },
+  {
+    href: "/instrumenty/konverter/",
+    icon: "converter",
+    title: "Конвертер единиц",
+    desc: "мм → м → дюйм",
+    bg: "#EDE9FE",
+    color: "#8B5CF6",
   },
   {
     href: "/instrumenty/chek-listy/",
     icon: "checklist",
     title: "Чек-листы",
     desc: "6 шаблонов работ",
-    bg: "#EDE9FE",
-    color: "#8B5CF6",
+    bg: "#CFFAFE",
+    color: "#06B6D4",
   },
 ] as const;
 
@@ -317,90 +333,135 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="page-container-wide py-10" id="calculators">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-          {UI_TEXT.categoriesTitle}
-        </h2>
+      <div className="page-container-wide py-10" id="calculators">
+        <div className="flex flex-col xl:flex-row gap-8">
+          {/* Main content: categories + popular */}
+          <div className="flex-1 min-w-0">
+            <section>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+                {UI_TEXT.categoriesTitle}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 gap-4">
+                {CATEGORIES.map((cat) => {
+                  const count = ALL_CALCULATORS.filter((c) => c.category === cat.id).length;
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={`/kalkulyatory/${cat.slug}/`}
+                      className="card-hover p-5 block no-underline group"
+                    >
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                        style={{ backgroundColor: cat.bgColor }}
+                      >
+                        <CategoryIcon icon={cat.icon} size={22} color={cat.color} />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
+                        {cat.label}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {count} {getCalculatorCountLabel(count)}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {CATEGORIES.map((cat) => {
-            const count = ALL_CALCULATORS.filter((c) => c.category === cat.id).length;
-            return (
-              <Link
-                key={cat.id}
-                href={`/kalkulyatory/${cat.slug}/`}
-                className="card-hover p-5 block no-underline group"
-              >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                  style={{ backgroundColor: cat.bgColor }}
-                >
-                  <CategoryIcon icon={cat.icon} size={22} color={cat.color} />
-                </div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
-                  {cat.label}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {count} {getCalculatorCountLabel(count)}
-                </p>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+            <section className="mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {UI_TEXT.popularTitle}
+                </h2>
+                <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
+                  {UI_TEXT.popularMeta}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+                {popular.map((calc) => {
+                  const cat = CATEGORIES.find((c) => c.id === calc.category);
+                  return (
+                    <Link
+                      key={calc.id}
+                      href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
+                      className="card-hover p-5 block no-underline group"
+                    >
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                        style={{ backgroundColor: cat?.bgColor ?? "#f1f5f9" }}
+                      >
+                        <CategoryIcon icon={cat?.icon ?? "wrench"} size={22} color={cat?.color ?? "#64748b"} />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
+                        {calc.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                        {calc.description}
+                      </p>
+                      <div className="mt-3">
+                        <span
+                          className="text-xs font-medium px-2.5 py-1 rounded-full"
+                          style={{
+                            backgroundColor: cat?.bgColor ?? "#f1f5f9",
+                            color: cat?.color ?? "#64748b",
+                          }}
+                        >
+                          {cat?.label ?? UI_TEXT.otherCategory}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="text-center mt-6">
+                <Link href="/kalkulyatory/" className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline">
+                  Все калькуляторы →
+                </Link>
+              </div>
+            </section>
+          </div>
 
-      <section className="page-container-wide py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {UI_TEXT.popularTitle}
-          </h2>
-          <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
-            {UI_TEXT.popularMeta}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {popular.map((calc) => {
-            const cat = CATEGORIES.find((c) => c.id === calc.category);
-            return (
-              <Link
-                key={calc.id}
-                href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
-                className="card-hover p-5 block no-underline group"
-              >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                  style={{ backgroundColor: cat?.bgColor ?? "#f1f5f9" }}
-                >
-                  <CategoryIcon icon={cat?.icon ?? "wrench"} size={22} color={cat?.color ?? "#64748b"} />
-                </div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
-                  {calc.title}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
-                  {calc.description}
-                </p>
-                <div className="mt-3">
-                  <span
-                    className="text-xs font-medium px-2.5 py-1 rounded-full"
-                    style={{
-                      backgroundColor: cat?.bgColor ?? "#f1f5f9",
-                      color: cat?.color ?? "#64748b",
-                    }}
+          {/* Sidebar: tools (desktop only) */}
+          <aside className="hidden xl:block w-72 shrink-0" aria-label="Полезные инструменты">
+            <div className="sticky top-20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {UI_TEXT.toolsTitle}
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {TOOLS.map((tool) => (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    className="card-hover p-4 flex items-center gap-3 no-underline group"
+                    aria-label={tool.title}
                   >
-                    {cat?.label ?? UI_TEXT.otherCategory}
-                  </span>
-                </div>
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: tool.bg }}
+                    >
+                      <CategoryIcon icon={tool.icon} size={20} color={tool.color} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
+                        {tool.title}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{tool.desc}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link
+                href="/instrumenty/"
+                className="block text-center text-sm text-accent-600 hover:text-accent-700 font-medium no-underline mt-4"
+              >
+                {UI_TEXT.toolsCta}
               </Link>
-            );
-          })}
+            </div>
+          </aside>
         </div>
-        <div className="text-center mt-6">
-          <Link href="/kalkulyatory/" className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline">
-            Все калькуляторы →
-          </Link>
-        </div>
-      </section>
+      </div>
 
       <section className="page-container-wide py-8">
         <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 md:p-12 text-white overflow-hidden dark:bg-slate-800">
@@ -439,7 +500,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="page-container-wide py-8">
+      {/* Tools section: visible only on mobile/tablet, hidden on xl (shown in sidebar instead) */}
+      <section className="page-container-wide py-8 xl:hidden">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {UI_TEXT.toolsTitle}
@@ -451,12 +513,13 @@ export default function HomePage() {
             {UI_TEXT.toolsCta}
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {TOOLS.map((tool) => (
             <Link
               key={tool.href}
               href={tool.href}
               className="card-hover p-5 block no-underline group text-center"
+              aria-label={tool.title}
             >
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
