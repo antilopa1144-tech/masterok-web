@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
-import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector, ComparisonTable, FeedbackPanel } from "./CalculatorParts";
+import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector, ComparisonTable, FeedbackPanel, ExperienceModeToggle } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function CalculatorWidget({ calculator }: Props) {
+  const [experienceMode, setExperienceMode] = useState<"beginner" | "pro">("beginner");
   const {
     values,
     result,
@@ -64,9 +66,10 @@ export default function CalculatorWidget({ calculator }: Props) {
 
       {/* Форма калькулятора */}
         <div className="card p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 shrink-0">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
             <div className="flex items-center gap-3">
+              <ExperienceModeToggle mode={experienceMode} onChange={setExperienceMode} />
               {calcHistory.length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}
@@ -99,21 +102,25 @@ export default function CalculatorWidget({ calculator }: Props) {
           />
         ))}
 
-        <AccuracyModeSelector
-          mode={accuracyMode}
-          onChange={handleAccuracyModeChange}
-          accentColor={accentColor}
-          customModifiers={customModifiers}
-          onCustomModifiersChange={handleCustomModifiersChange}
-        />
+        {experienceMode === "pro" && (
+          <>
+            <AccuracyModeSelector
+              mode={accuracyMode}
+              onChange={handleAccuracyModeChange}
+              accentColor={accentColor}
+              customModifiers={customModifiers}
+              onCustomModifiersChange={handleCustomModifiersChange}
+            />
 
-        {accuracyHint && accuracyHint.suggested !== accuracyMode && (
-          <button
-            onClick={() => handleAccuracyModeChange(accuracyHint.suggested)}
-            className="w-full text-left text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-xl px-3 py-2.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
-          >
-            <span className="font-medium">💡 {accuracyHint.reason}</span>
-          </button>
+            {accuracyHint && accuracyHint.suggested !== accuracyMode && (
+              <button
+                onClick={() => handleAccuracyModeChange(accuracyHint.suggested)}
+                className="w-full text-left text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-xl px-3 py-2.5 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+              >
+                <span className="font-medium">💡 {accuracyHint.reason}</span>
+              </button>
+            )}
+          </>
         )}
 
         <button
@@ -131,16 +138,18 @@ export default function CalculatorWidget({ calculator }: Props) {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.resultsTitle}</h2>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleToggleComparison}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                  showComparison
-                    ? "border-accent-300 dark:border-accent-600 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
-                    : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
-                }`}
-              >
-                {CALCULATOR_UI_TEXT.comparisonToggle}
-              </button>
+              {experienceMode === "pro" && (
+                <button
+                  onClick={handleToggleComparison}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                    showComparison
+                      ? "border-accent-300 dark:border-accent-600 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
+                      : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
+                  }`}
+                >
+                  {CALCULATOR_UI_TEXT.comparisonToggle}
+                </button>
+              )}
               <ExportButtons calculatorName={calculator.title} result={result} />
             </div>
           </div>
