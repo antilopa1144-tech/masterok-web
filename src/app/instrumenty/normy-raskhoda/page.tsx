@@ -107,6 +107,53 @@ const NORMS: NormCategory[] = [
       { material: "Рулонная гидроизоляция", consumption: "1.15", unit: "м²/м²", conditions: "Нахлёст 15%", source: "СП 71.13330.2017" },
     ],
   },
+  {
+    title: "Обойный клей",
+    icon: "📜",
+    calculatorSlug: "wallpaper",
+    rows: [
+      { material: "Клей для бумажных обоев (КМЦ)", consumption: "0.15–0.20", unit: "кг/м²", conditions: "Готовый раствор, 1 слой", source: "Инструкция производителя" },
+      { material: "Клей для виниловых обоев (Quelyd)", consumption: "0.20–0.25", unit: "кг/м²", conditions: "Готовый раствор, нанесение на стену", source: "Паспорт Quelyd" },
+      { material: "Клей для флизелиновых обоев", consumption: "0.20–0.30", unit: "кг/м²", conditions: "Нанесение только на стену", source: "Инструкция производителя" },
+      { material: "Клей для стеклообоев", consumption: "0.25–0.35", unit: "кг/м²", conditions: "Готовый раствор, густая консистенция", source: "Паспорт Oscar" },
+    ],
+  },
+  {
+    title: "Утеплители",
+    icon: "🧊",
+    calculatorSlug: "insulation",
+    rows: [
+      { material: "Минвата Rockwool Лайт Баттс (50 мм)", consumption: "2.0", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Паспорт Rockwool" },
+      { material: "Минвата Rockwool Лайт Баттс (100 мм)", consumption: "2.88", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Паспорт Rockwool" },
+      { material: "ЭППС Пеноплэкс Комфорт (50 мм)", consumption: "5.04", unit: "м²/уп", conditions: "Упаковка 7 листов 600×1200 мм", source: "Паспорт Пеноплэкс" },
+      { material: "Пенопласт ПСБ-С 25 (50 мм)", consumption: "1.0", unit: "м²/лист", conditions: "Лист 1000×1000 мм", source: "ГОСТ 15588-2014" },
+      { material: "Тарельчатый дюбель", consumption: "5–6", unit: "шт/м²", conditions: "Для крепления утеплителя к фасаду", source: "СТО 58239148-001-2006" },
+    ],
+  },
+  {
+    title: "Кладочные растворы",
+    icon: "🧱",
+    calculatorSlug: "brick",
+    rows: [
+      { material: "Раствор М100 (кирпич 250×120×65)", consumption: "0.22–0.25", unit: "м³/м³ кладки", conditions: "Кладка в полкирпича, шов 10 мм", source: "СНиП 82-02-95" },
+      { material: "Раствор М100 (кирпич утолщённый)", consumption: "0.18–0.20", unit: "м³/м³ кладки", conditions: "Кирпич 250×120×88, шов 10 мм", source: "СНиП 82-02-95" },
+      { material: "Клей для газобетона", consumption: "1.5–2.0", unit: "кг/м² кладки", conditions: "Шов 2-3 мм, зубчатый шпатель", source: "Паспорт Ceresit CT 21" },
+      { material: "Кладочная сетка 50×50", consumption: "1.0", unit: "м²/м² кладки", conditions: "Через каждые 3-5 рядов", source: "СП 15.13330.2020" },
+    ],
+  },
+  {
+    title: "Монтаж ГКЛ",
+    icon: "📐",
+    calculatorSlug: "drywall",
+    rows: [
+      { material: "Лист ГКЛ 2500×1200×12.5", consumption: "1.0", unit: "лист/3 м²", conditions: "Площадь листа 3 м²", source: "ГОСТ 6266-97" },
+      { material: "Профиль ПС 60×27", consumption: "2.0", unit: "пог.м/м²", conditions: "Шаг стоек 600 мм", source: "Knauf технология W611" },
+      { material: "Профиль ПН 28×27", consumption: "0.7–0.8", unit: "пог.м/м²", conditions: "По периметру", source: "Knauf технология" },
+      { material: "Саморезы по металлу 3.5×25", consumption: "23–25", unit: "шт/лист", conditions: "Шаг крепления 250 мм", source: "Knauf технология" },
+      { material: "Серпянка (лента для швов)", consumption: "1.2", unit: "пог.м/м²", conditions: "Длина стыков + запас 20%", source: "Расчётная норма" },
+      { material: "Шпаклёвка для швов (Knauf Fugen)", consumption: "0.25", unit: "кг/пог.м шва", conditions: "Заделка стыка + серпянка", source: "Паспорт Knauf" },
+    ],
+  },
 ];
 
 function NormTable({ category }: { category: NormCategory }) {
