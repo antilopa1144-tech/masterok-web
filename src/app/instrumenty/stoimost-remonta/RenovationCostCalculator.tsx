@@ -144,21 +144,26 @@ export default function RenovationCostCalculator() {
   const [area, setArea] = useState(55);
   const [typeId, setTypeId] = useState("standard");
   const [withWork, setWithWork] = useState(true);
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
 
   const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
+
+  const getPrice = (name: string, defaultPrice: number) => customPrices[name] ?? defaultPrice;
 
   const result = useMemo(() => {
     const materialLines = type.materials.map((m) => {
       const qty = Math.ceil(area * m.consumptionPerM2 * 10) / 10;
-      const cost = Math.round(qty * m.pricePerUnit);
-      return { ...m, qty, cost };
+      const price = getPrice(m.name, m.pricePerUnit);
+      const cost = Math.round(qty * price);
+      return { ...m, qty, cost, pricePerUnit: price };
     });
 
     const workLines = withWork
       ? type.works.map((w) => {
           const qty = Math.ceil(area * w.consumptionPerM2 * 10) / 10;
-          const cost = Math.round(qty * w.pricePerUnit);
-          return { ...w, qty, cost };
+          const price = getPrice(`work:${w.name}`, w.pricePerUnit);
+          const cost = Math.round(qty * price);
+          return { ...w, qty, cost, pricePerUnit: price };
         })
       : [];
 
@@ -169,7 +174,8 @@ export default function RenovationCostCalculator() {
     const durationDays = Math.ceil(area * type.durationDaysPerM2);
 
     return { materialLines, workLines, materialTotal, workTotal, total, perM2, durationDays };
-  }, [area, type, withWork]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area, type, withWork, customPrices]);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -300,13 +306,22 @@ export default function RenovationCostCalculator() {
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
             Материалы
           </h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Нажмите на цену, чтобы ввести свою</p>
           <div className="space-y-1.5">
             {result.materialLines.map((line, i) => (
               <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
                 <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                <span className="text-slate-400 dark:text-slate-500 text-xs w-20 text-right">
+                <span className="text-slate-400 dark:text-slate-500 text-xs w-16 text-right">
                   {line.qty} {line.unit}
                 </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={customPrices[line.name] ?? line.pricePerUnit}
+                  onChange={(e) => setCustomPrices((p) => ({ ...p, [line.name]: Number(e.target.value) || 0 }))}
+                  className="w-16 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+                  title="Цена за единицу"
+                />
                 <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
                   {formatPrice(line.cost)} ₽
                 </span>
@@ -329,9 +344,17 @@ export default function RenovationCostCalculator() {
               {result.workLines.map((line, i) => (
                 <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
                   <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs w-24 text-right">
+                  <span className="text-slate-400 dark:text-slate-500 text-xs w-16 text-right">
                     {line.qty} {line.unit}
                   </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={customPrices[`work:${line.name}`] ?? line.pricePerUnit}
+                    onChange={(e) => setCustomPrices((p) => ({ ...p, [`work:${line.name}`]: Number(e.target.value) || 0 }))}
+                    className="w-16 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+                    title="Цена за единицу"
+                  />
                   <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
                     {formatPrice(line.cost)} ₽
                   </span>

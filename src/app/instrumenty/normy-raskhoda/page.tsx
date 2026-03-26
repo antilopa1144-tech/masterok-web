@@ -227,6 +227,9 @@ export default function Page() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
             Справочник расхода на 1 м² по ГОСТ, СНиП и паспортам производителей. Используется в наших калькуляторах.
           </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+            Последнее обновление: март 2026 г. Источники: паспорта Ceresit, Knauf, Vetonit, Litokol; ГОСТ, СНиП, СП.
+          </p>
         </div>
       </div>
 
