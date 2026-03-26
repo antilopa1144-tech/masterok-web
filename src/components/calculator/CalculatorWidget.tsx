@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector, ComparisonTable, FeedbackPanel, ExperienceModeToggle } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
@@ -13,6 +13,7 @@ import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
+import { trackRecentCalculator } from "./RecentCalculators";
 
 export type { CalculatorWidgetProps };
 
@@ -51,8 +52,29 @@ export default function CalculatorWidget({ calculator }: Props) {
   const accentColor = category?.color ?? "#f97316";
   const presets = CALCULATOR_PRESETS[calculator.slug];
 
+  // Track this calculator as recently viewed
+  useEffect(() => {
+    trackRecentCalculator({
+      id: calculator.id,
+      slug: calculator.slug,
+      title: calculator.title,
+      categorySlug: calculator.categorySlug,
+      categoryIcon: category?.icon ?? "wrench",
+      categoryColor: category?.color ?? "#64748b",
+      categoryBg: category?.bgColor ?? "#f1f5f9",
+    });
+  }, [calculator.id, calculator.slug, calculator.title, calculator.categorySlug, category]);
+
+  // Enter key triggers calculation from any input field
+  const handleFormKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
+      e.preventDefault();
+      handleCalculate();
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onKeyDown={handleFormKeyDown}>
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">

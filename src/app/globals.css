@@ -405,3 +405,52 @@ input[type="range"]::-moz-range-thumb {
 @utility bg-cat-engineering { background-color: #cffafe; }
 @utility bg-cat-interior { background-color: #d1fae5; }
 @utility bg-cat-ceiling { background-color: #dbeafe; }
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide non-essential UI */
+  header, footer, nav,
+  .btn-primary, .btn-secondary,
+  [class*="ScrollToTop"],
+  details summary,
+  [aria-label="Полезные инструменты"] {
+    display: none !important;
+  }
+
+  /* Clean backgrounds */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .card, .card-hover, .result-card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Show full content */
+  details[open] > div {
+    display: block !important;
+  }
+
+  /* Calculator result emphasis */
+  .result-card {
+    background: #f8fafc !important;
+    padding: 12pt !important;
+  }
+
+  /* Links show URL */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* No page breaks inside results */
+  .slide-up {
+    animation: none !important;
+    break-inside: avoid;
+  }
+}

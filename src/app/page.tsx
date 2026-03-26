@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ALL_CALCULATORS, getPopularCalculators } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { SITE_NAME, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
+import RecentCalculators from "@/components/calculator/RecentCalculators";
 
 const META = {
   title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
@@ -332,6 +334,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <RecentCalculators />
+      </Suspense>
 
       <div className="page-container-wide py-10" id="calculators">
         <div className="flex flex-col xl:flex-row gap-8">
