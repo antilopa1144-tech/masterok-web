@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 
 const UI_TEXT = {
@@ -302,6 +302,130 @@ export default function KonverterPage() {
       <p className="mt-4 text-xs text-slate-400 dark:text-slate-500 text-center">
         {UI_TEXT.quickTargetHint}
       </p>
+
+      {/* Калькулятор плотности: масса ↔ объём */}
+      <DensityCalculator />
+    </div>
+  );
+}
+
+// ── Расчёт плотности ────────────────────────────────────────────────────────
+
+const DENSITY_PRESETS = [
+  { label: "Бетон М200", density: 2400 },
+  { label: "Бетон М300", density: 2500 },
+  { label: "Кирпич", density: 1800 },
+  { label: "Газобетон D500", density: 500 },
+  { label: "Газобетон D600", density: 600 },
+  { label: "Пескобетон М300", density: 2200 },
+  { label: "Цемент (насып.)", density: 1500 },
+  { label: "Песок", density: 1600 },
+  { label: "Щебень", density: 1400 },
+  { label: "Керамзит", density: 450 },
+  { label: "Минвата", density: 50 },
+  { label: "ЭППС", density: 35 },
+  { label: "Вода", density: 1000 },
+  { label: "Краска акриловая", density: 1300 },
+  { label: "Грунтовка", density: 1050 },
+];
+
+type DensityMode = "mass-to-volume" | "volume-to-mass" | "calc-density";
+
+function DensityCalculator() {
+  const [mode, setMode] = useState<DensityMode>("mass-to-volume");
+  const [density, setDensity] = useState(2400);
+  const [inputVal, setInputVal] = useState("1");
+
+  const num = parseFloat(inputVal.replace(",", ".")) || 0;
+
+  const result = useMemo(() => {
+    if (density <= 0 || num <= 0) return "—";
+    if (mode === "mass-to-volume") return formatResult(num / density);
+    if (mode === "volume-to-mass") return formatResult(num * density);
+    return "—";
+  }, [mode, density, num]);
+
+  const resultUnit = mode === "mass-to-volume" ? "м³" : "кг";
+  const inputUnit = mode === "mass-to-volume" ? "кг" : "м³";
+
+  return (
+    <div className="card p-6 mt-8">
+      <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+        Масса ↔ Объём через плотность
+      </h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+        Пересчитайте килограммы в кубометры и обратно для строительных материалов.
+      </p>
+
+      {/* Режим */}
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => setMode("mass-to-volume")}
+          className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+            mode === "mass-to-volume"
+              ? "bg-accent-500 text-white border-accent-500"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+          }`}
+        >
+          кг → м³
+        </button>
+        <button
+          onClick={() => setMode("volume-to-mass")}
+          className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
+            mode === "volume-to-mass"
+              ? "bg-accent-500 text-white border-accent-500"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+          }`}
+        >
+          м³ → кг
+        </button>
+      </div>
+
+      {/* Плотность — пресеты */}
+      <div className="mb-4">
+        <label className="input-label">Материал / плотность (кг/м³)</label>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {DENSITY_PRESETS.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => setDensity(p.density)}
+              className={`text-xs px-2 py-1 rounded border transition-colors ${
+                density === p.density
+                  ? "border-accent-300 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 font-medium"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="number"
+          min={1}
+          value={density}
+          onChange={(e) => setDensity(Number(e.target.value) || 1)}
+          className="input-field w-32"
+        />
+      </div>
+
+      {/* Ввод / результат */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="input-label">Значение ({inputUnit})</label>
+          <input
+            type="number"
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            className="input-field text-lg font-semibold"
+          />
+        </div>
+        <div>
+          <label className="input-label">Результат ({resultUnit})</label>
+          <div className="input-field text-lg font-bold text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40">
+            {result}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
