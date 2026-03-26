@@ -89,6 +89,21 @@ export default function CuringTimer() {
     setCompleted(false);
   }, []);
 
+  // Flash document title when timer completes
+  useEffect(() => {
+    if (!completed) return;
+    const originalTitle = document.title;
+    let flash = true;
+    const interval = setInterval(() => {
+      document.title = flash ? "✅ Таймер завершён!" : originalTitle;
+      flash = !flash;
+    }, 1000);
+    return () => {
+      clearInterval(interval);
+      document.title = originalTitle;
+    };
+  }, [completed]);
+
   useEffect(() => {
     if (!running || secondsLeft <= 0) return;
 
@@ -97,15 +112,21 @@ export default function CuringTimer() {
         if (prev <= 1) {
           setRunning(false);
           setCompleted(true);
-          // Try to play notification sound
+          // Play notification sound
           try {
             audioRef.current?.play();
           } catch {}
-          // Try to send notification
+          // Vibrate on mobile
+          try {
+            navigator.vibrate?.([200, 100, 200, 100, 200]);
+          } catch {}
+          // Send push notification (works even when tab is in background)
           if (typeof Notification !== "undefined" && Notification.permission === "granted") {
             new Notification("Таймер завершён!", {
               body: `${preset?.name}: можно продолжать работу`,
               icon: "/favicon.ico",
+              tag: "curing-timer",
+              requireInteraction: true,
             });
           }
           return 0;
@@ -131,10 +152,8 @@ export default function CuringTimer() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Hidden audio element for notification */}
-      <audio ref={audioRef} preload="none">
-        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAB/f39/" type="audio/wav" />
-      </audio>
+      {/* Notification sound — generated 800Hz beep */}
+      <audio ref={audioRef} preload="none" src="data:audio/wav;base64,UklGRl4FAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YToFAACAj56ssbu+wLy2rqKUhoB/gIaSnKiyw7zCwLqyqJ6SiIGAgISMlqCqtLzBwb67s6uhnZKIgoCAhIyWoKq0vMHBvruzoZ2SiIKAgISMlqCqtLzBwb67s6GdkoiCgICEjJagqrS8wcG+u7OhnZKIgoCAhIyWoKq0vMHBvruzoZ2SiIKAgISMlqCqtLzBwb67s6GdkoiCgA==" />
 
       {/* Material selector */}
       {!running && !completed && (

@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+type LayoutMode = "straight" | "offset-half" | "offset-third" | "diagonal";
+
 interface TileResult {
   wholeTiles: number;
   cutTiles: number;
@@ -14,13 +16,22 @@ interface TileResult {
   cutRight: number; // mm of last column cut
   cutBottom: number; // mm of last row cut
   tileGrid: TileCell[][];
+  mode: LayoutMode;
 }
 
 interface TileCell {
   type: "whole" | "cut" | "corner";
   widthMm: number;
   heightMm: number;
+  offsetMm?: number; // horizontal offset for staggered layouts
 }
+
+const LAYOUT_MODES: { value: LayoutMode; label: string; desc: string }[] = [
+  { value: "straight", label: "Прямая", desc: "Классическая раскладка без смещения" },
+  { value: "offset-half", label: "Со смещением 1/2", desc: "Кирпичная кладка, каждый ряд сдвинут на половину" },
+  { value: "offset-third", label: "Со смещением 1/3", desc: "Каждый ряд сдвинут на треть плитки" },
+  { value: "diagonal", label: "Диагональная", desc: "Укладка под 45°, больше подрезки" },
+];
 
 const TILE_PRESETS = [
   { label: "20×20", w: 200, h: 200 },
@@ -47,6 +58,33 @@ function calculateLayout(
   tileW: number,
   tileH: number,
   groutMm: number,
+  mode: LayoutMode = "straight",
+): TileResult {
+  // Diagonal mode: multiply area by ~1.41 for waste, use straight grid as visual
+  if (mode === "diagonal") {
+    const straight = calculateStraightLayout(surfaceW, surfaceH, tileW, tileH, groutMm);
+    const diagonalWaste = Math.min(straight.wastePercent + 15, 35); // diagonal adds ~15% waste
+    const extraTiles = Math.ceil(straight.totalTiles * 0.15);
+    return {
+      ...straight,
+      cutTiles: straight.cutTiles + extraTiles,
+      totalTiles: straight.totalTiles + extraTiles,
+      wastePercent: diagonalWaste,
+      mode: "diagonal",
+    };
+  }
+
+  // Offset modes: calculate with staggered rows
+  if (mode === "offset-half" || mode === "offset-third") {
+    const offsetFraction = mode === "offset-half" ? 0.5 : 1 / 3;
+    return calculateOffsetLayout(surfaceW, surfaceH, tileW, tileH, groutMm, offsetFraction, mode);
+  }
+
+  return { ...calculateStraightLayout(surfaceW, surfaceH, tileW, tileH, groutMm), mode: "straight" };
+}
+
+function calculateStraightLayout(
+  surfaceW: number, surfaceH: number, tileW: number, tileH: number, groutMm: number,
 ): TileResult {
   const stepW = tileW + groutMm;
   const stepH = tileH + groutMm;
@@ -69,7 +107,6 @@ function calculateLayout(
   const cols = wholeCols + (hasRightCut ? 1 : 0);
   const rows = wholeRows + (hasBottomCut ? 1 : 0);
 
-  // Build grid
   const grid: TileCell[][] = [];
   for (let r = 0; r < rows; r++) {
     const row: TileCell[] = [];
@@ -89,7 +126,6 @@ function calculateLayout(
     grid.push(row);
   }
 
-  // Count tiles
   const wholeTiles = wholeCols * wholeRows;
   const cutTilesRight = hasRightCut ? wholeRows : 0;
   const cutTilesBottom = hasBottomCut ? wholeCols : 0;
@@ -97,7 +133,6 @@ function calculateLayout(
   const cutTiles = cutTilesRight + cutTilesBottom + cornerTile;
   const totalTiles = wholeTiles + cutTiles;
 
-  // Waste: cut area / whole tile area
   const wholeArea = tileW * tileH;
   let wasteArea = 0;
   if (hasRightCut) wasteArea += cutTilesRight * (wholeArea - cutRight * tileH);
@@ -105,7 +140,77 @@ function calculateLayout(
   if (cornerTile) wasteArea += wholeArea - cutRight * cutBottom;
   const wastePercent = totalTiles > 0 ? (wasteArea / (totalTiles * wholeArea)) * 100 : 0;
 
-  return { wholeTiles, cutTiles, totalTiles, wastePercent, rows, cols, cutRight, cutBottom, tileGrid: grid };
+  return { wholeTiles, cutTiles, totalTiles, wastePercent, rows, cols, cutRight, cutBottom, tileGrid: grid, mode: "straight" };
+}
+
+function calculateOffsetLayout(
+  surfaceW: number, surfaceH: number, tileW: number, tileH: number, groutMm: number,
+  offsetFraction: number, mode: LayoutMode,
+): TileResult {
+  const stepW = tileW + groutMm;
+  const stepH = tileH + groutMm;
+  const offsetPx = Math.round(tileW * offsetFraction);
+
+  const wholeRows = Math.floor(surfaceH / stepH);
+  const hasBottomCut = (surfaceH - wholeRows * stepH) > groutMm;
+  const cutBottom = hasBottomCut ? surfaceH - wholeRows * stepH - groutMm : 0;
+  const rows = wholeRows + (hasBottomCut ? 1 : 0);
+
+  const grid: TileCell[][] = [];
+  let totalWhole = 0;
+  let totalCut = 0;
+
+  for (let r = 0; r < rows; r++) {
+    const row: TileCell[] = [];
+    const isLastRow = hasBottomCut && r === rows - 1;
+    const cellH = isLastRow ? cutBottom : tileH;
+    const rowOffset = (r % 2 === 1) ? offsetPx : 0;
+
+    // First tile might be cut if offset
+    let x = 0;
+    if (rowOffset > 0) {
+      const firstW = Math.min(offsetPx, surfaceW);
+      row.push({ type: "cut", widthMm: firstW, heightMm: cellH, offsetMm: 0 });
+      totalCut++;
+      x = firstW + groutMm;
+    }
+
+    while (x < surfaceW) {
+      const remaining = surfaceW - x;
+      if (remaining >= tileW) {
+        row.push({ type: isLastRow ? "cut" : "whole", widthMm: tileW, heightMm: cellH });
+        if (isLastRow) totalCut++; else totalWhole++;
+        x += stepW;
+      } else if (remaining > groutMm) {
+        const cutW = remaining - groutMm;
+        row.push({ type: "cut", widthMm: Math.max(1, cutW), heightMm: cellH });
+        totalCut++;
+        break;
+      } else {
+        break;
+      }
+    }
+    grid.push(row);
+  }
+
+  const totalTiles = totalWhole + totalCut;
+  const wholeArea = tileW * tileH;
+  let wasteArea = 0;
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell.type !== "whole") {
+        wasteArea += wholeArea - cell.widthMm * cell.heightMm;
+      }
+    }
+  }
+  const wastePercent = totalTiles > 0 ? (wasteArea / (totalTiles * wholeArea)) * 100 : 0;
+
+  return {
+    wholeTiles: totalWhole, cutTiles: totalCut, totalTiles, wastePercent,
+    rows, cols: grid[0]?.length ?? 0,
+    cutRight: 0, cutBottom,
+    tileGrid: grid, mode,
+  };
 }
 
 // ── SVG Renderer ─────────────────────────────────────────────────────────────
@@ -175,10 +280,11 @@ export default function TileLayoutGenerator() {
   const [tileW, setTileW] = useState(300);
   const [tileH, setTileH] = useState(600);
   const [groutMm, setGroutMm] = useState(2);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("straight");
 
   const result = useMemo(
-    () => calculateLayout(surfaceW, surfaceH, tileW, tileH, groutMm),
-    [surfaceW, surfaceH, tileW, tileH, groutMm],
+    () => calculateLayout(surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode),
+    [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode],
   );
 
   return (
@@ -235,6 +341,29 @@ export default function TileLayoutGenerator() {
                 }`}
               >
                 {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Layout mode */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Способ укладки
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {LAYOUT_MODES.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setLayoutMode(m.value)}
+                className={`text-left p-3 rounded-xl border transition-all ${
+                  layoutMode === m.value
+                    ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 shadow-sm"
+                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                }`}
+              >
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.label}</span>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{m.desc}</p>
               </button>
             ))}
           </div>
