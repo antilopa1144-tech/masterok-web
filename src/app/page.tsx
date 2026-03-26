@@ -173,6 +173,11 @@ export default function HomePage() {
     serviceType: ["Строительные калькуляторы онлайн", "Расчёт строительных материалов"],
     knowsLanguage: "ru",
     priceRange: "Бесплатно",
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 55.7558,
+      longitude: 37.6173,
+    },
     sameAs: [],
     contactPoint: {
       "@type": "ContactPoint",

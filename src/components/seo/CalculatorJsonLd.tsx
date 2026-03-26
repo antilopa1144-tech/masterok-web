@@ -1,4 +1,4 @@
-import { SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_EXPERT, SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
 
 interface CalculatorJsonLdProps {
   calc: {
@@ -45,6 +45,12 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     datePublished: SITE_FOUNDING_DATE,
     dateModified: new Date().toISOString().split("T")[0],
     author: {
+      "@type": "Person",
+      name: SITE_EXPERT.name,
+      jobTitle: SITE_EXPERT.jobTitle,
+      url: `${SITE_URL}/o-spetsialiste/`,
+    },
+    publisher: {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,

@@ -134,6 +134,11 @@ export default function Footer() {
                   О проекте
                 </Link>
               </li>
+              <li>
+                <Link href="/o-spetsialiste/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                  О специалисте
+                </Link>
+              </li>
             </ul>
 
             <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
