@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 
-import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
+import { SITE_DEFAULT_TITLE, SITE_EXPERT, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
 const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
@@ -52,8 +52,8 @@ export const metadata: Metadata = {
     "калькулятор ламината",
     "расчёт стройматериалов онлайн",
   ],
-  authors: [{ name: SITE_NAME }],
-  creator: SITE_NAME,
+  authors: [{ name: `${SITE_EXPERT.name}, ${SITE_EXPERT.jobTitle.toLowerCase()}` }],
+  creator: SITE_EXPERT.name,
   metadataBase: new URL(SITE_URL),
   twitter: {
     card: "summary_large_image",
@@ -105,7 +105,7 @@ export const metadata: Metadata = {
     "ICBM": "55.7558, 37.6173",
     "geo.placename": "Россия",
     "citation_title": SITE_DEFAULT_TITLE,
-    "citation_author": SITE_NAME,
+    "citation_author": SITE_EXPERT.name,
     "citation_language": "ru",
   },
 };
