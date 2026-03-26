@@ -8,6 +8,11 @@ import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
+import Link from "next/link";
+import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
+import { getCalculatorBySlug } from "@/lib/calculators";
+import CategoryIcon from "@/components/ui/CategoryIcon";
+import { getCategoryById } from "@/lib/calculators/categories";
 
 export type { CalculatorWidgetProps };
 
@@ -189,6 +194,9 @@ export default function CalculatorWidget({ calculator }: Props) {
             primaryMaterial={result.materials.find((m) => m.category === "Основное") ?? result.materials[0]}
             accuracyMode={result.accuracyMode}
           />
+
+          {/* Спутники — связанные калькуляторы */}
+          <CompanionLinks slug={calculator.slug} />
         </div>
       )}
 
@@ -201,6 +209,54 @@ export default function CalculatorWidget({ calculator }: Props) {
       {calculator.faq && calculator.faq.length > 0 && (
         <CalculatorFAQ faq={calculator.faq} />
       )}
+    </div>
+  );
+}
+
+function CompanionLinks({ slug }: { slug: string }) {
+  const companions = CALCULATOR_COMPANIONS[slug];
+  if (!companions || companions.length === 0) return null;
+
+  const resolved = companions
+    .map((c) => {
+      const calc = getCalculatorBySlug(c.slug);
+      if (!calc) return null;
+      const cat = getCategoryById(calc.category);
+      return { ...c, calc, cat };
+    })
+    .filter(Boolean) as { slug: string; reason: string; calc: NonNullable<ReturnType<typeof getCalculatorBySlug>>; cat: ReturnType<typeof getCategoryById> }[];
+
+  if (resolved.length === 0) return null;
+
+  return (
+    <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+        Также может пригодиться
+      </p>
+      <div className="space-y-2">
+        {resolved.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/kalkulyatory/${c.calc.categorySlug}/${c.calc.slug}/`}
+            className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-accent-300 dark:hover:border-accent-600 transition-all no-underline group"
+          >
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: c.cat?.bgColor ?? "#f1f5f9" }}
+            >
+              <CategoryIcon icon={c.cat?.icon ?? "wrench"} size={18} color={c.cat?.color ?? "#64748b"} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors">
+                {c.calc.title}
+              </span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {c.reason}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ALL_CHECKLISTS, getChecklistBySlug } from "@/lib/checklists";
 import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
-import PrintButton from "./PrintButton";
+import PrintButton, { ExportChecklistPDF } from "./PrintButton";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -128,6 +128,7 @@ export default async function ChecklistPage({ params }: Props) {
 
       {/* Нижние кнопки */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <ExportChecklistPDF checklist={cl} />
         <PrintButton />
         <Link
           href="/instrumenty/chek-listy/"
