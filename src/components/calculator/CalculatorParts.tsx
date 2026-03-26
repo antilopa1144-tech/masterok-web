@@ -923,6 +923,78 @@ function PracticalNotes({ notes }: { notes: string[] }) {
 
 // ── Блок результата (warnings + materials + totals + share) ──────────────────
 
+// ── Оценка стоимости ──────────────────────────────────────────────────────
+
+function PriceEstimate({ materials }: { materials: CalculatorResult["materials"] }) {
+  const [open, setOpen] = useState(false);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+
+  const total = materials.reduce((sum, m) => {
+    const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
+    const price = prices[m.name] ?? 0;
+    return sum + qty * price;
+  }, 0);
+
+  const handlePriceChange = (name: string, value: number) => {
+    setPrices((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const filledCount = Object.values(prices).filter((v) => v > 0).length;
+
+  return (
+    <details className="mt-3 group" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary className="flex items-center gap-2 cursor-pointer list-none text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-accent-600 transition-colors py-2">
+        <span>💰 Оценка стоимости</span>
+        {total > 0 && (
+          <span className="ml-auto text-accent-600 dark:text-accent-400 font-bold">
+            {total.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽
+          </span>
+        )}
+        {total === 0 && filledCount === 0 && (
+          <span className="ml-auto text-xs text-slate-400">введите цены</span>
+        )}
+        <span className="group-open:rotate-180 transition-transform text-slate-400">▼</span>
+      </summary>
+
+      <div className="mt-2 space-y-2 bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+          Введите цену за единицу — итог обновится автоматически
+        </p>
+        {materials.map((m) => {
+          const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
+          const price = prices[m.name] ?? 0;
+          const lineTotal = qty * price;
+          return (
+            <div key={m.name} className="flex items-center gap-2 text-sm">
+              <span className="flex-1 text-slate-600 dark:text-slate-300 truncate text-xs">{m.name}</span>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={price || ""}
+                placeholder="₽"
+                onChange={(e) => handlePriceChange(m.name, Number(e.target.value) || 0)}
+                className="w-20 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+              />
+              <span className="text-xs text-slate-400 w-16 text-right tabular-nums">
+                {lineTotal > 0 ? `${lineTotal.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽` : "—"}
+              </span>
+            </div>
+          );
+        })}
+        {total > 0 && (
+          <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-200 dark:border-slate-700 text-sm font-bold">
+            <span className="text-slate-700 dark:text-slate-200">Итого</span>
+            <span className="text-accent-600 dark:text-accent-400">
+              {total.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽
+            </span>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export function ResultBlock({
   result,
   shareState,
@@ -992,6 +1064,9 @@ export function ResultBlock({
         <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{CALCULATOR_UI_TEXT.materialsListTitle}</h3>
 
         <MaterialList materials={result.materials} />
+
+        {/* Оценка стоимости — пользователь вводит свои цены */}
+        <PriceEstimate materials={result.materials} />
 
         {/* Кнопки действий — компактная полоса под материалами */}
         <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
