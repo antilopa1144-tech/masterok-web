@@ -4,10 +4,10 @@ export const SITE_WEBPAGE_DESCRIPTION = "Бесплатные строитель
 export const SITE_TITLE_SUFFIX = "строительные калькуляторы онлайн";
 export const SITE_DEFAULT_TITLE = `${SITE_NAME} — ${SITE_TITLE_SUFFIX}`;
 export const SITE_METADATA_DESCRIPTION =
-  "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и ещё 60+ расчётов. Точно, быстро, по ГОСТ.";
+  "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и ещё 61+ расчёт. Точно, быстро, по ГОСТ.";
 export const SITE_TWITTER_TITLE = `${SITE_NAME} — строительные калькуляторы`;
-export const SITE_TWITTER_DESCRIPTION = "60+ бесплатных строительных калькуляторов онлайн";
-export const SITE_OG_DESCRIPTION = "60+ бесплатных строительных калькуляторов. Точный расчёт материалов по ГОСТ.";
+export const SITE_TWITTER_DESCRIPTION = "61+ бесплатный строительный калькулятор онлайн";
+export const SITE_OG_DESCRIPTION = "61+ бесплатный строительный калькулятор. Точный расчёт материалов по ГОСТ.";
 export const SITE_OG_IMAGE_PATH = "/og-image.png";
 export const SITE_OG_IMAGE_URL = `${SITE_URL}${SITE_OG_IMAGE_PATH}`;
 export const SITE_OG_IMAGE_WIDTH = 1200;

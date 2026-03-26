@@ -277,7 +277,7 @@ export default function PloshadKomnatyPage() {
       {/* Результат */}
       {result && (
         <div className="result-card">
-          <h3 className="text-base font-semibold text-white mb-4">{UI_TEXT.resultTitle}</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{UI_TEXT.resultTitle}</h3>
           <div className="grid grid-cols-2 gap-3">
             <ResultItem label={UI_TEXT.floorAreaLabel} value={fmtM(result.floorArea)} unit="м²" />
             <ResultItem label={UI_TEXT.perimeterLabel} value={fmtM(result.perimeter)} unit="м" />
@@ -286,7 +286,7 @@ export default function PloshadKomnatyPage() {
             )}
           </div>
           {result.notes && (
-            <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">{result.notes}</p>
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{result.notes}</p>
           )}
         </div>
       )}
@@ -296,10 +296,10 @@ export default function PloshadKomnatyPage() {
 
 function ResultItem({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="bg-white/10 rounded-xl p-3">
-      <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{label}</p>
-      <p className="text-xl font-bold text-white">
-        {value} <span className="text-sm font-normal text-slate-300 dark:text-slate-400">{unit}</span>
+    <div className="bg-accent-50 dark:bg-slate-800 rounded-xl p-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
+      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        {value} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{unit}</span>
       </p>
     </div>
   );
