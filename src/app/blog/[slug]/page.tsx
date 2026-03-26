@@ -326,16 +326,19 @@ export default async function BlogPostPage({ params }: Props) {
 
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-slate-400 dark:text-slate-500">{UI_TEXT.tagsLabel}</span>
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2.5 py-1 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-slate-400 dark:text-slate-500">{UI_TEXT.tagsLabel}</span>
+                {post.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2.5 py-1 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <ShareLinks url={`${SITE_URL}/blog/${post.slug}/`} title={post.title} />
             </div>
           </div>
         )}
@@ -426,6 +429,30 @@ export default async function BlogPostPage({ params }: Props) {
   );
 }
 
+function ShareLinks({ url, title }: { url: string; title: string }) {
+  const encoded = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
 
+  const links = [
+    { label: "Telegram", href: `https://t.me/share/url?url=${encoded}&text=${encodedTitle}`, bg: "hover:bg-[#229ED9]" },
+    { label: "VK", href: `https://vk.com/share.php?url=${encoded}&title=${encodedTitle}`, bg: "hover:bg-[#4680C2]" },
+    { label: "WhatsApp", href: `https://wa.me/?text=${encodedTitle}%20${encoded}`, bg: "hover:bg-[#25D366]" },
+  ];
 
-
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-slate-400 dark:text-slate-500">Поделиться:</span>
+      {links.map((l) => (
+        <a
+          key={l.label}
+          href={l.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`text-xs px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-white hover:border-transparent transition-all no-underline ${l.bg}`}
+        >
+          {l.label}
+        </a>
+      ))}
+    </div>
+  );
+}
