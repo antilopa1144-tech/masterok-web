@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 
 export const metadata: Metadata = {
   title: "Страница не найдена | Мастерок",
@@ -33,9 +34,14 @@ export default function NotFound() {
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
           {UI_TEXT.title}
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+        <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
           {UI_TEXT.description}
         </p>
+        <div className="max-w-md mx-auto">
+          <CalculatorSearch
+            calculators={ALL_CALCULATORS.map(({ id, slug, title, h1, description, metaTitle, metaDescription, category, categorySlug, tags, popularity, complexity }) => ({ id, slug, title, h1, description, metaTitle, metaDescription, category, categorySlug, tags, popularity, complexity }))}
+          />
+        </div>
       </div>
 
       <div className="mb-10">

@@ -67,6 +67,34 @@ const CATEGORIES: Category[] = [
       { name: "Эковата", pricePerM2: [100, 300], durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 1, warmth: 3, soundInsulation: 3, repairability: 1, extras: "Задувка аппаратом, мембраны", verdict: "Хороша для каркасных домов, без мостиков холода" },
     ],
   },
+  {
+    id: "roofing",
+    label: "Кровельные материалы",
+    icon: "🏠",
+    unit: "₽/м²",
+    materials: [
+      { name: "Металлочерепица", pricePerM2: [400, 900], durabilityYears: [25, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, ендовы, торцевые", verdict: "Классика для частных домов, лёгкая и долговечная" },
+      { name: "Профнастил С21/НС35", pricePerM2: [300, 700], durabilityYears: [25, 40], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, уплотнитель", verdict: "Бюджетнее металлочерепицы, проще монтаж" },
+      { name: "Мягкая кровля (гибкая черепица)", pricePerM2: [400, 1200], durabilityYears: [20, 40], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Подкладочный ковёр, гвозди, мастика, OSB", verdict: "Тихая, красивая, подходит для сложных крыш" },
+      { name: "Ондулин", pricePerM2: [200, 400], durabilityYears: [10, 20], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 1, extras: "Гвозди с шляпками, конёк", verdict: "Самый бюджетный, лёгкий, подходит для дачи" },
+      { name: "Фальцевая кровля", pricePerM2: [600, 1500], durabilityYears: [40, 60], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Кляммеры, герметик, обрешётка", verdict: "Премиум: герметичные швы, максимальный срок" },
+      { name: "Композитная черепица", pricePerM2: [800, 1800], durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Крепёж, доборные элементы", verdict: "Тихая, лёгкая, выглядит как керамика" },
+    ],
+  },
+  {
+    id: "ceilings",
+    label: "Потолки",
+    icon: "📐",
+    unit: "₽/м²",
+    materials: [
+      { name: "Натяжной потолок (ПВХ)", pricePerM2: [300, 800], durabilityYears: [10, 20], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 1, extras: "Профиль, закладные под светильники", verdict: "Быстро, ровно, не боится затопления. Нужен мастер" },
+      { name: "Натяжной (тканевый)", pricePerM2: [600, 1500], durabilityYears: [15, 25], installDifficulty: 3, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Профиль, закладные", verdict: "Дышит, не деформируется. Премиум-вариант" },
+      { name: "Гипсокартон (ГКЛ)", pricePerM2: [400, 900], durabilityYears: [15, 30], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 2, repairability: 3, extras: "Профили, саморезы, шпаклёвка, краска", verdict: "Можно делать уровни, ниши, подсветку" },
+      { name: "Покраска (по шпаклёвке)", pricePerM2: [100, 300], durabilityYears: [5, 8], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Шпаклёвка, грунтовка, краска", verdict: "Самый бюджетный, но нужны ровные потолки" },
+      { name: "Реечный потолок (алюминий)", pricePerM2: [500, 1200], durabilityYears: [20, 30], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Стрингеры, пристенный профиль", verdict: "Ванная и кухня — не боится влаги" },
+      { name: "Кассетный потолок (Armstrong)", pricePerM2: [300, 700], durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 2, repairability: 3, extras: "T-профиль, подвесы", verdict: "Офисы, подсобки — легко заменить кассету" },
+    ],
+  },
 ];
 
 const LEVEL_LABELS: Record<number, string> = { 1: "Низкая", 2: "Средняя", 3: "Высокая" };

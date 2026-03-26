@@ -127,4 +127,37 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
     { label: "Дом 80 м²", values: { roofArea: 80, slope: 30, ridgeLength: 8, eaveLength: 20, valleyLength: 0 } },
     { label: "Дом 150 м² с ендовами", values: { roofArea: 150, slope: 25, ridgeLength: 12, eaveLength: 30, valleyLength: 8 } },
   ],
+  // ── Дополнительные пресеты ─────────────────────
+  gazobeton: [
+    { label: "Дом 10×8 (одноэтажный)", values: { inputMode: 0, length: 36, height: 2.7, blockLength: 600, blockHeight: 200, blockWidth: 300, openingsArea: 12 } },
+    { label: "Гараж 4×6", values: { inputMode: 0, length: 20, height: 2.5, blockLength: 600, blockHeight: 200, blockWidth: 200, openingsArea: 5 } },
+  ],
+  gruntovka: [
+    { label: "Комната 15 м²", values: { inputMode: 1, area: 15, height: 2.7, surfaceType: 0, layers: 1 } },
+    { label: "Ванная 8 м² (бетоноконтакт)", values: { inputMode: 1, area: 8, height: 2.5, surfaceType: 1, layers: 1 } },
+  ],
+  shpaklevka: [
+    { label: "Комната под обои", values: { inputMode: 1, area: 40, qualityClass: 0, surfaceType: 0 } },
+    { label: "Потолок под покраску", values: { inputMode: 1, area: 20, qualityClass: 1, surfaceType: 0 } },
+  ],
+  "klej-dlya-plitki": [
+    { label: "Ванная пол 4 м²", values: { inputMode: 1, area: 4, tileSize: 0, adhesiveType: 0, layerThickness: 6 } },
+    { label: "Кухня фартук 2 м²", values: { inputMode: 1, area: 2, tileSize: 1, adhesiveType: 0, layerThickness: 4 } },
+  ],
+  zatirka: [
+    { label: "Ванная 4 м² (плитка 30×30)", values: { inputMode: 1, area: 4, tileWidth: 300, tileHeight: 300, tileThickness: 8, jointWidth: 2, jointDepth: 6 } },
+    { label: "Пол 20 м² (60×60)", values: { inputMode: 1, area: 20, tileWidth: 600, tileHeight: 600, tileThickness: 10, jointWidth: 3, jointDepth: 8 } },
+  ],
+  vodostok: [
+    { label: "Дом 8×10 м", values: { eaveLength: 20, gutterType: 0, stories: 1 } },
+    { label: "Дом 10×12 м (двухэтажный)", values: { eaveLength: 24, gutterType: 1, stories: 2 } },
+  ],
+  "otdelka-balkona": [
+    { label: "Балкон 3×1 м", values: { length: 3, width: 1, height: 2.5, wallType: 0, floorType: 0, ceilingType: 0 } },
+    { label: "Лоджия 6×1.2 м", values: { length: 6, width: 1.2, height: 2.5, wallType: 1, floorType: 1, ceilingType: 1 } },
+  ],
+  "kalkulyator-lestnicy": [
+    { label: "Этаж 2.8 м", values: { floorHeight: 2800, stairWidth: 1000, stepWidth: 280, materialType: 0 } },
+    { label: "Этаж 3.2 м (широкая)", values: { floorHeight: 3200, stairWidth: 1200, stepWidth: 300, materialType: 1 } },
+  ],
 };
