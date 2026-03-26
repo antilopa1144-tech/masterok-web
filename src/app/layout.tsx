@@ -6,9 +6,10 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
-import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
+
+const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
 const THEME_INIT_SCRIPT = `(() => {
   try {
@@ -27,6 +28,8 @@ const THEME_INIT_SCRIPT = `(() => {
   }
 })();`;
 
+const YM_INIT_SCRIPT = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`;
+
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   display: "swap",
@@ -36,7 +39,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: {
     default: SITE_DEFAULT_TITLE,
-    template: `%s | ${SITE_NAME}`, 
+    template: `%s | ${SITE_NAME}`,
   },
   description:
     SITE_METADATA_DESCRIPTION,
@@ -121,9 +124,18 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-
+        <script dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
+        <noscript>
+          <div>
+            <img
+              src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
+              style={{ position: "absolute", left: "-9999px" }}
+              alt=""
+            />
+          </div>
+        </noscript>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-accent-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium"
@@ -141,11 +153,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-
-
-
-
-
-

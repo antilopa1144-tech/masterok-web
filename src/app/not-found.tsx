@@ -7,7 +7,7 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 export const metadata: Metadata = {
   title: "Страница не найдена | Мастерок",
   description: "Запрошенная страница не найдена. Перейдите к каталогу строительных калькуляторов или на главную.",
-  robots: { index: false, follow: true },
+  robots: "noindex, follow",
 };
 
 const POPULAR = ALL_CALCULATORS.filter((c) => c.popularity >= 9).slice(0, 6);

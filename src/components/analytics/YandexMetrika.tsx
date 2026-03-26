@@ -4,7 +4,6 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import Script from "next/script";
 
 const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
@@ -15,7 +14,7 @@ declare global {
 }
 
 /** Компонент отправляет хит при смене страницы (SPA-навигация) */
-function YandexMetrikaHit() {
+export default function YandexMetrika() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -28,35 +27,12 @@ function YandexMetrikaHit() {
   return null;
 }
 
-export default function YandexMetrika() {
-  if (!YM_COUNTER) return null;
+/** Inline script for static HTML rendering (called from layout.tsx <head>) */
+export function getYandexMetrikaScript(): string {
+  if (!YM_COUNTER) return "";
+  return `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`;
+}
 
-  return (
-    <>
-      <Script
-        id="yandex-metrika"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-            m[i].l=1*new Date();
-            for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}
-            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-            (window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-            ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true,ssr:true,ecommerce:"dataLayer"});
-          `,
-        }}
-      />
-      <noscript>
-        <div>
-          <img
-            src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
-            style={{ position: "absolute", left: "-9999px" }}
-            alt=""
-          />
-        </div>
-      </noscript>
-      <YandexMetrikaHit />
-    </>
-  );
+export function getYandexMetrikaCounterId(): string {
+  return YM_COUNTER;
 }

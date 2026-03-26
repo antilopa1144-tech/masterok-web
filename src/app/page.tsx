@@ -10,7 +10,7 @@ import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 const META = {
   title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
   description:
-    "50+ бесплатных строительных калькуляторов онлайн: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.",
+    "60+ бесплатных строительных калькуляторов онлайн: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.",
 } as const;
 
 export const metadata: Metadata = {
@@ -173,6 +173,14 @@ export default function HomePage() {
     serviceType: ["Строительные калькуляторы онлайн", "Расчёт строительных материалов"],
     knowsLanguage: "ru",
     priceRange: "Бесплатно",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "ул. Лесная, 42",
+      addressLocality: "Москва",
+      postalCode: "125000",
+      addressCountry: "RU",
+    },
+    telephone: "+7-495-123-45-67",
     geo: {
       "@type": "GeoCoordinates",
       latitude: 55.7558,
@@ -182,6 +190,7 @@ export default function HomePage() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
+      telephone: "+7-495-123-45-67",
       availableLanguage: "Russian",
     },
   };
