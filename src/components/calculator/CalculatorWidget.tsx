@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector, ComparisonTable, FeedbackPanel, ExperienceModeToggle } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
@@ -22,6 +23,9 @@ interface Props {
 }
 
 export default function CalculatorWidget({ calculator }: Props) {
+  const searchParams = useSearchParams();
+  const fromCalc = searchParams.get("from");
+  const fromCalcDef = useMemo(() => fromCalc ? getCalculatorBySlug(fromCalc) : null, [fromCalc]);
   const [experienceMode, setExperienceMode] = useState<"beginner" | "pro">("beginner");
   const {
     values,
@@ -75,6 +79,14 @@ export default function CalculatorWidget({ calculator }: Props) {
 
   return (
     <div className="space-y-6" onKeyDown={handleFormKeyDown}>
+      {/* Баннер: значения перенесены из другого калькулятора */}
+      {fromCalcDef && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+          <span>📐</span>
+          <span>Значения перенесены из <strong>{fromCalcDef.title}</strong></span>
+        </div>
+      )}
+
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -218,7 +230,7 @@ export default function CalculatorWidget({ calculator }: Props) {
           />
 
           {/* Спутники — связанные калькуляторы */}
-          <CompanionLinks slug={calculator.slug} />
+          <CompanionLinks slug={calculator.slug} values={values} />
         </div>
       )}
 
@@ -235,7 +247,22 @@ export default function CalculatorWidget({ calculator }: Props) {
   );
 }
 
-function CompanionLinks({ slug }: { slug: string }) {
+// Keys that commonly transfer between calculators
+const TRANSFERABLE_KEYS = ["area", "length", "width", "height", "inputMode"];
+
+function buildTransferParams(values: Record<string, number>, targetSlug: string): string {
+  const params = new URLSearchParams();
+  for (const key of TRANSFERABLE_KEYS) {
+    if (values[key] != null && values[key] > 0) {
+      params.set(key, String(values[key]));
+    }
+  }
+  params.set("from", targetSlug);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function CompanionLinks({ slug, values }: { slug: string; values: Record<string, number> }) {
   const companions = CALCULATOR_COMPANIONS[slug];
   if (!companions || companions.length === 0) return null;
 
@@ -259,7 +286,7 @@ function CompanionLinks({ slug }: { slug: string }) {
         {resolved.map((c) => (
           <Link
             key={c.slug}
-            href={`/kalkulyatory/${c.calc.categorySlug}/${c.calc.slug}/`}
+            href={`/kalkulyatory/${c.calc.categorySlug}/${c.calc.slug}/${buildTransferParams(values, slug)}`}
             className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-accent-300 dark:hover:border-accent-600 transition-all no-underline group"
           >
             <div

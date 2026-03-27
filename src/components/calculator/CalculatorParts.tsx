@@ -874,6 +874,9 @@ export function HistoryPanel({
               month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
             })}
           </span>
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
+            {entry.calcTitle}
+          </span>
           <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
             {entry.result.materials.slice(0, 2).map(
               (m) => `${formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)} ${m.unit}`
@@ -1005,6 +1008,11 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
   );
 }
 
+function isResultEmpty(result: CalculatorResult): boolean {
+  return result.materials.length === 0 ||
+    result.materials.every((m) => !m.quantity || isNaN(m.quantity) || m.quantity === 0);
+}
+
 export function ResultBlock({
   result,
   shareState,
@@ -1014,6 +1022,18 @@ export function ResultBlock({
   shareState: "idle" | "copied";
   onShare: () => void;
 }) {
+  if (isResultEmpty(result)) {
+    return (
+      <div className="card p-6 text-center space-y-3">
+        <div className="text-3xl">📐</div>
+        <p className="text-slate-700 dark:text-slate-200 font-medium">Недостаточно данных для расчёта</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Проверьте, что размеры помещения и параметры материалов заполнены корректно (больше нуля).
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 slide-up">
       {result.warnings.length > 0 && (
