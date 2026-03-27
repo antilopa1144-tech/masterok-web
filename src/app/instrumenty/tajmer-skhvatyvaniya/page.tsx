@@ -17,6 +17,16 @@ export const metadata: Metadata = buildPageMetadata({
   url: PAGE_URL,
 });
 
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Инструменты", item: `${SITE_URL}/instrumenty/` },
+    { "@type": "ListItem", position: 3, name: "Таймер схватывания" },
+  ],
+};
+
 export default function Page() {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -35,6 +45,7 @@ export default function Page() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
       <div className="bg-gradient-to-b from-amber-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6">
