@@ -106,8 +106,8 @@ async function generateFixtures() {
         defaultInputs[field.key] = field.default_value;
       }
 
-      // Run engine with defaults
-      const result = computeFn(config, defaultInputs, factorTable);
+      // Run engine with defaults — use "basic" accuracy for parity baseline
+      const result = computeFn(config, { ...defaultInputs, accuracyMode: "basic" }, factorTable);
 
       const fixture: ParityFixture = {
         calculator_id: calcId,
