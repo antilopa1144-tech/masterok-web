@@ -1,7 +1,7 @@
 // Service Worker for Мастерок PWA
 // Caches static assets for offline access
 
-const CACHE_NAME = "masterok-v1";
+const CACHE_NAME = "masterok-v2";
 const STATIC_ASSETS = [
   "/",
   "/kalkulyatory/",
