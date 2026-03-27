@@ -8,6 +8,7 @@ import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
 import CategoryFaqAccordion from "./CategoryFaqAccordion";
+import { ALL_POSTS } from "@/lib/blog";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -168,6 +169,35 @@ export default async function CategoryPage({ params }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* Связанные статьи */}
+      {(() => {
+        const relatedPosts = ALL_POSTS.filter((p) => p.relatedCalculator?.categorySlug === cat.slug).slice(0, 3);
+        if (relatedPosts.length === 0) return null;
+        return (
+          <div className="border-t border-slate-200 dark:border-slate-800">
+            <div className="page-container-wide py-8">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Полезные статьи</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {relatedPosts.map((post) => (
+                  <Link
+                    key={post.slug}
+                    href={`/blog/${post.slug}/`}
+                    className="card-hover p-4 block no-underline group"
+                  >
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-600 transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                      {post.description}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* FAQ section */}
       {faqItems.length > 0 && (

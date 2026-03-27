@@ -90,9 +90,16 @@ export default function KalkulyatoryPage() {
                     href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
                     className="card-hover px-5 py-4 block no-underline group"
                   >
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 group-hover:text-accent-600 transition-colors">
-                      {calc.title}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
+                        {calc.title}
+                      </h3>
+                      {calc.popularity >= 9 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-50 dark:bg-accent-900/20 text-accent-600 dark:text-accent-400 font-medium shrink-0">
+                          ТОП
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2">
                       {calc.description}
                     </p>
