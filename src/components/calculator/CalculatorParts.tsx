@@ -441,6 +441,7 @@ export function FieldInput({
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
             className="input-field"
+            aria-label={field.label}
           >
             {field.options?.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -459,6 +460,9 @@ export function FieldInput({
         </div>
         <button
           onClick={() => onChange(value > 0 ? 0 : 1)}
+          role="switch"
+          aria-checked={value > 0}
+          aria-label={field.label}
           className={`relative w-12 h-7 rounded-full transition-colors ${
             value > 0 ? "" : "bg-slate-200 dark:bg-slate-700"
           }`}
@@ -496,6 +500,7 @@ export function FieldInput({
                 : "text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 focus:ring-accent-500/30 focus:border-accent-500"
             }`}
             aria-invalid={isOutOfRange}
+            aria-label={field.label}
           />
           {field.unit && <span className="text-xs text-slate-400 dark:text-slate-500 w-8 shrink-0">{field.unit}</span>}
         </div>
@@ -509,6 +514,7 @@ export function FieldInput({
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           className="range-slider"
+          aria-label={field.label}
           style={{ accentColor }}
         />
       )}

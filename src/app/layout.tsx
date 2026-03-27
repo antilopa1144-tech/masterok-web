@@ -99,6 +99,7 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#f97316",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
+    "format-detection": "telephone=no",
     "mobile-web-app-capable": "yes",
     "geo.region": "RU",
     "geo.position": "55.7558;37.6173",
