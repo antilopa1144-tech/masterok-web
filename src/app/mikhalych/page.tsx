@@ -66,9 +66,33 @@ const NEARBY_CALCULATORS = NEARBY_CALCULATOR_SLUGS.map((slug) => {
   };
 });
 
+const mikhalychJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Михалыч — AI-ассистент строителя",
+  url: `${SITE_URL}/mikhalych/`,
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web",
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
+  description: META.description,
+  inLanguage: "ru",
+};
+
+const mikhalychBreadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Михалыч" },
+  ],
+};
+
 export default function MikhalychPage() {
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mikhalychJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mikhalychBreadcrumbLd) }} />
       <div className="bg-linear-to-br from-slate-800 to-slate-700 text-white">
         <div className="page-container-wide py-8 md:py-10">
           <div className="flex items-start gap-4">

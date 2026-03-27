@@ -71,9 +71,44 @@ const APP_CATEGORIES = [
   { icon: "🔲", name: "Ламинат", cat: "Полы" },
 ] as const;
 
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  name: `${SITE_NAME} — строительный калькулятор`,
+  operatingSystem: "Android",
+  applicationCategory: "UtilitiesApplication",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "RUB",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "122",
+    bestRating: "5",
+  },
+  downloadUrl: "https://www.rustore.ru/catalog/app/ru.masterok.app",
+  softwareVersion: "1.5.0",
+  datePublished: "2024-06-01",
+  description: META.description,
+  inLanguage: "ru",
+};
+
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Приложение" },
+  ],
+};
+
 export default function PrilozheniePage() {
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-12 md:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
