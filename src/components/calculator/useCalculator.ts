@@ -230,6 +230,16 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       params.set("accuracyMode", accuracyMode);
     }
     const url = `${window.location.origin}${window.location.pathname}?${params}`;
+
+    // Try native share on mobile first
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: calculator.title, url });
+        return;
+      } catch {}
+    }
+
+    // Fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(url);
       setShareState("copied");
@@ -237,7 +247,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     } catch {
       prompt(CALCULATOR_UI_TEXT.copyLinkPrompt, url);
     }
-  }, [values, accuracyMode]);
+  }, [values, accuracyMode, calculator.title]);
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {
