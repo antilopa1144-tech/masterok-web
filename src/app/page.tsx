@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ALL_CALCULATORS, getPopularCalculators } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
+import { ALL_POSTS } from "@/lib/blog";
+import { ALL_CHECKLISTS } from "@/lib/checklists";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { SITE_NAME, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
@@ -319,6 +321,8 @@ export default function HomePage() {
                   complexity,
                 })
               )}
+              blogPosts={ALL_POSTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
+              checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
             />
           </div>
 

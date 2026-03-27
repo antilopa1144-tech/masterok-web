@@ -144,6 +144,43 @@ export default function PrilozheniePage() {
         </div>
       </section>
 
+      {/* Статистика и отзывы */}
+      <section className="border-b border-slate-200 dark:border-slate-800">
+        <div className="page-container-wide py-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">1000+</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Скачиваний</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">4.9 ★</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Рейтинг в RuStore</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">61+</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Калькуляторов</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">v1.5</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Актуальная версия</div>
+            </div>
+          </div>
+
+          {/* Последнее обновление */}
+          <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              Что нового в v1.5.0
+            </p>
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
+              <li>• Единый движок расчётов, синхронизация с сайтом</li>
+              <li>• Улучшенный ИИ-прораб Михалыч</li>
+              <li>• Исправлены краши в 8 калькуляторах</li>
+              <li>• Уменьшен размер приложения</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="page-container-wide py-12">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center mb-8">
           {UI_TEXT.featuresTitle}

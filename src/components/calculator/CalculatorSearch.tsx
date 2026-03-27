@@ -8,27 +8,85 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 
-interface Props {
-  calculators: CalculatorMeta[];
+interface SearchResult {
+  type: "calculator" | "blog" | "checklist";
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  categoryLabel: string;
 }
 
-export default function CalculatorSearch({ calculators }: Props) {
+interface Props {
+  calculators: CalculatorMeta[];
+  blogPosts?: { slug: string; title: string; description: string; category: string }[];
+  checklists?: { slug: string; title: string; description: string; category: string }[];
+}
+
+export default function CalculatorSearch({ calculators, blogPosts, checklists }: Props) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const results = useMemo(() => {
+  const results = useMemo((): SearchResult[] => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return calculators
-      .filter((c) => {
-        const haystack = [c.title, c.description, ...c.tags].join(" ").toLowerCase();
-        return haystack.includes(q);
-      })
-      .slice(0, 8);
-  }, [query, calculators]);
+
+    const calcResults: SearchResult[] = calculators
+      .filter((c) => [c.title, c.description, ...c.tags].join(" ").toLowerCase().includes(q))
+      .slice(0, 6)
+      .map((c) => {
+        const cat = CATEGORIES.find((ct) => ct.id === c.category);
+        return {
+          type: "calculator",
+          id: c.id,
+          title: c.title,
+          description: cat?.label ?? "",
+          href: `/kalkulyatory/${c.categorySlug}/${c.slug}/`,
+          icon: cat?.icon ?? "wrench",
+          color: cat?.color ?? "#64748b",
+          bgColor: cat?.bgColor ?? "#f1f5f9",
+          categoryLabel: "Калькулятор",
+        };
+      });
+
+    const blogResults: SearchResult[] = (blogPosts ?? [])
+      .filter((p) => [p.title, p.description, p.category].join(" ").toLowerCase().includes(q))
+      .slice(0, 2)
+      .map((p) => ({
+        type: "blog",
+        id: p.slug,
+        title: p.title,
+        description: p.category,
+        href: `/blog/${p.slug}/`,
+        icon: "book",
+        color: "#6366F1",
+        bgColor: "#EDE9FE",
+        categoryLabel: "Статья",
+      }));
+
+    const checklistResults: SearchResult[] = (checklists ?? [])
+      .filter((cl) => [cl.title, cl.description, cl.category].join(" ").toLowerCase().includes(q))
+      .slice(0, 2)
+      .map((cl) => ({
+        type: "checklist",
+        id: cl.slug,
+        title: cl.title,
+        description: cl.category,
+        href: `/instrumenty/chek-listy/${cl.slug}/`,
+        icon: "checklist",
+        color: "#8B5CF6",
+        bgColor: "#EDE9FE",
+        categoryLabel: "Чек-лист",
+      }));
+
+    return [...calcResults, ...blogResults, ...checklistResults].slice(0, 8);
+  }, [query, calculators, blogPosts, checklists]);
 
   const showDropdown = isOpen && query.trim().length > 0;
 
@@ -67,9 +125,9 @@ export default function CalculatorSearch({ calculators }: Props) {
         setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
       } else if (e.key === "Enter" && activeIndex >= 0) {
         e.preventDefault();
-        const calc = results[activeIndex];
+        const item = results[activeIndex];
         close();
-        router.push(`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`);
+        router.push(item.href);
       } else if (e.key === "Escape") {
         setIsOpen(false);
       }
@@ -115,18 +173,16 @@ export default function CalculatorSearch({ calculators }: Props) {
         <div id="search-results" className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl z-50 overflow-hidden scale-in" role="listbox">
           {results.length > 0 ? (
             <ul>
-              {results.map((calc, i) => {
-                const cat = CATEGORIES.find((c) => c.id === calc.category);
-                return (
+              {results.map((item, i) => (
                   <li
-                    key={calc.id}
+                    key={`${item.type}-${item.id}`}
                     id={`search-result-${i}`}
                     role="option"
                     aria-selected={i === activeIndex}
                     className="border-b border-slate-50 dark:border-slate-700 last:border-0"
                   >
                     <Link
-                      href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
+                      href={item.href}
                       onClick={close}
                       className={`flex items-center gap-3 px-4 py-3 no-underline transition-colors ${
                         i === activeIndex ? "bg-accent-50 dark:bg-accent-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -134,21 +190,20 @@ export default function CalculatorSearch({ calculators }: Props) {
                     >
                       <span
                         className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: cat?.bgColor ?? "#f1f5f9" }}
+                        style={{ backgroundColor: item.bgColor }}
                       >
-                        <CategoryIcon icon={cat?.icon ?? "wrench"} size={16} color={cat?.color ?? "#64748b"} />
+                        <CategoryIcon icon={item.icon} size={16} color={item.color} />
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                          {calc.title}
+                          {item.title}
                         </p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{cat?.label}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.categoryLabel} · {item.description}</p>
                       </div>
                       <span className="ml-auto text-slate-300 dark:text-slate-500 text-sm shrink-0">→</span>
                     </Link>
                   </li>
-                );
-              })}
+              ))}
             </ul>
           ) : (
             <div className="px-4 py-6 text-center">
