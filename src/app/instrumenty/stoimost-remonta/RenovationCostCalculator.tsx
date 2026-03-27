@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // ── Price database (avg Russia 2026, updated March 2026) ─────────────────────
 
@@ -144,9 +144,18 @@ export default function RenovationCostCalculator() {
   const [area, setArea] = useState(55);
   const [typeId, setTypeId] = useState("standard");
   const [withWork, setWithWork] = useState(true);
-  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(localStorage.getItem("masterok-renovation-prices") ?? "{}"); } catch { return {}; }
+  });
 
   const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
+
+  // Persist custom prices
+  useEffect(() => {
+    if (Object.keys(customPrices).length > 0) {
+      try { localStorage.setItem("masterok-renovation-prices", JSON.stringify(customPrices)); } catch {}
+    }
+  }, [customPrices]);
 
   const getPrice = (name: string, defaultPrice: number) => customPrices[name] ?? defaultPrice;
 

@@ -925,9 +925,15 @@ function PracticalNotes({ notes }: { notes: string[] }) {
 
 // ── Оценка стоимости ──────────────────────────────────────────────────────
 
+const PRICE_STORAGE_KEY = "masterok-material-prices";
+
+function loadSavedPrices(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(PRICE_STORAGE_KEY) ?? "{}"); } catch { return {}; }
+}
+
 function PriceEstimate({ materials }: { materials: CalculatorResult["materials"] }) {
   const [open, setOpen] = useState(false);
-  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [prices, setPrices] = useState<Record<string, number>>(() => loadSavedPrices());
 
   const total = materials.reduce((sum, m) => {
     const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
@@ -936,7 +942,11 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
   }, 0);
 
   const handlePriceChange = (name: string, value: number) => {
-    setPrices((prev) => ({ ...prev, [name]: value }));
+    setPrices((prev) => {
+      const next = { ...prev, [name]: value };
+      try { localStorage.setItem(PRICE_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
   };
 
   const filledCount = Object.values(prices).filter((v) => v > 0).length;

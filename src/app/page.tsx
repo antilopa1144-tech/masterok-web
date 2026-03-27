@@ -95,7 +95,7 @@ const TOOLS = [
     href: "/instrumenty/chek-listy/",
     icon: "checklist",
     title: "Чек-листы",
-    desc: "6 шаблонов работ",
+    desc: "11 шаблонов работ",
     bg: "#CFFAFE",
     color: "#06B6D4",
   },
