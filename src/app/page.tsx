@@ -10,6 +10,7 @@ import { SITE_NAME, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import RecentCalculators from "@/components/calculator/RecentCalculators";
+import ProjectManager from "@/components/calculator/ProjectManager";
 
 const META = {
   title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
@@ -468,6 +469,13 @@ export default function HomePage() {
               >
                 {UI_TEXT.toolsCta}
               </Link>
+
+              {/* Проекты */}
+              <div className="mt-6">
+                <Suspense fallback={null}>
+                  <ProjectManager />
+                </Suspense>
+              </div>
             </div>
           </aside>
         </div>
