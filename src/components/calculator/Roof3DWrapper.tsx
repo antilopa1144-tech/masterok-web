@@ -23,7 +23,7 @@ interface Props {
 class ErrorBoundary extends Component<{ children: ReactNode; onError: (msg: string) => void }, { hasError: boolean }> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(e: Error, _info: ErrorInfo) { console.error("3D Error:", e); this.props.onError(e?.message ?? "unknown"); }
+  componentDidCatch(e: Error) { this.props.onError(e?.message ?? "unknown"); }
   render() { return this.state.hasError ? null : this.props.children; }
 }
 

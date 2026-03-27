@@ -65,6 +65,6 @@ import { Component, type ReactNode, type ErrorInfo } from "react";
 class ErrorBoundary extends Component<{ children: ReactNode; onError: (msg: string) => void }, { hasError: boolean; errorMsg: string }> {
   state = { hasError: false, errorMsg: "" };
   static getDerivedStateFromError(e: Error) { return { hasError: true, errorMsg: e?.message ?? "unknown" }; }
-  componentDidCatch(e: Error, _info: ErrorInfo) { console.error("3D Error:", e); this.props.onError(e?.message ?? "unknown"); }
+  componentDidCatch(e: Error) { this.props.onError(e?.message ?? "unknown"); }
   render() { return this.state.hasError ? null : this.props.children; }
 }

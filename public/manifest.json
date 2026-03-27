@@ -35,6 +35,13 @@
   ],
   "shortcuts": [
     {
+      "name": "Калькулятор бетона",
+      "short_name": "Бетон",
+      "description": "Рассчитать объём и состав бетона",
+      "url": "/kalkulyatory/fundament/beton/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
+    },
+    {
       "name": "Калькулятор кирпича",
       "short_name": "Кирпич",
       "description": "Рассчитать кирпич для стены",
@@ -42,17 +49,17 @@
       "icons": [{"src": "/favicon.svg", "sizes": "any"}]
     },
     {
-      "name": "Калькулятор штукатурки",
-      "short_name": "Штукатурка",
-      "description": "Рассчитать штукатурку для стен",
-      "url": "/kalkulyatory/steny/shtukaturka/",
-      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
-    },
-    {
       "name": "Калькулятор плитки",
       "short_name": "Плитка",
       "description": "Рассчитать плитку для пола/стены",
       "url": "/kalkulyatory/poly/plitka/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any"}]
+    },
+    {
+      "name": "Калькулятор ламината",
+      "short_name": "Ламинат",
+      "description": "Рассчитать ламинат с учётом подрезки",
+      "url": "/kalkulyatory/poly/laminat/",
       "icons": [{"src": "/favicon.svg", "sizes": "any"}]
     }
   ],
