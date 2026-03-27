@@ -118,9 +118,33 @@ function Badge({ level, labels = LEVEL_LABELS, colors = LEVEL_COLORS }: { level:
   );
 }
 
+type Priority = "budget" | "durability" | "diy";
+
+const PRIORITY_OPTIONS: { value: Priority; label: string; icon: string }[] = [
+  { value: "budget", label: "Бюджет", icon: "💰" },
+  { value: "durability", label: "Долговечность", icon: "⏳" },
+  { value: "diy", label: "Своими руками", icon: "🔧" },
+];
+
+function scoreMaterial(mat: Material, priority: Priority | null): number {
+  if (!priority) return 0;
+  if (priority === "budget") return 4 - Math.round((mat.pricePerM2[0] + mat.pricePerM2[1]) / 2 / 500);
+  if (priority === "durability") return Math.round((mat.durabilityYears[0] + mat.durabilityYears[1]) / 2 / 10);
+  if (priority === "diy") return 4 - mat.installDifficulty;
+  return 0;
+}
+
 export default function MaterialComparison() {
   const [categoryId, setCategoryId] = useState("flooring");
+  const [priority, setPriority] = useState<Priority | null>(null);
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
+
+  const sortedMaterials = [...category.materials].sort((a, b) => {
+    if (!priority) return 0;
+    return scoreMaterial(b, priority) - scoreMaterial(a, priority);
+  });
+
+  const topScore = priority ? Math.max(...sortedMaterials.map((m) => scoreMaterial(m, priority))) : 0;
 
   return (
     <div className="space-y-6">
@@ -129,7 +153,7 @@ export default function MaterialComparison() {
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
-            onClick={() => setCategoryId(c.id)}
+            onClick={() => { setCategoryId(c.id); setPriority(null); }}
             className={`text-sm px-4 py-2 rounded-lg border transition-colors ${
               categoryId === c.id
                 ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 font-medium"
@@ -141,10 +165,35 @@ export default function MaterialComparison() {
         ))}
       </div>
 
+      {/* Priority filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-slate-500 dark:text-slate-400">Что важнее:</span>
+        {PRIORITY_OPTIONS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setPriority(priority === p.value ? null : p.value)}
+            className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+              priority === p.value
+                ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 font-medium"
+                : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300"
+            }`}
+          >
+            {p.icon} {p.label}
+          </button>
+        ))}
+      </div>
+
       {/* Comparison cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {category.materials.map((mat) => (
-          <div key={mat.name} className="card p-5 space-y-3">
+        {sortedMaterials.map((mat) => {
+          const isBest = priority && scoreMaterial(mat, priority) === topScore && topScore > 0;
+          return (
+          <div key={mat.name} className={`card p-5 space-y-3 ${isBest ? "ring-2 ring-accent-400 dark:ring-accent-500" : ""}`}>
+            {isBest && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-900/30 px-2 py-0.5 rounded-full">
+                🏆 Лучший выбор
+              </span>
+            )}
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">{mat.name}</h3>
 
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -172,7 +221,8 @@ export default function MaterialComparison() {
             <p className="text-xs text-slate-400">{mat.extras}</p>
             <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">{mat.verdict}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
