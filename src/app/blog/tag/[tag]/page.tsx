@@ -29,8 +29,15 @@ interface TagPageProps {
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { tag: tagSlug } = await params;
-  const tag = slugToTag(tagSlug);
-  if (!tag) return {};
+  // Try both decoded and raw slug matching
+  const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
+  if (!tag) {
+    return buildPageMetadata({
+      title: `Статьи — ${SITE_NAME}`,
+      description: "Статьи о строительстве и ремонте",
+      url: `${SITE_URL}/blog/`,
+    });
+  }
   const posts = getPostsByTag(tag);
   return buildPageMetadata({
     title: `${tag} — статьи о строительстве | ${SITE_NAME}`,

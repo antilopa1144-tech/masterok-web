@@ -2848,7 +2848,7 @@ export function tagToSlug(tag: string): string {
 
 /** Convert slug back to tag (find matching tag from ALL_POSTS) */
 export function slugToTag(slug: string): string | undefined {
-  const decoded = decodeURIComponent(slug);
+  const decoded = decodeURIComponent(slug).toLowerCase().replace(/\s+/g, "-");
   const allTags = getAllTags();
   return allTags.find((t) => t.toLowerCase().replace(/\s+/g, "-") === decoded);
 }
