@@ -7,6 +7,8 @@ import {
   formatNumber,
   type CalculatorWidgetProps,
 } from "./useCalculator";
+import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
+import { getCalculatorBySlug } from "@/lib/calculators";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import Staircase3DWrapper from "./Staircase3DWrapper";
@@ -38,6 +40,17 @@ function buildCalcContext(
   return ctx;
 }
 
+function getCompanionContext(slug: string): string {
+  const companions = CALCULATOR_COMPANIONS[slug];
+  if (!companions || companions.length === 0) return "";
+  const names = companions
+    .map((c) => getCalculatorBySlug(c.slug))
+    .filter(Boolean)
+    .map((c) => c!.title);
+  if (names.length === 0) return "";
+  return ` Связанные калькуляторы на сайте: ${names.join(", ")}. Рекомендуй их, если пользователь спрашивает о смежных материалах.`;
+}
+
 export default function CalculatorWithMikhalych({
   calculator,
 }: {
@@ -63,8 +76,9 @@ export default function CalculatorWithMikhalych({
   const accentColor = category?.color ?? "#f97316";
 
   // Контекст для Михалыча — обновляется при каждом расчёте
+  const companionCtx = getCompanionContext(calculator.slug);
   const mikhalychContext = hasCalculated
-    ? buildCalcContext(calculator.title, calculator.fields, values, result)
+    ? buildCalcContext(calculator.title, calculator.fields, values, result) + companionCtx
     : undefined;
 
   return (

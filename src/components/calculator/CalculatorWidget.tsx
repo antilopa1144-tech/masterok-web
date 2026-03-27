@@ -15,6 +15,7 @@ import { getCalculatorBySlug } from "@/lib/calculators";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { trackRecentCalculator } from "./RecentCalculators";
+import SaveToProjectButton from "./SaveToProjectButton";
 
 export type { CalculatorWidgetProps };
 
@@ -190,6 +191,13 @@ export default function CalculatorWidget({ calculator }: Props) {
                 </button>
               )}
               <ExportButtons calculatorName={calculator.title} result={result} />
+              <SaveToProjectButton
+                calcId={calculator.id}
+                calcTitle={calculator.title}
+                slug={calculator.slug}
+                categorySlug={calculator.categorySlug}
+                materials={result.materials.map((m) => ({ name: m.name, quantity: m.purchaseQty ?? m.withReserve ?? m.quantity, unit: m.unit }))}
+              />
             </div>
           </div>
           <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
