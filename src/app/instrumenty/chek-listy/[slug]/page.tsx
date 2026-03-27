@@ -58,8 +58,36 @@ export default async function ChecklistPage({ params }: Props) {
 
   const colors = COMPLEXITY_COLORS[cl.complexity];
 
+  const checklistJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: cl.title,
+    description: cl.description,
+    totalTime: cl.duration,
+    step: cl.steps.flatMap((step, si) =>
+      step.items.map((item, ii) => ({
+        "@type": "HowToStep",
+        position: si * 10 + ii + 1,
+        name: item,
+        text: item,
+      }))
+    ).slice(0, 20),
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Чек-листы", item: `${SITE_URL}/instrumenty/chek-listy/` },
+      { "@type": "ListItem", position: 3, name: cl.title },
+    ],
+  };
+
   return (
     <div className="page-container py-8 max-w-4xl">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(checklistJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-6 flex-wrap">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>

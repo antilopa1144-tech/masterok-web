@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 
 export default async function TagPage({ params }: TagPageProps) {
   const { tag: tagSlug } = await params;
-  const tag = slugToTag(tagSlug);
+  const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
   if (!tag) notFound();
 
   const posts = getPostsByTag(tag);

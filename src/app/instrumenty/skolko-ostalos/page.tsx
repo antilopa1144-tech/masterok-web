@@ -15,9 +15,22 @@ export const metadata: Metadata = buildPageMetadata({
   url: `${SITE_URL}/instrumenty/skolko-ostalos/`,
 });
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Калькулятор «Сколько осталось»",
+  url: `${SITE_URL}/instrumenty/skolko-ostalos/`,
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web",
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
+  description: META.description,
+};
+
 export default function Page() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6">
           <Breadcrumbs items={[
