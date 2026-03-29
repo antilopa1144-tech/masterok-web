@@ -51,6 +51,16 @@
     .status.err { background: #f8d7da; color: #721c24; }
     .field-row { display: flex; gap: 16px; }
     .field-row .field { flex: 1; }
+
+    /* Image upload */
+    .img-toolbar { display: flex; gap: 8px; margin-bottom: 4px; align-items: center; }
+    .img-toolbar .btn { padding: 6px 14px; font-size: 12px; }
+    .img-toolbar .upload-status { font-size: 12px; color: var(--muted); }
+    .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 24px; text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 8px; display: none; transition: border-color 0.2s; }
+    .drop-zone.active { display: block; }
+    .drop-zone.dragover { border-color: var(--accent); background: #fef2f6; }
+    .hero-upload { display: flex; gap: 8px; align-items: center; }
+    .hero-upload .btn { padding: 6px 14px; font-size: 12px; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -115,11 +125,29 @@
       <div class="field"><label>Категория калькулятора</label><input id="f-calcCat" /></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Hero изображение (URL)</label><input id="f-heroImage" /></div>
+      <div class="field">
+        <label>Hero изображение</label>
+        <div class="hero-upload">
+          <input id="f-heroImage" placeholder="URL или загрузите файл" style="flex:1" />
+          <button class="btn btn-outline" type="button" onclick="document.getElementById('heroFileInput').click()">Загрузить</button>
+          <input type="file" id="heroFileInput" accept="image/*" style="display:none" onchange="uploadHeroImage(this.files[0])" />
+        </div>
+        <span id="heroUploadStatus" class="upload-status" style="font-size:12px;color:var(--muted)"></span>
+      </div>
       <div class="field"><label>Hero alt</label><input id="f-heroAlt" /></div>
     </div>
     <div class="field">
       <label>Содержание статьи (Markdown)</label>
+      <div class="img-toolbar">
+        <button class="btn btn-outline" type="button" onclick="document.getElementById('bodyFileInput').click()">Вставить картинку</button>
+        <button class="btn btn-outline" type="button" onclick="toggleDropZone()">Перетащить файл</button>
+        <button class="btn btn-outline" type="button" onclick="insertImageUrl()">Вставить по URL</button>
+        <span id="bodyUploadStatus" class="upload-status"></span>
+        <input type="file" id="bodyFileInput" accept="image/*" style="display:none" onchange="uploadBodyImage(this.files[0])" />
+      </div>
+      <div class="drop-zone" id="dropZone" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+        Перетащите картинку сюда
+      </div>
       <textarea id="f-body" placeholder="## Заголовок&#10;&#10;Текст статьи...&#10;&#10;- Пункт 1&#10;- Пункт 2&#10;&#10;![Описание](https://example.com/image.jpg)"></textarea>
     </div>
     <div class="editor-actions">
@@ -305,6 +333,82 @@ function backToList() {
   document.getElementById("editor").style.display = "none";
   document.getElementById("app").style.display = "block";
   loadPosts();
+}
+
+// --- Image Upload ---
+function uploadImage(file, statusElId, callback) {
+  if (!file || !file.type.startsWith("image/")) { return; }
+  var statusEl = document.getElementById(statusElId);
+  statusEl.textContent = "Загрузка " + file.name + "...";
+
+  var reader = new FileReader();
+  reader.onload = function() {
+    var base64 = reader.result.split(",")[1];
+    var ext = file.name.split(".").pop().toLowerCase();
+    var name = Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    var path = "public/blog-images/" + name;
+
+    fetch("https://api.github.com/repos/" + REPO + "/contents/" + path, {
+      method: "PUT",
+      headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "upload: " + name, content: base64, branch: BRANCH })
+    })
+    .then(function(r) { if (!r.ok) throw new Error("Upload failed"); return r.json(); })
+    .then(function(data) {
+      var url = "/blog-images/" + name;
+      statusEl.textContent = "Загружено!";
+      setTimeout(function() { statusEl.textContent = ""; }, 3000);
+      callback(url, file.name);
+    })
+    .catch(function(e) { statusEl.textContent = "Ошибка: " + e.message; });
+  };
+  reader.readAsDataURL(file);
+}
+
+function uploadHeroImage(file) {
+  uploadImage(file, "heroUploadStatus", function(url) {
+    document.getElementById("f-heroImage").value = url;
+  });
+}
+
+function uploadBodyImage(file) {
+  uploadImage(file, "bodyUploadStatus", function(url, name) {
+    insertAtCursor("![" + name.replace(/\.[^.]+$/, "") + "](" + url + ")\n\n");
+  });
+}
+
+function insertImageUrl() {
+  var url = prompt("Вставьте URL картинки:");
+  if (!url) return;
+  var alt = prompt("Описание картинки (alt):", "") || "image";
+  insertAtCursor("!["+ alt + "](" + url + ")\n\n");
+}
+
+function insertAtCursor(text) {
+  var ta = document.getElementById("f-body");
+  var start = ta.selectionStart, end = ta.selectionEnd;
+  var before = ta.value.substring(0, start);
+  var after = ta.value.substring(end);
+  // Add newline before if needed
+  if (before.length > 0 && !before.endsWith("\n")) text = "\n" + text;
+  ta.value = before + text + after;
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  ta.focus();
+}
+
+// --- Drag & Drop ---
+function toggleDropZone() {
+  var dz = document.getElementById("dropZone");
+  dz.classList.toggle("active");
+}
+function dzOver(e) { e.preventDefault(); e.currentTarget.classList.add("dragover"); }
+function dzLeave(e) { e.currentTarget.classList.remove("dragover"); }
+function dzDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("dragover");
+  var file = e.dataTransfer.files[0];
+  if (file) uploadBodyImage(file);
+  document.getElementById("dropZone").classList.remove("active");
 }
 </script>
 </body>
