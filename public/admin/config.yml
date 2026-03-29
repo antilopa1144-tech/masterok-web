@@ -1,0 +1,32 @@
+backend:
+  name: github
+  repo: antilopa1144-tech/masterok-web
+  branch: main
+
+media_folder: "public/blog-images"
+public_folder: "/blog-images"
+locale: "ru"
+
+collections:
+  - name: "blog"
+    label: "Статьи блога"
+    folder: "content/blog"
+    create: true
+    slug: "{{slug}}"
+    identifier_field: slug
+    summary: "{{title}} ({{date}})"
+    sortable_fields: ["date", "title", "category"]
+    fields:
+      - { label: "Slug (URL)", name: "slug", widget: "string" }
+      - { label: "Заголовок", name: "title", widget: "string" }
+      - { label: "Описание", name: "description", widget: "text" }
+      - { label: "Дата", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD.MM.YYYY", time_format: false }
+      - { label: "Время чтения", name: "readTime", widget: "string" }
+      - { label: "Категория", name: "category", widget: "select", options: ["Стены","Полы","Фундамент","Кровля","Фасад","Инженерные системы","Отделка"] }
+      - { label: "Иконка", name: "icon", widget: "string" }
+      - { label: "Теги", name: "tags", widget: "list" }
+      - { label: "Slug калькулятора", name: "relatedCalculatorSlug", widget: "string", required: false }
+      - { label: "Категория калькулятора", name: "relatedCalculatorCategory", widget: "string", required: false }
+      - { label: "Hero изображение (URL)", name: "heroImage", widget: "string" }
+      - { label: "Hero alt", name: "heroImageAlt", widget: "string" }
+      - { label: "Статья", name: "body", widget: "markdown" }
