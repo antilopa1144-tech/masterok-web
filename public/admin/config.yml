@@ -2,8 +2,8 @@ backend:
   name: github
   repo: antilopa1144-tech/masterok-web
   branch: main
-  auth_type: pkce
-  app_id: Ov23li2shLB9QOSAAUel
+  base_url: https://getmasterok.ru
+  auth_endpoint: api/auth
 
 # Загрузка медиафайлов
 media_folder: "public/blog-images"

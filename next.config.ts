@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Статический экспорт — хостинг без Node.js
-  output: "export",
+  // Standalone — Node.js сервер, поддерживает API роуты
+  output: "standalone",
   // Trailing slash для SEO
   trailingSlash: true,
   // Убрать X-Powered-By: Next.js
   poweredByHeader: false,
-  // Оптимизация изображений — unoptimized для static export
+  // Оптимизация изображений
   images: {
     unoptimized: true,
   },
