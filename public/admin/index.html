@@ -28,109 +28,88 @@
       #gate .hint a { color: #e6437d; }
       #gate .error { color: #e53e3e; margin-top: 8px; font-size: 13px; }
     </style>
-    <script>window.CMS_MANUAL_INIT = true;</script>
   </head>
   <body>
     <div id="gate">
       <h1>Masterok Blog Editor</h1>
       <p>Для входа нужен GitHub Personal Access Token с правами <b>repo</b>.</p>
       <input type="password" id="pat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-      <button id="btn" onclick="doLogin()">Войти</button>
+      <button id="btn">Войти</button>
       <div id="err" class="error"></div>
       <p class="hint">
         <a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank" rel="noopener">Создать токен на GitHub</a>
       </p>
+      <p class="hint">Для выхода: F12 → Console → localStorage.clear() → Enter → обновить страницу</p>
     </div>
 
     <script>
-      var TOKEN_KEY = "masterok-cms-token";
-      var CMS_USER_KEY = "netlify-cms-user";
-      var REPO = "antilopa1144-tech/masterok-web";
+      (function() {
+        var TOKEN_KEY = "masterok-cms-token";
+        var CMS_KEY = "netlify-cms-user";
 
-      // Auto-login if token exists
-      var saved = localStorage.getItem(TOKEN_KEY);
-      if (saved) {
-        showMsg("Проверяю токен...");
-        checkAndBoot(saved);
-      }
-
-      function showMsg(text) {
-        document.getElementById("gate").innerHTML = '<h1>Masterok Blog Editor</h1><p>' + text + '</p>';
-      }
-
-      function doLogin() {
-        var t = document.getElementById("pat").value.trim();
-        if (!t) { document.getElementById("err").textContent = "Введите токен"; return; }
-        document.getElementById("btn").textContent = "Проверяю...";
-        document.getElementById("btn").disabled = true;
-        checkAndBoot(t);
-      }
-
-      function checkAndBoot(token) {
-        fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } })
-          .then(function(r) { if (!r.ok) throw new Error("bad"); return r.json(); })
-          .then(function(user) {
-            // Save token
-            localStorage.setItem(TOKEN_KEY, token);
-            // Save in format Decap CMS expects
-            localStorage.setItem(CMS_USER_KEY, JSON.stringify({
-              token: token,
-              name: user.name || user.login,
-              login: user.login,
-              avatar_url: user.avatar_url || "",
-              backendName: "github"
-            }));
-            document.getElementById("gate").style.display = "none";
-            loadDecap();
-          })
-          .catch(function() {
+        // If token already saved — verify and boot CMS immediately
+        var saved = localStorage.getItem(TOKEN_KEY);
+        if (saved) {
+          document.getElementById("gate").innerHTML = '<h1>Masterok Blog Editor</h1><p>Загрузка редактора...</p>';
+          verify(saved, function(user) {
+            storeAndBoot(saved, user);
+          }, function() {
             localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(CMS_USER_KEY);
+            localStorage.removeItem(CMS_KEY);
             location.reload();
           });
-      }
+          return;
+        }
 
-      function loadDecap() {
-        var s = document.createElement("script");
-        s.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js";
-        s.onload = function() {
-          initCMS();
+        // Login button
+        document.getElementById("btn").onclick = function() {
+          var token = document.getElementById("pat").value.trim();
+          if (!token) { showErr("Введите токен"); return; }
+          document.getElementById("btn").textContent = "Проверяю...";
+          document.getElementById("btn").disabled = true;
+          verify(token, function(user) {
+            storeAndBoot(token, user);
+          }, function() {
+            showErr("Неверный токен или нет доступа к репозиторию");
+            document.getElementById("btn").textContent = "Войти";
+            document.getElementById("btn").disabled = false;
+          });
         };
-        document.body.appendChild(s);
-      }
 
-      function initCMS() {
-        CMS.init({
-          config: {
-            load_config_file: false,
-            backend: { name: "github", repo: REPO, branch: "main" },
-            media_folder: "public/blog-images",
-            public_folder: "/blog-images",
-            locale: "ru",
-            collections: [{
-              name: "blog", label: "Статьи блога", folder: "content/blog",
-              create: true, slug: "{{slug}}", identifier_field: "slug",
-              summary: "{{title}} ({{date}})",
-              sortable_fields: ["date", "title", "category"],
-              fields: [
-                { label: "Slug (URL)", name: "slug", widget: "string" },
-                { label: "Заголовок", name: "title", widget: "string" },
-                { label: "Описание", name: "description", widget: "text" },
-                { label: "Дата", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD.MM.YYYY", time_format: false },
-                { label: "Время чтения", name: "readTime", widget: "string" },
-                { label: "Категория", name: "category", widget: "select", options: ["Стены","Полы","Фундамент","Кровля","Фасад","Инженерные системы","Отделка"] },
-                { label: "Иконка", name: "icon", widget: "string" },
-                { label: "Теги", name: "tags", widget: "list" },
-                { label: "Slug калькулятора", name: "relatedCalculatorSlug", widget: "string", required: false },
-                { label: "Категория калькулятора", name: "relatedCalculatorCategory", widget: "string", required: false },
-                { label: "Hero изображение", name: "heroImage", widget: "string" },
-                { label: "Hero alt", name: "heroImageAlt", widget: "string" },
-                { label: "Статья", name: "body", widget: "markdown" }
-              ]
-            }]
-          }
-        });
-      }
+        document.getElementById("pat").onkeydown = function(e) {
+          if (e.key === "Enter") document.getElementById("btn").click();
+        };
+
+        function showErr(msg) { var el = document.getElementById("err"); el.textContent = msg; }
+
+        function verify(token, onOk, onFail) {
+          fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } })
+            .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+            .then(function(u) { onOk(u); })
+            .catch(onFail);
+        }
+
+        function storeAndBoot(token, user) {
+          // Save our token
+          localStorage.setItem(TOKEN_KEY, token);
+          // Save in exact format Decap CMS reads on restore
+          localStorage.setItem(CMS_KEY, JSON.stringify({
+            token: token,
+            name: user.name || user.login,
+            login: user.login,
+            avatar_url: user.avatar_url || ""
+          }));
+
+          // Hide gate
+          document.getElementById("gate").style.display = "none";
+
+          // Load Decap CMS — let it auto-initialize from config.yml
+          // It will call restoreUser(), find our token, validate, show dashboard
+          var s = document.createElement("script");
+          s.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js";
+          document.body.appendChild(s);
+        }
+      })();
     </script>
   </body>
 </html>
