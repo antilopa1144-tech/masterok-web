@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node -e \"fetch('https://www.google.com/ping?sitemap=https://getmasterok.ru/sitemap.xml').then(()=>console.log('Sitemap ping sent')).catch(()=>{})\"",
+    "postbuild": "node -e \"require('fs').cpSync('public', '.next/standalone/public', {recursive:true}); require('fs').cpSync('.next/static', '.next/standalone/.next/static', {recursive:true}); fetch('https://www.google.com/ping?sitemap=https://getmasterok.ru/sitemap.xml').then(()=>console.log('Sitemap ping sent')).catch(()=>{})\"",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
