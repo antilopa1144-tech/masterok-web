@@ -3,6 +3,7 @@ backend:
   repo: antilopa1144-tech/masterok-web
   branch: main
   auth_type: pkce
+  app_id: Ov23li2shLB9QOSAAUel
 
 # Загрузка медиафайлов
 media_folder: "public/blog-images"
