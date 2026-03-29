@@ -8,190 +8,128 @@
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-      #token-gate {
+      #gate {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         min-height: 100vh; background: #f5f5f5; padding: 20px;
       }
-      #token-gate h1 { font-size: 24px; margin-bottom: 8px; color: #333; }
-      #token-gate p { color: #666; margin-bottom: 20px; text-align: center; max-width: 420px; font-size: 14px; line-height: 1.5; }
-      #token-gate input {
+      #gate h1 { font-size: 24px; margin-bottom: 8px; color: #333; }
+      #gate p { color: #666; margin-bottom: 20px; text-align: center; max-width: 420px; font-size: 14px; line-height: 1.5; }
+      #gate input {
         width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid #ddd;
         border-radius: 8px; font-size: 14px; font-family: monospace;
       }
-      #token-gate input:focus { outline: none; border-color: #e6437d; }
-      #token-gate button {
+      #gate input:focus { outline: none; border-color: #e6437d; }
+      #gate button {
         margin-top: 12px; padding: 12px 32px; background: #e6437d; color: white;
         border: none; border-radius: 8px; font-size: 16px; cursor: pointer; min-width: 200px;
       }
-      #token-gate button:hover { background: #d13570; }
-      #token-gate .hint {
-        margin-top: 16px; font-size: 12px; color: #999; max-width: 420px; text-align: center; line-height: 1.5;
-      }
-      #token-gate .hint a { color: #e6437d; }
-      #token-gate .error { color: #e53e3e; margin-top: 8px; font-size: 13px; display: none; }
-      #token-gate .logout-hint { margin-top: 24px; font-size: 11px; color: #bbb; }
+      #gate button:hover { background: #d13570; }
+      #gate .hint { margin-top: 16px; font-size: 12px; color: #999; max-width: 420px; text-align: center; line-height: 1.5; }
+      #gate .hint a { color: #e6437d; }
+      #gate .error { color: #e53e3e; margin-top: 8px; font-size: 13px; }
     </style>
+    <script>window.CMS_MANUAL_INIT = true;</script>
   </head>
   <body>
-    <div id="token-gate">
+    <div id="gate">
       <h1>Masterok Blog Editor</h1>
       <p>Для входа нужен GitHub Personal Access Token с правами <b>repo</b>.</p>
-      <input type="password" id="pat-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-      <button id="login-btn" onclick="doLogin()">Войти</button>
-      <div id="error-msg" class="error"></div>
+      <input type="password" id="pat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+      <button id="btn" onclick="doLogin()">Войти</button>
+      <div id="err" class="error"></div>
       <p class="hint">
-        <a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank">Создать токен на GitHub</a>
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank" rel="noopener">Создать токен на GitHub</a>
       </p>
-      <p class="logout-hint">Для выхода откройте консоль (F12) и выполните: localStorage.clear()</p>
     </div>
 
     <script>
       var TOKEN_KEY = "masterok-cms-token";
+      var CMS_USER_KEY = "netlify-cms-user";
       var REPO = "antilopa1144-tech/masterok-web";
 
-      // Check saved token
-      var savedToken = localStorage.getItem(TOKEN_KEY);
-      if (savedToken) {
-        document.getElementById("token-gate").innerHTML = '<h1>Masterok Blog Editor</h1><p>Загрузка...</p>';
-        verifyAndInit(savedToken);
+      // Auto-login if token exists
+      var saved = localStorage.getItem(TOKEN_KEY);
+      if (saved) {
+        showMsg("Проверяю токен...");
+        checkAndBoot(saved);
+      }
+
+      function showMsg(text) {
+        document.getElementById("gate").innerHTML = '<h1>Masterok Blog Editor</h1><p>' + text + '</p>';
       }
 
       function doLogin() {
-        var token = document.getElementById("pat-input").value.trim();
-        var errEl = document.getElementById("error-msg");
-        if (!token) {
-          errEl.textContent = "Введите токен";
-          errEl.style.display = "block";
-          return;
-        }
-        document.getElementById("login-btn").textContent = "Проверяю...";
-        errEl.style.display = "none";
-        verifyAndInit(token);
+        var t = document.getElementById("pat").value.trim();
+        if (!t) { document.getElementById("err").textContent = "Введите токен"; return; }
+        document.getElementById("btn").textContent = "Проверяю...";
+        document.getElementById("btn").disabled = true;
+        checkAndBoot(t);
       }
 
-      var inp = document.getElementById("pat-input");
-      if (inp) inp.addEventListener("keydown", function(e) { if (e.key === "Enter") doLogin(); });
-
-      function verifyAndInit(token) {
-        fetch("https://api.github.com/repos/" + REPO, {
-          headers: { "Authorization": "token " + token }
-        })
-        .then(function(r) {
-          if (!r.ok) throw new Error("bad");
-          return r.json();
-        })
-        .then(function() {
-          localStorage.setItem(TOKEN_KEY, token);
-          document.getElementById("token-gate").style.display = "none";
-          bootCMS(token);
-        })
-        .catch(function() {
-          localStorage.removeItem(TOKEN_KEY);
-          // Show login form again
-          document.getElementById("token-gate").innerHTML =
-            '<h1>Masterok Blog Editor</h1>' +
-            '<p>Токен недействителен или нет доступа к репозиторию.</p>' +
-            '<input type="password" id="pat-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />' +
-            '<button id="login-btn" onclick="doLogin()">Войти</button>' +
-            '<div id="error-msg" class="error"></div>' +
-            '<p class="hint"><a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank">Создать токен</a></p>';
-          document.getElementById("token-gate").style.display = "flex";
-          var inp2 = document.getElementById("pat-input");
-          if (inp2) inp2.addEventListener("keydown", function(e) { if (e.key === "Enter") doLogin(); });
-        });
+      function checkAndBoot(token) {
+        fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } })
+          .then(function(r) { if (!r.ok) throw new Error("bad"); return r.json(); })
+          .then(function(user) {
+            // Save token
+            localStorage.setItem(TOKEN_KEY, token);
+            // Save in format Decap CMS expects
+            localStorage.setItem(CMS_USER_KEY, JSON.stringify({
+              token: token,
+              name: user.name || user.login,
+              login: user.login,
+              avatar_url: user.avatar_url || "",
+              backendName: "github"
+            }));
+            document.getElementById("gate").style.display = "none";
+            loadDecap();
+          })
+          .catch(function() {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(CMS_USER_KEY);
+            location.reload();
+          });
       }
 
-      function bootCMS(token) {
-        // Store token where Decap CMS GitHub backend expects it
-        localStorage.setItem("netlify-cms-user", JSON.stringify({
-          token: token, name: "", login: "", avatar_url: ""
-        }));
-
-        // Patch window.open to prevent OAuth popup
-        var _origOpen = window.open;
-        window.open = function() { return null; };
-
-        // Set manual init BEFORE loading script
-        window.CMS_MANUAL_INIT = true;
-
+      function loadDecap() {
         var s = document.createElement("script");
         s.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js";
         s.onload = function() {
-          // Register custom GitHub backend that uses our token
-          var GitHubBackend = CMS.getBackend("github");
-
-          CMS.registerBackend("github-pat", {
-            init: function(config) {
-              this.config = config;
-              this.token = token;
-              this.api_root = "https://api.github.com";
-              this.repo = config.getIn(["backend", "repo"]);
-              this.branch = config.getIn(["backend", "branch"]) || "main";
-            },
-            authenticate: function() {
-              return Promise.resolve({
-                token: token,
-                name: "editor",
-                login: "editor",
-                avatar_url: "",
-                backendName: "github-pat"
-              });
-            },
-            restoreUser: function() {
-              return this.authenticate();
-            },
-            logout: function() {
-              localStorage.removeItem(TOKEN_KEY);
-              localStorage.removeItem("netlify-cms-user");
-              window.location.reload();
-              return Promise.resolve();
-            },
-            authComponent: function() { return null; },
-            currentUser: function() { return this.authenticate(); }
-          });
-
-          CMS.init({
-            config: {
-              backend: {
-                name: "github",
-                repo: REPO,
-                branch: "main"
-              },
-              load_config_file: false,
-              media_folder: "public/blog-images",
-              public_folder: "/blog-images",
-              locale: "ru",
-              collections: [
-                {
-                  name: "blog",
-                  label: "\u0421\u0442\u0430\u0442\u044c\u0438 \u0431\u043b\u043e\u0433\u0430",
-                  folder: "content/blog",
-                  create: true,
-                  slug: "{{slug}}",
-                  identifier_field: "slug",
-                  summary: "{{title}} ({{date}})",
-                  sortable_fields: ["date", "title", "category"],
-                  fields: [
-                    { label: "Slug (URL)", name: "slug", widget: "string" },
-                    { label: "\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a", name: "title", widget: "string" },
-                    { label: "\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435", name: "description", widget: "text" },
-                    { label: "\u0414\u0430\u0442\u0430", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD.MM.YYYY", time_format: false },
-                    { label: "\u0412\u0440\u0435\u043c\u044f \u0447\u0442\u0435\u043d\u0438\u044f", name: "readTime", widget: "string" },
-                    { label: "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f", name: "category", widget: "select", options: ["\u0421\u0442\u0435\u043d\u044b", "\u041f\u043e\u043b\u044b", "\u0424\u0443\u043d\u0434\u0430\u043c\u0435\u043d\u0442", "\u041a\u0440\u043e\u0432\u043b\u044f", "\u0424\u0430\u0441\u0430\u0434", "\u0418\u043d\u0436\u0435\u043d\u0435\u0440\u043d\u044b\u0435 \u0441\u0438\u0441\u0442\u0435\u043c\u044b", "\u041e\u0442\u0434\u0435\u043b\u043a\u0430"] },
-                    { label: "\u0418\u043a\u043e\u043d\u043a\u0430", name: "icon", widget: "string" },
-                    { label: "\u0422\u0435\u0433\u0438", name: "tags", widget: "list" },
-                    { label: "Slug \u043a\u0430\u043b\u044c\u043a.", name: "relatedCalculatorSlug", widget: "string", required: false },
-                    { label: "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u043a\u0430\u043b\u044c\u043a.", name: "relatedCalculatorCategory", widget: "string", required: false },
-                    { label: "Hero URL", name: "heroImage", widget: "string" },
-                    { label: "Hero alt", name: "heroImageAlt", widget: "string" },
-                    { label: "\u0421\u0442\u0430\u0442\u044c\u044f", name: "body", widget: "markdown" }
-                  ]
-                }
-              ]
-            }
-          });
+          initCMS();
         };
         document.body.appendChild(s);
+      }
+
+      function initCMS() {
+        CMS.init({
+          config: {
+            load_config_file: false,
+            backend: { name: "github", repo: REPO, branch: "main" },
+            media_folder: "public/blog-images",
+            public_folder: "/blog-images",
+            locale: "ru",
+            collections: [{
+              name: "blog", label: "Статьи блога", folder: "content/blog",
+              create: true, slug: "{{slug}}", identifier_field: "slug",
+              summary: "{{title}} ({{date}})",
+              sortable_fields: ["date", "title", "category"],
+              fields: [
+                { label: "Slug (URL)", name: "slug", widget: "string" },
+                { label: "Заголовок", name: "title", widget: "string" },
+                { label: "Описание", name: "description", widget: "text" },
+                { label: "Дата", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD.MM.YYYY", time_format: false },
+                { label: "Время чтения", name: "readTime", widget: "string" },
+                { label: "Категория", name: "category", widget: "select", options: ["Стены","Полы","Фундамент","Кровля","Фасад","Инженерные системы","Отделка"] },
+                { label: "Иконка", name: "icon", widget: "string" },
+                { label: "Теги", name: "tags", widget: "list" },
+                { label: "Slug калькулятора", name: "relatedCalculatorSlug", widget: "string", required: false },
+                { label: "Категория калькулятора", name: "relatedCalculatorCategory", widget: "string", required: false },
+                { label: "Hero изображение", name: "heroImage", widget: "string" },
+                { label: "Hero alt", name: "heroImageAlt", widget: "string" },
+                { label: "Статья", name: "body", widget: "markdown" }
+              ]
+            }]
+          }
+        });
       }
     </script>
   </body>
