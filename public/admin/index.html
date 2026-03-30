@@ -227,8 +227,13 @@ function np(){cf=null;cs=null;clr();$("f-date").value=new Date().toISOString().s
 function ep(p){$("et").textContent="Загрузка...";se();api("/repos/"+R+"/contents/"+p+"?ref="+B).then(function(f){cf=p;cs=f.sha;var c=decodeURIComponent(escape(atob(f.content.replace(/\n/g,""))));pf(c);$("et").textContent="Редактирование"})}
 
 function pf(raw){
-  var ps=raw.split("---");if(ps.length<3){$("body").value=raw;return}
-  var fm=ps[1],bd=ps.slice(2).join("---").trim();
+  // Parse frontmatter: find first and second "---" on their own line
+  var fmStart=raw.indexOf("---");
+  if(fmStart===-1){$("body").value=raw;return}
+  var fmEnd=raw.indexOf("\n---",fmStart+3);
+  if(fmEnd===-1){$("body").value=raw;return}
+  var fm=raw.substring(fmStart+3,fmEnd);
+  var bd=raw.substring(fmEnd+4).trim();
   $("body").value=bd;
   sf("title",ex(fm,"title"));sf("desc",ex(fm,"description"));sf("slug",ex(fm,"slug"));
   sf("date",ex(fm,"date"));sf("rt",ex(fm,"readTime"));sf("cat",ex(fm,"category"));
@@ -286,14 +291,20 @@ function hp(){
 }
 
 // Markdown toolbar
-// Save cursor position on every interaction with textarea
+// Save cursor position — use multiple events to catch it before blur
 var lastCur=0,lastEnd=0;
-document.addEventListener("click",function(){
-  var ta=$("body");if(ta&&document.activeElement===ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}
-});
-document.addEventListener("keyup",function(){
-  var ta=$("body");if(ta&&document.activeElement===ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}
-});
+function saveCur(){var ta=$("body");if(ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}}
+// mousedown on toolbar buttons fires BEFORE textarea loses focus
+document.querySelector(".md-tb").addEventListener("mousedown",function(){saveCur()});
+// Also save on every keyup and mouseup in textarea
+setTimeout(function(){
+  var ta=$("body");
+  if(ta){
+    ta.addEventListener("keyup",saveCur);
+    ta.addEventListener("mouseup",saveCur);
+    ta.addEventListener("select",saveCur);
+  }
+},100);
 
 function ins(before,after,nl){
   var ta=$("body"),s=lastCur,e=lastEnd,v=ta.value;
@@ -308,10 +319,10 @@ function ins(before,after,nl){
   ta.focus();
 }
 function wrap(ch){
-  var ta=$("body"),s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  var ta=$("body"),s=lastCur,e=lastEnd,v=ta.value;
   var sel=v.substring(s,e);
-  if(!sel){ta.value=v.substring(0,s)+ch+"текст"+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=s+ch.length+5}
-  else{ta.value=v.substring(0,s)+ch+sel+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=e+ch.length}
+  if(!sel){ta.value=v.substring(0,s)+ch+"текст"+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=s+ch.length+5;lastCur=s+ch.length;lastEnd=s+ch.length+5}
+  else{ta.value=v.substring(0,s)+ch+sel+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=e+ch.length;lastCur=s+ch.length;lastEnd=e+ch.length}
   ta.focus();
 }
 
