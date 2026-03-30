@@ -7,7 +7,7 @@ readTime: "6 мин"
 category: "Фасад"
 icon: "🏢"
 tags: ["утепление", "фасад", "минвата", "пенопласт", "Технониколь"]
-relatedCalculatorSlug: "uteplenie-sten"
+relatedCalculatorSlug: "uteplenie"
 relatedCalculatorCategory: "fasad"
 heroImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=630&fit=crop"
 heroImageAlt: "Утепление фасада здания минеральной ватой"
