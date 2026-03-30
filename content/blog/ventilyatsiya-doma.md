@@ -8,7 +8,7 @@ category: "Инженерия"
 icon: "🌀"
 tags: ["вентиляция", "инженерные системы", "воздухообмен", "рекуператор"]
 relatedCalculatorSlug: "ventilyaciya"
-relatedCalculatorCategory: "inzhenernye-sistemy"
+relatedCalculatorCategory: "inzhenernye"
 heroImage: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=1200&h=630&fit=crop"
 heroImageAlt: "Система вентиляции в частном доме"
 ---

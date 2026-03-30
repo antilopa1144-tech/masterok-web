@@ -286,14 +286,25 @@ function hp(){
 }
 
 // Markdown toolbar
+// Save cursor position on every interaction with textarea
+var lastCur=0,lastEnd=0;
+document.addEventListener("click",function(){
+  var ta=$("body");if(ta&&document.activeElement===ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}
+});
+document.addEventListener("keyup",function(){
+  var ta=$("body");if(ta&&document.activeElement===ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}
+});
+
 function ins(before,after,nl){
-  var ta=$("body"),s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  var ta=$("body"),s=lastCur,e=lastEnd,v=ta.value;
   var sel=v.substring(s,e)||"";
   var pre=v.substring(0,s),post=v.substring(e);
   if(nl&&s>0&&!pre.endsWith("\n"))before="\n"+before;
   var t=before+sel+(after||"");
   ta.value=pre+t+post;
-  ta.selectionStart=s+before.length;ta.selectionEnd=s+before.length+sel.length;
+  var newPos=s+before.length+sel.length+(after?after.length:0);
+  ta.selectionStart=ta.selectionEnd=newPos;
+  lastCur=lastEnd=newPos;
   ta.focus();
 }
 function wrap(ch){
