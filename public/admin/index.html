@@ -199,13 +199,12 @@ function upload(file){
   });
 }
 
-// Preview image via GitHub API (works for private repos)
+// Preview image — public repo, use raw.githubusercontent.com
 function previewImg(path, imgEl){
   if(path.startsWith("http")){imgEl.src=path;imgEl.style.display="block";return}
-  // For relative paths, use GitHub API to get download_url
-  api("/repos/"+R+"/contents/public"+path+"?ref="+B).then(function(d){
-    if(d.download_url){imgEl.src=d.download_url;imgEl.style.display="block"}
-  }).catch(function(){imgEl.style.display="none"});
+  imgEl.src="https://raw.githubusercontent.com/"+R+"/"+B+"/public"+path;
+  imgEl.style.display="block";
+  imgEl.onerror=function(){imgEl.style.display="none"};
 }
 
 // Posts
