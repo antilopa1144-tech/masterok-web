@@ -5,486 +5,332 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Редактор блога — Masterok</title>
-  <!-- Editor.js + plugins -->
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.7/dist/editorjs.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@2.0.2/dist/list.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.10.1/dist/image.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.7.6/dist/quote.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.min.js"></script>
   <style>
     :root { --accent: #e6437d; --bg: #f5f5f5; --card: #fff; --text: #333; --muted: #888; --border: #e0e0e0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    .btn { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn { padding: 10px 20px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
     .btn:hover { opacity: 0.9; }
-    .btn-outline { background: none; color: var(--accent); border: 1px solid var(--accent); }
-    .btn-sm { padding: 6px 14px; font-size: 12px; }
-    .error { color: #e53e3e; font-size: 13px; margin-top: 8px; }
-    .status { padding: 8px 16px; font-size: 13px; border-radius: 6px; margin-bottom: 16px; }
-    .status.ok { background: #d4edda; color: #155724; }
-    .status.err { background: #f8d7da; color: #721c24; }
+    .btn-o { background: none; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-s { padding: 5px 12px; font-size: 12px; }
+    .err { color: #e53e3e; font-size: 13px; margin-top: 8px; }
+    .ok { padding: 8px 16px; font-size: 13px; border-radius: 6px; margin-bottom: 12px; background: #d4edda; color: #155724; }
+    .bad { padding: 8px 16px; font-size: 13px; border-radius: 6px; margin-bottom: 12px; background: #f8d7da; color: #721c24; }
 
     /* Login */
     #login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
     #login h1 { font-size: 24px; margin-bottom: 8px; }
-    #login p { color: var(--muted); margin-bottom: 20px; text-align: center; max-width: 420px; font-size: 14px; line-height: 1.5; }
-    #login input { width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-family: monospace; }
-    #login input:focus { outline: none; border-color: var(--accent); }
+    #login p { color: var(--muted); margin-bottom: 16px; text-align: center; max-width: 420px; font-size: 14px; line-height: 1.5; }
+    #login input { width: 100%; max-width: 400px; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-family: monospace; }
     #login .btn { margin-top: 12px; font-size: 16px; padding: 12px 32px; }
-    #login .hint { margin-top: 16px; font-size: 12px; color: var(--muted); }
-    #login .hint a { color: var(--accent); }
+    #login a { color: var(--accent); font-size: 12px; margin-top: 12px; }
 
     /* Header */
-    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 18px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+    header h1 { font-size: 16px; }
 
     /* List */
     #app { display: none; }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
-    .posts { padding: 0 24px 24px; }
-    .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .post-card:hover { border-color: var(--accent); }
-    .post-card h3 { font-size: 15px; margin-bottom: 4px; }
-    .post-card .meta { font-size: 12px; color: var(--muted); }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; }
+    .posts { padding: 0 20px 20px; }
+    .pc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .pc:hover { border-color: var(--accent); }
+    .pc h3 { font-size: 14px; margin-bottom: 2px; }
+    .pc .m { font-size: 11px; color: var(--muted); }
 
-    /* Editor page */
-    #editor { display: none; }
-    .editor-wrap { max-width: 820px; margin: 0 auto; padding: 24px 16px; }
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
-    .field input, .field select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; }
-    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
-    .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .field-row .field { flex: 1; min-width: 150px; }
-    .hero-upload { display: flex; gap: 8px; align-items: center; }
-    .hero-upload input { flex: 1; }
-    .upload-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    /* Editor */
+    #ed { display: none; }
+    .ew { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+    .f { margin-bottom: 14px; }
+    .f label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: var(--muted); }
+    .f input, .f select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+    .f input:focus, .f select:focus { outline: none; border-color: var(--accent); }
+    .fr { display: flex; gap: 10px; flex-wrap: wrap; }
+    .fr .f { flex: 1; min-width: 140px; }
 
-    /* Editor.js container */
-    .editorjs-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 8px; min-height: 400px; padding: 8px 0; }
-    .editorjs-wrap .ce-block__content { max-width: 100%; padding: 0 20px; }
-    .editorjs-wrap .ce-toolbar__content { max-width: 100%; }
-    .editorjs-wrap .ce-toolbar__plus { left: -2px; }
-    .editorjs-wrap .ce-toolbar__actions { right: -2px; }
-    .editorjs-wrap .codex-editor__redactor { padding-bottom: 150px !important; }
-    .editorjs-wrap .ce-paragraph { line-height: 1.7; font-size: 15px; }
-    .editorjs-wrap h2.ce-header { font-size: 22px; margin: 8px 0 4px; }
-    .editorjs-wrap h3.ce-header { font-size: 18px; margin: 8px 0 4px; }
+    /* Hero */
+    .hu { display: flex; gap: 8px; align-items: center; }
+    .hu input { flex: 1; }
+    #hp { margin-top: 6px; }
+    #hp img { max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: cover; }
 
-    .editor-actions { display: flex; gap: 8px; margin-top: 20px; padding-bottom: 40px; }
+    /* Markdown editor */
+    .md-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--card); }
+    .md-tb { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 8px; background: #f0f0f0; border-bottom: 1px solid var(--border); align-items: center; }
+    .md-tb button { padding: 4px 10px; font-size: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .md-tb button:hover { background: #e8e8e8; }
+    .md-tb .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+    .md-tb .upload-s { font-size: 11px; color: var(--muted); margin-left: 8px; }
+    #body { width: 100%; min-height: 450px; padding: 14px; border: none; font-size: 14px; line-height: 1.7; resize: vertical; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    #body:focus { outline: none; }
 
-    /* Collapsible meta */
-    .meta-toggle { cursor: pointer; font-size: 13px; color: var(--accent); margin-bottom: 12px; user-select: none; }
-    .meta-fields { margin-bottom: 16px; }
-    .meta-fields.collapsed { display: none; }
+    /* Drop zone */
+    .dz { display: none; padding: 40px; text-align: center; color: var(--muted); font-size: 14px; border: 2px dashed var(--border); margin: 8px; border-radius: 8px; }
+    .dz.on { display: block; }
+    .dz.hover { border-color: var(--accent); background: #fef2f6; }
+
+    /* Meta toggle */
+    .mt { cursor: pointer; font-size: 13px; color: var(--accent); margin: 8px 0 12px; user-select: none; }
+    .mf { margin-bottom: 14px; }
+    .mf.hide { display: none; }
+
+    .ea { display: flex; gap: 8px; margin-top: 16px; padding-bottom: 40px; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h1>Masterok Blog Editor</h1>
   <p>Для входа нужен GitHub Personal Access Token с правами <b>repo</b>.</p>
   <input type="password" id="pat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-  <button class="btn" id="loginBtn">Войти</button>
-  <div id="loginErr" class="error"></div>
-  <p class="hint"><a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank">Создать токен на GitHub</a></p>
+  <button class="btn" id="lb">Войти</button>
+  <div id="le" class="err"></div>
+  <a href="https://github.com/settings/tokens/new?scopes=repo&description=Masterok+CMS" target="_blank">Создать токен на GitHub</a>
 </div>
 
-<!-- POST LIST -->
 <div id="app">
-  <header>
-    <h1>Masterok Blog</h1>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span id="userName" style="font-size:13px;color:var(--muted)"></span>
-      <button class="btn btn-outline btn-sm" onclick="logout()">Выйти</button>
-    </div>
-  </header>
-  <div class="toolbar">
-    <span id="postCount"></span>
-    <button class="btn" onclick="newPost()">+ Новая статья</button>
-  </div>
-  <div class="posts" id="postList"></div>
+  <header><h1>Masterok Blog</h1><div style="display:flex;gap:10px;align-items:center"><span id="un" style="font-size:12px;color:var(--muted)"></span><button class="btn btn-o btn-s" onclick="logout()">Выйти</button></div></header>
+  <div class="toolbar"><span id="pc"></span><button class="btn" onclick="np()">+ Новая статья</button></div>
+  <div class="posts" id="pl"></div>
 </div>
 
-<!-- EDITOR -->
-<div id="editor">
+<div id="ed">
   <header>
-    <h1 id="editorTitle">Редактирование</h1>
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="savePost()">Сохранить</button>
-      <button class="btn btn-outline" onclick="backToList()">Назад</button>
-    </div>
+    <h1 id="et">Редактирование</h1>
+    <div style="display:flex;gap:6px"><button class="btn" onclick="save()">Сохранить</button><button class="btn btn-o" onclick="back()">Назад</button></div>
   </header>
-  <div class="editor-wrap">
-    <div id="editorStatus"></div>
+  <div class="ew">
+    <div id="st"></div>
+    <div class="f"><input id="f-title" placeholder="Заголовок статьи" style="font-size:20px;font-weight:700;border:none;padding:8px 0;border-bottom:2px solid var(--border)" /></div>
 
-    <!-- Title inline -->
-    <div class="field">
-      <input id="f-title" placeholder="Заголовок статьи" style="font-size:22px;font-weight:700;border:none;padding:8px 0;border-bottom:2px solid var(--border)" />
-    </div>
-
-    <!-- Hero image -->
-    <div class="field">
+    <div class="f">
       <label>Главное изображение</label>
-      <div class="hero-upload">
-        <input id="f-heroImage" placeholder="URL или загрузите файл" />
-        <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('heroFileInput').click()">Загрузить</button>
-        <input type="file" id="heroFileInput" accept="image/*" style="display:none" onchange="uploadHeroImage(this.files[0])" />
+      <div class="hu">
+        <input id="f-hero" placeholder="URL картинки" oninput="hp()" />
+        <button class="btn btn-o btn-s" onclick="$('hf').click()">Загрузить</button>
+        <input type="file" id="hf" accept="image/*" style="display:none" onchange="uh(this.files[0])" />
       </div>
-      <div id="heroUploadStatus" class="upload-status"></div>
-      <div id="heroPreview" style="margin-top:8px"></div>
+      <span id="hs" style="font-size:11px;color:var(--muted)"></span>
+      <div id="hp"></div>
     </div>
-    <div class="field"><input id="f-heroAlt" placeholder="Описание изображения (alt)" /></div>
+    <div class="f"><input id="f-halt" placeholder="Описание изображения (alt)" /></div>
 
-    <!-- Content editor -->
-    <div class="field">
+    <div class="f">
       <label>Содержание статьи</label>
-      <div class="editorjs-wrap" id="editorjs"></div>
-    </div>
-
-    <!-- Collapsible meta fields -->
-    <div class="meta-toggle" onclick="toggleMeta()">&#9660; Мета-данные и SEO</div>
-    <div class="meta-fields collapsed" id="metaFields">
-      <div class="field"><label>Описание (meta description)</label><input id="f-description" placeholder="150-160 символов для SEO" /></div>
-      <div class="field-row">
-        <div class="field"><label>Slug (URL)</label><input id="f-slug" placeholder="kak-rasschitat-kirpich" /></div>
-        <div class="field"><label>Дата</label><input id="f-date" type="date" /></div>
-        <div class="field"><label>Время чтения</label><input id="f-readTime" placeholder="7 мин" /></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Категория</label>
-          <select id="f-category">
-            <option>Стены</option><option>Полы</option><option>Фундамент</option>
-            <option>Кровля</option><option>Фасад</option><option>Инженерные системы</option><option>Отделка</option>
-          </select>
+      <div class="md-wrap">
+        <div class="md-tb">
+          <button onclick="ins('## ','',1)" title="Заголовок H2"><b>H2</b></button>
+          <button onclick="ins('### ','',1)" title="Заголовок H3"><b>H3</b></button>
+          <span class="sep"></span>
+          <button onclick="wrap('**')" title="Жирный"><b>Ж</b></button>
+          <button onclick="wrap('*')" title="Курсив"><i>К</i></button>
+          <span class="sep"></span>
+          <button onclick="ins('- ','',1)" title="Список">Список</button>
+          <button onclick="ins('1. ','',1)" title="Нумерованный">1. 2. 3.</button>
+          <span class="sep"></span>
+          <button onclick="$('bf').click()" title="Загрузить картинку">📷 Картинка</button>
+          <button onclick="iurl()" title="Картинка по URL">🔗 По URL</button>
+          <button onclick="tdz()" title="Drag & drop">📁 Перетащить</button>
+          <span id="bs" class="upload-s"></span>
+          <input type="file" id="bf" accept="image/*" style="display:none" onchange="ub(this.files[0])" />
         </div>
-        <div class="field"><label>Иконка</label><input id="f-icon" placeholder="🧱" /></div>
-        <div class="field"><label>Теги (через запятую)</label><input id="f-tags" placeholder="кирпич, кладка, стены" /></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Slug калькулятора</label><input id="f-calcSlug" /></div>
-        <div class="field"><label>Категория калькулятора</label><input id="f-calcCat" /></div>
+        <div class="dz" id="dz" ondragover="dzo(event)" ondragleave="dzl(event)" ondrop="dzd(event)">Перетащите картинку сюда</div>
+        <textarea id="body" placeholder="Начните писать статью...&#10;&#10;## Заголовок&#10;&#10;Текст абзаца.&#10;&#10;- Пункт списка&#10;&#10;![Описание](URL картинки)"></textarea>
       </div>
     </div>
 
-    <div class="editor-actions">
-      <button class="btn" onclick="savePost()">Сохранить</button>
-      <button class="btn btn-outline" onclick="backToList()">Отмена</button>
+    <div class="mt" onclick="tm()">&#9660; Мета-данные и SEO</div>
+    <div class="mf hide" id="mf">
+      <div class="f"><label>Описание (meta)</label><input id="f-desc" placeholder="150-160 символов для SEO" /></div>
+      <div class="fr">
+        <div class="f"><label>Slug (URL)</label><input id="f-slug" placeholder="kak-rasschitat-kirpich" /></div>
+        <div class="f"><label>Дата</label><input id="f-date" type="date" /></div>
+        <div class="f"><label>Время чтения</label><input id="f-rt" placeholder="7 мин" /></div>
+      </div>
+      <div class="fr">
+        <div class="f"><label>Категория</label><select id="f-cat"><option>Стены</option><option>Полы</option><option>Фундамент</option><option>Кровля</option><option>Фасад</option><option>Инженерные системы</option><option>Отделка</option></select></div>
+        <div class="f"><label>Иконка</label><input id="f-icon" placeholder="🧱" /></div>
+        <div class="f"><label>Теги (через запятую)</label><input id="f-tags" placeholder="кирпич, кладка" /></div>
+      </div>
+      <div class="fr">
+        <div class="f"><label>Slug калькулятора</label><input id="f-cs" /></div>
+        <div class="f"><label>Категория калькулятора</label><input id="f-cc" /></div>
+      </div>
+    </div>
+
+    <div class="ea">
+      <button class="btn" onclick="save()">Сохранить</button>
+      <button class="btn btn-o" onclick="back()">Отмена</button>
     </div>
   </div>
 </div>
 
 <script>
-var REPO = "antilopa1144-tech/masterok-web";
-var BRANCH = "main";
-var TOKEN_KEY = "masterok-cms-token";
-var token = "", currentFile = null, currentSha = null, editorInstance = null;
+var R="antilopa1144-tech/masterok-web",B="main",TK="masterok-cms-token",tk="",cf=null,cs=null;
+function $(id){return document.getElementById(id)}
 
-// ===== Auth =====
-var saved = localStorage.getItem(TOKEN_KEY);
-if (saved) { document.getElementById("login").innerHTML = '<h1>Загрузка...</h1>'; checkToken(saved); }
-document.getElementById("loginBtn").onclick = function() {
-  var t = document.getElementById("pat").value.trim();
-  if (!t) { document.getElementById("loginErr").textContent = "Введите токен"; return; }
-  document.getElementById("loginBtn").textContent = "Проверяю...";
-  checkToken(t);
-};
-document.getElementById("pat").onkeydown = function(e) { if (e.key === "Enter") document.getElementById("loginBtn").click(); };
+// Auth
+var sv=localStorage.getItem(TK);
+if(sv){$("login").innerHTML='<h1>Загрузка...</h1>';ck(sv)}
+$("lb").onclick=function(){var t=$("pat").value.trim();if(!t){$("le").textContent="Введите токен";return}$("lb").textContent="Проверяю...";ck(t)};
+$("pat").onkeydown=function(e){if(e.key==="Enter")$("lb").click()};
+function ck(t){api("/user",t).then(function(u){tk=t;localStorage.setItem(TK,t);$("un").textContent=u.login;$("login").style.display="none";$("app").style.display="block";lp()}).catch(function(){localStorage.removeItem(TK);location.reload()})}
+function logout(){localStorage.removeItem(TK);location.reload()}
 
-function checkToken(t) {
-  ghAPI("/user", t).then(function(u) {
-    token = t; localStorage.setItem(TOKEN_KEY, t);
-    document.getElementById("userName").textContent = u.login;
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    loadPosts();
-  }).catch(function() { localStorage.removeItem(TOKEN_KEY); location.reload(); });
-}
-function logout() { localStorage.removeItem(TOKEN_KEY); location.reload(); }
+// API
+function api(p,t,o){t=t||tk;o=o||{};var u=p.startsWith("http")?p:"https://api.github.com"+p;return fetch(u,Object.assign({headers:{Authorization:"token "+t,Accept:"application/vnd.github.v3+json"}},o)).then(function(r){if(!r.ok)throw new Error(r.status);return r.status===204?null:r.json()})}
 
-// ===== GitHub API =====
-function ghAPI(path, tok, opts) {
-  tok = tok || token; opts = opts || {};
-  var url = path.startsWith("http") ? path : "https://api.github.com" + path;
-  return fetch(url, Object.assign({ headers: { Authorization: "token " + tok, Accept: "application/vnd.github.v3+json" } }, opts))
-    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.status === 204 ? null : r.json(); });
-}
-
-function uploadToGitHub(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function() {
-      var base64 = reader.result.split(",")[1];
-      var name = Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      fetch("https://api.github.com/repos/" + REPO + "/contents/public/blog-images/" + name, {
-        method: "PUT",
-        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "upload: " + name, content: base64, branch: BRANCH })
-      }).then(function(r) {
-        if (!r.ok) throw new Error("Upload failed");
-        return r.json();
-      }).then(function() {
-        // Use raw GitHub URL for preview in editor, save relative path for markdown
-        var rawUrl = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public/blog-images/" + name;
-        resolve({ success: 1, file: { url: rawUrl, _relativePath: "/blog-images/" + name } });
-      }).catch(reject);
+function upload(file){
+  return new Promise(function(ok,no){
+    var rd=new FileReader();
+    rd.onload=function(){
+      var b64=rd.result.split(",")[1];
+      var nm=Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+      fetch("https://api.github.com/repos/"+R+"/contents/public/blog-images/"+nm,{
+        method:"PUT",headers:{Authorization:"token "+tk,"Content-Type":"application/json"},
+        body:JSON.stringify({message:"upload: "+nm,content:b64,branch:B})
+      }).then(function(r){if(!r.ok)throw new Error("fail");return r.json()})
+      .then(function(d){
+        // Get raw URL using GitHub API for private repos
+        ok({path:"/blog-images/"+nm, previewUrl:"https://api.github.com/repos/"+R+"/contents/public/blog-images/"+nm+"?ref="+B});
+      }).catch(no);
     };
-    reader.readAsDataURL(file);
+    rd.readAsDataURL(file);
   });
 }
 
-// ===== Post List =====
-function loadPosts() {
-  ghAPI("/repos/" + REPO + "/contents/content/blog?ref=" + BRANCH).then(function(files) {
-    var md = files.filter(function(f) { return f.name.endsWith(".md"); });
-    md.sort(function(a, b) { return b.name.localeCompare(a.name); });
-    document.getElementById("postCount").textContent = md.length + " статей";
-    var html = "";
-    md.forEach(function(f) {
-      var name = f.name.replace(".md", "");
-      html += '<div class="post-card" onclick="editPost(\'' + f.path + '\')">' +
-        '<div><h3>' + name + '</h3><div class="meta">' + f.path + '</div></div>' +
-        '<div class="meta">' + (f.size / 1024).toFixed(1) + ' KB</div></div>';
+// Preview image via GitHub API (works for private repos)
+function previewImg(path, imgEl){
+  if(path.startsWith("http")){imgEl.src=path;imgEl.style.display="block";return}
+  // For relative paths, use GitHub API to get download_url
+  api("/repos/"+R+"/contents/public"+path+"?ref="+B).then(function(d){
+    if(d.download_url){imgEl.src=d.download_url;imgEl.style.display="block"}
+  }).catch(function(){imgEl.style.display="none"});
+}
+
+// Posts
+function lp(){
+  api("/repos/"+R+"/contents/content/blog?ref="+B).then(function(fs){
+    var md=fs.filter(function(f){return f.name.endsWith(".md")});
+    md.sort(function(a,b){return a.name.localeCompare(b.name)});
+    $("pc").textContent=md.length+" статей";
+    var h="";
+    md.forEach(function(f){
+      var n=f.name.replace(".md","");
+      h+='<div class="pc" onclick="ep(\''+f.path+'\')"><div><h3>'+n+'</h3><div class="m">'+f.path+'</div></div><div class="m">'+(f.size/1024).toFixed(1)+' KB</div></div>';
     });
-    document.getElementById("postList").innerHTML = html;
-  }).catch(function(e) { document.getElementById("postList").innerHTML = '<p class="error">Ошибка: ' + e.message + '</p>'; });
+    $("pl").innerHTML=h;
+  }).catch(function(e){$("pl").innerHTML='<p class="err">Ошибка: '+e.message+'</p>'});
 }
 
-// ===== Editor.js =====
-function initEditor(blocks) {
-  if (editorInstance) { try { editorInstance.destroy(); } catch(e) {} editorInstance = null; }
-  // Clear holder
-  document.getElementById("editorjs").innerHTML = "";
-  var editorData = (blocks && blocks.length > 0) ? { blocks: blocks } : { blocks: [{ type: "paragraph", data: { text: "" } }] };
-  editorInstance = new EditorJS({
-    holder: "editorjs",
-    autofocus: true,
-    placeholder: "Начните писать или нажмите + чтобы добавить блок...",
-    tools: {
-      header: { class: Header, config: { levels: [2, 3, 4], defaultLevel: 2 }, shortcut: "CMD+SHIFT+H", inlineToolbar: true },
-      list: { class: List, inlineToolbar: true },
-      image: {
-        class: ImageTool,
-        config: {
-          uploader: {
-            uploadByFile: function(file) { return uploadToGitHub(file); },
-            uploadByUrl: function(url) { return Promise.resolve({ success: 1, file: { url: url } }); }
-          }
-        }
-      },
-      quote: { class: Quote, inlineToolbar: true },
-      delimiter: Delimiter
-    },
-    data: editorData,
-    onReady: function() {
-      console.log("Editor.js ready, blocks:", editorData.blocks.length);
-    },
-    i18n: {
-      messages: {
-        toolNames: { Text: "Текст", Heading: "Заголовок", List: "Список", Image: "Картинка", Quote: "Цитата", Delimiter: "Разделитель" },
-        tools: { image: { "Select an Image": "Выберите изображение", "With border": "С рамкой", "Stretch image": "На всю ширину", "With background": "С фоном" } },
-        ui: { blockTunes: { toggler: { "Click to tune": "Настройки", "or drag to move": "или перетащите" } } }
-      }
-    }
-  });
+// Editor
+function np(){cf=null;cs=null;clr();$("f-date").value=new Date().toISOString().split("T")[0];$("et").textContent="Новая статья";se()}
+function ep(p){$("et").textContent="Загрузка...";se();api("/repos/"+R+"/contents/"+p+"?ref="+B).then(function(f){cf=p;cs=f.sha;var c=decodeURIComponent(escape(atob(f.content.replace(/\n/g,""))));pf(c);$("et").textContent="Редактирование"})}
+
+function pf(raw){
+  var ps=raw.split("---");if(ps.length<3){$("body").value=raw;return}
+  var fm=ps[1],bd=ps.slice(2).join("---").trim();
+  $("body").value=bd;
+  sf("title",ex(fm,"title"));sf("desc",ex(fm,"description"));sf("slug",ex(fm,"slug"));
+  sf("date",ex(fm,"date"));sf("rt",ex(fm,"readTime"));sf("cat",ex(fm,"category"));
+  sf("icon",ex(fm,"icon"));sf("hero",ex(fm,"heroImage"));sf("halt",ex(fm,"heroImageAlt"));
+  sf("cs",ex(fm,"relatedCalculatorSlug"));sf("cc",ex(fm,"relatedCalculatorCategory"));
+  var tg=ex(fm,"tags");if(tg.startsWith("["))tg=tg.replace(/[\[\]"]/g,"");sf("tags",tg);
+  hp();
 }
 
-// ===== Markdown <-> EditorJS =====
-function markdownToBlocks(md) {
-  var blocks = [], lines = md.split("\n"), i = 0;
-  while (i < lines.length) {
-    var line = lines[i];
-    // Empty line
-    if (line.trim() === "") { i++; continue; }
-    // Header
-    var hm = line.match(/^(#{2,4})\s+(.+)/);
-    if (hm) { blocks.push({ type: "header", data: { text: hm[2], level: hm[1].length } }); i++; continue; }
-    // Image
-    var im = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
-    if (im) { blocks.push({ type: "image", data: { file: { url: im[2] }, caption: im[1], withBorder: false, stretched: false, withBackground: false } }); i++; continue; }
-    // Unordered list
-    if (line.match(/^[-*]\s/)) {
-      var items = [];
-      while (i < lines.length && lines[i].match(/^[-*]\s/)) { items.push(lines[i].replace(/^[-*]\s+/, "")); i++; }
-      blocks.push({ type: "list", data: { style: "unordered", items: items } });
-      continue;
-    }
-    // Ordered list
-    if (line.match(/^\d+\.\s/)) {
-      var items = [];
-      while (i < lines.length && lines[i].match(/^\d+\.\s/)) { items.push(lines[i].replace(/^\d+\.\s+/, "")); i++; }
-      blocks.push({ type: "list", data: { style: "ordered", items: items } });
-      continue;
-    }
-    // Paragraph (collect consecutive non-empty, non-special lines)
-    var para = [];
-    while (i < lines.length && lines[i].trim() !== "" && !lines[i].match(/^#{2,4}\s/) && !lines[i].match(/^!\[/) && !lines[i].match(/^[-*]\s/) && !lines[i].match(/^\d+\.\s/)) {
-      para.push(lines[i]); i++;
-    }
-    if (para.length) blocks.push({ type: "paragraph", data: { text: para.join("<br>") } });
-  }
-  return blocks;
+function ex(t,k){var r=new RegExp('^'+k+':\\s*"?(.*?)"?\\s*$','m');var m=t.match(r);return m?m[1]:""}
+function sf(id,v){var e=$("f-"+id);if(e)e.value=v||""}
+function gf(id){var e=$("f-"+id);return e?e.value.trim():""}
+function clr(){["title","desc","slug","date","rt","cat","icon","tags","cs","cc","hero","halt"].forEach(function(id){sf(id,"")});$("body").value="";$("st").innerHTML="";$("hp").innerHTML=""}
+
+function save(){
+  var slug=gf("slug"),title=gf("title");
+  if(!slug||!title){ss("Заполните заголовок и slug",1);return}
+  var tg=gf("tags").split(",").map(function(t){return'"'+t.trim()+'"'}).filter(function(t){return t!=='""'});
+  var fm='---\nslug: "'+slug+'"\ntitle: "'+title+'"\n';
+  fm+='description: "'+gf("desc")+'"\ndate: "'+gf("date")+'"\nreadTime: "'+gf("rt")+'"\n';
+  fm+='category: "'+gf("cat")+'"\nicon: "'+gf("icon")+'"\ntags: ['+tg.join(", ")+']\n';
+  if(gf("cs"))fm+='relatedCalculatorSlug: "'+gf("cs")+'"\n';
+  if(gf("cc"))fm+='relatedCalculatorCategory: "'+gf("cc")+'"\n';
+  fm+='heroImage: "'+gf("hero")+'"\nheroImageAlt: "'+gf("halt")+'"\n---\n\n';
+  var ct=fm+$("body").value+'\n';
+  var enc=btoa(unescape(encodeURIComponent(ct)));
+  var pa=cf||"content/blog/"+slug+".md";
+  var bd={message:(cf?"update":"create")+": "+slug,content:enc,branch:B};
+  if(cs)bd.sha=cs;
+  ss("Сохраняю...",0);
+  fetch("https://api.github.com/repos/"+R+"/contents/"+pa,{method:"PUT",headers:{Authorization:"token "+tk,"Content-Type":"application/json"},body:JSON.stringify(bd)})
+  .then(function(r){if(!r.ok)return r.json().then(function(e){throw new Error(e.message)});return r.json()})
+  .then(function(d){cs=d.content.sha;cf=pa;ss("Сохранено! Автодеплой запущен.",0)})
+  .catch(function(e){ss("Ошибка: "+e.message,1)});
 }
 
-function blocksToMarkdown(blocks) {
-  var parts = [];
-  blocks.forEach(function(b) {
-    switch (b.type) {
-      case "header": parts.push("#".repeat(b.data.level) + " " + stripHtml(b.data.text)); break;
-      case "paragraph": parts.push(stripHtml(b.data.text).replace(/<br\s*\/?>/gi, "\n")); break;
-      case "list":
-        b.data.items.forEach(function(item, idx) {
-          var text = typeof item === "string" ? item : item.content || "";
-          parts.push((b.data.style === "ordered" ? (idx + 1) + ". " : "- ") + stripHtml(text));
-        });
-        break;
-      case "image":
-        var url = b.data.file ? (b.data.file._relativePath || b.data.file.url) : b.data.url || "";
-        // Convert raw GitHub URLs back to relative paths
-        var rawPrefix = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public";
-        if (url.startsWith(rawPrefix)) url = url.substring(rawPrefix.length);
-        parts.push("![" + (b.data.caption || "") + "](" + url + ")");
-        break;
-      case "quote": parts.push("> " + stripHtml(b.data.text)); break;
-      case "delimiter": parts.push("---"); break;
-      default: if (b.data && b.data.text) parts.push(stripHtml(b.data.text));
-    }
-  });
-  return parts.join("\n\n");
+function ss(m,e){$("st").innerHTML='<div class="'+(e?"bad":"ok")+'">'+m+'</div>'}
+function se(){$("app").style.display="none";$("ed").style.display="block";$("body").focus()}
+function back(){$("ed").style.display="none";$("app").style.display="block";lp()}
+function tm(){var e=$("mf");e.classList.toggle("hide");document.querySelector(".mt").innerHTML=(e.classList.contains("hide")?"&#9660;":"&#9650;")+" Мета-данные и SEO"}
+
+// Hero image
+function uh(file){
+  if(!file)return;$("hs").textContent="Загрузка...";
+  upload(file).then(function(r){sf("hero",r.path);$("hs").textContent="Загружено!";hp();setTimeout(function(){$("hs").textContent=""},3000)}).catch(function(e){$("hs").textContent="Ошибка"});
+}
+function hp(){
+  var url=gf("hero");
+  if(!url){$("hp").innerHTML="";return}
+  var img=document.createElement("img");
+  img.style.cssText="max-width:100%;max-height:180px;border-radius:8px;object-fit:cover;display:none";
+  $("hp").innerHTML="";$("hp").appendChild(img);
+  if(url.startsWith("http")){img.src=url;img.style.display="block";img.onerror=function(){img.style.display="none"}}
+  else{previewImg(url,img)}
 }
 
-function stripHtml(s) {
-  if (!s) return "";
-  return s.replace(/<b>/gi, "**").replace(/<\/b>/gi, "**")
-    .replace(/<i>/gi, "*").replace(/<\/i>/gi, "*")
-    .replace(/<a[^>]*href="([^"]*)"[^>]*>/gi, "[$1](").replace(/<\/a>/gi, ")")
-    .replace(/<[^>]+>/g, "");
+// Markdown toolbar
+function ins(before,after,nl){
+  var ta=$("body"),s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  var sel=v.substring(s,e)||"";
+  var pre=v.substring(0,s),post=v.substring(e);
+  if(nl&&s>0&&!pre.endsWith("\n"))before="\n"+before;
+  var t=before+sel+(after||"");
+  ta.value=pre+t+post;
+  ta.selectionStart=s+before.length;ta.selectionEnd=s+before.length+sel.length;
+  ta.focus();
+}
+function wrap(ch){
+  var ta=$("body"),s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  var sel=v.substring(s,e);
+  if(!sel){ta.value=v.substring(0,s)+ch+"текст"+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=s+ch.length+5}
+  else{ta.value=v.substring(0,s)+ch+sel+ch+v.substring(e);ta.selectionStart=s+ch.length;ta.selectionEnd=e+ch.length}
+  ta.focus();
 }
 
-// ===== Editor Actions =====
-function newPost() {
-  currentFile = null; currentSha = null; clearFields();
-  document.getElementById("f-date").value = new Date().toISOString().split("T")[0];
-  document.getElementById("editorTitle").textContent = "Новая статья";
-  showEditor(); initEditor();
+// Body image upload
+function ub(file){
+  if(!file)return;$("bs").textContent="Загрузка "+file.name+"...";
+  upload(file).then(function(r){
+    ins("\n!["+file.name.replace(/\.[^.]+$/,"")+"]("+r.path+")\n","",0);
+    $("bs").textContent="Загружено!";setTimeout(function(){$("bs").textContent=""},3000);
+  }).catch(function(e){$("bs").textContent="Ошибка"});
+}
+function iurl(){
+  var url=prompt("URL картинки:");if(!url)return;
+  var alt=prompt("Описание (alt):","картинка")||"картинка";
+  ins("\n!["+alt+"]("+url+")\n","",0);
 }
 
-function editPost(path) {
-  document.getElementById("editorTitle").textContent = "Загрузка...";
-  showEditor();
-  ghAPI("/repos/" + REPO + "/contents/" + path + "?ref=" + BRANCH).then(function(file) {
-    currentFile = path; currentSha = file.sha;
-    var content = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ""))));
-    parseAndFill(content);
-    document.getElementById("editorTitle").textContent = "Редактирование";
-  });
-}
+// Drag & drop
+function tdz(){$("dz").classList.toggle("on")}
+function dzo(e){e.preventDefault();e.currentTarget.classList.add("hover")}
+function dzl(e){e.currentTarget.classList.remove("hover")}
+function dzd(e){e.preventDefault();e.currentTarget.classList.remove("hover");var f=e.dataTransfer.files[0];if(f)ub(f);$("dz").classList.remove("on")}
 
-function parseAndFill(raw) {
-  var parts = raw.split("---");
-  if (parts.length < 3) { initEditor(markdownToBlocks(raw)); return; }
-  var fm = parts[1], body = parts.slice(2).join("---").trim();
-  setField("slug", extractFM(fm, "slug"));
-  setField("title", extractFM(fm, "title"));
-  setField("description", extractFM(fm, "description"));
-  setField("date", extractFM(fm, "date"));
-  setField("readTime", extractFM(fm, "readTime"));
-  setField("category", extractFM(fm, "category"));
-  setField("icon", extractFM(fm, "icon"));
-  setField("heroImage", extractFM(fm, "heroImage"));
-  setField("heroAlt", extractFM(fm, "heroImageAlt"));
-  setField("calcSlug", extractFM(fm, "relatedCalculatorSlug"));
-  setField("calcCat", extractFM(fm, "relatedCalculatorCategory"));
-  var tags = extractFM(fm, "tags");
-  if (tags.startsWith("[")) tags = tags.replace(/[\[\]"]/g, "");
-  setField("tags", tags);
-  updateHeroPreview();
-  initEditor(markdownToBlocks(body));
-}
-
-function extractFM(text, key) {
-  var re = new RegExp('^' + key + ':\\s*"?(.*?)"?\\s*$', 'm');
-  var m = text.match(re); return m ? m[1] : "";
-}
-
-function setField(id, val) { var el = document.getElementById("f-" + id); if (el) el.value = val || ""; }
-function getField(id) { var el = document.getElementById("f-" + id); return el ? el.value.trim() : ""; }
-
-function clearFields() {
-  ["slug","title","description","date","readTime","category","icon","tags","calcSlug","calcCat","heroImage","heroAlt"].forEach(function(id) { setField(id, ""); });
-  document.getElementById("editorStatus").innerHTML = "";
-  document.getElementById("heroPreview").innerHTML = "";
-}
-
-function savePost() {
-  if (!editorInstance) return;
-  var slug = getField("slug"), title = getField("title");
-  if (!slug || !title) { showStatus("Заполните заголовок и slug", true); return; }
-
-  editorInstance.save().then(function(outputData) {
-    var body = blocksToMarkdown(outputData.blocks);
-    var tags = getField("tags").split(",").map(function(t) { return '"' + t.trim() + '"'; }).filter(function(t) { return t !== '""'; });
-    var fm = '---\nslug: "' + slug + '"\ntitle: "' + title + '"\n';
-    fm += 'description: "' + getField("description") + '"\n';
-    fm += 'date: "' + getField("date") + '"\nreadTime: "' + getField("readTime") + '"\n';
-    fm += 'category: "' + getField("category") + '"\nicon: "' + getField("icon") + '"\n';
-    fm += 'tags: [' + tags.join(", ") + ']\n';
-    if (getField("calcSlug")) fm += 'relatedCalculatorSlug: "' + getField("calcSlug") + '"\n';
-    if (getField("calcCat")) fm += 'relatedCalculatorCategory: "' + getField("calcCat") + '"\n';
-    fm += 'heroImage: "' + getField("heroImage") + '"\nheroImageAlt: "' + getField("heroAlt") + '"\n---\n\n';
-    var content = fm + body + '\n';
-    var encoded = btoa(unescape(encodeURIComponent(content)));
-    var path = currentFile || "content/blog/" + slug + ".md";
-    var reqBody = { message: (currentFile ? "update" : "create") + ": " + slug, content: encoded, branch: BRANCH };
-    if (currentSha) reqBody.sha = currentSha;
-
-    showStatus("Сохраняю...", false);
-    fetch("https://api.github.com/repos/" + REPO + "/contents/" + path, {
-      method: "PUT", headers: { Authorization: "token " + token, "Content-Type": "application/json" },
-      body: JSON.stringify(reqBody)
-    }).then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message); }); return r.json(); })
-      .then(function(data) { currentSha = data.content.sha; currentFile = path; showStatus("Сохранено! Автодеплой запущен.", false); })
-      .catch(function(e) { showStatus("Ошибка: " + e.message, true); });
-  });
-}
-
-function showStatus(msg, isErr) { document.getElementById("editorStatus").innerHTML = '<div class="status ' + (isErr ? "err" : "ok") + '">' + msg + '</div>'; }
-function showEditor() { document.getElementById("app").style.display = "none"; document.getElementById("editor").style.display = "block"; }
-function backToList() {
-  document.getElementById("editor").style.display = "none"; document.getElementById("app").style.display = "block";
-  if (editorInstance) { editorInstance.destroy(); editorInstance = null; }
-  loadPosts();
-}
-function toggleMeta() {
-  var el = document.getElementById("metaFields");
-  el.classList.toggle("collapsed");
-  document.querySelector(".meta-toggle").innerHTML = (el.classList.contains("collapsed") ? "&#9660;" : "&#9650;") + " Мета-данные и SEO";
-}
-
-// ===== Hero Image =====
-function uploadHeroImage(file) {
-  if (!file) return;
-  document.getElementById("heroUploadStatus").textContent = "Загрузка...";
-  uploadToGitHub(file).then(function(res) {
-    document.getElementById("f-heroImage").value = res.file.url;
-    document.getElementById("heroUploadStatus").textContent = "Загружено!";
-    updateHeroPreview();
-    setTimeout(function() { document.getElementById("heroUploadStatus").textContent = ""; }, 3000);
-  }).catch(function(e) { document.getElementById("heroUploadStatus").textContent = "Ошибка: " + e; });
-}
-function updateHeroPreview() {
-  var url = getField("heroImage");
-  if (!url) { document.getElementById("heroPreview").innerHTML = ""; return; }
-  // For local uploads, show from GitHub raw until deployed
-  var previewUrl = url;
-  if (url.startsWith("/blog-images/")) {
-    previewUrl = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public" + url;
-  }
-  document.getElementById("heroPreview").innerHTML = '<img src="' + previewUrl + '" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover" onerror="this.style.display=\'none\'" />';
-}
-document.addEventListener("change", function(e) { if (e.target.id === "f-heroImage") updateHeroPreview(); });
+// Also support drag&drop directly on textarea
+$("body") && $("body").addEventListener("dragover",function(e){e.preventDefault()});
+$("body") && $("body").addEventListener("drop",function(e){
+  e.preventDefault();var f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith("image/"))ub(f);
+});
 </script>
 </body>
 </html>
