@@ -290,21 +290,16 @@ function hp(){
   else{previewImg(url,img)}
 }
 
-// Markdown toolbar
-// Save cursor position — use multiple events to catch it before blur
+// Markdown toolbar — cursor tracking
 var lastCur=0,lastEnd=0;
-function saveCur(){var ta=$("body");if(ta){lastCur=ta.selectionStart;lastEnd=ta.selectionEnd}}
-// mousedown on toolbar buttons fires BEFORE textarea loses focus
-document.querySelector(".md-tb").addEventListener("mousedown",function(){saveCur()});
-// Also save on every keyup and mouseup in textarea
-setTimeout(function(){
+// Use setInterval to continuously track cursor while textarea is focused
+setInterval(function(){
   var ta=$("body");
-  if(ta){
-    ta.addEventListener("keyup",saveCur);
-    ta.addEventListener("mouseup",saveCur);
-    ta.addEventListener("select",saveCur);
+  if(ta && ta===document.activeElement){
+    lastCur=ta.selectionStart;
+    lastEnd=ta.selectionEnd;
   }
-},100);
+},50);
 
 function ins(before,after,nl){
   var ta=$("body"),s=lastCur,e=lastEnd,v=ta.value;
