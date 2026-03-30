@@ -226,7 +226,9 @@ function uploadToGitHub(file) {
         if (!r.ok) throw new Error("Upload failed");
         return r.json();
       }).then(function() {
-        resolve({ success: 1, file: { url: "/blog-images/" + name } });
+        // Use raw GitHub URL for preview in editor, save relative path for markdown
+        var rawUrl = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public/blog-images/" + name;
+        resolve({ success: 1, file: { url: rawUrl, _relativePath: "/blog-images/" + name } });
       }).catch(reject);
     };
     reader.readAsDataURL(file);
@@ -252,12 +254,16 @@ function loadPosts() {
 
 // ===== Editor.js =====
 function initEditor(blocks) {
-  if (editorInstance) { editorInstance.destroy(); editorInstance = null; }
+  if (editorInstance) { try { editorInstance.destroy(); } catch(e) {} editorInstance = null; }
+  // Clear holder
+  document.getElementById("editorjs").innerHTML = "";
+  var editorData = (blocks && blocks.length > 0) ? { blocks: blocks } : { blocks: [{ type: "paragraph", data: { text: "" } }] };
   editorInstance = new EditorJS({
     holder: "editorjs",
+    autofocus: true,
     placeholder: "Начните писать или нажмите + чтобы добавить блок...",
     tools: {
-      header: { class: Header, config: { levels: [2, 3, 4], defaultLevel: 2 }, shortcut: "CMD+SHIFT+H" },
+      header: { class: Header, config: { levels: [2, 3, 4], defaultLevel: 2 }, shortcut: "CMD+SHIFT+H", inlineToolbar: true },
       list: { class: List, inlineToolbar: true },
       image: {
         class: ImageTool,
@@ -268,10 +274,13 @@ function initEditor(blocks) {
           }
         }
       },
-      quote: { class: Quote, shortcut: "CMD+SHIFT+O" },
+      quote: { class: Quote, inlineToolbar: true },
       delimiter: Delimiter
     },
-    data: blocks ? { blocks: blocks } : undefined,
+    data: editorData,
+    onReady: function() {
+      console.log("Editor.js ready, blocks:", editorData.blocks.length);
+    },
     i18n: {
       messages: {
         toolNames: { Text: "Текст", Heading: "Заголовок", List: "Список", Image: "Картинка", Quote: "Цитата", Delimiter: "Разделитель" },
@@ -332,7 +341,10 @@ function blocksToMarkdown(blocks) {
         });
         break;
       case "image":
-        var url = b.data.file ? b.data.file.url : b.data.url || "";
+        var url = b.data.file ? (b.data.file._relativePath || b.data.file.url) : b.data.url || "";
+        // Convert raw GitHub URLs back to relative paths
+        var rawPrefix = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public";
+        if (url.startsWith(rawPrefix)) url = url.substring(rawPrefix.length);
         parts.push("![" + (b.data.caption || "") + "](" + url + ")");
         break;
       case "quote": parts.push("> " + stripHtml(b.data.text)); break;
@@ -464,7 +476,13 @@ function uploadHeroImage(file) {
 }
 function updateHeroPreview() {
   var url = getField("heroImage");
-  document.getElementById("heroPreview").innerHTML = url ? '<img src="' + url + '" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover" />' : "";
+  if (!url) { document.getElementById("heroPreview").innerHTML = ""; return; }
+  // For local uploads, show from GitHub raw until deployed
+  var previewUrl = url;
+  if (url.startsWith("/blog-images/")) {
+    previewUrl = "https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/public" + url;
+  }
+  document.getElementById("heroPreview").innerHTML = '<img src="' + previewUrl + '" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover" onerror="this.style.display=\'none\'" />';
 }
 document.addEventListener("change", function(e) { if (e.target.id === "f-heroImage") updateHeroPreview(); });
 </script>
