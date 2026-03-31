@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
-import { ALL_POSTS, getAllTags, tagToSlug } from "@/lib/blog";
+import { getAllPosts, getAllTags, tagToSlug } from "@/lib/blog";
 import { ALL_TOOLS } from "@/lib/tools";
 import { SITE_URL } from "@/lib/site";
 
@@ -29,12 +29,15 @@ export const dynamic = "force-static";
  * lastModified: build timestamp for static pages, post.date for blog,
  * build timestamp for calculators (formulas update with each deploy).
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const buildDate = new Date().toISOString();
 
+  const allPosts = await getAllPosts();
+  const allTags = await getAllTags();
+
   // Derive latest blog date for blog listing page
-  const latestPostDate = ALL_POSTS.length > 0
-    ? ALL_POSTS.reduce((latest, p) => (p.date > latest ? p.date : latest), ALL_POSTS[0].date)
+  const latestPostDate = allPosts.length > 0
+    ? allPosts.reduce((latest, p) => (p.date > latest ? p.date : latest), allPosts[0].date)
     : buildDate;
 
   // ── 1. Static pages ────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // ── 6. Blog post pages ─────────────────────────────────────────────────────
   //    lastModified from post.date, priority 0.7 for SEO content value
 
-  const blogPages: MetadataRoute.Sitemap = ALL_POSTS.map((post) => ({
+  const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
     lastModified: post.date,
     changeFrequency: "monthly" as const,
@@ -139,7 +142,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // ── 7. Blog tag pages ───────────────────────────────────────────────────────
 
-  const tagPages: MetadataRoute.Sitemap = getAllTags().map((tag) => ({
+  const tagPages: MetadataRoute.Sitemap = allTags.map((tag) => ({
     url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
     lastModified: latestPostDate,
     changeFrequency: "weekly" as const,

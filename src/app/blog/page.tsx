@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ALL_POSTS } from "@/lib/blog";
+import { getAllPosts } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
@@ -30,7 +30,8 @@ const UI_TEXT = {
   askMikhalych: "Спросить Михалыча",
 } as const;
 
-function BlogCollectionJsonLd() {
+async function BlogCollectionJsonLd() {
+  const allPosts = await getAllPosts();
   const schema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -39,8 +40,8 @@ function BlogCollectionJsonLd() {
     url: PAGE_URL,
     mainEntity: {
       "@type": "ItemList",
-      numberOfItems: ALL_POSTS.length,
-      itemListElement: ALL_POSTS.slice(0, 20).map((post, i) => ({
+      numberOfItems: allPosts.length,
+      itemListElement: allPosts.slice(0, 20).map((post, i) => ({
         "@type": "ListItem",
         position: i + 1,
         url: `${SITE_URL}/blog/${post.slug}/`,
@@ -58,7 +59,9 @@ function BlogCollectionJsonLd() {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const allPosts = await getAllPosts();
+
   return (
     <div>
       <BlogCollectionJsonLd />
@@ -82,7 +85,7 @@ export default function BlogPage() {
       {/* Статьи */}
       <div className="page-container-wide py-8">
         <BlogPostGrid
-          posts={ALL_POSTS.map(({ slug, title, description, category, readTime, date, heroImage, heroImageAlt }) => ({
+          posts={allPosts.map(({ slug, title, description, category, readTime, date, heroImage, heroImageAlt }) => ({
             slug, title, description, category, readTime, date, heroImage, heroImageAlt,
           }))}
           readMoreText={UI_TEXT.readMore}
@@ -107,8 +110,3 @@ export default function BlogPage() {
     </div>
   );
 }
-
-
-
-
-

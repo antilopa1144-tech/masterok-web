@@ -8,7 +8,7 @@ import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
 import CategoryFaqAccordion from "./CategoryFaqAccordion";
-import { ALL_POSTS } from "@/lib/blog";
+import { getAllPosts } from "@/lib/blog";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -52,6 +52,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const calculators = getCalculatorsByCategory(cat.id);
   const faqItems = CATEGORY_FAQ[cat.id] ?? [];
+  const allBlogPosts = await getAllPosts();
   const baseUrl = SITE_URL;
 
   const breadcrumbLd = {
@@ -172,7 +173,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
       {/* Связанные статьи */}
       {(() => {
-        const relatedPosts = ALL_POSTS.filter((p) => p.relatedCalculator?.categorySlug === cat.slug).slice(0, 3);
+        const relatedPosts = allBlogPosts.filter((p) => p.relatedCalculator?.categorySlug === cat.slug).slice(0, 3);
         if (relatedPosts.length === 0) return null;
         return (
           <div className="border-t border-slate-200 dark:border-slate-800">

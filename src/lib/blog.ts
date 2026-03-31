@@ -1,6 +1,4 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
+import { fetchAllPosts, fetchPostBySlug, fetchAllTags as strapiFetchAllTags, type StrapiBlock } from "./strapi";
 
 export interface BlogPost {
   slug: string;
@@ -17,64 +15,40 @@ export interface BlogPost {
   heroImage: string;
   /** Alt text for hero image */
   heroImageAlt: string;
-  /** Полный текст статьи в markdown */
-  content: string;
+  /** Контент статьи в формате Strapi Blocks */
+  content: StrapiBlock[];
 }
 
-const CONTENT_DIR = path.join(process.cwd(), "content/blog");
+/** Cache posts in memory during build to avoid duplicate API calls. */
+let _postsCache: BlogPost[] | null = null;
 
-function readPost(filePath: string): BlogPost {
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(raw);
-  return {
-    slug: data.slug,
-    title: data.title,
-    description: data.description,
-    date: data.date,
-    readTime: data.readTime,
-    category: data.category,
-    icon: data.icon,
-    tags: data.tags ?? [],
-    relatedCalculator:
-      data.relatedCalculatorSlug && data.relatedCalculatorCategory
-        ? {
-            slug: data.relatedCalculatorSlug,
-            categorySlug: data.relatedCalculatorCategory,
-          }
-        : undefined,
-    heroImage: data.heroImage,
-    heroImageAlt: data.heroImageAlt,
-    content: content.trim(),
-  };
+export async function getAllPosts(): Promise<BlogPost[]> {
+  if (_postsCache) return _postsCache;
+  _postsCache = await fetchAllPosts();
+  return _postsCache;
 }
 
-function loadAllPosts(): BlogPost[] {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-  const files = fs
-    .readdirSync(CONTENT_DIR)
-    .filter((f) => f.endsWith(".md"))
-    .sort();
-  return files
-    .map((f) => readPost(path.join(CONTENT_DIR, f)))
-    .sort((a, b) => (a.date > b.date ? -1 : 1));
+export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
+  // Try cache first
+  if (_postsCache) {
+    return _postsCache.find((p) => p.slug === slug);
+  }
+  return fetchPostBySlug(slug);
 }
 
-export const ALL_POSTS: BlogPost[] = loadAllPosts();
-
-export function getPostBySlug(slug: string): BlogPost | undefined {
-  return ALL_POSTS.find((p) => p.slug === slug);
-}
-
-export function getAllTags(): string[] {
+export async function getAllTags(): Promise<string[]> {
+  // Derive from posts to stay consistent with the tag pages
+  const posts = await getAllPosts();
   const set = new Set<string>();
-  for (const post of ALL_POSTS) {
+  for (const post of posts) {
     for (const tag of post.tags) set.add(tag);
   }
   return Array.from(set).sort();
 }
 
-export function getPostsByTag(tag: string): BlogPost[] {
-  return ALL_POSTS.filter((p) => p.tags.includes(tag));
+export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
+  const posts = await getAllPosts();
+  return posts.filter((p) => p.tags.includes(tag));
 }
 
 export function tagToSlug(tag: string): string {

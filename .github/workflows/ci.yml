@@ -63,5 +63,7 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: https://getmasterok.ru
+          STRAPI_API_URL: ${{ secrets.STRAPI_API_URL }}
+          STRAPI_API_TOKEN: ${{ secrets.STRAPI_API_TOKEN }}
 
   # Deploy: Timeweb Cloud auto-deploys from main branch

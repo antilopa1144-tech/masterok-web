@@ -1,0 +1,36 @@
+name: Rebuild on Strapi Update
+
+on:
+  repository_dispatch:
+    types: [strapi_content_update]
+
+concurrency:
+  group: strapi-rebuild
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://getmasterok.ru
+          STRAPI_API_URL: ${{ secrets.STRAPI_API_URL }}
+          STRAPI_API_TOKEN: ${{ secrets.STRAPI_API_TOKEN }}
+
+  # Timeweb Cloud auto-deploys from main branch.
+  # This workflow rebuilds the site when content changes in Strapi.
+  # If Timeweb watches build artifacts, add a deploy step here.

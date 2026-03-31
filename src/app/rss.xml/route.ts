@@ -1,10 +1,11 @@
-import { ALL_POSTS } from "@/lib/blog";
+import { getAllPosts } from "@/lib/blog";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 export const dynamic = "force-static";
 
 export async function GET() {
-  const sortedPosts = [...ALL_POSTS].sort(
+  const allPosts = await getAllPosts();
+  const sortedPosts = [...allPosts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 

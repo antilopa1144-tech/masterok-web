@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import { SITE_EXPERT, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
-import { ALL_POSTS, getPostBySlug } from "@/lib/blog";
+import { getAllPosts, getPostBySlug } from "@/lib/blog";
+import { blocksToPlainText, type StrapiBlock, type StrapiInlineNode } from "@/lib/strapi";
 
 const UI_TEXT = {
   notFoundTitle: "Статья не найдена",
@@ -25,12 +26,13 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  return ALL_POSTS.map((post) => ({ slug: post.slug }));
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) return { title: UI_TEXT.notFoundTitle };
 
   const baseUrl = SITE_URL;
@@ -52,128 +54,138 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-function renderContent(content: string) {
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
-  let currentParagraph: string[] = [];
-  let currentList: string[] = [];
-  let key = 0;
+// ── Strapi Blocks renderer ──────────────────────────────────────────────────
 
-  const flushParagraph = () => {
-    if (currentParagraph.length > 0) {
-      const text = currentParagraph.join(" ").trim();
-      if (text) {
-        elements.push(
-          <p key={key++} className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-            {text}
+function renderInlineNodes(nodes: StrapiInlineNode[], keyPrefix: string): React.ReactNode[] {
+  return nodes.map((node, i) => {
+    if (node.type === "link") {
+      return (
+        <a
+          key={`${keyPrefix}-${i}`}
+          href={node.url}
+          className="text-accent-600 hover:underline"
+          target={node.url.startsWith("http") ? "_blank" : undefined}
+          rel={node.url.startsWith("http") ? "noopener noreferrer" : undefined}
+        >
+          {renderInlineNodes(node.children, `${keyPrefix}-${i}`)}
+        </a>
+      );
+    }
+
+    // Text node with optional formatting
+    let content: React.ReactNode = node.text;
+    if (node.bold) content = <strong key={`${keyPrefix}-${i}-b`}>{content}</strong>;
+    if (node.italic) content = <em key={`${keyPrefix}-${i}-i`}>{content}</em>;
+    if (node.code) content = <code key={`${keyPrefix}-${i}-c`} className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">{content}</code>;
+    if (node.strikethrough) content = <s key={`${keyPrefix}-${i}-s`}>{content}</s>;
+
+    return <span key={`${keyPrefix}-${i}`}>{content}</span>;
+  });
+}
+
+function renderBlocks(blocks: StrapiBlock[]): React.ReactNode[] {
+  return blocks.map((block, i) => {
+    switch (block.type) {
+      case "heading": {
+        const children = renderInlineNodes(block.children, `h-${i}`);
+        if (block.level === 2) {
+          return (
+            <h2 key={i} className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3">
+              {children}
+            </h2>
+          );
+        }
+        if (block.level === 3) {
+          return (
+            <h3 key={i} className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2">
+              {children}
+            </h3>
+          );
+        }
+        // h4-h6 fallback
+        const Tag = `h${block.level}` as "h4" | "h5" | "h6";
+        return (
+          <Tag key={i} className="font-semibold text-slate-800 dark:text-slate-200 mt-4 mb-2">
+            {children}
+          </Tag>
+        );
+      }
+
+      case "paragraph": {
+        // Skip empty paragraphs
+        const text = block.children.map((c) => (c.type === "text" ? c.text : "")).join("").trim();
+        if (!text && block.children.every((c) => c.type === "text")) return null;
+
+        return (
+          <p key={i} className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+            {renderInlineNodes(block.children, `p-${i}`)}
           </p>
         );
       }
-      currentParagraph = [];
-    }
-  };
 
-  const flushList = () => {
-    if (currentList.length > 0) {
-      elements.push(
-        <ul key={key++} className="list-disc list-outside pl-5 mb-5 space-y-1.5">
-          {currentList.map((item, i) => (
-            <li key={i} className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              {item}
-            </li>
-          ))}
-        </ul>
-      );
-      currentList = [];
-    }
-  };
+      case "list": {
+        const Tag = block.format === "ordered" ? "ol" : "ul";
+        const listClass = block.format === "ordered"
+          ? "list-decimal list-outside pl-5 mb-5 space-y-1.5"
+          : "list-disc list-outside pl-5 mb-5 space-y-1.5";
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+        return (
+          <Tag key={i} className={listClass}>
+            {block.children.map((item, j) => (
+              <li key={j} className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                {renderInlineNodes(item.children, `li-${i}-${j}`)}
+              </li>
+            ))}
+          </Tag>
+        );
+      }
 
-    if (trimmed.startsWith("![")) {
-      flushParagraph();
-      flushList();
-      const match = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-      if (match) {
-        elements.push(
-          <figure key={key++} className="my-6">
+      case "image": {
+        return (
+          <figure key={i} className="my-6">
             <img
-              src={match[2]}
-              alt={match[1]}
+              src={block.image.url}
+              alt={block.image.alternativeText ?? ""}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700"
               loading="lazy"
             />
-            {match[1] && (
+            {block.image.alternativeText && (
               <figcaption className="text-center text-sm text-slate-400 dark:text-slate-500 mt-2">
-                {match[1]}
+                {block.image.alternativeText}
               </figcaption>
             )}
           </figure>
         );
       }
-      continue;
+
+      case "quote": {
+        return (
+          <blockquote key={i} className="border-l-4 border-accent-300 dark:border-accent-700 pl-4 my-4 italic text-slate-600 dark:text-slate-400">
+            {renderInlineNodes(block.children, `q-${i}`)}
+          </blockquote>
+        );
+      }
+
+      case "code": {
+        const code = block.children.map((c) => c.text).join("\n");
+        return (
+          <pre key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 my-4 overflow-x-auto">
+            <code className="text-sm text-slate-800 dark:text-slate-200">{code}</code>
+          </pre>
+        );
+      }
+
+      default:
+        return null;
     }
-
-    if (trimmed.startsWith("## ")) {
-      flushParagraph();
-      flushList();
-      elements.push(
-        <h2
-          key={key++}
-          className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3"
-        >
-          {trimmed.slice(3)}
-        </h2>
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith("### ")) {
-      flushParagraph();
-      flushList();
-      elements.push(
-        <h3
-          key={key++}
-          className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2"
-        >
-          {trimmed.slice(4)}
-        </h3>
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith("- ")) {
-      flushParagraph();
-      currentList.push(trimmed.slice(2));
-      continue;
-    }
-
-    if (/^\d+\.\s/.test(trimmed)) {
-      flushParagraph();
-      currentList.push(trimmed);
-      continue;
-    }
-
-    if (trimmed === "") {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-
-    flushList();
-    currentParagraph.push(trimmed);
-  }
-
-  flushParagraph();
-  flushList();
-
-  return elements;
+  });
 }
 
-function getRelatedPosts(post: { slug: string; category: string; tags: string[] }) {
-  // Prefer posts from the same category or with overlapping tags
-  const candidates = ALL_POSTS
+// ── Related posts ───────────────────────────────────────────────────────────
+
+async function getRelatedPosts(post: { slug: string; category: string; tags: string[] }) {
+  const allPosts = await getAllPosts();
+  const candidates = allPosts
     .filter((p) => p.slug !== post.slug)
     .map((p) => {
       const categoryMatch = p.category === post.category ? 2 : 0;
@@ -184,9 +196,8 @@ function getRelatedPosts(post: { slug: string; category: string; tags: string[] 
 
   const related = candidates.slice(0, 3).map((c) => c.post);
 
-  // If not enough, fill with recent posts
   if (related.length < 3) {
-    const remaining = ALL_POSTS
+    const remaining = allPosts
       .filter((p) => p.slug !== post.slug && !related.some((r) => r.slug === p.slug))
       .slice(0, 3 - related.length);
     related.push(...remaining);
@@ -195,9 +206,11 @@ function getRelatedPosts(post: { slug: string; category: string; tags: string[] 
   return related;
 }
 
+// ── Page component ──────────────────────────────────────────────────────────
+
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
   const baseUrl = SITE_URL;
@@ -205,7 +218,9 @@ export default async function BlogPostPage({ params }: Props) {
     ? getCalculatorBySlug(post.relatedCalculator.slug)
     : undefined;
 
-  const relatedPosts = getRelatedPosts(post);
+  const relatedPosts = await getRelatedPosts(post);
+
+  const wordCount = blocksToPlainText(post.content).split(/\s+/).length;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -214,7 +229,7 @@ export default async function BlogPostPage({ params }: Props) {
     description: post.description,
     datePublished: post.date,
     dateModified: post.date,
-    wordCount: post.content.split(/\s+/).length,
+    wordCount,
     articleSection: post.category,
     author: {
       "@type": "Person",
@@ -322,7 +337,7 @@ export default async function BlogPostPage({ params }: Props) {
       </div>
 
       <article className="page-container py-8 max-w-3xl">
-        <div className="prose-custom">{renderContent(post.content)}</div>
+        <div className="prose-custom">{renderBlocks(post.content)}</div>
 
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ALL_POSTS, getAllTags, getPostsByTag, slugToTag, tagToSlug } from "@/lib/blog";
+import { getAllTags, getPostsByTag, slugToTag, tagToSlug } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -18,8 +18,8 @@ const UI_TEXT = {
   backToBlog: "← Все статьи",
 } as const;
 
-export function generateStaticParams() {
-  const tags = getAllTags();
+export async function generateStaticParams() {
+  const tags = await getAllTags();
   return tags.map((tag) => ({ tag: tagToSlug(tag) }));
 }
 
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       url: `${SITE_URL}/blog/`,
     });
   }
-  const posts = getPostsByTag(tag);
+  const posts = await getPostsByTag(tag);
   return buildPageMetadata({
     title: `${tag} — статьи о строительстве | ${SITE_NAME}`,
     description: `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`,
@@ -51,8 +51,8 @@ export default async function TagPage({ params }: TagPageProps) {
   const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
   if (!tag) notFound();
 
-  const posts = getPostsByTag(tag);
-  const allTags = getAllTags();
+  const posts = await getPostsByTag(tag);
+  const allTags = await getAllTags();
 
   const jsonLd = {
     "@context": "https://schema.org",
