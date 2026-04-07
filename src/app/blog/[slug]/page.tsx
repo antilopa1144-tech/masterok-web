@@ -5,7 +5,7 @@ import { getCalculatorBySlug } from "@/lib/calculators";
 import { SITE_EXPERT, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
-import { blocksToPlainText, type StrapiBlock, type StrapiInlineNode } from "@/lib/strapi";
+import parse from "html-react-parser";
 
 const UI_TEXT = {
   notFoundTitle: "Статья не найдена",
@@ -36,8 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return { title: UI_TEXT.notFoundTitle };
 
   const baseUrl = SITE_URL;
-
-  const title = `${post.title} | ${SITE_NAME}`;
+  const title = post.title;
   const description = post.description;
   const canonicalUrl = `${baseUrl}/blog/${post.slug}/`;
 
@@ -54,131 +53,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-// ── Strapi Blocks renderer ──────────────────────────────────────────────────
+// ── HTML content renderer ───────────────────────────────────────────────────
 
-function renderInlineNodes(nodes: StrapiInlineNode[], keyPrefix: string): React.ReactNode[] {
-  return nodes.map((node, i) => {
-    if (node.type === "link") {
-      return (
-        <a
-          key={`${keyPrefix}-${i}`}
-          href={node.url}
-          className="text-accent-600 hover:underline"
-          target={node.url.startsWith("http") ? "_blank" : undefined}
-          rel={node.url.startsWith("http") ? "noopener noreferrer" : undefined}
-        >
-          {renderInlineNodes(node.children, `${keyPrefix}-${i}`)}
-        </a>
-      );
-    }
-
-    // Text node with optional formatting
-    let content: React.ReactNode = node.text;
-    if (node.bold) content = <strong key={`${keyPrefix}-${i}-b`}>{content}</strong>;
-    if (node.italic) content = <em key={`${keyPrefix}-${i}-i`}>{content}</em>;
-    if (node.code) content = <code key={`${keyPrefix}-${i}-c`} className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">{content}</code>;
-    if (node.strikethrough) content = <s key={`${keyPrefix}-${i}-s`}>{content}</s>;
-
-    return <span key={`${keyPrefix}-${i}`}>{content}</span>;
-  });
-}
-
-function renderBlocks(blocks: StrapiBlock[]): React.ReactNode[] {
-  return blocks.map((block, i) => {
-    switch (block.type) {
-      case "heading": {
-        const children = renderInlineNodes(block.children, `h-${i}`);
-        if (block.level === 2) {
-          return (
-            <h2 key={i} className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3">
-              {children}
-            </h2>
-          );
-        }
-        if (block.level === 3) {
-          return (
-            <h3 key={i} className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2">
-              {children}
-            </h3>
-          );
-        }
-        // h4-h6 fallback
-        const Tag = `h${block.level}` as "h4" | "h5" | "h6";
-        return (
-          <Tag key={i} className="font-semibold text-slate-800 dark:text-slate-200 mt-4 mb-2">
-            {children}
-          </Tag>
-        );
-      }
-
-      case "paragraph": {
-        // Skip empty paragraphs
-        const text = block.children.map((c) => (c.type === "text" ? c.text : "")).join("").trim();
-        if (!text && block.children.every((c) => c.type === "text")) return null;
-
-        return (
-          <p key={i} className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-            {renderInlineNodes(block.children, `p-${i}`)}
-          </p>
-        );
-      }
-
-      case "list": {
-        const Tag = block.format === "ordered" ? "ol" : "ul";
-        const listClass = block.format === "ordered"
-          ? "list-decimal list-outside pl-5 mb-5 space-y-1.5"
-          : "list-disc list-outside pl-5 mb-5 space-y-1.5";
-
-        return (
-          <Tag key={i} className={listClass}>
-            {block.children.map((item, j) => (
-              <li key={j} className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                {renderInlineNodes(item.children, `li-${i}-${j}`)}
-              </li>
-            ))}
-          </Tag>
-        );
-      }
-
-      case "image": {
-        return (
-          <figure key={i} className="my-6">
-            <img
-              src={block.image.url}
-              alt={block.image.alternativeText ?? ""}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700"
-              loading="lazy"
-            />
-            {block.image.alternativeText && (
-              <figcaption className="text-center text-sm text-slate-400 dark:text-slate-500 mt-2">
-                {block.image.alternativeText}
-              </figcaption>
-            )}
-          </figure>
-        );
-      }
-
-      case "quote": {
-        return (
-          <blockquote key={i} className="border-l-4 border-accent-300 dark:border-accent-700 pl-4 my-4 italic text-slate-600 dark:text-slate-400">
-            {renderInlineNodes(block.children, `q-${i}`)}
-          </blockquote>
-        );
-      }
-
-      case "code": {
-        const code = block.children.map((c) => c.text).join("\n");
-        return (
-          <pre key={i} className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 my-4 overflow-x-auto">
-            <code className="text-sm text-slate-800 dark:text-slate-200">{code}</code>
-          </pre>
-        );
-      }
-
-      default:
-        return null;
-    }
-  });
+function renderContent(content: string) {
+  // Content is HTML from CKEditor — render with Tailwind prose styles
+  return parse(content);
 }
 
 // ── Related posts ───────────────────────────────────────────────────────────
@@ -220,7 +99,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   const relatedPosts = await getRelatedPosts(post);
 
-  const wordCount = blocksToPlainText(post.content).split(/\s+/).length;
+  const wordCount = post.content.split(/\s+/).length;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -337,7 +216,7 @@ export default async function BlogPostPage({ params }: Props) {
       </div>
 
       <article className="page-container py-8 max-w-3xl">
-        <div className="prose-custom">{renderBlocks(post.content)}</div>
+        <div className="prose-custom">{renderContent(post.content)}</div>
 
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">

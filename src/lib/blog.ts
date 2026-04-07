@@ -1,4 +1,4 @@
-import { fetchAllPosts, fetchPostBySlug, fetchAllTags as strapiFetchAllTags, type StrapiBlock } from "./strapi";
+import { fetchAllPosts, fetchPostBySlug } from "./ghost";
 
 export interface BlogPost {
   slug: string;
@@ -15,8 +15,8 @@ export interface BlogPost {
   heroImage: string;
   /** Alt text for hero image */
   heroImageAlt: string;
-  /** Контент статьи в формате Strapi Blocks */
-  content: StrapiBlock[];
+  /** HTML-контент статьи (из Ghost) */
+  content: string;
 }
 
 /** Cache posts in memory during build to avoid duplicate API calls. */
@@ -29,7 +29,6 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
-  // Try cache first
   if (_postsCache) {
     return _postsCache.find((p) => p.slug === slug);
   }
@@ -37,7 +36,6 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | undefined>
 }
 
 export async function getAllTags(): Promise<string[]> {
-  // Derive from posts to stay consistent with the tag pages
   const posts = await getAllPosts();
   const set = new Set<string>();
   for (const post of posts) {
