@@ -154,8 +154,8 @@ async function main() {
         ghostTags.push({ name: `#calc:${post.relatedCalculatorSlug}:${post.relatedCalculatorCategory}` });
       }
 
-      // Create post
-      await ghostAdminRequest("POST", "/posts/", {
+      // Create post — source:"html" is required for Ghost v5+ to accept html field
+      await ghostAdminRequest("POST", "/posts/?source=html", {
         posts: [{
           title: post.title,
           slug: post.slug,
