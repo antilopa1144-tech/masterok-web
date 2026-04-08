@@ -9,17 +9,24 @@ import type {
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
-/* ─── constants ─── */
+/* ─── fallback constants (used if spec.material_rules is missing a field) ─── */
 
-const CONSUMPTION_PER_LAYER: Record<number, number> = { 0: 1.0, 1: 1.2, 2: 0.8 };
-const BUCKET_KG: Record<number, number> = { 0: 15, 1: 20, 2: 15 };
-const TAPE_RESERVE = 1.10;
-const SILICONE_M_PER_TUBE = 6;
-const PRIMER_KG_PER_M2 = 0.15;
-const PRIMER_CAN_KG = 2;
-const BITUMEN_L_PER_M2 = 0.3;
-const BITUMEN_CAN_L = 20;
-const JOINT_SEALANT_M_PER_TUBE = 10;
+const DEFAULTS = {
+  consumption_per_layer: { 0: 1.0, 1: 1.2, 2: 0.8 } as Record<number, number>,
+  bucket_kg: { 0: 15, 1: 20, 2: 15 } as Record<number, number>,
+  tape_reserve: 1.10,
+  silicone_m_per_tube: 6,
+  primer_kg_per_m2: 0.15,
+  primer_can_kg: 2,
+  bitumen_l_per_m2: 0.3,
+  bitumen_can_l: 20,
+  joint_sealant_m_per_tube: 10,
+};
+
+function getMaterialRule<T>(spec: WaterproofingCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
+  return (rules?.[key] as T) ?? fallback;
+}
 
 /* ─── labels ─── */
 
@@ -54,6 +61,17 @@ export function computeCanonicalWaterproofing(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+  // Read material rules from spec, fallback to defaults
+  const CONSUMPTION_PER_LAYER = getMaterialRule(spec, "consumption_per_layer", DEFAULTS.consumption_per_layer);
+  const BUCKET_KG = getMaterialRule(spec, "bucket_kg", DEFAULTS.bucket_kg);
+  const TAPE_RESERVE = getMaterialRule(spec, "tape_reserve", DEFAULTS.tape_reserve);
+  const SILICONE_M_PER_TUBE = getMaterialRule(spec, "silicone_m_per_tube", DEFAULTS.silicone_m_per_tube);
+  const PRIMER_KG_PER_M2 = getMaterialRule(spec, "primer_kg_per_m2", DEFAULTS.primer_kg_per_m2);
+  const PRIMER_CAN_KG = getMaterialRule(spec, "primer_can_kg", DEFAULTS.primer_can_kg);
+  const BITUMEN_L_PER_M2 = getMaterialRule(spec, "bitumen_l_per_m2", DEFAULTS.bitumen_l_per_m2);
+  const BITUMEN_CAN_L = getMaterialRule(spec, "bitumen_can_l", DEFAULTS.bitumen_can_l);
+  const JOINT_SEALANT_M_PER_TUBE = getMaterialRule(spec, "joint_sealant_m_per_tube", DEFAULTS.joint_sealant_m_per_tube);
 
   const floorArea = Math.max(1, Math.min(50, inputs.floorArea ?? getInputDefault(spec, "floorArea", 6)));
   const wallHeightMm = Math.max(0, Math.min(2000, inputs.wallHeight ?? getInputDefault(spec, "wallHeight", 200)));

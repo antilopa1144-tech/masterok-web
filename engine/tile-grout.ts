@@ -9,15 +9,15 @@ import type {
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
-/* ─── constants ─── */
+/* ─── fallback constants (used only if spec doesn't provide values) ─── */
 
-const GROUT_DENSITY: Record<number, number> = {
+const DEFAULT_GROUT_DENSITY: Record<number, number> = {
   0: 1600, // cement, kg/m³
   1: 1400, // epoxy
   2: 1200, // polyurethane
 };
 
-const GROUT_RESERVE = 1.1;
+const DEFAULT_GROUT_RESERVE = 1.1;
 
 /* ─── inputs ─── */
 
@@ -26,6 +26,7 @@ interface TileGroutInputs {
   tileWidth?: number;
   tileHeight?: number;
   tileThickness?: number;
+  groutDepth?: number;
   jointWidth?: number;
   groutType?: number;
   bagSize?: number;
@@ -36,6 +37,20 @@ interface TileGroutInputs {
 
 function getInputDefault(spec: TileGroutCanonicalSpec, key: string, fallback: number): number {
   return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
+}
+
+/**
+ * Resolve grout depth (how deep the joint is filled).
+ * This is NOT the same as tile thickness — joints are typically filled
+ * to 2/3 of tile thickness. Auto-resolve matches tile.ts logic.
+ */
+function resolveGroutDepth(tileWidthMm: number, tileHeightMm: number, requestedDepth: number | undefined): number {
+  if (requestedDepth && requestedDepth > 0) return requestedDepth;
+  const avgSizeCm = ((tileWidthMm + tileHeightMm) / 2) / 10;
+  if (avgSizeCm < 15) return 4;
+  if (avgSizeCm < 40) return 6;
+  if (avgSizeCm <= 60) return 8;
+  return 10;
 }
 
 /* ─── main ─── */
@@ -51,6 +66,7 @@ export function computeCanonicalTileGrout(
   const tileWidth = Math.max(50, Math.min(1200, Math.round(inputs.tileWidth ?? getInputDefault(spec, "tileWidth", 300))));
   const tileHeight = Math.max(50, Math.min(1200, Math.round(inputs.tileHeight ?? getInputDefault(spec, "tileHeight", 300))));
   const tileThickness = Math.max(6, Math.min(25, Math.round(inputs.tileThickness ?? getInputDefault(spec, "tileThickness", 8))));
+  const groutDepth = resolveGroutDepth(tileWidth, tileHeight, inputs.groutDepth);
   const jointWidth = Math.max(1, Math.min(20, Math.round(inputs.jointWidth ?? getInputDefault(spec, "jointWidth", 3))));
   const groutType = Math.max(0, Math.min(2, Math.round(inputs.groutType ?? getInputDefault(spec, "groutType", 0))));
   const bagSize = [1, 2, 5].includes(inputs.bagSize ?? getInputDefault(spec, "bagSize", 2))
@@ -61,14 +77,17 @@ export function computeCanonicalTileGrout(
   // Joint length per m² (mm -> tiles per 1000mm)
   const jointLenPerM2 = (1000 / tileWidth) + (1000 / tileHeight);
 
-  // Joint volume per m² in liters
-  const jointVolPerM2 = jointLenPerM2 * (jointWidth / 1000) * (tileThickness / 1000) * 1000;
+  // Joint volume per m² in liters (use groutDepth, not tileThickness — joints are not filled to full tile depth)
+  const jointVolPerM2 = jointLenPerM2 * (jointWidth / 1000) * (groutDepth / 1000) * 1000;
 
-  // Density in kg/L
-  const density = (GROUT_DENSITY[groutType] ?? GROUT_DENSITY[0]) / 1000;
+  // Density in kg/L — prefer spec values, fallback to hardcoded
+  const specDensity = spec.material_rules?.grout_density;
+  const densityKgM3 = specDensity ? (specDensity[String(groutType)] ?? specDensity["0"] ?? DEFAULT_GROUT_DENSITY[0]) : (DEFAULT_GROUT_DENSITY[groutType] ?? DEFAULT_GROUT_DENSITY[0]);
+  const density = densityKgM3 / 1000;
+  const groutReserve = spec.material_rules?.grout_reserve ?? DEFAULT_GROUT_RESERVE;
 
   const kgPerM2 = jointVolPerM2 * density;
-  const totalKgRaw = area * kgPerM2 * GROUT_RESERVE;
+  const totalKgRaw = area * kgPerM2 * groutReserve;
   const accuracyMult = getPrimaryMultiplier("grout", accuracyMode);
   const totalKg = totalKgRaw * accuracyMult;
   const bags = Math.ceil(totalKg / bagSize);
@@ -158,6 +177,7 @@ export function computeCanonicalTileGrout(
       tileWidth,
       tileHeight,
       tileThickness,
+      groutDepth,
       jointWidth,
       groutType,
       bagSize,
