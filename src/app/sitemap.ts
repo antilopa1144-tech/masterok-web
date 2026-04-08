@@ -86,6 +86,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/instrumenty/`,
+      lastModified: buildDate,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${BASE_URL}/blog/`,
       lastModified: latestPostDate,
       changeFrequency: "weekly",
@@ -114,12 +120,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── 4. Tools pages (dynamic from registry) ──────────────────────────────────
 
-  const toolPages: MetadataRoute.Sitemap = ALL_TOOLS.map((tool) => ({
-    url: tool.slug ? `${BASE_URL}/instrumenty/${tool.slug}/` : `${BASE_URL}/instrumenty/`,
-    lastModified: buildDate,
-    changeFrequency: "monthly" as const,
-    priority: tool.priority,
-  }));
+  const toolPages: MetadataRoute.Sitemap = ALL_TOOLS
+    .filter((tool) => tool.slug)
+    .map((tool) => ({
+      url: `${BASE_URL}/instrumenty/${tool.slug}/`,
+      lastModified: buildDate,
+      changeFrequency: "monthly" as const,
+      priority: tool.priority,
+    }));
 
   // ── 5. Individual checklist pages ──────────────────────────────────────────
 

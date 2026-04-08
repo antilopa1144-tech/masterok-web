@@ -56,5 +56,18 @@ export function optimizePackaging(exactNeed: number, options: PackageOption[]): 
     }
   }
 
+  // Fallback: if all options were filtered out, use first option with ceil
+  if (!best && options.length > 0) {
+    const fallback = options[0];
+    const size = fallback.size || 1;
+    const packageCount = Math.ceil(safeNeed / size);
+    best = {
+      purchaseQuantity: packageCount * size,
+      leftover: packageCount * size - safeNeed,
+      package: fallback,
+      packageCount,
+    };
+  }
+
   return best as PackagingResult;
 }

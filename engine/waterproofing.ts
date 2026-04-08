@@ -68,10 +68,11 @@ export function computeCanonicalWaterproofing(
   /* ─── mastic ─── */
   const consumption = CONSUMPTION_PER_LAYER[masticType] ?? 1.0;
   const bucketKg = BUCKET_KG[masticType] ?? 15;
-  const masticKg = roundDisplay(totalArea * consumption * layers, 3);
-  const masticBucketsRaw = Math.ceil(masticKg / bucketKg);
   const accuracyMult = getPrimaryMultiplier("waterproofing", accuracyMode);
-  const masticBuckets = masticBucketsRaw * accuracyMult;
+  const masticKgRaw = roundDisplay(totalArea * consumption * layers, 3);
+  const masticKg = roundDisplay(masticKgRaw * accuracyMult, 3);
+  const masticBucketsRaw = Math.ceil(masticKgRaw / bucketKg);
+  const masticBuckets = Math.ceil(masticKg / bucketKg);
 
   /* ─── tape ─── */
   const tapeM = roundDisplay((roomPerimeter + (wallHeightMm > 0 ? roomPerimeter * 1.2 : 0)) * TAPE_RESERVE, 3);

@@ -134,13 +134,17 @@ function transformPost(post: GhostPost): BlogPost {
 }
 
 export async function fetchAllPosts(): Promise<BlogPost[]> {
-  const res = await ghostFetch<GhostResponse<GhostPost>>("/posts/", {
-    include: "tags",
-    limit: "all",
-    order: "published_at desc",
-  });
-
-  return (res.posts ?? []).map(transformPost);
+  try {
+    const res = await ghostFetch<GhostResponse<GhostPost>>("/posts/", {
+      include: "tags",
+      limit: "all",
+      order: "published_at desc",
+    });
+    return (res.posts ?? []).map(transformPost);
+  } catch (err) {
+    console.error("[Ghost] Failed to fetch posts:", err);
+    return [];
+  }
 }
 
 export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefined> {
@@ -157,10 +161,14 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
 }
 
 export async function fetchAllTags(): Promise<{ name: string; slug: string }[]> {
-  const res = await ghostFetch<GhostResponse<GhostTag>>("/tags/", {
-    limit: "all",
-    filter: "visibility:public",
-  });
-
-  return (res.tags ?? []).map((t) => ({ name: t.name, slug: t.slug }));
+  try {
+    const res = await ghostFetch<GhostResponse<GhostTag>>("/tags/", {
+      limit: "all",
+      filter: "visibility:public",
+    });
+    return (res.tags ?? []).map((t) => ({ name: t.name, slug: t.slug }));
+  } catch (err) {
+    console.error("[Ghost] Failed to fetch tags:", err);
+    return [];
+  }
 }

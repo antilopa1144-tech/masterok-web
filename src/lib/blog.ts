@@ -55,7 +55,7 @@ export function tagToSlug(tag: string): string {
 
 export function slugToTag(slug: string): string {
   try {
-    return decodeURIComponent(decodeURIComponent(slug)).replace(/-/g, " ");
+    return decodeURIComponent(slug).replace(/-/g, " ");
   } catch {
     return slug.replace(/-/g, " ");
   }

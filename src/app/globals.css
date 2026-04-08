@@ -257,6 +257,60 @@
   @apply text-slate-500 dark:text-slate-400;
 }
 
+/* Типографика для контента блога (Ghost HTML) */
+@utility prose-custom {
+  @apply text-slate-700 dark:text-slate-300 leading-relaxed;
+
+  & h2 {
+    @apply text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3;
+  }
+  & h3 {
+    @apply text-lg font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2;
+  }
+  & h4 {
+    @apply font-semibold text-slate-800 dark:text-slate-200 mt-4 mb-2;
+  }
+  & p {
+    @apply mb-4 leading-relaxed;
+  }
+  & ul {
+    @apply list-disc list-outside pl-5 mb-5 space-y-1.5;
+  }
+  & ol {
+    @apply list-decimal list-outside pl-5 mb-5 space-y-1.5;
+  }
+  & li {
+    @apply leading-relaxed;
+  }
+  & a {
+    @apply text-accent-600 hover:underline;
+  }
+  & img {
+    @apply w-full rounded-xl border border-slate-200 dark:border-slate-700 my-6;
+  }
+  & figure {
+    @apply my-6;
+  }
+  & figcaption {
+    @apply text-center text-sm text-slate-400 dark:text-slate-500 mt-2;
+  }
+  & blockquote {
+    @apply border-l-4 border-accent-300 dark:border-accent-700 pl-4 my-4 italic text-slate-600 dark:text-slate-400;
+  }
+  & pre {
+    @apply bg-slate-100 dark:bg-slate-800 rounded-xl p-4 my-4 overflow-x-auto;
+  }
+  & code {
+    @apply text-sm text-slate-800 dark:text-slate-200;
+  }
+  & strong {
+    @apply font-bold text-slate-900 dark:text-slate-100;
+  }
+  & hr {
+    @apply border-slate-200 dark:border-slate-700 my-6;
+  }
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

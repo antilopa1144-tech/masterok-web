@@ -18,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "Yandex",
         allow: "/",
         disallow: ["/api/", "/_next/"],
-        crawlDelay: 1,
+        crawlDelay: 0.5,
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

@@ -6,6 +6,7 @@ import { SITE_EXPERT, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import parse from "html-react-parser";
+import DOMPurify from "isomorphic-dompurify";
 
 const UI_TEXT = {
   notFoundTitle: "Статья не найдена",
@@ -56,8 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // ── HTML content renderer ───────────────────────────────────────────────────
 
 function renderContent(content: string) {
-  // Content is HTML from CKEditor — render with Tailwind prose styles
-  return parse(content);
+  // Sanitize HTML from Ghost to prevent XSS, then render
+  const clean = DOMPurify.sanitize(content, {
+    ADD_TAGS: ["figure", "figcaption", "iframe"],
+    ADD_ATTR: ["loading", "fetchpriority", "target", "rel"],
+  });
+  return parse(clean);
 }
 
 // ── Related posts ───────────────────────────────────────────────────────────
@@ -106,6 +111,7 @@ export default async function BlogPostPage({ params }: Props) {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.description,
+    url: `${baseUrl}/blog/${post.slug}/`,
     datePublished: post.date,
     dateModified: post.date,
     wordCount,
@@ -203,7 +209,7 @@ export default async function BlogPostPage({ params }: Props) {
             <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
               <img
                 src={post.heroImage}
-                alt={post.heroImageAlt}
+                alt={post.heroImageAlt || post.title}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
                 width={800}
                 height={320}

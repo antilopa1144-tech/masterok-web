@@ -204,9 +204,9 @@ export function computeCanonicalDrywall(
   const totalSheetArea = area * sides * layers;
 
   const gklArea = SHEET_SIZES[sheetSize]?.area ?? SHEET_SIZES[0].area;
-  const baseSheetsNeededRaw = Math.ceil(totalSheetArea / gklArea * SHEET_RESERVE);
   const accuracyMult = getPrimaryMultiplier("drywall", accuracyMode);
-  const baseSheetsNeeded = baseSheetsNeededRaw * accuracyMult;
+  const baseSheetsNeededRaw = Math.ceil(totalSheetArea / gklArea * SHEET_RESERVE);
+  const baseSheetsNeeded = Math.ceil(baseSheetsNeededRaw * accuracyMult);
 
   // Profile PN (perimeter)
   const pnPerimeter = 2 * (length + height);
