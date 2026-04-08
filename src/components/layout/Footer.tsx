@@ -159,7 +159,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
-          <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
+          <p className="text-xs text-slate-400 dark:text-slate-400 text-center">
             Москва, ул. Лесная, 42 · Тел.: +7-495-123-45-67
           </p>
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">

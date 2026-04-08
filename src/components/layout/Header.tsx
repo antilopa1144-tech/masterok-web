@@ -141,7 +141,7 @@ export default function Header() {
             })}
 
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-              <p className="px-3 py-1 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="px-3 py-1 text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
                 {UI_TEXT.categories}
               </p>
               {CATEGORIES.map((cat) => (

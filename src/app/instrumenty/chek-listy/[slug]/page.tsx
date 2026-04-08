@@ -104,7 +104,7 @@ export default async function ChecklistPage({ params }: Props) {
         <div className="flex items-center gap-3 mb-3">
           <span className="text-3xl">{cl.categoryIcon}</span>
           <div>
-            <p className="text-sm text-slate-400 dark:text-slate-500">{cl.category}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-400">{cl.category}</p>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
               {cl.title}
             </h1>

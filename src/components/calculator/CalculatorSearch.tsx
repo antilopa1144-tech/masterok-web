@@ -161,7 +161,7 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
         {query && (
           <button
             onClick={close}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
           >
             <CategoryIcon icon="close" size={16} />
           </button>
@@ -198,16 +198,16 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                           {item.title}
                         </p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.categoryLabel} · {item.description}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-400 truncate">{item.categoryLabel} · {item.description}</p>
                       </div>
-                      <span className="ml-auto text-slate-300 dark:text-slate-500 text-sm shrink-0">→</span>
+                      <span className="ml-auto text-slate-300 dark:text-slate-400 text-sm shrink-0">→</span>
                     </Link>
                   </li>
               ))}
             </ul>
           ) : (
             <div className="px-4 py-6 text-center">
-              <p className="text-slate-400 dark:text-slate-500 text-sm">{CALCULATOR_UI_TEXT.searchEmpty(query)}</p>
+              <p className="text-slate-400 dark:text-slate-400 text-sm">{CALCULATOR_UI_TEXT.searchEmpty(query)}</p>
               <Link
                 href="/mikhalych/"
                 className="text-sm text-accent-600 hover:text-accent-700 mt-2 inline-block no-underline"

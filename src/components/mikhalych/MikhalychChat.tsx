@@ -177,7 +177,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
       {messages.length === 1 && starterQuestions.length > 0 && (
         <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
-          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Попробуйте спросить:</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Попробуйте спросить:</p>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.slice(0, 3).map((q, i) => (
               <button
@@ -226,7 +226,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             </svg>
           </button>
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 text-center">
+        <p className="text-xs text-slate-400 dark:text-slate-400 mt-2 text-center">
           Ответы Михалыча носят справочный характер. Для точных расчётов используйте{" "}
           <Link href="/" className="text-accent-500 hover:underline">
             калькуляторы

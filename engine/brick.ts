@@ -36,8 +36,9 @@ function resolveArea(
     return { inputMode: 0, area: roundDisplay(wallWidth * wallHeight, 3), wallWidth, wallHeight };
   }
   const area = Math.max(1, inputs.area ?? getInputDefault(spec, "area", 15));
-  const wallWidth = inputs.wallWidth ?? getInputDefault(spec, "wallWidth", 5);
   const wallHeight = inputs.wallHeight ?? getInputDefault(spec, "wallHeight", 3);
+  // Estimate wallWidth from area/height when not explicitly provided
+  const wallWidth = inputs.wallWidth ?? (wallHeight > 0 ? area / wallHeight : getInputDefault(spec, "wallWidth", 5));
   return { inputMode: 1, area: roundDisplay(area, 3), wallWidth, wallHeight };
 }
 

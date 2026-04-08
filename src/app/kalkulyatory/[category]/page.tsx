@@ -136,7 +136,7 @@ export default async function CategoryPage({ params }: PageProps) {
       {/* Список калькуляторов */}
       <div className="page-container-wide py-8">
         {calculators.length === 0 ? (
-          <div className="text-center py-16 text-slate-400 dark:text-slate-500">
+          <div className="text-center py-16 text-slate-400 dark:text-slate-400">
             <p className="text-lg">{UI_TEXT.emptyState}</p>
             <Link href="/" className="btn-secondary mt-4 inline-flex">
               {UI_TEXT.allCalculators}
@@ -161,7 +161,7 @@ export default async function CategoryPage({ params }: PageProps) {
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{calc.description}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                  <span className="text-xs text-slate-400 dark:text-slate-400">
                     {"★".repeat(calc.complexity)}{"☆".repeat(3 - calc.complexity)} {UI_TEXT.complexitySuffix}
                   </span>
                 </div>

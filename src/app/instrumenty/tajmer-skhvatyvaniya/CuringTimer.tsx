@@ -164,7 +164,7 @@ export default function CuringTimer() {
 
           {categories.map((cat) => (
             <div key={cat}>
-              <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-2">{cat}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400 font-medium uppercase tracking-wider mb-2">{cat}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {PRESETS.filter((p) => p.category === cat).map((p) => (
                   <button

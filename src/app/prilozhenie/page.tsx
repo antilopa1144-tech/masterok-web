@@ -139,7 +139,7 @@ export default function PrilozheniePage() {
                 </Link>
               </div>
 
-              <p className="text-sm text-slate-400 dark:text-slate-500 mt-3">
+              <p className="text-sm text-slate-400 dark:text-slate-400 mt-3">
                 {UI_TEXT.heroMeta}
               </p>
             </div>

@@ -195,7 +195,7 @@ export default function ReverseCalculator() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+      <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
         * Расход по средним нормам. Фактический расход зависит от основания, способа нанесения и толщины слоя.
       </p>
     </div>

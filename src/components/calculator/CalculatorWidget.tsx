@@ -91,7 +91,7 @@ export default function CalculatorWidget({ calculator }: Props) {
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{CALCULATOR_UI_TEXT.examples}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">{CALCULATOR_UI_TEXT.examples}</span>
           {presets.map((p) => (
             <button
               key={p.label}
@@ -121,7 +121,7 @@ export default function CalculatorWidget({ calculator }: Props) {
             )}
               <button
                 onClick={handleReset}
-                className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="text-sm text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 {CALCULATOR_UI_TEXT.reset}
               </button>

@@ -45,7 +45,7 @@ export default function NotFound() {
       </div>
 
       <div className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
+        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
           {UI_TEXT.popularTitle}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
@@ -77,7 +77,7 @@ export default function NotFound() {
       </div>
 
       <div className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 text-center">
+        <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">
           {UI_TEXT.categoriesTitle}
         </h2>
         <div className="flex flex-wrap justify-center gap-2">

@@ -179,7 +179,7 @@ export default function KalkulyatorPage() {
   return (
     <div className="page-container py-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-6">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
         <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
@@ -247,7 +247,7 @@ export default function KalkulyatorPage() {
               <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{UI_TEXT.historyTitle}</p>
               <button
                 onClick={() => setHistory([])}
-                className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                className="text-xs text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >{UI_TEXT.clearHistory}</button>
             </div>
             <div className="space-y-2">
@@ -261,7 +261,7 @@ export default function KalkulyatorPage() {
                   }}
                   className="card-hover w-full text-right px-4 py-3 block"
                 >
-                  <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.expr}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-400 truncate">{item.expr}</div>
                 </button>
               ))}
             </div>

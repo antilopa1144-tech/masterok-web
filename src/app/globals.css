@@ -292,7 +292,7 @@
     @apply my-6;
   }
   & figcaption {
-    @apply text-center text-sm text-slate-400 dark:text-slate-500 mt-2;
+    @apply text-center text-sm text-slate-400 dark:text-slate-400 mt-2;
   }
   & blockquote {
     @apply border-l-4 border-accent-300 dark:border-accent-700 pl-4 my-4 italic text-slate-600 dark:text-slate-400;

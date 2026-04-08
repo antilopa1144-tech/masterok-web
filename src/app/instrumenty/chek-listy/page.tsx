@@ -74,7 +74,7 @@ export default function ChekListyPage() {
       {/* Hero */}
       <section className="border-b border-slate-200 dark:border-slate-800 bg-linear-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900">
         <div className="page-container-wide py-10 md:py-14">
-          <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-5">
+          <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-5">
             <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
             <span>/</span>
             <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
@@ -111,7 +111,7 @@ export default function ChekListyPage() {
                 {/* Категория */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">{cl.categoryIcon}</span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{cl.category}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">{cl.category}</span>
                 </div>
 
                 {/* Заголовок */}
@@ -137,7 +137,7 @@ export default function ChekListyPage() {
 
                 {/* Этапы */}
                 <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                  <p className="text-xs text-slate-400 dark:text-slate-500">{cl.steps.length} {UI_TEXT.checklistStepsSuffix}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-400">{cl.steps.length} {UI_TEXT.checklistStepsSuffix}</p>
                 </div>
               </Link>
             );

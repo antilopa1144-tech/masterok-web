@@ -75,7 +75,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
               <CategoryIcon icon="file-text" size={16} color="currentColor" />
               <div>
                 <div className="font-medium">{CALCULATOR_UI_TEXT.exportPdfTitle}</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">{CALCULATOR_UI_TEXT.exportPdfDescription}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-400">{CALCULATOR_UI_TEXT.exportPdfDescription}</div>
               </div>
             </button>
 
@@ -91,7 +91,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
               <CategoryIcon icon="sheet" size={16} color="currentColor" />
               <div>
                 <div className="font-medium">{CALCULATOR_UI_TEXT.exportExcelTitle}</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">{CALCULATOR_UI_TEXT.exportExcelDescription}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-400">{CALCULATOR_UI_TEXT.exportExcelDescription}</div>
               </div>
             </button>
           </div>

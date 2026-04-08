@@ -1,5 +1,13 @@
 export type SupportedUnit = "kg" | "g" | "m2" | "mm" | "m";
 
+const UNIT_DIMENSION: Record<SupportedUnit, string> = {
+  kg: "mass",
+  g: "mass",
+  m2: "area",
+  mm: "length",
+  m: "length",
+};
+
 const UNIT_FACTORS_TO_BASE: Record<SupportedUnit, number> = {
   kg: 1,
   g: 0.001,
@@ -11,11 +19,12 @@ const UNIT_FACTORS_TO_BASE: Record<SupportedUnit, number> = {
 export function convertValue(value: number, from: SupportedUnit, to: SupportedUnit): number {
   if (from === to) return value;
 
+  if (UNIT_DIMENSION[from] !== UNIT_DIMENSION[to]) {
+    throw new Error(`Incompatible units: ${from} (${UNIT_DIMENSION[from]}) -> ${to} (${UNIT_DIMENSION[to]})`);
+  }
+
   const fromFactor = UNIT_FACTORS_TO_BASE[from];
   const toFactor = UNIT_FACTORS_TO_BASE[to];
-  if (fromFactor === undefined || toFactor === undefined) {
-    throw new Error(`Unsupported conversion: ${from} -> ${to}`);
-  }
 
   return (value * fromFactor) / toFactor;
 }

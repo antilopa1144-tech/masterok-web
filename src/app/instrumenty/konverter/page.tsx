@@ -172,7 +172,7 @@ export default function KonverterPage() {
   return (
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-6">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
         <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
@@ -236,6 +236,7 @@ export default function KonverterPage() {
               onClick={swap}
               className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100 transition-colors text-lg"
               title={UI_TEXT.swapTitle}
+              aria-label={UI_TEXT.swapTitle}
             >
               ⇄
             </button>
@@ -261,7 +262,7 @@ export default function KonverterPage() {
 
         {/* Быстрые результаты по всем единицам */}
         <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700">
-          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-3">
+          <p className="text-xs text-slate-400 dark:text-slate-400 font-medium uppercase tracking-wider mb-3">
             {inputValue || UI_TEXT.defaultInputValue} {group.units.find(u => u.key === fromUnit)?.label} {UI_TEXT.quickResultsSuffix}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -290,7 +291,7 @@ export default function KonverterPage() {
                         : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
                     }`}
                   >
-                    <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{u.label}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-400 truncate">{u.label}</div>
                     <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{res}</div>
                   </button>
                 );
@@ -299,7 +300,7 @@ export default function KonverterPage() {
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-400 dark:text-slate-500 text-center">
+      <p className="mt-4 text-xs text-slate-400 dark:text-slate-400 text-center">
         {UI_TEXT.quickTargetHint}
       </p>
 

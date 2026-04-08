@@ -33,7 +33,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
         {items.map((item, index) => (
           <React.Fragment key={item.href || item.label}>
-            <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+            <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-400" aria-hidden="true" />
             <li>
               {item.href ? (
                 <Link

@@ -188,8 +188,8 @@ export default async function BlogPostPage({ params }: Props) {
             <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
               {post.category}
             </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{post.readTime}</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">
+            <span className="text-xs text-slate-400 dark:text-slate-400">{post.readTime}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-400">
               {new Date(post.date).toLocaleDateString("ru-RU", {
                 day: "numeric",
                 month: "long",
@@ -228,7 +228,7 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-slate-400 dark:text-slate-500">{UI_TEXT.tagsLabel}</span>
+                <span className="text-sm text-slate-400 dark:text-slate-400">{UI_TEXT.tagsLabel}</span>
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
@@ -288,7 +288,7 @@ export default async function BlogPostPage({ params }: Props) {
                       <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
                         {rp.category}
                       </span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
+                      <span className="text-xs text-slate-400 dark:text-slate-400 ml-auto">
                         {rp.readTime}
                       </span>
                     </div>
@@ -341,7 +341,7 @@ function ShareLinks({ url, title }: { url: string; title: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-400 dark:text-slate-500">Поделиться:</span>
+      <span className="text-xs text-slate-400 dark:text-slate-400">Поделиться:</span>
       {links.map((l) => (
         <a
           key={l.label}

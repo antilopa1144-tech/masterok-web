@@ -58,7 +58,12 @@ function estimatePerimeter(area: number): number {
 function resolveWorkArea(spec: PaintCanonicalSpec, rawInputs: PaintInputs): WorkAreaResolution {
   const inputMode = Math.round(rawInputs.inputMode ?? getInputDefault(spec, "inputMode", 1));
   const openingsArea = Math.max(0, rawInputs.openingsArea ?? rawInputs.doorsWindows ?? getInputDefault(spec, "openingsArea", 0));
-  const openingsPerimeter = openingsArea > 0 ? estimatePerimeter(openingsArea) * 2 : 0;
+  // Estimate perimeter of openings for masking tape.
+  // Assume average opening is ~2m² (standard door 0.8×2=1.6m², window 1.2×1.5=1.8m²)
+  // Each opening has perimeter ~6m. Multiply by 2 sides (inside+outside of tape).
+  const avgOpeningArea = 2;
+  const estimatedOpeningsCount = openingsArea > 0 ? Math.max(1, Math.round(openingsArea / avgOpeningArea)) : 0;
+  const openingsPerimeter = estimatedOpeningsCount * 6 * 2;
   const hasSplitAreas = rawInputs.wallArea !== undefined || rawInputs.ceilingArea !== undefined;
   const hasCanonicalRoomDimensions = rawInputs.roomWidth !== undefined && rawInputs.roomLength !== undefined && rawInputs.roomHeight !== undefined;
   const hasLegacyRoomDimensions = rawInputs.length !== undefined && rawInputs.width !== undefined && rawInputs.height !== undefined;

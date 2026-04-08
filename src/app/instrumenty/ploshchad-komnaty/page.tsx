@@ -74,7 +74,7 @@ function NumInput({
         />
         <span className="text-sm text-slate-500 dark:text-slate-400 w-6 shrink-0">{unit}</span>
       </div>
-      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -170,7 +170,7 @@ export default function PloshadKomnatyPage() {
   return (
     <div className="page-container py-8 max-w-3xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6">
+      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-6">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
         <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
@@ -202,7 +202,7 @@ export default function PloshadKomnatyPage() {
               <span className="text-lg leading-none">{s.icon}</span>
               <div>
                 <div className="text-sm font-medium">{s.label}</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500 leading-tight hidden sm:block">{s.desc}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-400 leading-tight hidden sm:block">{s.desc}</div>
               </div>
             </button>
           ))}

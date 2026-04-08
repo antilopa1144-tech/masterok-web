@@ -315,12 +315,12 @@ export default function RenovationCostCalculator() {
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
             Материалы
           </h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Нажмите на цену, чтобы ввести свою</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Нажмите на цену, чтобы ввести свою</p>
           <div className="space-y-1.5">
             {result.materialLines.map((line, i) => (
               <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
                 <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                <span className="text-slate-400 dark:text-slate-500 text-xs w-16 text-right">
+                <span className="text-slate-400 dark:text-slate-400 text-xs w-16 text-right">
                   {line.qty} {line.unit}
                 </span>
                 <input
@@ -353,7 +353,7 @@ export default function RenovationCostCalculator() {
               {result.workLines.map((line, i) => (
                 <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
                   <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs w-16 text-right">
+                  <span className="text-slate-400 dark:text-slate-400 text-xs w-16 text-right">
                     {line.qty} {line.unit}
                   </span>
                   <input
@@ -379,7 +379,7 @@ export default function RenovationCostCalculator() {
       </div>
 
       {/* Disclaimer */}
-      <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+      <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
         * Цены ориентировочные, средние по России на 2026 год. Итог показан в диапазоне ±15%.
         Фактическая стоимость зависит от региона, выбранных материалов, состояния помещения и сложности работ.
         Для точного расчёта отдельных материалов используйте наши калькуляторы.

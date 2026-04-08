@@ -81,7 +81,7 @@ export default function KalkulyatoryPage() {
                   <CategoryIcon icon={cat.icon} size={20} color={cat.color} />
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{cat.label}</h2>
-                <span className="text-sm text-slate-400 dark:text-slate-500">({calcs.length})</span>
+                <span className="text-sm text-slate-400 dark:text-slate-400">({calcs.length})</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {calcs.map((calc) => (
@@ -100,7 +100,7 @@ export default function KalkulyatoryPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed line-clamp-2">
                       {calc.description}
                     </p>
                   </Link>

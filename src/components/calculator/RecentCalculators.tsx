@@ -46,7 +46,7 @@ export default function RecentCalculators() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
           Недавно просмотренные
         </h2>
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        <span className="text-xs text-slate-400 dark:text-slate-400">
           Последние {recent.length}
         </span>
       </div>

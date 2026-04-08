@@ -84,7 +84,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                 <span className="badge bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0 text-xs">
                   {post.category}
                 </span>
-                <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">{post.readTime}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-400 ml-auto">{post.readTime}</span>
               </div>
               <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug text-sm flex-1">
                 <Link href={`/blog/${post.slug}/`} className="no-underline hover:text-accent-600 transition-colors">
@@ -95,7 +95,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                 {post.description}
               </p>
               <div className="flex items-center justify-between mt-auto">
-                <span className="text-xs text-slate-400 dark:text-slate-500">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                   {new Date(post.date).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
                 </span>
                 <Link

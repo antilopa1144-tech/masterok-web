@@ -227,12 +227,12 @@ export default function InstrumentyPage() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{cl.categoryIcon}</span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">{cl.category}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-400">{cl.category}</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1 group-hover:text-accent-600 transition-colors">
                 {cl.title}
               </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed line-clamp-2 mb-3">
+              <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed line-clamp-2 mb-3">
                 {cl.description}
               </p>
               <div className="flex items-center gap-2 flex-wrap">

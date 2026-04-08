@@ -68,7 +68,7 @@ export default async function BlogPage() {
       {/* Hero */}
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-8">
-          <nav className="text-sm text-slate-400 dark:text-slate-500 mb-4">
+          <nav className="text-sm text-slate-400 dark:text-slate-400 mb-4">
             <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300 no-underline transition-colors">{UI_TEXT.breadcrumbHome}</Link>
             <span className="mx-1.5">›</span>
             <span className="text-slate-700 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>

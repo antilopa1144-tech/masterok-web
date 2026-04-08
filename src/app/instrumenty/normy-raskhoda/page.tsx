@@ -191,7 +191,7 @@ function NormTable({ category }: { category: NormCategory }) {
                   {row.consumption} <span className="text-slate-400 font-normal">{row.unit}</span>
                 </td>
                 <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs hidden sm:table-cell">{row.conditions}</td>
-                <td className="px-4 py-2.5 text-slate-400 dark:text-slate-500 text-xs hidden md:table-cell">{row.source}</td>
+                <td className="px-4 py-2.5 text-slate-400 dark:text-slate-400 text-xs hidden md:table-cell">{row.source}</td>
               </tr>
             ))}
           </tbody>
@@ -238,7 +238,7 @@ export default function Page() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
             Справочник расхода на 1 м² по ГОСТ, СНиП и паспортам производителей. Используется в наших калькуляторах.
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+          <p className="text-xs text-slate-400 dark:text-slate-400 mt-2">
             Последнее обновление: март 2026 г. Источники: паспорта Ceresit, Knauf, Vetonit, Litokol; ГОСТ, СНиП, СП.
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function Page() {
           <NormTable key={cat.title} category={cat} />
         ))}
 
-        <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+        <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
           * Нормы расхода приведены для типовых условий. Фактический расход зависит от основания, способа нанесения, толщины слоя и квалификации мастера. Для точного расчёта используйте калькуляторы.
         </p>
       </div>

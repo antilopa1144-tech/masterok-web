@@ -269,7 +269,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
                         {r.title}
                       </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
                         {r.description}
                       </p>
                     </div>
@@ -309,7 +309,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
                         {r.title}
                       </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
                         {r.description}
                       </p>
                     </div>

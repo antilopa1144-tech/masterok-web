@@ -96,7 +96,7 @@ export default function MikhalychPage() {
       <div className="bg-linear-to-br from-slate-800 to-slate-700 text-white">
         <div className="page-container-wide py-8 md:py-10">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 bg-accent-500 rounded-2xl flex items-center justify-center text-3xl shrink-0">
+            <div className="w-14 h-14 bg-accent-500 rounded-2xl flex items-center justify-center text-3xl shrink-0" role="img" aria-label="AI-помощник Михалыч">
               🤖
             </div>
             <div>

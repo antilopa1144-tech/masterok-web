@@ -103,7 +103,7 @@ export function AccuracyModeSelector({
             >
               <span className="block">{ACCURACY_MODE_LABELS[m]}</span>
               <span className={`block text-[10px] font-normal mt-0.5 ${
-                isActive ? "text-white/80" : "text-slate-400 dark:text-slate-500"
+                isActive ? "text-white/80" : "text-slate-400 dark:text-slate-400"
               }`}>
                 {ACCURACY_MODE_DESCRIPTIONS[m]}
               </span>
@@ -119,7 +119,7 @@ export function AccuracyModeSelector({
           className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
             isCustom
               ? "border-accent-300 dark:border-accent-600 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
-              : "border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600"
+              : "border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-400 hover:text-slate-600"
           }`}
         >
           {CALCULATOR_UI_TEXT.customModeToggle}
@@ -235,7 +235,7 @@ export function ComparisonTable({
                       }`}
                     >
                       <span className="text-slate-900 dark:text-slate-100">{displayVal}</span>{" "}
-                      <span className="text-slate-400 dark:text-slate-500 text-xs">{displayUnit}</span>
+                      <span className="text-slate-400 dark:text-slate-400 text-xs">{displayUnit}</span>
                     </td>
                   );
                 })}
@@ -244,7 +244,7 @@ export function ComparisonTable({
           </tbody>
           <tfoot>
             <tr className="border-t border-slate-200 dark:border-slate-700">
-              <td className="py-2 pr-3 text-xs text-slate-400 dark:text-slate-500 font-medium">
+              <td className="py-2 pr-3 text-xs text-slate-400 dark:text-slate-400 font-medium">
                 {CALCULATOR_UI_TEXT.scenarioLabels.buy} (REC)
               </td>
               {ACCURACY_MODES.map((mode) => {
@@ -265,7 +265,7 @@ export function ComparisonTable({
         </table>
       </div>
 
-      <p className="text-[10px] text-slate-400 dark:text-slate-500">
+      <p className="text-[10px] text-slate-400 dark:text-slate-400">
         {CALCULATOR_UI_TEXT.comparisonNote}
       </p>
     </div>
@@ -288,7 +288,7 @@ export function ExpertTips({ tips }: { tips: NonNullable<CalculatorDefinition["e
             {tip.author && (
               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-accent-100 flex items-center justify-center text-[10px]">🏗️</div>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{tip.author}</span>
+                <span className="text-xs font-medium text-slate-400 dark:text-slate-400">{tip.author}</span>
               </div>
             )}
           </div>
@@ -502,7 +502,7 @@ export function FieldInput({
             aria-invalid={isOutOfRange}
             aria-label={field.label}
           />
-          {field.unit && <span className="text-xs text-slate-400 dark:text-slate-500 w-8 shrink-0">{field.unit}</span>}
+          {field.unit && <span className="text-xs text-slate-400 dark:text-slate-400 w-8 shrink-0">{field.unit}</span>}
         </div>
       </div>
       {field.type === "slider" && (
@@ -548,7 +548,7 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
     <div className="space-y-4">
       {Object.entries(groups).map(([groupName, items]) => (
         <div key={groupName}>
-          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider mb-2">{groupName}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400 font-medium uppercase tracking-wider mb-2">{groupName}</p>
           <div className="space-y-2">
             {items.map((m, i) => {
               const rawQty = m.purchaseQty ?? m.withReserve ?? m.quantity;
@@ -569,12 +569,12 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                       <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{displayUnit}</span>
                     </div>
                     {m.packageInfo && (
-                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                      <div className="text-xs text-slate-400 dark:text-slate-400">
                         {m.packageInfo.count} {pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} × {m.packageInfo.size} {m.unit}
                       </div>
                     )}
                     {!m.packageInfo && m.withReserve != null && m.withReserve !== m.quantity && (
-                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                      <div className="text-xs text-slate-400 dark:text-slate-400">
                         {CALCULATOR_UI_TEXT.withoutReserve}: {reserveVal} {reserveUnit}
                       </div>
                     )}
@@ -618,7 +618,7 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3">
-      <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{label}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-400 mb-0.5">{label}</p>
       <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
         {formattedValue}
         {unit && <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-1">{unit}</span>}
@@ -683,7 +683,7 @@ function TotalInline({ name, value }: { name: string; value: number }) {
   return (
     <span>
       {label}: <span className="font-semibold text-slate-900 dark:text-slate-100">{formattedValue}</span>
-      {unit && <span className="text-slate-400 dark:text-slate-500 ml-0.5 text-xs">{unit}</span>}
+      {unit && <span className="text-slate-400 dark:text-slate-400 ml-0.5 text-xs">{unit}</span>}
     </span>
   );
 }
@@ -726,7 +726,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
               {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)} {translatedUnit}
             </p>
             {rec.leftover > 0 && (
-              <p className="text-xs text-slate-400 dark:text-slate-500">
+              <p className="text-xs text-slate-400 dark:text-slate-400">
                 {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)} {translatedUnit}
               </p>
             )}
@@ -740,7 +740,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
                 : pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit);
               const sizeLabel = isRawUnit ? displayUnit(bpUnit) : "";
               return (
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
                   {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size}{sizeLabel ? ` ${sizeLabel}` : ""}
                 </p>
               );
@@ -833,7 +833,7 @@ export function FeedbackPanel({
         {CALCULATOR_UI_TEXT.feedbackTitle}
       </p>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0 max-w-[120px] truncate">
+        <span className="text-xs text-slate-400 dark:text-slate-400 shrink-0 max-w-[120px] truncate">
           {primaryMaterial.name}:
         </span>
         <input
@@ -843,7 +843,7 @@ export function FeedbackPanel({
           placeholder={CALCULATOR_UI_TEXT.feedbackPlaceholder}
           className="flex-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 min-h-[36px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
         />
-        <span className="text-xs text-slate-400 dark:text-slate-500">{primaryMaterial.unit}</span>
+        <span className="text-xs text-slate-400 dark:text-slate-400">{primaryMaterial.unit}</span>
         <button
           onClick={handleSubmit}
           className="text-xs px-3 py-1.5 rounded-lg bg-accent-500 text-white hover:bg-accent-600 transition-colors shrink-0"
@@ -866,7 +866,7 @@ export function HistoryPanel({
 }) {
   return (
     <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-1 border border-slate-200 dark:border-slate-700">
-      <p className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+      <p className="text-xs font-medium text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">
         {CALCULATOR_UI_TEXT.pastCalculations}
       </p>
       {calcHistory.map((entry) => (
@@ -883,7 +883,7 @@ export function HistoryPanel({
           <span className="text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
             {entry.calcTitle}
           </span>
-          <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
+          <span className="text-xs text-slate-400 dark:text-slate-400 truncate">
             {entry.result.materials.slice(0, 2).map(
               (m) => `${formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)} ${m.unit}`
             ).join(", ")}
@@ -976,7 +976,7 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
       </summary>
 
       <div className="mt-2 space-y-2 bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+        <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">
           Введите цену за единицу — итог обновится автоматически
         </p>
         {materials.map((m) => {
@@ -1056,7 +1056,7 @@ export function ResultBlock({
       {/* Режим точности — компактная расшифровка */}
       {result.accuracyExplanation && result.accuracyExplanation.appliedModifiers.length > 0 && (
         <details className="group">
-          <summary className="flex items-center gap-2 cursor-pointer list-none text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-1">
+          <summary className="flex items-center gap-2 cursor-pointer list-none text-xs text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-1">
             <span className="font-medium text-slate-500 dark:text-slate-400">
               {result.accuracyExplanation.modeLabel}
             </span>
@@ -1084,7 +1084,7 @@ export function ResultBlock({
                 {Object.entries(result.scenarios.REC.key_factors)
                   .filter(([k]) => k !== "field_multiplier" && k !== "accuracy_multiplier")
                   .map(([key, value]) => (
-                    <span key={key} className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <span key={key} className="text-[11px] text-slate-400 dark:text-slate-400">
                       {KEY_FACTOR_LABELS[key] ?? key}: <span className="font-mono">{(value as number).toFixed(2)}</span>
                     </span>
                   ))
