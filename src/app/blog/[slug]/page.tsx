@@ -145,6 +145,35 @@ export default async function BlogPostPage({ params }: Props) {
     inLanguage: "ru",
   };
 
+  // HowTo Schema for instructional articles (titles with "Как", "расчёт", "расход")
+  const isHowToArticle = /как |расчёт|расход|пошагов|инструкци/i.test(post.title);
+  const howToLd = isHowToArticle ? (() => {
+    // Extract h2 headings as steps from HTML content
+    const h2Regex = /<h2[^>]*>([^<]+)<\/h2>/gi;
+    const steps: { name: string; position: number }[] = [];
+    let match;
+    let i = 1;
+    while ((match = h2Regex.exec(post.content)) !== null) {
+      steps.push({ name: match[1].trim(), position: i++ });
+    }
+    if (steps.length < 2) return null;
+    return {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      name: post.title,
+      description: post.description,
+      image: post.heroImage || undefined,
+      totalTime: `PT${post.readTime.replace(/[^0-9]/g, "") || "7"}M`,
+      inLanguage: "ru",
+      step: steps.map((s) => ({
+        "@type": "HowToStep",
+        position: s.position,
+        name: s.name,
+        url: `${baseUrl}/blog/${post.slug}/#${encodeURIComponent(s.name.toLowerCase().replace(/\s+/g, "-"))}`,
+      })),
+    };
+  })() : null;
+
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -165,6 +194,12 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {howToLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}
+        />
+      )}
 
       <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6 max-w-3xl">
