@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -35,6 +35,12 @@ const inter = Inter({
   display: "swap",
   variable: "--font-inter",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -102,9 +108,10 @@ export const metadata: Metadata = {
     "format-detection": "telephone=no",
     "mobile-web-app-capable": "yes",
     "geo.region": "RU",
+    "geo.placename": "Россия",
+    "content-language": "ru",
     "geo.position": "55.7558;37.6173",
     "ICBM": "55.7558, 37.6173",
-    "geo.placename": "Россия",
     "citation_title": SITE_DEFAULT_TITLE,
     "citation_author": SITE_EXPERT.name,
     "citation_language": "ru",
