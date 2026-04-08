@@ -10,32 +10,27 @@ import type {
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
-/* ─── constants ─── */
+/* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
 
-const BASE_CONSUMPTION: Record<number, number> = {
-  0: 3.0,  // small ≤30cm  kg/m²
-  1: 5.0,  // medium 30-60cm
-  2: 7.5,  // large ≥60cm
+const TA_DEFAULTS = {
+  base_consumption: { "0": 3.0, "1": 5.0, "2": 7.5 } as Record<string, number>,
+  wall_factor: 0.85,
+  street_factor: 1.3,
+  old_tile_factor: 1.2,
+  adhesive_reserve: 1.1,
+  primer_l_per_m2: 0.15,
+  primer_reserve: 1.15,
+  primer_can: 10,
+  tile_sizes_for_cross: { "0": 0.3, "1": 0.45, "2": 0.6 } as Record<string, number>,
+  crosses_per_tile: 4,
+  cross_reserve: 1.1,
+  cross_pack: 200,
 };
 
-const WALL_FACTOR = 0.85;
-const STREET_FACTOR = 1.3;
-const OLD_TILE_FACTOR = 1.2;
-const ADHESIVE_RESERVE = 1.1;
-
-const PRIMER_L_PER_M2 = 0.15;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN = 10; // L
-
-const TILE_SIZES_FOR_CROSS: Record<number, number> = {
-  0: 0.3,  // m
-  1: 0.45,
-  2: 0.6,
-};
-
-const CROSSES_PER_TILE = 4;
-const CROSS_RESERVE = 1.1;
-const CROSS_PACK = 200;
+function taMr<T>(spec: TileAdhesiveCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown>;
+  return (rules?.[key] as T) ?? fallback;
+}
 
 /* ─── inputs ─── */
 
@@ -69,25 +64,39 @@ export function computeCanonicalTileAdhesive(
   const base = Math.max(0, Math.min(2, Math.round(inputs.base ?? getInputDefault(spec, "base", 0))));
   const bagWeight = (inputs.bagWeight ?? getInputDefault(spec, "bagWeight", 25)) === 5 ? 5 : 25;
 
-  /* ─── formulas ─── */
-  let adjustedRate = BASE_CONSUMPTION[tileSize] ?? BASE_CONSUMPTION[0];
-  if (laying === 1) adjustedRate *= WALL_FACTOR;
-  if (laying === 2) adjustedRate *= STREET_FACTOR;
-  if (base === 2) adjustedRate *= OLD_TILE_FACTOR;
+  /* ─── read material rules from spec with fallbacks ─── */
+  const baseConsumption = taMr(spec, "base_consumption", TA_DEFAULTS.base_consumption);
+  const wallFactor = taMr(spec, "wall_factor", TA_DEFAULTS.wall_factor);
+  const streetFactor = taMr(spec, "street_factor", TA_DEFAULTS.street_factor);
+  const oldTileFactor = taMr(spec, "old_tile_factor", TA_DEFAULTS.old_tile_factor);
+  const adhesiveReserve = taMr(spec, "adhesive_reserve", TA_DEFAULTS.adhesive_reserve);
+  const primerLPerM2 = taMr(spec, "primer_l_per_m2", TA_DEFAULTS.primer_l_per_m2);
+  const primerReserve = taMr(spec, "primer_reserve", TA_DEFAULTS.primer_reserve);
+  const primerCan = taMr(spec, "primer_can", TA_DEFAULTS.primer_can);
+  const tileSizesForCross = taMr(spec, "tile_sizes_for_cross", TA_DEFAULTS.tile_sizes_for_cross);
+  const crossesPerTile = taMr(spec, "crosses_per_tile", TA_DEFAULTS.crosses_per_tile);
+  const crossReserve = taMr(spec, "cross_reserve", TA_DEFAULTS.cross_reserve);
+  const crossPack = taMr(spec, "cross_pack", TA_DEFAULTS.cross_pack);
 
-  const totalKgRaw = area * adjustedRate * ADHESIVE_RESERVE;
+  /* ─── formulas ─── */
+  let adjustedRate = baseConsumption[String(tileSize)] ?? baseConsumption["0"];
+  if (laying === 1) adjustedRate *= wallFactor;
+  if (laying === 2) adjustedRate *= streetFactor;
+  if (base === 2) adjustedRate *= oldTileFactor;
+
+  const totalKgRaw = area * adjustedRate * adhesiveReserve;
   const accuracyMult = getPrimaryMultiplier("tile_adhesive", accuracyMode);
   const totalKg = totalKgRaw * accuracyMult;
   const bags = Math.ceil(totalKg / bagWeight);
 
   // Primer
-  const primer = Math.ceil(area * PRIMER_L_PER_M2 * PRIMER_RESERVE / PRIMER_CAN);
+  const primer = Math.ceil(area * primerLPerM2 * primerReserve / primerCan);
 
   // Crosses
-  const tileSideM = TILE_SIZES_FOR_CROSS[tileSize] ?? TILE_SIZES_FOR_CROSS[0];
+  const tileSideM = tileSizesForCross[String(tileSize)] ?? tileSizesForCross["0"];
   const tilesPerM2 = 1 / (tileSideM * tileSideM);
-  const crosses = Math.ceil(area * tilesPerM2 * CROSSES_PER_TILE * CROSS_RESERVE);
-  const crossPacks = Math.ceil(crosses / CROSS_PACK);
+  const crosses = Math.ceil(area * tilesPerM2 * crossesPerTile * crossReserve);
+  const crossPacks = Math.ceil(crosses / crossPack);
 
   /* ─── scenarios ─── */
   const packageOptions = [{
@@ -141,9 +150,9 @@ export function computeCanonicalTileAdhesive(
       category: "Основное",
       packageInfo: { count: Math.ceil(recScenario.purchase_quantity / bagWeight), size: bagWeight, packageUnit: "мешков" },
     },
-    { ...buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE }), category: "Грунтовка" },
+    { ...buildPrimerMaterial(area * primerLPerM2, { reserveFactor: primerReserve }), category: "Грунтовка" },
     {
-      name: `Крестики (упаковка ${CROSS_PACK} шт)`,
+      name: `Крестики (упаковка ${crossPack} шт)`,
       quantity: crossPacks,
       unit: "упаковок",
       withReserve: crossPacks,

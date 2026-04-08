@@ -10,25 +10,25 @@ import type {
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
 
-/* ─── constants ─── */
+/* ─── fallback constants (used if spec.material_rules is missing a field) ─── */
 
-const CONSUMPTION_KG_PER_M2: Record<number, number> = {
-  0: 2.5,  // korod 2mm
-  1: 3.5,  // korod 3mm
-  2: 3.0,  // pebble
-  3: 4.0,  // shuba
-  4: 1.2,  // venetian
+const DEFAULTS = {
+  consumption_kg_per_m2: { 0: 2.5, 1: 3.5, 2: 3.0, 3: 4.0, 4: 1.2 } as Record<number, number>,
+  plaster_reserve: 1.05,
+  primer_deep_l_per_m2: 0.2,
+  primer_deep_reserve: 1.15,
+  primer_can: 10,
+  tinted_primer_l_per_m2: 0.15,
+  tinted_can: 5,
+  pigment_per_25kg: 1,
+  wax_l_per_m2: 0.1,
+  wax_can: 1,
 };
 
-const PLASTER_RESERVE = 1.05;
-const PRIMER_DEEP_L_PER_M2 = 0.2;
-const PRIMER_DEEP_RESERVE = 1.15;
-const PRIMER_CAN = 10;
-const TINTED_PRIMER_L_PER_M2 = 0.15;
-const TINTED_CAN = 5;
-const PIGMENT_PER_25KG = 1;
-const WAX_L_PER_M2 = 0.1; // venetian only
-const WAX_CAN = 1;
+function getMaterialRule<T>(spec: DecorPlasterCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
+  return (rules?.[key] as T) ?? fallback;
+}
 
 /* ─── labels ─── */
 
@@ -69,6 +69,18 @@ export function computeCanonicalDecorPlaster(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+  // Read material rules from spec, fallback to defaults
+  const CONSUMPTION_KG_PER_M2 = getMaterialRule(spec, "consumption_kg_per_m2", DEFAULTS.consumption_kg_per_m2);
+  const PLASTER_RESERVE = getMaterialRule(spec, "plaster_reserve", DEFAULTS.plaster_reserve);
+  const PRIMER_DEEP_L_PER_M2 = getMaterialRule(spec, "primer_deep_l_per_m2", DEFAULTS.primer_deep_l_per_m2);
+  const PRIMER_DEEP_RESERVE = getMaterialRule(spec, "primer_deep_reserve", DEFAULTS.primer_deep_reserve);
+  const PRIMER_CAN = getMaterialRule(spec, "primer_can", DEFAULTS.primer_can);
+  const TINTED_PRIMER_L_PER_M2 = getMaterialRule(spec, "tinted_primer_l_per_m2", DEFAULTS.tinted_primer_l_per_m2);
+  const TINTED_CAN = getMaterialRule(spec, "tinted_can", DEFAULTS.tinted_can);
+  const PIGMENT_PER_25KG = getMaterialRule(spec, "pigment_per_25kg", DEFAULTS.pigment_per_25kg);
+  const WAX_L_PER_M2 = getMaterialRule(spec, "wax_l_per_m2", DEFAULTS.wax_l_per_m2);
+  const WAX_CAN = getMaterialRule(spec, "wax_can", DEFAULTS.wax_can);
 
   const area = Math.max(1, Math.min(1000, Math.round(inputs.area ?? getInputDefault(spec, "area", 50))));
   const texture = Math.max(0, Math.min(4, Math.round(inputs.texture ?? getInputDefault(spec, "texture", 0))));

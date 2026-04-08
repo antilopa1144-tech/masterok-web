@@ -25,28 +25,27 @@ interface ScreedInputs {
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── constants ─── */
-const VOLUME_MULTIPLIER = 1.08;
+/* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
+const DEFAULTS = {
+  volume_multiplier: 1.08,
+  cement_density: 1300,
+  cement_fraction: 0.25,
+  sand_fraction: 0.75,
+  sand_density: 1.6,
+  water_per_m3: 200,
+  cps_density_ready: 2000,
+  cps_density_semidry: 1800,
+  fiber_kg_per_m2: 0.6,
+  mesh_margin: 1.15,
+  film_margin: 1.1,
+  damper_tape_reserve: 1.05,
+  beacons_area_per_piece: 2,
+};
 
-// Type 0 — ЦПС 1:3
-const CEMENT_DENSITY = 1300;   // kg/m³
-const CEMENT_FRACTION = 0.25;  // 1/4 volume
-const SAND_FRACTION = 0.75;    // 3/4 volume
-const SAND_DENSITY = 1.6;      // t/m³
-const WATER_PER_M3 = 200;      // L/m³
-
-// Type 1 — Ready CPS M150
-const CPS_DENSITY_READY = 2000; // kg/m³
-
-// Type 2 — Semi-dry
-const CPS_DENSITY_SEMIDRY = 1800; // kg/m³
-const FIBER_KG_PER_M2 = 0.6;
-
-// Ancillary
-const MESH_MARGIN = 1.15;       // 15%
-const FILM_MARGIN = 1.1;        // 10%
-const DAMPER_TAPE_RESERVE = 1.05;
-const BEACONS_AREA_PER_PIECE = 2; // 1 beacon profile per 2 m²
+function mr<T>(spec: ScreedCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
+  return (rules?.[key] as T) ?? fallback;
+}
 
 const SCREED_FACTOR_TABLE: FactorTable = {
   surface_quality: { min: 1, rec: 1, max: 1 },
@@ -311,6 +310,22 @@ export function computeCanonicalScreed(
   factorTable: FactorTable = SCREED_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+  // Read constants from spec, fallback to defaults
+  const VOLUME_MULTIPLIER = mr(spec, "volume_multiplier", DEFAULTS.volume_multiplier);
+  const CEMENT_DENSITY = mr(spec, "cement_density", DEFAULTS.cement_density);
+  const CEMENT_FRACTION = mr(spec, "cement_fraction", DEFAULTS.cement_fraction);
+  const SAND_FRACTION = mr(spec, "sand_fraction", DEFAULTS.sand_fraction);
+  const SAND_DENSITY = mr(spec, "sand_density", DEFAULTS.sand_density);
+  const WATER_PER_M3 = mr(spec, "water_per_m3", DEFAULTS.water_per_m3);
+  const CPS_DENSITY_READY = mr(spec, "cps_density_ready", DEFAULTS.cps_density_ready);
+  const CPS_DENSITY_SEMIDRY = mr(spec, "cps_density_semidry", DEFAULTS.cps_density_semidry);
+  const FIBER_KG_PER_M2 = mr(spec, "fiber_kg_per_m2", DEFAULTS.fiber_kg_per_m2);
+  const MESH_MARGIN = mr(spec, "mesh_margin", DEFAULTS.mesh_margin);
+  const FILM_MARGIN = mr(spec, "film_margin", DEFAULTS.film_margin);
+  const DAMPER_TAPE_RESERVE = mr(spec, "damper_tape_reserve", DEFAULTS.damper_tape_reserve);
+  const BEACONS_AREA_PER_PIECE = mr(spec, "beacons_area_per_piece", DEFAULTS.beacons_area_per_piece);
+
   const work = resolveArea(spec, inputs);
   const thickness = Math.max(
     spec.material_rules.min_thickness_mm,

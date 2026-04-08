@@ -19,29 +19,48 @@ interface InsulationInputs {
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── constants ─── */
+/* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
 
-const PLATE_AREAS: Record<number, number> = { 0: 0.72, 1: 0.50, 2: 2.00 };
+const DEFAULTS = {
+  plate_areas: { 0: 0.72, 1: 0.50, 2: 2.00 } as Record<number, number>,
+  dowels_per_sqm: { 0: 7, 1: 5, 2: 6, 3: 0 } as Record<number, number>,
+  plate_reserve: 1.05,
+  dowel_reserve: 1.05,
+  membrane_reserve: 1.15,
+  alu_tape_m2_per_m2: 2,
+  alu_tape_roll_m: 50,
+  glue_kg_per_m2: 2.5,
+  glue_bag_kg: 25,
+  primer_l_per_m2: 0.15,
+  primer_reserve: 1.15,
+  primer_can_l: 10,
+  ecowool_density: 35,
+  ecowool_waste: 1.10,
+  ecowool_bag_kg: 15,
+};
+
 const PLATE_LABELS: Record<number, string> = { 0: "1200×600", 1: "1000×500", 2: "2000×1000" };
-const PLATE_RESERVE = 1.05;
 
-const DOWELS_PER_SQM: Record<number, number> = { 0: 7, 1: 5, 2: 6, 3: 0 };
-const DOWEL_RESERVE = 1.05;
+function mr<T>(spec: InsulationCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
+  return (rules?.[key] as T) ?? fallback;
+}
 
-const MEMBRANE_RESERVE = 1.15;
-const ALU_TAPE_M2_PER_M2 = 2;
-const ALU_TAPE_ROLL_M = 50;
+function buildPlateAreas(spec: InsulationCanonicalSpec): Record<number, number> {
+  const sizes = spec.normative_formula?.plate_sizes;
+  if (!sizes || sizes.length === 0) return DEFAULTS.plate_areas;
+  const map: Record<number, number> = {};
+  for (const s of sizes) map[s.id] = s.area_m2;
+  return map;
+}
 
-const GLUE_KG_PER_M2 = 2.5;
-const GLUE_BAG_KG = 25;
-
-const PRIMER_L_PER_M2 = 0.15;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN_L = 10;
-
-const ECOWOOL_DENSITY = 35;
-const ECOWOOL_WASTE = 1.10;
-const ECOWOOL_BAG_KG = 15;
+function buildDowelsPerSqm(spec: InsulationCanonicalSpec): Record<number, number> {
+  const types = spec.normative_formula?.insulation_types;
+  if (!types || types.length === 0) return DEFAULTS.dowels_per_sqm;
+  const map: Record<number, number> = {};
+  for (const t of types) map[t.id] = t.dowels_per_sqm;
+  return map;
+}
 
 /* ─── labels ─── */
 
@@ -74,6 +93,23 @@ export function computeCanonicalInsulation(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+  // Read constants from spec, fallback to defaults
+  const PLATE_AREAS = buildPlateAreas(spec);
+  const DOWELS_PER_SQM = buildDowelsPerSqm(spec);
+  const PLATE_RESERVE = mr(spec, "plate_reserve", DEFAULTS.plate_reserve);
+  const DOWEL_RESERVE = mr(spec, "dowel_reserve", DEFAULTS.dowel_reserve);
+  const MEMBRANE_RESERVE = mr(spec, "membrane_reserve", DEFAULTS.membrane_reserve);
+  const ALU_TAPE_M2_PER_M2 = mr(spec, "alu_tape_m2_per_m2", DEFAULTS.alu_tape_m2_per_m2);
+  const ALU_TAPE_ROLL_M = mr(spec, "alu_tape_roll_m", DEFAULTS.alu_tape_roll_m);
+  const GLUE_KG_PER_M2 = mr(spec, "glue_kg_per_m2", DEFAULTS.glue_kg_per_m2);
+  const GLUE_BAG_KG = mr(spec, "glue_bag_kg", DEFAULTS.glue_bag_kg);
+  const PRIMER_L_PER_M2 = mr(spec, "primer_l_per_m2", DEFAULTS.primer_l_per_m2);
+  const PRIMER_RESERVE = mr(spec, "primer_reserve", DEFAULTS.primer_reserve);
+  const PRIMER_CAN_L = mr(spec, "primer_can_l", DEFAULTS.primer_can_l);
+  const ECOWOOL_DENSITY = mr(spec, "ecowool_density", DEFAULTS.ecowool_density);
+  const ECOWOOL_WASTE = mr(spec, "ecowool_waste", DEFAULTS.ecowool_waste);
+  const ECOWOOL_BAG_KG = mr(spec, "ecowool_bag_kg", DEFAULTS.ecowool_bag_kg);
 
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 40)));
   const insulationType = resolveInsulationType(spec, inputs);

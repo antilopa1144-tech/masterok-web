@@ -2,12 +2,45 @@
   "calculator_id": "drywall",
   "formula_version": "drywall-canonical-v1",
   "input_schema": [
-    { "key": "workType", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "length", "unit": "m", "default_value": 5, "min": 0.5, "max": 30 },
-    { "key": "height", "unit": "m", "default_value": 2.7, "min": 1.5, "max": 5 },
-    { "key": "layers", "default_value": 1, "min": 1, "max": 2 },
-    { "key": "sheetSize", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "profileStep", "unit": "m", "default_value": 0.6, "min": 0.4, "max": 0.6 }
+    {
+      "key": "workType",
+      "default_value": 0,
+      "min": 0,
+      "max": 2
+    },
+    {
+      "key": "length",
+      "unit": "m",
+      "default_value": 5,
+      "min": 0.5,
+      "max": 30
+    },
+    {
+      "key": "height",
+      "unit": "m",
+      "default_value": 2.7,
+      "min": 1.5,
+      "max": 5
+    },
+    {
+      "key": "layers",
+      "default_value": 1,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "key": "sheetSize",
+      "default_value": 0,
+      "min": 0,
+      "max": 2
+    },
+    {
+      "key": "profileStep",
+      "unit": "m",
+      "default_value": 0.6,
+      "min": 0.4,
+      "max": 0.6
+    }
   ],
   "field_factors": {
     "enabled": [
@@ -18,9 +51,24 @@
   },
   "normative_formula": {
     "sheet_sizes": {
-      "0": { "id": 0, "w": 1.2, "h": 2.5, "area": 3.0 },
-      "1": { "id": 1, "w": 1.2, "h": 3.0, "area": 3.6 },
-      "2": { "id": 2, "w": 0.6, "h": 2.5, "area": 1.5 }
+      "0": {
+        "id": 0,
+        "w": 1.2,
+        "h": 2.5,
+        "area": 3
+      },
+      "1": {
+        "id": 1,
+        "w": 1.2,
+        "h": 3,
+        "area": 3.6
+      },
+      "2": {
+        "id": 2,
+        "w": 0.6,
+        "h": 2.5,
+        "area": 1.5
+      }
     }
   },
   "packaging_rules": {
@@ -28,13 +76,13 @@
     "package_size": 1
   },
   "material_rules": {
-    "sheet_reserve": 1.10,
+    "sheet_reserve": 1.1,
     "profile_reserve": 1.05,
     "screws_tf_per_m2": 30,
     "screws_lb_per_profile": 4,
     "dowels_step_m": 0.6,
     "putty_start_kg_per_m2": 0.8,
-    "putty_finish_kg_per_m2": 1.0,
+    "putty_finish_kg_per_m2": 1,
     "putty_reserve": 1.15,
     "putty_bag_kg": 25,
     "serpyanka_m_per_sheet": 2.5,
@@ -46,7 +94,9 @@
     "sandpaper_m2_per_sheet": 5,
     "sandpaper_pack": 10,
     "profile_length_m": 3,
-    "sealing_tape_roll_m": 30
+    "sealing_tape_roll_m": 30,
+    "screws_tf_per_kg": 1000,
+    "screws_lb_per_kg": 4000
   },
   "warnings_rules": {
     "wide_profile_height_threshold": 3.5

@@ -26,27 +26,35 @@ const SHEET_SIZES: Record<number, { w: number; h: number; area: number }> = {
   2: { w: 0.6, h: 2.5, area: 1.5 },
 };
 
-const SHEET_RESERVE = 1.10;
-const PROFILE_RESERVE = 1.05;
-const SCREWS_TF_PER_M2 = 30;
-const SCREWS_LB_PER_PROFILE = 4;
-const DOWELS_STEP_M = 0.6;
-const PUTTY_START_KG_PER_M2 = 0.8;
-const PUTTY_FINISH_KG_PER_M2 = 1.0;
-const PUTTY_RESERVE = 1.15;
-const PUTTY_BAG_KG = 25;
-const SERPYANKA_M_PER_SHEET = 2.5;
-const SERPYANKA_RESERVE = 1.1;
-const SERPYANKA_ROLL_M = 90;
-const PRIMER_L_PER_M2 = 0.3;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN_L = 10;
-const SANDPAPER_M2_PER_SHEET = 5;
-const SANDPAPER_PACK = 10;
-const PROFILE_LENGTH_M = 3;
-const SEALING_TAPE_ROLL_M = 30;
-const SCREWS_TF_PER_KG = 1000;  // 3.5×25 мм
-const SCREWS_LB_PER_KG = 4000;  // 3.5×9.5 мм (клопы)
+/* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
+const DW_DEFAULTS = {
+  sheet_reserve: 1.10,
+  profile_reserve: 1.05,
+  screws_tf_per_m2: 30,
+  screws_lb_per_profile: 4,
+  dowels_step_m: 0.6,
+  putty_start_kg_per_m2: 0.8,
+  putty_finish_kg_per_m2: 1.0,
+  putty_reserve: 1.15,
+  putty_bag_kg: 25,
+  serpyanka_m_per_sheet: 2.5,
+  serpyanka_reserve: 1.1,
+  serpyanka_roll_m: 90,
+  primer_l_per_m2: 0.3,
+  primer_reserve: 1.15,
+  primer_can_l: 10,
+  sandpaper_m2_per_sheet: 5,
+  sandpaper_pack: 10,
+  profile_length_m: 3,
+  sealing_tape_roll_m: 30,
+  screws_tf_per_kg: 1000,
+  screws_lb_per_kg: 4000,
+};
+
+function dwMr<T>(spec: DrywallCanonicalSpec, key: string, fallback: T): T {
+  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
+  return (rules?.[key] as T) ?? fallback;
+}
 
 function getInputDefault(spec: DrywallCanonicalSpec, key: string, fallback: number): number {
   return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
@@ -191,6 +199,29 @@ export function computeCanonicalDrywall(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+  // Read constants from spec, fallback to defaults
+  const SHEET_RESERVE = dwMr(spec, "sheet_reserve", DW_DEFAULTS.sheet_reserve);
+  const PROFILE_RESERVE = dwMr(spec, "profile_reserve", DW_DEFAULTS.profile_reserve);
+  const SCREWS_TF_PER_M2 = dwMr(spec, "screws_tf_per_m2", DW_DEFAULTS.screws_tf_per_m2);
+  const SCREWS_LB_PER_PROFILE = dwMr(spec, "screws_lb_per_profile", DW_DEFAULTS.screws_lb_per_profile);
+  const DOWELS_STEP_M = dwMr(spec, "dowels_step_m", DW_DEFAULTS.dowels_step_m);
+  const PUTTY_START_KG_PER_M2 = dwMr(spec, "putty_start_kg_per_m2", DW_DEFAULTS.putty_start_kg_per_m2);
+  const PUTTY_FINISH_KG_PER_M2 = dwMr(spec, "putty_finish_kg_per_m2", DW_DEFAULTS.putty_finish_kg_per_m2);
+  const PUTTY_RESERVE = dwMr(spec, "putty_reserve", DW_DEFAULTS.putty_reserve);
+  const PUTTY_BAG_KG = dwMr(spec, "putty_bag_kg", DW_DEFAULTS.putty_bag_kg);
+  const SERPYANKA_M_PER_SHEET = dwMr(spec, "serpyanka_m_per_sheet", DW_DEFAULTS.serpyanka_m_per_sheet);
+  const SERPYANKA_RESERVE = dwMr(spec, "serpyanka_reserve", DW_DEFAULTS.serpyanka_reserve);
+  const SERPYANKA_ROLL_M = dwMr(spec, "serpyanka_roll_m", DW_DEFAULTS.serpyanka_roll_m);
+  const PRIMER_L_PER_M2 = dwMr(spec, "primer_l_per_m2", DW_DEFAULTS.primer_l_per_m2);
+  const PRIMER_RESERVE = dwMr(spec, "primer_reserve", DW_DEFAULTS.primer_reserve);
+  const PRIMER_CAN_L = dwMr(spec, "primer_can_l", DW_DEFAULTS.primer_can_l);
+  const SANDPAPER_M2_PER_SHEET = dwMr(spec, "sandpaper_m2_per_sheet", DW_DEFAULTS.sandpaper_m2_per_sheet);
+  const SANDPAPER_PACK = dwMr(spec, "sandpaper_pack", DW_DEFAULTS.sandpaper_pack);
+  const PROFILE_LENGTH_M = dwMr(spec, "profile_length_m", DW_DEFAULTS.profile_length_m);
+  const SEALING_TAPE_ROLL_M = dwMr(spec, "sealing_tape_roll_m", DW_DEFAULTS.sealing_tape_roll_m);
+  const SCREWS_TF_PER_KG = dwMr(spec, "screws_tf_per_kg", DW_DEFAULTS.screws_tf_per_kg);
+  const SCREWS_LB_PER_KG = dwMr(spec, "screws_lb_per_kg", DW_DEFAULTS.screws_lb_per_kg);
 
   const workType = resolveWorkType(spec, inputs);
   const length = resolveLength(spec, inputs);
