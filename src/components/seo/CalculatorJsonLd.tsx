@@ -43,7 +43,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       availability: "https://schema.org/InStock",
     },
     datePublished: SITE_FOUNDING_DATE,
-    dateModified: new Date().toISOString().split("T")[0],
+    dateModified: SITE_FOUNDING_DATE,
     author: {
       "@type": "Person",
       name: SITE_EXPERT.name,
@@ -55,13 +55,9 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       name: SITE_NAME,
       url: SITE_URL,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: String(Math.max(50, calc.popularity * 3)),
-      bestRating: "5",
-      worstRating: "1",
-    },
+    // AggregateRating убран — фейковые рейтинги нарушают гайдлайны Google
+    // и могут привести к ручному штрафу. Добавить обратно только при наличии
+    // реальной системы отзывов пользователей.
   };
 
   // BreadcrumbList
@@ -72,7 +68,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
       { "@type": "ListItem", position: 2, name: "Калькуляторы", item: `${SITE_URL}/kalkulyatory/` },
       ...(categoryLabel ? [{ "@type": "ListItem", position: 3, name: categoryLabel, item: `${SITE_URL}/kalkulyatory/${calc.categorySlug}/` }] : []),
-      { "@type": "ListItem", position: categoryLabel ? 4 : 3, name: calc.title },
+      { "@type": "ListItem", position: categoryLabel ? 4 : 3, name: calc.title, item: canonicalUrl },
     ],
   };
 
@@ -105,7 +101,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
   const qaPageLd = allFaqItems.length >= 5 ? {
     "@context": "https://schema.org",
     "@type": "QAPage",
-    mainEntity: allFaqItems.slice(0, 1).map(item => ({
+    mainEntity: allFaqItems.slice(0, 3).map(item => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: {
@@ -115,7 +111,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
         dateCreated: SITE_FOUNDING_DATE,
         author: { "@type": "Organization", name: SITE_NAME },
       },
-    }))[0],
+    })),
   } : null;
 
   // HowTo schema

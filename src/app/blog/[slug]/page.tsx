@@ -26,8 +26,12 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   const posts = await getAllPosts();
+  // output: "export" требует хотя бы один параметр для динамического роута
+  if (posts.length === 0) return [{ slug: "_placeholder" }];
   return posts.map((post) => ({ slug: post.slug }));
 }
 

@@ -1,7 +1,7 @@
 {
   "calculator_id": "concrete",
   "formula_version": "concrete-canonical-v1",
-  "generated_at": "2026-04-08T01:51:42.427Z",
+  "generated_at": "2026-04-08T06:09:15.366Z",
   "cases": [
     {
       "id": "defaults",

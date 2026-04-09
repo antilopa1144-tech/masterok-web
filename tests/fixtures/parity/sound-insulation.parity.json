@@ -1,7 +1,7 @@
 {
   "calculator_id": "sound-insulation",
   "formula_version": "sound-insulation-canonical-v1",
-  "generated_at": "2026-04-08T01:51:42.689Z",
+  "generated_at": "2026-04-08T06:09:15.639Z",
   "cases": [
     {
       "id": "defaults",

@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { ALL_CALCULATORS } from "@/lib/calculators";
 import { buildPageMetadata } from "@/lib/metadata";
+
+const CALC_COUNT = ALL_CALCULATORS.length;
 
 const META = {
   title: `Скачать приложение ${SITE_NAME} — строительные калькуляторы`,
   description:
-    `Скачайте бесплатное приложение ${SITE_NAME} для Android. 61+ строительных калькуляторов, работает без интернета, сохранение расчётов, AI-ассистент Михалыч.`,
+    `Скачайте бесплатное приложение ${SITE_NAME} для Android. ${CALC_COUNT}+ строительных калькуляторов, работает без интернета, сохранение расчётов, AI-ассистент Михалыч.`,
 } as const;
 
 export const metadata: Metadata = buildPageMetadata({
@@ -20,7 +23,7 @@ const UI_TEXT = {
   heroTitle: `${SITE_NAME} — приложение`,
   heroAccent: "строительного мастера",
   heroDescription:
-    "61+ бесплатных строительных калькуляторов в вашем кармане. Работает без интернета. Идеально для стройки.",
+    `${CALC_COUNT}+ бесплатных строительных калькуляторов в вашем кармане. Работает без интернета. Идеально для стройки.`,
   downloadRuStore: "📲 Скачать в RuStore",
   onlineVersion: "Онлайн-версия",
   heroMeta: "Бесплатно · Android · Без рекламы в расчётах",
@@ -34,7 +37,7 @@ const UI_TEXT = {
 const FEATURES = [
   {
     icon: "📐",
-    title: "61+ калькуляторов",
+    title: `${CALC_COUNT}+ калькуляторов`,
     desc: "Бетон, кирпич, кровля, плитка, ламинат, гипсокартон и многое другое. Все расчёты в одном приложении.",
   },
   {
@@ -192,7 +195,7 @@ export default function PrilozheniePage() {
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Рейтинг в RuStore</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">61+</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{CALC_COUNT}+</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Калькуляторов</div>
             </div>
             <div>

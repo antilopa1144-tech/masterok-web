@@ -12,10 +12,12 @@ import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import RecentCalculators from "@/components/calculator/RecentCalculators";
 import ProjectManager from "@/components/calculator/ProjectManager";
 
+const CALC_COUNT = ALL_CALCULATORS.length;
+
 const META = {
   title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
   description:
-    "61+ бесплатных строительных калькуляторов онлайн: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.",
+    `${CALC_COUNT}+ бесплатных строительных калькуляторов онлайн: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.`,
 } as const;
 
 export const metadata: Metadata = {
@@ -239,7 +241,7 @@ export default async function HomePage() {
       {
         "@type": "Question",
         name: "Есть ли мобильное приложение?",
-        acceptedAnswer: { "@type": "Answer", text: "Да, приложение Мастерок для Android доступно в RuStore. Все 61+ калькуляторов работают без интернета, расчёты сохраняются в истории." },
+        acceptedAnswer: { "@type": "Answer", text: `Да, приложение Мастерок для Android доступно в RuStore. Все ${CALC_COUNT}+ калькуляторов работают без интернета, расчёты сохраняются в истории.` },
       },
       {
         "@type": "Question",

@@ -1,7 +1,7 @@
 {
   "calculator_id": "roofing",
   "formula_version": "roofing-canonical-v1",
-  "generated_at": "2026-04-08T01:51:42.642Z",
+  "generated_at": "2026-04-08T06:09:15.603Z",
   "cases": [
     {
       "id": "defaults",

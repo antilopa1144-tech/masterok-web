@@ -101,12 +101,6 @@ export const metadata: Metadata = {
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION ?? "",
   },
   other: {
-    "theme-color": "#f97316",
-    "msapplication-TileColor": "#f97316",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
-    "format-detection": "telephone=no",
-    "mobile-web-app-capable": "yes",
     "geo.region": "RU",
     "geo.placename": "Россия",
     "content-language": "ru",
@@ -130,12 +124,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://mc.yandex.ru" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        <link rel="manifest" href="/manifest.json" />
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
-        <link rel="search" type="application/opensearchdescription+xml" title={SITE_NAME} href="/opensearch.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})` }} />
+        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))` }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
@@ -144,6 +136,7 @@ export default function RootLayout({
               src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
               style={{ position: "absolute", left: "-9999px" }}
               alt=""
+              aria-hidden="true"
             />
           </div>
         </noscript>

@@ -5,6 +5,8 @@
  * so there is no runtime API access.
  */
 
+// GHOST_API_URL: задайте в .env.local или CI secrets.
+// Fallback для локальных билдов (внутренний сервер Ghost).
 const GHOST_API_URL = process.env.GHOST_API_URL ?? "http://5.129.248.119";
 const GHOST_CONTENT_API_KEY = process.env.GHOST_CONTENT_API_KEY ?? "";
 
@@ -58,6 +60,9 @@ async function ghostFetch<T>(
   endpoint: string,
   params: Record<string, string> = {},
 ): Promise<T> {
+  if (!GHOST_API_URL) {
+    throw new Error("GHOST_API_URL не задан. Укажите в .env.local или CI secrets.");
+  }
   const url = new URL(`/ghost/api/content${endpoint}`, GHOST_API_URL);
   url.searchParams.set("key", GHOST_CONTENT_API_KEY);
   for (const [key, value] of Object.entries(params)) {
@@ -134,6 +139,10 @@ function transformPost(post: GhostPost): BlogPost {
 }
 
 export async function fetchAllPosts(): Promise<BlogPost[]> {
+  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) {
+    console.warn("[Ghost] GHOST_API_URL или GHOST_CONTENT_API_KEY не заданы — блог будет пустым.");
+    return [];
+  }
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>("/posts/", {
       include: "tags",
@@ -148,6 +157,7 @@ export async function fetchAllPosts(): Promise<BlogPost[]> {
 }
 
 export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefined> {
+  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) return undefined;
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>(`/posts/slug/${slug}/`, {
       include: "tags",
@@ -161,6 +171,7 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
 }
 
 export async function fetchAllTags(): Promise<{ name: string; slug: string }[]> {
+  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) return [];
   try {
     const res = await ghostFetch<GhostResponse<GhostTag>>("/tags/", {
       limit: "all",

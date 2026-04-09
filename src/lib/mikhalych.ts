@@ -2,7 +2,7 @@
  * Общие константы и утилиты для Михалыча (AI-помощник).
  */
 
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 
 export const SYSTEM_PROMPT = `Ты — Михалыч, опытный строительный прораб с 30-летним стажем.
 Работал на стройках по всей России: фундаменты, кладка, кровля, отделка, инженерные сети — всё через твои руки прошло.
@@ -57,18 +57,19 @@ export const MAX_TOKENS = 2048;
 /**
  * URL для API-запросов Михалыча.
  *
- * Если задана NEXT_PUBLIC_MIKHALYCH_PROXY_URL — используется прокси (рекомендуется).
  * Прокси (Cloudflare Worker / серверная функция) хранит API-ключ на сервере,
  * не раскрывая его в клиентском бандле.
  *
- * Если прокси не настроен — fallback на прямое обращение к OpenRouter
- * (ключ берётся из NEXT_PUBLIC_OPENROUTER_API_KEY — менее безопасно).
+ * В продакшене ОБЯЗАТЕЛЕН прокси (NEXT_PUBLIC_MIKHALYCH_PROXY_URL).
+ * Прямой ключ (NEXT_PUBLIC_OPENROUTER_API_KEY) — только для локальной разработки.
  */
-export const MIKHALYCH_API_URL =
-  process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL ??
-  "https://openrouter.ai/api/v1/chat/completions";
+const IS_DEV = process.env.NODE_ENV === "development";
 
 export const USE_PROXY = !!process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL;
+
+export const MIKHALYCH_API_URL =
+  process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL ??
+  (IS_DEV ? "https://openrouter.ai/api/v1/chat/completions" : "");
 
 const MIN_INTERVAL_MS = 3000;
 let lastRequestTime = 0;
@@ -90,6 +91,8 @@ export function checkRateLimit(): string | null {
 
 export function getApiKey(): string | null {
   if (USE_PROXY) return null;
+  // Прямой ключ только в dev-режиме — в продакшене ключ не должен попадать в бандл
+  if (!IS_DEV) return null;
   return process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ?? null;
 }
 

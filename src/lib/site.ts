@@ -3,6 +3,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok
 export const SITE_WEBPAGE_DESCRIPTION = "Бесплатные строительные калькуляторы онлайн";
 export const SITE_TITLE_SUFFIX = "строительные калькуляторы онлайн";
 export const SITE_DEFAULT_TITLE = `${SITE_NAME} — ${SITE_TITLE_SUFFIX}`;
+// NB: Обновляйте число при добавлении калькуляторов (ALL_CALCULATORS.length в calculators/index.ts)
 export const SITE_METADATA_DESCRIPTION =
   "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и ещё 61+ расчёт. Точно, быстро, по ГОСТ.";
 export const SITE_TWITTER_TITLE = `${SITE_NAME} — строительные калькуляторы`;

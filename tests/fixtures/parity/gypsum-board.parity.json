@@ -1,7 +1,7 @@
 {
   "calculator_id": "gypsum-board",
   "formula_version": "gypsum-board-canonical-v1",
-  "generated_at": "2026-04-08T01:51:42.536Z",
+  "generated_at": "2026-04-08T06:09:15.536Z",
   "cases": [
     {
       "id": "defaults",

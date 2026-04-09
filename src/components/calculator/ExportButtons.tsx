@@ -60,7 +60,9 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
           {/* Затемнение фона */}
           <div
             className="fixed inset-0 z-40"
+            role="presentation"
             onClick={() => setIsOpen(false)}
+            onKeyDown={(e) => { if (e.key === "Escape") setIsOpen(false); }}
           />
 
           {/* Выпадающее меню */}

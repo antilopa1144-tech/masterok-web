@@ -35,6 +35,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,11 +71,15 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
       setError(null);
 
       try {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
         const apiMessages = [...messages, userMsg].slice(-10);
 
         const response = await fetch(MIKHALYCH_API_URL, {
           method: "POST",
           headers: getApiHeaders(),
+          signal: controller.signal,
           body: JSON.stringify({
             model: OPENROUTER_MODEL,
             messages: [

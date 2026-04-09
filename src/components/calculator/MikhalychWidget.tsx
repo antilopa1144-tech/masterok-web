@@ -29,6 +29,11 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -83,10 +88,14 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
     setLoading(true);
 
     try {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       const lastMessages = apiMessages.slice(-10);
       const res = await fetch(MIKHALYCH_API_URL, {
         method: "POST",
         headers: getApiHeaders(),
+        signal: controller.signal,
         body: JSON.stringify({
           model: OPENROUTER_MODEL,
           messages: [

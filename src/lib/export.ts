@@ -1,6 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
 export interface Material {
@@ -22,7 +19,9 @@ interface EstimateData {
 const EXPORT_TITLE = `${SITE_NAME} — Смета материалов`;
 const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '');
 
-export function exportToPDF(data: EstimateData): void {
+export async function exportToPDF(data: EstimateData): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
 
   doc.setFontSize(18);
@@ -105,7 +104,8 @@ export function exportToPDF(data: EstimateData): void {
   doc.save(filename);
 }
 
-export function exportToExcel(data: EstimateData): void {
+export async function exportToExcel(data: EstimateData): Promise<void> {
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   const wsData = [
@@ -179,8 +179,8 @@ export function useEstimateExport(calculatorName: string) {
     };
 
     return {
-      toPDF: () => exportToPDF(data),
-      toExcel: () => exportToExcel(data),
+      toPDF: () => void exportToPDF(data),
+      toExcel: () => void exportToExcel(data),
     };
   };
 

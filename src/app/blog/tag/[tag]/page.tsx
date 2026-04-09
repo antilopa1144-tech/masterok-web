@@ -18,8 +18,12 @@ const UI_TEXT = {
   backToBlog: "← Все статьи",
 } as const;
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   const tags = await getAllTags();
+  // output: "export" требует хотя бы один параметр для динамического роута
+  if (tags.length === 0) return [{ tag: "_placeholder" }];
   return tags.map((tag) => ({ tag: tagToSlug(tag) }));
 }
 
