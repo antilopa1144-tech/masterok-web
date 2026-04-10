@@ -97,22 +97,11 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     },
   } : null;
 
-  // QAPage schema for calculators with 5+ FAQ (better for AI citation engines)
-  const qaPageLd = allFaqItems.length >= 5 ? {
-    "@context": "https://schema.org",
-    "@type": "QAPage",
-    mainEntity: allFaqItems.slice(0, 3).map(item => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-        upvoteCount: 0,
-        dateCreated: SITE_FOUNDING_DATE,
-        author: { "@type": "Organization", name: SITE_NAME },
-      },
-    })),
-  } : null;
+  // QAPage удалён: дублировал FAQPage с теми же вопросами и не соответствовал
+  // гайдлайнам Google (требует mainEntity.answerCount, mainEntity.author,
+  // url в acceptedAnswer.author). Google официально оставил QAPage только
+  // для форумных Q&A-сайтов вроде StackOverflow. FAQPage достаточен для SEO,
+  // AEO и AI-цитирования (Perplexity, ChatGPT парсят FAQPage).
 
   // HowTo schema
   const howToLd = calc.howToUse && calc.howToUse.length > 0 ? {
@@ -138,6 +127,9 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
   } : null;
 
   // Expert tips as Article snippets for AEO
+  const expertAuthors = calc.expertTips
+    ? calc.expertTips.filter(t => t.author).map(t => ({ "@type": "Person", name: t.author }))
+    : [];
   const expertTipsLd = calc.expertTips && calc.expertTips.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -145,10 +137,13 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     description: calc.metaDescription,
     inLanguage: "ru",
     url: canonicalUrl,
-    author: calc.expertTips.filter(t => t.author).map(t => ({
+    // Если у советов нет авторов — указываем эксперта сайта как автора
+    author: expertAuthors.length > 0 ? expertAuthors : {
       "@type": "Person",
-      name: t.author,
-    })),
+      name: SITE_EXPERT.name,
+      jobTitle: SITE_EXPERT.jobTitle,
+      url: `${SITE_URL}/o-spetsialiste/`,
+    },
     articleBody: calc.expertTips.map(t => `${t.title}: ${t.content}`).join("\n\n"),
     publisher: {
       "@type": "Organization",
@@ -162,7 +157,6 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />}
-      {qaPageLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(qaPageLd) }} />}
       {howToLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />}
       {expertTipsLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(expertTipsLd) }} />}
     </>

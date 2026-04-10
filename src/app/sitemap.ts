@@ -140,22 +140,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── 6. Blog post pages ─────────────────────────────────────────────────────
   //    lastModified from post.date, priority 0.7 for SEO content value
+  //    Защитный фильтр на placeholder slug — на случай если Ghost вернул пусто
 
-  const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
-    url: `${BASE_URL}/blog/${post.slug}/`,
-    lastModified: post.date,
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }));
+  const blogPages: MetadataRoute.Sitemap = allPosts
+    .filter((post) => post.slug !== "_placeholder")
+    .map((post) => ({
+      url: `${BASE_URL}/blog/${post.slug}/`,
+      lastModified: post.date,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    }));
 
   // ── 7. Blog tag pages ───────────────────────────────────────────────────────
 
-  const tagPages: MetadataRoute.Sitemap = allTags.map((tag) => ({
-    url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
-    lastModified: latestPostDate,
-    changeFrequency: "weekly" as const,
-    priority: 0.5,
-  }));
+  const tagPages: MetadataRoute.Sitemap = allTags
+    .filter((tag) => tag !== "_placeholder")
+    .map((tag) => ({
+      url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
+      lastModified: latestPostDate,
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+    }));
 
   // ── Merge all sections ─────────────────────────────────────────────────────
 

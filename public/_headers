@@ -1,3 +1,8 @@
+# Этот файл — формат Netlify/Cloudflare Pages.
+# Текущий хостинг — Caddy на Timeweb, который этот формат НЕ читает.
+# Для боевого применения cache-control нужна настройка Caddyfile через панель Timeweb.
+# См. комментарий в next.config.ts с готовым Caddyfile-фрагментом.
+
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
@@ -5,3 +10,39 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+# Хэшированная статика Next.js — иммутабельный кэш на год
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Шрифты — иммутабельный кэш на год
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+# Изображения — кэш на 30 дней
+/*.svg
+  Cache-Control: public, max-age=2592000
+/*.png
+  Cache-Control: public, max-age=2592000
+/*.jpg
+  Cache-Control: public, max-age=2592000
+/*.jpeg
+  Cache-Control: public, max-age=2592000
+/*.webp
+  Cache-Control: public, max-age=2592000
+/*.ico
+  Cache-Control: public, max-age=2592000
+
+# HTML — короткий кэш с обязательной ревалидацией
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Sitemap, robots, RSS
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+/robots.txt
+  Cache-Control: public, max-age=86400
+/rss.xml
+  Cache-Control: public, max-age=1800

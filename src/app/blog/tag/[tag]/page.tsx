@@ -22,8 +22,16 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const tags = await getAllTags();
-  // output: "export" требует хотя бы один параметр для динамического роута
-  if (tags.length === 0) return [{ tag: "_placeholder" }];
+  if (tags.length === 0) {
+    // Защита от тихой деградации: production CI билд падает при пустом блоге.
+    if (process.env.CI === "true" && process.env.NODE_ENV === "production") {
+      throw new Error(
+        "Ghost API returned 0 tags in production CI build — refusing to deploy. " +
+        "Check GHOST_API_URL and GHOST_CONTENT_API_KEY in CI secrets."
+      );
+    }
+    return [{ tag: "_placeholder" }];
+  }
   return tags.map((tag) => ({ tag: tagToSlug(tag) }));
 }
 
@@ -33,14 +41,20 @@ interface TagPageProps {
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { tag: tagSlug } = await params;
+  // Явный noindex для placeholder — защита от Soft 404 в индексе
+  if (tagSlug === "_placeholder") {
+    return {
+      title: `Статьи — ${SITE_NAME}`,
+      robots: { index: false, follow: false },
+    };
+  }
   // Try both decoded and raw slug matching
   const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
   if (!tag) {
-    return buildPageMetadata({
+    return {
       title: `Статьи — ${SITE_NAME}`,
-      description: "Статьи о строительстве и ремонте",
-      url: `${SITE_URL}/blog/`,
-    });
+      robots: { index: false, follow: false },
+    };
   }
   const posts = await getPostsByTag(tag);
   return buildPageMetadata({
