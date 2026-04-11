@@ -25,6 +25,10 @@ interface PageProps {
   params: Promise<{ category: string }>;
 }
 
+// dynamicParams: false → неизвестные category slug возвращают HTTP 404
+// (Next.js не пытается рендерить компонент для них)
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return CATEGORIES.map((cat) => ({ category: cat.slug }));
 }

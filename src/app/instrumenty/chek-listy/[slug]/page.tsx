@@ -24,6 +24,9 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// dynamicParams: false → неизвестные slug возвращают HTTP 404
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return ALL_CHECKLISTS.map((cl) => ({ slug: cl.slug }));
 }
