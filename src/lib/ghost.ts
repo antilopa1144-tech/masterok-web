@@ -69,10 +69,6 @@ async function ghostFetch<T>(
     url.searchParams.set(key, value);
   }
 
-  // Diagnostics for CI builds — помогает отследить сетевые проблемы
-  const redactedUrl = url.toString().replace(/key=[^&]+/, "key=***");
-  console.log(`[Ghost] Fetching ${redactedUrl}`);
-
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -80,20 +76,12 @@ async function ghostFetch<T>(
       const res = await fetch(url.toString());
 
       if (!res.ok) {
-        const bodyPreview = await res.text().catch(() => "");
-        throw new Error(
-          `Ghost API error: ${res.status} ${res.statusText} for ${endpoint}. ` +
-          `Body preview: ${bodyPreview.slice(0, 200)}`
-        );
+        throw new Error(`Ghost API error: ${res.status} ${res.statusText} for ${endpoint}`);
       }
 
       return (await res.json()) as T;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.error(`[Ghost] Attempt ${attempt + 1}/3 failed for ${endpoint}:`, lastError.message);
-      if (lastError.cause) {
-        console.error(`[Ghost] Cause:`, lastError.cause);
-      }
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
