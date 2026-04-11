@@ -2,71 +2,88 @@ import type { NextConfig } from "next";
 
 /*
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- * ХОСТИНГ: Timeweb Cloud, сервер Caddy.
- * Деплой статики из out/ автоматически с push в main.
+ * РЕЖИМ: SSR через `next start` (Node.js server)
+ * Хостинг: Timeweb Cloud App Platform → Backend Apps (Node.js 24)
  *
- * КРИТИЧНО: Caddy на Timeweb по умолчанию настроен с SPA-fallback —
- * отдаёт index.html для всех несуществующих URL вместо 404. Это создаёт
- * Soft 404 в Яндексе и Google. Нужна правка Caddyfile через панель Timeweb:
+ * Build: `npm ci && npm run build`
+ * Start: `npm run start` (→ next start, читает PORT из env, дефолт 3000)
  *
- *   example.com {
- *     root * /path/to/out
- *     encode gzip zstd
+ * Этот режим даёт нативную поддержку:
+ *  - HTTP 404 со статус-кодом 404 (через src/app/not-found.tsx)
+ *  - Custom headers (через headers() ниже)
+ *  - Redirects (через redirects() если понадобятся)
+ *  - Динамические роуты без предварительного build-time рендеринга (ISR)
  *
- *     # try_files: точное совпадение → .html → index.html → 404
- *     try_files {path} {path}.html {path}/index.html
- *     file_server
- *
- *     # 404 страница со статус-кодом 404
- *     handle_errors {
- *       @404 expression {http.error.status_code} == 404
- *       rewrite @404 /404.html
- *       file_server
- *     }
- *
- *     # ── Security headers ────────────────────────────────────────────────
- *     header X-Content-Type-Options "nosniff"
- *     header X-Frame-Options "SAMEORIGIN"
- *     header X-XSS-Protection "1; mode=block"
- *     header Referrer-Policy "strict-origin-when-cross-origin"
- *     header Permissions-Policy "camera=(), microphone=(), geolocation=()"
- *     header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
- *
- *     # ── Cache-Control ──────────────────────────────────────────────────
- *     # Хэшированная статика Next.js — иммутабельный кэш на год
- *     @hashed_assets path /_next/static/*
- *     header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
- *
- *     # Шрифты
- *     @fonts path *.woff2 *.woff *.ttf *.eot
- *     header @fonts Cache-Control "public, max-age=31536000, immutable"
- *
- *     # Изображения — 30 дней
- *     @media path *.png *.jpg *.jpeg *.svg *.webp *.ico
- *     header @media Cache-Control "public, max-age=2592000"
- *
- *     # HTML — короткий кэш + ревалидация
- *     @html path *.html /
- *     header @html Cache-Control "public, max-age=300, must-revalidate"
- *
- *     # Sitemap, robots, RSS
- *     header /sitemap.xml Cache-Control "public, max-age=3600"
- *     header /robots.txt Cache-Control "public, max-age=86400"
- *     header /rss.xml Cache-Control "public, max-age=1800"
- *   }
+ * Раньше был `output: "export"` — он раздавался через Frontend Apps Timeweb,
+ * которая делала SPA-fallback на index.html для всех несуществующих URL.
+ * Это создавало Soft 404. Теперь запускаем Next.js сервером.
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
 
 const nextConfig: NextConfig = {
-  // Статический экспорт — хостинг без Node.js
-  output: "export",
-  // Trailing slash для SEO
+  // Без output → стандартный server mode (next start)
+
+  // Trailing slash для SEO (URL всегда с / на конце)
   trailingSlash: true,
+
   // Убрать X-Powered-By: Next.js
   poweredByHeader: false,
-  // Оптимизация изображений — unoptimized для static export
+
+  // next/image не используем — blog images с Ghost (внешний URL),
+  // остальные ассеты локальные. Оставляем unoptimized чтобы не требовать sharp в runtime.
   images: {
     unoptimized: true,
+  },
+
+  // HTTP headers — то, ради чего мы перешли на SSR
+  async headers() {
+    return [
+      // Security headers — на всех страницах
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+        ],
+      },
+      // Content-hashed статика Next.js — иммутабельный кэш на год
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      // Шрифты — иммутабельный кэш на год
+      {
+        source: "/:path*.woff2",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      // Картинки — месяц
+      {
+        source: "/:path*.(png|jpg|jpeg|svg|webp|ico|gif)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=2592000" },
+        ],
+      },
+      // Sitemap, robots, RSS
+      {
+        source: "/sitemap.xml",
+        headers: [{ key: "Cache-Control", value: "public, max-age=3600" }],
+      },
+      {
+        source: "/robots.txt",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      },
+      {
+        source: "/rss.xml",
+        headers: [{ key: "Cache-Control", value: "public, max-age=1800" }],
+      },
+    ];
   },
 };
 

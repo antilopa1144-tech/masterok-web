@@ -12,22 +12,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: [
-          "/api/",
-          "/_next/",
-          "/blog/_placeholder/",
-          "/blog/tag/_placeholder/",
-        ],
+        disallow: ["/api/", "/_next/"],
       },
       {
         userAgent: "Yandex",
         allow: "/",
-        disallow: [
-          "/api/",
-          "/_next/",
-          "/blog/_placeholder/",
-          "/blog/tag/_placeholder/",
-        ],
+        disallow: ["/api/", "/_next/"],
         crawlDelay: 0.5,
       },
     ],

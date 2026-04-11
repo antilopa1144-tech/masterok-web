@@ -26,35 +26,23 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// dynamicParams: false → неизвестные slug возвращают 404 (через notFound())
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
-  if (posts.length === 0) {
-    // Защита от тихой деградации: в production CI билд падает, если Ghost API
-    // вернул 0 постов — иначе в прод уйдёт сайт без блога с placeholder.
-    if (process.env.CI === "true" && process.env.NODE_ENV === "production") {
-      throw new Error(
-        "Ghost API returned 0 posts in production CI build — refusing to deploy. " +
-        "Check GHOST_API_URL and GHOST_CONTENT_API_KEY in CI secrets."
-      );
-    }
-    // Локальные билды: placeholder для обхода требования output:"export"
-    return [{ slug: "_placeholder" }];
+  // Защита от тихой деградации: CI билд падает, если Ghost API вернул 0 постов
+  if (posts.length === 0 && process.env.CI === "true" && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Ghost API returned 0 posts in production CI build — refusing to deploy. " +
+      "Check GHOST_API_URL and GHOST_CONTENT_API_KEY in CI secrets."
+    );
   }
   return posts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  // Явный noindex для placeholder и отсутствующих постов — защита от Soft 404
-  // на случай, если такая страница попадёт в индекс.
-  if (slug === "_placeholder") {
-    return {
-      title: UI_TEXT.notFoundTitle,
-      robots: { index: false, follow: false },
-    };
-  }
   const post = await getPostBySlug(slug);
   if (!post) {
     return {
