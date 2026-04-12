@@ -49,14 +49,3 @@ export function trackComparisonOpen(calculatorSlug: string): void {
   });
 }
 
-export function trackExport(
-  calculatorSlug: string,
-  format: "pdf" | "excel",
-  mode: string,
-): void {
-  trackEvent("calculator_export", {
-    calculator: calculatorSlug,
-    format,
-    accuracy_mode: mode,
-  });
-}

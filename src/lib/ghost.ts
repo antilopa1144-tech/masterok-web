@@ -170,16 +170,3 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
   }
 }
 
-export async function fetchAllTags(): Promise<{ name: string; slug: string }[]> {
-  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) return [];
-  try {
-    const res = await ghostFetch<GhostResponse<GhostTag>>("/tags/", {
-      limit: "all",
-      filter: "visibility:public",
-    });
-    return (res.tags ?? []).map((t) => ({ name: t.name, slug: t.slug }));
-  } catch (err) {
-    console.error("[Ghost] Failed to fetch tags:", err);
-    return [];
-  }
-}

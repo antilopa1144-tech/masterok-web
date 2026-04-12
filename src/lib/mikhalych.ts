@@ -96,10 +96,6 @@ export function getApiKey(): string | null {
   return process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ?? null;
 }
 
-export function getSiteUrl(): string {
-  return SITE_URL;
-}
-
 export function getApiHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -110,7 +106,7 @@ export function getApiHeaders(): Record<string, string> {
   const key = getApiKey();
   if (key) {
     headers.Authorization = `Bearer ${key}`;
-    headers["HTTP-Referer"] = getSiteUrl();
+    headers["HTTP-Referer"] = SITE_URL;
     headers["X-Title"] = "Masterok - Mikhalych";
   }
 
