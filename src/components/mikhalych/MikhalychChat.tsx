@@ -7,9 +7,7 @@ import {
   MIKHALYCH_API_URL,
   OPENROUTER_MODEL,
   checkRateLimit,
-  getApiKey,
   getApiHeaders,
-  USE_PROXY,
 } from "@/lib/mikhalych";
 
 interface Message {
@@ -52,11 +50,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || loading) return;
-
-      if (!USE_PROXY && !getApiKey()) {
-        setError("API-ключ не настроен. Проверьте NEXT_PUBLIC_OPENROUTER_API_KEY.");
-        return;
-      }
 
       const rateLimitError = checkRateLimit();
       if (rateLimitError) {

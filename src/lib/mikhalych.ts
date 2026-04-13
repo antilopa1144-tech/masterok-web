@@ -57,19 +57,17 @@ export const MAX_TOKENS = 2048;
 /**
  * URL для API-запросов Михалыча.
  *
- * Прокси (Cloudflare Worker / серверная функция) хранит API-ключ на сервере,
- * не раскрывая его в клиентском бандле.
+ * В продакшене запросы идут через серверный API route `/api/mikhalych`,
+ * который хранит OPENROUTER_API_KEY на сервере — ключ не попадает в бандл.
  *
- * В продакшене ОБЯЗАТЕЛЕН прокси (NEXT_PUBLIC_MIKHALYCH_PROXY_URL).
- * Прямой ключ (NEXT_PUBLIC_OPENROUTER_API_KEY) — только для локальной разработки.
+ * В dev-режиме можно использовать прямой ключ NEXT_PUBLIC_OPENROUTER_API_KEY
+ * для удобства локальной разработки.
  */
 const IS_DEV = process.env.NODE_ENV === "development";
 
-export const USE_PROXY = !!process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL;
-
-export const MIKHALYCH_API_URL =
-  process.env.NEXT_PUBLIC_MIKHALYCH_PROXY_URL ??
-  (IS_DEV ? "https://openrouter.ai/api/v1/chat/completions" : "");
+export const MIKHALYCH_API_URL = IS_DEV
+  ? "https://openrouter.ai/api/v1/chat/completions"
+  : "/api/mikhalych";
 
 const MIN_INTERVAL_MS = 3000;
 let lastRequestTime = 0;
@@ -89,21 +87,15 @@ export function checkRateLimit(): string | null {
   return null;
 }
 
-export function getApiKey(): string | null {
-  if (USE_PROXY) return null;
-  // Прямой ключ только в dev-режиме — в продакшене ключ не должен попадать в бандл
-  if (!IS_DEV) return null;
-  return process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ?? null;
-}
-
 export function getApiHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (USE_PROXY) return headers;
+  if (!IS_DEV) return headers;
 
-  const key = getApiKey();
+  // Прямой ключ только в dev-режиме
+  const key = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ?? null;
   if (key) {
     headers.Authorization = `Bearer ${key}`;
     headers["HTTP-Referer"] = SITE_URL;

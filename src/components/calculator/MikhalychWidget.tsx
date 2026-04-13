@@ -7,9 +7,7 @@ import {
   OPENROUTER_MODEL,
   MAX_TOKENS,
   checkRateLimit,
-  getApiKey,
   getApiHeaders,
-  USE_PROXY,
 } from "@/lib/mikhalych";
 import { MIKHALYCH_WIDGET_UI_TEXT as UI_TEXT, getMikhalychAssistantErrorMessage } from "./uiText";
 
@@ -58,14 +56,6 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
     if (loading) return; // debounce while request in flight
-
-    if (!USE_PROXY && !getApiKey()) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: UI_TEXT.apiKeyMissing },
-      ]);
-      return;
-    }
 
     const rateLimitError = checkRateLimit();
     if (rateLimitError) {
