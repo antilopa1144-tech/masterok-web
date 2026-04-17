@@ -7,7 +7,7 @@ import { ALL_CALCULATORS } from "@/lib/calculators";
 export const metadata: Metadata = buildPageMetadata({
   title: `О проекте ${SITE_NAME} — строительные калькуляторы`,
   description:
-    `Мастерок — бесплатный сервис строительных калькуляторов. Расчёты по ГОСТ и СНиП, ${ALL_CALCULATORS.length}+ калькуляторов для строительства и ремонта. О проекте, миссии и технологиях.`,
+    `${SITE_NAME} — бесплатный сервис из ${ALL_CALCULATORS.length}+ строительных калькуляторов по ГОСТ и СНиП. О проекте, миссии и технологиях.`,
   url: `${SITE_URL}/o-proekte/`,
 });
 
