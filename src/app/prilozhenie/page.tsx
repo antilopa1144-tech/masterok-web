@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { MASTEROK_RUSTORE_URL, SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -77,25 +77,30 @@ const APP_CATEGORIES = [
 const appJsonLd = {
   "@context": "https://schema.org",
   "@type": "MobileApplication",
+  "@id": `${SITE_URL}/#mobile-app`,
   name: `${SITE_NAME} — строительный калькулятор`,
   operatingSystem: "Android",
   applicationCategory: "UtilitiesApplication",
+  inLanguage: "ru",
+  isAccessibleForFree: true,
+  installUrl: MASTEROK_RUSTORE_URL,
+  downloadUrl: MASTEROK_RUSTORE_URL,
   offers: {
     "@type": "Offer",
     price: "0",
     priceCurrency: "RUB",
   },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    ratingCount: "122",
-    bestRating: "5",
-  },
-  downloadUrl: "https://www.rustore.ru/catalog/app/ru.masterok.app",
   softwareVersion: "1.5.0",
-  datePublished: "2024-06-01",
+  datePublished: SITE_FOUNDING_DATE,
   description: META.description,
-  inLanguage: "ru",
+  publisher: {
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: SITE_NAME,
+    url: SITE_URL,
+  },
+  // AggregateRating убран — фейковые рейтинги нарушают гайдлайны Google.
+  // Добавить обратно только при наличии реальных отзывов из RuStore API.
 };
 
 const breadcrumbLd = {

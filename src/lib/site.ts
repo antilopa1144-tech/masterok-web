@@ -17,8 +17,16 @@ export const SITE_OG_IMAGE_HEIGHT = 630;
 export const SITE_FOOTER_DESCRIPTION = `${SITE_WEBPAGE_DESCRIPTION}. Точный расчёт материалов по ГОСТ и СНиП.`;
 export const SITE_FOUNDING_DATE = "2024-06-01";
 
-export const SITE_EXPERT = {
-  name: "Андрей Николаевич Белов",
-  jobTitle: "Инженер-строитель, кандидат технических наук",
-  description: "30 лет опыта в строительстве. Автор методик расчёта строительных материалов.",
-};
+// Дата последнего пересмотра контента — обновляется автоматически на каждом билде.
+export const SITE_LAST_REVIEWED = new Date().toISOString().split("T")[0];
+
+// Ссылки на внешние профили организации (sameAs для Schema.org).
+export const MASTEROK_RUSTORE_URL = "https://www.rustore.ru/catalog/app/ru.masterok.app";
+export const SITE_SAME_AS = [MASTEROK_RUSTORE_URL] as const;
+
+// Ключевые нормативные документы — используются в citation schema калькуляторов.
+export const SITE_CITATIONS = [
+  { name: "ГОСТ", description: "Государственные стандарты Российской Федерации" },
+  { name: "СНиП", description: "Строительные нормы и правила" },
+  { name: "СП", description: "Своды правил по проектированию и строительству" },
+] as const;

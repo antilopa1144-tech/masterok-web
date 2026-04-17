@@ -35,6 +35,25 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 
+  // 301-редиректы для удалённых/переименованных URL
+  async redirects() {
+    return [
+      // Страница «О специалисте» удалена — выдуманный эксперт больше не фигурирует.
+      // Перенаправляем на «О проекте», чтобы не терять SEO-вес и не получать 404
+      // для старых индексированных URL.
+      {
+        source: "/o-spetsialiste",
+        destination: "/o-proekte/",
+        permanent: true,
+      },
+      {
+        source: "/o-spetsialiste/",
+        destination: "/o-proekte/",
+        permanent: true,
+      },
+    ];
+  },
+
   // HTTP headers — то, ради чего мы перешли на SSR
   async headers() {
     return [

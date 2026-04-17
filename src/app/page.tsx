@@ -6,7 +6,7 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { SITE_NAME, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
+import { MASTEROK_RUSTORE_URL, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import RecentCalculators from "@/components/calculator/RecentCalculators";
@@ -184,39 +184,49 @@ export default async function HomePage() {
 
   const organizationLd = {
     "@context": "https://schema.org",
-    "@type": "HomeAndConstructionBusiness",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: `${SITE_URL}/logo-512x512.png`,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/apple-touch-icon.png`,
+      width: 180,
+      height: 180,
+    },
     description: SITE_WEBPAGE_DESCRIPTION,
     foundingDate: "2024",
     areaServed: {
       "@type": "Country",
       name: "Россия",
     },
-    serviceType: ["Строительные калькуляторы онлайн", "Расчёт строительных материалов"],
     knowsLanguage: "ru",
-    priceRange: "Бесплатно",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "ул. Лесная, 42",
-      addressLocality: "Москва",
-      postalCode: "125000",
-      addressCountry: "RU",
-    },
-    telephone: "+7-495-123-45-67",
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 55.7558,
-      longitude: 37.6173,
-    },
-    sameAs: [],
+    sameAs: [...SITE_SAME_AS],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
-      telephone: "+7-495-123-45-67",
       availableLanguage: "Russian",
+      url: `${SITE_URL}/mikhalych/`,
     },
+  };
+
+  const appLd = {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "@id": `${SITE_URL}/#mobile-app`,
+    name: `${SITE_NAME} — строительные калькуляторы`,
+    operatingSystem: "Android",
+    applicationCategory: "UtilitiesApplication",
+    inLanguage: "ru",
+    isAccessibleForFree: true,
+    installUrl: MASTEROK_RUSTORE_URL,
+    downloadUrl: MASTEROK_RUSTORE_URL,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "RUB",
+    },
+    publisher: { "@id": `${SITE_URL}/#organization` },
   };
 
   const faqLd = {
@@ -225,28 +235,28 @@ export default async function HomePage() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "Калькуляторы бесплатные?",
-        acceptedAnswer: { "@type": "Answer", text: "Да, все калькуляторы полностью бесплатные, без регистрации и ограничений. Расчёты доступны онлайн на сайте и в мобильном приложении." },
+        name: `Бесплатны ли строительные калькуляторы на сайте ${SITE_NAME}?`,
+        acceptedAnswer: { "@type": "Answer", text: `Да, все калькуляторы на сайте ${SITE_NAME} полностью бесплатные, без регистрации и ограничений. Расчёты доступны онлайн на сайте и в мобильном приложении для Android.` },
       },
       {
         "@type": "Question",
-        name: "По каким нормам считают калькуляторы?",
-        acceptedAnswer: { "@type": "Answer", text: "Расчёты основаны на актуальных нормативах: ГОСТ, СНиП, СП. Нормы расхода материалов берутся из технических паспортов производителей и строительных справочников." },
+        name: "По каким нормам рассчитываются материалы в калькуляторах?",
+        acceptedAnswer: { "@type": "Answer", text: "Расчёты основаны на актуальных нормативных документах Российской Федерации: ГОСТ (государственные стандарты), СНиП (строительные нормы и правила), СП (своды правил). Нормы расхода материалов берутся из технических паспортов производителей и строительных справочников." },
       },
       {
         "@type": "Question",
-        name: "Можно ли доверять результатам?",
-        acceptedAnswer: { "@type": "Answer", text: "Калькуляторы показывают три сценария (минимум, рекомендуемый, максимум) и позволяют выбрать режим точности — от базового до профессионального. Это даёт вилку для закупки, а не одну цифру." },
+        name: "Можно ли доверять результатам расчётов в онлайн-калькуляторах?",
+        acceptedAnswer: { "@type": "Answer", text: "Каждый калькулятор показывает три сценария расчёта: минимум, рекомендуемый и максимум. Это даёт вилку для закупки материалов, а не одну цифру. Можно выбрать режим точности — от базового до профессионального с учётом отходов и запасов." },
       },
       {
         "@type": "Question",
-        name: "Есть ли мобильное приложение?",
-        acceptedAnswer: { "@type": "Answer", text: `Да, приложение Мастерок для Android доступно в RuStore. Все ${CALC_COUNT}+ калькуляторов работают без интернета, расчёты сохраняются в истории.` },
+        name: `Есть ли мобильное приложение ${SITE_NAME} для смартфона?`,
+        acceptedAnswer: { "@type": "Answer", text: `Да, мобильное приложение ${SITE_NAME} для Android бесплатно доступно в RuStore. Все ${CALC_COUNT}+ калькуляторов работают без интернета, расчёты сохраняются в истории и могут быть отправлены в виде QR-кода со сметой.` },
       },
       {
         "@type": "Question",
-        name: "Кто такой Михалыч?",
-        acceptedAnswer: { "@type": "Answer", text: "Михалыч — AI-ассистент строителя. Отвечает на вопросы по материалам, технологиям и нормам расхода. Работает прямо в калькуляторах и видит ваши параметры расчёта." },
+        name: "Кто такой Михалыч и как он помогает со строительными расчётами?",
+        acceptedAnswer: { "@type": "Answer", text: `Михалыч — это встроенный AI-ассистент сайта ${SITE_NAME}. Он отвечает на вопросы по строительным материалам, технологиям монтажа и нормам расхода. Работает прямо в калькуляторах и видит ваши параметры расчёта, что позволяет давать контекстные советы.` },
       },
     ],
   };
@@ -262,6 +272,10 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }}
       />
       <script
         type="application/ld+json"

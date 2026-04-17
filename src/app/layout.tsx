@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 
-import { SITE_DEFAULT_TITLE, SITE_EXPERT, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
+import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
 const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
@@ -58,8 +59,9 @@ export const metadata: Metadata = {
     "калькулятор ламината",
     "расчёт стройматериалов онлайн",
   ],
-  authors: [{ name: `${SITE_EXPERT.name}, ${SITE_EXPERT.jobTitle.toLowerCase()}` }],
-  creator: SITE_EXPERT.name,
+  authors: [{ name: `Редакция ${SITE_NAME}`, url: `${SITE_URL}/o-proekte/` }],
+  creator: `Редакция ${SITE_NAME}`,
+  publisher: SITE_NAME,
   metadataBase: new URL(SITE_URL),
   twitter: {
     card: "summary_large_image",
@@ -106,9 +108,6 @@ export const metadata: Metadata = {
     "content-language": "ru",
     "geo.position": "55.7558;37.6173",
     "ICBM": "55.7558, 37.6173",
-    "citation_title": SITE_DEFAULT_TITLE,
-    "citation_author": SITE_EXPERT.name,
-    "citation_language": "ru",
   },
 };
 
@@ -126,8 +125,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))` }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
@@ -153,6 +150,8 @@ export default function RootLayout({
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
         <ScrollToTop />
+        <Script id="ym-init" strategy="afterInteractive">{YM_INIT_SCRIPT}</Script>
+        <Script id="sw-unregister" strategy="afterInteractive">{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
       </body>
     </html>
   );

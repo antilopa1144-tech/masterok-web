@@ -1,4 +1,4 @@
-import { SITE_EXPERT, SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_CITATIONS, SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/site";
 
 interface CalculatorJsonLdProps {
   calc: {
@@ -43,18 +43,28 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       availability: "https://schema.org/InStock",
     },
     datePublished: SITE_FOUNDING_DATE,
-    dateModified: SITE_FOUNDING_DATE,
+    dateModified: SITE_LAST_REVIEWED,
     author: {
-      "@type": "Person",
-      name: SITE_EXPERT.name,
-      jobTitle: SITE_EXPERT.jobTitle,
-      url: `${SITE_URL}/o-spetsialiste/`,
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      sameAs: [...SITE_SAME_AS],
     },
     publisher: {
       "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
       url: SITE_URL,
     },
+    // Ссылки на первоисточники — нормативные документы РФ (ГОСТ/СНиП/СП),
+    // на которых основаны расчёты. Помогает GEO (Perplexity, ChatGPT, Claude)
+    // понять доказательную базу.
+    citation: SITE_CITATIONS.map((c) => ({
+      "@type": "CreativeWork",
+      name: c.name,
+      description: c.description,
+    })),
     // AggregateRating убран — фейковые рейтинги нарушают гайдлайны Google
     // и могут привести к ручному штрафу. Добавить обратно только при наличии
     // реальной системы отзывов пользователей.
@@ -126,10 +136,9 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     })),
   } : null;
 
-  // Expert tips as Article snippets for AEO
-  const expertAuthors = calc.expertTips
-    ? calc.expertTips.filter(t => t.author).map(t => ({ "@type": "Person", name: t.author }))
-    : [];
+  // Expert tips as Article snippets for AEO.
+  // Авторство указывается как Organization — сайт не использует фиктивных
+  // персональных экспертов (нарушение E-E-A-T по Google guidelines).
   const expertTipsLd = calc.expertTips && calc.expertTips.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -137,16 +146,18 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     description: calc.metaDescription,
     inLanguage: "ru",
     url: canonicalUrl,
-    // Если у советов нет авторов — указываем эксперта сайта как автора
-    author: expertAuthors.length > 0 ? expertAuthors : {
-      "@type": "Person",
-      name: SITE_EXPERT.name,
-      jobTitle: SITE_EXPERT.jobTitle,
-      url: `${SITE_URL}/o-spetsialiste/`,
+    datePublished: SITE_FOUNDING_DATE,
+    dateModified: SITE_LAST_REVIEWED,
+    author: {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
     },
     articleBody: calc.expertTips.map(t => `${t.title}: ${t.content}`).join("\n\n"),
     publisher: {
       "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
       url: SITE_URL,
     },

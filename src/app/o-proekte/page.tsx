@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
-import { SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/site";
 import { ALL_CALCULATORS } from "@/lib/calculators";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -19,13 +19,15 @@ export default function AboutPage() {
     "@type": "AboutPage",
     name: `О проекте ${SITE_NAME}`,
     url: `${baseUrl}/o-proekte/`,
-    description: "Информация о проекте Мастерок — бесплатном сервисе строительных калькуляторов.",
+    description: `Информация о проекте ${SITE_NAME} — бесплатном сервисе строительных калькуляторов.`,
     mainEntity: {
-      "@type": "HomeAndConstructionBusiness",
+      "@type": "Organization",
+      "@id": `${baseUrl}/#organization`,
       name: SITE_NAME,
       url: baseUrl,
       foundingDate: SITE_FOUNDING_DATE,
       areaServed: { "@type": "Country", name: "Россия" },
+      sameAs: [...SITE_SAME_AS],
     },
   };
 

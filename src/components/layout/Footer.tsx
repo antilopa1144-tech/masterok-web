@@ -134,11 +134,6 @@ export default function Footer() {
                   О проекте
                 </Link>
               </li>
-              <li>
-                <Link href="/o-spetsialiste/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
-                  О специалисте
-                </Link>
-              </li>
             </ul>
 
             <div className="mt-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -158,20 +153,17 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
-          <p className="text-xs text-slate-400 dark:text-slate-400 text-center">
-            Москва, ул. Лесная, 42 · Тел.: +7-495-123-45-67
-          </p>
+        <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            © {year} {UI_TEXT.copyrightSuffix}
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="/politika-konfidencialnosti/" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
-              Конфиденциальность
-            </Link>
-            <span className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.standards}</span>
-          </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              © {year} {UI_TEXT.copyrightSuffix}
+            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/politika-konfidencialnosti/" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                Конфиденциальность
+              </Link>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{UI_TEXT.standards}</span>
+            </div>
           </div>
         </div>
       </div>

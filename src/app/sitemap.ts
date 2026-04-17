@@ -62,12 +62,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
-      url: `${BASE_URL}/o-spetsialiste/`,
-      lastModified: buildDate,
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
       url: `${BASE_URL}/politika-konfidencialnosti/`,
       lastModified: buildDate,
       changeFrequency: "yearly",

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCalculatorBySlug } from "@/lib/calculators";
-import { SITE_EXPERT, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import parse from "html-react-parser";
@@ -132,13 +132,14 @@ export default async function BlogPostPage({ params }: Props) {
     wordCount,
     articleSection: post.category,
     author: {
-      "@type": "Person",
-      name: SITE_EXPERT.name,
-      jobTitle: SITE_EXPERT.jobTitle,
-      url: `${baseUrl}/o-spetsialiste/`,
+      "@type": "Organization",
+      "@id": `${baseUrl}/#organization`,
+      name: SITE_NAME,
+      url: baseUrl,
     },
     publisher: {
       "@type": "Organization",
+      "@id": `${baseUrl}/#organization`,
       name: SITE_NAME,
       url: baseUrl,
     },
