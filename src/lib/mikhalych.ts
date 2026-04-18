@@ -2,8 +2,6 @@
  * Общие константы и утилиты для Михалыча (AI-помощник).
  */
 
-import { SITE_URL } from "@/lib/site";
-
 export const SYSTEM_PROMPT = `Ты — Михалыч, опытный строительный прораб с 30-летним стажем.
 Работал на стройках по всей России: фундаменты, кладка, кровля, отделка, инженерные сети — всё через твои руки прошло.
 Говоришь по делу, без воды. С добродушным юмором мастера, который видел всё.
@@ -57,17 +55,12 @@ export const MAX_TOKENS = 2048;
 /**
  * URL для API-запросов Михалыча.
  *
- * В продакшене запросы идут через серверный API route `/api/mikhalych`,
- * который хранит OPENROUTER_API_KEY на сервере — ключ не попадает в бандл.
- *
- * В dev-режиме можно использовать прямой ключ NEXT_PUBLIC_OPENROUTER_API_KEY
- * для удобства локальной разработки.
+ * Всегда идёт через серверный route `/api/mikhalych`, который хранит
+ * OPENROUTER_API_KEY на сервере. Прямые запросы с клиентским ключом
+ * (NEXT_PUBLIC_*) намеренно удалены — при этой схеме ключ попадал в
+ * клиентский JS-бандл, и это стало причиной утечки 2026-04-18.
  */
-const IS_DEV = process.env.NODE_ENV === "development";
-
-export const MIKHALYCH_API_URL = IS_DEV
-  ? "https://openrouter.ai/api/v1/chat/completions"
-  : "/api/mikhalych";
+export const MIKHALYCH_API_URL = "/api/mikhalych";
 
 const MIN_INTERVAL_MS = 3000;
 let lastRequestTime = 0;
@@ -88,19 +81,7 @@ export function checkRateLimit(): string | null {
 }
 
 export function getApiHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
+  return {
     "Content-Type": "application/json",
   };
-
-  if (!IS_DEV) return headers;
-
-  // Прямой ключ только в dev-режиме
-  const key = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ?? null;
-  if (key) {
-    headers.Authorization = `Bearer ${key}`;
-    headers["HTTP-Referer"] = SITE_URL;
-    headers["X-Title"] = "Masterok - Mikhalych";
-  }
-
-  return headers;
 }

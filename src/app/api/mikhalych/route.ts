@@ -7,6 +7,13 @@ const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-Client",
+  "Access-Control-Max-Age": "86400",
+};
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const timestamps = (RATE_LIMIT.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
@@ -16,11 +23,15 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(req: NextRequest) {
   if (!OPENROUTER_API_KEY) {
     return NextResponse.json(
       { error: "OPENROUTER_API_KEY not configured on server" },
-      { status: 500 },
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 
@@ -28,40 +39,86 @@ export async function POST(req: NextRequest) {
   if (isRateLimited(ip)) {
     return NextResponse.json(
       { error: "Too many requests" },
-      { status: 429 },
+      { status: 429, headers: CORS_HEADERS },
     );
   }
 
+  let body: {
+    model?: string;
+    messages?: unknown;
+    temperature?: number;
+    max_tokens?: number;
+    top_p?: number;
+    stream?: boolean;
+  };
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body" },
+      { status: 400, headers: CORS_HEADERS },
+    );
+  }
 
-    const res = await fetch(OPENROUTER_URL, {
+  const client = req.headers.get("x-client") ?? "web";
+  const referer =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+
+  const upstreamRequest: Record<string, unknown> = {
+    model: body.model,
+    messages: body.messages,
+    temperature: body.temperature ?? 0.7,
+    max_tokens: body.max_tokens ?? 2048,
+    stream: body.stream ?? false,
+  };
+  if (body.top_p !== undefined) upstreamRequest.top_p = body.top_p;
+
+  try {
+    const upstream = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru",
-        "X-Title": "Masterok - Mikhalych",
+        "HTTP-Referer": referer,
+        "X-Title": `Masterok - ${client}`,
       },
-      body: JSON.stringify({
-        model: body.model,
-        messages: body.messages,
-        temperature: body.temperature ?? 0.7,
-        max_tokens: body.max_tokens ?? 2048,
-      }),
+      body: JSON.stringify(upstreamRequest),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+    if (body.stream) {
+      if (!upstream.ok || !upstream.body) {
+        const text = await upstream.text().catch(() => "");
+        return new Response(text || JSON.stringify({ error: "upstream error" }), {
+          status: upstream.status || 502,
+          headers: {
+            ...CORS_HEADERS,
+            "Content-Type": "application/json",
+          },
+        });
+      }
+      return new Response(upstream.body, {
+        status: 200,
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
     }
 
-    return NextResponse.json(data);
+    const data = await upstream.json();
+    if (!upstream.ok) {
+      return NextResponse.json(data, {
+        status: upstream.status,
+        headers: CORS_HEADERS,
+      });
+    }
+    return NextResponse.json(data, { headers: CORS_HEADERS });
   } catch {
     return NextResponse.json(
       { error: "Proxy request failed" },
-      { status: 502 },
+      { status: 502, headers: CORS_HEADERS },
     );
   }
 }
