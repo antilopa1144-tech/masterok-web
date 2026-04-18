@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
+// Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
+const MODEL = process.env.MIKHALYCH_MODEL ?? "anthropic/claude-haiku-4-5";
+
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
 
   const upstreamRequest: Record<string, unknown> = {
-    model: body.model,
+    model: MODEL,
     messages: body.messages,
     temperature: body.temperature ?? 0.7,
     max_tokens: body.max_tokens ?? 2048,
