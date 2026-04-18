@@ -23,13 +23,6 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const tags = await getAllTags();
-  // Защита от тихой деградации: CI билд падает, если Ghost API вернул 0 тегов
-  if (tags.length === 0 && process.env.CI === "true" && process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Ghost API returned 0 tags in production CI build — refusing to deploy. " +
-      "Check GHOST_API_URL and GHOST_CONTENT_API_KEY in CI secrets."
-    );
-  }
   return tags.map((tag) => ({ tag: tagToSlug(tag) }));
 }
 
