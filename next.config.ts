@@ -34,6 +34,20 @@ const nextConfig: NextConfig = {
   // Убрать X-Powered-By: Next.js
   poweredByHeader: false,
 
+  // API-маршруты должны приниматься и со слэшем, и без — мобильный клиент
+  // probrab1 ходит на /api/mikhalych (без слэша), а 308-redirect на POST
+  // ломается на части HTTP-клиентов. Rewrite делает оба варианта
+  // эквивалентными на сервере без ответа 308.
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/api/:path*", destination: "/api/:path*/" },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+
   // next/image не используем — blog images с Ghost (внешний URL),
   // остальные ассеты локальные. Оставляем unoptimized чтобы не требовать sharp в runtime.
   images: {
