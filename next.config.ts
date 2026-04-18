@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
   // Trailing slash для SEO (URL всегда с / на конце)
   trailingSlash: true,
 
+  // Отключаем встроенный 308-редирект — middleware.ts восстанавливает его
+  // только для страниц. API-роуты работают без редиректа: Dart http.Client
+  // не умеет повторять POST-тело после 308, и стриминг ломается.
+  skipTrailingSlashRedirect: true,
+
   // Убрать X-Powered-By: Next.js
   poweredByHeader: false,
 

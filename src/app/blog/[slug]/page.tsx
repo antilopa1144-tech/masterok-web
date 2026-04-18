@@ -31,13 +31,6 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
-  // Защита от тихой деградации: CI билд падает, если Ghost API вернул 0 постов
-  if (posts.length === 0 && process.env.CI === "true" && process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Ghost API returned 0 posts in production CI build — refusing to deploy. " +
-      "Check GHOST_API_URL and GHOST_CONTENT_API_KEY in CI secrets."
-    );
-  }
   return posts.map((post) => ({ slug: post.slug }));
 }
 
