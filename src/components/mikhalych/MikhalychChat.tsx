@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
-  OPENROUTER_MODEL,
   checkRateLimit,
   getApiHeaders,
 } from "@/lib/mikhalych";
@@ -74,7 +73,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           headers: getApiHeaders(),
           signal: controller.signal,
           body: JSON.stringify({
-            model: OPENROUTER_MODEL,
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
               ...apiMessages.map((m) => ({ role: m.role, content: m.content })),
