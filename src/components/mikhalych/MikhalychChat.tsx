@@ -110,7 +110,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
               { role: "system", content: SYSTEM_PROMPT },
               ...apiMessages.map((m) => ({ role: m.role, content: m.content })),
             ],
-            temperature: 0.7,
+            temperature: 0.55,
             max_tokens: 1024,
           }),
         });
