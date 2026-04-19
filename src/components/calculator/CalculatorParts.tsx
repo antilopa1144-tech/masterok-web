@@ -944,10 +944,14 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
     setPrices(getPrices(scope));
   }, [scope]);
 
+  // Берём то же количество, что отображается в MaterialList (с запасом/упаковкой),
+  // чтобы итог в оценке совпадал с цифрой у пользователя на виду.
+  const qtyFor = (m: CalculatorResult["materials"][number]) =>
+    m.purchaseQty ?? m.withReserve ?? m.quantity;
+
   const total = materials.reduce((sum, m) => {
-    const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
     const price = prices[m.name] ?? 0;
-    return sum + qty * price;
+    return sum + qtyFor(m) * price;
   }, 0);
 
   const handlePriceChange = (name: string, value: number) => {
@@ -999,7 +1003,7 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
           )}
         </div>
         {materials.map((m) => {
-          const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
+          const qty = qtyFor(m);
           const price = prices[m.name] ?? 0;
           const lineTotal = qty * price;
           const hasCustom = price > 0;
@@ -1014,6 +1018,7 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
                   />
                 )}
                 <span className="truncate">{m.name}</span>
+                <span className="text-[10px] text-slate-400 shrink-0">× {qty}</span>
               </span>
               <input
                 type="number"
