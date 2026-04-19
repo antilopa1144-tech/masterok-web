@@ -103,6 +103,7 @@ export default async function CalculatorPage({ params }: PageProps) {
       <div
         style={heroStyle}
         className="border-b border-slate-200 dark:border-slate-800 bg-[var(--accent-hero-bg)] dark:bg-slate-900"
+        data-print-hide
       >
         <div className="page-container-wide py-6 md:py-8">
           {/* Хлебные крошки */}
@@ -181,32 +182,36 @@ export default async function CalculatorPage({ params }: PageProps) {
 
             {/* SEO/GEO/AEO контент — объединённый блок */}
             {calc.seoContent && (
-              <SeoContentBlock
-                calculatorId={calc.id}
-                descriptionHtml={calc.seoContent.descriptionHtml}
-                faq={calc.seoContent.faq}
-                formulaDescription={calc.formulaDescription}
-                howToUse={calc.howToUse}
-                inlineFaq={calc.faq}
-                accentColor={accentColor}
-              />
+              <div data-print-hide>
+                <SeoContentBlock
+                  calculatorId={calc.id}
+                  descriptionHtml={calc.seoContent.descriptionHtml}
+                  faq={calc.seoContent.faq}
+                  formulaDescription={calc.formulaDescription}
+                  howToUse={calc.howToUse}
+                  inlineFaq={calc.faq}
+                  accentColor={accentColor}
+                />
+              </div>
             )}
 
             {/* Fallback: если нет seoContent, показать формулы + howToUse + FAQ отдельно */}
             {!calc.seoContent && (calc.formulaDescription || (calc.howToUse && calc.howToUse.length > 0) || (calc.faq && calc.faq.length > 0)) && (
-              <SeoContentBlock
-                calculatorId={calc.id}
-                descriptionHtml=""
-                faq={calc.faq ?? []}
-                formulaDescription={calc.formulaDescription}
-                howToUse={calc.howToUse}
-                accentColor={accentColor}
-              />
+              <div data-print-hide>
+                <SeoContentBlock
+                  calculatorId={calc.id}
+                  descriptionHtml=""
+                  faq={calc.faq ?? []}
+                  formulaDescription={calc.formulaDescription}
+                  howToUse={calc.howToUse}
+                  accentColor={accentColor}
+                />
+              </div>
             )}
           </div>
 
           {/* Правая колонка */}
-          <div className="space-y-4">
+          <div className="space-y-4" data-print-hide>
             {/* Скачать приложение */}
             <div className="card p-5">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.appPromoTitle}</h3>
@@ -246,7 +251,7 @@ export default async function CalculatorPage({ params }: PageProps) {
 
         {/* Связанные калькуляторы — карточки (полная ширина, под основным контентом) */}
         {related.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-10" data-print-hide>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
               {UI_TEXT.maybeUsefulTitle}
             </h2>

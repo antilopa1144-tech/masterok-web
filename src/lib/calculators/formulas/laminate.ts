@@ -4,8 +4,10 @@ import factorTables from "../../../../configs/factor-tables.json";
 import laminateCanonicalSpecJson from "../../../../configs/calculators/laminate-canonical.v1.json";
 import { computeCanonicalLaminate } from "../../../../engine/laminate";
 import type { LaminateCanonicalSpec } from "../../../../engine/canonical";
+import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
 
 const laminateCanonicalSpec = laminateCanonicalSpecJson as LaminateCanonicalSpec;
+const manufacturerField = buildManufacturerField("laminate");
 
 function mapLegacyLayoutProfile(layingMethod: number | undefined, offsetMode: number | undefined): number {
   const method = Math.round(layingMethod ?? 0);
@@ -145,9 +147,14 @@ export const laminateDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 1,
     },
+    ...(manufacturerField ? [manufacturerField] : []),
   ],
   calculate(inputs) {
-    return computeCanonicalLaminate(
+    const manufacturer = getManufacturerByIndex("laminate", inputs.manufacturer);
+    const brandPackM2 = getSpec<number | undefined>(manufacturer, "packM2", undefined);
+    const packArea = brandPackM2 ?? inputs.packArea;
+
+    const result = computeCanonicalLaminate(
       laminateCanonicalSpec,
       {
         inputMode: inputs.inputMode,
@@ -155,7 +162,7 @@ export const laminateDef: CalculatorDefinition = {
         width: inputs.width,
         area: inputs.area,
         perimeter: inputs.perimeter,
-        packArea: inputs.packArea,
+        packArea,
         layoutProfileId: inputs.layoutProfileId ?? mapLegacyLayoutProfile(inputs.layingMethod, inputs.offsetMode),
         reservePercent: inputs.reservePercent,
         hasUnderlayment: inputs.hasUnderlayment,
@@ -165,6 +172,15 @@ export const laminateDef: CalculatorDefinition = {
       },
       factorTables.factors,
     );
+
+    if (manufacturer) {
+      result.materials = result.materials.map((m) =>
+        m.name.toLowerCase().includes("ламинат") || m.category === "Основное"
+          ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+          : m
+      );
+    }
+    return result;
   },
   formulaDescription: `
 **Расчёт ламината:**

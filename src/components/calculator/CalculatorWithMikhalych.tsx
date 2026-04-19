@@ -85,7 +85,7 @@ export default function CalculatorWithMikhalych({
     <>
       {/* Калькулятор */}
       <div className="space-y-6">
-        <div className="card p-6 space-y-5">
+        <div className="card p-6 space-y-5" data-print-hide>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function CalculatorWithMikhalych({
 
         {/* Результат */}
         {result && (
-          <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+          <ResultBlock result={result} shareState={shareState} onShare={handleShare} calculatorSlug={calculator.slug} />
         )}
 
         {/* 3D-модель лестницы — обновляется при каждом изменении полей */}
@@ -173,11 +173,13 @@ export default function CalculatorWithMikhalych({
       </div>
 
       {/* Михалыч */}
-      <MikhalychWidget
-        calculatorTitle={calculator.title}
-        calcContext={mikhalychContext}
-        key={mikhalychContext ?? "no-context"}
-      />
+      <div data-print-hide>
+        <MikhalychWidget
+          calculatorTitle={calculator.title}
+          calcContext={mikhalychContext}
+          key={mikhalychContext ?? "no-context"}
+        />
+      </div>
     </>
   );
 }

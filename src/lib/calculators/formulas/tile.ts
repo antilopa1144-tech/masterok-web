@@ -4,8 +4,10 @@ import factorTables from "../../../../configs/factor-tables.json";
 import tileCanonicalSpecJson from "../../../../configs/calculators/tile-canonical.v1.json";
 import { computeCanonicalTile } from "../../../../engine/tile";
 import type { TileCanonicalSpec } from "../../../../engine/canonical";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
 const tileCanonicalSpec = tileCanonicalSpecJson as TileCanonicalSpec;
+const tileManufacturerField = buildManufacturerField("tile");
 
 function mapLegacyMethodToCanonical(layingMethod: number | undefined): number {
   switch (Math.round(layingMethod ?? 0)) {
@@ -143,9 +145,10 @@ export const tileDef: CalculatorDefinition = {
         { value: 2, label: "Сложное (много углов, радиусы)" },
       ],
     },
+    ...(tileManufacturerField ? [tileManufacturerField] : []),
   ],
   calculate(inputs) {
-    return computeCanonicalTile(
+    const result = computeCanonicalTile(
       tileCanonicalSpec,
       {
         inputMode: inputs.inputMode,
@@ -162,6 +165,16 @@ export const tileDef: CalculatorDefinition = {
       },
       factorTables.factors,
     );
+
+    const manufacturer = getManufacturerByIndex("tile", inputs.manufacturer);
+    if (manufacturer) {
+      result.materials = result.materials.map((m) =>
+        m.category === "Основное" || /плитк|керамогран/i.test(m.name)
+          ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+          : m
+      );
+    }
+    return result;
   },
   formulaDescription: `
 **Расчёт плитки:**

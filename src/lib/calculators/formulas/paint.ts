@@ -4,8 +4,10 @@ import factorTables from "../../../../configs/factor-tables.json";
 import paintCanonicalSpecJson from "../../../../configs/calculators/paint-canonical.v1.json";
 import { computeCanonicalPaint } from "../../../../engine/paint";
 import type { PaintCanonicalSpec } from "../../../../engine/canonical";
+import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
 
 const paintCanonicalSpec = paintCanonicalSpecJson as PaintCanonicalSpec;
+const paintManufacturerField = buildManufacturerField("paint");
 
 export const paintDef: CalculatorDefinition = {
   id: "paint",
@@ -88,9 +90,14 @@ export const paintDef: CalculatorDefinition = {
       defaultValue: 10,
       hint: "Указан на упаковке краски. Типичный расход 8–14 м²/л",
     },
+    ...(paintManufacturerField ? [paintManufacturerField] : []),
   ],
   calculate(inputs) {
-    return computeCanonicalPaint(
+    const manufacturer = getManufacturerByIndex("paint", inputs.manufacturer);
+    const brandCoverage = getSpec<number | undefined>(manufacturer, "coveragePerLitre", undefined);
+    const coverage = brandCoverage ?? inputs.coverage ?? inputs.consumption;
+
+    const result = computeCanonicalPaint(
       paintCanonicalSpec,
       {
         inputMode: inputs.inputMode,
@@ -110,12 +117,21 @@ export const paintDef: CalculatorDefinition = {
         surfacePrep: inputs.surfacePrep ?? 0,
         colorIntensity: inputs.colorIntensity ?? 0,
         coats: inputs.coats,
-        coverage: inputs.coverage ?? inputs.consumption,
+        coverage,
         canSize: inputs.canSize,
         accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
     );
+
+    if (manufacturer) {
+      result.materials = result.materials.map((m) =>
+        m.category === "Основное" || /краск|эмал/i.test(m.name)
+          ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+          : m
+      );
+    }
+    return result;
   },
   formulaDescription: `
 **Расчёт краски:**

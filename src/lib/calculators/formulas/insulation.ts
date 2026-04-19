@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalInsulation } from "../../../../engine/insulation";
 import insulationSpec from "../../../../configs/calculators/insulation-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+
+const insulationManufacturerField = buildManufacturerField("insulation");
 
 export const insulationDef: CalculatorDefinition = {
   id: "insulation",
@@ -64,14 +67,24 @@ export const insulationDef: CalculatorDefinition = {
         { value: 2, label: "2000×1000 мм (пеноплекс стандарт)" },
       ],
     },
+    ...(insulationManufacturerField ? [insulationManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = insulationSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalInsulation(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
+    const manufacturer = getManufacturerByIndex("insulation", inputs.manufacturer);
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          m.category === "Основное" || /утепл|вата|пеноплекс|плит/i.test(m.name)
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
+
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

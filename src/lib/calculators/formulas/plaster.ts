@@ -3,8 +3,12 @@ import { withSiteMetaTitle } from "../meta";
 import plasterCanonicalSpecJson from "../../../../configs/calculators/plaster-canonical.v1.json";
 import { computeCanonicalPlaster } from "../../../../engine/plaster";
 import type { PlasterCanonicalSpec } from "../../../../engine/canonical";
+import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
 
 const plasterCanonicalSpec = plasterCanonicalSpecJson as PlasterCanonicalSpec;
+const manufacturerField = buildManufacturerField("plaster", {
+  hint: "При выборе бренда расход на 1 м²/мм и размер мешка подставляются автоматически",
+});
 
 export const plasterDef: CalculatorDefinition = {
   id: "mixes_plaster",
@@ -118,9 +122,19 @@ export const plasterDef: CalculatorDefinition = {
         { value: 40, label: "40 кг" },
       ],
     },
+    ...(manufacturerField ? [manufacturerField] : []),
   ],
   calculate(inputs) {
-    return computeCanonicalPlaster(plasterCanonicalSpec, {
+    const manufacturer = getManufacturerByIndex("plaster", inputs.manufacturer);
+    const brandPackKg = getSpec<number | undefined>(manufacturer, "packKg", undefined);
+    const brandConsumption = getSpec<number | undefined>(
+      manufacturer,
+      "consumptionKgPerM2PerMm",
+      undefined
+    );
+
+    const effectiveBagWeight = brandPackKg ?? inputs.bagWeight;
+    const result = computeCanonicalPlaster(plasterCanonicalSpec, {
       inputMode: inputs.inputMode,
       length: inputs.length,
       width: inputs.width,
@@ -129,11 +143,42 @@ export const plasterDef: CalculatorDefinition = {
       openingsArea: inputs.openingsArea,
       plasterType: inputs.plasterType,
       thickness: inputs.thickness,
-      bagWeight: inputs.bagWeight,
+      bagWeight: effectiveBagWeight,
       substrateType: inputs.substrateType ?? 1,
       wallEvenness: inputs.wallEvenness ?? 1,
       accuracyMode: inputs.accuracyMode as any,
     });
+
+    if (!manufacturer) return result;
+
+    const netArea = typeof result.totals.netArea === "number" ? result.totals.netArea : 0;
+    const thickness = Math.max(1, inputs.thickness ?? 15);
+
+    // Переименовываем и пересчитываем ТОЛЬКО главный материал (штукатурку).
+    // Маяки, грунтовка, профили, инструмент — не относятся к бренду штукатурки.
+    result.materials = result.materials.map((m) => {
+      if (m.category !== "Основное") return m;
+
+      const renamed = `${m.name} — ${manufacturer.name}`;
+
+      if (brandConsumption && netArea > 0) {
+        const packKg = effectiveBagWeight ?? 30;
+        const totalKg = netArea * thickness * brandConsumption * 1.10;
+        const bags = Math.ceil(totalKg / packKg);
+        return {
+          ...m,
+          name: renamed,
+          quantity: bags,
+          withReserve: bags,
+          purchaseQty: bags,
+          packageInfo: { count: bags, size: packKg, packageUnit: "мешок" },
+        };
+      }
+
+      return { ...m, name: renamed };
+    });
+
+    return result;
   },
   formulaDescription: `
 **Расчёт штукатурки (практика РФ):**

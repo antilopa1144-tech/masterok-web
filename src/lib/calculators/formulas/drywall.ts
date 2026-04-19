@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalDrywall } from "../../../../engine/drywall";
 import drywallSpec from "../../../../configs/calculators/drywall-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+
+const drywallManufacturerField = buildManufacturerField("drywall");
 
 // Размеры листов ГКЛ (ширина × высота, м)
 const SHEET_SIZES: Record<number, [number, number]> = {
@@ -87,14 +90,24 @@ export const drywallDef: CalculatorDefinition = {
         { value: 0.6, label: "600 мм (стандарт)" },
       ],
     },
+    ...(drywallManufacturerField ? [drywallManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = drywallSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalDrywall(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
+    const manufacturer = getManufacturerByIndex("drywall", inputs.manufacturer);
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          /лист|гкл|гипсокартон|профиль/i.test(m.name)
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
+
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

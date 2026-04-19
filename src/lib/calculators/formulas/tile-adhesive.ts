@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalTileAdhesive } from "../../../../engine/tile-adhesive";
 import tileadhesiveSpec from "../../../../configs/calculators/tile-adhesive-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
+
+const tileAdhesiveManufacturerField = buildManufacturerField("tile_adhesive");
 
 export const tileAdhesiveDef: CalculatorDefinition = {
   id: "mixes_tile_glue",
@@ -71,14 +74,35 @@ export const tileAdhesiveDef: CalculatorDefinition = {
         { value: 25, label: "25 кг" },
       ],
     },
+    ...(tileAdhesiveManufacturerField ? [tileAdhesiveManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = tileadhesiveSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalTileAdhesive(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
+
+    const manufacturer = getManufacturerByIndex("tile_adhesive", inputs.manufacturer);
+    const brandPackKg = getSpec<number | undefined>(manufacturer, "packKg", undefined);
+
+    const canonical = computeCanonicalTileAdhesive(
+      spec,
+      {
+        ...inputs,
+        bagWeight: brandPackKg ?? inputs.bagWeight,
+        accuracyMode: inputs.accuracyMode as any,
+      },
+      factorTable
+    );
+
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          m.category === "Основное" || /клей|adhesive/i.test(m.name)
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
 
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

@@ -7,6 +7,7 @@ import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS, displayUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
+import { getPrices, setPrice, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import {
   ACCURACY_MODES,
   ACCURACY_MODE_LABELS,
@@ -896,7 +897,7 @@ export function HistoryPanel({
 
 // ── Вспомогательная функция: скопировать список материалов ───────────────────
 
-function copyMaterialsAsText(materials: CalculatorResult["materials"]): void {
+async function copyMaterialsAsText(materials: CalculatorResult["materials"]): Promise<boolean> {
   const lines = materials.map((m) => {
     const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
     const useGrams = m.unit === "кг" && qty > 0 && qty < 1;
@@ -907,7 +908,8 @@ function copyMaterialsAsText(materials: CalculatorResult["materials"]): void {
     return `• ${m.name}: ${val} ${unit}${pkgSuffix}`;
   });
   const text = `${CALCULATOR_UI_TEXT.copyMaterialsHeading}\n\n${lines.join("\n")}`;
-  void navigator.clipboard.writeText(text);
+  const { copyText } = await import("@/lib/clipboard");
+  return copyText(text);
 }
 
 // ── Практические советы прораба ──────────────────────────────────────────────
@@ -934,15 +936,13 @@ function PracticalNotes({ notes }: { notes: string[] }) {
 
 // ── Оценка стоимости ──────────────────────────────────────────────────────
 
-const PRICE_STORAGE_KEY = "masterok-material-prices";
-
-function loadSavedPrices(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(PRICE_STORAGE_KEY) ?? "{}"); } catch { return {}; }
-}
-
-function PriceEstimate({ materials }: { materials: CalculatorResult["materials"] }) {
+function PriceEstimate({ materials, scope }: { materials: CalculatorResult["materials"]; scope: string }) {
   const [open, setOpen] = useState(false);
-  const [prices, setPrices] = useState<Record<string, number>>(() => loadSavedPrices());
+  const [prices, setPrices] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setPrices(getPrices(scope));
+  }, [scope]);
 
   const total = materials.reduce((sum, m) => {
     const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
@@ -951,11 +951,18 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
   }, 0);
 
   const handlePriceChange = (name: string, value: number) => {
+    setPrice(scope, name, value);
     setPrices((prev) => {
-      const next = { ...prev, [name]: value };
-      try { localStorage.setItem(PRICE_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      const next = { ...prev };
+      if (value > 0) next[name] = value;
+      else delete next[name];
       return next;
     });
+  };
+
+  const handleResetAll = () => {
+    resetScope(scope);
+    setPrices({});
   };
 
   const filledCount = Object.values(prices).filter((v) => v > 0).length;
@@ -976,16 +983,38 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
       </summary>
 
       <div className="mt-2 space-y-2 bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-        <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">
-          Введите цену за единицу — итог обновится автоматически
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-slate-400 dark:text-slate-400">
+            Введите цену за единицу — итог обновится автоматически
+          </p>
+          {filledCount > 0 && (
+            <button
+              type="button"
+              onClick={handleResetAll}
+              className="text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+              title="Сбросить все введённые цены"
+            >
+              Сбросить
+            </button>
+          )}
+        </div>
         {materials.map((m) => {
           const qty = m.purchaseQty ?? m.withReserve ?? m.quantity;
           const price = prices[m.name] ?? 0;
           const lineTotal = qty * price;
+          const hasCustom = price > 0;
           return (
             <div key={m.name} className="flex items-center gap-2 text-sm">
-              <span className="flex-1 text-slate-600 dark:text-slate-300 truncate text-xs">{m.name}</span>
+              <span className="flex-1 text-slate-600 dark:text-slate-300 truncate text-xs flex items-center gap-1.5">
+                {hasCustom && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-accent-500 shrink-0"
+                    title="Кастомная цена"
+                    aria-label="Кастомная цена"
+                  />
+                )}
+                <span className="truncate">{m.name}</span>
+              </span>
               <input
                 type="number"
                 min={0}
@@ -993,7 +1022,11 @@ function PriceEstimate({ materials }: { materials: CalculatorResult["materials"]
                 value={price || ""}
                 placeholder="₽"
                 onChange={(e) => handlePriceChange(m.name, Number(e.target.value) || 0)}
-                className="w-20 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
+                className={`w-20 text-right text-xs border rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
+                  hasCustom
+                    ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                }`}
               />
               <span className="text-xs text-slate-400 w-16 text-right tabular-nums">
                 {lineTotal > 0 ? `${lineTotal.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽` : "—"}
@@ -1023,11 +1056,22 @@ export function ResultBlock({
   result,
   shareState,
   onShare,
+  calculatorSlug,
 }: {
   result: CalculatorResult;
   shareState: "idle" | "copied";
   onShare: () => void;
+  calculatorSlug?: string;
 }) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const priceScope = calculatorSlug ? `materials:${calculatorSlug}` : PRICE_SCOPES.materials;
+
+  const handleCopyMaterials = async () => {
+    const ok = await copyMaterialsAsText(result.materials);
+    setCopyState(ok ? "copied" : "failed");
+    setTimeout(() => setCopyState("idle"), 2500);
+  };
+
   if (isResultEmpty(result)) {
     return (
       <div className="card p-6 text-center space-y-3">
@@ -1102,16 +1146,21 @@ export function ResultBlock({
         <MaterialList materials={result.materials} />
 
         {/* Оценка стоимости — пользователь вводит свои цены */}
-        <PriceEstimate materials={result.materials} />
+        <PriceEstimate materials={result.materials} scope={priceScope} />
 
         {/* Кнопки действий — компактная полоса под материалами */}
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700" data-print-hide>
           <button
-            onClick={() => copyMaterialsAsText(result.materials)}
+            onClick={handleCopyMaterials}
             className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
             title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
           >
-            📋 {CALCULATOR_UI_TEXT.copy}
+            {copyState === "copied" ? "✓" : copyState === "failed" ? "✕" : "📋"}{" "}
+            {copyState === "copied"
+              ? CALCULATOR_UI_TEXT.copied
+              : copyState === "failed"
+              ? "Ошибка"
+              : CALCULATOR_UI_TEXT.copy}
           </button>
           <span className="text-slate-200 dark:text-slate-700">|</span>
           <button
