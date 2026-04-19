@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalRoofing } from "../../../../engine/roofing";
 import roofingSpec from "../../../../configs/calculators/roofing-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+
+const roofingManufacturerField = buildManufacturerField("roofing");
 
 export const roofingDef: CalculatorDefinition = {
   id: "roofing_unified",
@@ -95,14 +98,24 @@ export const roofingDef: CalculatorDefinition = {
         { value: 2, label: "Сложная (эркеры, башенки, много ендов)" },
       ],
     },
+    ...(roofingManufacturerField ? [roofingManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = roofingSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalRoofing(spec, inputs, factorTable);
 
+    const manufacturer = getManufacturerByIndex("roofing", inputs.manufacturer);
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          m.category === "Основное" || /металлочереп|черепиц|профнастил|профлист|ондулин|кровл|мягкая/i.test(m.name)
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
+
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

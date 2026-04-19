@@ -1,0 +1,145 @@
+{
+  "$schema": "Справочник производителей строительных материалов (актуально для РФ, 2026). У каждого бренда зашиты технические параметры (расход, размеры упаковки, плотность и т.д.), которые подставляются в формулу калькулятора при выборе.",
+  "wallpaper": {
+    "label": "Производитель обоев",
+    "items": [
+      { "name": "Erismann (Эрисманн)", "country": "РФ/Германия", "specs": { "rollWidth": 1.06, "rollLength": 10.05, "overlap": 0 }, "notes": "Завод в Подольске. Метровые виниловые на флизелине." },
+      { "name": "Palitra (Палитра)", "country": "Россия", "specs": { "rollWidth": 1.06, "rollLength": 10.05, "overlap": 0 }, "notes": "Российский производитель, флизелин + винил." },
+      { "name": "Loymina", "country": "Россия", "specs": { "rollWidth": 1.00, "rollLength": 10.00, "overlap": 0 }, "notes": "Дизайнерские обои премиум-сегмента." },
+      { "name": "Victoria Stenova", "country": "Россия", "specs": { "rollWidth": 1.06, "rollLength": 10.05, "overlap": 0 }, "notes": "Крупный российский производитель, виниловые на флизелине." },
+      { "name": "Maxwall", "country": "Россия", "specs": { "rollWidth": 1.06, "rollLength": 10.05, "overlap": 0 }, "notes": "Российский производитель, массовый сегмент." },
+      { "name": "АртДекор / ART Decor", "country": "Россия", "specs": { "rollWidth": 1.06, "rollLength": 10.05, "overlap": 0 }, "notes": "Российский производитель." },
+      { "name": "Rasch", "country": "Германия", "specs": { "rollWidth": 0.53, "rollLength": 10.05, "overlap": 0 }, "notes": "Импорт, узкий рулон 53 см." },
+      { "name": "A.S. Création", "country": "Германия", "specs": { "rollWidth": 0.53, "rollLength": 10.05, "overlap": 0 }, "notes": "Импорт." }
+    ]
+  },
+  "insulation": {
+    "label": "Производитель утеплителя",
+    "items": [
+      { "name": "Технониколь", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [50, 100, 150, 200], "packArea": 6.0 }, "notes": "Крупнейший РФ-производитель. Роклайт (30 кг/м³), Техноблок (45), Техновент (80)." },
+      { "name": "Rockwool (Роквул)", "country": "РФ/Дания", "specs": { "density": 37, "thicknessOptions": [50, 100, 150], "packArea": 5.76 }, "notes": "Лайт Баттс Скандик (37 кг/м³), Акустик Баттс, Руф Баттс. Заводы в РФ работают." },
+      { "name": "Isover (Изовер)", "country": "РФ/Франция", "specs": { "density": 15, "thicknessOptions": [50, 100, 150, 200], "packArea": 14.27 }, "notes": "Saint-Gobain, заводы в Егорьевске и Челябинске." },
+      { "name": "Knauf Insulation", "country": "РФ/Германия", "specs": { "density": 20, "thicknessOptions": [50, 100, 150], "packArea": 10.0 }, "notes": "Стекловата, заводы в РФ." },
+      { "name": "Paroc (Парок)", "country": "РФ/Финляндия", "specs": { "density": 35, "thicknessOptions": [50, 100, 150], "packArea": 7.2 }, "notes": "Базальт, производство в РФ." },
+      { "name": "URSA", "country": "РФ/Испания", "specs": { "density": 15, "thicknessOptions": [50, 100, 150], "packArea": 18.0 }, "notes": "Стекловата, заводы в Серпухове и Чудово." },
+      { "name": "Пеноплэкс (XPS)", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [20, 30, 50, 100], "packArea": 5.76 }, "notes": "Экструзионный пенополистирол, водонепроницаемый." },
+      { "name": "ТехноНиколь XPS Carbon", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [20, 30, 50, 100], "packArea": 5.76 }, "notes": "Аналог Пеноплэкса от ТехноНиколь." }
+    ]
+  },
+  "laminate": {
+    "label": "Производитель ламината",
+    "items": [
+      { "name": "Tarkett (Таркетт)", "country": "РФ/Германия", "specs": { "classOptions": [32, 33, 34], "packM2": 1.253, "planksPerPack": 5, "thicknessMm": 8 }, "notes": "Завод в Мытищах, коллекции Navigator, Gibraltar, Estetica." },
+      { "name": "Egger (Эггер)", "country": "РФ/Австрия", "specs": { "classOptions": [31, 32, 33], "packM2": 1.985, "planksPerPack": 8, "thicknessMm": 8 }, "notes": "Egger Home, Pro, Flooring. Производство в Гагарине." },
+      { "name": "Kronospan", "country": "РФ/Австрия", "specs": { "classOptions": [31, 32, 33], "packM2": 2.131, "planksPerPack": 8, "thicknessMm": 7 }, "notes": "Завод в Егорьевске, массовый сегмент." },
+      { "name": "Kronostar", "country": "Россия", "specs": { "classOptions": [31, 32, 33], "packM2": 2.131, "planksPerPack": 8, "thicknessMm": 7 }, "notes": "Российский бренд группы Kronospan." },
+      { "name": "Aberhof", "country": "Россия", "specs": { "classOptions": [32, 33], "packM2": 2.0, "planksPerPack": 8, "thicknessMm": 8 }, "notes": "Российский бренд, завод в Московской области." },
+      { "name": "Floorwood", "country": "Россия", "specs": { "classOptions": [32, 33, 34], "packM2": 2.13, "planksPerPack": 8, "thicknessMm": 8 }, "notes": "Российский производитель." },
+      { "name": "Classen", "country": "Германия", "specs": { "classOptions": [32, 33], "packM2": 2.0, "planksPerPack": 8, "thicknessMm": 8 }, "notes": "Импорт." }
+    ]
+  },
+  "tile": {
+    "label": "Производитель плитки/керамогранита",
+    "items": [
+      { "name": "Kerama Marazzi (Керама Марацци)", "country": "Россия", "specs": { "formats": ["20×60", "30×60", "60×60", "20×80", "60×120"], "wasteCoeff": 1.10 }, "notes": "Крупнейший РФ-производитель. 50+ форматов, крупноформат до 160×320." },
+      { "name": "Estima", "country": "Россия", "specs": { "formats": ["30×60", "60×60", "60×120", "80×80"], "wasteCoeff": 1.10 }, "notes": "Керамогранит, Новгородская обл." },
+      { "name": "Italon", "country": "Россия", "specs": { "formats": ["30×60", "60×60", "60×120", "80×160"], "wasteCoeff": 1.10 }, "notes": "Завод в Ступино (Концерн Cersanit Russia)." },
+      { "name": "Laparet", "country": "Россия", "specs": { "formats": ["20×60", "30×60", "60×60"], "wasteCoeff": 1.10 }, "notes": "Массовый сегмент, Нижний Новгород." },
+      { "name": "IDALGO (Идальго)", "country": "Россия", "specs": { "formats": ["30×60", "60×60", "60×120"], "wasteCoeff": 1.10 }, "notes": "Керамогранит." },
+      { "name": "Gracia Ceramica", "country": "Россия", "specs": { "formats": ["20×50", "25×60", "30×60"], "wasteCoeff": 1.10 }, "notes": "Плитка для стен и пола." },
+      { "name": "LB-Ceramics", "country": "Россия", "specs": { "formats": ["20×40", "30×60"], "wasteCoeff": 1.10 }, "notes": "Лыткаринский завод." },
+      { "name": "Axima", "country": "Россия", "specs": { "formats": ["20×30", "25×40", "30×60"], "wasteCoeff": 1.10 }, "notes": "Плитка эконом-сегмента." },
+      { "name": "Laminam", "country": "Италия", "specs": { "formats": ["100×300", "120×260", "160×320"], "wasteCoeff": 1.05 }, "notes": "Тонкий крупноформат (3–12 мм), импорт." }
+    ]
+  },
+  "drywall": {
+    "label": "Производитель гипсокартона",
+    "items": [
+      { "name": "Knauf (Кнауф)", "country": "РФ/Германия", "specs": { "sheetWidthM": 1.2, "sheetLengthM": 2.5, "thicknessMm": [9.5, 12.5, 15, 18], "sheetArea": 3.0 }, "notes": "ГКЛ, ГКЛВ, ГКЛО, ГКЛВО. Профили ПН, ПС, ПП. 5 заводов в РФ." },
+      { "name": "Волма", "country": "Россия", "specs": { "sheetWidthM": 1.2, "sheetLengthM": 2.5, "thicknessMm": [9.5, 12.5], "sheetArea": 3.0 }, "notes": "Крупнейший российский производитель." },
+      { "name": "Gyproc (Гипрок)", "country": "РФ/Saint-Gobain", "specs": { "sheetWidthM": 1.2, "sheetLengthM": 2.5, "thicknessMm": [9.5, 12.5], "sheetArea": 3.0 }, "notes": "Saint-Gobain, заводы в Санкт-Петербурге и Нижнем Новгороде." },
+      { "name": "Magma (Магма)", "country": "Россия", "specs": { "sheetWidthM": 1.2, "sheetLengthM": 2.5, "thicknessMm": [9.5, 12.5], "sheetArea": 3.0 }, "notes": "Российский производитель." }
+    ]
+  },
+  "cement": {
+    "label": "Производитель цемента",
+    "items": [
+      { "name": "Евроцемент груп", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н", "ЦЕМ II 32,5Б"], "packKg": [25, 50] }, "notes": "Крупнейший производитель в РФ." },
+      { "name": "Себряковцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н"], "packKg": [50] }, "notes": "Волгоградская обл." },
+      { "name": "Новоросцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н", "ЦЕМ II 32,5Б"], "packKg": [50] }, "notes": "Новороссийск." },
+      { "name": "Мордовцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н"], "packKg": [50] }, "notes": "Мордовия." },
+      { "name": "Сухоложскцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н"], "packKg": [50] }, "notes": "Свердловская обл." },
+      { "name": "Осколцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н"], "packKg": [50] }, "notes": "Белгородская обл., группа Евроцемент." },
+      { "name": "Мальцовский портландцемент", "country": "Россия", "specs": { "brands": ["ЦЕМ I 42,5Н"], "packKg": [50] }, "notes": "Брянская обл." }
+    ]
+  },
+  "brick": {
+    "label": "Производитель кирпича",
+    "items": [
+      { "name": "ЛСР", "country": "Россия", "specs": { "types": ["одинарный 250×120×65", "утолщённый 250×120×88", "евро 250×85×65"] }, "notes": "Лицевой, клинкерный, рядовой. Заводы в СПб и Ленобласти." },
+      { "name": "BRAER (Браер)", "country": "Россия", "specs": { "types": ["одинарный 250×120×65", "утолщённый 250×120×88", "евро"] }, "notes": "Тульская обл., фасадный керамический." },
+      { "name": "Победа ЛСР", "country": "Россия", "specs": { "types": ["одинарный 250×120×65", "евро 250×85×65"] }, "notes": "Группа ЛСР." },
+      { "name": "Голицынский кирпичный завод", "country": "Россия", "specs": { "types": ["одинарный 250×120×65", "утолщённый 250×120×88"] }, "notes": "Московская обл." },
+      { "name": "Rauf (Рауф)", "country": "Россия", "specs": { "types": ["одинарный", "утолщённый"] }, "notes": "Крупный РФ-производитель." },
+      { "name": "Terca (Терка)", "country": "Россия", "specs": { "types": ["одинарный", "утолщённый", "евро"] }, "notes": "Группа BRAER." },
+      { "name": "Славянский кирпич", "country": "Россия", "specs": { "types": ["одинарный", "утолщённый"] }, "notes": "Краснодарский край." }
+    ]
+  },
+  "paint": {
+    "label": "Производитель краски",
+    "items": [
+      { "name": "Текс", "country": "Россия", "specs": { "coveragePerLitre": 9, "packL": [1.8, 3, 9] }, "notes": "Крупнейший РФ-производитель. Теперь владеет заводами Tikkurila." },
+      { "name": "Tikkivala", "country": "Россия", "specs": { "coveragePerLitre": 9, "packL": [0.9, 2.7, 9] }, "notes": "Ребренд Tikkurila после ухода финской компании (2025)." },
+      { "name": "Лакра (LAKRA)", "country": "Россия", "specs": { "coveragePerLitre": 8, "packL": [1, 3, 9] }, "notes": "Бренды LAKRA, PARADE, Proremont." },
+      { "name": "Dali (Рогнеда)", "country": "Россия", "specs": { "coveragePerLitre": 9, "packL": [1, 2.5, 5] }, "notes": "НПП «Рогнеда», универсальные краски и антисептики." },
+      { "name": "Empils (Эмпилс)", "country": "Россия", "specs": { "coveragePerLitre": 9, "packL": [1, 3, 10] }, "notes": "Бренды AvantGarde, NEWTONE, TITAN, Ореол." },
+      { "name": "Ярославские краски", "country": "Россия", "specs": { "coveragePerLitre": 9, "packL": [1, 2.5, 9] }, "notes": "Крупный РФ-производитель ЛКМ." },
+      { "name": "Церезит (бывший Ceresit)", "country": "Россия", "specs": { "coveragePerLitre": 8, "packL": [2.5, 5, 10] }, "notes": "ООО «ЛАБ Индастриз», бывшие активы Henkel." },
+      { "name": "Dufa", "country": "РФ/Германия", "specs": { "coveragePerLitre": 9, "packL": [2.5, 5, 10] }, "notes": "MEFFERT, производство в Подольске." }
+    ]
+  },
+  "plaster": {
+    "label": "Производитель штукатурки",
+    "items": [
+      { "name": "Knauf Ротбанд", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 0.88, "packKg": 30, "type": "гипсовая" }, "notes": "Эталон гипсовой штукатурки, заводы в РФ." },
+      { "name": "Knauf Гольдбанд", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 0.88, "packKg": 30, "type": "гипсовая" }, "notes": "Ручное нанесение." },
+      { "name": "Волма Слой", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.85, "packKg": 30, "type": "гипсовая" }, "notes": "Крупнейший РФ-производитель." },
+      { "name": "Bergauf (Бергауф)", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 25, "type": "гипсовая/цементная" }, "notes": "Российско-Германское предприятие (с 2003)." },
+      { "name": "Основит", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 30, "type": "гипсовая" }, "notes": "Крупный РФ-производитель сухих смесей." },
+      { "name": "Старатели", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 30, "type": "гипсовая" }, "notes": "Штукатурки машинного нанесения." },
+      { "name": "Perfekta", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 25, "type": "гипсовая/цементная" }, "notes": "Российский производитель." },
+      { "name": "Petromix", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.50, "packKg": 25, "type": "цементная" }, "notes": "СПб, цементные штукатурки." },
+      { "name": "Unis (Юнис)", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.00, "packKg": 25, "type": "гипсовая" }, "notes": "Массовый сегмент." },
+      { "name": "Weber.Vetonit", "country": "РФ/Saint-Gobain", "specs": { "consumptionKgPerM2PerMm": 1.20, "packKg": 25, "type": "цементная" }, "notes": "Saint-Gobain, локальное производство." },
+      { "name": "Церезит CT 29", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.50, "packKg": 25, "type": "цементная" }, "notes": "ООО «ЛАБ Индастриз» (бывший Henkel)." }
+    ]
+  },
+  "tile_adhesive": {
+    "label": "Производитель плиточного клея",
+    "items": [
+      { "name": "Церезит CM 11", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Стандарт для внутренних работ." },
+      { "name": "Церезит CM 17", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Усиленный, для керамогранита." },
+      { "name": "Knauf Флизен", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 1.10, "packKg": 25 }, "notes": "Цементный клей." },
+      { "name": "Knauf Флизен Плюс", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 1.20, "packKg": 25 }, "notes": "Для керамогранита и тёплого пола." },
+      { "name": "Unis Плюс", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.20, "packKg": 25 }, "notes": "Бюджетный." },
+      { "name": "Unis 2000", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Для керамогранита." },
+      { "name": "Волма Керамик", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Российский производитель." },
+      { "name": "Bergauf Keramik Pro", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Усиленный." },
+      { "name": "Weber.Vetonit Easy Fix", "country": "РФ/Saint-Gobain", "specs": { "consumptionKgPerM2PerMm": 1.25, "packKg": 25 }, "notes": "" },
+      { "name": "Основит Гранипликс", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Для крупноформатного керамогранита." },
+      { "name": "Litokol K80", "country": "Италия", "specs": { "consumptionKgPerM2PerMm": 1.30, "packKg": 25 }, "notes": "Эластичный, для тёплого пола. Импорт." }
+    ]
+  },
+  "roofing": {
+    "label": "Производитель кровли",
+    "items": [
+      { "name": "Металл Профиль", "country": "Россия", "specs": { "types": ["МП-20", "Монтеррей", "Макси", "Каскад"] }, "notes": "Крупнейший РФ-производитель металлокровли." },
+      { "name": "Grand Line", "country": "Россия", "specs": { "types": ["Classic", "Kvinta plus", "Kvinta Uno"] }, "notes": "Металлочерепица премиум." },
+      { "name": "Shinglas (ТехноНИКОЛЬ)", "country": "Россия", "specs": { "types": ["Финская", "Классик", "Джаз", "Кантри"] }, "notes": "Мягкая черепица." },
+      { "name": "Docke (Дёке)", "country": "Россия", "specs": { "types": ["Pie", "Premium", "Simple"] }, "notes": "Мягкая кровля и водостоки." },
+      { "name": "Ондулин", "country": "РФ/Франция", "specs": { "types": ["Smart", "Tile", "DIY"] }, "notes": "Битумный лист, завод в Нижегородской обл." },
+      { "name": "Kerabit (Керабит)", "country": "Россия", "specs": { "types": ["Super+", "Quadro"] }, "notes": "Российский производитель мягкой черепицы." },
+      { "name": "ТехноНИКОЛЬ Профиль", "country": "Россия", "specs": { "types": ["профнастил С8", "С21", "НС35"] }, "notes": "Профлист." }
+    ]
+  }
+}

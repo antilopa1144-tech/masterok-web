@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalConcrete } from "../../../../engine/concrete";
 import concreteSpec from "../../../../configs/calculators/concrete-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+
+const cementManufacturerField = buildManufacturerField("cement", { label: "Производитель цемента" });
 
 // Пропорции на 1 м³ бетона (цемент М400, по СНиП)
 // [цемент кг, песок м³, щебень м³, вода л]
@@ -78,14 +81,24 @@ export const concreteDef: CalculatorDefinition = {
       defaultValue: 5,
       hint: "Рекомендуется 5–10% на потери при заливке",
     },
+    ...(cementManufacturerField ? [cementManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = concreteSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalConcrete(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
+    const manufacturer = getManufacturerByIndex("cement", inputs.manufacturer);
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          /цемент|портланд/i.test(m.name)
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
+
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

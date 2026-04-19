@@ -3,6 +3,9 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalBrick } from "../../../../engine/brick";
 import brickSpec from "../../../../configs/calculators/brick-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+
+const brickManufacturerField = buildManufacturerField("brick");
 // Кирпичей на 1 м² кладки (с учётом швов 10 мм), по СНиП 3.03.01-87
 const BRICKS_PER_SQM: Record<number, Record<number, number>> = {
   0: { 0: 51, 1: 102, 2: 153, 3: 204 },  // одинарный 250×120×65
@@ -126,14 +129,24 @@ export const brickDef: CalculatorDefinition = {
         { value: 2, label: "Минимальный (3%) — опытный мастер" },
       ],
     },
+    ...(brickManufacturerField ? [brickManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = brickSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalBrick(spec, inputs, factorTable);
 
+    const manufacturer = getManufacturerByIndex("brick", inputs.manufacturer);
+    const materials = manufacturer
+      ? canonical.materials.map((m) =>
+          m.category === "Основное" || m.name.toLowerCase().includes("кирпич")
+            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+            : m
+        )
+      : canonical.materials;
+
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,

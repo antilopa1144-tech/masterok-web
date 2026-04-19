@@ -4,8 +4,10 @@ import factorTables from "../../../../configs/factor-tables.json";
 import wallpaperCanonicalSpecJson from "../../../../configs/calculators/wallpaper-canonical.v1.json";
 import { computeCanonicalWallpaper } from "../../../../engine/wallpaper";
 import type { WallpaperCanonicalSpec } from "../../../../engine/canonical";
+import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
 
 const wallpaperCanonicalSpec = wallpaperCanonicalSpecJson as WallpaperCanonicalSpec;
+const manufacturerField = buildManufacturerField("wallpaper");
 
 export const wallpaperDef: CalculatorDefinition = {
   id: "wallpaper",
@@ -107,13 +109,20 @@ export const wallpaperDef: CalculatorDefinition = {
       defaultValue: 1,
       hint: "Рекомендуемый запас на подрезку, брак и будущий ремонт",
     },
+    ...(manufacturerField ? [manufacturerField] : []),
   ],
   calculate(inputs) {
-    const rollWidth = inputs.rollWidth !== undefined
+    const manufacturer = getManufacturerByIndex("wallpaper", inputs.manufacturer);
+    const brandRollWidth = getSpec<number | undefined>(manufacturer, "rollWidth", undefined);
+    const brandRollLength = getSpec<number | undefined>(manufacturer, "rollLength", undefined);
+
+    const inputRollWidth = inputs.rollWidth !== undefined
       ? (inputs.rollWidth > 10 ? inputs.rollWidth / 1000 : inputs.rollWidth)
       : undefined;
+    const rollWidth = brandRollWidth ?? inputRollWidth;
+    const rollLength = brandRollLength ?? inputs.rollLength;
 
-    return computeCanonicalWallpaper(
+    const result = computeCanonicalWallpaper(
       wallpaperCanonicalSpec,
       {
         inputMode: inputs.inputMode,
@@ -129,7 +138,7 @@ export const wallpaperDef: CalculatorDefinition = {
         openingsArea: inputs.openingsArea,
         doorsCount: inputs.doorsCount ?? inputs.doors,
         windowsCount: inputs.windowsCount ?? inputs.windows,
-        rollLength: inputs.rollLength,
+        rollLength,
         rollWidth,
         rapport: inputs.rapport,
         wallpaperType: inputs.wallpaperType ?? 1,
@@ -139,6 +148,15 @@ export const wallpaperDef: CalculatorDefinition = {
       },
       factorTables.factors,
     );
+
+    if (manufacturer) {
+      result.materials = result.materials.map((m) =>
+        m.name.toLowerCase().includes("обои") || m.name.toLowerCase().includes("рулон")
+          ? { ...m, name: `${m.name} — ${manufacturer.name}` }
+          : m
+      );
+    }
+    return result;
   },
   formulaDescription: `
 **Расчёт обоев:**
