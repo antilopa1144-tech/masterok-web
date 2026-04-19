@@ -144,24 +144,25 @@ export default function RenovationCostCalculator() {
   const [typeId, setTypeId] = useState("standard");
   const [withWork, setWithWork] = useState(true);
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+  const scopeKey = `${PRICE_SCOPES.renovation}:${typeId}`;
 
   useEffect(() => {
-    setCustomPrices(getUserPrices(PRICE_SCOPES.renovation));
-  }, []);
+    setCustomPrices(getUserPrices(scopeKey));
+  }, [scopeKey]);
 
   const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
 
   // Persist custom prices
   useEffect(() => {
     if (Object.keys(customPrices).length > 0) {
-      setUserPrices(PRICE_SCOPES.renovation, customPrices);
+      setUserPrices(scopeKey, customPrices);
     }
-  }, [customPrices]);
+  }, [customPrices, scopeKey]);
 
   const priceFor = (key: string): number => customPrices[key] ?? 0;
 
   const handleResetPrices = () => {
-    resetScope(PRICE_SCOPES.renovation);
+    resetScope(scopeKey);
     setCustomPrices({});
   };
 
