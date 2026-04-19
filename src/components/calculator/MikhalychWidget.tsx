@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
-  OPENROUTER_MODEL,
   MAX_TOKENS,
   checkRateLimit,
   getApiHeaders,
@@ -87,7 +86,6 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
         headers: getApiHeaders(),
         signal: controller.signal,
         body: JSON.stringify({
-          model: OPENROUTER_MODEL,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             ...lastMessages.map((m) => ({ role: m.role, content: m.content })),
