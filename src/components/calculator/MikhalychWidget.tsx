@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import MarkdownContent from "@/components/mikhalych/MarkdownContent";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
@@ -25,11 +26,17 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [typing, setTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      abortRef.current?.abort();
+      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -41,9 +48,46 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
     }
   }, [open, messages.length, calculatorTitle, calcContext]);
 
+  // Скроллим чат в центр экрана при открытии
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => {
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [open]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Прогрессивная печать ответа ассистента (typing effect)
+  const startTyping = (fullContent: string) => {
+    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    setTyping(true);
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    let shown = 0;
+    const total = fullContent.length;
+    const charsPerTick = Math.max(2, Math.ceil(total / 220)); // длинные ответы — быстрее
+
+    typingTimerRef.current = setInterval(() => {
+      shown = Math.min(total, shown + charsPerTick);
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last && last.role === "assistant") {
+          copy[copy.length - 1] = { ...last, content: fullContent.slice(0, shown) };
+        }
+        return copy;
+      });
+      if (shown >= total) {
+        if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+        setTyping(false);
+      }
+    }, 18);
+  };
 
   // Safety: reset loading if stuck for more than 30 seconds
   useEffect(() => {
@@ -54,7 +98,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    if (loading) return; // debounce while request in flight
+    if (loading || typing) return; // debounce while request in flight or typing
 
     const rateLimitError = checkRateLimit();
     if (rateLimitError) {
@@ -108,7 +152,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
       const data = await res.json();
       const content =
         data.choices?.[0]?.message?.content ?? UI_TEXT.genericApiError;
-      setMessages((prev) => [...prev, { role: "assistant", content }]);
+      startTyping(content);
     } catch (err) {
       const msg =
         err instanceof Error && err.message
@@ -151,7 +195,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   }
 
   return (
-    <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-2xl overflow-hidden">
+    <div ref={rootRef} className="bg-linear-to-br from-slate-800 to-slate-700 rounded-2xl overflow-hidden scroll-mt-20">
       <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-xl" aria-hidden="true">🤖</span>
@@ -182,7 +226,11 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
                 ? "bg-slate-600/50 text-slate-100"
                 : "bg-accent-500 text-white"
             }`}>
-              <SimpleMarkdown text={msg.content} />
+              {msg.role === "assistant" ? (
+                <MarkdownContent content={msg.content} />
+              ) : (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              )}
             </div>
           </div>
         ))}
@@ -205,15 +253,15 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+            onKeyDown={(e) => e.key === "Enter" && !typing && sendMessage(input)}
             placeholder={UI_TEXT.inputPlaceholder}
-            disabled={loading}
+            disabled={loading || typing}
             aria-label={UI_TEXT.inputAriaLabel}
             className="flex-1 bg-slate-600/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-accent-500/50"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || typing}
             className="bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white px-3 py-2 rounded-xl transition-colors text-sm font-medium"
             aria-label={UI_TEXT.sendAriaLabel}
           >
@@ -225,20 +273,3 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   );
 }
 
-function SimpleMarkdown({ text }: { text: string }) {
-  const lines = text.split("\n");
-  return (
-    <div className="space-y-0.5">
-      {lines.map((line, i) => {
-        const parts = line.split(/\*\*(.*?)\*\*/g);
-        return (
-          <p key={i} className={line === "" ? "h-1.5" : ""}>
-            {parts.map((part, j) =>
-              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
-            )}
-          </p>
-        );
-      })}
-    </div>
-  );
-}

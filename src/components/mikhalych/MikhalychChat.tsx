@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import MarkdownContent from "./MarkdownContent";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
@@ -28,15 +29,47 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [typing, setTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      abortRef.current?.abort();
+      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    };
   }, []);
+
+  const startTyping = (fullContent: string) => {
+    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    setTyping(true);
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    let shown = 0;
+    const total = fullContent.length;
+    const charsPerTick = Math.max(2, Math.ceil(total / 220));
+
+    typingTimerRef.current = setInterval(() => {
+      shown = Math.min(total, shown + charsPerTick);
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last && last.role === "assistant") {
+          copy[copy.length - 1] = { ...last, content: fullContent.slice(0, shown) };
+        }
+        return copy;
+      });
+      if (shown >= total) {
+        if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+        setTyping(false);
+      }
+    }, 18);
+  };
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,7 +81,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || loading) return;
+      if (!text.trim() || loading || typing) return;
 
       const rateLimitError = checkRateLimit();
       if (rateLimitError) {
@@ -93,10 +126,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           throw new Error("Пустой ответ от AI");
         }
 
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content },
-        ]);
+        startTyping(content);
       } catch (err) {
         const msg =
           err instanceof Error
@@ -107,7 +137,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         setLoading(false);
       }
     },
-    [messages, loading]
+    [messages, loading, typing]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -146,7 +176,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
                   : "bg-accent-500 text-white rounded-tr-none"
               }`}
             >
-              <MessageContent content={msg.content} />
+              {msg.role === "assistant" ? (
+                <MarkdownContent content={msg.content} />
+              ) : (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              )}
             </div>
           </div>
         ))}
@@ -202,12 +236,12 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             placeholder="Задайте вопрос Михалычу... (Enter — отправить, Shift+Enter — новая строка)"
             className="flex-1 input-field resize-none text-sm py-2.5"
             rows={2}
-            disabled={loading}
+            disabled={loading || typing}
             aria-label="Сообщение для Михалыча"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || typing}
             className="btn-primary py-2.5 px-4 shrink-0 disabled:opacity-50"
             aria-label="Отправить"
           >
@@ -238,26 +272,3 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   );
 }
 
-function MessageContent({ content }: { content: string }) {
-  const lines = content.split("\n");
-  return (
-    <div className="space-y-1">
-      {lines.map((line, i) => {
-        const parts = line.split(/\*\*(.*?)\*\*/g);
-        return (
-          <p key={i} className={line === "" ? "h-2" : ""}>
-            {parts.map((part, j) =>
-              j % 2 === 1 ? (
-                <strong key={j} className="font-semibold">
-                  {part}
-                </strong>
-              ) : (
-                part
-              )
-            )}
-          </p>
-        );
-      })}
-    </div>
-  );
-}

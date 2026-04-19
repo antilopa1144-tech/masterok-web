@@ -28,6 +28,7 @@ export default function CalculatorWidget({ calculator }: Props) {
   const fromCalc = searchParams.get("from");
   const fromCalcDef = useMemo(() => fromCalc ? getCalculatorBySlug(fromCalc) : null, [fromCalc]);
   const [experienceMode, setExperienceMode] = useState<"beginner" | "pro">("beginner");
+  const [pulse, setPulse] = useState(false);
   const {
     values,
     result,
@@ -70,11 +71,17 @@ export default function CalculatorWidget({ calculator }: Props) {
     });
   }, [calculator.id, calculator.slug, calculator.title, calculator.categorySlug, category]);
 
+  const triggerCalculate = () => {
+    handleCalculate();
+    setPulse(true);
+    window.setTimeout(() => setPulse(false), 620);
+  };
+
   // Enter key triggers calculation from any input field
   const handleFormKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
       e.preventDefault();
-      handleCalculate();
+      triggerCalculate();
     }
   };
 
@@ -90,7 +97,7 @@ export default function CalculatorWidget({ calculator }: Props) {
 
       {/* Пресеты (быстрые примеры) */}
       {presets && presets.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap" data-print-hide>
           <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">{CALCULATOR_UI_TEXT.examples}</span>
           {presets.map((p) => (
             <button
@@ -105,10 +112,10 @@ export default function CalculatorWidget({ calculator }: Props) {
       )}
 
       {/* Форма калькулятора */}
-        <div className="card p-6 space-y-5">
+        <div className="card p-6 space-y-5" data-print-hide>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 shrink-0">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" data-print-hide>
               <ExperienceModeToggle mode={experienceMode} onChange={setExperienceMode} />
               {calcHistory.length > 0 && (
                 <button
@@ -164,8 +171,8 @@ export default function CalculatorWidget({ calculator }: Props) {
         )}
 
         <button
-          onClick={handleCalculate}
-          className="btn-primary w-full text-base"
+          onClick={triggerCalculate}
+          className={`btn-primary w-full text-base${pulse ? " btn-primary-pulse" : ""}`}
           style={{ backgroundColor: category?.color }}
         >
           {hasCalculated ? CALCULATOR_UI_TEXT.saveToHistory : CALCULATOR_UI_TEXT.calculate}
@@ -177,7 +184,7 @@ export default function CalculatorWidget({ calculator }: Props) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.resultsTitle}</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-print-hide>
               {experienceMode === "pro" && (
                 <button
                   onClick={handleToggleComparison}
@@ -200,7 +207,7 @@ export default function CalculatorWidget({ calculator }: Props) {
               />
             </div>
           </div>
-          <ResultBlock result={result} shareState={shareState} onShare={handleShare} />
+          <ResultBlock result={result} shareState={shareState} onShare={handleShare} calculatorSlug={calculator.slug} />
 
           {/* 3D-модель лестницы */}
           {calculator.slug === "kalkulyator-lestnicy" && (
@@ -231,25 +238,33 @@ export default function CalculatorWidget({ calculator }: Props) {
           )}
 
           {/* Обратная связь */}
-          <FeedbackPanel
-            calculatorSlug={calculator.slug}
-            primaryMaterial={result.materials.find((m) => m.category === "Основное") ?? result.materials[0]}
-            accuracyMode={result.accuracyMode}
-          />
+          <div data-print-hide>
+            <FeedbackPanel
+              calculatorSlug={calculator.slug}
+              primaryMaterial={result.materials.find((m) => m.category === "Основное") ?? result.materials[0]}
+              accuracyMode={result.accuracyMode}
+            />
+          </div>
 
           {/* Спутники — связанные калькуляторы */}
-          <CompanionLinks slug={calculator.slug} values={values} />
+          <div data-print-hide>
+            <CompanionLinks slug={calculator.slug} values={values} />
+          </div>
         </div>
       )}
 
       {/* Экспертные советы */}
       {calculator.expertTips && calculator.expertTips.length > 0 && (
-        <ExpertTips tips={calculator.expertTips} />
+        <div data-print-hide>
+          <ExpertTips tips={calculator.expertTips} />
+        </div>
       )}
 
       {/* FAQ */}
       {calculator.faq && calculator.faq.length > 0 && (
-        <CalculatorFAQ faq={calculator.faq} />
+        <div data-print-hide>
+          <CalculatorFAQ faq={calculator.faq} />
+        </div>
       )}
     </div>
   );

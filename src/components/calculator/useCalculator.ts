@@ -9,6 +9,7 @@ import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../..
 import { getCategoryById } from "@/lib/calculators/categories";
 import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
+import { shareOrCopy } from "@/lib/clipboard";
 import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackComparisonOpen } from "@/lib/analytics";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -221,7 +222,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     router.replace(window.location.pathname, { scroll: false });
   }, [calculator.fields, router]);
 
-  // Поделиться — генерирует URL с параметрами
+  // Поделиться — генерирует URL с параметрами, использует Web Share API или clipboard fallback
   const handleShare = useCallback(async () => {
     const params = new URLSearchParams(
       Object.entries(values).map(([k, v]) => [k, String(v)])
@@ -231,23 +232,25 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
     const url = `${window.location.origin}${window.location.pathname}?${params}`;
 
-    // Try native share on mobile first
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: calculator.title, url });
-        return;
-      } catch {}
-    }
+    const primary = result?.materials?.[0];
+    const summary = primary
+      ? `${primary.name}: ${primary.purchaseQty ?? primary.withReserve ?? primary.quantity} ${primary.unit}`
+      : undefined;
 
-    // Fallback: copy to clipboard
-    try {
-      await navigator.clipboard.writeText(url);
+    const outcome = await shareOrCopy({
+      title: calculator.title,
+      text: summary ? `${calculator.title}. ${summary}` : calculator.title,
+      url,
+    });
+
+    if (outcome === "copied") {
       setShareState("copied");
       setTimeout(() => setShareState("idle"), 2500);
-    } catch {
+    } else if (outcome === "failed") {
       prompt(CALCULATOR_UI_TEXT.copyLinkPrompt, url);
     }
-  }, [values, accuracyMode, calculator.title]);
+    // "shared" and "cancelled" — no UI feedback needed
+  }, [values, accuracyMode, calculator.title, result]);
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {

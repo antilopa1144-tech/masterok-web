@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { getPrices as getUserPrices, setPrices as setUserPrices, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 
-// ── Price database (avg Russia 2026, updated March 2026) ─────────────────────
+// ── Структура нормативов (расходы на м²). Цены пользователь вводит сам. ──────
 
 interface MaterialPrice {
   name: string;
   unit: string;
-  pricePerUnit: number; // ₽ per unit
   consumptionPerM2: number; // units per m² of floor area
 }
 
 interface WorkPrice {
   name: string;
   unit: string;
-  pricePerUnit: number;
   consumptionPerM2: number;
 }
 
@@ -36,18 +35,18 @@ const RENOVATION_TYPES: RenovationType[] = [
     icon: "🎨",
     durationDaysPerM2: 0.3,
     materials: [
-      { name: "Обои виниловые", unit: "рулон", pricePerUnit: 1500, consumptionPerM2: 0.18 },
-      { name: "Клей обойный", unit: "уп", pricePerUnit: 550, consumptionPerM2: 0.02 },
-      { name: "Краска потолочная", unit: "л", pricePerUnit: 350, consumptionPerM2: 0.3 },
-      { name: "Грунтовка", unit: "л", pricePerUnit: 90, consumptionPerM2: 0.2 },
-      { name: "Плинтус напольный", unit: "м.п.", pricePerUnit: 220, consumptionPerM2: 0.5 },
-      { name: "Расходники (скотч, валики, кисти)", unit: "компл", pricePerUnit: 2200, consumptionPerM2: 0.015 },
+      { name: "Обои виниловые", unit: "рулон", consumptionPerM2: 0.18 },
+      { name: "Клей обойный", unit: "уп", consumptionPerM2: 0.02 },
+      { name: "Краска потолочная", unit: "л", consumptionPerM2: 0.3 },
+      { name: "Грунтовка", unit: "л", consumptionPerM2: 0.2 },
+      { name: "Плинтус напольный", unit: "м.п.", consumptionPerM2: 0.5 },
+      { name: "Расходники (скотч, валики, кисти)", unit: "компл", consumptionPerM2: 0.015 },
     ],
     works: [
-      { name: "Поклейка обоев", unit: "м²", pricePerUnit: 450, consumptionPerM2: 2.5 },
-      { name: "Покраска потолка", unit: "м²", pricePerUnit: 280, consumptionPerM2: 1.0 },
-      { name: "Монтаж плинтуса", unit: "м.п.", pricePerUnit: 150, consumptionPerM2: 0.5 },
-      { name: "Грунтовка стен", unit: "м²", pricePerUnit: 100, consumptionPerM2: 2.5 },
+      { name: "Поклейка обоев", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Покраска потолка", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Монтаж плинтуса", unit: "м.п.", consumptionPerM2: 0.5 },
+      { name: "Грунтовка стен", unit: "м²", consumptionPerM2: 2.5 },
     ],
   },
   {
@@ -57,29 +56,29 @@ const RENOVATION_TYPES: RenovationType[] = [
     icon: "🏠",
     durationDaysPerM2: 0.7,
     materials: [
-      { name: "Штукатурка гипсовая", unit: "мешок 30кг", pricePerUnit: 550, consumptionPerM2: 0.35 },
-      { name: "Шпаклёвка финишная", unit: "мешок 25кг", pricePerUnit: 700, consumptionPerM2: 0.08 },
-      { name: "Грунтовка глубокого проникновения", unit: "л", pricePerUnit: 90, consumptionPerM2: 0.4 },
-      { name: "Ламинат", unit: "м²", pricePerUnit: 950, consumptionPerM2: 0.7 },
-      { name: "Подложка", unit: "м²", pricePerUnit: 80, consumptionPerM2: 0.7 },
-      { name: "Обои / краска стен", unit: "м²", pricePerUnit: 300, consumptionPerM2: 2.5 },
-      { name: "Плитка (ванная, кухня)", unit: "м²", pricePerUnit: 1400, consumptionPerM2: 0.3 },
-      { name: "Плиточный клей", unit: "мешок 25кг", pricePerUnit: 550, consumptionPerM2: 0.05 },
-      { name: "Стяжка ЦПС", unit: "мешок 25кг", pricePerUnit: 280, consumptionPerM2: 0.4 },
-      { name: "Электрика (кабель, автоматы)", unit: "компл", pricePerUnit: 8000, consumptionPerM2: 0.06 },
-      { name: "Натяжной потолок", unit: "м²", pricePerUnit: 700, consumptionPerM2: 1.0 },
-      { name: "Двери межкомнатные", unit: "шт", pricePerUnit: 9000, consumptionPerM2: 0.04 },
-      { name: "Расходники", unit: "компл", pricePerUnit: 4000, consumptionPerM2: 0.02 },
+      { name: "Штукатурка гипсовая", unit: "мешок 30кг", consumptionPerM2: 0.35 },
+      { name: "Шпаклёвка финишная", unit: "мешок 25кг", consumptionPerM2: 0.08 },
+      { name: "Грунтовка глубокого проникновения", unit: "л", consumptionPerM2: 0.4 },
+      { name: "Ламинат", unit: "м²", consumptionPerM2: 0.7 },
+      { name: "Подложка", unit: "м²", consumptionPerM2: 0.7 },
+      { name: "Обои / краска стен", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Плитка (ванная, кухня)", unit: "м²", consumptionPerM2: 0.3 },
+      { name: "Плиточный клей", unit: "мешок 25кг", consumptionPerM2: 0.05 },
+      { name: "Стяжка ЦПС", unit: "мешок 25кг", consumptionPerM2: 0.4 },
+      { name: "Электрика (кабель, автоматы)", unit: "компл", consumptionPerM2: 0.06 },
+      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Двери межкомнатные", unit: "шт", consumptionPerM2: 0.04 },
+      { name: "Расходники", unit: "компл", consumptionPerM2: 0.02 },
     ],
     works: [
-      { name: "Штукатурка стен", unit: "м²", pricePerUnit: 600, consumptionPerM2: 2.5 },
-      { name: "Шпаклёвка", unit: "м²", pricePerUnit: 280, consumptionPerM2: 2.5 },
-      { name: "Укладка ламината", unit: "м²", pricePerUnit: 450, consumptionPerM2: 0.7 },
-      { name: "Укладка плитки", unit: "м²", pricePerUnit: 1800, consumptionPerM2: 0.3 },
-      { name: "Стяжка пола", unit: "м²", pricePerUnit: 650, consumptionPerM2: 1.0 },
-      { name: "Электромонтаж", unit: "точка", pricePerUnit: 1000, consumptionPerM2: 0.3 },
-      { name: "Натяжной потолок (монтаж)", unit: "м²", pricePerUnit: 300, consumptionPerM2: 1.0 },
-      { name: "Установка дверей", unit: "шт", pricePerUnit: 4500, consumptionPerM2: 0.04 },
+      { name: "Штукатурка стен", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Шпаклёвка", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Укладка ламината", unit: "м²", consumptionPerM2: 0.7 },
+      { name: "Укладка плитки", unit: "м²", consumptionPerM2: 0.3 },
+      { name: "Стяжка пола", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Электромонтаж", unit: "точка", consumptionPerM2: 0.3 },
+      { name: "Натяжной потолок (монтаж)", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Установка дверей", unit: "шт", consumptionPerM2: 0.04 },
     ],
   },
   {
@@ -89,35 +88,35 @@ const RENOVATION_TYPES: RenovationType[] = [
     icon: "🏗️",
     durationDaysPerM2: 1.2,
     materials: [
-      { name: "Штукатурка гипсовая", unit: "мешок 30кг", pricePerUnit: 580, consumptionPerM2: 0.5 },
-      { name: "Шпаклёвка финишная", unit: "мешок 25кг", pricePerUnit: 750, consumptionPerM2: 0.12 },
-      { name: "Грунтовка", unit: "л", pricePerUnit: 95, consumptionPerM2: 0.6 },
-      { name: "Керамогранит / плитка", unit: "м²", pricePerUnit: 2200, consumptionPerM2: 0.5 },
-      { name: "Плиточный клей", unit: "мешок 25кг", pricePerUnit: 600, consumptionPerM2: 0.1 },
-      { name: "Ламинат / паркетная доска", unit: "м²", pricePerUnit: 1800, consumptionPerM2: 0.5 },
-      { name: "Подложка", unit: "м²", pricePerUnit: 100, consumptionPerM2: 0.5 },
-      { name: "Стяжка с тёплым полом", unit: "м²", pricePerUnit: 1100, consumptionPerM2: 1.0 },
-      { name: "Гипсокартон (перегородки)", unit: "лист", pricePerUnit: 580, consumptionPerM2: 0.15 },
-      { name: "Электрика полная замена", unit: "компл", pricePerUnit: 12000, consumptionPerM2: 0.08 },
-      { name: "Сантехника (трубы, фитинги)", unit: "компл", pricePerUnit: 9000, consumptionPerM2: 0.05 },
-      { name: "Натяжной потолок", unit: "м²", pricePerUnit: 800, consumptionPerM2: 1.0 },
-      { name: "Двери", unit: "шт", pricePerUnit: 14000, consumptionPerM2: 0.04 },
-      { name: "Краска / декоративная штукатурка", unit: "м²", pricePerUnit: 500, consumptionPerM2: 2.5 },
-      { name: "Демонтажные работы (вывоз)", unit: "м²", pricePerUnit: 250, consumptionPerM2: 1.0 },
-      { name: "Расходники", unit: "компл", pricePerUnit: 6000, consumptionPerM2: 0.025 },
+      { name: "Штукатурка гипсовая", unit: "мешок 30кг", consumptionPerM2: 0.5 },
+      { name: "Шпаклёвка финишная", unit: "мешок 25кг", consumptionPerM2: 0.12 },
+      { name: "Грунтовка", unit: "л", consumptionPerM2: 0.6 },
+      { name: "Керамогранит / плитка", unit: "м²", consumptionPerM2: 0.5 },
+      { name: "Плиточный клей", unit: "мешок 25кг", consumptionPerM2: 0.1 },
+      { name: "Ламинат / паркетная доска", unit: "м²", consumptionPerM2: 0.5 },
+      { name: "Подложка", unit: "м²", consumptionPerM2: 0.5 },
+      { name: "Стяжка с тёплым полом", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Гипсокартон (перегородки)", unit: "лист", consumptionPerM2: 0.15 },
+      { name: "Электрика полная замена", unit: "компл", consumptionPerM2: 0.08 },
+      { name: "Сантехника (трубы, фитинги)", unit: "компл", consumptionPerM2: 0.05 },
+      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Двери", unit: "шт", consumptionPerM2: 0.04 },
+      { name: "Краска / декоративная штукатурка", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Демонтажные работы (вывоз)", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Расходники", unit: "компл", consumptionPerM2: 0.025 },
     ],
     works: [
-      { name: "Демонтаж старой отделки", unit: "м²", pricePerUnit: 450, consumptionPerM2: 3.5 },
-      { name: "Штукатурка стен", unit: "м²", pricePerUnit: 650, consumptionPerM2: 2.5 },
-      { name: "Шпаклёвка + покраска", unit: "м²", pricePerUnit: 500, consumptionPerM2: 2.5 },
-      { name: "Стяжка с тёплым полом", unit: "м²", pricePerUnit: 1100, consumptionPerM2: 1.0 },
-      { name: "Укладка напольного покрытия", unit: "м²", pricePerUnit: 650, consumptionPerM2: 1.0 },
-      { name: "Укладка плитки", unit: "м²", pricePerUnit: 2200, consumptionPerM2: 0.5 },
-      { name: "Электромонтаж", unit: "точка", pricePerUnit: 1200, consumptionPerM2: 0.4 },
-      { name: "Сантехмонтаж", unit: "точка", pricePerUnit: 4500, consumptionPerM2: 0.08 },
-      { name: "Монтаж ГКЛ перегородок", unit: "м²", pricePerUnit: 850, consumptionPerM2: 0.15 },
-      { name: "Натяжной потолок", unit: "м²", pricePerUnit: 350, consumptionPerM2: 1.0 },
-      { name: "Установка дверей", unit: "шт", pricePerUnit: 5500, consumptionPerM2: 0.04 },
+      { name: "Демонтаж старой отделки", unit: "м²", consumptionPerM2: 3.5 },
+      { name: "Штукатурка стен", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Шпаклёвка + покраска", unit: "м²", consumptionPerM2: 2.5 },
+      { name: "Стяжка с тёплым полом", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Укладка напольного покрытия", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Укладка плитки", unit: "м²", consumptionPerM2: 0.5 },
+      { name: "Электромонтаж", unit: "точка", consumptionPerM2: 0.4 },
+      { name: "Сантехмонтаж", unit: "точка", consumptionPerM2: 0.08 },
+      { name: "Монтаж ГКЛ перегородок", unit: "м²", consumptionPerM2: 0.15 },
+      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
+      { name: "Установка дверей", unit: "шт", consumptionPerM2: 0.04 },
     ],
   },
 ];
@@ -144,45 +143,53 @@ export default function RenovationCostCalculator() {
   const [area, setArea] = useState(55);
   const [typeId, setTypeId] = useState("standard");
   const [withWork, setWithWork] = useState(true);
-  const [customPrices, setCustomPrices] = useState<Record<string, number>>(() => {
-    try { return JSON.parse(localStorage.getItem("masterok-renovation-prices") ?? "{}"); } catch { return {}; }
-  });
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setCustomPrices(getUserPrices(PRICE_SCOPES.renovation));
+  }, []);
 
   const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
 
   // Persist custom prices
   useEffect(() => {
     if (Object.keys(customPrices).length > 0) {
-      try { localStorage.setItem("masterok-renovation-prices", JSON.stringify(customPrices)); } catch {}
+      setUserPrices(PRICE_SCOPES.renovation, customPrices);
     }
   }, [customPrices]);
 
-  const getPrice = (name: string, defaultPrice: number) => customPrices[name] ?? defaultPrice;
+  const priceFor = (key: string): number => customPrices[key] ?? 0;
+
+  const handleResetPrices = () => {
+    resetScope(PRICE_SCOPES.renovation);
+    setCustomPrices({});
+  };
 
   const result = useMemo(() => {
     const materialLines = type.materials.map((m) => {
       const qty = Math.ceil(area * m.consumptionPerM2 * 10) / 10;
-      const price = getPrice(m.name, m.pricePerUnit);
+      const price = priceFor(m.name);
       const cost = Math.round(qty * price);
-      return { ...m, qty, cost, pricePerUnit: price };
+      return { ...m, qty, cost, price };
     });
 
     const workLines = withWork
       ? type.works.map((w) => {
           const qty = Math.ceil(area * w.consumptionPerM2 * 10) / 10;
-          const price = getPrice(`work:${w.name}`, w.pricePerUnit);
+          const price = priceFor(`work:${w.name}`);
           const cost = Math.round(qty * price);
-          return { ...w, qty, cost, pricePerUnit: price };
+          return { ...w, qty, cost, price };
         })
       : [];
 
     const materialTotal = materialLines.reduce((s, l) => s + l.cost, 0);
     const workTotal = workLines.reduce((s, l) => s + l.cost, 0);
     const total = materialTotal + workTotal;
-    const perM2 = Math.round(total / area);
+    const perM2 = total > 0 ? Math.round(total / area) : 0;
     const durationDays = Math.ceil(area * type.durationDaysPerM2);
+    const hasAnyPrice = total > 0;
 
-    return { materialLines, workLines, materialTotal, workTotal, total, perM2, durationDays };
+    return { materialLines, workLines, materialTotal, workTotal, total, perM2, durationDays, hasAnyPrice };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, type, withWork, customPrices]);
 
@@ -265,16 +272,24 @@ export default function RenovationCostCalculator() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
             <div>
               <p className="text-xs font-semibold text-accent-600 dark:text-accent-400 uppercase tracking-wider mb-1">
-                Примерная стоимость
+                Ваша смета
               </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                {formatPriceRange(result.total)[0]} — {formatPriceRange(result.total)[1]} ₽
-              </p>
+              {result.hasAnyPrice ? (
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  {formatPriceRange(result.total)[0]} — {formatPriceRange(result.total)[1]} ₽
+                </p>
+              ) : (
+                <p className="text-base text-slate-500 dark:text-slate-400">
+                  Введите свои цены в таблицах ниже — итог появится здесь
+                </p>
+              )}
             </div>
             <div className="text-right space-y-0.5">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {formatPrice(result.perM2)} ₽/м²
-              </p>
+              {result.hasAnyPrice && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {formatPrice(result.perM2)} ₽/м²
+                </p>
+              )}
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 ~{result.durationDays} дней
               </p>
@@ -282,7 +297,7 @@ export default function RenovationCostCalculator() {
           </div>
 
           {/* Breakdown bar */}
-          {withWork && (
+          {withWork && result.hasAnyPrice && result.total > 0 && (
             <div className="mt-4">
               <div className="flex rounded-full overflow-hidden h-3">
                 <div
@@ -312,10 +327,22 @@ export default function RenovationCostCalculator() {
 
         {/* Materials table */}
         <div className="p-5">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            Материалы
-          </h3>
-          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Нажмите на цену, чтобы ввести свою</p>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Материалы
+            </h3>
+            {Object.values(customPrices).some((v) => v > 0) && (
+              <button
+                type="button"
+                onClick={handleResetPrices}
+                className="text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+                title="Сбросить все введённые цены"
+              >
+                Сбросить все цены
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Введите свои цены — итог появится автоматически</p>
           <div className="space-y-1.5">
             {result.materialLines.map((line, i) => (
               <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
@@ -326,20 +353,27 @@ export default function RenovationCostCalculator() {
                 <input
                   type="number"
                   min={0}
-                  value={customPrices[line.name] ?? line.pricePerUnit}
+                  value={customPrices[line.name] || ""}
+                  placeholder="₽"
                   onChange={(e) => setCustomPrices((p) => ({ ...p, [line.name]: Number(e.target.value) || 0 }))}
-                  className="w-16 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
-                  title="Цена за единицу"
+                  className={`w-16 text-right text-xs border rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
+                    line.price > 0
+                      ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  }`}
+                  title="Ваша цена за единицу"
                 />
                 <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                  {formatPrice(line.cost)} ₽
+                  {line.cost > 0 ? `${formatPrice(line.cost)} ₽` : "—"}
                 </span>
               </div>
             ))}
-            <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
-              <span>Итого материалы</span>
-              <span>{formatPrice(result.materialTotal)} ₽</span>
-            </div>
+            {result.materialTotal > 0 && (
+              <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
+                <span>Итого материалы</span>
+                <span>{formatPrice(result.materialTotal)} ₽</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -359,20 +393,27 @@ export default function RenovationCostCalculator() {
                   <input
                     type="number"
                     min={0}
-                    value={customPrices[`work:${line.name}`] ?? line.pricePerUnit}
+                    value={customPrices[`work:${line.name}`] || ""}
+                    placeholder="₽"
                     onChange={(e) => setCustomPrices((p) => ({ ...p, [`work:${line.name}`]: Number(e.target.value) || 0 }))}
-                    className="w-16 text-right text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30"
-                    title="Цена за единицу"
+                    className={`w-16 text-right text-xs border rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
+                      line.price > 0
+                        ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    }`}
+                    title="Ваша цена за единицу"
                   />
                   <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                    {formatPrice(line.cost)} ₽
+                    {line.cost > 0 ? `${formatPrice(line.cost)} ₽` : "—"}
                   </span>
                 </div>
               ))}
-              <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
-                <span>Итого работы</span>
-                <span>{formatPrice(result.workTotal)} ₽</span>
-              </div>
+              {result.workTotal > 0 && (
+                <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
+                  <span>Итого работы</span>
+                  <span>{formatPrice(result.workTotal)} ₽</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -380,9 +421,8 @@ export default function RenovationCostCalculator() {
 
       {/* Disclaimer */}
       <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
-        * Цены ориентировочные, средние по России на 2026 год. Итог показан в диапазоне ±15%.
-        Фактическая стоимость зависит от региона, выбранных материалов, состояния помещения и сложности работ.
-        Для точного расчёта отдельных материалов используйте наши калькуляторы.
+        * Цены вводите сами — так смета получается честной, под ваш регион и поставщиков. Итог показан в диапазоне ±15%.
+        Расходы материалов рассчитаны по типовым нормативам на м² пола. Для точного расчёта отдельных материалов используйте наши калькуляторы.
       </p>
     </div>
   );

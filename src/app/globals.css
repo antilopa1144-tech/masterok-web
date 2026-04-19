@@ -167,11 +167,26 @@
     bg-accent-600 text-white font-bold
     rounded-xl
     shadow-sm
-    transition-all duration-150
-    hover:bg-accent-600 hover:shadow-md
-    active:bg-accent-700
+    transition-[transform,box-shadow,background-color,filter] duration-150 ease-out
+    will-change-transform
+    hover:bg-accent-500 hover:shadow-md hover:-translate-y-0.5
+    active:bg-accent-700 active:scale-[0.97] active:translate-y-0 active:shadow-inner active:brightness-95
     focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:outline-none
-    disabled:opacity-50 disabled:cursor-not-allowed;
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm;
+}
+
+@keyframes pulse-success {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.btn-primary-pulse {
+  animation: pulse-success 600ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary-pulse { animation: none; }
 }
 
 @utility btn-secondary {
@@ -478,51 +493,113 @@ input[type="range"]::-moz-range-thumb {
 @utility bg-cat-interior { background-color: #d1fae5; }
 @utility bg-cat-ceiling { background-color: #dbeafe; }
 
-/* ── Print styles ──────────────────────────────────────────────────────────── */
+/* ── Print styles — компактный лист A4 с одним расчётом ─────────────────── */
 @media print {
-  /* Hide non-essential UI */
-  header, footer, nav,
-  .btn-primary, .btn-secondary,
-  [class*="ScrollToTop"],
-  details summary,
-  [aria-label="Полезные инструменты"] {
+  @page {
+    margin: 0.8cm 1.2cm;
+    size: A4;
+  }
+
+  /* Скрываем всё лишнее: навигация, формы, чат, SEO, FAQ, советы, связанные.
+     Используем повышенную специфичность через html body, чтобы перебить Tailwind-утилиты. */
+  html body header,
+  html body footer,
+  html body nav,
+  html body aside,
+  html body .btn-primary,
+  html body .btn-secondary,
+  html body [class*="ScrollToTop"],
+  html body [aria-label="Полезные инструменты"],
+  html body .print-hide,
+  html body [data-print-hide],
+  html body [data-print-hide] *,
+  html body iframe,
+  html body video,
+  html body canvas {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  /* Clean backgrounds */
-  body {
+  /* Чистая типографика */
+  html, body {
     background: white !important;
-    color: black !important;
-    font-size: 12pt;
+    color: #111 !important;
+    font-size: 9.5pt;
+    line-height: 1.25;
   }
 
+  /* Заголовок страницы с брендом и датой */
+  body::before {
+    content: "masterok.ru — строительный расчёт";
+    display: block;
+    font-size: 8pt;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 3pt;
+    margin-bottom: 6pt;
+  }
+
+  /* Убираем фоны и тени, делаем границы тонкими */
   .card, .card-hover, .result-card {
-    border: 1px solid #ddd !important;
+    background: white !important;
+    border: 1px solid #ccc !important;
     box-shadow: none !important;
     break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 6pt 8pt !important;
+    margin-bottom: 4pt !important;
   }
+  .result-card { background: #fafbfc !important; }
 
-  /* Show full content */
-  details[open] > div {
-    display: block !important;
+  /* Компактные заголовки */
+  h1, h2, h3, h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+    color: #111 !important;
+    margin: 3pt 0 2pt 0 !important;
   }
+  h1 { font-size: 12pt; }
+  h2 { font-size: 10.5pt; }
+  h3 { font-size: 10pt; }
+  h4 { font-size: 9.5pt; }
 
-  /* Calculator result emphasis */
-  .result-card {
-    background: #f8fafc !important;
-    padding: 12pt !important;
-  }
+  /* Плотные списки и параграфы */
+  p, li { margin: 1pt 0 !important; }
+  ul, ol { margin: 2pt 0 !important; padding-left: 14pt !important; }
 
-  /* Links show URL */
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
+  /* Компактные таблицы */
+  table {
     font-size: 9pt;
-    color: #666;
+    width: 100% !important;
+    border-collapse: collapse;
   }
+  th, td { padding: 2pt 4pt !important; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
 
-  /* No page breaks inside results */
-  .slide-up {
-    animation: none !important;
-    break-inside: avoid;
+  /* Убираем анимации, пустые зазоры, скрываем все details-аккордеоны */
+  details { display: none !important; }
+  .slide-up, .animate-fade-in { animation: none !important; break-inside: avoid; }
+  .space-y-6 > * + *,
+  .space-y-5 > * + *,
+  .space-y-4 > * + * { margin-top: 4pt !important; }
+  .py-8, .py-6, .py-4 { padding-top: 0 !important; padding-bottom: 0 !important; }
+  .mt-10, .mt-8, .mt-6 { margin-top: 4pt !important; }
+
+  /* Убираем layout-grid — растягиваем результат на всю ширину */
+  .page-container, .page-container-wide {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .grid { display: block !important; }
+
+  /* Ссылки — без подсветки URL (не нужны на бумаге) */
+  a { color: #111 !important; text-decoration: none !important; }
+
+  /* Принудительно светлая тема */
+  .dark * {
+    color: #111 !important;
+    background-color: transparent !important;
+    border-color: #ccc !important;
   }
 }

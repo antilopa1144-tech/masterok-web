@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getPrices, setPrice } from "@/lib/userPrices";
+
+const COMPARISON_SCOPE = "comparison";
 
 interface Material {
   name: string;
-  pricePerM2: [number, number]; // min-max ₽/м²
   durabilityYears: [number, number];
   installDifficulty: 1 | 2 | 3; // 1=easy, 2=medium, 3=hard
   moistureResistance: 1 | 2 | 3; // 1=low, 2=medium, 3=high
@@ -30,14 +32,14 @@ const CATEGORIES: Category[] = [
     icon: "🏠",
     unit: "₽/м²",
     materials: [
-      { name: "Ламинат 32 класс", pricePerM2: [500, 1200], durabilityYears: [7, 15], installDifficulty: 1, moistureResistance: 1, warmth: 2, soundInsulation: 1, repairability: 2, extras: "Подложка 50-90 ₽/м², плинтус", verdict: "Оптимальный вариант для жилых комнат" },
-      { name: "Ламинат 33-34 класс", pricePerM2: [900, 2000], durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 2, warmth: 2, soundInsulation: 2, repairability: 2, extras: "Подложка, плинтус, порожки", verdict: "Для высокой проходимости и кухни" },
-      { name: "Линолеум бытовой", pricePerM2: [200, 600], durabilityYears: [5, 10], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 1, extras: "Клей/скотч 30-80 ₽/м², плинтус", verdict: "Самый бюджетный, подходит для съёмного жилья" },
-      { name: "Линолеум полукоммерческий", pricePerM2: [500, 1000], durabilityYears: [10, 20], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 1, extras: "Клей, плинтус, сварка швов", verdict: "Хорош для кухни и прихожей" },
-      { name: "Керамогранит", pricePerM2: [800, 2500], durabilityYears: [30, 50], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, крестики, СВП", verdict: "Ванная, кухня, прихожая. Вечный вариант" },
-      { name: "Кварцвиниловая плитка (SPC)", pricePerM2: [1000, 2500], durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 2, extras: "Подложка (встроена), плинтус", verdict: "Современная альтернатива ламинату, не боится воды" },
-      { name: "Паркетная доска", pricePerM2: [1500, 4000], durabilityYears: [20, 40], installDifficulty: 2, moistureResistance: 1, warmth: 3, soundInsulation: 2, repairability: 3, extras: "Подложка, клей/замок, масло/лак", verdict: "Премиум. Тепло, красиво, можно циклевать" },
-      { name: "Плитка керамическая", pricePerM2: [500, 1500], durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, крестики", verdict: "Классика для мокрых зон" },
+      { name: "Ламинат 32 класс", durabilityYears: [7, 15], installDifficulty: 1, moistureResistance: 1, warmth: 2, soundInsulation: 1, repairability: 2, extras: "Подложка 50-90 ₽/м², плинтус", verdict: "Оптимальный вариант для жилых комнат" },
+      { name: "Ламинат 33-34 класс", durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 2, warmth: 2, soundInsulation: 2, repairability: 2, extras: "Подложка, плинтус, порожки", verdict: "Для высокой проходимости и кухни" },
+      { name: "Линолеум бытовой", durabilityYears: [5, 10], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 1, extras: "Клей/скотч 30-80 ₽/м², плинтус", verdict: "Самый бюджетный, подходит для съёмного жилья" },
+      { name: "Линолеум полукоммерческий", durabilityYears: [10, 20], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 1, extras: "Клей, плинтус, сварка швов", verdict: "Хорош для кухни и прихожей" },
+      { name: "Керамогранит", durabilityYears: [30, 50], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, крестики, СВП", verdict: "Ванная, кухня, прихожая. Вечный вариант" },
+      { name: "Кварцвиниловая плитка (SPC)", durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 3, warmth: 2, soundInsulation: 2, repairability: 2, extras: "Подложка (встроена), плинтус", verdict: "Современная альтернатива ламинату, не боится воды" },
+      { name: "Паркетная доска", durabilityYears: [20, 40], installDifficulty: 2, moistureResistance: 1, warmth: 3, soundInsulation: 2, repairability: 3, extras: "Подложка, клей/замок, масло/лак", verdict: "Премиум. Тепло, красиво, можно циклевать" },
+      { name: "Плитка керамическая", durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, крестики", verdict: "Классика для мокрых зон" },
     ],
   },
   {
@@ -46,12 +48,12 @@ const CATEGORIES: Category[] = [
     icon: "🧱",
     unit: "₽/м²",
     materials: [
-      { name: "Обои виниловые", pricePerM2: [150, 500], durabilityYears: [5, 10], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 1, extras: "Клей 30-50 ₽/м²", verdict: "Самый популярный вариант для жилых комнат" },
-      { name: "Обои флизелиновые под покраску", pricePerM2: [100, 300], durabilityYears: [10, 15], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей + краска 100-200 ₽/м²", verdict: "Можно перекрашивать 5-8 раз" },
-      { name: "Краска интерьерная", pricePerM2: [80, 250], durabilityYears: [5, 8], installDifficulty: 2, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Грунтовка, шпаклёвка (стены должны быть идеальные)", verdict: "Требует идеальных стен, зато легко обновить" },
-      { name: "Декоративная штукатурка", pricePerM2: [300, 1500], durabilityYears: [15, 25], installDifficulty: 3, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Грунтовка, колер, воск/лак", verdict: "Эффектно, но нужен мастер" },
-      { name: "Керамическая плитка", pricePerM2: [500, 1500], durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, СВП", verdict: "Ванная и кухонный фартук" },
-      { name: "Стеновые панели ПВХ", pricePerM2: [200, 600], durabilityYears: [10, 15], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Обрешётка или клей", verdict: "Бюджетно для ванной и балкона" },
+      { name: "Обои виниловые", durabilityYears: [5, 10], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 1, extras: "Клей 30-50 ₽/м²", verdict: "Самый популярный вариант для жилых комнат" },
+      { name: "Обои флизелиновые под покраску", durabilityYears: [10, 15], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей + краска 100-200 ₽/м²", verdict: "Можно перекрашивать 5-8 раз" },
+      { name: "Краска интерьерная", durabilityYears: [5, 8], installDifficulty: 2, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Грунтовка, шпаклёвка (стены должны быть идеальные)", verdict: "Требует идеальных стен, зато легко обновить" },
+      { name: "Декоративная штукатурка", durabilityYears: [15, 25], installDifficulty: 3, moistureResistance: 2, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Грунтовка, колер, воск/лак", verdict: "Эффектно, но нужен мастер" },
+      { name: "Керамическая плитка", durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Клей, затирка, СВП", verdict: "Ванная и кухонный фартук" },
+      { name: "Стеновые панели ПВХ", durabilityYears: [10, 15], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Обрешётка или клей", verdict: "Бюджетно для ванной и балкона" },
     ],
   },
   {
@@ -60,11 +62,11 @@ const CATEGORIES: Category[] = [
     icon: "🧤",
     unit: "₽/м²",
     materials: [
-      { name: "Минвата (Rockwool, Технониколь)", pricePerM2: [150, 400], durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 1, warmth: 3, soundInsulation: 3, repairability: 1, extras: "Мембрана, крепёж, пароизоляция", verdict: "Универсальный, негорючий. Стены, кровля, перекрытия" },
-      { name: "Пенополистирол (ППС/EPS)", pricePerM2: [100, 250], durabilityYears: [20, 30], installDifficulty: 1, moistureResistance: 2, warmth: 2, soundInsulation: 1, repairability: 1, extras: "Клей, дюбели, сетка", verdict: "Бюджетный для фасадов (мокрая система)" },
-      { name: "Экструдированный пенополистирол (XPS)", pricePerM2: [200, 500], durabilityYears: [40, 50], installDifficulty: 1, moistureResistance: 3, warmth: 3, soundInsulation: 1, repairability: 1, extras: "Клей, дюбели", verdict: "Фундамент, отмостка, подвалы — не боится воды" },
-      { name: "PIR-плиты", pricePerM2: [400, 800], durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 3, warmth: 3, soundInsulation: 2, repairability: 1, extras: "Скотч для стыков", verdict: "Максимальная теплоизоляция при минимальной толщине" },
-      { name: "Эковата", pricePerM2: [100, 300], durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 1, warmth: 3, soundInsulation: 3, repairability: 1, extras: "Задувка аппаратом, мембраны", verdict: "Хороша для каркасных домов, без мостиков холода" },
+      { name: "Минвата (Rockwool, Технониколь)", durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 1, warmth: 3, soundInsulation: 3, repairability: 1, extras: "Мембрана, крепёж, пароизоляция", verdict: "Универсальный, негорючий. Стены, кровля, перекрытия" },
+      { name: "Пенополистирол (ППС/EPS)", durabilityYears: [20, 30], installDifficulty: 1, moistureResistance: 2, warmth: 2, soundInsulation: 1, repairability: 1, extras: "Клей, дюбели, сетка", verdict: "Бюджетный для фасадов (мокрая система)" },
+      { name: "Экструдированный пенополистирол (XPS)", durabilityYears: [40, 50], installDifficulty: 1, moistureResistance: 3, warmth: 3, soundInsulation: 1, repairability: 1, extras: "Клей, дюбели", verdict: "Фундамент, отмостка, подвалы — не боится воды" },
+      { name: "PIR-плиты", durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 3, warmth: 3, soundInsulation: 2, repairability: 1, extras: "Скотч для стыков", verdict: "Максимальная теплоизоляция при минимальной толщине" },
+      { name: "Эковата", durabilityYears: [20, 40], installDifficulty: 3, moistureResistance: 1, warmth: 3, soundInsulation: 3, repairability: 1, extras: "Задувка аппаратом, мембраны", verdict: "Хороша для каркасных домов, без мостиков холода" },
     ],
   },
   {
@@ -73,12 +75,12 @@ const CATEGORIES: Category[] = [
     icon: "🏠",
     unit: "₽/м²",
     materials: [
-      { name: "Металлочерепица", pricePerM2: [400, 900], durabilityYears: [25, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, ендовы, торцевые", verdict: "Классика для частных домов, лёгкая и долговечная" },
-      { name: "Профнастил С21/НС35", pricePerM2: [300, 700], durabilityYears: [25, 40], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, уплотнитель", verdict: "Бюджетнее металлочерепицы, проще монтаж" },
-      { name: "Мягкая кровля (гибкая черепица)", pricePerM2: [400, 1200], durabilityYears: [20, 40], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Подкладочный ковёр, гвозди, мастика, OSB", verdict: "Тихая, красивая, подходит для сложных крыш" },
-      { name: "Ондулин", pricePerM2: [200, 400], durabilityYears: [10, 20], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 1, extras: "Гвозди с шляпками, конёк", verdict: "Самый бюджетный, лёгкий, подходит для дачи" },
-      { name: "Фальцевая кровля", pricePerM2: [600, 1500], durabilityYears: [40, 60], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Кляммеры, герметик, обрешётка", verdict: "Премиум: герметичные швы, максимальный срок" },
-      { name: "Композитная черепица", pricePerM2: [800, 1800], durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Крепёж, доборные элементы", verdict: "Тихая, лёгкая, выглядит как керамика" },
+      { name: "Металлочерепица", durabilityYears: [25, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, ендовы, торцевые", verdict: "Классика для частных домов, лёгкая и долговечная" },
+      { name: "Профнастил С21/НС35", durabilityYears: [25, 40], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Саморезы, конёк, уплотнитель", verdict: "Бюджетнее металлочерепицы, проще монтаж" },
+      { name: "Мягкая кровля (гибкая черепица)", durabilityYears: [20, 40], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Подкладочный ковёр, гвозди, мастика, OSB", verdict: "Тихая, красивая, подходит для сложных крыш" },
+      { name: "Ондулин", durabilityYears: [10, 20], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 1, extras: "Гвозди с шляпками, конёк", verdict: "Самый бюджетный, лёгкий, подходит для дачи" },
+      { name: "Фальцевая кровля", durabilityYears: [40, 60], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Кляммеры, герметик, обрешётка", verdict: "Премиум: герметичные швы, максимальный срок" },
+      { name: "Композитная черепица", durabilityYears: [30, 50], installDifficulty: 2, moistureResistance: 3, warmth: 1, soundInsulation: 2, repairability: 2, extras: "Крепёж, доборные элементы", verdict: "Тихая, лёгкая, выглядит как керамика" },
     ],
   },
   {
@@ -87,12 +89,12 @@ const CATEGORIES: Category[] = [
     icon: "📐",
     unit: "₽/м²",
     materials: [
-      { name: "Натяжной потолок (ПВХ)", pricePerM2: [300, 800], durabilityYears: [10, 20], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 1, extras: "Профиль, закладные под светильники", verdict: "Быстро, ровно, не боится затопления. Нужен мастер" },
-      { name: "Натяжной (тканевый)", pricePerM2: [600, 1500], durabilityYears: [15, 25], installDifficulty: 3, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Профиль, закладные", verdict: "Дышит, не деформируется. Премиум-вариант" },
-      { name: "Гипсокартон (ГКЛ)", pricePerM2: [400, 900], durabilityYears: [15, 30], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 2, repairability: 3, extras: "Профили, саморезы, шпаклёвка, краска", verdict: "Можно делать уровни, ниши, подсветку" },
-      { name: "Покраска (по шпаклёвке)", pricePerM2: [100, 300], durabilityYears: [5, 8], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Шпаклёвка, грунтовка, краска", verdict: "Самый бюджетный, но нужны ровные потолки" },
-      { name: "Реечный потолок (алюминий)", pricePerM2: [500, 1200], durabilityYears: [20, 30], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Стрингеры, пристенный профиль", verdict: "Ванная и кухня — не боится влаги" },
-      { name: "Кассетный потолок (Armstrong)", pricePerM2: [300, 700], durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 2, repairability: 3, extras: "T-профиль, подвесы", verdict: "Офисы, подсобки — легко заменить кассету" },
+      { name: "Натяжной потолок (ПВХ)", durabilityYears: [10, 20], installDifficulty: 3, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 1, extras: "Профиль, закладные под светильники", verdict: "Быстро, ровно, не боится затопления. Нужен мастер" },
+      { name: "Натяжной (тканевый)", durabilityYears: [15, 25], installDifficulty: 3, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 2, extras: "Профиль, закладные", verdict: "Дышит, не деформируется. Премиум-вариант" },
+      { name: "Гипсокартон (ГКЛ)", durabilityYears: [15, 30], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 2, repairability: 3, extras: "Профили, саморезы, шпаклёвка, краска", verdict: "Можно делать уровни, ниши, подсветку" },
+      { name: "Покраска (по шпаклёвке)", durabilityYears: [5, 8], installDifficulty: 2, moistureResistance: 1, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Шпаклёвка, грунтовка, краска", verdict: "Самый бюджетный, но нужны ровные потолки" },
+      { name: "Реечный потолок (алюминий)", durabilityYears: [20, 30], installDifficulty: 1, moistureResistance: 3, warmth: 1, soundInsulation: 1, repairability: 3, extras: "Стрингеры, пристенный профиль", verdict: "Ванная и кухня — не боится влаги" },
+      { name: "Кассетный потолок (Armstrong)", durabilityYears: [15, 25], installDifficulty: 1, moistureResistance: 2, warmth: 1, soundInsulation: 2, repairability: 3, extras: "T-профиль, подвесы", verdict: "Офисы, подсобки — легко заменить кассету" },
     ],
   },
 ];
@@ -126,9 +128,12 @@ const PRIORITY_OPTIONS: { value: Priority; label: string; icon: string }[] = [
   { value: "diy", label: "Своими руками", icon: "🔧" },
 ];
 
-function scoreMaterial(mat: Material, priority: Priority | null): number {
+function scoreMaterial(mat: Material, priority: Priority | null, userPrice: number): number {
   if (!priority) return 0;
-  if (priority === "budget") return 4 - Math.round((mat.pricePerM2[0] + mat.pricePerM2[1]) / 2 / 500);
+  if (priority === "budget") {
+    if (userPrice <= 0) return -1; // материалы без цены опускаются в конец сортировки
+    return 4 - Math.round(userPrice / 500);
+  }
   if (priority === "durability") return Math.round((mat.durabilityYears[0] + mat.durabilityYears[1]) / 2 / 10);
   if (priority === "diy") return 4 - mat.installDifficulty;
   return 0;
@@ -137,14 +142,31 @@ function scoreMaterial(mat: Material, priority: Priority | null): number {
 export default function MaterialComparison() {
   const [categoryId, setCategoryId] = useState("flooring");
   const [priority, setPriority] = useState<Priority | null>(null);
+  const [userPrices, setUserPrices] = useState<Record<string, number>>({});
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
+
+  useEffect(() => {
+    setUserPrices(getPrices(COMPARISON_SCOPE));
+  }, []);
+
+  const handlePriceChange = (name: string, value: number) => {
+    setPrice(COMPARISON_SCOPE, name, value);
+    setUserPrices((prev) => {
+      const next = { ...prev };
+      if (value > 0) next[name] = value;
+      else delete next[name];
+      return next;
+    });
+  };
 
   const sortedMaterials = [...category.materials].sort((a, b) => {
     if (!priority) return 0;
-    return scoreMaterial(b, priority) - scoreMaterial(a, priority);
+    return scoreMaterial(b, priority, userPrices[b.name] ?? 0) - scoreMaterial(a, priority, userPrices[a.name] ?? 0);
   });
 
-  const topScore = priority ? Math.max(...sortedMaterials.map((m) => scoreMaterial(m, priority))) : 0;
+  const topScore = priority
+    ? Math.max(...sortedMaterials.map((m) => scoreMaterial(m, priority, userPrices[m.name] ?? 0)))
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -186,7 +208,8 @@ export default function MaterialComparison() {
       {/* Comparison cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sortedMaterials.map((mat) => {
-          const isBest = priority && scoreMaterial(mat, priority) === topScore && topScore > 0;
+          const userPrice = userPrices[mat.name] ?? 0;
+          const isBest = priority && scoreMaterial(mat, priority, userPrice) === topScore && topScore > 0;
           return (
           <div key={mat.name} className={`card p-5 space-y-3 ${isBest ? "ring-2 ring-accent-400 dark:ring-accent-500" : ""}`}>
             {isBest && (
@@ -198,10 +221,19 @@ export default function MaterialComparison() {
 
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">Цена</p>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
-                  {mat.pricePerM2[0]}–{mat.pricePerM2[1]} {category.unit}
-                </p>
+                <p className="text-xs text-slate-400 mb-0.5">Ваша цена, {category.unit}</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={userPrice || ""}
+                  placeholder="—"
+                  onChange={(e) => handlePriceChange(mat.name, Number(e.target.value) || 0)}
+                  className={`w-full text-sm border rounded-lg px-2 py-1 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
+                    userPrice > 0
+                      ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  }`}
+                />
               </div>
               <div>
                 <p className="text-xs text-slate-400 mb-0.5">Срок службы</p>
