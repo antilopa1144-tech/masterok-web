@@ -105,7 +105,7 @@ export default function ChekListyPage() {
             return (
               <Link
                 key={cl.slug}
-                href={`/instrumenty/chek-listy/${cl.slug}`}
+                href={`/instrumenty/chek-listy/${cl.slug}/`}
                 className="card-hover p-5 block no-underline group"
               >
                 {/* Категория */}

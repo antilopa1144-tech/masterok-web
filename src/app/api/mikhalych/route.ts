@@ -4,7 +4,7 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 // Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
-const MODEL = process.env.MIKHALYCH_MODEL ?? "x-ai/grok-4.1-fast";
+const MODEL = process.env.MIKHALYCH_MODEL ?? "google/gemini-3-flash-preview";
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
