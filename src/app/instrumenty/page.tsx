@@ -222,7 +222,7 @@ export default function InstrumentyPage() {
           {ALL_CHECKLISTS.map((cl) => (
             <Link
               key={cl.slug}
-              href={`/instrumenty/chek-listy/${cl.slug}`}
+              href={`/instrumenty/chek-listy/${cl.slug}/`}
               className="card-hover p-5 block no-underline group"
             >
               <div className="flex items-center gap-2 mb-2">
