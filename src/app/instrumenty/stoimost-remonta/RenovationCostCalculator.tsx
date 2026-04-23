@@ -205,6 +205,7 @@ export default function RenovationCostCalculator() {
           </label>
           <input
             type="number"
+            inputMode="decimal"
             min={5}
             max={500}
             value={area}
@@ -353,6 +354,7 @@ export default function RenovationCostCalculator() {
                 </span>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={0}
                   value={customPrices[line.name] || ""}
                   placeholder="₽"
@@ -393,6 +395,7 @@ export default function RenovationCostCalculator() {
                   </span>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     value={customPrices[`work:${line.name}`] || ""}
                     placeholder="₽"

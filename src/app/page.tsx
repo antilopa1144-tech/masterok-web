@@ -15,9 +15,9 @@ import ProjectManager from "@/components/calculator/ProjectManager";
 const CALC_COUNT = ALL_CALCULATORS.length;
 
 const META = {
-  title: `${SITE_NAME} — строительные калькуляторы онлайн бесплатно`,
+  title: `Строительные калькуляторы онлайн — ${CALC_COUNT} расчётов по ГОСТ | ${SITE_NAME}`,
   description:
-    `${CALC_COUNT}+ бесплатных калькуляторов: бетон, кирпич, кровля, плитка, ламинат, гипсокартон. Точный расчёт материалов по ГОСТ и СНиП.`,
+    `${CALC_COUNT}+ бесплатных строительных калькуляторов для ремонта и стройки: бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон. Точные нормы по ГОСТ, СНиП и СП. Без регистрации, с ИИ-прорабом Михалыч.`,
 } as const;
 
 export const metadata: Metadata = {
@@ -32,8 +32,9 @@ const UI_TEXT = {
   heroBadgeSuffix: "бесплатных калькуляторов",
   heroTitle: "Строительные калькуляторы",
   heroAccent: "онлайн",
+  heroTail: "расчёт материалов по ГОСТ и СНиП",
   heroDescription:
-    "Точный расчёт материалов по ГОСТ и СНиП. Бетон, кирпич, кровля, плитка, ламинат — всё в одном месте. Быстро, бесплатно, без регистрации.",
+    "Бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон — всё для ремонта и стройки в одном месте. Быстро, бесплатно, без регистрации. И ИИ-прораб Михалыч, если что-то непонятно.",
   heroPrimaryCta: "Начать расчёт",
   heroSecondaryCta: "Спросить Михалыча",
   stats: [
@@ -292,6 +293,9 @@ export default async function HomePage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
             {UI_TEXT.heroTitle}{" "}
             <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
+            <span className="block mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-500 dark:text-slate-400">
+              {UI_TEXT.heroTail}
+            </span>
           </h1>
 
           <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">

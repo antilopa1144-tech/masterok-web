@@ -10,6 +10,7 @@ import {
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
+import CompanionLinks from "./CompanionLinks";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
@@ -130,6 +131,11 @@ export default function CalculatorWithMikhalych({
         {/* Результат */}
         {result && (
           <ResultBlock result={result} shareState={shareState} onShare={handleShare} calculatorSlug={calculator.slug} />
+        )}
+
+        {/* Cross-sell: сопутствующие калькуляторы — только после расчёта */}
+        {hasCalculated && (
+          <CompanionLinks slug={calculator.slug} values={values} />
         )}
 
         {/* 3D-модель лестницы — обновляется при каждом изменении полей */}

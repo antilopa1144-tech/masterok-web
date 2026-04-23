@@ -222,6 +222,7 @@ export default function KonverterPage() {
             </select>
             <input
               type="number"
+              inputMode="decimal"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={UI_TEXT.inputPlaceholder}
@@ -402,6 +403,7 @@ function DensityCalculator() {
         </div>
         <input
           type="number"
+          inputMode="decimal"
           min={1}
           value={density}
           onChange={(e) => setDensity(Number(e.target.value) || 1)}
@@ -415,6 +417,7 @@ function DensityCalculator() {
           <label className="input-label">Значение ({inputUnit})</label>
           <input
             type="number"
+            inputMode="decimal"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             className="input-field text-lg font-semibold"
