@@ -7,6 +7,7 @@ import { SITE_TITLE_SUFFIX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
+import { getCategoryIntro } from "@/lib/calculators/category-intro";
 import CategoryFaqAccordion from "./CategoryFaqAccordion";
 import { getAllPosts } from "@/lib/blog";
 
@@ -56,6 +57,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const calculators = getCalculatorsByCategory(cat.id);
   const faqItems = CATEGORY_FAQ[cat.id] ?? [];
+  const intro = getCategoryIntro(cat.id);
   const allBlogPosts = await getAllPosts();
   const baseUrl = SITE_URL;
 
@@ -136,6 +138,47 @@ export default async function CategoryPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* SEO-контент: вводный блок по категории */}
+      {intro && (
+        <div className="border-b border-slate-100 dark:border-slate-800">
+          <div className="page-container-wide py-8">
+            <div className="max-w-3xl">
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                {intro.lead}
+              </p>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                    Что здесь можно рассчитать
+                  </h2>
+                  <ul className="space-y-1.5 text-sm text-slate-700 dark:text-slate-200 list-disc pl-5">
+                    {intro.bullets.map((b) => <li key={b}>{b}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                    Нормативные источники
+                  </h2>
+                  <ul className="space-y-1.5 text-sm text-slate-700 dark:text-slate-200 list-disc pl-5">
+                    {intro.standards.map((s) => <li key={s}>{s}</li>)}
+                  </ul>
+                </div>
+              </div>
+              {intro.pitfalls && intro.pitfalls.length > 0 && (
+                <div className="mt-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wider mb-2">
+                    На что обратить внимание
+                  </p>
+                  <ul className="space-y-1.5 text-sm text-amber-900 dark:text-amber-200 list-disc pl-5">
+                    {intro.pitfalls.map((p) => <li key={p}>{p}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Список калькуляторов */}
       <div className="page-container-wide py-8">
