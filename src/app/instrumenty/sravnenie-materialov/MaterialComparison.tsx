@@ -224,6 +224,7 @@ export default function MaterialComparison() {
                 <p className="text-xs text-slate-400 mb-0.5">Ваша цена, {category.unit}</p>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={0}
                   value={userPrice || ""}
                   placeholder="—"

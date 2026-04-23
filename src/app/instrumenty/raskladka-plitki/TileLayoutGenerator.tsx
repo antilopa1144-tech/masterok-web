@@ -320,9 +320,9 @@ export default function TileLayoutGenerator() {
             Размер поверхности (мм)
           </label>
           <div className="flex items-center gap-2">
-            <input type="number" min={100} max={20000} value={surfaceW} onChange={(e) => setSurfaceW(Number(e.target.value) || 100)} className="input-field w-28" />
+            <input type="number" inputMode="numeric" min={100} max={20000} value={surfaceW} onChange={(e) => setSurfaceW(Number(e.target.value) || 100)} className="input-field w-28" />
             <span className="text-slate-400">×</span>
-            <input type="number" min={100} max={20000} value={surfaceH} onChange={(e) => setSurfaceH(Number(e.target.value) || 100)} className="input-field w-28" />
+            <input type="number" inputMode="numeric" min={100} max={20000} value={surfaceH} onChange={(e) => setSurfaceH(Number(e.target.value) || 100)} className="input-field w-28" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -348,9 +348,9 @@ export default function TileLayoutGenerator() {
             Размер плитки (мм)
           </label>
           <div className="flex items-center gap-2">
-            <input type="number" min={10} max={2000} value={tileW} onChange={(e) => setTileW(Number(e.target.value) || 10)} className="input-field w-24" />
+            <input type="number" inputMode="numeric" min={10} max={2000} value={tileW} onChange={(e) => setTileW(Number(e.target.value) || 10)} className="input-field w-24" />
             <span className="text-slate-400">×</span>
-            <input type="number" min={10} max={2000} value={tileH} onChange={(e) => setTileH(Number(e.target.value) || 10)} className="input-field w-24" />
+            <input type="number" inputMode="numeric" min={10} max={2000} value={tileH} onChange={(e) => setTileH(Number(e.target.value) || 10)} className="input-field w-24" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">

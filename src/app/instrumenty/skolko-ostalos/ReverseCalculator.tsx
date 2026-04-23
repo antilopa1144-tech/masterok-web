@@ -94,6 +94,7 @@ export default function ReverseCalculator() {
           </label>
           <input
             type="number"
+            inputMode="decimal"
             min={0.1}
             step={0.1}
             value={amount}

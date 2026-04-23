@@ -65,6 +65,7 @@ function NumInput({
       <div className="flex items-center gap-2">
         <input
           type="number"
+          inputMode="decimal"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           min={0}

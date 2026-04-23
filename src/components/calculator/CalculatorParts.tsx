@@ -487,6 +487,7 @@ export function FieldInput({
         <div className="flex items-center gap-1.5">
           <input
             type="number"
+            inputMode="decimal"
             value={value}
             min={min}
             max={max}
@@ -839,6 +840,7 @@ export function FeedbackPanel({
         </span>
         <input
           type="number"
+          inputMode="decimal"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={CALCULATOR_UI_TEXT.feedbackPlaceholder}
@@ -1022,6 +1024,7 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
               </span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={0}
                 step={1}
                 value={price || ""}

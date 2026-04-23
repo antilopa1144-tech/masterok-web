@@ -193,6 +193,7 @@ export default function CuringTimer() {
               <label className="text-sm text-slate-600 dark:text-slate-300">Минут:</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={14400}
                 value={customMinutes}
