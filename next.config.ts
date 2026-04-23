@@ -75,6 +75,29 @@ const nextConfig: NextConfig = {
 
   // HTTP headers — то, ради чего мы перешли на SSR
   async headers() {
+    // CSP в Report-Only режиме: собираем статистику нарушений без блокировок.
+    // Через 2–4 недели после мониторинга можно перевести на enforcement,
+    // заменив заголовок на `Content-Security-Policy`.
+    //
+    // 'unsafe-inline' нужен из-за:
+    //   - inline dark-mode скрипта в layout.tsx
+    //   - JSON-LD (dangerouslySetInnerHTML)
+    //   - Tailwind styles
+    // В enforcement-режиме заменить на nonce-based CSP.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.webvisor.com https://mc.webvisor.org https://yastatic.net",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https: http://5.129.248.119",
+      "font-src 'self' data:",
+      "connect-src 'self' https://mc.yandex.ru https://mc.webvisor.com https://mc.webvisor.org https://openrouter.ai",
+      "frame-src 'self' https://mc.yandex.ru",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'",
+    ].join("; ");
+
     return [
       // Security headers — на всех страницах
       {
@@ -85,6 +108,9 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+          { key: "Content-Security-Policy-Report-Only", value: csp },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
       // Content-hashed статика Next.js — иммутабельный кэш на год
