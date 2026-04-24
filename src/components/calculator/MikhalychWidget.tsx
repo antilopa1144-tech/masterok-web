@@ -134,7 +134,10 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             { role: "system", content: SYSTEM_PROMPT },
             ...lastMessages.map((m) => ({ role: m.role, content: m.content })),
           ],
-          temperature: 0.55,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.15,
+          presence_penalty: 0.1,
           max_tokens: MAX_TOKENS,
         }),
       });

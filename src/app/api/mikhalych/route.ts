@@ -4,7 +4,10 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 // Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
-const MODEL = process.env.MIKHALYCH_MODEL ?? "google/gemini-3-flash-preview";
+// DeepSeek V4 Fast — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
+// ВАЖНО: точный slug на OpenRouter сверить после релиза — может отличаться
+// (варианты: deepseek/deepseek-v4-fast, deepseek/deepseek-chat-v4-fast).
+const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-fast";
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
@@ -52,6 +55,8 @@ export async function POST(req: NextRequest) {
     temperature?: number;
     max_tokens?: number;
     top_p?: number;
+    frequency_penalty?: number;
+    presence_penalty?: number;
     stream?: boolean;
   };
   try {
@@ -67,14 +72,21 @@ export async function POST(req: NextRequest) {
   const referer =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
 
+  // Дефолтные параметры — подобраны под «живую речь» Михалыча на DeepSeek V4.
+  // temperature 0.7 — золотая середина: не канцелярит, но не галлюцинирует по стройке.
+  // top_p 0.9 — широкий пул слов, больше речевого разнообразия.
+  // frequency_penalty 0.15 — меньше повторов слов-паразитов и одних и тех же шуток.
+  // presence_penalty 0.1 — охотнее вводит новые речевые ходы и байки.
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
     messages: body.messages,
-    temperature: body.temperature ?? 0.55,
+    temperature: body.temperature ?? 0.7,
     max_tokens: body.max_tokens ?? 2048,
+    top_p: body.top_p ?? 0.9,
+    frequency_penalty: body.frequency_penalty ?? 0.15,
+    presence_penalty: body.presence_penalty ?? 0.1,
     stream: body.stream ?? false,
   };
-  if (body.top_p !== undefined) upstreamRequest.top_p = body.top_p;
 
   try {
     const upstream = await fetch(OPENROUTER_URL, {
