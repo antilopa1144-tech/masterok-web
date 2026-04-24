@@ -4,10 +4,8 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 // Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
-// DeepSeek V4 Fast — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
-// ВАЖНО: точный slug на OpenRouter сверить после релиза — может отличаться
-// (варианты: deepseek/deepseek-v4-fast, deepseek/deepseek-chat-v4-fast).
-const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-fast";
+// DeepSeek V4 Flash — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
+const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-flash";
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
