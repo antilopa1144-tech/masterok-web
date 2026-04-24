@@ -119,7 +119,15 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         });
 
         if (!response.ok) {
-          throw new Error("Ошибка AI-сервиса. Попробуйте позже.");
+          // Извлекаем детали ошибки от OpenRouter — это помогает диагностировать
+          // проблемы с моделью/параметрами, не лазая в логи Timeweb.
+          let detail = "";
+          try {
+            const errorBody = await response.json();
+            detail = errorBody?.error?.message ?? errorBody?.message ?? "";
+          } catch { /* non-JSON — ничего не добавляем */ }
+          const base = `Ошибка AI-сервиса (${response.status}). Попробуйте позже.`;
+          throw new Error(detail ? `${base} ${detail}` : base);
         }
 
         const data = await response.json();
