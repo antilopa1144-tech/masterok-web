@@ -7,6 +7,14 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 // DeepSeek V4 Flash — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
 const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-flash";
 
+// Модели, которые на OpenRouter не поддерживают frequency_penalty и вернут 400,
+// если параметр прислан. presence_penalty у них поддерживается. Источник:
+// поле supported_parameters в https://openrouter.ai/api/v1/models.
+// Обновлять при добавлении новых моделей с аналогичным ограничением.
+const MODELS_WITHOUT_FREQUENCY_PENALTY = new Set<string>([
+  "deepseek/deepseek-v4-flash",
+]);
+
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
@@ -73,7 +81,7 @@ export async function POST(req: NextRequest) {
   // Дефолтные параметры — подобраны под «живую речь» Михалыча на DeepSeek V4.
   // temperature 0.7 — золотая середина: не канцелярит, но не галлюцинирует по стройке.
   // top_p 0.9 — широкий пул слов, больше речевого разнообразия.
-  // frequency_penalty 0.15 — меньше повторов слов-паразитов и одних и тех же шуток.
+  // frequency_penalty 0.15 — меньше повторов слов-паразитов (не для всех моделей — см. ниже).
   // presence_penalty 0.1 — охотнее вводит новые речевые ходы и байки.
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
@@ -81,10 +89,16 @@ export async function POST(req: NextRequest) {
     temperature: body.temperature ?? 0.7,
     max_tokens: body.max_tokens ?? 2048,
     top_p: body.top_p ?? 0.9,
-    frequency_penalty: body.frequency_penalty ?? 0.15,
     presence_penalty: body.presence_penalty ?? 0.1,
     stream: body.stream ?? false,
   };
+
+  // frequency_penalty прокидываем только для моделей, которые его поддерживают.
+  // На неподдерживающих (DeepSeek V4 Flash и др.) OpenRouter отвечает 400.
+  // Клиентский параметр игнорируем намеренно — защита от ошибочных запросов.
+  if (!MODELS_WITHOUT_FREQUENCY_PENALTY.has(MODEL)) {
+    upstreamRequest.frequency_penalty = body.frequency_penalty ?? 0.15;
+  }
 
   try {
     const upstream = await fetch(OPENROUTER_URL, {
