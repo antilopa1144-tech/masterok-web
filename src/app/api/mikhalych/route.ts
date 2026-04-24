@@ -7,12 +7,15 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 // DeepSeek V4 Flash — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
 const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-flash";
 
-// Модели, которые на OpenRouter не поддерживают frequency_penalty и вернут 400,
-// если параметр прислан. presence_penalty у них поддерживается. Источник:
-// поле supported_parameters в https://openrouter.ai/api/v1/models.
-// Обновлять при добавлении новых моделей с аналогичным ограничением.
-const MODELS_WITHOUT_FREQUENCY_PENALTY = new Set<string>([
+// Модели, у которых по умолчанию включён reasoning / chain-of-thought и нужен
+// явный отказ от него, иначе ответ приходит в расширенном формате
+// и/или max_tokens целиком уходит на reasoning-токены до контента.
+// Проверяется через supported_parameters в /api/v1/models — если есть "reasoning",
+// модель reasoning-enabled и ей нужен reasoning.enabled=false для быстрого ответа.
+const REASONING_MODELS = new Set<string>([
   "deepseek/deepseek-v4-flash",
+  "deepseek/deepseek-v4-pro",
+  "deepseek/deepseek-r1",
 ]);
 
 const RATE_LIMIT = new Map<string, number[]>();
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
   // Дефолтные параметры — подобраны под «живую речь» Михалыча на DeepSeek V4.
   // temperature 0.7 — золотая середина: не канцелярит, но не галлюцинирует по стройке.
   // top_p 0.9 — широкий пул слов, больше речевого разнообразия.
-  // frequency_penalty 0.15 — меньше повторов слов-паразитов (не для всех моделей — см. ниже).
+  // frequency_penalty 0.15 — меньше повторов слов-паразитов.
   // presence_penalty 0.1 — охотнее вводит новые речевые ходы и байки.
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
@@ -89,15 +92,18 @@ export async function POST(req: NextRequest) {
     temperature: body.temperature ?? 0.7,
     max_tokens: body.max_tokens ?? 2048,
     top_p: body.top_p ?? 0.9,
+    frequency_penalty: body.frequency_penalty ?? 0.15,
     presence_penalty: body.presence_penalty ?? 0.1,
     stream: body.stream ?? false,
   };
 
-  // frequency_penalty прокидываем только для моделей, которые его поддерживают.
-  // На неподдерживающих (DeepSeek V4 Flash и др.) OpenRouter отвечает 400.
-  // Клиентский параметр игнорируем намеренно — защита от ошибочных запросов.
-  if (!MODELS_WITHOUT_FREQUENCY_PENALTY.has(MODEL)) {
-    upstreamRequest.frequency_penalty = body.frequency_penalty ?? 0.15;
+  // Для reasoning-моделей явно выключаем chain-of-thought — иначе модель тратит
+  // max_tokens на внутренние рассуждения и либо возвращает пустой content,
+  // либо OpenRouter отвечает 400 на несовместимость параметров. Формат —
+  // OpenRouter-specific: `reasoning: { enabled: false }`. Документация:
+  // https://openrouter.ai/docs/use-cases/reasoning-tokens
+  if (REASONING_MODELS.has(MODEL)) {
+    upstreamRequest.reasoning = { enabled: false };
   }
 
   try {
@@ -136,13 +142,20 @@ export async function POST(req: NextRequest) {
 
     const data = await upstream.json();
     if (!upstream.ok) {
+      // Серверное логирование для диагностики через Timeweb logs.
+      console.error("[mikhalych] upstream error", {
+        status: upstream.status,
+        model: MODEL,
+        body: data,
+      });
       return NextResponse.json(data, {
         status: upstream.status,
         headers: CORS_HEADERS,
       });
     }
     return NextResponse.json(data, { headers: CORS_HEADERS });
-  } catch {
+  } catch (err) {
+    console.error("[mikhalych] proxy request failed", err);
     return NextResponse.json(
       { error: "Proxy request failed" },
       { status: 502, headers: CORS_HEADERS },
