@@ -173,6 +173,36 @@ describe("Калькулятор ленточного фундамента", () 
       expect(result.totals.requiredFrostDepthMm).toBe(0);
     });
 
+    it("UI-флоу: regionIndex=6 (Москва) даёт ту же валидацию что regionId='moscow'", () => {
+      // Мапа: 1=krasnodar, 2=sochi, 3=rostov, 4=volgograd, 5=voronezh, 6=moscow
+      // (см. порядок в configs/regional/frost-depth-rf.json)
+      const r = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionIndex: 6,
+      });
+      expect(r.totals.requiredFrostDepthMm).toBe(1400);
+      const hasMoscowWarning = r.warnings.some((w) =>
+        w.includes("Москва") && w.includes("1.40"),
+      );
+      expect(hasMoscowWarning).toBe(true);
+    });
+
+    it("UI-флоу: regionIndex=0 → нет региональной валидации", () => {
+      const r = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionIndex: 0,
+      });
+      expect(r.totals.requiredFrostDepthMm).toBe(0);
+    });
+
     it("Тип грунта: песок (soilType=3) даёт большую требуемую глубину чем суглинок (0)", () => {
       const loamResult = calc({
         perimeter: 40,

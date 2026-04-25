@@ -2,7 +2,31 @@ import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalStripFoundation } from "../../../../engine/strip-foundation";
 import stripfoundationSpec from "../../../../configs/calculators/strip-foundation-canonical.v1.json";
+import frostDepthRf from "../../../../configs/regional/frost-depth-rf.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+
+// Маппинг регионов: index → id для UI (FieldOption.value — number).
+// Индекс 0 зарезервирован для «не указан» (без региональной валидации).
+const REGION_INDEX_TO_ID: Record<number, string> = (() => {
+  const map: Record<number, string> = { 0: "" };
+  (frostDepthRf.regions as Array<{ id: string }>).forEach((region, i) => {
+    map[i + 1] = region.id;
+  });
+  return map;
+})();
+
+const REGION_OPTIONS = (() => {
+  const opts: Array<{ value: number; label: string }> = [
+    { value: 0, label: "Не указан (без проверки промерзания)" },
+  ];
+  (frostDepthRf.regions as Array<{ id: string; name: string; min_frost_depth_m: number }>).forEach((r, i) => {
+    opts.push({
+      value: i + 1,
+      label: `${r.name} (норма ${r.min_frost_depth_m.toFixed(1)} м)`,
+    });
+  });
+  return opts;
+})();
 
 export const stripFoundationDef: CalculatorDefinition = {
   id: "strip_foundation",
@@ -82,11 +106,48 @@ export const stripFoundationDef: CalculatorDefinition = {
         { value: 2, label: "Вручную (замес на месте)" },
       ],
     },
+    {
+      key: "regionIndex",
+      label: "Регион (для проверки глубины промерзания)",
+      type: "select",
+      defaultValue: 0,
+      options: REGION_OPTIONS,
+      hint: "Если регион указан — калькулятор сравнит глубину фундамента с нормативной по СНиП 2.02.01-83*. Если depth ниже нормы — предупредит о риске морозного пучения.",
+    },
+    {
+      key: "soilType",
+      label: "Тип грунта",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Суглинки и глины (типовое)" },
+        { value: 1, label: "Супеси (×1.22)" },
+        { value: 2, label: "Мелкий и пылеватый песок (×1.27)" },
+        { value: 3, label: "Крупный песок и гравий (×1.30)" },
+      ],
+      hint: "Поправочные коэффициенты глубины промерзания по Приложению 1 СНиП 2.02.01-83*.",
+    },
   ],
   calculate(inputs) {
     const spec = stripfoundationSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalStripFoundation(spec, inputs, factorTable);
+    // UI передаёт regionIndex (number) — преобразуем в regionId (string) для engine.
+    // Если inputs.regionId уже задан как строка (программный API/тесты) —
+    // оставляем без изменений.
+    const rawRegionId = (inputs as Record<string, unknown>).regionId;
+    let resolvedRegionId: string | undefined;
+    if (typeof rawRegionId === "string" && rawRegionId.length > 0) {
+      resolvedRegionId = rawRegionId;
+    } else {
+      const regionIndex = Math.round(inputs.regionIndex ?? 0);
+      const mapped = REGION_INDEX_TO_ID[regionIndex] ?? "";
+      resolvedRegionId = mapped || undefined;
+    }
+    const engineInputs = {
+      ...inputs,
+      regionId: resolvedRegionId,
+    };
+    const canonical = computeCanonicalStripFoundation(spec, engineInputs as any, factorTable);
 
     return {
       materials: canonical.materials,
@@ -116,6 +177,7 @@ export const stripFoundationDef: CalculatorDefinition = {
     "Укажите ширину ленты (обычно на 100 мм шире стены)",
     "Задайте глубину залегания и высоту цоколя",
     "Выберите способ заливки (насос требует доп. объёма)",
+    "Опционально: укажите регион и тип грунта — калькулятор предупредит, если глубина ниже нормы промерзания",
     "Нажмите «Рассчитать» — получите полную смету материалов",
   ],
   expertTips: [
