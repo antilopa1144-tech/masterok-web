@@ -132,4 +132,84 @@ describe("Калькулятор плитного фундамента", () => {
       checkInvariants(result);
     });
   });
+
+  describe("Прямоугольная плита 6×10 м (60 м²)", () => {
+    // useRect=true: length=10, width=6, area=60
+    // perimeter = 2*(10+6) = 32 м (vs 4*sqrt(60) ≈ 30.98 при квадратной аппроксимации)
+    // barsAlongLength = ceil(6/0.2) + 1 = 31, barsAlongWidth = ceil(10/0.2) + 1 = 51
+    // totalBarLen = (31*10 + 51*6) * 2 = (310 + 306) * 2 = 1232 м (vs 1240 у квадрата)
+    // rebarKg ≈ 1232 * 0.888 ≈ 1094 кг
+    const result = calc({
+      length: 10,
+      width: 6,
+      thickness: 200,
+      rebarDiam: 12,
+      rebarStep: 200,
+      insulationThickness: 0,
+    });
+
+    it("использован реальный прямоугольник: length=10, width=6", () => {
+      expect(result.totals.length).toBe(10);
+      expect(result.totals.width).toBe(6);
+    });
+
+    it("площадь = 60 м² (length × width)", () => {
+      expect(result.totals.area).toBeCloseTo(60, 2);
+    });
+
+    it("периметр = 32 м (2 × (10+6))", () => {
+      expect(result.totals.perimeter).toBeCloseTo(32, 2);
+    });
+
+    it("прутков вдоль длины = 31, вдоль ширины = 51", () => {
+      expect(result.totals.barsAlongLength).toBe(31);
+      expect(result.totals.barsAlongWidth).toBe(51);
+    });
+
+    it("общая длина арматуры = 1232 м (две сетки)", () => {
+      expect(result.totals.totalBarLen).toBeCloseTo(1232, 1);
+    });
+
+    it("инварианты", () => {
+      checkInvariants(result);
+    });
+  });
+
+  describe("Вытянутая плита 3×20 м — заметная разница с sqrt-аппроксимацией", () => {
+    // length=20, width=3, area=60 (та же что и квадрат 7.75×7.75)
+    // periметр = 2*(3+20) = 46 м (vs 31 у квадрата → +48% опалубки!)
+    // barsAlongLength = ceil(3/0.2) + 1 = 16, barsAlongWidth = ceil(20/0.2) + 1 = 101
+    // totalBarLen = (16*20 + 101*3) * 2 = (320 + 303) * 2 = 1246 м
+    const rect = calc({
+      length: 20,
+      width: 3,
+      thickness: 200,
+      rebarDiam: 12,
+      rebarStep: 200,
+      insulationThickness: 0,
+    });
+    const square = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
+
+    it("периметр прямоугольника > периметра квадрата", () => {
+      // 46 vs ~31
+      expect(rect.totals.perimeter).toBeGreaterThan(square.totals.perimeter * 1.4);
+    });
+
+    it("опалубка прямоугольника заметно больше", () => {
+      const rectFormwork = rect.totals.formworkArea as number;
+      const squareFormwork = square.totals.formworkArea as number;
+      expect(rectFormwork).toBeGreaterThan(squareFormwork * 1.4);
+    });
+  });
+
+  describe("Backward-compat: только area без length/width", () => {
+    const old = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
+    const explicit = calc({ length: 0, width: 0, area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
+
+    it("identical: только area даёт тот же результат, что и length=0/width=0", () => {
+      expect(old.totals.rebarKg).toBeCloseTo(explicit.totals.rebarKg as number, 3);
+      expect(old.totals.concreteM3).toBeCloseTo(explicit.totals.concreteM3 as number, 3);
+      expect(old.totals.perimeter).toBeCloseTo(explicit.totals.perimeter as number, 3);
+    });
+  });
 });

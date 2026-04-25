@@ -11,6 +11,11 @@ import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimary
 
 interface FoundationSlabInputs {
   area?: number;
+  /** Длина прямоугольной плиты, м. Если задана вместе с width > 0 — используется
+   *  для точного расчёта арматуры/периметра/опалубки. Иначе fallback на sqrt(area). */
+  length?: number;
+  /** Ширина прямоугольной плиты, м. См. length. */
+  width?: number;
   thickness?: number;
   rebarDiam?: number;
   rebarStep?: number;
@@ -115,21 +120,41 @@ export function computeCanonicalFoundationSlab(
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
-  const area = Math.max(10, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 60)));
+  const areaInput = Math.max(10, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 60)));
   const thickness = Math.max(150, Math.min(300, inputs.thickness ?? getInputDefault(spec, "thickness", 200)));
   const rebarDiam = Math.max(10, Math.min(16, inputs.rebarDiam ?? getInputDefault(spec, "rebarDiam", 12)));
   const rebarStep = Math.max(150, Math.min(250, inputs.rebarStep ?? getInputDefault(spec, "rebarStep", 200)));
   const insulationThickness = Math.max(0, Math.min(150, inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 0)));
 
+  // Геометрия: если пользователь ввёл length и width — считаем точный прямоугольник.
+  // Иначе fallback на квадратную аппроксимацию через sqrt(area). Это устраняет
+  // переоценку арматуры/опалубки на вытянутых плитах (3×20 и т.п.).
+  const lengthInput = inputs.length ?? 0;
+  const widthInput = inputs.width ?? 0;
+  const useRect = lengthInput > 0 && widthInput > 0;
+
+  const length = useRect ? lengthInput : Math.sqrt(areaInput);
+  const width = useRect ? widthInput : Math.sqrt(areaInput);
+  const area = useRect ? roundDisplay(length * width, 6) : areaInput;
+  const side = useRect ? Math.sqrt(area) : Math.sqrt(areaInput); // back-compat для totals
+  const perimeter = useRect ? 2 * (length + width) : side * 4;
+
+  const stepM = rebarStep / 1000;
+  // Прутки в обоих направлениях считаются раздельно: количество прутков длиной L
+  // определяется по перпендикулярной стороне делённой на шаг + 1 крайний.
+  const barsAlongLength = Math.ceil(width / stepM) + 1;
+  const barsAlongWidth = Math.ceil(length / stepM) + 1;
+  // back-compat: для квадрата эти значения совпадают, totals.barsPerDir = barsAlongLength.
+  const barsPerDir = barsAlongLength;
+
   const weightPerMeter = spec.material_rules.weight_per_meter[String(rebarDiam)] ?? 0.888;
-  const side = Math.sqrt(area);
-  const perimeter = side * 4;
   const concreteM3Raw = roundDisplay(area * (thickness / 1000) * spec.material_rules.concrete_reserve, 6);
   const concreteM3 = roundDisplay(concreteM3Raw * accuracyMult, 6);
-  const barsPerDir = Math.ceil(side / (rebarStep / 1000)) + 1;
-  const totalBarLen = barsPerDir * side * 2 * 2;
+  // Длина одной сетки = (прутки вдоль длины × длина) + (прутки вдоль ширины × ширина).
+  // Двух сеток (верх + низ) — × 2.
+  const totalBarLen = (barsAlongLength * length + barsAlongWidth * width) * 2;
   const rebarKg = roundDisplay(totalBarLen * weightPerMeter, 6);
-  const wireKg = roundDisplay(barsPerDir * barsPerDir * 2 * spec.material_rules.wire_per_joint, 6);
+  const wireKg = roundDisplay(barsAlongLength * barsAlongWidth * 2 * spec.material_rules.wire_per_joint, 6);
   const formworkArea = roundDisplay(perimeter * (thickness / 1000) * spec.material_rules.formwork_reserve, 6);
   const geotextile = roundDisplay(area * spec.material_rules.geotextile_reserve, 6);
   const gravel = roundDisplay(area * spec.material_rules.gravel_layer, 6);
@@ -212,6 +237,8 @@ export function computeCanonicalFoundationSlab(
     ),
     totals: {
       area: roundDisplay(area, 3),
+      length: roundDisplay(length, 3),
+      width: roundDisplay(width, 3),
       thickness: roundDisplay(thickness, 3),
       rebarDiam: roundDisplay(rebarDiam, 3),
       rebarStep: roundDisplay(rebarStep, 3),
@@ -220,6 +247,8 @@ export function computeCanonicalFoundationSlab(
       perimeter: roundDisplay(perimeter, 3),
       concreteM3: roundDisplay(concreteM3, 3),
       barsPerDir: barsPerDir,
+      barsAlongLength: barsAlongLength,
+      barsAlongWidth: barsAlongWidth,
       totalBarLen: roundDisplay(totalBarLen, 3),
       rebarKg: roundDisplay(rebarKg, 3),
       wireKg: roundDisplay(wireKg, 3),
