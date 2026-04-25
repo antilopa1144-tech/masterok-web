@@ -1,7 +1,7 @@
 {
   "calculator_id": "strip-foundation",
   "formula_version": "strip-foundation-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.646Z",
+  "generated_at": "2026-04-25T21:47:38.790Z",
   "cases": [
     {
       "id": "defaults",
@@ -12,7 +12,9 @@
         "depth": 700,
         "aboveGround": 300,
         "reinforcement": 1,
-        "deliveryMethod": 0
+        "deliveryMethod": 0,
+        "regionId": "",
+        "soilType": 0
       },
       "expected_totals": {
         "perimeter": 40,
@@ -21,6 +23,8 @@
         "aboveGround": 300,
         "reinforcement": 1,
         "deliveryMethod": 0,
+        "soilType": 0,
+        "requiredFrostDepthMm": 0,
         "totalH": 1,
         "vol": 16,
         "volReserve": 17.655,
