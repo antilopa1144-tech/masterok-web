@@ -856,6 +856,19 @@ export interface RoofingMaterialRules {
   metal_tile_batten_reserve: number;
   metal_tile_counter_batten_step_m: number;
   metal_tile_counter_batten_reserve: number;
+  /**
+   * Порог уклона (град), ниже которого обрешётка под металлочерепицу должна
+   * быть сплошной (по СП 17.13330.2017 — критическая точка для прочности
+   * под снеговой нагрузкой). При slope < threshold engine переключает шаг
+   * обрешётки с metal_tile_batten_step_m на solid_sheathing_step_m.
+   * Опциональное поле для backward-compatibility.
+   */
+  solid_sheathing_slope_threshold_deg?: number;
+  /**
+   * Шаг обрешётки при пологом уклоне (фактически — сплошной настил доска
+   * к доске). Опциональное поле, default ~ 0.1 м (доска 100 мм впритык).
+   */
+  solid_sheathing_step_m?: number;
   soft_pack_area_m2: number;
   soft_underlayment_roll_m2: number;
   soft_underlayment_reserve: number;

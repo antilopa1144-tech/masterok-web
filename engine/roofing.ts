@@ -88,7 +88,17 @@ export function computeCanonicalRoofing(
     const screws = Math.ceil(realArea * 9);
     const waterproofingM2 = Math.ceil(realArea * 1.15);
     const waterproofingRolls = Math.ceil(waterproofingM2 / 75);
-    const battens = Math.ceil(realArea / 0.35 * 1.1);
+
+    // Шаг обрешётки зависит от уклона (СП 17.13330.2017 п. 5.5.5):
+    // при slope < solid_sheathing_slope_threshold_deg обрешётка должна быть
+    // сплошной (доски впритык, ~100 мм шаг), иначе листы прогнутся под снегом.
+    // Дефолтный порог — 15°, дефолтный шаг сплошной — 0.1 м.
+    const solidThresholdDeg = spec.material_rules.solid_sheathing_slope_threshold_deg ?? 15;
+    const solidStepM = spec.material_rules.solid_sheathing_step_m ?? 0.1;
+    const effectiveBattenStep = slope < solidThresholdDeg
+      ? solidStepM
+      : spec.material_rules.metal_tile_batten_step_m;
+    const battens = Math.ceil(realArea / effectiveBattenStep * 1.1);
     const counterBattens = Math.ceil(realArea / 1.0 * 1.1);
 
     primaryQuantity = sheetsNeeded;
@@ -359,6 +369,21 @@ export function computeCanonicalRoofing(
   }
   if (slope < spec.warnings_rules.soft_roofing_min_slope && roofingType === 1) {
     warnings.push("Уклон менее 12° — слишком пологий для мягкой кровли");
+  }
+  // Сплошная обрешётка при пологом уклоне для металлочерепицы.
+  // По СП 17.13330.2017 п. 5.5.5: при slope < 15° обрешётка под
+  // металлочерепицу должна быть сплошной — листы прогнутся под снегом
+  // на редкой обрешётке. Шаг обрешётки уже скорректирован в расчёте,
+  // но пользователю важно увидеть пояснение.
+  if (roofingType === 0) {
+    const solidThresholdDeg = spec.material_rules.solid_sheathing_slope_threshold_deg ?? 15;
+    if (slope < solidThresholdDeg) {
+      warnings.push(
+        `Уклон ${roundDisplay(slope, 0)}° < ${solidThresholdDeg}° — по СП 17.13330.2017 ` +
+          `обрешётка под металлочерепицу должна быть сплошной (доска впритык). ` +
+          `Расчёт обрешётки скорректирован под этот режим.`,
+      );
+    }
   }
   if (complexity === 2) {
     warnings.push("Сложная геометрия крыши — рекомендуется профессиональный монтаж");
