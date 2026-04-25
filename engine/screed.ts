@@ -27,7 +27,11 @@ interface ScreedInputs {
 
 /* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
 const DEFAULTS = {
-  volume_multiplier: 1.08,
+  // Глобальный fallback. Обновлено 2026-04-24 с 1.08 на 1.15 — это значение
+  // безопасно для худшего сценария (ручной замес ЦПС 1:3 с 15% усадки).
+  // Per-type значения хранятся в screed_types[].volume_multiplier и имеют
+  // приоритет над этим fallback'ом.
+  volume_multiplier: 1.15,
   cement_density: 1300,
   cement_fraction: 0.25,
   sand_fraction: 0.75,
@@ -312,7 +316,7 @@ export function computeCanonicalScreed(
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
   // Read constants from spec, fallback to defaults
-  const VOLUME_MULTIPLIER = mr(spec, "volume_multiplier", DEFAULTS.volume_multiplier);
+  const GLOBAL_VOLUME_MULTIPLIER = mr(spec, "volume_multiplier", DEFAULTS.volume_multiplier);
   const CEMENT_DENSITY = mr(spec, "cement_density", DEFAULTS.cement_density);
   const CEMENT_FRACTION = mr(spec, "cement_fraction", DEFAULTS.cement_fraction);
   const SAND_FRACTION = mr(spec, "sand_fraction", DEFAULTS.sand_fraction);
@@ -332,6 +336,11 @@ export function computeCanonicalScreed(
     Math.min(spec.material_rules.max_thickness_mm, inputs.thickness ?? getInputDefault(spec, 'thickness', 50)),
   );
   const screedType = resolveScreedType(spec, inputs.screedType);
+
+  // Per-type усадочный множитель имеет приоритет над глобальным fallback'ом.
+  // Реальная усадка зависит от типа смеси: ЦПС 1:3 ручной — ~15%, готовая ЦПС
+  // М150 — ~10%, полусухая стяжка — ~7%. См. assumption_notes в spec.
+  const VOLUME_MULTIPLIER = screedType.volume_multiplier ?? GLOBAL_VOLUME_MULTIPLIER;
 
   const area = work.area;
   const perimeter = work.perimeter;

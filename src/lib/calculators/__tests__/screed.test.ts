@@ -7,10 +7,9 @@ const calc = withBasicAccuracy(screedDef.calculate.bind(screedDef));
 describe("Калькулятор стяжки пола", () => {
   describe("ЦПС 1:3, 5×4 м, толщина 50 мм", () => {
     // area = 20, thicknessM = 0.05
-    // volume = 20 * 0.05 * 1.08 = 1.08
-    // cementM3 = 1.08/4 = 0.27
-    // cementKg = 0.27 * 1300 = 351
-    // cementBags = ceil(351/50) = ceil(7.02) = 8
+    // volume = 20 * 0.05 * 1.15 = 1.15 (усадочный множитель 1.15 для ручного замеса ЦПС 1:3)
+    // cementKg = 1.15 * 0.25 * 1300 = 373.75
+    // cementBags = ceil(373.75/50) = ceil(7.475) = 8
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -23,8 +22,8 @@ describe("Калькулятор стяжки пола", () => {
       expect(result.totals.area).toBe(20);
     });
 
-    it("объём с запасом 8% = 1.08 м³", () => {
-      expect(result.totals.volume).toBeCloseTo(1.08, 3);
+    it("объём с усадкой 15% = 1.15 м³", () => {
+      expect(result.totals.volume).toBeCloseTo(1.15, 3);
     });
 
     it("цемент 8 мешков × 50 кг = 400 кг", () => {
@@ -50,8 +49,10 @@ describe("Калькулятор стяжки пола", () => {
   });
 
   describe("Готовая ЦПС М150", () => {
-    // area=20, volume=1.08, cpsKg=1.08*2000=2160
-    // bags50 = ceil(2160/50) = ceil(43.2) = 44
+    // area=20, thicknessM=0.05, volume_multiplier=1.10 (готовая ЦПС, заводская)
+    // volume = 20 * 0.05 * 1.10 = 1.10 м³
+    // cpsKg = 1.10 * 2000 = 2200
+    // bags50 = ceil(2200/50) = 44
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -64,6 +65,10 @@ describe("Калькулятор стяжки пола", () => {
       expect(findMaterial(result, "ЦПС М150")).toBeDefined();
     });
 
+    it("объём с усадкой 10% = 1.10 м³", () => {
+      expect(result.totals.volume).toBeCloseTo(1.10, 3);
+    });
+
     it("ЦПС 44 мешка × 50 кг = 2200 кг", () => {
       const cps = findMaterial(result, "Готовая ЦПС М150");
       expect(cps?.purchaseQty).toBe(2200);
@@ -71,6 +76,10 @@ describe("Калькулятор стяжки пола", () => {
   });
 
   describe("Полусухая стяжка", () => {
+    // area=20, thicknessM=0.05, volume_multiplier=1.07 (полусухая, минимум воды)
+    // volume = 20 * 0.05 * 1.07 = 1.07 м³
+    // cpsKg = 1.07 * 1800 = 1926
+    // bags50 = ceil(1926/50) = 39, purchaseQty = 1950
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -81,6 +90,15 @@ describe("Калькулятор стяжки пола", () => {
 
     it("ЦПС полусухая присутствует", () => {
       expect(findMaterial(result, "ЦПС полусухая")).toBeDefined();
+    });
+
+    it("объём с усадкой 7% = 1.07 м³", () => {
+      expect(result.totals.volume).toBeCloseTo(1.07, 3);
+    });
+
+    it("ЦПС 39 мешков × 50 кг = 1950 кг", () => {
+      const cps = findMaterial(result, "ЦПС полусухая");
+      expect(cps?.purchaseQty).toBe(1950);
     });
 
     it("фиброволокно ПП присутствует", () => {
