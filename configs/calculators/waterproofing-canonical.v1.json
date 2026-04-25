@@ -6,7 +6,10 @@
     { "key": "wallHeight", "unit": "mm", "default_value": 200, "min": 0, "max": 2000 },
     { "key": "roomPerimeter", "unit": "m", "default_value": 10, "min": 4, "max": 40 },
     { "key": "masticType", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "layers", "default_value": 2, "min": 1, "max": 3 }
+    { "key": "layers", "default_value": 2, "min": 1, "max": 3 },
+    { "key": "pipePenetrations", "default_value": 0, "min": 0, "max": 20 },
+    { "key": "insetCount", "default_value": 0, "min": 0, "max": 10 },
+    { "key": "floorCurvatureClass", "default_value": 0, "min": 0, "max": 2 }
   ],
   "field_factors": {
     "enabled": [
@@ -40,7 +43,14 @@
     "primer_can_kg": 2,
     "bitumen_l_per_m2": 0.3,
     "bitumen_can_l": 20,
-    "joint_sealant_m_per_tube": 10
+    "joint_sealant_m_per_tube": 10,
+    "mastic_per_pipe_penetration_kg": 1.0,
+    "mastic_per_inset_kg": 1.5,
+    "floor_curvature_multipliers": {
+      "0": 1.0,
+      "1": 1.10,
+      "2": 1.20
+    }
   },
   "warnings_rules": {
     "min_layers_residential": 2,
@@ -48,5 +58,30 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "normative_sources": [
+    {
+      "code": "СП 71.13330.2017",
+      "title": "Изоляционные и отделочные покрытия",
+      "section": "Раздел 7 — гидроизоляционные работы; п. 7.5 — обработка примыканий и проёмов"
+    },
+    {
+      "code": "СП 29.13330.2011",
+      "title": "Полы",
+      "section": "пп. 4.5, 8.6 — гидроизоляция пола в мокрых зонах"
+    },
+    {
+      "code": "СНиП 2.04.01-85*",
+      "title": "Внутренний водопровод и канализация зданий",
+      "section": "Требования к гидроизоляции вокруг трубопроводов"
+    }
+  ],
+  "assumption_notes": [
+    "Базовый расход мастики = площадь пола + площадь стен (по wallHeight) × расход на слой × количество слоёв.",
+    "Если floorCurvatureClass > 0 — основной расход умножается на коэффициент кривизны (1.0 / 1.10 / 1.20). Это компенсирует локальные утолщения слоя в кавернах и просадках старого основания. По СП 71.13330.2017 при сильной кривизне (класс 2) сначала рекомендуется наливной пол.",
+    "При pipePenetrations > 0 на каждое примыкание трубы (стояк, подвод воды, слив, душ-стойка) добавляется ~1.0 кг мастики локально (радиус ~150 мм вокруг трубы) и ~0.5 м гидроизоляционной ленты-манжеты.",
+    "При insetCount > 0 на каждую инсталляцию (подвесной унитаз, душевой бокс, встроенный шкаф) добавляется ~1.5 кг мастики и ~2 м ленты по периметру узла.",
+    "Если pipePenetrations и insetCount не заданы при floorArea > 3 м² — выдаётся warning о недостаче 15-25%. Типовой санузел имеет 3-5 примыканий + 1 инсталляция.",
+    "Лента гидроизоляционная: периметр пола + вертикальные примыкания к стенам (если wallHeight > 0) + манжеты по примыканиям + периметр инсталляций. Запас 10%."
+  ]
 }
