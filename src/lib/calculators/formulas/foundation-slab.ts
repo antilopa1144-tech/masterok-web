@@ -19,6 +19,39 @@ export const foundationSlabDef: CalculatorDefinition = {
   complexity: 3,
   fields: [
     {
+      key: "inputMode",
+      label: "Способ ввода",
+      type: "radio",
+      defaultValue: 1,
+      options: [
+        { value: 0, label: "По размерам (длина × ширина)" },
+        { value: 1, label: "По площади" },
+      ],
+      hint: "По размерам — точнее для прямоугольных и вытянутых плит. По площади — упрощённый расчёт.",
+    },
+    {
+      key: "length",
+      label: "Длина плиты",
+      type: "slider",
+      unit: "м",
+      min: 1,
+      max: 50,
+      step: 0.5,
+      defaultValue: 10,
+      group: "bySize",
+    },
+    {
+      key: "width",
+      label: "Ширина плиты",
+      type: "slider",
+      unit: "м",
+      min: 1,
+      max: 50,
+      step: 0.5,
+      defaultValue: 6,
+      group: "bySize",
+    },
+    {
       key: "area",
       label: "Площадь плиты",
       type: "slider",
@@ -27,6 +60,7 @@ export const foundationSlabDef: CalculatorDefinition = {
       max: 500,
       step: 5,
       defaultValue: 60,
+      group: "byArea",
     },
     {
       key: "thickness",
@@ -101,7 +135,8 @@ export const foundationSlabDef: CalculatorDefinition = {
 - Утепление ЭППС — опционально
   `,
   howToUse: [
-    "Введите площадь плиты",
+    "Выберите способ ввода: по размерам (точнее) или по площади",
+    "Введите длину и ширину (или площадь) плиты",
     "Выберите толщину и армирование",
     "Укажите необходимость утепления",
     "Нажмите «Рассчитать»",
