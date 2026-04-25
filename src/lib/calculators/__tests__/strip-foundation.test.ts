@@ -102,4 +102,99 @@ describe("Калькулятор ленточного фундамента", () 
       expect(rebar).toBeDefined();
     });
   });
+
+  describe("Региональная валидация глубины промерзания", () => {
+    it("Москва, depth 700 мм < 1400 мм → warning о промерзании", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "moscow",
+      });
+      const hasFrostWarning = result.warnings.some((w) =>
+        w.includes("Москва") && w.includes("1.40")
+      );
+      expect(hasFrostWarning).toBe(true);
+      expect(result.totals.requiredFrostDepthMm).toBe(1400);
+    });
+
+    it("Москва, depth 1500 мм >= 1400 мм → нет warning о регионе", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 1500,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "moscow",
+      });
+      const hasFrostWarning = result.warnings.some((w) => w.includes("«Москва»"));
+      expect(hasFrostWarning).toBe(false);
+    });
+
+    it("Сочи, depth 700 мм >= 600 мм → нет warning", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "sochi",
+      });
+      const hasFrostWarning = result.warnings.some((w) => w.includes("«Сочи»"));
+      expect(hasFrostWarning).toBe(false);
+      expect(result.totals.requiredFrostDepthMm).toBe(600);
+    });
+
+    it("Якутск (нет в списке) → нет региональной валидации", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "yakutsk",
+      });
+      // Регион не найден → requiredFrostDepthMm = 0, warning по региону отсутствует
+      expect(result.totals.requiredFrostDepthMm).toBe(0);
+    });
+
+    it("Без regionId → backward-compat, поведение как раньше", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+      });
+      const hasRegionalWarning = result.warnings.some((w) => w.includes("«"));
+      expect(hasRegionalWarning).toBe(false);
+      expect(result.totals.requiredFrostDepthMm).toBe(0);
+    });
+
+    it("Тип грунта: песок (soilType=3) даёт большую требуемую глубину чем суглинок (0)", () => {
+      const loamResult = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 1000,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "moscow",
+        soilType: 0,
+      });
+      const sandResult = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 1000,
+        aboveGround: 300,
+        reinforcement: 1,
+        regionId: "moscow",
+        soilType: 3,
+      });
+      // Москва суглинок = 1400, песок = 1400 * 1.30 = 1820
+      expect(loamResult.totals.requiredFrostDepthMm).toBe(1400);
+      expect(sandResult.totals.requiredFrostDepthMm).toBe(1820);
+    });
+  });
 });

@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import frostDepthRf from "../configs/regional/frost-depth-rf.json";
 
 interface StripFoundationInputs {
   perimeter?: number;
@@ -16,7 +17,44 @@ interface StripFoundationInputs {
   aboveGround?: number;
   reinforcement?: number;
   deliveryMethod?: number;
+  /** ID региона из configs/regional/frost-depth-rf.json для проверки глубины
+   *  промерзания (Москва: "moscow", СПб: "saint-petersburg" и т.д.). Если не
+   *  задан — региональная валидация не применяется (поведение как раньше). */
+  regionId?: string;
+  /** Тип грунта: 0=суглинки/глины (default), 1=супеси, 2=мелкий песок,
+   *  3=крупный песок и гравий. Влияет на коэффициент глубины промерзания. */
+  soilType?: number;
   accuracyMode?: AccuracyMode;
+}
+
+/** Карта soilType (number) → коэффициент глубины промерзания. Источник:
+ *  СНиП 2.02.01-83* Приложение 1, формула d = d0 * sqrt(Mt) с поправками. */
+const SOIL_CORRECTION: Record<number, number> = {
+  0: 1.0,   // суглинки и глины
+  1: 1.22,  // супеси
+  2: 1.27,  // мелкий и пылеватый песок
+  3: 1.30,  // крупнообломочные / гравелистые / крупные пески
+};
+
+interface FrostRegion {
+  id: string;
+  name: string;
+  min_frost_depth_m: number;
+  federal_subject: string;
+}
+
+function getRegionFrostDepthMm(regionId: string | undefined, soilType: number): number | null {
+  if (!regionId) return null;
+  const region = (frostDepthRf.regions as FrostRegion[]).find((r) => r.id === regionId);
+  if (!region) return null;
+  const correction = SOIL_CORRECTION[soilType] ?? 1.0;
+  return Math.round(region.min_frost_depth_m * correction * 1000);
+}
+
+function getRegionDisplayName(regionId: string | undefined): string | null {
+  if (!regionId) return null;
+  const region = (frostDepthRf.regions as FrostRegion[]).find((r) => r.id === regionId);
+  return region?.name ?? null;
 }
 
 function getInputDefault(spec: StripFoundationCanonicalSpec, key: string, fallback: number): number {
@@ -100,6 +138,10 @@ export function computeCanonicalStripFoundation(
   const aboveGround = Math.max(0, Math.min(600, inputs.aboveGround ?? getInputDefault(spec, "aboveGround", 300)));
   const reinforcement = Math.max(0, Math.min(3, Math.round(inputs.reinforcement ?? getInputDefault(spec, "reinforcement", 1))));
   const deliveryMethod = Math.max(0, Math.min(2, Math.round(inputs.deliveryMethod ?? getInputDefault(spec, "deliveryMethod", 0))));
+  const regionId = inputs.regionId;
+  const soilType = Math.max(0, Math.min(3, Math.round(inputs.soilType ?? 0)));
+  const requiredFrostDepthMm = getRegionFrostDepthMm(regionId, soilType);
+  const regionDisplayName = getRegionDisplayName(regionId);
 
   const rebarDiam = spec.material_rules.rebar_diameters[String(reinforcement)] ?? 12;
   const threads = spec.material_rules.rebar_threads[String(reinforcement)] ?? 4;
@@ -169,6 +211,17 @@ export function computeCanonicalStripFoundation(
   if (perimeter > spec.warnings_rules.large_perimeter_threshold_m) {
     warnings.push("Большой периметр — рекомендуется разделить на секции с деформационными швами");
   }
+  // Региональная валидация глубины промерзания. Если пользователь выбрал
+  // регион и ввёл depth меньше нормативной — даём конкретный warning. Расчёт
+  // продолжаем (не блокируем) — пользователь может строить мелкозаглублённый
+  // на непучинистом грунте сознательно.
+  if (requiredFrostDepthMm !== null && depth < requiredFrostDepthMm) {
+    const requiredM = (requiredFrostDepthMm / 1000).toFixed(2);
+    warnings.push(
+      `Глубина ${depth} мм меньше нормативной для региона «${regionDisplayName}» (${requiredM} м по СНиП 2.02.01-83*). ` +
+        `На пучинистых грунтах фундамент может выдавить морозом. Либо увеличьте глубину, либо примите меры (утепление основания, дренаж).`,
+    );
+  }
 
   const practicalNotes: string[] = [];
   if (depth < 600) {
@@ -202,6 +255,10 @@ export function computeCanonicalStripFoundation(
       aboveGround: roundDisplay(aboveGround, 3),
       reinforcement: reinforcement,
       deliveryMethod: deliveryMethod,
+      // Региональная информация — только числовые поля (totals: Record<string, number>).
+      // Имя региона доступно в тексте warning'а.
+      soilType: soilType,
+      requiredFrostDepthMm: requiredFrostDepthMm ?? 0,
       totalH: roundDisplay(totalH, 3),
       vol: roundDisplay(vol, 3),
       volReserve: roundDisplay(volReserve, 3),
