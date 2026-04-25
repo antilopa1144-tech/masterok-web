@@ -512,6 +512,14 @@ export interface ScreedTypeSpec {
   key: string;
   label: string;
   density_kg_per_m3: number;
+  /**
+   * Per-type усадочный множитель: учитывает реальную потерю объёма при наборе
+   * прочности и испарении влаги. Если отсутствует — fallback к глобальному
+   * material_rules.volume_multiplier (для обратной совместимости spec'ов).
+   * Источники: СП 29.13330.2011, тех. листы Knauf UBO / Bergauf BodenZement /
+   * Stroyff РБСГ.
+   */
+  volume_multiplier?: number;
 }
 
 export interface ScreedPackagingRules {
