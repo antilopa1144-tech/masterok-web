@@ -1302,6 +1302,22 @@ export interface WarmFloorPipesMaterialRules {
   screed_thickness_m: number;
   screed_density: number;
   screed_bag_kg: number;
+  /**
+   * Шаг трубы в зоне у окна (мм), при zonedLayoutEnabled=true.
+   * По СП 60.13330.2020 для тепловой завесы у окна: 100-150 мм.
+   * Default 120 мм. Опциональное поле для backward-compat.
+   */
+  window_zone_step_mm?: number;
+  /**
+   * Шаг трубы в центральной зоне (мм). Default 200 мм — та же норма,
+   * что в существующем общем pipeStep.
+   */
+  central_zone_step_mm?: number;
+  /**
+   * Доля площади, относящаяся к зоне у окна (0..0.5).
+   * Default 0.20 — типовая доля «холодной» зоны вдоль стены с окнами.
+   */
+  window_zone_fraction?: number;
 }
 
 export interface WarmFloorPipesWarningRules {
