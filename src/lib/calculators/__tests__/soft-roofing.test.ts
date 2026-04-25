@@ -198,4 +198,60 @@ describe("Калькулятор мягкой кровли", () => {
       checkInvariants(result);
     });
   });
+
+  describe("Различные ширины полос подкладочного ковра по СП 17.13330.2017", () => {
+    // Двускатная без ендов: подкладка считается по eave + ridge с ширинами 1.0 / 1.0.
+    // Default: eave=20, ridge=8, valley=0, slope=30
+    // criticalArea = (20*1.0 + 0*1.5 + 8*1.0) * 1.15 = 32.2 м² → ceil(32.2/15) = 3 рулона
+    const noValleys = calc({
+      roofArea: 80,
+      slope: 30,
+      ridgeLength: 8,
+      eaveLength: 20,
+      valleyLength: 0,
+    });
+
+    it("двускатная без ендов: 3 рулона подкладки (как раньше)", () => {
+      const underlayment = findMaterial(noValleys, "Подкладочный ковёр");
+      expect(underlayment?.purchaseQty).toBe(3);
+    });
+
+    // С ендовой: valley_band_width_m = 1.5, что больше старой 1.0 → больше подкладки
+    // criticalArea = (20*1.0 + 6*1.5 + 8*1.0) * 1.15 = (20+9+8)*1.15 = 42.55 → ceil(42.55/15) = 3
+    // Прежняя формула: (20+6+8)*1.0*1.15 = 39.1 → 3 рулона. Граничный случай.
+    const withSmallValley = calc({
+      roofArea: 80,
+      slope: 30,
+      ridgeLength: 8,
+      eaveLength: 20,
+      valleyLength: 6,
+    });
+
+    it("с ендовой 6 м: 3 рулона (учёт ширины полосы 1.5 м)", () => {
+      const underlayment = findMaterial(withSmallValley, "Подкладочный ковёр");
+      expect(underlayment?.purchaseQty).toBe(3);
+    });
+
+    // С большой ендовой 20 м: разница становится заметной
+    // Новая: (20*1.0 + 20*1.5 + 8*1.0) * 1.15 = 58 * 1.15 = 66.7 → 5 рулонов
+    // Старая: (20+20+8)*1.0*1.15 = 55.2 → 4 рулона
+    const withBigValley = calc({
+      roofArea: 80,
+      slope: 30,
+      ridgeLength: 8,
+      eaveLength: 20,
+      valleyLength: 20,
+    });
+
+    it("с ендовой 20 м: 5 рулонов (новая формула учитывает 1.5 м для ендовы)", () => {
+      const underlayment = findMaterial(withBigValley, "Подкладочный ковёр");
+      expect(underlayment?.purchaseQty).toBe(5);
+    });
+
+    it("больше ендов → больше подкладки (монотонность)", () => {
+      const small = findMaterial(withSmallValley, "Подкладочный ковёр")!.purchaseQty as number;
+      const big = findMaterial(withBigValley, "Подкладочный ковёр")!.purchaseQty as number;
+      expect(big).toBeGreaterThan(small);
+    });
+  });
 });
