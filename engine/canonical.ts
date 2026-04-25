@@ -2460,7 +2460,17 @@ export interface SoftRoofingMaterialRules {
   underlayment_roll: number;
   underlayment_full_reserve: number;
   slope_threshold: number;
+  /** Legacy: единая ширина полосы подкладочного ковра по критическим зонам.
+   *  Сохранено для backward-compat. Если задан — используется как fallback,
+   *  если новые eave_band_width_m / valley_band_width_m / ridge_band_width_m
+   *  не указаны. */
   critical_zone_width: number;
+  /** Ширина полосы подкладочного ковра вдоль карниза (1.0 м по СП 17.13330.2017). */
+  eave_band_width_m?: number;
+  /** Ширина полосы вдоль ендовы (~1.5 м: 0.75 м с каждой стороны оси по СП 17.13330.2017). */
+  valley_band_width_m?: number;
+  /** Ширина полосы под коньком (~1.0 м: 0.5 м с каждой стороны конька по СП 17.13330.2017). */
+  ridge_band_width_m?: number;
   valley_roll: number;
   valley_reserve: number;
   mastic_linear_rate: number;

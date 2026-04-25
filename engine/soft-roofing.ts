@@ -71,12 +71,23 @@ export function computeCanonicalSoftRoofing(
   const packsRaw = Math.ceil(roofArea / PACK_AREA * PACK_RESERVE);
   const packs = Math.ceil(packsRaw * accuracyMult);
 
-  // Underlayment
+  // Underlayment.
+  // При slope < 18° (SLOPE_THRESHOLD) по СП 17.13330.2017 п. 5.5.2 подкладочный
+  // ковёр укладывается по всей площади. Иначе — полосами вдоль критических зон
+  // (карниз, ендова, конёк) с разной шириной по нормам:
+  //   карниз: 1.0 м (полоса от карниза вверх по скату)
+  //   ендова: 1.5 м (по 0.75 м с каждой стороны оси)
+  //   конёк:  1.0 м (по 0.5 м с каждой стороны конька)
   let underlaymentRolls: number;
   if (slope < SLOPE_THRESHOLD) {
     underlaymentRolls = Math.ceil(roofArea * UNDERLAYMENT_FULL_RESERVE / UNDERLAYMENT_ROLL);
   } else {
-    const criticalArea = (eaveLength + valleyLength + ridgeLength) * CRITICAL_ZONE_WIDTH * UNDERLAYMENT_FULL_RESERVE;
+    const eaveBandW = spec.material_rules.eave_band_width_m ?? CRITICAL_ZONE_WIDTH;
+    const valleyBandW = spec.material_rules.valley_band_width_m ?? CRITICAL_ZONE_WIDTH;
+    const ridgeBandW = spec.material_rules.ridge_band_width_m ?? CRITICAL_ZONE_WIDTH;
+    const criticalArea =
+      (eaveLength * eaveBandW + valleyLength * valleyBandW + ridgeLength * ridgeBandW) *
+      UNDERLAYMENT_FULL_RESERVE;
     underlaymentRolls = Math.ceil(criticalArea / UNDERLAYMENT_ROLL);
   }
 
