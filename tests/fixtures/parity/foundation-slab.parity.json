@@ -1,13 +1,15 @@
 {
   "calculator_id": "foundation-slab",
   "formula_version": "foundation-slab-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.525Z",
+  "generated_at": "2026-04-25T21:30:05.601Z",
   "cases": [
     {
       "id": "defaults",
       "description": "Default inputs for foundation-slab",
       "inputs": {
         "area": 60,
+        "length": 0,
+        "width": 0,
         "thickness": 200,
         "rebarDiam": 12,
         "rebarStep": 200,
@@ -15,6 +17,8 @@
       },
       "expected_totals": {
         "area": 60,
+        "length": 7.746,
+        "width": 7.746,
         "thickness": 200,
         "rebarDiam": 12,
         "rebarStep": 200,
@@ -23,6 +27,8 @@
         "perimeter": 30.984,
         "concreteM3": 12.6,
         "barsPerDir": 40,
+        "barsAlongLength": 40,
+        "barsAlongWidth": 40,
         "totalBarLen": 1239.355,
         "rebarKg": 1100.547,
         "wireKg": 64,
