@@ -1054,6 +1054,17 @@ export interface FacadeBrickMaterialRules {
   hydrophob_l_per_m2: number;
   hydrophob_reserve: number;
   hydrophob_can_l: number;
+  /**
+   * Высота полосы гидроизоляции над оконными перемычками, м (СП 15.13330.2020
+   * раздел отвода влаги). По умолчанию 0.3 м — перекрывает стык перемычки и
+   * зону капиллярной влаги. Опциональное поле для backward-compat.
+   */
+  lintel_band_height_m?: number;
+  /**
+   * Боковой запас полосы по бокам проёма, м. По умолчанию 0.3 м с каждой
+   * стороны. Полоса для каждого окна имеет ширину = avgWindowWidth + 2 × side_extension_m.
+   */
+  lintel_band_side_extension_m?: number;
 }
 
 export interface FacadeBrickWarningRules {
