@@ -1139,6 +1139,27 @@ export interface WaterproofingMaterialRules {
   bitumen_l_per_m2: number;
   bitumen_can_l: number;
   joint_sealant_m_per_tube: number;
+  /**
+   * Дополнительная мастика на каждое примыкание трубы (стояк, подвод воды,
+   * слив, душевая стойка). Default 1.0 кг — местное утолщение слоя
+   * по периметру трубы радиусом ~150 мм. СП 71.13330.2017 раздел отвода
+   * влаги в мокрых зонах. Опциональное поле для backward-compat.
+   */
+  mastic_per_pipe_penetration_kg?: number;
+  /**
+   * Дополнительная мастика на каждую инсталляцию (встроенная сантехника:
+   * подвесной унитаз, бокс душевой, встроенный шкаф). Default 1.5 кг —
+   * усиление гидроизоляции вокруг крупного узла.
+   */
+  mastic_per_inset_kg?: number;
+  /**
+   * Множители расхода мастики по классу кривизны пола:
+   * 0 = ровный (после стяжки), 1.0;
+   * 1 = средняя кривизна (старая стяжка), 1.10;
+   * 2 = сильная кривизна (требуется локальное утолщение), 1.20.
+   * Применяется к ОСНОВНОМУ расходу (totalArea × consumption × layers).
+   */
+  floor_curvature_multipliers?: Record<string, number>;
 }
 
 export interface WaterproofingWarningRules {

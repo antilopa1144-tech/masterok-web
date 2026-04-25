@@ -44,6 +44,15 @@ interface WaterproofingInputs {
   roomPerimeter?: number;
   masticType?: number;
   layers?: number;
+  /** Количество примыканий труб (стояк, подвод воды, слив, душ-стойка).
+   *  Каждое примыкание требует дополнительной мастики (~1 кг локально). */
+  pipePenetrations?: number;
+  /** Количество инсталляций (подвесной унитаз, душевой бокс, встроенный шкаф).
+   *  Каждая инсталляция требует усиления гидроизоляции (~1.5 кг). */
+  insetCount?: number;
+  /** Класс кривизны пола: 0=ровный, 1=средний, 2=сильный.
+   *  Множители 1.0/1.10/1.20 на основной расход мастики. */
+  floorCurvatureClass?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -78,6 +87,9 @@ export function computeCanonicalWaterproofing(
   const roomPerimeter = Math.max(4, Math.min(40, inputs.roomPerimeter ?? getInputDefault(spec, "roomPerimeter", 10)));
   const masticType = Math.max(0, Math.min(2, Math.round(inputs.masticType ?? getInputDefault(spec, "masticType", 0))));
   const layers = Math.max(1, Math.min(3, Math.round(inputs.layers ?? getInputDefault(spec, "layers", 2))));
+  const pipePenetrations = Math.max(0, Math.min(20, Math.round(inputs.pipePenetrations ?? getInputDefault(spec, "pipePenetrations", 0))));
+  const insetCount = Math.max(0, Math.min(10, Math.round(inputs.insetCount ?? getInputDefault(spec, "insetCount", 0))));
+  const floorCurvatureClass = Math.max(0, Math.min(2, Math.round(inputs.floorCurvatureClass ?? getInputDefault(spec, "floorCurvatureClass", 0))));
 
   /* ─── areas ─── */
   const wallArea = roundDisplay(roomPerimeter * (wallHeightMm / 1000), 3);
@@ -87,13 +99,37 @@ export function computeCanonicalWaterproofing(
   const consumption = CONSUMPTION_PER_LAYER[masticType] ?? 1.0;
   const bucketKg = BUCKET_KG[masticType] ?? 15;
   const accuracyMult = getPrimaryMultiplier("waterproofing", accuracyMode);
-  const masticKgRaw = roundDisplay(totalArea * consumption * layers, 3);
+
+  // Множитель на кривизну пола (СП 71.13330.2017): локальное утолщение слоя
+  // там, где основание неровное. Для ровного пола = 1.0, как раньше.
+  const curvatureMultipliers = getMaterialRule(spec, "floor_curvature_multipliers", {
+    "0": 1.0,
+    "1": 1.10,
+    "2": 1.20,
+  } as Record<string, number>);
+  const curvatureMult = curvatureMultipliers[String(floorCurvatureClass)] ?? 1.0;
+
+  // Дополнительная мастика на примыкания (трубы) и инсталляции.
+  // Без этого недостача 15-25% для типового санузла с 4-5 трубами + унитаз.
+  const masticPerPipe = getMaterialRule(spec, "mastic_per_pipe_penetration_kg", 1.0);
+  const masticPerInset = getMaterialRule(spec, "mastic_per_inset_kg", 1.5);
+  const extraMasticForPenetrations = pipePenetrations * masticPerPipe + insetCount * masticPerInset;
+
+  const masticKgRaw = roundDisplay(
+    totalArea * consumption * layers * curvatureMult + extraMasticForPenetrations,
+    3,
+  );
   const masticKg = roundDisplay(masticKgRaw * accuracyMult, 3);
   const masticBucketsRaw = Math.ceil(masticKgRaw / bucketKg);
   const masticBuckets = Math.ceil(masticKg / bucketKg);
 
   /* ─── tape ─── */
-  const tapeM = roundDisplay((roomPerimeter + (wallHeightMm > 0 ? roomPerimeter * 1.2 : 0)) * TAPE_RESERVE, 3);
+  // Базовая лента: периметр пола + вертикальные примыкания к стенам.
+  // Дополнительно — манжеты вокруг труб (по 0.5 м на каждое примыкание)
+  // и периметр инсталляций (~2 м на каждую).
+  const baseTapeM = roomPerimeter + (wallHeightMm > 0 ? roomPerimeter * 1.2 : 0);
+  const penetrationTapeM = pipePenetrations * 0.5 + insetCount * 2.0;
+  const tapeM = roundDisplay((baseTapeM + penetrationTapeM) * TAPE_RESERVE, 3);
   const tapeRolls = Math.ceil(tapeM / 10);
 
   /* ─── silicone ─── */
@@ -224,10 +260,30 @@ export function computeCanonicalWaterproofing(
   if (wallHeightMm === 0) {
     warnings.push("Обработка стен обязательна минимум на 200 мм от пола");
   }
+  if (pipePenetrations === 0 && insetCount === 0 && floorArea > 3) {
+    warnings.push(
+      "Не указаны примыкания труб и инсталляций. В реальном санузле обычно 3-5 примыканий " +
+        "(стояк, подвод воды, слив, душ) — без них расчёт занижен на 15-25%. Укажите pipePenetrations.",
+    );
+  }
 
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Гидроизоляцию заводите на стены минимум на 200 мм — мокрые зоны защищайте полностью");
+  if (pipePenetrations + insetCount > 0) {
+    practicalNotes.push(
+      `Учтены ${pipePenetrations} примыкан(ий) труб и ${insetCount} инсталляций — добавлено ` +
+        `~${roundDisplay(extraMasticForPenetrations, 1)} кг мастики и ~${roundDisplay(penetrationTapeM, 1)} м ленты ` +
+        `на манжеты и обходы.`,
+    );
+  }
+  if (floorCurvatureClass > 0) {
+    const pct = Math.round((curvatureMult - 1) * 100);
+    practicalNotes.push(
+      `Класс кривизны пола ${floorCurvatureClass} — расход мастики увеличен на +${pct}% ` +
+        `на локальное утолщение слоя в кавернах и просадках.`,
+    );
+  }
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -239,6 +295,12 @@ export function computeCanonicalWaterproofing(
       roomPerimeter: roundDisplay(roomPerimeter, 3),
       masticType,
       layers,
+      pipePenetrations,
+      insetCount,
+      floorCurvatureClass,
+      curvatureMult: roundDisplay(curvatureMult, 3),
+      extraMasticKg: roundDisplay(extraMasticForPenetrations, 3),
+      penetrationTapeM: roundDisplay(penetrationTapeM, 3),
       wallArea,
       totalArea,
       masticKg,
