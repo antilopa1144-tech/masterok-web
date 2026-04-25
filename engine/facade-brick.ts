@@ -57,6 +57,11 @@ interface FacadeBrickInputs {
   brickType?: number;
   jointThickness?: number;
   withTie?: number;
+  /** Количество оконных проёмов на фасаде. Над каждым требуется горизонтальная
+   *  полоса гидроизоляции (СП 15.13330.2020). Если 0 — backward-compat. */
+  windowCount?: number;
+  /** Средняя ширина оконного проёма, м. Default 1.5 — типовое окно. */
+  avgWindowWidth?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -80,6 +85,8 @@ export function computeCanonicalFacadeBrick(
   const brickType = Math.max(0, Math.min(3, Math.round(inputs.brickType ?? getInputDefault(spec, "brickType", 0))));
   const jointThickness = Math.max(8, Math.min(12, inputs.jointThickness ?? getInputDefault(spec, "jointThickness", 10)));
   const withTie = Math.max(0, Math.min(2, Math.round(inputs.withTie ?? getInputDefault(spec, "withTie", 0))));
+  const windowCount = Math.max(0, Math.min(50, Math.round(inputs.windowCount ?? getInputDefault(spec, "windowCount", 0))));
+  const avgWindowWidth = Math.max(0.5, Math.min(5, inputs.avgWindowWidth ?? getInputDefault(spec, "avgWindowWidth", 1.5)));
 
   /* ─── bricks ─── */
   const dim = BRICK_DIMS[brickType] ?? BRICK_DIMS[0];
@@ -100,8 +107,21 @@ export function computeCanonicalFacadeBrick(
   const tiesCount = withTie > 0 ? Math.ceil(area * TIES_PER_SQM * TIES_RESERVE) : 0;
 
   /* ─── hydro isolation ─── */
+  // Базовая полоса по цоколю — горизонтальная отсечка от грунтовой влаги.
   const perimeterEst = roundDisplay(Math.sqrt(area) * 4, 3);
-  const hydroArea = roundDisplay(perimeterEst * HYDRO_COEFF * HYDRO_RESERVE, 3);
+  const baseHydroArea = perimeterEst * HYDRO_COEFF;
+
+  // Дополнительная гидроизоляция над оконными проёмами (СП 15.13330.2020).
+  // Каждое окно требует горизонтальной полосы поверх перемычки шириной
+  // = ширина проёма + 2 × боковой запас, и высотой lintel_band_height_m.
+  // Без неё дождь по швам кладки попадает в проём.
+  const lintelBandHeight = spec.material_rules.lintel_band_height_m ?? 0.3;
+  const lintelSideExt = spec.material_rules.lintel_band_side_extension_m ?? 0.3;
+  const windowHydroArea = windowCount > 0
+    ? windowCount * (avgWindowWidth + 2 * lintelSideExt) * lintelBandHeight
+    : 0;
+
+  const hydroArea = roundDisplay((baseHydroArea + windowHydroArea) * HYDRO_RESERVE, 3);
   const hydroRolls = Math.ceil(hydroArea / HYDRO_ROLL_M2);
 
   /* ─── vent boxes ─── */
@@ -236,11 +256,23 @@ export function computeCanonicalFacadeBrick(
   if (withTie === 0) {
     warnings.push("Облицовочная кладка должна иметь конструктивное крепление к основной стене (гибкие связи)");
   }
+  if (windowCount === 0 && area > 30) {
+    warnings.push(
+      "На фасадах с окнами над каждой перемычкой нужна гидроизоляция (СП 15.13330.2020). " +
+        "Укажите windowCount, чтобы расчёт учёл дополнительную полосу.",
+    );
+  }
   warnings.push("Необходим вентиляционный зазор 20–40 мм между облицовкой и несущей стеной (СП 15.13330)");
 
   const practicalNotes: string[] = [];
   if (withTie === 0) {
     practicalNotes.push("Без гибких связей облицовка со временем отойдёт от несущей стены");
+  }
+  if (windowCount > 0) {
+    practicalNotes.push(
+      `Гидроизоляция над ${windowCount} оконными проёмами добавлена (~${roundDisplay(windowHydroArea, 1)} м² поверх цоколя). ` +
+        `Без неё вода по швам идёт в проём — ремонт откосов через 1-2 сезона.`,
+    );
   }
   practicalNotes.push("Вентзазор 20-40 мм между облицовкой и стеной — иначе влага разрушит утеплитель");
 
@@ -264,6 +296,9 @@ export function computeCanonicalFacadeBrick(
       sandM3,
       tiesCount,
       perimeterEst,
+      windowCount,
+      avgWindowWidth: roundDisplay(avgWindowWidth, 3),
+      windowHydroArea: roundDisplay(windowHydroArea, 3),
       hydroArea,
       hydroRolls,
       ventBoxes,

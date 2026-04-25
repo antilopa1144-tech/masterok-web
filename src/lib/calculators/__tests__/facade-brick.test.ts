@@ -128,4 +128,56 @@ describe("Облицовочный кирпич", () => {
       expect(r.warnings.some(w => w.includes("СП 15.13330"))).toBe(true);
     });
   });
+
+  describe("Гидроизоляция над оконными проёмами (СП 15.13330.2020)", () => {
+    // Без окон: гидроизоляция считается только по цоколю.
+    // baseHydroArea = 4*sqrt(80) * 0.3 = 35.78 * 0.3 = 10.73 м²
+    // hydroArea = 10.73 * 1.15 = 12.34 → ceil/10 = 2 рулона
+    const noWindows = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1, windowCount: 0 });
+
+    // 5 окон шириной 1.5 м: добавочная полоса = 5 * (1.5 + 0.6) * 0.3 = 3.15 м²
+    // hydroArea = (10.73 + 3.15) * 1.15 = 15.96 → 2 рулона (граница)
+    const fiveWindows = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1, windowCount: 5, avgWindowWidth: 1.5 });
+
+    // 10 окон шириной 1.5 м: добавочная = 10 * 2.1 * 0.3 = 6.3 м²
+    // hydroArea = (10.73 + 6.3) * 1.15 = 19.58 → 2 рулона (граница)
+    const tenWindows = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1, windowCount: 10, avgWindowWidth: 1.5 });
+
+    // 20 окон: добавочная = 20 * 2.1 * 0.3 = 12.6 → hydroArea = 23.33 * 1.15 = 26.83 → 3 рулона
+    const twentyWindows = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1, windowCount: 20, avgWindowWidth: 1.5 });
+
+    it("без окон: warning рекомендует указать windowCount", () => {
+      const hasReminderWarning = noWindows.warnings.some((w) =>
+        w.includes("СП 15.13330.2020") && w.includes("windowCount"),
+      );
+      expect(hasReminderWarning).toBe(true);
+    });
+
+    it("без окон: backward-compat hydroArea ≈ 12.34 м²", () => {
+      expect(noWindows.totals.hydroArea).toBeCloseTo(12.34, 1);
+      expect(noWindows.totals.windowHydroArea).toBe(0);
+    });
+
+    it("5 окон: добавочная полоса = 3.15 м² (5 × 2.1 × 0.3)", () => {
+      expect(fiveWindows.totals.windowHydroArea).toBeCloseTo(3.15, 1);
+    });
+
+    it("20 окон: 3 рулона vs 2 у безоконного фасада", () => {
+      const noWinRolls = findMaterial(noWindows, "Гидроизоляция")!.purchaseQty as number;
+      const twentyWinRolls = findMaterial(twentyWindows, "Гидроизоляция")!.purchaseQty as number;
+      expect(twentyWinRolls).toBeGreaterThan(noWinRolls);
+    });
+
+    it("монотонность: больше окон → больше гидроизоляции", () => {
+      expect(fiveWindows.totals.windowHydroArea).toBeLessThan(tenWindows.totals.windowHydroArea as number);
+      expect(tenWindows.totals.windowHydroArea).toBeLessThan(twentyWindows.totals.windowHydroArea as number);
+    });
+
+    it("с окнами: practicalNote упоминает добавленную полосу", () => {
+      const hasNote = fiveWindows.practicalNotes.some((n) =>
+        n.includes("Гидроизоляция над 5 оконными проёмами"),
+      );
+      expect(hasNote).toBe(true);
+    });
+  });
 });
