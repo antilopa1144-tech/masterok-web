@@ -2425,6 +2425,19 @@ export interface TileAdhesiveMaterialRules {
   crosses_per_tile: number;
   cross_reserve: number;
   cross_pack: number;
+  /**
+   * Множитель расхода клея при двойном нанесении (на основание + на тыл
+   * плитки). По СП 71.13330.2017 для крупноформатной плитки (≥60 см
+   * сторона) обязательно. Default 1.7. Опциональное поле для backward-compat.
+   */
+  double_application_multiplier?: number;
+  /**
+   * Минимальный класс формата (tileSize index), при котором автоматически
+   * включается двойное нанесение. Default 3 — для крупноформата >60 см.
+   * Если у пользователя tileSize >= порога, double_application_multiplier
+   * применяется без ручного указания.
+   */
+  double_application_min_size_class?: number;
 }
 
 export interface TileAdhesiveWarningRules {

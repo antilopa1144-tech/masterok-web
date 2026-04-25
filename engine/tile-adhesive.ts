@@ -13,7 +13,10 @@ import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimary
 /* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
 
 const TA_DEFAULTS = {
-  base_consumption: { "0": 3.0, "1": 5.0, "2": 7.5 } as Record<string, number>,
+  // tileSize index: 0=мелкая (≤30см), 1=средняя (~45см), 2=крупная (~60см),
+  // 3=крупноформат (>60см: 60×120, 80×80, 120×120 и т.п.).
+  // Базовый расход в кг/м² для слоя клея гребёнкой, без двойного нанесения.
+  base_consumption: { "0": 3.0, "1": 5.0, "2": 7.5, "3": 7.5 } as Record<string, number>,
   wall_factor: 0.85,
   street_factor: 1.3,
   old_tile_factor: 1.2,
@@ -21,10 +24,15 @@ const TA_DEFAULTS = {
   primer_l_per_m2: 0.15,
   primer_reserve: 1.15,
   primer_can: 10,
-  tile_sizes_for_cross: { "0": 0.3, "1": 0.45, "2": 0.6 } as Record<string, number>,
+  // tileSize 3 (крупноформат) — средняя сторона ~0.9 м (60×120 даёт ~0.85, 80×80 — 0.8).
+  tile_sizes_for_cross: { "0": 0.3, "1": 0.45, "2": 0.6, "3": 0.9 } as Record<string, number>,
   crosses_per_tile: 4,
   cross_reserve: 1.1,
   cross_pack: 200,
+  // По СП 71.13330.2017 для крупноформата (≥60 см) обязательно двойное
+  // нанесение клея (на основание + на тыл плитки). Расход возрастает в 1.5–1.8 раза.
+  double_application_multiplier: 1.7,
+  double_application_min_size_class: 3,
 };
 
 function taMr<T>(spec: TileAdhesiveCanonicalSpec, key: string, fallback: T): T {
@@ -36,10 +44,16 @@ function taMr<T>(spec: TileAdhesiveCanonicalSpec, key: string, fallback: T): T {
 
 interface TileAdhesiveInputs {
   area?: number;
+  /** Класс формата плитки: 0=мелкая (≤30см), 1=средняя (~45см),
+   *  2=крупная (~60см), 3=крупноформат (>60см: 60×120, 80×80, 120×120). */
   tileSize?: number;
   laying?: number;
   base?: number;
   bagWeight?: number;
+  /** Принудительное двойное нанесение клея (на основание + тыл плитки).
+   *  Авто-true для tileSize >= double_application_min_size_class (default 3).
+   *  Можно ручно установить true для класса 2 при сложных условиях. */
+  doubleApplicationRequired?: boolean;
   accuracyMode?: AccuracyMode;
 }
 
@@ -59,7 +73,8 @@ export function computeCanonicalTileAdhesive(
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 20)));
-  const tileSize = Math.max(0, Math.min(2, Math.round(inputs.tileSize ?? getInputDefault(spec, "tileSize", 0))));
+  // tileSize 0..3 — расширили диапазон для класса крупноформата.
+  const tileSize = Math.max(0, Math.min(3, Math.round(inputs.tileSize ?? getInputDefault(spec, "tileSize", 0))));
   const laying = Math.max(0, Math.min(2, Math.round(inputs.laying ?? getInputDefault(spec, "laying", 0))));
   const base = Math.max(0, Math.min(2, Math.round(inputs.base ?? getInputDefault(spec, "base", 0))));
   const bagWeight = (inputs.bagWeight ?? getInputDefault(spec, "bagWeight", 25)) === 5 ? 5 : 25;
@@ -77,12 +92,28 @@ export function computeCanonicalTileAdhesive(
   const crossesPerTile = taMr(spec, "crosses_per_tile", TA_DEFAULTS.crosses_per_tile);
   const crossReserve = taMr(spec, "cross_reserve", TA_DEFAULTS.cross_reserve);
   const crossPack = taMr(spec, "cross_pack", TA_DEFAULTS.cross_pack);
+  const doubleApplicationMultiplier = taMr(
+    spec,
+    "double_application_multiplier",
+    TA_DEFAULTS.double_application_multiplier,
+  );
+  const doubleApplicationMinSizeClass = taMr(
+    spec,
+    "double_application_min_size_class",
+    TA_DEFAULTS.double_application_min_size_class,
+  );
+
+  // Двойное нанесение: автоматически для крупноформата (class >= порога)
+  // или явно установлено пользователем.
+  const autoDoubleApplication = tileSize >= doubleApplicationMinSizeClass;
+  const doubleApplication = inputs.doubleApplicationRequired ?? autoDoubleApplication;
 
   /* ─── formulas ─── */
   let adjustedRate = baseConsumption[String(tileSize)] ?? baseConsumption["0"];
   if (laying === 1) adjustedRate *= wallFactor;
   if (laying === 2) adjustedRate *= streetFactor;
   if (base === 2) adjustedRate *= oldTileFactor;
+  if (doubleApplication) adjustedRate *= doubleApplicationMultiplier;
 
   const totalKgRaw = area * adjustedRate * adhesiveReserve;
   const accuracyMult = getPrimaryMultiplier("tile_adhesive", accuracyMode);
@@ -164,7 +195,13 @@ export function computeCanonicalTileAdhesive(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (tileSize === 2) {
-    warnings.push("Крупноформатная плитка — рекомендуется гребёнка 12 мм");
+    warnings.push("Крупная плитка (60 см) — рекомендуется гребёнка 10-12 мм");
+  }
+  if (tileSize === 3) {
+    warnings.push(
+      "Крупноформат (>60 см) — по СП 71.13330.2017 обязательно двойное нанесение клея " +
+        "(на основание + на тыл плитки). Расход возрастает в 1.5-1.8 раза. Расчёт скорректирован.",
+    );
   }
   if (base === 2) {
     warnings.push("Укладка на старую плитку — обязателен контактный грунт");
@@ -173,6 +210,17 @@ export function computeCanonicalTileAdhesive(
   const practicalNotes: string[] = [];
   if (tileSize === 2) {
     practicalNotes.push("Крупная плитка — используйте гребёнку 10-12 мм и клей класса С2");
+  }
+  if (tileSize === 3) {
+    practicalNotes.push(
+      "Крупноформат: гребёнка 12-15 мм, клей класса С2 (например Ceresit CM 17 / Bergauf Granit). " +
+        "Двойное нанесение увеличивает расход на 70% — не сэкономите на тонком слое.",
+    );
+  }
+  if (doubleApplication && tileSize < doubleApplicationMinSizeClass) {
+    practicalNotes.push(
+      `Двойное нанесение включено вручную для tileSize ${tileSize} — расход увеличен на 70%.`,
+    );
   }
   practicalNotes.push("Не замешивайте больше клея, чем уложите за 30 минут — он теряет адгезию");
 
@@ -186,6 +234,8 @@ export function computeCanonicalTileAdhesive(
       laying,
       base,
       bagWeight,
+      // 1 если двойное нанесение применено, 0 иначе.
+      doubleApplication: doubleApplication ? 1 : 0,
       adjustedRate: roundDisplay(adjustedRate, 3),
       totalKg: roundDisplay(totalKg, 3),
       bags,

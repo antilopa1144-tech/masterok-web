@@ -3,7 +3,7 @@
   "formula_version": "tile-adhesive-canonical-v1",
   "input_schema": [
     { "key": "area", "unit": "m²", "default_value": 20, "min": 1, "max": 500 },
-    { "key": "tileSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "tileSize", "default_value": 0, "min": 0, "max": 3 },
     { "key": "laying", "default_value": 0, "min": 0, "max": 2 },
     { "key": "base", "default_value": 0, "min": 0, "max": 2 },
     { "key": "bagWeight", "unit": "kg", "default_value": 25, "min": 5, "max": 25 }
@@ -16,7 +16,7 @@
     ]
   },
   "normative_formula": {
-    "tile_sizes": [0, 1, 2],
+    "tile_sizes": [0, 1, 2, 3],
     "laying_types": [0, 1, 2],
     "base_types": [0, 1, 2]
   },
@@ -29,7 +29,8 @@
     "base_consumption": {
       "0": 3.0,
       "1": 5.0,
-      "2": 7.5
+      "2": 7.5,
+      "3": 7.5
     },
     "wall_factor": 0.85,
     "street_factor": 1.3,
@@ -41,11 +42,14 @@
     "tile_sizes_for_cross": {
       "0": 0.3,
       "1": 0.45,
-      "2": 0.6
+      "2": 0.6,
+      "3": 0.9
     },
     "crosses_per_tile": 4,
     "cross_reserve": 1.1,
-    "cross_pack": 200
+    "cross_pack": 200,
+    "double_application_multiplier": 1.7,
+    "double_application_min_size_class": 3
   },
   "warnings_rules": {
     "large_tile_warning": true,
@@ -53,5 +57,30 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "normative_sources": [
+    {
+      "code": "СП 71.13330.2017",
+      "title": "Изоляционные и отделочные покрытия",
+      "section": "Раздел 9 — облицовочные работы; п. 9.6 — крупноформатная плитка"
+    },
+    {
+      "code": "ГОСТ 31376-2008",
+      "title": "Смеси сухие строительные на цементном вяжущем",
+      "section": "Технические условия — классификация клеёв C0, C1, C2, S1, S2"
+    },
+    {
+      "code": "EN 12004",
+      "title": "Adhesives for ceramic tiles",
+      "section": "Классы клея для плитки: C — клеящая способность, S — деформативность"
+    }
+  ],
+  "assumption_notes": [
+    "Класс формата tileSize: 0=мелкая (≤30 см), 1=средняя (~45 см), 2=крупная (~60 см), 3=крупноформат (>60 см: 60×120, 80×80, 120×120 и т.п.).",
+    "Базовый расход в кг/м² для слоя клея гребёнкой одного слоя: 3.0 / 5.0 / 7.5 / 7.5.",
+    "Двойное нанесение (на основание + на тыл плитки) обязательно по СП 71.13330.2017 п. 9.6 для крупноформата (≥60 см сторона) и для всех плиток на улице. Расход возрастает в 1.5-1.8 раза. Default множитель 1.7.",
+    "Автоматическое двойное нанесение включается при tileSize ≥ double_application_min_size_class (default 3). Можно принудительно включить через doubleApplicationRequired для класса 2 (60 см) при сложных условиях (фасад, бассейн, открытая терраса).",
+    "Backward-compat: при tileSize 0/1/2 и default doubleApplicationRequired=undefined расчёт идентичен прежней версии.",
+    "Для крупноформата требуется клей класса C2S1 минимум (например Ceresit CM 17 / Bergauf Granit) — на классе C0/C1 плитка отвалится через год. Калькулятор пока не различает класс клея — поле для будущего расширения."
+  ]
 }
