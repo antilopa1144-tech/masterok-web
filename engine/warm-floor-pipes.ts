@@ -16,6 +16,12 @@ interface WarmFloorPipesInputs {
   area?: number;
   pipeStep?: number;
   pipeType?: number;
+  /** Включить зональную раскладку трубы: у окна — 100-150 мм, в центре —
+   *  200-250 мм. По СП 60.13330.2020 это правильный режим для жилых
+   *  помещений с окнами. Default false → старая формула (один pipeStep). */
+  zonedLayoutEnabled?: boolean;
+  /** Доля площади у окна (0..0.5). Default из spec, обычно 0.20. */
+  windowZoneFraction?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -105,10 +111,45 @@ export function computeCanonicalWarmFloorPipes(
   const pipeStep = Math.max(100, Math.min(300, inputs.pipeStep ?? getInputDefault(spec, "pipeStep", 200)));
   const pipeType = Math.max(0, Math.min(3, Math.round(inputs.pipeType ?? getInputDefault(spec, "pipeType", 0))));
 
+  // Зональная раскладка: разные шаги трубы в зоне у окна (тепловая завеса)
+  // и в центре. По СП 60.13330.2020 для жилых помещений это правильный режим.
+  const zonedLayoutEnabled = inputs.zonedLayoutEnabled ?? false;
+  const windowZoneStepMm =
+    spec.material_rules.window_zone_step_mm ?? 120;
+  const centralZoneStepMm =
+    spec.material_rules.central_zone_step_mm ?? 200;
+  const windowZoneFraction = Math.max(
+    0,
+    Math.min(
+      0.5,
+      inputs.windowZoneFraction ?? spec.material_rules.window_zone_fraction ?? 0.20,
+    ),
+  );
+
   /* ─── core formulas ─── */
   const usefulArea = roundDisplay(area * FURNITURE_REDUCTION, 3);
-  const pipeStepM = pipeStep / 1000;
-  const pipeLength = roundDisplay(usefulArea / pipeStepM + COLLECTOR_ADDITION_M, 3);
+
+  let pipeLength: number;
+  let pipeStepM: number;
+  if (zonedLayoutEnabled) {
+    // Зоны считаются от useful (без мебели):
+    const windowAreaM2 = usefulArea * windowZoneFraction;
+    const centralAreaM2 = usefulArea * (1 - windowZoneFraction);
+    const winStepM = windowZoneStepMm / 1000;
+    const midStepM = centralZoneStepMm / 1000;
+    pipeLength = roundDisplay(
+      windowAreaM2 / winStepM + centralAreaM2 / midStepM + COLLECTOR_ADDITION_M,
+      3,
+    );
+    // Для отчёта в totals — эффективный средневзвешенный шаг.
+    pipeStepM = roundDisplay(
+      usefulArea / Math.max(1e-9, pipeLength - COLLECTOR_ADDITION_M),
+      4,
+    );
+  } else {
+    pipeStepM = pipeStep / 1000;
+    pipeLength = roundDisplay(usefulArea / pipeStepM + COLLECTOR_ADDITION_M, 3);
+  }
   const circuits = Math.max(1, Math.ceil(pipeLength / MAX_CIRCUIT_M));
   const totalPipe = roundDisplay(pipeLength * PIPE_RESERVE, 3);
   const coils = Math.ceil(totalPipe / PIPE_COIL_M);
@@ -220,11 +261,24 @@ export function computeCanonicalWarmFloorPipes(
   if (area > spec.warnings_rules.professional_heat_loss_area_threshold_m2) {
     warnings.push("Площадь более 40 м² — рекомендуется профессиональный расчёт теплопотерь");
   }
+  if (!zonedLayoutEnabled && area > 8) {
+    warnings.push(
+      "Раскладка трубы единым шагом — у окон будет холоднее, чем в центре. " +
+        "Включите zonedLayoutEnabled для тепловой завесы у окна (СП 60.13330.2020).",
+    );
+  }
 
 
   const practicalNotes: string[] = [];
   if (pipeLength > 80) {
     practicalNotes.push(`Контур ${roundDisplay(pipeLength, 0)} м — разбейте на ${circuits} петель, иначе котёл не продавит теплоноситель`);
+  }
+  if (zonedLayoutEnabled) {
+    const winPct = Math.round(windowZoneFraction * 100);
+    practicalNotes.push(
+      `Зональная раскладка: у окон шаг ${windowZoneStepMm} мм (${winPct}% площади), ` +
+        `в центре ${centralZoneStepMm} мм. Это даёт тепловую завесу — пол у окна не холодный.`,
+    );
   }
   practicalNotes.push("Тёплый пол — не основное отопление, а дополнительный комфорт. Радиаторы всё равно нужны");
 
@@ -240,6 +294,11 @@ export function computeCanonicalWarmFloorPipes(
       width: work.width,
       pipeStep,
       pipeType,
+      // 1 если зональная раскладка включена, 0 если стандартная.
+      zonedLayoutEnabled: zonedLayoutEnabled ? 1 : 0,
+      windowZoneStepMm: zonedLayoutEnabled ? windowZoneStepMm : 0,
+      centralZoneStepMm: zonedLayoutEnabled ? centralZoneStepMm : 0,
+      windowZoneFraction: roundDisplay(windowZoneFraction, 3),
       usefulArea,
       pipeStepM: roundDisplay(pipeStepM, 4),
       pipeLength: roundDisplay(pipeLength, 3),

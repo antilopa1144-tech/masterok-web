@@ -150,4 +150,99 @@ describe("Калькулятор водяного тёплого пола", () =
       checkInvariants(result);
     });
   });
+
+  describe("Зональная раскладка трубы (СП 60.13330.2020)", () => {
+    // Базовый кейс: 25 м², без зональной раскладки.
+    // usefulArea = 25 * 0.85 = 21.25; pipeLength = 21.25 / 0.2 + 3 = 109.25 м
+    const baseline = calc({
+      inputMode: 1,
+      area: 25,
+      pipeStep: 200,
+      pipeType: 0,
+    });
+
+    // С зональной раскладкой (default windowZoneFraction = 0.20):
+    // windowArea = 21.25 * 0.20 = 4.25; windowStep=0.12 → 4.25/0.12 = 35.417
+    // centralArea = 21.25 * 0.80 = 17.0; centralStep=0.20 → 17.0/0.20 = 85.0
+    // pipeLength = 35.417 + 85.0 + 3 = 123.42 м
+    const zoned = calc({
+      inputMode: 1,
+      area: 25,
+      pipeStep: 200,
+      pipeType: 0,
+      zonedLayoutEnabled: true,
+    });
+
+    // Угловая комната — больше доля у окна
+    const cornerRoom = calc({
+      inputMode: 1,
+      area: 25,
+      pipeStep: 200,
+      pipeType: 0,
+      zonedLayoutEnabled: true,
+      windowZoneFraction: 0.40,
+    });
+
+    // Без окон (внутренняя комната)
+    const noWindows = calc({
+      inputMode: 1,
+      area: 25,
+      pipeStep: 200,
+      pipeType: 0,
+      zonedLayoutEnabled: true,
+      windowZoneFraction: 0,
+    });
+
+    it("baseline: zonedLayoutEnabled=0 (backward-compat)", () => {
+      expect(baseline.totals.zonedLayoutEnabled).toBe(0);
+      expect(baseline.totals.pipeLength).toBeCloseTo(109.25, 1);
+    });
+
+    it("baseline: warning рекомендует zonedLayoutEnabled", () => {
+      const hasWarning = baseline.warnings.some((w) =>
+        w.includes("zonedLayoutEnabled") && w.includes("СП 60.13330"),
+      );
+      expect(hasWarning).toBe(true);
+    });
+
+    it("zoned (default 20%): pipeLength ≈ 123.42 м", () => {
+      expect(zoned.totals.pipeLength).toBeCloseTo(123.42, 1);
+    });
+
+    it("zoned: больше трубы чем baseline (тепловая завеса у окна)", () => {
+      const baselineLen = baseline.totals.pipeLength as number;
+      const zonedLen = zoned.totals.pipeLength as number;
+      expect(zonedLen).toBeGreaterThan(baselineLen);
+    });
+
+    it("zoned: practical note упоминает 120 мм у окон", () => {
+      const hasNote = zoned.practicalNotes.some((n) =>
+        n.includes("120 мм") && n.includes("у окон"),
+      );
+      expect(hasNote).toBe(true);
+    });
+
+    it("угловая (40%): больше трубы чем при 20%", () => {
+      const cornerLen = cornerRoom.totals.pipeLength as number;
+      const standardZoned = zoned.totals.pipeLength as number;
+      expect(cornerLen).toBeGreaterThan(standardZoned);
+    });
+
+    it("без окон (0%): pipeLength эквивалентно baseline", () => {
+      // При windowZoneFraction=0 формула даёт usefulArea/centralStep+collector
+      // = 21.25/0.2 + 3 = 109.25, что совпадает с baseline.
+      const noWindowsLen = noWindows.totals.pipeLength as number;
+      const baselineLen = baseline.totals.pipeLength as number;
+      expect(noWindowsLen).toBeCloseTo(baselineLen, 1);
+    });
+
+    it("zoned: totals содержит informational windowZoneStepMm=120", () => {
+      expect(zoned.totals.windowZoneStepMm).toBe(120);
+      expect(zoned.totals.centralZoneStepMm).toBe(200);
+    });
+
+    it("baseline: windowZoneStepMm=0 (zoned выключено)", () => {
+      expect(baseline.totals.windowZoneStepMm).toBe(0);
+    });
+  });
 });
