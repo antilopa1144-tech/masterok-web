@@ -1,0 +1,105 @@
+{
+  "calculator_id": "greenhouse",
+  "formula_version": "greenhouse-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 6, "min": 2, "max": 12 },
+    { "key": "width", "unit": "m", "default_value": 3, "min": 2, "max": 6 },
+    { "key": "height", "unit": "m", "default_value": 2.1, "min": 1.8, "max": 3.0 },
+    { "key": "roofType", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "polycarbonateThickness", "unit": "mm", "default_value": 6, "min": 4, "max": 10 },
+    { "key": "archStep", "unit": "m", "default_value": 0.65, "min": 0.5, "max": 1.05 },
+    { "key": "doorCount", "default_value": 2, "min": 1, "max": 2 },
+    { "key": "ventCount", "default_value": 2, "min": 0, "max": 6 },
+    { "key": "foundationType", "default_value": 1, "min": 0, "max": 3 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "roof_types": [0, 1],
+    "polycarbonate_thicknesses": [4, 6, 8, 10],
+    "foundation_types": [0, 1, 2, 3]
+  },
+  "packaging_rules": {
+    "unit": "лист",
+    "package_size": 1
+  },
+  "material_rules": {
+    "polycarbonate_sheet_width_m": 2.10,
+    "polycarbonate_sheet_length_m": 6.0,
+    "polycarbonate_reserve": 1.15,
+    "thermal_washers_per_m2": 6,
+    "thermal_washer_pack": 100,
+    "h_profile_length_m": 6.0,
+    "up_profile_length_m": 2.10,
+    "frame_profile_section_label": "20×20×1.2 мм",
+    "frame_profile_pack_m": 6.0,
+    "frame_profile_reserve": 1.10,
+    "longitudinal_purlins_count": 5,
+    "wood_beam_section_label": "Брус 100×100 мм",
+    "wood_beam_pack_m": 6.0,
+    "wood_beam_reserve": 1.05,
+    "wood_beam_crossbeam_step_m": 1.5,
+    "screw_pile_step_m": 1.5,
+    "screw_pile_corners_min": 4,
+    "concrete_strip_width_m": 0.30,
+    "concrete_strip_depth_m": 0.40,
+    "concrete_reserve": 1.05,
+    "anchor_step_m": 1.0,
+    "door_width_m": 0.9,
+    "door_height_m": 1.85,
+    "vent_width_m": 0.6,
+    "vent_height_m": 0.9,
+    "sealing_tape_per_seam_factor": 2.0,
+    "self_tapping_screws_per_m2": 4
+  },
+  "warnings_rules": {
+    "thin_polycarbonate_for_winter_mm": 6,
+    "wide_step_for_winter_m": 1.0,
+    "low_height_threshold_m": 2.0,
+    "no_foundation_max_length_m": 4
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  },
+  "normative_sources": [
+    {
+      "code": "ГОСТ 56826-2015",
+      "title": "Сотовый поликарбонат для применения в строительстве",
+      "section": "Технические условия — толщины 4/6/8/10/16 мм, размер листа 2100×6000 / 2100×12000"
+    },
+    {
+      "code": "ГОСТ 14918-2020",
+      "title": "Прокат стальной тонколистовой оцинкованный",
+      "section": "Технические условия для каркасов теплиц"
+    },
+    {
+      "code": "СП 20.13330.2016",
+      "title": "Нагрузки и воздействия",
+      "section": "Раздел 10 — снеговые нагрузки на теплицы; шаг арок ≤ 0.65 м для III снегового района и тяжелее"
+    },
+    {
+      "code": "СП 107.13330.2012",
+      "title": "Теплицы и парники",
+      "section": "Конструктивные требования, расход поликарбоната, типоразмеры"
+    }
+  ],
+  "assumption_notes": [
+    "Стандартный лист сотового поликарбоната 2.10 × 6.0 м (12.6 м²) — наиболее распространённый формат. Запас на раскрой 15% по ГОСТ 56826-2015.",
+    "Для арочной теплицы (roofType=0) общая площадь поликарбоната = боковая поверхность полуцилиндра (π × W × L / 2) + 2 торца (полукруг π × W² / 8 каждый).",
+    "Для двускатной теплицы (roofType=1) площадь = 2 ската + 2 торца. Высота стен принята фиксированной 1.5 м, остальная высота уходит на конёк.",
+    "Шаг арок/стропил по СП 20.13330.2016: 0.65 м обязателен для зимней эксплуатации в III и тяжелее снеговом районе РФ; 1.0 м допустим для летних теплиц или южных регионов.",
+    "Профиль каркаса 20×20×1.2 мм — лёгкий стандарт; для зимней теплицы рекомендуется 25×25×1.5 мм или 40×20×1.5 мм (пользователь корректирует через выбор за пределами spec).",
+    "Термошайбы для поликарбоната: 6 шт/м² с шагом 30-40 см по СП 107.13330.2012. Без них поликарбонат деформируется при нагреве/охлаждении.",
+    "H-соединительный профиль (поликарбонатный) — между листами по длине; UP-торцевой профиль — по верху и низу листа для герметичности.",
+    "Фундамент типа 0 (без) — установка на грунт с анкерами; допустим только для теплиц длиной ≤ 4 м, иначе перекос конструкции.",
+    "Брус 100×100 мм (foundationType=1) — наиболее частый вариант для дачи. Поперечные перемычки каждые 1.5 м для устойчивости.",
+    "Винтовые сваи (foundationType=2) — шаг 1.5 м по периметру, минимум 4 угловых, не требуют земляных работ.",
+    "Ленточный фундамент (foundationType=3) — мелкозаглублённый 0.30 × 0.40 м для зимних теплиц с оборудованием отопления.",
+    "Двери стандартного размера 0.9 × 1.85 м, форточки 0.6 × 0.9 м — типовые размеры серийных теплиц."
+  ]
+}

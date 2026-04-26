@@ -2956,3 +2956,58 @@ export interface SepticRingsCanonicalSpec extends CanonicalCalculatorSpecBase {
   material_rules: SepticRingsMaterialRules;
   warnings_rules: SepticRingsWarningRules;
 }
+
+/* ─── Greenhouse / Теплица ─── */
+
+export interface GreenhousePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface GreenhouseMaterialRules {
+  polycarbonate_sheet_width_m: number;
+  polycarbonate_sheet_length_m: number;
+  polycarbonate_reserve: number;
+  thermal_washers_per_m2: number;
+  thermal_washer_pack: number;
+  h_profile_length_m: number;
+  up_profile_length_m: number;
+  frame_profile_section_label: string;
+  frame_profile_pack_m: number;
+  frame_profile_reserve: number;
+  longitudinal_purlins_count: number;
+  wood_beam_section_label: string;
+  wood_beam_pack_m: number;
+  wood_beam_reserve: number;
+  wood_beam_crossbeam_step_m: number;
+  screw_pile_step_m: number;
+  screw_pile_corners_min: number;
+  concrete_strip_width_m: number;
+  concrete_strip_depth_m: number;
+  concrete_reserve: number;
+  anchor_step_m: number;
+  door_width_m: number;
+  door_height_m: number;
+  vent_width_m: number;
+  vent_height_m: number;
+  sealing_tape_per_seam_factor: number;
+  self_tapping_screws_per_m2: number;
+}
+
+export interface GreenhouseWarningRules {
+  thin_polycarbonate_for_winter_mm: number;
+  wide_step_for_winter_m: number;
+  low_height_threshold_m: number;
+  no_foundation_max_length_m: number;
+}
+
+export interface GreenhouseCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    roof_types: number[];
+    polycarbonate_thicknesses: number[];
+    foundation_types: number[];
+  };
+  packaging_rules: GreenhousePackagingRules;
+  material_rules: GreenhouseMaterialRules;
+  warnings_rules: GreenhouseWarningRules;
+}
