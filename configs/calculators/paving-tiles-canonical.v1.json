@@ -1,0 +1,87 @@
+{
+  "calculator_id": "paving-tiles",
+  "formula_version": "paving-tiles-canonical-v1",
+  "input_schema": [
+    { "key": "area", "unit": "m2", "default_value": 50, "min": 5, "max": 2000 },
+    { "key": "perimeter", "unit": "m", "default_value": 30, "min": 4, "max": 500 },
+    { "key": "foundationType", "default_value": 1, "min": 0, "max": 2 },
+    { "key": "tileThickness", "unit": "mm", "default_value": 60, "min": 30, "max": 80 },
+    { "key": "borderEnabled", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "foundation_types": [0, 1, 2],
+    "tile_thicknesses": [30, 40, 60, 80]
+  },
+  "packaging_rules": {
+    "unit": "м²",
+    "package_size": 1
+  },
+  "material_rules": {
+    "tile_reserve": 1.07,
+    "sand_bedding_layer_m": 0.05,
+    "sand_bedding_layer_m_auto": 0.10,
+    "gravel_layer_m": 0.15,
+    "cement_sand_mix_layer_m": 0.03,
+    "cement_sand_mix_kg_per_m3": 1800,
+    "cement_bag_kg": 50,
+    "concrete_layer_m": 0.10,
+    "concrete_reserve": 1.05,
+    "joint_sand_kg_per_m2": 5,
+    "joint_sand_bag_kg": 25,
+    "joint_sand_reserve": 1.10,
+    "border_length_m": 1.0,
+    "border_reserve": 1.05,
+    "border_concrete_m_per_m": 0.03,
+    "geotextile_roll_m2": 50,
+    "geotextile_reserve": 1.15,
+    "compaction_factor_sand": 1.20,
+    "compaction_factor_gravel": 1.25,
+    "compaction_factor_cement_sand": 1.10
+  },
+  "warnings_rules": {
+    "thin_tile_for_vehicle_mm": 60,
+    "min_tile_for_vehicle_mm": 60,
+    "min_perimeter_to_area_ratio": 0.1
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  },
+  "normative_sources": [
+    {
+      "code": "СП 78.13330.2012",
+      "title": "Автомобильные дороги",
+      "section": "Раздел 13 — основания и покрытия из штучных элементов"
+    },
+    {
+      "code": "СП 82.13330.2016",
+      "title": "Благоустройство территорий",
+      "section": "Раздел 5 — покрытия проездов и пешеходных зон, конструкции дорожных одежд"
+    },
+    {
+      "code": "ГОСТ 17608-2017",
+      "title": "Плиты бетонные тротуарные",
+      "section": "Технические условия — толщины 30/40/60/80 мм, классы по нагрузке"
+    },
+    {
+      "code": "ГОСТ 6665-91",
+      "title": "Камни бетонные и железобетонные бортовые",
+      "section": "Технические условия — БР100.30.18, БР100.20.8"
+    }
+  ],
+  "assumption_notes": [
+    "Песчаная подушка (foundationType=0) подходит только для пешеходных нагрузок (двор, садовые дорожки) и плитки толщиной 30-40 мм. Толщина подсыпки увеличена до 100 мм по сравнению с цементно-песчаной (50 мм), чтобы компенсировать отсутствие связующего.",
+    "Цементно-песчаная подушка (foundationType=1, по умолчанию) — универсальный вариант СП 82.13330.2016 для пешеходных зон и лёгкого автотранспорта. Слой ЦПС 30 мм поверх щебня 150 мм.",
+    "Бетонное основание (foundationType=2) обязательно для автомобильных проездов и парковок. Бетонная плита 100 мм (М200) поверх щебня 150 мм. По СП 78.13330.2012 минимальная толщина плитки на проезжей части — 60 мм, оптимально 80 мм.",
+    "Коэффициенты уплотнения: песок 1.20, щебень 1.25, ЦПС 1.10 — учтены в расчёте насыпных материалов (объём «по факту до уплотнения» больше проектной толщины).",
+    "Кварцевый песок для заполнения швов: 5 кг/м² по СП 82.13330.2016 (швы 3-5 мм). Для широких швов (декоративная укладка) расход может быть выше — пользователь вводит вручную.",
+    "Бордюр БР100.30.18 длиной 1.0 м укладывается на цементно-песчаное основание ~30 мм по периметру. Если borderEnabled=0, бордюр и его основание не считаются (например, плитка примыкает к существующей конструкции).",
+    "Геотекстиль (например, Геотекс 200 г/м²) укладывается под щебневую/песчаную подушку для предотвращения смешения с грунтом. Рулон 50 м² — типовая упаковка для частного применения."
+  ]
+}

@@ -2857,3 +2857,49 @@ export interface DrainageCanonicalSpec extends CanonicalCalculatorSpecBase {
   material_rules: DrainageMaterialRules;
   warnings_rules: DrainageWarningRules;
 }
+
+/* ─── Paving Tiles / Тротуарная плитка ─── */
+
+export interface PavingTilesPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface PavingTilesMaterialRules {
+  tile_reserve: number;
+  sand_bedding_layer_m: number;
+  sand_bedding_layer_m_auto: number;
+  gravel_layer_m: number;
+  cement_sand_mix_layer_m: number;
+  cement_sand_mix_kg_per_m3: number;
+  cement_bag_kg: number;
+  concrete_layer_m: number;
+  concrete_reserve: number;
+  joint_sand_kg_per_m2: number;
+  joint_sand_bag_kg: number;
+  joint_sand_reserve: number;
+  border_length_m: number;
+  border_reserve: number;
+  border_concrete_m_per_m: number;
+  geotextile_roll_m2: number;
+  geotextile_reserve: number;
+  compaction_factor_sand: number;
+  compaction_factor_gravel: number;
+  compaction_factor_cement_sand: number;
+}
+
+export interface PavingTilesWarningRules {
+  thin_tile_for_vehicle_mm: number;
+  min_tile_for_vehicle_mm: number;
+  min_perimeter_to_area_ratio: number;
+}
+
+export interface PavingTilesCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    foundation_types: number[];
+    tile_thicknesses: number[];
+  };
+  packaging_rules: PavingTilesPackagingRules;
+  material_rules: PavingTilesMaterialRules;
+  warnings_rules: PavingTilesWarningRules;
+}
