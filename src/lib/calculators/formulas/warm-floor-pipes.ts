@@ -87,11 +87,56 @@ export const warmFloorPipesDef: CalculatorDefinition = {
         { value: 3, label: "Металлопластик 16 мм (PEX-AL-PEX)" },
       ],
     },
+    {
+      key: "zonedLayoutEnabled",
+      label: "Зональная раскладка трубы",
+      type: "switch",
+      defaultValue: 0,
+      hint: "У окна шаг 120 мм (тепловая завеса), в центре 200 мм. Рекомендуется для комнат с большими окнами (СП 60.13330.2020).",
+    },
+    {
+      key: "windowZoneFraction",
+      label: "Доля площади у окна",
+      type: "slider",
+      unit: "%",
+      min: 10,
+      max: 40,
+      step: 5,
+      defaultValue: 20,
+      hint: "Какая часть пола считается «оконной зоной» (с уплотнённым шагом). Учитывается только при включённой зональной раскладке.",
+    },
   ],
   calculate(inputs) {
     const spec = warmfloorpipesSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalWarmFloorPipes(spec, inputs, factorTable);
+
+    const rawZoned = (inputs as Record<string, unknown>).zonedLayoutEnabled;
+    const zonedEnabled =
+      typeof rawZoned === "boolean" ? rawZoned :
+      typeof rawZoned === "number" ? rawZoned > 0 :
+      false;
+
+    const rawWinFraction = (inputs as Record<string, unknown>).windowZoneFraction;
+    let windowZoneFraction: number | undefined;
+    if (typeof rawWinFraction === "number") {
+      if (rawWinFraction === 0) {
+        windowZoneFraction = 0;
+      } else if (rawWinFraction <= 1) {
+        windowZoneFraction = rawWinFraction;
+      } else {
+        windowZoneFraction = rawWinFraction / 100;
+      }
+    }
+
+    const canonical = computeCanonicalWarmFloorPipes(
+      spec,
+      {
+        ...inputs,
+        zonedLayoutEnabled: zonedEnabled,
+        windowZoneFraction,
+      },
+      factorTable
+    );
 
     return {
       materials: canonical.materials,
@@ -123,6 +168,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
     "Введите размеры помещения или площадь",
     "Выберите шаг укладки трубы (200 мм — стандарт)",
     "Выберите тип трубы (PEX-a — самый надёжный)",
+    "Для комнат с большими окнами включите «Зональную раскладку» — у окна шаг 120 мм даст тепловую завесу",
     "Нажмите «Рассчитать» — получите длину трубы, утеплитель, коллектор и стяжку",
   ],
 faq: [
