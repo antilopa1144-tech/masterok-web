@@ -62,6 +62,27 @@ export const facadeBrickDef: CalculatorDefinition = {
         { value: 2, label: "Гибкие связи нержавеющая сталь" },
       ],
     },
+    {
+      key: "windowCount",
+      label: "Количество оконных проёмов",
+      type: "slider",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 0,
+      hint: "Над каждым окном по СП 15.13330.2020 нужна полоса гидроизоляции. Без неё дождь по швам идёт в проём — гниют откосы через 1-2 сезона.",
+    },
+    {
+      key: "avgWindowWidth",
+      label: "Средняя ширина окна",
+      type: "slider",
+      unit: "м",
+      min: 0.5,
+      max: 5,
+      step: 0.1,
+      defaultValue: 1.5,
+      hint: "Полоса гидроизоляции = ширина окна + 0.6 м (по 0.3 м запаса по бокам).",
+    },
   ],
   calculate(inputs) {
     const spec = facadebrickSpec as any;
@@ -92,6 +113,7 @@ export const facadeBrickDef: CalculatorDefinition = {
     "Введите площадь облицовки (без проёмов)",
     "Выберите тип кирпича и толщину шва",
     "Укажите необходимость гибких связей",
+    "Опционально: количество окон и их среднюю ширину — добавится гидроизоляция перемычек по СП 15.13330.2020",
     "Нажмите «Рассчитать»",
   ],
 faq: [
