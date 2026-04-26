@@ -2903,3 +2903,56 @@ export interface PavingTilesCanonicalSpec extends CanonicalCalculatorSpecBase {
   material_rules: PavingTilesMaterialRules;
   warnings_rules: PavingTilesWarningRules;
 }
+
+/* ─── Septic Rings / Септик ЖБИ-кольца ─── */
+
+export interface SepticRingsPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface SepticRingsMaterialRules {
+  liters_per_person_per_day: number;
+  reserve_days_small_family: number;
+  reserve_days_large_family: number;
+  large_family_threshold: number;
+  ring_height_m: number;
+  ring_volumes_m3: Record<string, number>;
+  neck_ring_label: string;
+  neck_rings_per_chamber: number;
+  seal_rings_factor: number;
+  mastic_kg_per_m2: number;
+  mastic_layers: number;
+  mastic_can_kg: number;
+  bitumen_sheet_m_per_joint: number;
+  bitumen_sheet_roll_m: number;
+  filter_gravel_layer_m: number;
+  filter_sand_layer_m: number;
+  filter_gravel_compaction: number;
+  filter_sand_compaction: number;
+  pipe_diameter_mm: number;
+  pipe_section_m: number;
+  pipe_reserve: number;
+  pipe_elbow_count: number;
+  well_floor_plates: Record<string, string>;
+  well_top_plates: Record<string, string>;
+  manhole_label: string;
+}
+
+export interface SepticRingsWarningRules {
+  biotreatment_recommended_residents: number;
+  single_chamber_max_residents: number;
+  clay_ground_filter_well_problematic: number;
+  max_pipe_length_without_intermediate_well: number;
+}
+
+export interface SepticRingsCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    ring_diameters_mm: number[];
+    chambers_counts: number[];
+    ground_types: number[];
+  };
+  packaging_rules: SepticRingsPackagingRules;
+  material_rules: SepticRingsMaterialRules;
+  warnings_rules: SepticRingsWarningRules;
+}
