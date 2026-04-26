@@ -3011,3 +3011,49 @@ export interface GreenhouseCanonicalSpec extends CanonicalCalculatorSpecBase {
   material_rules: GreenhouseMaterialRules;
   warnings_rules: GreenhouseWarningRules;
 }
+
+/* ─── Lawn / Газон ─── */
+
+export interface LawnPackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface LawnMaterialRules {
+  seed_rate_g_per_m2_decor: number;
+  seed_rate_g_per_m2_normal: number;
+  seed_rate_g_per_m2_sport: number;
+  seed_pack_kg: number;
+  seed_reserve: number;
+  roll_size_m2: number;
+  roll_reserve: number;
+  fertilizer_starter_g_per_m2: number;
+  fertilizer_pack_kg: number;
+  fertilizer_reserve: number;
+  rooting_stimulator_ml_per_m2: number;
+  rooting_stimulator_can_l: number;
+  topsoil_compaction_factor: number;
+  drainage_sand_layer_m: number;
+  drainage_sand_compaction: number;
+  geotextile_reserve: number;
+  geotextile_roll_m2: number;
+  lawn_roller_min_pieces: number;
+}
+
+export interface LawnWarningRules {
+  min_topsoil_thickness_cm: number;
+  thin_topsoil_for_sport_cm: number;
+  clay_ground_needs_drainage: number;
+  large_area_needs_irrigation_m2: number;
+}
+
+export interface LawnCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    lawn_types: number[];
+    ground_types: number[];
+    usage_intensities: number[];
+  };
+  packaging_rules: LawnPackagingRules;
+  material_rules: LawnMaterialRules;
+  warnings_rules: LawnWarningRules;
+}
