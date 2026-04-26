@@ -70,6 +70,7 @@ import { decorStoneDef } from "./formulas/decor-stone";
 import { drainageDef } from "./formulas/drainage";
 import { pavingTilesDef } from "./formulas/paving-tiles";
 import { septicRingsDef } from "./formulas/septic-rings";
+import { greenhouseDef } from "./formulas/greenhouse";
 
 export const ALL_CALCULATORS: CalculatorDefinition[] = [
   // Фундамент
@@ -121,6 +122,7 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   fenceDef,
   terraceDef,
   pavingTilesDef,
+  greenhouseDef,
   stairsDef,
   // Инженерные системы
   electricDef,
