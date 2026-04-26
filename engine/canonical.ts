@@ -2808,3 +2808,52 @@ export interface DecorStoneCanonicalSpec extends CanonicalCalculatorSpecBase {
   material_rules: DecorStoneMaterialRules;
   warnings_rules: DecorStoneWarningRules;
 }
+
+/* ─── Drainage / Дренаж ─── */
+
+export interface DrainagePackagingRules {
+  unit: string;
+  package_size: number;
+}
+
+export interface DrainageMaterialRules {
+  pipe_reserve: number;
+  pipe_coil_length_m: number;
+  trench_width_m: number;
+  sand_bedding_thickness_m: number;
+  gravel_top_thickness_m: number;
+  gravel_side_thickness_m: number;
+  compaction_factor_sand: number;
+  compaction_factor_gravel: number;
+  geotextile_perimeter_factor: number;
+  geotextile_reserve: number;
+  geotextile_roll_m2: number;
+  well_step_m: number;
+  well_diameter_mm: number;
+  collector_well_diameter_mm: number;
+  tee_count_per_branch_type1: number;
+  elbow_count_type0: number;
+  elbow_count_type1: number;
+  elbow_count_type2: number;
+  min_slope_d110: number;
+  min_slope_d160: number;
+  extra_geotextile_high_groundwater: number;
+}
+
+export interface DrainageWarningRules {
+  min_length_for_collector: number;
+  max_length_d110_m: number;
+  high_groundwater_threshold: number;
+  min_well_count: number;
+}
+
+export interface DrainageCanonicalSpec extends CanonicalCalculatorSpecBase {
+  normative_formula: {
+    drainage_types: number[];
+    pipe_diameters: number[];
+    groundwater_risks: number[];
+  };
+  packaging_rules: DrainagePackagingRules;
+  material_rules: DrainageMaterialRules;
+  warnings_rules: DrainageWarningRules;
+}

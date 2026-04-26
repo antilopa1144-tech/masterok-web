@@ -1,0 +1,91 @@
+{
+  "calculator_id": "drainage",
+  "formula_version": "drainage-canonical-v1",
+  "input_schema": [
+    { "key": "length", "unit": "m", "default_value": 40, "min": 5, "max": 500 },
+    { "key": "pipeDiameter", "unit": "mm", "default_value": 110, "min": 110, "max": 160 },
+    { "key": "drainageType", "default_value": 1, "min": 0, "max": 2 },
+    { "key": "groundwaterRisk", "default_value": 1, "min": 0, "max": 2 },
+    { "key": "withCollector", "default_value": 1, "min": 0, "max": 1 }
+  ],
+  "field_factors": {
+    "enabled": [
+      "geometry_complexity",
+      "worker_skill",
+      "waste_factor"
+    ]
+  },
+  "normative_formula": {
+    "drainage_types": [0, 1, 2],
+    "pipe_diameters": [110, 160],
+    "groundwater_risks": [0, 1, 2]
+  },
+  "packaging_rules": {
+    "unit": "м",
+    "package_size": 1
+  },
+  "material_rules": {
+    "pipe_reserve": 1.05,
+    "pipe_coil_length_m": 50,
+    "trench_width_m": 0.30,
+    "sand_bedding_thickness_m": 0.10,
+    "gravel_top_thickness_m": 0.30,
+    "gravel_side_thickness_m": 0.10,
+    "compaction_factor_sand": 1.20,
+    "compaction_factor_gravel": 1.25,
+    "geotextile_perimeter_factor": 1.61,
+    "geotextile_reserve": 1.15,
+    "geotextile_roll_m2": 50,
+    "well_step_m": 50,
+    "well_diameter_mm": 340,
+    "collector_well_diameter_mm": 600,
+    "tee_count_per_branch_type1": 4,
+    "elbow_count_type0": 4,
+    "elbow_count_type1": 2,
+    "elbow_count_type2": 2,
+    "min_slope_d110": 0.005,
+    "min_slope_d160": 0.003,
+    "extra_geotextile_high_groundwater": 1.30
+  },
+  "warnings_rules": {
+    "min_length_for_collector": 20,
+    "max_length_d110_m": 80,
+    "high_groundwater_threshold": 2,
+    "min_well_count": 1
+  },
+  "scenario_policy": {
+    "contract": "min-rec-max-v1"
+  },
+  "normative_sources": [
+    {
+      "code": "СП 104.13330.2016",
+      "title": "Инженерная защита территории от затопления и подтопления",
+      "section": "Раздел 7 — горизонтальный закрытый дренаж: глубина, обсыпка, шаг колодцев"
+    },
+    {
+      "code": "СП 32.13330.2018",
+      "title": "Канализация. Наружные сети и сооружения",
+      "section": "Раздел 6 — минимальные уклоны самотёчных трубопроводов 0.005 для Ø110, 0.003 для Ø160"
+    },
+    {
+      "code": "ГОСТ Р 54475-2011",
+      "title": "Трубы полимерные со структурированной стенкой и фасонные части к ним для систем наружной канализации",
+      "section": "Технические условия — гофрированные дренажные трубы класса SN8"
+    },
+    {
+      "code": "ГОСТ 8267-93",
+      "title": "Щебень и гравий из плотных горных пород для строительных работ",
+      "section": "Фракции 5-20 и 20-40 мм для дренажа"
+    }
+  ],
+  "assumption_notes": [
+    "Длина траншеи равна длине дренажной трубы; стандартная ширина траншеи 0.30 м (СП 104.13330.2016).",
+    "Под трубой укладывается выравнивающий слой песка 100 мм с компенсацией уплотнения 1.20.",
+    "Обсыпка щебнем фр. 5-20 или 20-40 мм: 100 мм с боков + 300 мм сверху над трубой, коэф. уплотнения 1.25. На высокий уровень грунтовых вод (groundwaterRisk=2) добавляется доп. слой и расширенная обмотка геотекстилем (×1.30).",
+    "Геотекстиль (Дорнит 200 г/м²) обёртывает щебневую обсыпку по периметру траншеи: коэф. 1.61 м² на метр трассы при ширине 0.30 м и высоте обсыпки 0.40 м, +15% запас на нахлёст (стандарт нахлёст 15-20 см).",
+    "Смотровые колодцы Ø340 устанавливаются по СП 104.13330.2016: на каждом повороте + каждые 50 м прямого участка. Минимум 1 колодец независимо от длины. Для типа 1 (ёлочка) количество поворотов больше — учтено в формуле.",
+    "Приёмный (накопительный) колодец Ø600 — конечная точка системы, опция withCollector=1. На длинах < 20 м обычно не нужен — выводят в кювет/канаву.",
+    "Минимальный уклон: 0.005 (5 мм/м) для Ø110, 0.003 (3 мм/м) для Ø160 по СП 32.13330.2018. На длине 80 м и больше для Ø110 предупреждение — нужен Ø160 или промежуточный сброс.",
+    "Дренажная труба продаётся бухтами (50 м гофры с фильтром) или отрезками (3-6 м жёсткой). В расчёте — погонные метры, упаковка через optimizePackaging."
+  ]
+}
