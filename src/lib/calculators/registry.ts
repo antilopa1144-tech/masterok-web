@@ -70,6 +70,7 @@ const FORMULA_MAP: Record<string, string> = {
   "myagkaya-krovlya": "soft-roofing",
   "drenazh-uchastka": "drainage",
   "trotuarnaya-plitka": "paving-tiles",
+  "septik-iz-kolets": "septic-rings",
 };
 
 /** Кеш загруженных функций */
@@ -143,6 +144,7 @@ const IMPORT_MAP: Record<string, () => Promise<Record<string, unknown>>> = {
   "soft-roofing": () => import("./formulas/soft-roofing"),
   drainage: () => import("./formulas/drainage"),
   "paving-tiles": () => import("./formulas/paving-tiles"),
+  "septic-rings": () => import("./formulas/septic-rings"),
 };
 
 /**
