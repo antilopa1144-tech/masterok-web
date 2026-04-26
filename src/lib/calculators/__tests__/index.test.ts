@@ -10,8 +10,8 @@ import { SITE_NAME } from "@/lib/site";
 
 describe("Индекс калькуляторов", () => {
   describe("ALL_CALCULATORS", () => {
-    it("содержит 61 калькулятор", () => {
-      expect(ALL_CALCULATORS).toHaveLength(61);
+    it("содержит 62 калькулятора", () => {
+      expect(ALL_CALCULATORS).toHaveLength(62);
     });
 
     it("все id уникальны", () => {
