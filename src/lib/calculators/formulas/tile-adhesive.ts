@@ -37,10 +37,12 @@ export const tileAdhesiveDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 1,
       options: [
-        { value: 0, label: "до 30×30 см (маленькая)" },
-        { value: 1, label: "30×60 — 60×60 см (средняя)" },
-        { value: 2, label: "60×120 см и более (крупноформатная)" },
+        { value: 0, label: "до 30×30 см (мелкая)" },
+        { value: 1, label: "30×60 — 45×45 см (средняя)" },
+        { value: 2, label: "60×60 см (крупная)" },
+        { value: 3, label: "60×120 см и более (крупноформат)" },
       ],
+      hint: "Для крупноформата (≥60×120) автоматически включается двойное нанесение клея",
     },
     {
       key: "layingType",
@@ -65,6 +67,13 @@ export const tileAdhesiveDef: CalculatorDefinition = {
       ],
     },
     {
+      key: "doubleApplicationRequired",
+      label: "Двойное нанесение клея",
+      type: "switch",
+      defaultValue: 0,
+      hint: "Нанесение на основание и на тыльную сторону плитки. Авто-вкл для крупноформата (СП 71.13330.2017)",
+    },
+    {
       key: "bagWeight",
       label: "Фасовка мешка",
       type: "select",
@@ -83,11 +92,22 @@ export const tileAdhesiveDef: CalculatorDefinition = {
     const manufacturer = getManufacturerByIndex("tile_adhesive", inputs.manufacturer);
     const brandPackKg = getSpec<number | undefined>(manufacturer, "packKg", undefined);
 
+    const rawDoubleApp = (inputs as Record<string, unknown>).doubleApplicationRequired;
+    let resolvedDoubleApp: boolean | undefined;
+    if (typeof rawDoubleApp === "boolean") {
+      resolvedDoubleApp = rawDoubleApp;
+    } else if (typeof rawDoubleApp === "number" && rawDoubleApp > 0) {
+      resolvedDoubleApp = true;
+    } else {
+      resolvedDoubleApp = undefined;
+    }
+
     const canonical = computeCanonicalTileAdhesive(
       spec,
       {
         ...inputs,
         bagWeight: brandPackKg ?? inputs.bagWeight,
+        doubleApplicationRequired: resolvedDoubleApp,
         accuracyMode: inputs.accuracyMode as any,
       },
       factorTable
@@ -123,8 +143,9 @@ export const tileAdhesiveDef: CalculatorDefinition = {
   `,
   howToUse: [
     "Введите площадь укладки",
-    "Выберите размер плитки",
+    "Выберите размер плитки (для крупноформата 60×120+ автоматически включится двойное нанесение)",
     "Укажите место укладки и тип основания",
+    "При необходимости включите двойное нанесение вручную (тёплый пол, фасад, неровное основание)",
     "Нажмите «Рассчитать» — получите мешки клея и рекомендации по марке",
   ],
 faq: [
