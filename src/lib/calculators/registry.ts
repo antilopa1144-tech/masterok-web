@@ -69,6 +69,7 @@ const FORMULA_MAP: Record<string, string> = {
   "karkasnyj-dom": "frame-house",
   "myagkaya-krovlya": "soft-roofing",
   "drenazh-uchastka": "drainage",
+  "trotuarnaya-plitka": "paving-tiles",
 };
 
 /** Кеш загруженных функций */
@@ -141,6 +142,7 @@ const IMPORT_MAP: Record<string, () => Promise<Record<string, unknown>>> = {
   "frame-house": () => import("./formulas/frame-house"),
   "soft-roofing": () => import("./formulas/soft-roofing"),
   drainage: () => import("./formulas/drainage"),
+  "paving-tiles": () => import("./formulas/paving-tiles"),
 };
 
 /**
