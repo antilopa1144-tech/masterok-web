@@ -7,7 +7,8 @@
     { "key": "perimeter", "unit": "m", "default_value": 40, "min": 10, "max": 200 },
     { "key": "height", "unit": "m", "default_value": 5, "min": 2, "max": 15 },
     { "key": "sidingType", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "exteriorCorners", "default_value": 4, "min": 0, "max": 20 }
+    { "key": "exteriorCorners", "default_value": 4, "min": 0, "max": 20 },
+    { "key": "jProfileStrategy", "default_value": 0, "min": 0, "max": 1 }
   ],
   "field_factors": {
     "enabled": [

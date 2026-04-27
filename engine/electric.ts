@@ -76,9 +76,13 @@ export function computeCanonicalElectric(
   const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0) + 1;
 
   /* ─── cable lengths ─── */
-  const cable15length = (apartmentArea * CABLE_15_RATE + lightingGroups * ceilingHeight) * (1 + reserve / 100);
-  const cable25length = (apartmentArea * CABLE_25_RATE + outletGroups * ceilingHeight * 1.5) * (1 + reserve / 100);
-  const cable6length = hasKitchen ? (Math.sqrt(apartmentArea) * CABLE_6_KITCHEN_FACTOR + ceilingHeight) * CABLE_6_RESERVE : 0;
+  // Множитель типа проводки: открытая требует на ~50% больше кабеля из-за обхода углов и крепления
+  const wiringMultiplier = wiringType === 1
+    ? (spec.material_rules.cable_open_wiring_multiplier ?? 1.0)
+    : (spec.material_rules.cable_hidden_wiring_multiplier ?? 1.0);
+  const cable15length = (apartmentArea * CABLE_15_RATE + lightingGroups * ceilingHeight) * (1 + reserve / 100) * wiringMultiplier;
+  const cable25length = (apartmentArea * CABLE_25_RATE + outletGroups * ceilingHeight * 1.5) * (1 + reserve / 100) * wiringMultiplier;
+  const cable6length = hasKitchen ? (Math.sqrt(apartmentArea) * CABLE_6_KITCHEN_FACTOR + ceilingHeight) * CABLE_6_RESERVE * wiringMultiplier : 0;
   const conduitLength = Math.ceil((cable15length + cable25length + cable6length) * CONDUIT_RATIO);
 
   /* ─── outlets & switches ─── */

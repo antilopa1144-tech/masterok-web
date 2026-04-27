@@ -30,6 +30,11 @@ interface GuttersInputs {
   funnels?: number;
   gutterDia?: number;
   gutterLength?: number;
+  /** Количество колен/отводов 45° (на изгибах трассы трубы). Если 0 и bendCount90=0
+   *  — используется legacy формула (corners=8, knees=funnels). */
+  bendCount45?: number;
+  /** Количество колен/отводов 90° (типично — отвод от воронки). */
+  bendCount90?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -54,6 +59,9 @@ export function computeCanonicalGutters(
   const funnels = Math.max(1, Math.min(20, Math.round(inputs.funnels ?? getInputDefault(spec, "funnels", 4))));
   const gutterDia = Math.max(75, Math.min(125, Math.round(inputs.gutterDia ?? getInputDefault(spec, "gutterDia", 90))));
   const gutterLength = Math.max(3, Math.min(4, Math.round(inputs.gutterLength ?? getInputDefault(spec, "gutterLength", 3))));
+  const bendCount45 = Math.max(0, Math.min(20, Math.round(inputs.bendCount45 ?? getInputDefault(spec, "bendCount45", 0))));
+  const bendCount90 = Math.max(0, Math.min(20, Math.round(inputs.bendCount90 ?? getInputDefault(spec, "bendCount90", 0))));
+  const useLegacyBends = bendCount45 === 0 && bendCount90 === 0;
 
   /* ─── gutters ─── */
   const gutterPcs = Math.ceil(roofPerimeter / gutterLength * GUTTER_RESERVE);
@@ -71,10 +79,12 @@ export function computeCanonicalGutters(
   /* ─── pipe clamps ─── */
   const pipeClamps = Math.ceil(roofHeight / PIPE_CLAMP_STEP_M * funnels * PIPE_CLAMP_RESERVE);
 
-  /* ─── corners ─── */
-  const corners = BUILDING_CORNERS;
+  /* ─── corners (legacy) и явные колена 45/90 ─── */
+  const corners = useLegacyBends ? BUILDING_CORNERS : 0;
+  const elbows45 = useLegacyBends ? 0 : bendCount45;
+  const elbows90 = useLegacyBends ? 0 : bendCount90;
 
-  /* ─── knee elbows ─── */
+  /* ─── knee elbows (отводы от воронки к стене) ─── */
   const kneeElbows = funnels;
 
   /* ─── end caps ─── */
@@ -195,14 +205,30 @@ export function computeCanonicalGutters(
       purchaseQty: pipeClamps,
       category: "Крепёж",
     },
-    {
+    ...(corners > 0 ? [{
       name: "Угловые элементы",
       quantity: corners,
       unit: "шт",
       withReserve: corners,
       purchaseQty: corners,
       category: "Фасонные",
-    },
+    } satisfies CanonicalMaterialResult] : []),
+    ...(elbows45 > 0 ? [{
+      name: "Колена/отводы 45°",
+      quantity: elbows45,
+      unit: "шт",
+      withReserve: elbows45,
+      purchaseQty: elbows45,
+      category: "Фасонные",
+    } satisfies CanonicalMaterialResult] : []),
+    ...(elbows90 > 0 ? [{
+      name: "Колена/отводы 90°",
+      quantity: elbows90,
+      unit: "шт",
+      withReserve: elbows90,
+      purchaseQty: elbows90,
+      category: "Фасонные",
+    } satisfies CanonicalMaterialResult] : []),
     {
       name: `Герметик (${SEALANT_TUBE_ML} мл)`,
       quantity: sealantTubes,
@@ -241,6 +267,10 @@ export function computeCanonicalGutters(
       gutterHooks,
       pipeClamps,
       corners,
+      elbows45,
+      elbows90,
+      bendCount45,
+      bendCount90,
       kneeElbows,
       endCaps,
       connectors,

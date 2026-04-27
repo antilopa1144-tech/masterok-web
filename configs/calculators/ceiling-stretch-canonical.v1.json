@@ -5,7 +5,9 @@
     { "key": "area", "unit": "m²", "default_value": 20, "min": 1, "max": 500 },
     { "key": "corners", "default_value": 4, "min": 3, "max": 20 },
     { "key": "fixtures", "default_value": 4, "min": 0, "max": 50 },
-    { "key": "type", "default_value": 0, "min": 0, "max": 2 }
+    { "key": "type", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "nichesCount", "default_value": 0, "min": 0, "max": 10 },
+    { "key": "boxPerimeterM", "unit": "m", "default_value": 0, "min": 0, "max": 50 }
   ],
   "field_factors": {
     "enabled": [
@@ -25,7 +27,9 @@
     "baguet_reserve": 1.1,
     "baguet_length": 2.5,
     "insert_reserve": 1.1,
-    "masking_tape_roll": 50
+    "masking_tape_roll": 50,
+    "niche_perimeter_m_each": 4,
+    "niche_corner_count_each": 4
   },
   "warnings_rules": {
     "large_area_threshold_m2": 50,

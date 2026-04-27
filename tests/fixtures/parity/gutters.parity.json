@@ -1,7 +1,7 @@
 {
   "calculator_id": "gutters",
   "formula_version": "gutters-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.533Z",
+  "generated_at": "2026-04-27T12:19:34.888Z",
   "cases": [
     {
       "id": "defaults",
@@ -11,7 +11,9 @@
         "roofHeight": 5,
         "funnels": 4,
         "gutterDia": 90,
-        "gutterLength": 3
+        "gutterLength": 3,
+        "bendCount45": 0,
+        "bendCount90": 0
       },
       "expected_totals": {
         "roofPerimeter": 40,
@@ -26,6 +28,10 @@
         "gutterHooks": 71,
         "pipeClamps": 15,
         "corners": 8,
+        "elbows45": 0,
+        "elbows90": 0,
+        "bendCount45": 0,
+        "bendCount90": 0,
         "kneeElbows": 4,
         "endCaps": 4,
         "connectors": 14,

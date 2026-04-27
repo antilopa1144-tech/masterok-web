@@ -1405,6 +1405,8 @@ export interface GuttersMaterialRules {
   connector_reserve: number;
   sealant_connections_per_tube: number;
   sealant_tube_ml: number;
+  /** Расход герметика на стык желоба, мл (опционально, для будущего точного расчёта). */
+  sealant_per_joint_ml?: number;
   recommended_funnel_interval_m: number;
 }
 
@@ -1434,6 +1436,10 @@ export interface ElectricMaterialRules {
   cable_25_rate: number;
   cable_6_kitchen_factor: number;
   cable_6_reserve: number;
+  /** Множитель кабеля для открытой проводки (учитывает обход углов и крепление). */
+  cable_open_wiring_multiplier?: number;
+  /** Множитель кабеля для скрытой проводки (по умолчанию 1.0). */
+  cable_hidden_wiring_multiplier?: number;
   conduit_ratio: number;
   outlets_per_m2: number;
   outlets_per_room: number;
@@ -2143,6 +2149,10 @@ export interface CeilingStretchMaterialRules {
   baguet_length: number;
   insert_reserve: number;
   masking_tape_roll: number;
+  /** Условный периметр одной ниши, м — учитывает 3 видимые стороны при глубине ниши ~0.4 м. */
+  niche_perimeter_m_each?: number;
+  /** Углы на нишу — 4 (короб с прямоугольной нишей). */
+  niche_corner_count_each?: number;
 }
 
 export interface CeilingStretchWarningRules {
@@ -2221,6 +2231,9 @@ export interface FacadePanelsMaterialRules {
   guide_spacing: number;
   guide_length: number;
   guide_reserve: number;
+  /** Шаг горизонтальных направляющих, м. Применяется при withHorizontalRails=1.
+   *  По умолчанию 0.6 м — типовая горизонтальная обрешётка под фиброцемент/HPL. */
+  horizontal_rail_step_m?: number;
   fasteners_per_panel: number;
   fastener_reserve: number;
   anchor_per_bracket: number;

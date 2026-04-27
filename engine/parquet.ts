@@ -139,6 +139,18 @@ export function computeCanonicalParquet(
     warnings.push("Укладка ёлочкой требует профессионального инструмента и опыта");
   }
 
+  /* ─── expansion joint (для больших комнат) ─── */
+  const expansionJointThresholdM2 = (spec.material_rules as { expansion_joint_threshold_m2?: number }).expansion_joint_threshold_m2 ?? 50;
+  const expansionJointPieceLengthM = (spec.material_rules as { expansion_joint_piece_length_m?: number }).expansion_joint_piece_length_m ?? 1.0;
+  const needsExpansionJoint = geometry.area > expansionJointThresholdM2;
+  const expansionJointLengthM = needsExpansionJoint ? Math.sqrt(geometry.area) : 0;
+  const expansionJointPieces = needsExpansionJoint ? Math.ceil(expansionJointLengthM / expansionJointPieceLengthM) : 0;
+  if (needsExpansionJoint) {
+    warnings.push(
+      `Площадь ${geometry.area} м² больше ${expansionJointThresholdM2} м² — требуется компенсационный шов с профилем (СП 71.13330).`,
+    );
+  }
+
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Паркетная доска (${roundDisplay(packArea, 3)} м² в упаковке)`,
@@ -208,6 +220,17 @@ export function computeCanonicalParquet(
     });
   }
 
+  if (expansionJointPieces > 0) {
+    materials.push({
+      name: `Профиль компенсационный (${expansionJointPieceLengthM} м)`,
+      quantity: expansionJointPieces,
+      unit: "шт",
+      withReserve: expansionJointPieces,
+      purchaseQty: expansionJointPieces,
+      category: "Монтаж",
+    });
+  }
+
   const practicalNotes: string[] = [];
   practicalNotes.push("Паркет — живой материал, оставляйте зазор 10-15 мм у стен для температурного расширения");
 
@@ -228,6 +251,8 @@ export function computeCanonicalParquet(
       needUnderlayment: needUnderlayment ? 1 : 0,
       needPlinth: needPlinth ? 1 : 0,
       needGlue: needGlue ? 1 : 0,
+      expansionJointPieces,
+      expansionJointLengthM: roundDisplay(expansionJointLengthM, 3),
       underlayArea: underlaymentArea,
       underlaymentRolls: underlaymentRolls,
       plinthLength: plinthLength,

@@ -1,7 +1,7 @@
 {
   "calculator_id": "facade-panels",
   "formula_version": "facade-panels-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.510Z",
+  "generated_at": "2026-04-27T12:19:34.836Z",
   "cases": [
     {
       "id": "defaults",
@@ -10,7 +10,8 @@
         "area": 100,
         "panelType": 0,
         "substructure": 0,
-        "insulationThickness": 0
+        "insulationThickness": 0,
+        "withHorizontalRails": 0
       },
       "expected_totals": {
         "area": 100,
@@ -21,6 +22,8 @@
         "panels": 31,
         "brackets": 306,
         "guides": 62,
+        "horizontalGuides": 0,
+        "withHorizontalRails": 0,
         "fasteners": 261,
         "anchors": 643,
         "insPlates": 0,
@@ -39,7 +42,7 @@
       "expected_material_names": [
         "Фиброцементные панели (3.6 м²)",
         "Кронштейны (Алюминиевая)",
-        "Направляющие (3 м)",
+        "Направляющие вертикальные (3 м)",
         "Крепёж панелей",
         "Анкеры для кронштейнов",
         "Грунтовка глубокого проникновения (2 × 10 л)",

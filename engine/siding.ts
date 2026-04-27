@@ -51,6 +51,11 @@ interface SidingInputs {
   height?: number;
   sidingType?: number;
   exteriorCorners?: number;
+  /** Стратегия покрытия J-профилем оконных проёмов:
+   *  0 = both_sides_legacy (исторически: периметр проёма × 2 — двойной счёт);
+   *  1 = perimeter_once (корректно: периметр проёма × 1 раз).
+   *  По умолчанию 0 — backward-compat. */
+  jProfileStrategy?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -76,6 +81,7 @@ export function computeCanonicalSiding(
   const height = Math.max(2, Math.min(15, Math.round(inputs.height ?? getInputDefault(spec, "height", 5))));
   const sidingType = Math.max(0, Math.min(2, Math.round(inputs.sidingType ?? getInputDefault(spec, "sidingType", 0))));
   const exteriorCorners = Math.max(0, Math.min(20, Math.round(inputs.exteriorCorners ?? getInputDefault(spec, "exteriorCorners", 4))));
+  const jProfileStrategy = Math.max(0, Math.min(1, Math.round(inputs.jProfileStrategy ?? getInputDefault(spec, "jProfileStrategy", 0))));
 
   /* ─── panel area ─── */
   const panelArea = PANEL_AREAS[sidingType] ?? PANEL_AREAS[0];
@@ -85,7 +91,12 @@ export function computeCanonicalSiding(
   const panelsRaw = Math.ceil(netArea / panelArea * PANEL_RESERVE);
   const panels = Math.ceil(panelsRaw * accuracyMult);
   const starter = Math.ceil((perimeter + Math.sqrt(openingsArea) * 4) / STARTER_LENGTH);
-  const jProfile = Math.ceil((Math.sqrt(openingsArea) * 4 * 2 + perimeter) * J_RESERVE / J_PROFILE_LENGTH);
+  // Стратегия J-профиля: legacy (×2) или корректный perimeter_once (×1)
+  // СП 70.13330 не нормирует двойной счёт — это историческая ошибка
+  const openingPerimeterMultiplier = jProfileStrategy === 1 ? 1 : 2;
+  const jProfile = Math.ceil(
+    (Math.sqrt(openingsArea) * 4 * openingPerimeterMultiplier + perimeter) * J_RESERVE / J_PROFILE_LENGTH,
+  );
   const corners = Math.ceil(height * exteriorCorners * CORNER_RESERVE / CORNER_LENGTH);
   const finish = Math.ceil(perimeter * STARTER_RESERVE / FINISH_LENGTH);
   const screwsPcs = Math.ceil(netArea * SCREWS_PER_M2 * SCREW_RESERVE);
@@ -233,6 +244,7 @@ export function computeCanonicalSiding(
       height,
       sidingType,
       exteriorCorners,
+      jProfileStrategy,
       panelArea,
       netArea,
       panels,

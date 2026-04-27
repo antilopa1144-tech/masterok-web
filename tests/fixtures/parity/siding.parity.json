@@ -1,7 +1,7 @@
 {
   "calculator_id": "siding",
   "formula_version": "siding-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.626Z",
+  "generated_at": "2026-04-27T12:19:35.047Z",
   "cases": [
     {
       "id": "defaults",
@@ -12,7 +12,8 @@
         "perimeter": 40,
         "height": 5,
         "sidingType": 0,
-        "exteriorCorners": 4
+        "exteriorCorners": 4,
+        "jProfileStrategy": 0
       },
       "expected_totals": {
         "facadeArea": 100,
@@ -21,6 +22,7 @@
         "height": 5,
         "sidingType": 0,
         "exteriorCorners": 4,
+        "jProfileStrategy": 0,
         "panelArea": 0.732,
         "netArea": 90,
         "panels": 136,

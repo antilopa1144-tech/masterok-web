@@ -49,7 +49,9 @@
     "vapor_barrier_overlap_percent": 10,
     "wedge_spacing_m": 0.5,
     "default_door_opening_width_m": 0.9,
-    "rectangle_inner_corners": 4
+    "rectangle_inner_corners": 4,
+    "expansion_joint_threshold_m2": 50,
+    "expansion_joint_piece_length_m": 1.0
   },
   "warnings_rules": {
     "small_area_warning_threshold_m2": 5,

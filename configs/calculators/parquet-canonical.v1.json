@@ -38,7 +38,9 @@
     "wedge_spacing_m": 0.5,
     "default_door_opening_width_m": 0.9,
     "glue_kg_per_m2": 1.5,
-    "plinth_reserve_percent": 5
+    "plinth_reserve_percent": 5,
+    "expansion_joint_threshold_m2": 50,
+    "expansion_joint_piece_length_m": 1.0
   },
   "warnings_rules": {
     "small_area_warning_threshold_m2": 5,
