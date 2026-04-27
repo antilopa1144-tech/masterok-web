@@ -75,27 +75,36 @@ const nextConfig: NextConfig = {
 
   // HTTP headers — то, ради чего мы перешли на SSR
   async headers() {
-    // CSP в Report-Only режиме: собираем статистику нарушений без блокировок.
-    // Через 2–4 недели после мониторинга можно перевести на enforcement,
-    // заменив заголовок на `Content-Security-Policy`.
+    // CSP в enforcement-режиме (с 2026-04-28).
+    // До этого был Content-Security-Policy-Report-Only — собирали статистику
+    // нарушений. Главный нарушитель (webvisor с WebSocket к mc.yandex.com/solid.ws)
+    // отключён в PR #38, теперь можно блокировать. Webvisor URLs убраны
+    // из script-src и connect-src — больше там не нужны.
     //
-    // 'unsafe-inline' нужен из-за:
-    //   - inline dark-mode скрипта в layout.tsx
-    //   - JSON-LD (dangerouslySetInnerHTML)
-    //   - Tailwind styles
-    // В enforcement-режиме заменить на nonce-based CSP.
+    // 'unsafe-inline' оставлен в script-src из-за:
+    //   - inline dark-mode скрипта в layout.tsx (THEME_INIT_SCRIPT)
+    //   - JSON-LD <script type="application/ld+json"> в страницах (SEO)
+    //   - inline Yandex Metrika init script
+    // Переход на nonce-based CSP — отдельный рефакторинг (требует middleware).
+    //
+    // 'unsafe-eval' оставлен только потому что некоторые dev-инструменты
+    // его используют. В production React/Next 15 без 'unsafe-eval' работает.
+    // TODO в будущем: убрать 'unsafe-eval' и проверить что production build не сломан.
+    //
+    // 'unsafe-inline' для style-src безопасен (Tailwind генерирует inline-стили).
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.webvisor.com https://mc.webvisor.org https://yastatic.net",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://yastatic.net",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http://5.129.248.119",
       "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru https://mc.webvisor.com https://mc.webvisor.org https://openrouter.ai",
+      "connect-src 'self' https://mc.yandex.ru https://openrouter.ai",
       "frame-src 'self' https://mc.yandex.ru",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'self'",
+      "upgrade-insecure-requests",
     ].join("; ");
 
     return [
@@ -107,8 +116,18 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
-          { key: "Content-Security-Policy-Report-Only", value: csp },
+          // HSTS на 1 год для всех поддоменов. Директива `preload` УБРАНА:
+          // getmasterok.ru НЕ зарегистрирован на hstspreload.org, и браузеры её
+          // игнорируют без регистрации (создавая ложное чувство безопасности).
+          //
+          // Чтобы включить preload (после уверенной работы HTTPS на всех subdomains):
+          //  1. Проверить статус: https://hstspreload.org/?domain=getmasterok.ru
+          //  2. Изменить директиву на: max-age=31536000; includeSubDomains; preload
+          //  3. Подать заявку на https://hstspreload.org/ через форму submission
+          //  4. ВНИМАНИЕ: это необратимо на 6-12 месяцев. Если разорвёшь HTTPS
+          //     на каком-то поддомене — пользователи Chrome не смогут попасть.
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "Content-Security-Policy", value: csp },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],

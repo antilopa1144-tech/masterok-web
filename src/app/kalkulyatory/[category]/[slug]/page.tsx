@@ -260,7 +260,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                     <Link
                       key={r.id}
                       href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
-                      className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-accent-600 dark:hover:text-accent-400 no-underline transition-colors py-1.5 group"
+                      className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-accent-700 dark:hover:text-accent-400 no-underline transition-colors py-1.5 group"
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -301,7 +301,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                       />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
                         {r.title}
                       </p>
                       <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
@@ -341,7 +341,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                       />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors leading-snug">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
                         {r.title}
                       </p>
                       <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">

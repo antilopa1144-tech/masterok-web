@@ -213,7 +213,7 @@ export default function MaterialComparison() {
           return (
           <div key={mat.name} className={`card p-5 space-y-3 ${isBest ? "ring-2 ring-accent-400 dark:ring-accent-500" : ""}`}>
             {isBest && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-900/30 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-700 dark:text-accent-400 bg-accent-50 dark:bg-accent-900/30 px-2 py-0.5 rounded-full">
                 🏆 Лучший выбор
               </span>
             )}

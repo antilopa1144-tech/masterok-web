@@ -115,7 +115,7 @@ export default function ChekListyPage() {
                 </div>
 
                 {/* Заголовок */}
-                <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
+                <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug mb-1.5 group-hover:text-accent-700 transition-colors">
                   {cl.title}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-4">

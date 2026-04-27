@@ -6,7 +6,7 @@
     "dev": "next dev",
     "prebuild": "npx tsx scripts/generate-calculators-meta.ts",
     "build": "next build",
-    "postbuild": "node -e \"fetch('https://www.google.com/ping?sitemap=https://getmasterok.ru/sitemap.xml').then(()=>console.log('Sitemap ping sent')).catch(()=>{})\"",
+    "postbuild": "node scripts/ping-indexnow.js",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

@@ -53,7 +53,7 @@ export default function AboutPage() {
 
       <section className="page-container py-10 md:py-16">
         <nav className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          <Link href="/" className="hover:text-accent-600 no-underline">Главная</Link>
+          <Link href="/" className="hover:text-accent-700 no-underline">Главная</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-700 dark:text-slate-200">О проекте</span>
         </nav>

@@ -167,7 +167,7 @@ function NormTable({ category }: { category: NormCategory }) {
         {category.calculatorSlug && (
           <Link
             href={`/kalkulyatory/otdelka/${category.calculatorSlug}/`}
-            className="text-xs text-accent-600 hover:underline no-underline"
+            className="text-xs text-accent-700 hover:underline no-underline"
           >
             Калькулятор →
           </Link>

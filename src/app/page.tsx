@@ -361,7 +361,7 @@ export default async function HomePage() {
                       >
                         <CategoryIcon icon={cat.icon} size={22} color={cat.color} />
                       </div>
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-600 transition-colors">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight mb-1 group-hover:text-accent-700 transition-colors">
                         {cat.label}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -398,7 +398,7 @@ export default async function HomePage() {
                       >
                         <CategoryIcon icon={cat?.icon ?? "wrench"} size={22} color={cat?.color ?? "#64748b"} />
                       </div>
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-600 transition-colors">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1.5 group-hover:text-accent-700 transition-colors">
                         {calc.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
@@ -420,7 +420,7 @@ export default async function HomePage() {
                 })}
               </div>
               <div className="text-center mt-6">
-                <Link href="/kalkulyatory/" className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline">
+                <Link href="/kalkulyatory/" className="text-sm text-accent-700 hover:text-accent-800 font-medium no-underline">
                   Все калькуляторы →
                 </Link>
               </div>
@@ -451,7 +451,7 @@ export default async function HomePage() {
                       <CategoryIcon icon={tool.icon} size={20} color={tool.color} />
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-700 transition-colors">
                         {tool.title}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{tool.desc}</div>
@@ -461,7 +461,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/instrumenty/"
-                className="block text-center text-sm text-accent-600 hover:text-accent-700 font-medium no-underline mt-4"
+                className="block text-center text-sm text-accent-700 hover:text-accent-800 font-medium no-underline mt-4"
               >
                 {UI_TEXT.toolsCta}
               </Link>
@@ -522,7 +522,7 @@ export default async function HomePage() {
           </h2>
           <Link
             href="/instrumenty/"
-            className="text-sm text-accent-600 hover:text-accent-700 font-medium no-underline"
+            className="text-sm text-accent-700 hover:text-accent-800 font-medium no-underline"
           >
             {UI_TEXT.toolsCta}
           </Link>
@@ -542,7 +542,7 @@ export default async function HomePage() {
               >
                 <CategoryIcon icon={tool.icon} size={24} color={tool.color} />
               </div>
-              <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-600 transition-colors">
+              <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-700 transition-colors">
                 {tool.title}
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tool.desc}</div>

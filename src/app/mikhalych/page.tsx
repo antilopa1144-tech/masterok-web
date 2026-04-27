@@ -148,7 +148,7 @@ export default function MikhalychPage() {
                   <Link
                     key={link.slug}
                     href={link.href}
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-accent-600 dark:hover:text-accent-400 no-underline transition-colors py-1"
+                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-accent-700 dark:hover:text-accent-400 no-underline transition-colors py-1"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-accent-400 shrink-0" />
                     {link.title}

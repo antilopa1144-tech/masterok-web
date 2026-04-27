@@ -255,7 +255,7 @@ export default function KonverterPage() {
                 <option key={u.key} value={u.key}>{u.label}</option>
               ))}
             </select>
-            <div className="input-field text-lg font-bold text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40 select-all cursor-text">
+            <div className="input-field text-lg font-bold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40 select-all cursor-text">
               {result}
             </div>
           </div>
@@ -425,7 +425,7 @@ function DensityCalculator() {
         </div>
         <div>
           <label className="input-label">Результат ({resultUnit})</label>
-          <div className="input-field text-lg font-bold text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40">
+          <div className="input-field text-lg font-bold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40">
             {result}
           </div>
         </div>

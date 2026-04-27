@@ -249,7 +249,7 @@ export default function PrilozheniePage() {
             href="https://www.rustore.ru/catalog/app/ru.masterok.app"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-accent-600 font-bold px-8 py-3.5 rounded-xl hover:bg-accent-50 transition-colors no-underline"
+            className="inline-flex items-center gap-2 bg-white text-accent-700 font-bold px-8 py-3.5 rounded-xl hover:bg-accent-50 transition-colors no-underline"
           >
             {UI_TEXT.downloadRuStore}
           </a>

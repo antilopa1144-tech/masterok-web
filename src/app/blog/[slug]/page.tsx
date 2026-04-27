@@ -343,14 +343,14 @@ export default async function BlogPostPage({ params }: Props) {
                     <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug text-sm flex-1">
                       <Link
                         href={`/blog/${rp.slug}/`}
-                        className="no-underline hover:text-accent-600 transition-colors"
+                        className="no-underline hover:text-accent-700 transition-colors"
                       >
                         {rp.title}
                       </Link>
                     </h3>
                     <Link
                       href={`/blog/${rp.slug}/`}
-                      className="text-sm font-medium text-accent-600 hover:text-accent-700 no-underline transition-colors mt-auto"
+                      className="text-sm font-medium text-accent-700 hover:text-accent-800 no-underline transition-colors mt-auto"
                     >
                       {UI_TEXT.relatedPostsReadMore}
                     </Link>

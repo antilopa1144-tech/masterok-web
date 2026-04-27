@@ -32,7 +32,9 @@ export const CATEGORIES: Category[] = [
     id: "roofing",
     label: "Кровля и водосток",
     slug: "krovlya",
-    color: "#DC2626",
+    // #B91C1C (red-700) вместо #DC2626 (red-600) — для контраста ≥4.5:1 на bgColor #FEE2E2
+    // (требование WCAG AA для accessibility-аудита Lighthouse).
+    color: "#B91C1C",
     bgColor: "#FEE2E2",
     icon: "roofing",
     description: "Металлочерепица, профнастил, ондулин, водосток",

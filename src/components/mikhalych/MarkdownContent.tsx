@@ -28,7 +28,7 @@ export default function MarkdownContent({ content }: Props) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent-600 dark:text-accent-400 underline underline-offset-2 hover:text-accent-700"
+              className="text-accent-700 dark:text-accent-400 underline underline-offset-2 hover:text-accent-700"
             >
               {children}
             </a>
