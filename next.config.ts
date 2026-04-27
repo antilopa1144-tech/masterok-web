@@ -147,6 +147,58 @@ const nextConfig: NextConfig = {
         source: "/rss.xml",
         headers: [{ key: "Cache-Control", value: "public, max-age=1800" }],
       },
+      // HTML страниц — короткий клиентский кэш + длинный CDN-кэш с фоновой ревалидацией.
+      // Ключевая оптимизация для crawl budget: бот получит готовый HTML за ~50ms вместо
+      // 700ms TTFB. Реальные пользователи получают свежий HTML каждые 5 минут;
+      // CDN отдаёт старую версию пока обновляется (stale-while-revalidate).
+      // ISR-страницы с export const revalidate = N сами управляют своим Cache-Control,
+      // эти заголовки применяются как fallback.
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=300, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/kalkulyatory/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/instrumenty/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/blog/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=1800, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      // Статические информационные страницы — длинный кэш
+      {
+        source: "/(o-proekte|prilozhenie|metodologiya|politika-konfidencialnosti|mikhalych)/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
     ];
   },
 };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
-import { getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { getCategoryById } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
@@ -31,7 +31,7 @@ export default function CompanionLinks({ slug, values }: Props) {
 
   const resolved = companions
     .map((c) => {
-      const calc = getCalculatorBySlug(c.slug);
+      const calc = getCalculatorMetaBySlug(c.slug);
       if (!calc) return null;
       const cat = getCategoryById(calc.category);
       return { ...c, calc, cat };
@@ -39,7 +39,7 @@ export default function CompanionLinks({ slug, values }: Props) {
     .filter(Boolean) as {
     slug: string;
     reason: string;
-    calc: NonNullable<ReturnType<typeof getCalculatorBySlug>>;
+    calc: NonNullable<ReturnType<typeof getCalculatorMetaBySlug>>;
     cat: ReturnType<typeof getCategoryById>;
   }[];
 

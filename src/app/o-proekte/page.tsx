@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/site";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 
 export const metadata: Metadata = buildPageMetadata({
   title: `О проекте ${SITE_NAME} — строительные калькуляторы`,
   description:
-    `${SITE_NAME} — бесплатный сервис из ${ALL_CALCULATORS.length}+ строительных калькуляторов по ГОСТ и СНиП. О проекте, миссии и технологиях.`,
+    `${SITE_NAME} — бесплатный сервис из ${ALL_CALCULATORS_META.length}+ строительных калькуляторов по ГОСТ и СНиП. О проекте, миссии и технологиях.`,
   url: `${SITE_URL}/o-proekte/`,
 });
 

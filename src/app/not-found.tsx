@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/calculators/categories";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
 };
 
-const POPULAR = ALL_CALCULATORS.filter((c) => c.popularity >= 9).slice(0, 6);
+const POPULAR = ALL_CALCULATORS_META.filter((c) => c.popularity >= 9).slice(0, 6);
 
 const UI_TEXT = {
   title: "Страница не найдена",
@@ -38,9 +38,7 @@ export default function NotFound() {
           {UI_TEXT.description}
         </p>
         <div className="max-w-md mx-auto">
-          <CalculatorSearch
-            calculators={ALL_CALCULATORS.map(({ id, slug, title, h1, description, metaTitle, metaDescription, category, categorySlug, tags, popularity, complexity }) => ({ id, slug, title, h1, description, metaTitle, metaDescription, category, categorySlug, tags, popularity, complexity }))}
-          />
+          <CalculatorSearch calculators={ALL_CALCULATORS_META} />
         </div>
       </div>
 

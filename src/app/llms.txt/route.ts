@@ -1,4 +1,4 @@
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_TOOLS } from "@/lib/tools";
 import { getAllPosts } from "@/lib/blog";
@@ -19,7 +19,7 @@ export async function GET() {
   lines.push("## Главные разделы");
   lines.push("");
   lines.push(`- [Главная](${SITE_URL}/): каталог всех калькуляторов`);
-  lines.push(`- [Калькуляторы](${SITE_URL}/kalkulyatory/): ${ALL_CALCULATORS.length}+ калькуляторов по категориям`);
+  lines.push(`- [Калькуляторы](${SITE_URL}/kalkulyatory/): ${ALL_CALCULATORS_META.length}+ калькуляторов по категориям`);
   lines.push(`- [Блог](${SITE_URL}/blog/): статьи по строительству и ремонту`);
   lines.push(`- [Михалыч](${SITE_URL}/mikhalych/): AI-помощник строителя`);
   lines.push(`- [Инструменты](${SITE_URL}/instrumenty/): конвертеры, сравнения, чек-листы`);
@@ -29,13 +29,13 @@ export async function GET() {
   lines.push("## Категории калькуляторов");
   lines.push("");
   for (const cat of CATEGORIES) {
-    const count = ALL_CALCULATORS.filter((c) => c.category === cat.id).length;
+    const count = ALL_CALCULATORS_META.filter((c) => c.category === cat.id).length;
     lines.push(`- [${cat.label}](${SITE_URL}/kalkulyatory/${cat.slug}/): ${count} калькуляторов`);
   }
   lines.push("");
   lines.push("## Популярные калькуляторы");
   lines.push("");
-  const popular = [...ALL_CALCULATORS].sort((a, b) => b.popularity - a.popularity).slice(0, 15);
+  const popular = [...ALL_CALCULATORS_META].sort((a, b) => b.popularity - a.popularity).slice(0, 15);
   for (const calc of popular) {
     lines.push(`- [${calc.title}](${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/): ${calc.description}`);
   }

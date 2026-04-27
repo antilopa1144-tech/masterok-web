@@ -180,7 +180,7 @@ export default function KonverterPage() {
         <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
+      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
         {UI_TEXT.title}
       </h1>
       <p className="text-slate-500 dark:text-slate-400 mb-8">

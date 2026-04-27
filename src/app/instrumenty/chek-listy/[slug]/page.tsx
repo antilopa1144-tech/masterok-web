@@ -27,6 +27,9 @@ interface Props {
 // dynamicParams: false → неизвестные slug возвращают HTTP 404
 export const dynamicParams = false;
 
+// ISR: ревалидация раз в сутки — чек-листы стабильный контент.
+export const revalidate = 86400;
+
 export async function generateStaticParams() {
   return ALL_CHECKLISTS.map((cl) => ({ slug: cl.slug }));
 }
@@ -108,7 +111,7 @@ export default async function ChecklistPage({ params }: Props) {
           <span className="text-3xl">{cl.categoryIcon}</span>
           <div>
             <p className="text-sm text-slate-400 dark:text-slate-400">{cl.category}</p>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
               {cl.title}
             </h1>
           </div>

@@ -1,14 +1,29 @@
 "use client";
 
 import type { CalculatorField } from "@/lib/calculators/types";
-import MikhalychWidget from "./MikhalychWidget";
+import dynamic from "next/dynamic";
 import {
   useCalculator,
   formatNumber,
   type CalculatorWidgetProps,
 } from "./useCalculator";
+
+// Михалыч (AI-чат с react-markdown + remark-gfm + большим UI) — самый тяжёлый
+// клиентский кусок этой страницы. Грузим его лениво, чтобы не блокировать
+// First Load JS виджета калькулятора. Это экономит ~80-100 KB и ~200ms TBT.
+// SSR отключён, потому что Михалычу нужен браузерный fetch streaming + localStorage.
+const MikhalychWidget = dynamic(() => import("./MikhalychWidget"), {
+  ssr: false,
+  loading: () => (
+    <div className="card p-6 min-h-[400px] flex items-center justify-center">
+      <div className="text-sm text-slate-400 dark:text-slate-500 animate-pulse">
+        Загрузка Михалыча...
+      </div>
+    </div>
+  ),
+});
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
-import { getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import CompanionLinks from "./CompanionLinks";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -45,7 +60,7 @@ function getCompanionContext(slug: string): string {
   const companions = CALCULATOR_COMPANIONS[slug];
   if (!companions || companions.length === 0) return "";
   const names = companions
-    .map((c) => getCalculatorBySlug(c.slug))
+    .map((c) => getCalculatorMetaBySlug(c.slug))
     .filter(Boolean)
     .map((c) => c!.title);
   if (names.length === 0) return "";

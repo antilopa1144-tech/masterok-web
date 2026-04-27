@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getCalculatorsByCategory } from "@/lib/calculators";
+import { getCalculatorsMetaByCategory as getCalculatorsByCategory } from "@/lib/calculators/meta.generated";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/calculators/categories";
 import { SITE_TITLE_SUFFIX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -29,6 +29,9 @@ interface PageProps {
 // dynamicParams: false → неизвестные category slug возвращают HTTP 404
 // (Next.js не пытается рендерить компонент для них)
 export const dynamicParams = false;
+
+// ISR: ревалидация раз в сутки. Бот получает SSG-HTML моментально.
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   return CATEGORIES.map((cat) => ({ category: cat.slug }));

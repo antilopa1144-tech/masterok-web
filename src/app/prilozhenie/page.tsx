@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MASTEROK_RUSTORE_URL, SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { buildPageMetadata } from "@/lib/metadata";
 
-const CALC_COUNT = ALL_CALCULATORS.length;
+const CALC_COUNT = ALL_CALCULATORS_META.length;
 
 const META = {
   title: `Скачать приложение ${SITE_NAME} — строительные калькуляторы`,
@@ -124,7 +124,7 @@ export default function PrilozheniePage() {
               <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 dark:border-accent-800/40 mb-5">
                 {UI_TEXT.storeBadge}
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4">
                 {UI_TEXT.heroTitle}
                 <br />
                 <span className="text-accent-500">{UI_TEXT.heroAccent}</span>

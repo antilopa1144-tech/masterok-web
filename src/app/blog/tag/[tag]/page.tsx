@@ -21,6 +21,9 @@ const UI_TEXT = {
 // dynamicParams: false → неизвестные tag возвращают 404 (через notFound())
 export const dynamicParams = false;
 
+// ISR: ревалидация раз в час — теги синхронизируются с обновлениями постов.
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   const tags = await getAllTags();
   return tags.map((tag) => ({ tag: tagToSlug(tag) }));

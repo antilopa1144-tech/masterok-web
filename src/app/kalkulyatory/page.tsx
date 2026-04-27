@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -33,8 +33,8 @@ function CollectionJsonLd() {
     url: PAGE_URL,
     mainEntity: {
       "@type": "ItemList",
-      numberOfItems: ALL_CALCULATORS.length,
-      itemListElement: ALL_CALCULATORS.slice(0, 20).map((calc, i) => ({
+      numberOfItems: ALL_CALCULATORS_META.length,
+      itemListElement: ALL_CALCULATORS_META.slice(0, 20).map((calc, i) => ({
         "@type": "ListItem",
         position: i + 1,
         url: `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`,
@@ -62,14 +62,14 @@ export default function KalkulyatoryPage() {
             {UI_TEXT.title}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
-            {ALL_CALCULATORS.length} {UI_TEXT.countSuffix}
+            {ALL_CALCULATORS_META.length} {UI_TEXT.countSuffix}
           </p>
         </div>
       </div>
 
       <div className="page-container-wide py-8 space-y-10">
         {CATEGORIES.map((cat) => {
-          const calcs = ALL_CALCULATORS.filter((c) => c.category === cat.id);
+          const calcs = ALL_CALCULATORS_META.filter((c) => c.category === cat.id);
           if (calcs.length === 0) return null;
           return (
             <section key={cat.id}>

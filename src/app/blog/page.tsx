@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { buildPageMetadata } from "@/lib/metadata";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
 
@@ -26,7 +26,7 @@ const UI_TEXT = {
   heroDescription: "Практичные материалы о расчёте стройматериалов, технологиях монтажа и выборе материалов. Всё по ГОСТ и СНиП, без воды.",
   readMore: "Читать →",
   ctaTitle: "Нужен расчёт прямо сейчас?",
-  ctaDescription: `Используйте один из ${ALL_CALCULATORS.length}+ калькуляторов или спросите Михалыча`,
+  ctaDescription: `Используйте один из ${ALL_CALCULATORS_META.length}+ калькуляторов или спросите Михалыча`,
   allCalculators: "Все калькуляторы",
   askMikhalych: "Спросить Михалыча",
 } as const;
