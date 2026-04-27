@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META as ALL_CALCULATORS } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, tagToSlug } from "@/lib/blog";
@@ -8,80 +8,105 @@ import { SITE_URL } from "@/lib/site";
 
 const BASE_URL = SITE_URL;
 
-// Required for output: "export"
 export const dynamic = "force-static";
 
 /**
- * Dynamic sitemap covering ALL content types:
- *  1. Static pages (home, about, app download)
- *  2. Calculator hub + 8 category pages + 61 individual calculators
- *  3. Blog listing + individual blog posts
- *  4. Tools pages + individual checklists
+ * Sitemap для всех типов контента.
  *
- * Priorities:
- *  1.0  — homepage
- *  0.9  — calculator hub, top calculators (popularity ≥ 75)
- *  0.8  — category pages, popular calculators, core static pages
- *  0.7  — regular calculators, blog posts, tools hub
- *  0.6  — checklists, tool sub-pages
- *  0.5  — low-priority utilities
+ * ВАЖНО для crawl budget Googlebot/Yandexbot:
+ * lastModified должен быть **стабильным** между деплоями. Если мы ставим
+ * `new Date()` (build timestamp), бот видит «обновились ВСЕ 200+ URL» и
+ * переиндексирует с нуля, расходуя crawl budget впустую. Реально мы могли
+ * поправить опечатку или добавить один калькулятор, остальные не менялись.
  *
- * lastModified: build timestamp for static pages, post.date for blog,
- * build timestamp for calculators (formulas update with each deploy).
+ * Стратегия:
+ * - Группы страниц получают свою фиксированную дату последнего значимого
+ *   обновления (`*_LAST_MODIFIED` ниже). Менять руками когда меняется
+ *   соответствующий контент.
+ * - Блог-посты используют `post.date` из Ghost — там есть реальное обновление.
+ * - Если калькулятор был добавлен/изменён, обновляем CALCULATORS_LAST_MODIFIED.
+ *
+ * Приоритеты:
+ *  1.0 — главная
+ *  0.9 — реестр калькуляторов, топ-калькуляторы (popularity ≥ 75)
+ *  0.8 — категории, популярные калькуляторы, ключевые статичные страницы
+ *  0.7 — обычные калькуляторы, посты блога, инструменты
+ *  0.6 — чек-листы, утилиты
+ *  0.3-0.5 — низкоприоритетные служебные
  */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const buildDate = new Date().toISOString();
 
+// ── Стабильные даты последних обновлений по группам страниц ──────────────────
+// Менять руками при значимых изменениях.
+
+/** Структура главной/основных навигационных страниц. Меняется редко. */
+const STATIC_PAGES_LAST_MODIFIED = "2026-04-19";
+
+/** Реестр калькуляторов (добавление/удаление калькуляторов, формулы). */
+const CALCULATORS_LAST_MODIFIED = "2026-04-28";
+
+/** Категории калькуляторов (структура категорий). */
+const CATEGORIES_LAST_MODIFIED = "2026-04-19";
+
+/** Инструменты (страницы /instrumenty/*). */
+const TOOLS_LAST_MODIFIED = "2026-04-19";
+
+/** Чек-листы. */
+const CHECKLISTS_LAST_MODIFIED = "2026-04-19";
+
+/** Юридические/служебные страницы. Меняются ещё реже. */
+const LEGAL_LAST_MODIFIED = "2026-01-01";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allPosts = await getAllPosts();
   const allTags = await getAllTags();
 
-  // Derive latest blog date for blog listing page
+  // Дата последнего поста — для агрегационных страниц блога (/blog/, /blog/tag/*)
   const latestPostDate = allPosts.length > 0
     ? allPosts.reduce((latest, p) => (p.date > latest ? p.date : latest), allPosts[0].date)
-    : buildDate;
+    : STATIC_PAGES_LAST_MODIFIED;
 
   // ── 1. Static pages ────────────────────────────────────────────────────────
 
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${BASE_URL}/`,
-      lastModified: buildDate,
+      lastModified: STATIC_PAGES_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${BASE_URL}/kalkulyatory/`,
-      lastModified: buildDate,
+      lastModified: CALCULATORS_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${BASE_URL}/o-proekte/`,
-      lastModified: buildDate,
+      lastModified: STATIC_PAGES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
       url: `${BASE_URL}/politika-konfidencialnosti/`,
-      lastModified: buildDate,
+      lastModified: LEGAL_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${BASE_URL}/mikhalych/`,
-      lastModified: buildDate,
+      lastModified: STATIC_PAGES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/prilozhenie/`,
-      lastModified: buildDate,
+      lastModified: STATIC_PAGES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${BASE_URL}/instrumenty/`,
-      lastModified: buildDate,
+      lastModified: TOOLS_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.7,
     },
@@ -97,28 +122,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const categoryPages: MetadataRoute.Sitemap = CATEGORIES.map((cat) => ({
     url: `${BASE_URL}/kalkulyatory/${cat.slug}/`,
-    lastModified: buildDate,
+    lastModified: CATEGORIES_LAST_MODIFIED,
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
 
   // ── 3. Individual calculator pages ─────────────────────────────────────────
-  //    Priority scales with popularity: top calculators get 0.9, rest 0.7
 
   const calculatorPages: MetadataRoute.Sitemap = ALL_CALCULATORS.map((calc) => ({
     url: `${BASE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`,
-    lastModified: buildDate,
+    lastModified: CALCULATORS_LAST_MODIFIED,
     changeFrequency: "weekly" as const,
     priority: calc.popularity >= 75 ? 0.9 : 0.7,
   }));
 
-  // ── 4. Tools pages (dynamic from registry) ──────────────────────────────────
+  // ── 4. Tools pages ─────────────────────────────────────────────────────────
 
   const toolPages: MetadataRoute.Sitemap = ALL_TOOLS
     .filter((tool) => tool.slug)
     .map((tool) => ({
       url: `${BASE_URL}/instrumenty/${tool.slug}/`,
-      lastModified: buildDate,
+      lastModified: TOOLS_LAST_MODIFIED,
       changeFrequency: "monthly" as const,
       priority: tool.priority,
     }));
@@ -127,13 +151,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const checklistPages: MetadataRoute.Sitemap = ALL_CHECKLISTS.map((cl) => ({
     url: `${BASE_URL}/instrumenty/chek-listy/${cl.slug}/`,
-    lastModified: buildDate,
+    lastModified: CHECKLISTS_LAST_MODIFIED,
     changeFrequency: "monthly" as const,
     priority: 0.6,
   }));
 
   // ── 6. Blog post pages ─────────────────────────────────────────────────────
-  //    lastModified from post.date, priority 0.7 for SEO content value
+  //    lastModified от post.date — реальная дата редактирования из Ghost CMS.
 
   const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
@@ -150,8 +174,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     priority: 0.5,
   }));
-
-  // ── Merge all sections ─────────────────────────────────────────────────────
 
   return [
     ...staticPages,

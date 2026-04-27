@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_CITATIONS, SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_URL } from "@/lib/site";
-import { ALL_CALCULATORS } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 
 const PAGE_URL = `${SITE_URL}/metodologiya/`;
 
@@ -73,7 +73,7 @@ export default function MethodologyPage() {
           <span className="text-slate-700 dark:text-slate-200">Методология расчётов</span>
         </nav>
 
-        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4">
           Методология расчётов
         </h1>
         <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed mb-8">
@@ -154,7 +154,7 @@ export default function MethodologyPage() {
           </ul>
           <p>
             Между режимами действует жёсткий инвариант: <strong>basic ≤ realistic ≤ professional</strong> на одних и
-            тех же входных данных. Этот инвариант проверяется автоматически в CI для каждого из {ALL_CALCULATORS.length}+
+            тех же входных данных. Этот инвариант проверяется автоматически в CI для каждого из {ALL_CALCULATORS_META.length}+
             калькуляторов — если кто-то случайно изменит коэффициент так, что режимы перестанут быть упорядоченными,
             сборка не пройдёт.
           </p>

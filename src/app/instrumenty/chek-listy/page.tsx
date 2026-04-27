@@ -87,7 +87,7 @@ export default function ChekListyPage() {
               <span>✅</span>
               <span>{ALL_CHECKLISTS.length} {UI_TEXT.templatesSuffix}</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               {UI_TEXT.heroTitle}
             </h1>
             <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed">

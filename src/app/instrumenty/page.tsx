@@ -164,7 +164,7 @@ export default function InstrumentyPage() {
               <CategoryIcon icon="wrench" size={16} />
               <span>{UI_TEXT.heroBadge}</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               {UI_TEXT.heroTitle}
             </h1>
             <p className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed">

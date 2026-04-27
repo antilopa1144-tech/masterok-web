@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ALL_CALCULATORS, getPopularCalculators } from "@/lib/calculators";
+import { ALL_CALCULATORS_META, getPopularCalculatorsMeta } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
@@ -12,7 +12,7 @@ import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import RecentCalculators from "@/components/calculator/RecentCalculators";
 import ProjectManager from "@/components/calculator/ProjectManager";
 
-const CALC_COUNT = ALL_CALCULATORS.length;
+const CALC_COUNT = ALL_CALCULATORS_META.length;
 
 const META = {
   title: `Строительные калькуляторы онлайн — ${CALC_COUNT} расчётов по ГОСТ | ${SITE_NAME}`,
@@ -164,8 +164,8 @@ function getCalculatorCountLabel(count: number) {
 
 export default async function HomePage() {
   const blogPosts = await getAllPosts();
-  const popular = getPopularCalculators(8);
-  const totalCount = ALL_CALCULATORS.length;
+  const popular = getPopularCalculatorsMeta(8);
+  const totalCount = ALL_CALCULATORS_META.length;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -290,7 +290,7 @@ export default async function HomePage() {
             <span>{totalCount}+ {UI_TEXT.heroBadgeSuffix}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4">
             {UI_TEXT.heroTitle}{" "}
             <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
             <span className="block mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-500 dark:text-slate-400">
@@ -314,35 +314,7 @@ export default async function HomePage() {
 
           <div className="mt-8 max-w-xl mx-auto">
             <CalculatorSearch
-              calculators={ALL_CALCULATORS.map(
-                ({
-                  id,
-                  slug,
-                  title,
-                  h1,
-                  description,
-                  metaTitle,
-                  metaDescription,
-                  category,
-                  categorySlug,
-                  tags,
-                  popularity,
-                  complexity,
-                }) => ({
-                  id,
-                  slug,
-                  title,
-                  h1,
-                  description,
-                  metaTitle,
-                  metaDescription,
-                  category,
-                  categorySlug,
-                  tags,
-                  popularity,
-                  complexity,
-                })
-              )}
+              calculators={ALL_CALCULATORS_META}
               blogPosts={blogPosts.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
               checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
             />
@@ -375,11 +347,12 @@ export default async function HomePage() {
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 gap-4">
                 {CATEGORIES.map((cat) => {
-                  const count = ALL_CALCULATORS.filter((c) => c.category === cat.id).length;
+                  const count = ALL_CALCULATORS_META.filter((c) => c.category === cat.id).length;
                   return (
                     <Link
                       key={cat.id}
                       href={`/kalkulyatory/${cat.slug}/`}
+                      prefetch={false}
                       className="card-hover p-5 block no-underline group"
                     >
                       <div
@@ -416,6 +389,7 @@ export default async function HomePage() {
                     <Link
                       key={calc.id}
                       href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
+                      prefetch={false}
                       className="card-hover p-5 block no-underline group"
                     >
                       <div
@@ -466,6 +440,7 @@ export default async function HomePage() {
                   <Link
                     key={tool.href}
                     href={tool.href}
+                    prefetch={false}
                     className="card-hover p-4 flex items-center gap-3 no-underline group"
                     aria-label={tool.title}
                   >
@@ -557,6 +532,7 @@ export default async function HomePage() {
             <Link
               key={tool.href}
               href={tool.href}
+              prefetch={false}
               className="card-hover p-5 block no-underline group text-center"
               aria-label={tool.title}
             >

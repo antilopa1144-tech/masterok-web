@@ -11,7 +11,7 @@ import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
 import Link from "next/link";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
-import { getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { trackRecentCalculator } from "./RecentCalculators";
@@ -26,7 +26,7 @@ interface Props {
 export default function CalculatorWidget({ calculator }: Props) {
   const searchParams = useSearchParams();
   const fromCalc = searchParams.get("from");
-  const fromCalcDef = useMemo(() => fromCalc ? getCalculatorBySlug(fromCalc) : null, [fromCalc]);
+  const fromCalcDef = useMemo(() => fromCalc ? getCalculatorMetaBySlug(fromCalc) : null, [fromCalc]);
   const [experienceMode, setExperienceMode] = useState<"beginner" | "pro">("beginner");
   const [pulse, setPulse] = useState(false);
   const {
@@ -291,12 +291,12 @@ function CompanionLinks({ slug, values }: { slug: string; values: Record<string,
 
   const resolved = companions
     .map((c) => {
-      const calc = getCalculatorBySlug(c.slug);
+      const calc = getCalculatorMetaBySlug(c.slug);
       if (!calc) return null;
       const cat = getCategoryById(calc.category);
       return { ...c, calc, cat };
     })
-    .filter(Boolean) as { slug: string; reason: string; calc: NonNullable<ReturnType<typeof getCalculatorBySlug>>; cat: ReturnType<typeof getCategoryById> }[];
+    .filter(Boolean) as { slug: string; reason: string; calc: NonNullable<ReturnType<typeof getCalculatorMetaBySlug>>; cat: ReturnType<typeof getCategoryById> }[];
 
   if (resolved.length === 0) return null;
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
@@ -28,6 +28,10 @@ interface Props {
 
 // dynamicParams: false → неизвестные slug возвращают 404 (через notFound())
 export const dynamicParams = false;
+
+// ISR: ревалидация раз в час — для блога статьи могут редактироваться чаще,
+// чем калькуляторы (тексты обновляются через Ghost CMS).
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
@@ -242,7 +246,7 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
             {post.title}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed max-w-2xl">

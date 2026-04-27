@@ -29,11 +29,17 @@ const THEME_INIT_SCRIPT = `(() => {
   }
 })();`;
 
-const YM_INIT_SCRIPT = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`;
+// Webvisor отключён сознательно: тащил +43 KB JS, +200ms TBT mobile, открывал WebSocket
+// к mc.yandex.com/solid.ws (блокировался CSP, генерировал ошибки в консоли).
+// Клики/линки/время на странице/отказы продолжают писаться через clickmap+trackLinks.
+const YM_INIT_SCRIPT = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});`;
 
+// Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
+// font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
+// мобильном FCP. Все font-extrabold заменены на font-bold (визуальная разница минимальна).
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-inter",
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],

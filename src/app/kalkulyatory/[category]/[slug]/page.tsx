@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ALL_CALCULATORS, getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorBySlug } from "@/lib/calculators";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { getCategoryById } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Suspense } from "react";
@@ -21,7 +22,7 @@ const UI_TEXT = {
   howToUseTitle: "Как пользоваться калькулятором",
   faqTitle: "Частые вопросы",
   appPromoTitle: `📱 ${SITE_NAME} для Android`,
-  appPromoDescription: `${ALL_CALCULATORS.length}+ калькуляторов в одном приложении. Работает без интернета. Сохраняйте расчёты и создавайте проекты.`,
+  appPromoDescription: `${ALL_CALCULATORS_META.length}+ калькуляторов в одном приложении. Работает без интернета. Сохраняйте расчёты и создавайте проекты.`,
   appPromoLink: "Узнать подробнее",
   relatedTitle: "Похожие калькуляторы",
   maybeUsefulTitle: "Может пригодиться",
@@ -39,9 +40,16 @@ interface PageProps {
 // (Next.js не пытается рендерить компонент для них)
 export const dynamicParams = false;
 
+// ISR: ревалидация раз в сутки. После build страница раздаётся как статика;
+// при изменении формул/SEO-контента после деплоя страница автоматически
+// перерендерится при следующем запросе через сутки. Для бота это значит
+// готовый HTML за ~50ms вместо 700ms TTFB. Все 66 страниц одновременно при
+// build — heavy, но один раз; обновление по запросу — лёгкое.
+export const revalidate = 86400;
+
 // Генерация статических путей
 export async function generateStaticParams() {
-  return ALL_CALCULATORS.map((calc) => ({
+  return ALL_CALCULATORS_META.map((calc) => ({
     category: calc.categorySlug,
     slug: calc.slug,
   }));
@@ -74,12 +82,12 @@ export default async function CalculatorPage({ params }: PageProps) {
   const category = getCategoryById(calc.category);
 
   // Похожие калькуляторы из той же категории
-  const related = ALL_CALCULATORS.filter(
+  const related = ALL_CALCULATORS_META.filter(
     (c) => c.category === calc.category && c.slug !== calc.slug
   ).slice(0, 4);
 
   // Cross-category popular calculators (for internal linking SEO)
-  const crossCategory = ALL_CALCULATORS
+  const crossCategory = ALL_CALCULATORS_META
     .filter((c) => c.category !== calc.category && c.slug !== calc.slug)
     .sort((a, b) => b.popularity - a.popularity)
     .slice(0, 4);
@@ -160,7 +168,25 @@ export default async function CalculatorPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Левая колонка — калькулятор */}
           <div className="lg:col-span-2 space-y-6">
-            <Suspense fallback={<div className="card p-6 h-48 animate-pulse bg-slate-100 dark:bg-slate-700" />}>
+            <Suspense
+              fallback={
+                <div
+                  className="card p-6 animate-pulse space-y-4 min-h-[800px] lg:min-h-[1000px]"
+                  aria-hidden="true"
+                >
+                  {/* Резервируем место под виджет калькулятора, чтобы избежать CLS
+                      (виджет рендерится клиентским кодом после hydration). */}
+                  <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-700 rounded" />
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                    ))}
+                  </div>
+                  <div className="h-12 w-full bg-slate-200 dark:bg-slate-700 rounded-lg mt-6" />
+                  <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-lg mt-6" />
+                </div>
+              }
+            >
             <CalculatorWithMikhalych calculator={{
               id: calc.id,
               slug: calc.slug,

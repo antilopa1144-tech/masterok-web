@@ -187,7 +187,7 @@ export default function KalkulyatorPage() {
         <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.title}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.title}</h1>
       <p className="text-slate-500 dark:text-slate-400 mb-8">{UI_TEXT.description}</p>
 
       <div className="max-w-sm mx-auto md:mx-0 md:flex md:gap-8 md:max-w-2xl">

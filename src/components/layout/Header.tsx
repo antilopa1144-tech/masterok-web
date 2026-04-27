@@ -148,6 +148,7 @@ export default function Header() {
                 <Link
                   key={cat.id}
                   href={`/kalkulyatory/${cat.slug}/`}
+                  prefetch={false}
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-600 text-sm hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors no-underline min-h-[44px]"
                   onClick={() => setMenuOpen(false)}
                 >

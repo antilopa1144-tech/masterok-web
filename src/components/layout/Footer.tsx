@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCalculatorBySlug } from "@/lib/calculators";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { SITE_FOOTER_DESCRIPTION, SITE_NAME } from "@/lib/site";
@@ -31,7 +31,7 @@ const POPULAR_CALCULATOR_SLUGS = [
 ] as const;
 
 const POPULAR_CALCULATOR_LINKS = POPULAR_CALCULATOR_SLUGS.map((slug) => {
-  const calculator = getCalculatorBySlug(slug);
+  const calculator = getCalculatorMetaBySlug(slug);
 
   return {
     slug,
@@ -78,6 +78,7 @@ export default function Footer() {
                 <li key={cat.id}>
                   <Link
                     href={`/kalkulyatory/${cat.slug}/`}
+                    prefetch={false}
                     className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline"
                   >
                     <CategoryIcon icon={cat.icon} size={14} color="currentColor" />
@@ -97,6 +98,7 @@ export default function Footer() {
                 <li key={item.slug}>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline"
                   >
                     {item.label}

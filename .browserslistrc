@@ -1,0 +1,18 @@
+# Production-targets для SWC/Next.js: устраняем 12+ KB полифилов
+# (Array.prototype.at/flat/flatMap, Object.fromEntries/hasOwn, String.trimStart/trimEnd).
+#
+# Все эти фичи поддерживаются с Chrome 90+, Edge 90+, Firefox 92+, Safari 15.4+ — это
+# охватывает >95% мирового трафика и ~99% российского (Yandex Browser/Chrome/Edge).
+#
+# Если понадобится поддержка старых браузеров — добавь сюда более свободный селектор.
+[production]
+>0.5%
+last 2 versions
+not dead
+not op_mini all
+not ie 11
+
+[development]
+last 1 chrome version
+last 1 firefox version
+last 1 safari version
