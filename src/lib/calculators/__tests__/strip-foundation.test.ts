@@ -147,14 +147,14 @@ describe("Калькулятор ленточного фундамента", () 
       expect(result.totals.requiredFrostDepthMm).toBe(600);
     });
 
-    it("Якутск (нет в списке) → нет региональной валидации", () => {
+    it("Несуществующий regionId → нет региональной валидации", () => {
       const result = calc({
         perimeter: 40,
         width: 400,
         depth: 700,
         aboveGround: 300,
         reinforcement: 1,
-        regionId: "yakutsk",
+        regionId: "atlantida-fictional",
       });
       // Регион не найден → requiredFrostDepthMm = 0, warning по региону отсутствует
       expect(result.totals.requiredFrostDepthMm).toBe(0);

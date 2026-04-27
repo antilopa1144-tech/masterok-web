@@ -6,7 +6,9 @@
     { "key": "roofHeight", "unit": "m", "default_value": 5, "min": 2, "max": 15 },
     { "key": "funnels", "default_value": 4, "min": 1, "max": 20 },
     { "key": "gutterDia", "unit": "mm", "default_value": 90, "min": 75, "max": 125 },
-    { "key": "gutterLength", "unit": "m", "default_value": 3, "min": 3, "max": 4 }
+    { "key": "gutterLength", "unit": "m", "default_value": 3, "min": 3, "max": 4 },
+    { "key": "bendCount45", "default_value": 0, "min": 0, "max": 20 },
+    { "key": "bendCount90", "default_value": 0, "min": 0, "max": 20 }
   ],
   "field_factors": {
     "enabled": [
@@ -33,6 +35,7 @@
     "connector_reserve": 1.05,
     "sealant_connections_per_tube": 20,
     "sealant_tube_ml": 310,
+    "sealant_per_joint_ml": 15,
     "recommended_funnel_interval_m": 11
   },
   "warnings_rules": {

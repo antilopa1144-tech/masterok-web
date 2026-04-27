@@ -27,6 +27,8 @@
     "cable_25_rate": 1.6,
     "cable_6_kitchen_factor": 1.5,
     "cable_6_reserve": 1.2,
+    "cable_open_wiring_multiplier": 1.5,
+    "cable_hidden_wiring_multiplier": 1.0,
     "conduit_ratio": 0.8,
     "outlets_per_m2": 0.6,
     "outlets_per_room": 2,

@@ -1,7 +1,7 @@
 {
   "calculator_id": "laminate",
   "formula_version": "laminate-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.553Z",
+  "generated_at": "2026-04-27T12:19:34.922Z",
   "cases": [
     {
       "id": "defaults",
@@ -42,6 +42,8 @@
         "wedgesNeeded": 36,
         "vaporBarrierArea": 22,
         "doorThresholds": 1,
+        "expansionJointPieces": 0,
+        "expansionJointLengthM": 0,
         "underlayType": 3,
         "laminateClass": 32,
         "laminateThickness": 8,

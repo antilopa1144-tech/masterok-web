@@ -228,6 +228,15 @@ export function computeCanonicalLaminate(
   const wedges = Math.ceil(geometry.perimeter / spec.material_rules.wedge_spacing_m);
   const vaporBarrierArea = roundDisplay(geometry.area * (1 + spec.material_rules.vapor_barrier_overlap_percent / 100), 6);
 
+  /* ─── expansion joint (для больших комнат) ─── */
+  // По плану: компенсационный профиль обязателен при S>50 м² (СП 71.13330)
+  const expansionJointThresholdM2 = (spec.material_rules as { expansion_joint_threshold_m2?: number }).expansion_joint_threshold_m2 ?? 50;
+  const expansionJointPieceLengthM = (spec.material_rules as { expansion_joint_piece_length_m?: number }).expansion_joint_piece_length_m ?? 1.0;
+  const needsExpansionJoint = geometry.area > expansionJointThresholdM2;
+  // Длина шва ≈ корень из площади (одна линия посередине комнаты)
+  const expansionJointLengthM = needsExpansionJoint ? Math.sqrt(geometry.area) : 0;
+  const expansionJointPieces = needsExpansionJoint ? Math.ceil(expansionJointLengthM / expansionJointPieceLengthM) : 0;
+
   const warnings: string[] = [];
   if (geometry.area < spec.warnings_rules.small_area_warning_threshold_m2) {
     warnings.push("Маленькая площадь: процент отходов может быть выше из-за коротких обрезков");
@@ -250,26 +259,42 @@ export function computeCanonicalLaminate(
     practicalNotes.push("Диагональная укладка добавит 15% отходов — не экономьте на запасе");
   }
 
+  const materials = buildMaterials(
+    spec,
+    recScenario.exact_need,
+    recScenario.purchase_quantity,
+    packArea,
+    recScenario.buy_plan.packages_count,
+    hasUnderlayment,
+    underlaymentArea,
+    underlaymentRolls,
+    plinthLength,
+    plinthPieces,
+    innerCorners,
+    plinthConnectors,
+    wedges,
+    vaporBarrierArea,
+    doorThresholds,
+  );
+
+  if (expansionJointPieces > 0) {
+    materials.push({
+      name: `Профиль компенсационный (${expansionJointPieceLengthM} м)`,
+      quantity: expansionJointPieces,
+      unit: "шт",
+      withReserve: expansionJointPieces,
+      purchaseQty: expansionJointPieces,
+      category: "Монтаж",
+    });
+    warnings.push(
+      `Площадь ${geometry.area} м² больше ${expansionJointThresholdM2} м² — требуется компенсационный шов с профилем (СП 71.13330).`,
+    );
+  }
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: buildMaterials(
-      spec,
-      recScenario.exact_need,
-      recScenario.purchase_quantity,
-      packArea,
-      recScenario.buy_plan.packages_count,
-      hasUnderlayment,
-      underlaymentArea,
-      underlaymentRolls,
-      plinthLength,
-      plinthPieces,
-      innerCorners,
-      plinthConnectors,
-      wedges,
-      vaporBarrierArea,
-      doorThresholds,
-    ),
+    materials,
     totals: {
       area: geometry.area,
       perimeter: geometry.perimeter,
@@ -290,6 +315,8 @@ export function computeCanonicalLaminate(
       wedgesNeeded: wedges,
       vaporBarrierArea: vaporBarrierArea,
       doorThresholds: doorThresholds,
+      expansionJointPieces,
+      expansionJointLengthM: roundDisplay(expansionJointLengthM, 3),
       underlayType: Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3)))),
       laminateClass: Math.max(31, Math.min(34, Math.round(inputs.laminateClass ?? getInputDefault(spec, "laminateClass", 32)))),
       laminateThickness: Math.max(6, Math.min(14, Math.round(inputs.laminateThickness ?? getInputDefault(spec, "laminateThickness", 8)))),

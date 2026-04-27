@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "description": "Ветровые нагрузки на территории РФ по СП 20.13330.2016 «Нагрузки и воздействия», таблица 11.1. Нормативное значение ветрового давления w0 (кг/м²) для типа местности B (городские территории, лесопарки) на высоте 10 м. Полная ветровая нагрузка на сооружение wm = w0 × k(z) × c, где k(z) — коэффициент изменения с высотой, c — аэродинамический коэффициент.",
+  "wind_districts": [
+    { "id": "1a", "label": "Iа район", "w0_kgm2": 17, "regions_example": "защищённые внутренние территории Сибири, Якутия (центральная)" },
+    { "id": "1", "label": "I район", "w0_kgm2": 23, "regions_example": "Москва, Воронеж, Тула, центральная Россия" },
+    { "id": "2", "label": "II район", "w0_kgm2": 30, "regions_example": "Санкт-Петербург, Архангельск, Северо-Запад" },
+    { "id": "3", "label": "III район", "w0_kgm2": 38, "regions_example": "побережье Балтики, Калининград, Прикаспий" },
+    { "id": "4", "label": "IV район", "w0_kgm2": 48, "regions_example": "Норильск, северное побережье, Камчатка (западная)" },
+    { "id": "5", "label": "V район", "w0_kgm2": 60, "regions_example": "Сахалин (северный), Камчатка (восточная), Чукотка (внутренняя)" },
+    { "id": "6", "label": "VI район", "w0_kgm2": 73, "regions_example": "крайние точки побережья Чукотки, Командорские острова" },
+    { "id": "7", "label": "VII район", "w0_kgm2": 85, "regions_example": "штормовые точки севера" }
+  ],
+  "regions": [
+    { "id": "moscow", "name": "Москва", "wind_district": "1", "federal_subject": "Москва" },
+    { "id": "saint-petersburg", "name": "Санкт-Петербург", "wind_district": "2", "federal_subject": "Санкт-Петербург" },
+    { "id": "krasnodar", "name": "Краснодар", "wind_district": "1", "federal_subject": "Краснодарский край" },
+    { "id": "sochi", "name": "Сочи", "wind_district": "2", "federal_subject": "Краснодарский край" },
+    { "id": "rostov-on-don", "name": "Ростов-на-Дону", "wind_district": "2", "federal_subject": "Ростовская область" },
+    { "id": "volgograd", "name": "Волгоград", "wind_district": "2", "federal_subject": "Волгоградская область" },
+    { "id": "voronezh", "name": "Воронеж", "wind_district": "1", "federal_subject": "Воронежская область" },
+    { "id": "samara", "name": "Самара", "wind_district": "2", "federal_subject": "Самарская область" },
+    { "id": "kazan", "name": "Казань", "wind_district": "1", "federal_subject": "Республика Татарстан" },
+    { "id": "ufa", "name": "Уфа", "wind_district": "1", "federal_subject": "Республика Башкортостан" },
+    { "id": "perm", "name": "Пермь", "wind_district": "1a", "federal_subject": "Пермский край" },
+    { "id": "ekaterinburg", "name": "Екатеринбург", "wind_district": "1", "federal_subject": "Свердловская область" },
+    { "id": "chelyabinsk", "name": "Челябинск", "wind_district": "2", "federal_subject": "Челябинская область" },
+    { "id": "tyumen", "name": "Тюмень", "wind_district": "1", "federal_subject": "Тюменская область" },
+    { "id": "omsk", "name": "Омск", "wind_district": "2", "federal_subject": "Омская область" },
+    { "id": "novosibirsk", "name": "Новосибирск", "wind_district": "2", "federal_subject": "Новосибирская область" },
+    { "id": "krasnoyarsk", "name": "Красноярск", "wind_district": "1", "federal_subject": "Красноярский край" },
+    { "id": "irkutsk", "name": "Иркутск", "wind_district": "1a", "federal_subject": "Иркутская область" },
+    { "id": "khabarovsk", "name": "Хабаровск", "wind_district": "2", "federal_subject": "Хабаровский край" },
+    { "id": "vladivostok", "name": "Владивосток", "wind_district": "4", "federal_subject": "Приморский край" },
+    { "id": "murmansk", "name": "Мурманск", "wind_district": "3", "federal_subject": "Мурманская область" },
+    { "id": "arkhangelsk", "name": "Архангельск", "wind_district": "2", "federal_subject": "Архангельская область" },
+    { "id": "naryan-mar", "name": "Нарьян-Мар", "wind_district": "4", "federal_subject": "Ненецкий АО" },
+    { "id": "salekhard", "name": "Салехард", "wind_district": "3", "federal_subject": "Ямало-Ненецкий АО" },
+    { "id": "yakutsk", "name": "Якутск", "wind_district": "1a", "federal_subject": "Республика Саха (Якутия)" },
+    { "id": "magadan", "name": "Магадан", "wind_district": "5", "federal_subject": "Магаданская область" },
+    { "id": "anadyr", "name": "Анадырь", "wind_district": "6", "federal_subject": "Чукотский АО" },
+    { "id": "petropavlovsk-kamchatsky", "name": "Петропавловск-Камчатский", "wind_district": "5", "federal_subject": "Камчатский край" },
+    { "id": "yuzhno-sakhalinsk", "name": "Южно-Сахалинск", "wind_district": "5", "federal_subject": "Сахалинская область" },
+    { "id": "kaliningrad", "name": "Калининград", "wind_district": "3", "federal_subject": "Калининградская область" },
+    { "id": "stavropol", "name": "Ставрополь", "wind_district": "2", "federal_subject": "Ставропольский край" },
+    { "id": "astrakhan", "name": "Астрахань", "wind_district": "3", "federal_subject": "Астраханская область" },
+    { "id": "elista", "name": "Элиста", "wind_district": "3", "federal_subject": "Республика Калмыкия" },
+    { "id": "crimea-simferopol", "name": "Симферополь", "wind_district": "2", "federal_subject": "Республика Крым" },
+    { "id": "sevastopol", "name": "Севастополь", "wind_district": "3", "federal_subject": "Севастополь" }
+  ],
+  "height_factor_terrain_b": {
+    "description": "Коэффициент k(z) для типа местности B (городская застройка, лесопарковые зоны) по СП 20.13330.2016 п. 11.1.5",
+    "values": [
+      { "z_m": 5, "k": 0.50 },
+      { "z_m": 10, "k": 0.65 },
+      { "z_m": 20, "k": 0.85 },
+      { "z_m": 40, "k": 1.10 },
+      { "z_m": 60, "k": 1.30 },
+      { "z_m": 80, "k": 1.45 },
+      { "z_m": 100, "k": 1.60 }
+    ]
+  },
+  "notes": [
+    "СП 20.13330.2016 п. 11.1.4 определяет три типа местности: A (открытые ровные местности, морские побережья), B (городские территории, лесопарки), C (городская застройка плотная, более 25% застройки).",
+    "Для частного жилого строительства за городом — обычно тип B. Для застройки в крупных городах — тип B или C.",
+    "Коэффициент k(z) учитывает изменение скорости ветра с высотой. Для типового одноэтажного дома (h=3-4 м) k ≈ 0.5; для двухэтажного с мансардой (h=8-10 м) k ≈ 0.65.",
+    "Аэродинамический коэффициент c для скатной кровли — 0.7-1.4 в зависимости от уклона и направления ветра (СП 20.13330.2016 приложение Г).",
+    "Для регионов с резким локальным усилением ветра (горные перевалы, ущелья) применяется коэффициент местности и обращение к специализированному расчёту."
+  ]
+}

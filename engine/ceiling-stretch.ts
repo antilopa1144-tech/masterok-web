@@ -14,6 +14,10 @@ interface CeilingStretchInputs {
   corners?: number;
   fixtures?: number;
   type?: number;
+  /** Количество ниш под потолком — каждая добавляет периметр для багета и углы. */
+  nichesCount?: number;
+  /** Дополнительный периметр короба (например, для скрытой подсветки), м. */
+  boxPerimeterM?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -57,12 +61,21 @@ export function computeCanonicalCeilingStretch(
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
   const area = resolveArea(spec, inputs);
-  const corners = resolveCorners(spec, inputs);
+  const cornersBase = resolveCorners(spec, inputs);
   const fixtures = resolveFixtures(spec, inputs);
   const type = resolveType(spec, inputs);
+  const nichesCount = Math.max(0, Math.min(10, Math.round(inputs.nichesCount ?? getInputDefault(spec, "nichesCount", 0))));
+  const boxPerimeterM = Math.max(0, Math.min(50, inputs.boxPerimeterM ?? getInputDefault(spec, "boxPerimeterM", 0)));
 
   /* Perimeter estimate from area (square approximation) */
-  const perim = Math.sqrt(area) * 4;
+  const basePerim = Math.sqrt(area) * 4;
+  // Дополнительный периметр от ниш и короба
+  const nichePerimEach = (spec.material_rules as { niche_perimeter_m_each?: number }).niche_perimeter_m_each ?? 4;
+  const nicheCornersEach = (spec.material_rules as { niche_corner_count_each?: number }).niche_corner_count_each ?? 4;
+  const extraPerim = nichesCount * nichePerimEach + boxPerimeterM;
+  const perim = basePerim + extraPerim;
+  // Углы: базовые + по 4 на каждую нишу
+  const corners = cornersBase + nichesCount * nicheCornersEach;
 
   /* Baguette profiles */
   const baguetLen = perim * BAGUET_RESERVE;
@@ -187,6 +200,10 @@ export function computeCanonicalCeilingStretch(
       type,
       corners,
       fixtures,
+      nichesCount,
+      boxPerimeterM: roundDisplay(boxPerimeterM, 3),
+      basePerim: roundDisplay(basePerim, 3),
+      extraPerim: roundDisplay(extraPerim, 3),
       perim: roundDisplay(perim, 3),
       baguetLen: roundDisplay(baguetLen, 3),
       profilePcs,

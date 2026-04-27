@@ -61,6 +61,9 @@ interface FacadePanelsInputs {
   panelType?: number;
   substructure?: number;
   insulationThickness?: number;
+  /** Использовать горизонтальные направляющие в дополнение к вертикальным.
+   *  По умолчанию 0 — backward-compat с прежней формулой (только вертикали). */
+  withHorizontalRails?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -84,6 +87,7 @@ export function computeCanonicalFacadePanels(
   const panelType = Math.max(0, Math.min(3, Math.round(inputs.panelType ?? getInputDefault(spec, "panelType", 0))));
   const substructure = Math.max(0, Math.min(2, Math.round(inputs.substructure ?? getInputDefault(spec, "substructure", 0))));
   const insulationThickness = Math.max(0, Math.min(100, Math.round(inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 0))));
+  const withHorizontalRails = Math.max(0, Math.min(1, Math.round(inputs.withHorizontalRails ?? getInputDefault(spec, "withHorizontalRails", 0))));
 
   /* ─── panel area ─── */
   const panelArea = PANEL_AREAS[panelType] ?? PANEL_AREAS[0];
@@ -93,6 +97,12 @@ export function computeCanonicalFacadePanels(
   const panels = Math.ceil(panelsRaw * accuracyMult);
   const brackets = Math.ceil(area / BRACKET_SPACING_M2 * BRACKET_RESERVE);
   const guides = Math.ceil(area / GUIDE_SPACING * GUIDE_RESERVE / GUIDE_LENGTH);
+  // Горизонтальные направляющие: при withHorizontalRails=1 формула симметрична вертикальным
+  // (площадь / шаг_горизонтального / длина_секции × запас). Шаг по умолчанию 0.6 м (СП 70.13330).
+  const horizontalRailStepM = spec.material_rules.horizontal_rail_step_m ?? 0.6;
+  const horizontalGuides = withHorizontalRails === 1
+    ? Math.ceil((area / horizontalRailStepM) * GUIDE_RESERVE / GUIDE_LENGTH)
+    : 0;
   const fasteners = Math.ceil(panels * FASTENERS_PER_PANEL * FASTENER_RESERVE);
   const anchors = Math.ceil(brackets * ANCHOR_PER_BRACKET * ANCHOR_RESERVE);
   const insPlates = insulationThickness > 0 ? Math.ceil(area * INSULATION_RESERVE / INSULATION_PLATE) : 0;
@@ -160,13 +170,21 @@ export function computeCanonicalFacadePanels(
       category: "Подсистема",
     },
     {
-      name: `Направляющие (${GUIDE_LENGTH} м)`,
+      name: `Направляющие вертикальные (${GUIDE_LENGTH} м)`,
       quantity: guides,
       unit: "шт",
       withReserve: guides,
       purchaseQty: guides,
       category: "Подсистема",
     },
+    ...(horizontalGuides > 0 ? [{
+      name: `Направляющие горизонтальные (${GUIDE_LENGTH} м, шаг ${horizontalRailStepM} м)`,
+      quantity: horizontalGuides,
+      unit: "шт",
+      withReserve: horizontalGuides,
+      purchaseQty: horizontalGuides,
+      category: "Подсистема",
+    } satisfies CanonicalMaterialResult] : []),
     {
       name: "Крепёж панелей",
       quantity: fasteners,
@@ -252,6 +270,8 @@ export function computeCanonicalFacadePanels(
       panels,
       brackets,
       guides,
+      horizontalGuides,
+      withHorizontalRails,
       fasteners,
       anchors,
       insPlates,
