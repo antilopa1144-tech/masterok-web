@@ -67,7 +67,7 @@ export default function CompanionLinks({ slug, values }: Props) {
               <CategoryIcon icon={c.cat?.icon ?? "wrench"} size={18} color={c.cat?.color ?? "#64748b"} />
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors block">
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors block">
                 {c.calc.title}
               </span>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">

@@ -273,7 +273,7 @@ export default function RenovationCostCalculator() {
         <div className="bg-accent-50 dark:bg-accent-900/20 p-6 border-b border-accent-200 dark:border-accent-800/40">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold text-accent-600 dark:text-accent-400 uppercase tracking-wider mb-1">
+              <p className="text-xs font-semibold text-accent-700 dark:text-accent-400 uppercase tracking-wider mb-1">
                 Ваша смета
               </p>
               {result.hasAnyPrice ? (

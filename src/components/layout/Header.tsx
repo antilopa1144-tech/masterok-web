@@ -59,7 +59,7 @@ export default function Header() {
                   href={link.href}
                   className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors no-underline ${
                     active
-                      ? "text-accent-600 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
+                      ? "text-accent-700 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   }`}
                   aria-current={active ? "page" : undefined}
@@ -129,7 +129,7 @@ export default function Header() {
                   href={link.href}
                   className={`block px-3 py-3 rounded-lg font-medium transition-colors no-underline min-h-[44px] ${
                     active
-                      ? "text-accent-600 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
+                      ? "text-accent-700 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
                       : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   }`}
                   onClick={() => setMenuOpen(false)}

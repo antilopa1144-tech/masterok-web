@@ -130,7 +130,7 @@ export default async function TagPage({ params }: TagPageProps) {
                       <span className="text-xs text-slate-500 dark:text-slate-400">{post.readTime}</span>
                     </div>
                     <Link href={`/blog/${post.slug}/`} className="no-underline group">
-                      <h2 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 group-hover:text-accent-600 transition-colors">
+                      <h2 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 group-hover:text-accent-700 transition-colors">
                         {post.title}
                       </h2>
                     </Link>
@@ -139,7 +139,7 @@ export default async function TagPage({ params }: TagPageProps) {
                     </p>
                     <Link
                       href={`/blog/${post.slug}/`}
-                      className="text-accent-600 text-xs font-medium mt-3 no-underline hover:underline"
+                      className="text-accent-700 text-xs font-medium mt-3 no-underline hover:underline"
                     >
                       {UI_TEXT.readMore}
                     </Link>
@@ -149,7 +149,7 @@ export default async function TagPage({ params }: TagPageProps) {
             </div>
 
             <div className="mt-8">
-              <Link href="/blog/" className="text-sm text-accent-600 hover:underline no-underline">
+              <Link href="/blog/" className="text-sm text-accent-700 hover:underline no-underline">
                 {UI_TEXT.backToBlog}
               </Link>
             </div>

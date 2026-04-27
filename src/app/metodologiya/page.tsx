@@ -68,7 +68,7 @@ export default function MethodologyPage() {
 
       <section className="page-container py-10 md:py-16 max-w-4xl">
         <nav className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          <Link href="/" className="hover:text-accent-600 no-underline">Главная</Link>
+          <Link href="/" className="hover:text-accent-700 no-underline">Главная</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-700 dark:text-slate-200">Методология расчётов</span>
         </nav>
@@ -89,7 +89,7 @@ export default function MethodologyPage() {
           <ol className="space-y-1.5">
             {SECTIONS.map((s, i) => (
               <li key={s.id} className="text-sm">
-                <a href={`#${s.id}`} className="text-slate-700 dark:text-slate-200 hover:text-accent-600 no-underline">
+                <a href={`#${s.id}`} className="text-slate-700 dark:text-slate-200 hover:text-accent-700 no-underline">
                   {i + 1}. {s.title}
                 </a>
               </li>

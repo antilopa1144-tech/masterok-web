@@ -108,7 +108,7 @@ export default function CalculatorWithMikhalych({
               {calcHistory.length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}
-                  className="text-sm text-slate-400 hover:text-accent-600 transition-colors"
+                  className="text-sm text-slate-400 hover:text-accent-700 transition-colors"
                   title={CALCULATOR_UI_TEXT.historyTitle}
                 >
                   🕒 {calcHistory.length}

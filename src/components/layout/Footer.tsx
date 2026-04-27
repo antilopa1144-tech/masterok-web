@@ -50,7 +50,7 @@ export default function Footer() {
           <div>
             <Link
               href="/"
-              className="flex items-center gap-2 font-bold text-lg text-slate-900 dark:text-white mb-3 no-underline hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+              className="flex items-center gap-2 font-bold text-lg text-slate-900 dark:text-white mb-3 no-underline hover:text-accent-700 dark:hover:text-accent-400 transition-colors"
             >
               <div className="w-7 h-7 bg-accent-500 rounded-lg flex items-center justify-center">
                 <CategoryIcon icon="hammer" size={15} color="#fff" />
@@ -62,7 +62,7 @@ export default function Footer() {
             </p>
             <Link
               href="/prilozhenie/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 transition-colors no-underline mt-4"
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent-700 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 transition-colors no-underline mt-4"
             >
               <CategoryIcon icon="phone" size={14} color="currentColor" />
               {UI_TEXT.downloadApp}
@@ -147,7 +147,7 @@ export default function Footer() {
               </p>
               <Link
                 href="/mikhalych/"
-                className="mt-2 inline-block text-xs font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 no-underline transition-colors"
+                className="mt-2 inline-block text-xs font-medium text-accent-700 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 no-underline transition-colors"
               >
                 {UI_TEXT.askMikhalych}
               </Link>

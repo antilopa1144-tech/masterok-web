@@ -210,7 +210,7 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
               <p className="text-slate-400 dark:text-slate-400 text-sm">{CALCULATOR_UI_TEXT.searchEmpty(query)}</p>
               <Link
                 href="/mikhalych/"
-                className="text-sm text-accent-600 hover:text-accent-700 mt-2 inline-block no-underline"
+                className="text-sm text-accent-700 hover:text-accent-800 mt-2 inline-block no-underline"
               >
                 {CALCULATOR_UI_TEXT.askMikhalych}
               </Link>

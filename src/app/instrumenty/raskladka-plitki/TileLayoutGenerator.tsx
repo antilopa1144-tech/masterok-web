@@ -422,7 +422,7 @@ export default function TileLayoutGenerator() {
           </h3>
           <button
             onClick={handleExportPNG}
-            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-600 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-700 transition-colors"
           >
             📥 Скачать PNG
           </button>

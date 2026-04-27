@@ -348,7 +348,7 @@ function Tooltip({ text }: { text: string }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold leading-none flex items-center justify-center hover:bg-accent-100 hover:text-accent-600 dark:hover:bg-accent-900/30 dark:hover:text-accent-400 transition-colors"
+        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold leading-none flex items-center justify-center hover:bg-accent-100 hover:text-accent-700 dark:hover:bg-accent-900/30 dark:hover:text-accent-400 transition-colors"
         aria-label="Подсказка"
       >
         ?
@@ -717,7 +717,7 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
       <div className="bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4 mb-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-accent-600 dark:text-accent-400 mb-1">{CALCULATOR_UI_TEXT.scenarioLabels.recommended}</p>
+            <p className="text-xs font-semibold text-accent-700 dark:text-accent-400 mb-1">{CALCULATOR_UI_TEXT.scenarioLabels.recommended}</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {formatNumber(rec.purchase_quantity)}{" "}
               <span className="text-base font-normal text-slate-500 dark:text-slate-400">{recUnit}</span>
@@ -975,10 +975,10 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
 
   return (
     <details className="mt-3 group" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary className="flex items-center gap-2 cursor-pointer list-none text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-accent-600 transition-colors py-2">
+      <summary className="flex items-center gap-2 cursor-pointer list-none text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-accent-700 transition-colors py-2">
         <span>💰 Оценка стоимости</span>
         {total > 0 && (
-          <span className="ml-auto text-accent-600 dark:text-accent-400 font-bold">
+          <span className="ml-auto text-accent-700 dark:text-accent-400 font-bold">
             {total.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽
           </span>
         )}
@@ -1045,7 +1045,7 @@ function PriceEstimate({ materials, scope }: { materials: CalculatorResult["mate
         {total > 0 && (
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-200 dark:border-slate-700 text-sm font-bold">
             <span className="text-slate-700 dark:text-slate-200">Итого</span>
-            <span className="text-accent-600 dark:text-accent-400">
+            <span className="text-accent-700 dark:text-accent-400">
               {total.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽
             </span>
           </div>

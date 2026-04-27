@@ -87,7 +87,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                 <span className="text-xs text-slate-400 dark:text-slate-400 ml-auto">{post.readTime}</span>
               </div>
               <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug text-sm flex-1">
-                <Link href={`/blog/${post.slug}/`} className="no-underline hover:text-accent-600 transition-colors">
+                <Link href={`/blog/${post.slug}/`} className="no-underline hover:text-accent-700 transition-colors">
                   {post.title}
                 </Link>
               </h2>
@@ -100,7 +100,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                 </span>
                 <Link
                   href={`/blog/${post.slug}/`}
-                  className="text-sm font-medium text-accent-600 hover:text-accent-700 no-underline transition-colors"
+                  className="text-sm font-medium text-accent-700 hover:text-accent-800 no-underline transition-colors"
                 >
                   {readMoreText}
                 </Link>

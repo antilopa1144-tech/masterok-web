@@ -162,15 +162,18 @@
 /* ── 5. Компонентные утилиты ───────────────────────────────── */
 
 @utility btn-primary {
+  /* bg-accent-700 (#c2410c) вместо bg-accent-600 (#ea580c) — даёт контраст 5.68:1
+     с белым текстом и проходит WCAG AA для обычного текста (Lighthouse audit).
+     Hover осветляет до accent-600 — обратная связь без потери контраста. */
   @apply inline-flex items-center justify-center gap-2
     px-6 py-3
-    bg-accent-600 text-white font-bold
+    bg-accent-700 text-white font-bold
     rounded-xl
     shadow-sm
     transition-[transform,box-shadow,background-color,filter] duration-150 ease-out
     will-change-transform
-    hover:bg-accent-500 hover:shadow-md hover:-translate-y-0.5
-    active:bg-accent-700 active:scale-[0.97] active:translate-y-0 active:shadow-inner active:brightness-95
+    hover:bg-accent-600 hover:shadow-md hover:-translate-y-0.5
+    active:bg-accent-800 active:scale-[0.97] active:translate-y-0 active:shadow-inner active:brightness-95
     focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:outline-none
     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm;
 }
@@ -298,7 +301,7 @@
     @apply leading-relaxed;
   }
   & a {
-    @apply text-accent-600 hover:underline;
+    @apply text-accent-700 hover:underline;
   }
   & img {
     @apply w-full rounded-xl border border-slate-200 dark:border-slate-700 my-6;

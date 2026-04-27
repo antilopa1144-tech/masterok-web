@@ -103,7 +103,7 @@ export default function CalculatorWidget({ calculator }: Props) {
             <button
               key={p.label}
               onClick={() => applyPreset(p.values)}
-              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-300 dark:hover:border-accent-500/40 hover:text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-all"
+              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-accent-300 dark:hover:border-accent-500/40 hover:text-accent-700 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-all"
             >
               {p.label}
             </button>
@@ -120,7 +120,7 @@ export default function CalculatorWidget({ calculator }: Props) {
               {calcHistory.length > 0 && (
                 <button
                   onClick={() => setShowHistory(!showHistory)}
-                  className="text-sm text-slate-400 hover:text-accent-600 transition-colors flex items-center gap-1"
+                  className="text-sm text-slate-400 hover:text-accent-700 transition-colors flex items-center gap-1"
                   title={CALCULATOR_UI_TEXT.historyTitle}
               >
                 🕒 {calcHistory.length}
@@ -319,7 +319,7 @@ function CompanionLinks({ slug, values }: { slug: string; values: Record<string,
               <CategoryIcon icon={c.cat?.icon ?? "wrench"} size={18} color={c.cat?.color ?? "#64748b"} />
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-600 transition-colors">
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors">
                 {c.calc.title}
               </span>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">

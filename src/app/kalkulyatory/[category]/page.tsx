@@ -206,7 +206,7 @@ export default async function CategoryPage({ params }: PageProps) {
                 >
                   <CategoryIcon icon={cat.icon} size={20} color={cat.color} />
                 </div>
-                <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-600 transition-colors">
+                <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-700 transition-colors">
                   {calc.title}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{calc.description}</p>
@@ -236,7 +236,7 @@ export default async function CategoryPage({ params }: PageProps) {
                     href={`/blog/${post.slug}/`}
                     className="card-hover p-4 block no-underline group"
                   >
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-600 transition-colors line-clamp-2">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-accent-700 transition-colors line-clamp-2">
                       {post.title}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">

@@ -3,9 +3,27 @@ import { SITE_URL } from "@/lib/site";
 
 const BASE_URL = SITE_URL;
 
-// Required for output: "export"
 export const dynamic = "force-static";
 
+/**
+ * robots.txt для краулеров.
+ *
+ * Что НЕ ставим (актуально на 2026):
+ *  - `Crawl-delay` — Yandex её игнорирует с 22 февраля 2018 (используется
+ *    настройка скорости в Yandex Webmaster Console). Googlebot никогда не
+ *    поддерживал эту директиву. Bing уважает, но мы не указываем целенаправленно.
+ *  - `Host:` — Yandex отменил её в 2018 году, теперь полагается на 301-редиректы
+ *    и canonical. Googlebot никогда не поддерживал. Чистая помеха в robots.txt
+ *    (генерирует warnings в GSC).
+ *
+ * Что включаем:
+ *  - Явные правила для Yandex/YandexBot/YandexMobileBot/YandexImages —
+ *    нужны для тонкой настройки сканирования по типам ботов Yandex.
+ *  - Правила для AI-краулеров (GPTBot, OAI-SearchBot, ClaudeBot, anthropic-ai,
+ *    PerplexityBot, Google-Extended) — для попадания в ChatGPT/Claude/Perplexity/
+ *    Gemini. Дополнительно есть llms.txt с инструкцией для AI.
+ *  - Sitemap — главный сигнал для Googlebot, замещает deprecated ping endpoint.
+ */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -14,19 +32,17 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/", "/_next/"],
       },
-      // Яндекс — явные правила для основных краулеров (поиск, мобильный, картинки).
-      // Yandex Нейро и Алиса используют тот же индекс Яндекс Поиска.
+      // Yandex — явные правила для основных краулеров (поиск, мобильный, картинки).
+      // Yandex Нейро и Алиса используют тот же индекс Yandex Поиска.
       {
         userAgent: "Yandex",
         allow: "/",
         disallow: ["/api/", "/_next/"],
-        crawlDelay: 0.5,
       },
       {
         userAgent: "YandexBot",
         allow: "/",
         disallow: ["/api/", "/_next/"],
-        crawlDelay: 0.5,
       },
       {
         userAgent: "YandexMobileBot",
@@ -48,7 +64,5 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Google-Extended", allow: "/", disallow: ["/api/"] },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
   };
 }
-

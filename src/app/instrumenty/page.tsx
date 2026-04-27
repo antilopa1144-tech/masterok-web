@@ -192,7 +192,7 @@ export default function InstrumentyPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-accent-600 transition-colors">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-accent-700 transition-colors">
                       {tool.title}
                     </h2>
                     <span
@@ -214,7 +214,7 @@ export default function InstrumentyPage() {
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{UI_TEXT.previewTitle}</h2>
-          <Link href="/instrumenty/chek-listy/" className="text-sm text-accent-600 hover:text-accent-700 font-medium">
+          <Link href="/instrumenty/chek-listy/" className="text-sm text-accent-700 hover:text-accent-800 font-medium">
             {UI_TEXT.previewLink}
           </Link>
         </div>
@@ -229,7 +229,7 @@ export default function InstrumentyPage() {
                 <span className="text-xl">{cl.categoryIcon}</span>
                 <span className="text-xs text-slate-400 dark:text-slate-400">{cl.category}</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1 group-hover:text-accent-600 transition-colors">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug mb-1 group-hover:text-accent-700 transition-colors">
                 {cl.title}
               </h3>
               <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed line-clamp-2 mb-3">
