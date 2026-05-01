@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { waterproofingDef } from "../formulas/waterproofing";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(waterproofingDef.calculate.bind(waterproofingDef));
+const calc = withBasicAccuracy(waterproofingDef.calculate.bind(waterproofingDef)) as (
+  inputs: Record<string, any>,
+) => ReturnType<typeof waterproofingDef.calculate>;
 
 describe("Гидроизоляция", () => {
   describe("Ceresit CL 51 (masticType=0, стандарт)", () => {
@@ -141,9 +143,9 @@ describe("Гидроизоляция", () => {
     });
 
     it("полный санузел: practicalNote упоминает примыкания", () => {
-      const hasNote = fullRoom.practicalNotes.some((n) =>
+      const hasNote = fullRoom.practicalNotes?.some((n) =>
         n.includes("4 примыкан") && n.includes("1 инсталляц"),
-      );
+      ) ?? false;
       expect(hasNote).toBe(true);
     });
   });

@@ -37,10 +37,14 @@ const YM_INIT_SCRIPT = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m
 // Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
 // font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
 // мобильном FCP. Все font-extrabold заменены на font-bold (визуальная разница минимальна).
+// display: "optional" вместо "swap" устраняет CLS от замены шрифта (FOUT).
+// next/font самостоятельно прелоадит Inter с высоким приоритетом — браузер
+// успевает загрузить его до первого рендера при нормальном соединении.
+// На медленном соединении браузер использует системный шрифт без замены.
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "600", "700"],
-  display: "swap",
+  display: "optional",
   variable: "--font-inter",
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
   adjustFontFallback: true,
@@ -137,6 +141,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
           <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
               style={{ position: "absolute", left: "-9999px" }}

@@ -18,9 +18,9 @@ export function middleware(request: NextRequest) {
 
   // Страницы без trailing slash → 308 на версию со слэшем
   if (!pathname.endsWith("/")) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname + "/";
-    return NextResponse.redirect(url, 308);
+    const url = new URL(request.url);
+    url.pathname = `${pathname}/`;
+    return NextResponse.redirect(url.toString(), 308);
   }
 
   return NextResponse.next();

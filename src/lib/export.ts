@@ -18,6 +18,37 @@ interface EstimateData {
 
 const EXPORT_TITLE = `${SITE_NAME} — Смета материалов`;
 const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '');
+const CSV_SEPARATOR = ';';
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function safeFilenamePart(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function csvCell(value: unknown): string {
+  const raw = value == null ? '' : String(value);
+  const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+function csvRow(values: unknown[]): string {
+  return values.map(csvCell).join(CSV_SEPARATOR);
+}
 
 export async function exportToPDF(data: EstimateData): Promise<void> {
   const { default: jsPDF } = await import('jspdf');
@@ -105,10 +136,7 @@ export async function exportToPDF(data: EstimateData): Promise<void> {
 }
 
 export async function exportToExcel(data: EstimateData): Promise<void> {
-  const XLSX = await import('xlsx');
-  const wb = XLSX.utils.book_new();
-
-  const wsData = [
+  const rows: unknown[][] = [
     [EXPORT_TITLE],
     [''],
     ['Калькулятор:', data.calculatorName],
@@ -118,10 +146,10 @@ export async function exportToExcel(data: EstimateData): Promise<void> {
     ['Материалы:'],
   ];
 
-  wsData.push(['Материал', 'Количество', 'Ед. изм.', 'Запас (%)']);
+  rows.push(['Материал', 'Количество', 'Ед. изм.', 'Запас (%)']);
 
   data.materials.forEach((m) => {
-    wsData.push([
+    rows.push([
       m.name,
       String(m.quantity),
       m.unit,
@@ -130,36 +158,27 @@ export async function exportToExcel(data: EstimateData): Promise<void> {
   });
 
   if (data.totals && Object.keys(data.totals).length > 0) {
-    wsData.push(['']);
-    wsData.push(['Итого:']);
+    rows.push(['']);
+    rows.push(['Итого:']);
     Object.entries(data.totals).forEach(([key, value]) => {
-      wsData.push([key, typeof value === 'number' ? value.toFixed(2) : value]);
+      rows.push([key, typeof value === 'number' ? value.toFixed(2) : value]);
     });
   }
 
   if (data.warnings && data.warnings.length > 0) {
-    wsData.push(['']);
-    wsData.push(['Важно:']);
+    rows.push(['']);
+    rows.push(['Важно:']);
     data.warnings.forEach((w) => {
-      wsData.push([`• ${w}`]);
+      rows.push([`• ${w}`]);
     });
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  ws['!cols'] = [
-    { wch: 30 },
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 12 },
-  ];
-
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Смета');
-
-  const filename = `smeta-${data.calculatorName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
-  XLSX.writeFile(wb, filename);
+  const csv = [
+    `sep=${CSV_SEPARATOR}`,
+    ...rows.map(csvRow),
+  ].join('\r\n');
+  const filename = `smeta-${safeFilenamePart(data.calculatorName)}-${new Date().toISOString().split('T')[0]}.csv`;
+  downloadBlob(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), filename);
 }
 
 export function useEstimateExport(calculatorName: string) {

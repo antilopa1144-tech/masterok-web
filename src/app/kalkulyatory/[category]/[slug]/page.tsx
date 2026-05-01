@@ -31,6 +31,13 @@ const UI_TEXT = {
 } as const;
 
 const BUILD_DATE = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+const SITE_TITLE_SUFFIX = ` — ${SITE_NAME}`;
+
+function titleWithoutSiteSuffix(title: string): string {
+  return title.endsWith(SITE_TITLE_SUFFIX)
+    ? title.slice(0, -SITE_TITLE_SUFFIX.length)
+    : title;
+}
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -64,7 +71,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
 
   return buildPageMetadata({
-    title: calc.metaTitle,
+    title: titleWithoutSiteSuffix(calc.metaTitle),
     description: calc.metaDescription,
     url: canonicalUrl,
     openGraphTitle: calc.h1,

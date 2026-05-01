@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { stripFoundationDef } from "../formulas/strip-foundation";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(stripFoundationDef.calculate.bind(stripFoundationDef));
+const calc = withBasicAccuracy(stripFoundationDef.calculate.bind(stripFoundationDef)) as (
+  inputs: Record<string, any>,
+) => ReturnType<typeof stripFoundationDef.calculate>;
 
 describe("Калькулятор ленточного фундамента", () => {
   describe("Периметр 40 м, ширина 400 мм, глубина 700 мм, цоколь 300 мм, reinforcement=1", () => {

@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ReverseCalculator from "./ReverseCalculator";
 
 const META = {
-  title: `Калькулятор «Сколько осталось» — на какую площадь хватит материала | ${SITE_NAME}`,
+  title: `Калькулятор «Сколько осталось» — на какую площадь хватит материала`,
   description: "Обратный калькулятор: введите сколько материала осталось, узнайте на какую площадь его хватит. Краска, грунтовка, клей, штукатурка, шпаклёвка.",
 };
 

@@ -4,7 +4,7 @@ export const TOTAL_LABELS: Record<string, string> = {
   wallArea: "Площадь стен", floorArea: "Площадь пола", roofArea: "Площадь кровли",
   facadeArea: "Площадь фасада", totalArea: "Общая площадь", usefulArea: "Полезная площадь",
   totalFinishArea: "Площадь отделки", roomArea: "Площадь комнаты", heatingArea: "Площадь обогрева",
-  totalSlopeArea: "Площадь откосов", areaWithWaste: "Площадь с запасом", tileArea: "Площадь плитки",
+  totalSlopeArea: "Площадь откосов", areaWithWaste: "Площадь с запасом", tileArea: "Площадь одной плитки",
   // Объёмы
   volume: "Объём", totalVolume: "Объём с запасом", floorVolume: "Объём пола",
   wallVolume: "Объём стен", concreteM3: "Бетон",

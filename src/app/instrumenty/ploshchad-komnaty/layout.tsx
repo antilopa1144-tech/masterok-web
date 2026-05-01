@@ -3,7 +3,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
-  title: `Калькулятор площади комнаты | ${SITE_NAME}`,
+  title: `Калькулятор площади комнаты`,
   description: "Рассчитайте площадь пола, периметр и площадь стен для помещений любой формы.",
   url: `${SITE_URL}/instrumenty/ploshchad-komnaty/`,
 } as const;

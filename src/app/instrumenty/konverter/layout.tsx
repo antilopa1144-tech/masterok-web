@@ -3,7 +3,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
-  title: `Конвертер единиц измерения | ${SITE_NAME}`,
+  title: `Конвертер единиц измерения`,
   description: "Пересчитайте строительные единицы: длину, площадь, объём, массу, давление и температуру.",
   url: `${SITE_URL}/instrumenty/konverter/`,
 } as const;

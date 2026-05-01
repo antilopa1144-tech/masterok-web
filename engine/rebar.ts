@@ -289,22 +289,25 @@ export function computeCanonicalRebar(
 
   const wireLength = calc.intersections * WIRE_LENGTH_PER_INTERSECTION;
   const wireKg = wireLength * WIRE_KG_PER_M;
-  const mainRebarKgRaw = calc.mainRebarLength * (WEIGHT_PER_METER[mainDiameter] ?? WEIGHT_PER_METER[12]);
-  const mainRebarKg = roundDisplay(mainRebarKgRaw * accuracyMult, 6);
-  const mainRods = Math.ceil(calc.mainRebarLength / STANDARD_ROD_LENGTH);
+  const mainKgPerMeter = WEIGHT_PER_METER[mainDiameter] ?? WEIGHT_PER_METER[12];
+  const mainRebarKgRaw = calc.mainRebarLength * mainKgPerMeter;
+  const mainRebarLengthAdjusted = roundDisplay(calc.mainRebarLength * accuracyMult, 6);
+  const mainRebarKg = roundDisplay(mainRebarLengthAdjusted * mainKgPerMeter, 6);
+  const mainRods = Math.ceil(mainRebarLengthAdjusted / STANDARD_ROD_LENGTH);
   const tieRebarKg = calc.tieRebarLength * (WEIGHT_PER_METER[calc.secondaryDiameter] ?? WEIGHT_PER_METER[6]);
 
-  // Package options for main rebar (by rod)
+  // Package options for main rebar (standard 11.7 m rods). Scenarios stay in linear meters,
+  // while buy_plan exposes the number of rods to purchase.
   const packageOptions = [{
-    size: 1,
+    size: STANDARD_ROD_LENGTH,
     label: `rebar-rod-${STANDARD_ROD_LENGTH}m`,
-    unit: "шт",
+    unit: "м.п.",
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(mainRebarKg * multiplier, 6);
-    const packaging = optimizePackaging(Math.ceil(mainRods * multiplier), packageOptions);
+    const exactNeed = roundDisplay(mainRebarLengthAdjusted * multiplier, 6);
+    const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
       exact_need: exactNeed,
@@ -355,7 +358,7 @@ export function computeCanonicalRebar(
     materials: buildMaterials(
       mainDiameter,
       calc.secondaryDiameter,
-      calc.mainRebarLength,
+      mainRebarLengthAdjusted,
       mainRebarKg,
       mainRods,
       calc.tieRebarLength,
@@ -372,7 +375,7 @@ export function computeCanonicalRebar(
       mainDiameter,
       gridStep,
       gridStepM: roundDisplay(gridStepM, 4),
-      mainRebarLength: roundDisplay(calc.mainRebarLength, 1),
+      mainRebarLength: roundDisplay(mainRebarLengthAdjusted, 1),
       mainRebarKg: roundDisplay(mainRebarKg, 1),
       mainRods,
       tieRebarLength: roundDisplay(calc.tieRebarLength, 1),
@@ -386,12 +389,18 @@ export function computeCanonicalRebar(
       barsAlongWidth: calc.barsAlongWidth,
       verticalTieCount: calc.verticalTieCount,
       stirrupCount: calc.stirrupCount,
-      minExactNeedKg: scenarios.MIN.exact_need,
-      recExactNeedKg: recScenario.exact_need,
-      maxExactNeedKg: scenarios.MAX.exact_need,
-      minPurchaseRods: scenarios.MIN.purchase_quantity,
-      recPurchaseRods: recScenario.purchase_quantity,
-      maxPurchaseRods: scenarios.MAX.purchase_quantity,
+      minExactNeedM: scenarios.MIN.exact_need,
+      recExactNeedM: recScenario.exact_need,
+      maxExactNeedM: scenarios.MAX.exact_need,
+      minPurchaseM: scenarios.MIN.purchase_quantity,
+      recPurchaseM: recScenario.purchase_quantity,
+      maxPurchaseM: scenarios.MAX.purchase_quantity,
+      minPurchaseRods: scenarios.MIN.buy_plan.packages_count,
+      recPurchaseRods: recScenario.buy_plan.packages_count,
+      maxPurchaseRods: scenarios.MAX.buy_plan.packages_count,
+      minExactNeedKg: roundDisplay(scenarios.MIN.exact_need * mainKgPerMeter, 3),
+      recExactNeedKg: roundDisplay(recScenario.exact_need * mainKgPerMeter, 3),
+      maxExactNeedKg: roundDisplay(scenarios.MAX.exact_need * mainKgPerMeter, 3),
     },
     warnings,
     practicalNotes,

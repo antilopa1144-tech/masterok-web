@@ -12,7 +12,7 @@ const UI_TEXT = {
   breadcrumbHome: "Главная",
   breadcrumbTools: "Инструменты",
   breadcrumbChecklist: "Чек-листы",
-  checklistSuffix: `— чек-лист | ${SITE_NAME}`,
+  checklistSuffix: `— чек-лист`,
   itemsSuffix: "пунктов",
   stagesSuffix: "этапов",
   backToAll: "← Все чек-листы",

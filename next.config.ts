@@ -94,12 +94,12 @@ const nextConfig: NextConfig = {
     // 'unsafe-inline' для style-src безопасен (Tailwind генерирует inline-стили).
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://yastatic.net",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.yandex.com https://yastatic.net",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http://5.129.248.119",
       "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru https://openrouter.ai",
-      "frame-src 'self' https://mc.yandex.ru",
+      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://openrouter.ai",
+      "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

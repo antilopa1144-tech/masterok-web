@@ -14,8 +14,8 @@ export const CALCULATOR_UI_TEXT = {
   export: "Экспорт",
   exportPdfTitle: "PDF документ",
   exportPdfDescription: "Для печати и отправки",
-  exportExcelTitle: "Excel таблица",
-  exportExcelDescription: "Для редактирования",
+  exportExcelTitle: "CSV таблица",
+  exportExcelDescription: "Откроется в Excel",
   expertTips: "Советы прораба",
   faqTitle: "Частые вопросы",
   allowedValues: (min: number, max: number, unit?: string) =>
@@ -28,6 +28,7 @@ export const CALCULATOR_UI_TEXT = {
     buy: "Купить",
     leftover: "Остаток",
     plan: "Упаковка",
+    rounding: "Округление",
     recommended: "Рекомендуем",
     range: "Диапазон",
     from: "от",
@@ -97,7 +98,7 @@ export const MIKHALYCH_WIDGET_UI_TEXT = {
     `Привет! Вижу, что вы работаете с **${calculatorTitle}**. Уже вижу параметры расчёта. Задавайте вопросы — отвечу с учётом ваших данных.`,
   greetingWithoutContext: (calculatorTitle: string) =>
     `Привет! Задайте вопрос по **${calculatorTitle}** — расскажу о технологии, нормах расхода и типичных ошибках.`,
-  introDescription: "Опытный строительный мастер ответит на ваши вопросы по",
+  introDescription: "Опытный строительный мастер отвечает на вопросы о",
   contextVisible: "✓ Михалыч видит ваши параметры расчёта",
 } as const;
 
@@ -113,4 +114,3 @@ export function getMikhalychAssistantErrorMessage(status?: number) {
   }
   return MIKHALYCH_WIDGET_UI_TEXT.genericApiError;
 }
-

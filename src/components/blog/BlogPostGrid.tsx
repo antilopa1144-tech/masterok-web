@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface BlogPostData {
@@ -57,7 +58,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                   : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300"
               }`}
             >
-              {cat} ({count})
+              {cat.charAt(0).toUpperCase() + cat.slice(1)} ({count})
             </button>
           );
         })}
@@ -69,7 +70,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
           <article key={post.slug} className="card-hover flex flex-col overflow-hidden">
             {post.heroImage && (
               <Link href={`/blog/${post.slug}/`} className="block">
-                <img
+                <Image
                   src={post.heroImage}
                   alt={post.heroImageAlt ?? post.title}
                   className="w-full h-40 object-cover"

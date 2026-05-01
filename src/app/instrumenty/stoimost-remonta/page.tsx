@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import RenovationCostCalculator from "./RenovationCostCalculator";
 
 const META = {
-  title: `Калькулятор стоимости ремонта квартиры онлайн | ${SITE_NAME}`,
+  title: `Калькулятор стоимости ремонта квартиры онлайн`,
   description: "Рассчитайте примерную стоимость ремонта квартиры или комнаты. Косметический, стандартный и капитальный ремонт — смета по материалам и работам.",
 };
 

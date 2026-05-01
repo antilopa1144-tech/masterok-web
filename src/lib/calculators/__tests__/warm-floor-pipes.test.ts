@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { warmFloorPipesDef } from "../formulas/warm-floor-pipes";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(warmFloorPipesDef.calculate.bind(warmFloorPipesDef));
+const calc = withBasicAccuracy(warmFloorPipesDef.calculate.bind(warmFloorPipesDef)) as (
+  inputs: Record<string, any>,
+) => ReturnType<typeof warmFloorPipesDef.calculate>;
 
 describe("Калькулятор водяного тёплого пола", () => {
   describe("20 м², шаг 200, PEX-a", () => {
@@ -216,9 +218,9 @@ describe("Калькулятор водяного тёплого пола", () =
     });
 
     it("zoned: practical note упоминает 120 мм у окон", () => {
-      const hasNote = zoned.practicalNotes.some((n) =>
+      const hasNote = zoned.practicalNotes?.some((n) =>
         n.includes("120 мм") && n.includes("у окон"),
-      );
+      ) ?? false;
       expect(hasNote).toBe(true);
     });
 

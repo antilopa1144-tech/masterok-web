@@ -3,7 +3,7 @@
  * generate-calculators-meta.ts
  *
  * Генерирует src/lib/calculators/meta.generated.ts — lite-массив CalculatorMeta
- * для всех 66 калькуляторов, БЕЗ heavy-полей (fields, faq, seoContent, calculate).
+ * для всех калькуляторов, БЕЗ heavy-полей (fields, faq, seoContent, calculate).
  *
  * Зачем: страницы которые показывают только списки/ссылки (главная, категории,
  * поиск, Footer, related links) импортируют meta.generated.ts и НЕ тащат в

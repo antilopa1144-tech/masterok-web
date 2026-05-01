@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { buildPageMetadata } from "@/lib/metadata";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
 
 const META = {
-  title: `Блог — строительные советы и статьи | ${SITE_NAME}`,
+  title: `Блог — строительные советы и статьи`,
   description: "Статьи о строительстве и ремонте: как правильно рассчитать материалы, технологии укладки плитки, стяжки, гипсокартона. Советы по ГОСТ и СНиП.",
 } as const;
 

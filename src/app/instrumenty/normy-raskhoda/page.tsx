@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 const META = {
-  title: `Нормы расхода строительных материалов — таблица на 1 м² | ${SITE_NAME}`,
+  title: `Нормы расхода строительных материалов — таблица на 1 м²`,
   description: "Справочник норм расхода строительных материалов на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, плиточный клей, затирка, стяжка. По ГОСТ и СНиП.",
 };
 

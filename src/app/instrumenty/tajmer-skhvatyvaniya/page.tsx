@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import CuringTimer from "./CuringTimer";
 
 const META = {
-  title: `Таймер схватывания и высыхания строительных смесей | ${SITE_NAME}`,
+  title: `Таймер схватывания и высыхания строительных смесей`,
   description: "Таймер для строительных работ: время высыхания штукатурки, стяжки, грунтовки, клея, затирки. Уведомление когда можно продолжать работу.",
 };
 

@@ -15,7 +15,7 @@ import ProjectManager from "@/components/calculator/ProjectManager";
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
 const META = {
-  title: `Строительные калькуляторы онлайн — ${CALC_COUNT} расчётов по ГОСТ | ${SITE_NAME}`,
+  title: `Строительные калькуляторы онлайн — ${CALC_COUNT} расчётов по ГОСТ`,
   description:
     `${CALC_COUNT}+ бесплатных строительных калькуляторов для ремонта и стройки: бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон. Точные нормы по ГОСТ, СНиП и СП. Без регистрации, с ИИ-прорабом Михалыч.`,
 } as const;
@@ -468,7 +468,13 @@ export default async function HomePage() {
 
               {/* Проекты */}
               <div className="mt-6">
-                <Suspense fallback={null}>
+                <Suspense fallback={
+                  <div className="card p-6 text-center space-y-3">
+                    <div className="text-3xl">📁</div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Мои проекты</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Создайте проект для группировки расчётов.</p>
+                  </div>
+                }>
                   <ProjectManager />
                 </Suspense>
               </div>

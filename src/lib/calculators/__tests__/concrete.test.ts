@@ -24,6 +24,11 @@ describe("Калькулятор бетона", () => {
       expect(concrete?.withReserve).toBeCloseTo(5.6, 1);
     });
 
+    it("готовый бетон не показывается как десятки доставок по 0.1 м³", () => {
+      const concrete = findMaterial(result, "Бетон М200");
+      expect(concrete?.packageInfo).toBeUndefined();
+    });
+
     it("без manualMix — нет цемента в компонентах", () => {
       const cement = findMaterial(result, "Цемент М400");
       expect(cement).toBeUndefined();

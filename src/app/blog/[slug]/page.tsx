@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
@@ -255,7 +256,7 @@ export default async function BlogPostPage({ params }: Props) {
 
           {post.heroImage && (
             <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-              <img
+              <Image
                 src={post.heroImage}
                 alt={post.heroImageAlt || post.title}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
@@ -321,9 +322,9 @@ export default async function BlogPostPage({ params }: Props) {
                 >
                   {rp.heroImage && (
                     <Link href={`/blog/${rp.slug}/`} className="block">
-                      <img
+                      <Image
                         src={rp.heroImage}
-                        alt={rp.heroImageAlt}
+                        alt={rp.heroImageAlt || rp.title}
                         className="w-full h-32 object-cover"
                         width={400}
                         height={128}

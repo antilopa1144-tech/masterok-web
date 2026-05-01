@@ -21,13 +21,62 @@ const REASONING_MODELS = new Set<string>([
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
+const MAX_MESSAGES = 12;
+const MAX_MESSAGE_CHARS = 4_000;
+const MAX_RESPONSE_TOKENS = 2048;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Client",
-  "Access-Control-Max-Age": "86400",
-};
+function toOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "https://getmasterok.ru";
+  }
+}
+
+const SITE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru");
+const ALLOWED_ORIGINS = new Set([
+  SITE_ORIGIN,
+  "https://www.getmasterok.ru",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+]);
+
+function corsHeaders(req: NextRequest): Record<string, string> {
+  const origin = req.headers.get("origin");
+  const allowOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : SITE_ORIGIN;
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Vary": "Origin",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Client",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeMessages(messages: unknown): Array<{ role: string; content: string }> | null {
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return null;
+
+  const allowedRoles = new Set(["system", "user", "assistant"]);
+  const normalized = messages.map((message) => {
+    if (!message || typeof message !== "object") return null;
+    const item = message as Record<string, unknown>;
+    if (typeof item.role !== "string" || !allowedRoles.has(item.role)) return null;
+    if (typeof item.content !== "string" || item.content.trim().length === 0) return null;
+    return {
+      role: item.role,
+      content: item.content.slice(0, MAX_MESSAGE_CHARS),
+    };
+  });
+
+  if (normalized.some((message) => message === null)) return null;
+  return normalized as Array<{ role: string; content: string }>;
+}
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -38,15 +87,17 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-export function OPTIONS() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
+export function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
 }
 
 export async function POST(req: NextRequest) {
+  const headers = corsHeaders(req);
+
   if (!OPENROUTER_API_KEY) {
     return NextResponse.json(
       { error: "OPENROUTER_API_KEY not configured on server" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers },
     );
   }
 
@@ -54,7 +105,7 @@ export async function POST(req: NextRequest) {
   if (isRateLimited(ip)) {
     return NextResponse.json(
       { error: "Too many requests" },
-      { status: 429, headers: CORS_HEADERS },
+      { status: 429, headers },
     );
   }
 
@@ -73,13 +124,20 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON body" },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers },
     );
   }
 
-  const client = req.headers.get("x-client") ?? "web";
-  const referer =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
+  const messages = normalizeMessages(body.messages);
+  if (!messages) {
+    return NextResponse.json(
+      { error: "Invalid messages" },
+      { status: 400, headers },
+    );
+  }
+
+  const client = (req.headers.get("x-client") ?? "web").slice(0, 40);
+  const referer = SITE_ORIGIN;
 
   // Дефолтные параметры — подобраны под «живую речь» Михалыча на DeepSeek V4.
   // temperature 0.7 — золотая середина: не канцелярит, но не галлюцинирует по стройке.
@@ -88,13 +146,13 @@ export async function POST(req: NextRequest) {
   // presence_penalty 0.1 — охотнее вводит новые речевые ходы и байки.
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
-    messages: body.messages,
-    temperature: body.temperature ?? 0.7,
-    max_tokens: body.max_tokens ?? 2048,
-    top_p: body.top_p ?? 0.9,
-    frequency_penalty: body.frequency_penalty ?? 0.15,
-    presence_penalty: body.presence_penalty ?? 0.1,
-    stream: body.stream ?? false,
+    messages,
+    temperature: clampNumber(body.temperature, 0.7, 0, 1.2),
+    max_tokens: clampNumber(body.max_tokens, MAX_RESPONSE_TOKENS, 64, MAX_RESPONSE_TOKENS),
+    top_p: clampNumber(body.top_p, 0.9, 0.1, 1),
+    frequency_penalty: clampNumber(body.frequency_penalty, 0.15, -1, 1),
+    presence_penalty: clampNumber(body.presence_penalty, 0.1, -1, 1),
+    stream: body.stream === true,
   };
 
   // Для reasoning-моделей явно выключаем chain-of-thought — иначе модель тратит
@@ -124,7 +182,7 @@ export async function POST(req: NextRequest) {
         return new Response(text || JSON.stringify({ error: "upstream error" }), {
           status: upstream.status || 502,
           headers: {
-            ...CORS_HEADERS,
+            ...headers,
             "Content-Type": "application/json",
           },
         });
@@ -132,7 +190,7 @@ export async function POST(req: NextRequest) {
       return new Response(upstream.body, {
         status: 200,
         headers: {
-          ...CORS_HEADERS,
+          ...headers,
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache, no-transform",
           Connection: "keep-alive",
@@ -150,15 +208,15 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json(data, {
         status: upstream.status,
-        headers: CORS_HEADERS,
+        headers,
       });
     }
-    return NextResponse.json(data, { headers: CORS_HEADERS });
+    return NextResponse.json(data, { headers });
   } catch (err) {
     console.error("[mikhalych] proxy request failed", err);
     return NextResponse.json(
       { error: "Proxy request failed" },
-      { status: 502, headers: CORS_HEADERS },
+      { status: 502, headers },
     );
   }
 }

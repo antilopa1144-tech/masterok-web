@@ -49,8 +49,54 @@ export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
   return posts.filter((p) => p.tags.includes(tag));
 }
 
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "g",
+  д: "d",
+  е: "e",
+  ё: "e",
+  ж: "zh",
+  з: "z",
+  и: "i",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "h",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "sch",
+  ъ: "",
+  ы: "y",
+  ь: "",
+  э: "e",
+  ю: "yu",
+  я: "ya",
+};
+
 export function tagToSlug(tag: string): string {
-  return encodeURIComponent(tag.toLowerCase().replace(/\s+/g, "-"));
+  const transliterated = tag
+    .toLowerCase()
+    .split("")
+    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
+    .join("");
+
+  return transliterated
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "tag";
 }
 
 export function slugToTag(slug: string): string {
@@ -59,4 +105,18 @@ export function slugToTag(slug: string): string {
   } catch {
     return slug.replace(/-/g, " ");
   }
+}
+
+export function resolveTagFromSlug(slug: string, tags: string[]): string | undefined {
+  const decodedSlug = (() => {
+    try {
+      return decodeURIComponent(slug);
+    } catch {
+      return slug;
+    }
+  })().toLowerCase();
+
+  return tags.find((tag) => tagToSlug(tag) === decodedSlug)
+    ?? tags.find((tag) => tag.toLowerCase() === decodedSlug)
+    ?? tags.find((tag) => slugToTag(slug).toLowerCase() === tag.toLowerCase());
 }

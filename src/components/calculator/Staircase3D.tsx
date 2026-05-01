@@ -28,7 +28,7 @@ function addBox(parent: THREE.Object3D, w: number, h: number, d: number, x: numb
 }
 
 function buildStaircase(props: Staircase3DProps): THREE.Group {
-  const { stepCount, stepHeightM, stepWidthM, stairWidthM, materialType } = props;
+  const { stepCount, stepHeightM, stepWidthM, stairWidthM, floorHeightM, materialType } = props;
   const colors = getColors(materialType);
   const group = new THREE.Group();
   const totalH = stepCount * stepHeightM;
@@ -83,6 +83,7 @@ function buildStaircase(props: Staircase3DProps): THREE.Group {
 }
 
 export default function Staircase3D(props: Staircase3DProps) {
+  const { stepCount, stepHeightM, stepWidthM, stairWidthM, floorHeightM, materialType } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     renderer: THREE.WebGLRenderer;
@@ -175,7 +176,7 @@ export default function Staircase3D(props: Staircase3DProps) {
     }
 
     // Build new staircase
-    const newGroup = buildStaircase(props);
+    const newGroup = buildStaircase({ stepCount, stepHeightM, stepWidthM, stairWidthM, floorHeightM, materialType });
     while (newGroup.children.length > 0) {
       const child = newGroup.children[0];
       newGroup.remove(child);
@@ -183,15 +184,15 @@ export default function Staircase3D(props: Staircase3DProps) {
     }
 
     // Update camera position
-    const totalH = props.stepCount * props.stepHeightM;
-    const totalD = props.stepCount * props.stepWidthM;
+    const totalH = stepCount * stepHeightM;
+    const totalD = stepCount * stepWidthM;
     const camDist = Math.max(totalH, totalD) * 1.5 + 1;
     ctx.camera.position.set(camDist * 0.7, camDist * 0.5, camDist * 0.7);
     ctx.controls.target.set(0, totalH * 0.3, 0);
     ctx.controls.minDistance = 1;
     ctx.controls.maxDistance = camDist * 3;
     ctx.controls.update();
-  }, [props.stepCount, props.stepHeightM, props.stepWidthM, props.stairWidthM, props.materialType]);
+  }, [stepCount, stepHeightM, stepWidthM, stairWidthM, floorHeightM, materialType]);
 
   return (
     <div ref={containerRef} className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700" />

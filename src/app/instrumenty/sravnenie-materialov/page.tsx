@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import MaterialComparison from "./MaterialComparison";
 
 const META = {
-  title: `Сравнение строительных материалов — таблица характеристик | ${SITE_NAME}`,
+  title: `Сравнение строительных материалов — таблица характеристик`,
   description: "Сравнение напольных покрытий, утеплителей и отделочных материалов: стоимость, срок службы, сложность монтажа, расход сопутствующих материалов.",
 };
 

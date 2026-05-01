@@ -88,6 +88,7 @@ function buildRoof(props: Roof3DProps): THREE.Group {
 }
 
 export default function Roof3D(props: Roof3DProps) {
+  const { spanM, lengthM, slopeAngle, roofType, overhangM } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     renderer: THREE.WebGLRenderer;
@@ -177,7 +178,7 @@ export default function Roof3D(props: Roof3DProps) {
     }
 
     // Build new roof
-    const newGroup = buildRoof(props);
+    const newGroup = buildRoof({ spanM, lengthM, slopeAngle, roofType, overhangM });
     // Move children from newGroup into ctx.group (preserving rotation animation)
     ctx.group.position.copy(newGroup.position);
     while (newGroup.children.length > 0) {
@@ -187,14 +188,14 @@ export default function Roof3D(props: Roof3DProps) {
     }
 
     // Update camera
-    const maxDim = Math.max(props.spanM, props.lengthM);
+    const maxDim = Math.max(spanM, lengthM);
     const camDist = maxDim * 1.2 + 3;
     ctx.camera.position.set(camDist * 0.8, camDist * 0.6, camDist * 0.8);
     ctx.controls.target.set(0, 1, 0);
     ctx.controls.minDistance = 2;
     ctx.controls.maxDistance = camDist * 3;
     ctx.controls.update();
-  }, [props.spanM, props.lengthM, props.slopeAngle, props.roofType, props.overhangM]);
+  }, [spanM, lengthM, slopeAngle, roofType, overhangM]);
 
   return (
     <div ref={containerRef} className="w-full aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700" />

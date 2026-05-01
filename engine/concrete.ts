@@ -76,7 +76,6 @@ function buildMaterials(
       unit: "м³",
       withReserve: roundDisplay(recPurchaseQuantity, 3),
       purchaseQty: roundDisplay(recPackageCount * recPackageSize, 3),
-      packageInfo: { count: recPackageCount, size: recPackageSize, packageUnit: "доставок" },
       category: "Основное",
     },
   ];

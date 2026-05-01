@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { facadeBrickDef } from "../formulas/facade-brick";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(facadeBrickDef.calculate.bind(facadeBrickDef));
+const calc = withBasicAccuracy(facadeBrickDef.calculate.bind(facadeBrickDef)) as (
+  inputs: Record<string, any>,
+) => ReturnType<typeof facadeBrickDef.calculate>;
 
 describe("Облицовочный кирпич", () => {
   describe("Одинарный кирпич 250×65, шов 10 мм, 80 м²", () => {
@@ -174,9 +176,9 @@ describe("Облицовочный кирпич", () => {
     });
 
     it("с окнами: practicalNote упоминает добавленную полосу", () => {
-      const hasNote = fiveWindows.practicalNotes.some((n) =>
+      const hasNote = fiveWindows.practicalNotes?.some((n) =>
         n.includes("Гидроизоляция над 5 оконными проёмами"),
-      );
+      ) ?? false;
       expect(hasNote).toBe(true);
     });
   });

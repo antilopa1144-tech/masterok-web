@@ -6,7 +6,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
-  title: `Михалыч — AI-ассистент строителя | ${SITE_NAME}`,
+  title: `Михалыч — AI-ассистент строителя`,
   description:
     "Спросите Михалыча — опытного строительного ИИ-мастера. Расчёты, технологии, советы по материалам. Отвечает как настоящий прораб.",
 } as const;

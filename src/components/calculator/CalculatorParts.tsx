@@ -562,6 +562,10 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
               const reserveQty = m.quantity;
               const reserveUnit = useGrams ? formatWeightParts(reserveQty)[1] : pluralizeUnit(reserveQty, m.unit);
               const reserveVal = useGrams ? formatWeightParts(reserveQty)[0] : formatMaterialQty(reserveQty, m.unit);
+              const showWithoutReserve = !m.packageInfo
+                && m.withReserve != null
+                && Math.abs(rawQty - reserveQty) > 0.005
+                && `${displayVal} ${displayUnit}` !== `${reserveVal} ${reserveUnit}`;
               return (
                 <div key={i} className="flex items-start justify-between gap-2 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
                   <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 leading-snug min-w-0 break-words">{m.name}</span>
@@ -575,7 +579,7 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                         {m.packageInfo.count} {pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} × {m.packageInfo.size} {m.unit}
                       </div>
                     )}
-                    {!m.packageInfo && m.withReserve != null && m.withReserve !== m.quantity && (
+                    {showWithoutReserve && (
                       <div className="text-xs text-slate-400 dark:text-slate-400">
                         {CALCULATOR_UI_TEXT.withoutReserve}: {reserveVal} {reserveUnit}
                       </div>
@@ -633,7 +637,12 @@ export function TotalItem({ name, value }: { name: string; value: number }) {
 // ── Блок итогов (адаптивный) ─────────────────────────────────────────────────
 
 function TotalsBlock({ totals }: { totals: CalculatorResult["totals"] }) {
-  const visibleEntries = Object.entries(totals).filter(([key]) => key in TOTAL_LABELS && !HIDDEN_TOTALS.has(key));
+  const visibleEntries = Object.entries(totals).filter(([key, value]) =>
+    key in TOTAL_LABELS
+    && !HIDDEN_TOTALS.has(key)
+    && Number.isFinite(value)
+    && value !== 0
+  );
 
   if (visibleEntries.length === 0) return null;
 
@@ -734,9 +743,19 @@ function ScenarioBlock({ result }: { result: CalculatorResult }) {
             )}
             {rec.buy_plan && rec.buy_plan.packages_count > 0 && (() => {
               const bpUnit = rec.buy_plan.unit;
+              const isBulkRounding = (bpUnit === "м³" || bpUnit === "m3") && rec.buy_plan.package_size < 1;
+              const isSinglePieceStep = (bpUnit === "шт" || bpUnit === "piece") && rec.buy_plan.package_size === 1;
+              if (isSinglePieceStep) return null;
+              if (isBulkRounding) {
+                return (
+                  <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
+                    {CALCULATOR_UI_TEXT.scenarioLabels.rounding}: {formatNumber(rec.buy_plan.package_size)} {displayUnit(bpUnit)}
+                  </p>
+                );
+              }
               // If buy_plan.unit is a raw unit (kg, l, m), show "N шт × size unit"
               // If buy_plan.unit is a package type (мешков, канистр), pluralize it
-              const isRawUnit = !!({ kg: 1, g: 1, l: 1, m: 1, m2: 1 } as Record<string, number>)[bpUnit];
+              const isRawUnit = !!({ kg: 1, g: 1, l: 1, m: 1, m2: 1, m3: 1, "м²": 1, "м³": 1 } as Record<string, number>)[bpUnit];
               const countLabel = isRawUnit
                 ? pluralizeRu(rec.buy_plan.packages_count, ["шт.", "шт.", "шт."])
                 : pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit);

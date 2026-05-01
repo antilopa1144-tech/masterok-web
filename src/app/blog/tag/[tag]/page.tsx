@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllTags, getPostsByTag, slugToTag, tagToSlug } from "@/lib/blog";
+import { getAllTags, getPostsByTag, resolveTagFromSlug, tagToSlug } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -35,17 +36,17 @@ interface TagPageProps {
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { tag: tagSlug } = await params;
-  // Try both decoded and raw slug matching
-  const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
+  const allTags = await getAllTags();
+  const tag = resolveTagFromSlug(tagSlug, allTags);
   if (!tag) {
     return {
-      title: `Статьи — ${SITE_NAME}`,
+      title: `Статьи`,
       robots: { index: false, follow: false },
     };
   }
   const posts = await getPostsByTag(tag);
   return buildPageMetadata({
-    title: `${tag} — статьи о строительстве | ${SITE_NAME}`,
+    title: `${tag} — статьи о строительстве`,
     description: `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`,
     url: `${SITE_URL}/blog/tag/${tagToSlug(tag)}/`,
   });
@@ -53,11 +54,12 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 
 export default async function TagPage({ params }: TagPageProps) {
   const { tag: tagSlug } = await params;
-  const tag = slugToTag(tagSlug) ?? slugToTag(decodeURIComponent(tagSlug));
+  const allTags = await getAllTags();
+  const tag = resolveTagFromSlug(tagSlug, allTags);
   if (!tag) notFound();
 
   const posts = await getPostsByTag(tag);
-  const allTags = await getAllTags();
+  if (posts.length === 0) notFound();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -114,9 +116,9 @@ export default async function TagPage({ params }: TagPageProps) {
                 <article key={post.slug} className="card-hover flex flex-col overflow-hidden">
                   {post.heroImage && (
                     <Link href={`/blog/${post.slug}/`} className="block">
-                      <img
+                      <Image
                         src={post.heroImage}
-                        alt={post.heroImageAlt}
+                        alt={post.heroImageAlt || post.title}
                         className="w-full h-40 object-cover"
                         width={400}
                         height={160}

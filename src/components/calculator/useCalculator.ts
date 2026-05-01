@@ -188,7 +188,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       setResult(res);
       setHasCalculated(true);
     });
-  }, [calculator.slug, values]);
+  }, [calculator.slug, values, accuracyMode, customModifiers]);
 
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
@@ -364,4 +364,3 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     applyPreset,
   };
 }
-

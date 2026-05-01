@@ -7,7 +7,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
-  title: `Все строительные калькуляторы онлайн | ${SITE_NAME}`,
+  title: `Все строительные калькуляторы онлайн`,
   description: "Полный каталог строительных калькуляторов: бетон, кирпич, кровля, полы, отделка. Расчёт материалов по ГОСТ и СНиП.",
 } as const;
 
