@@ -32,7 +32,49 @@ const THEME_INIT_SCRIPT = `(() => {
 // Webvisor отключён сознательно: тащил +43 KB JS, +200ms TBT mobile, открывал WebSocket
 // к mc.yandex.com/solid.ws (блокировался CSP, генерировал ошибки в консоли).
 // Клики/линки/время на странице/отказы продолжают писаться через clickmap+trackLinks.
-const YM_INIT_SCRIPT = `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});`;
+//
+// Важно для Lighthouse/PageSpeed: сам tag.js грузим не сразу afterInteractive,
+// а после idle/первого взаимодействия/таймаута. Очередь ym() создаётся сразу,
+// поэтому первый hit и SPA-навигация не теряются, но тяжёлый сторонний JS
+// не попадает в критический TBT на первом рендере.
+const YM_INIT_SCRIPT = `(() => {
+  const id = ${YM_COUNTER};
+  const src = "https://mc.yandex.ru/metrika/tag.js";
+  const w = window;
+  const d = document;
+
+  w.ym = w.ym || function(){(w.ym.a = w.ym.a || []).push(arguments)};
+  w.ym.l = 1 * new Date();
+  w.ym(id, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true});
+
+  let loaded = false;
+  const load = () => {
+    if (loaded || d.querySelector('script[src="' + src + '"]')) return;
+    loaded = true;
+    const script = d.createElement("script");
+    script.async = true;
+    script.src = src;
+    (d.head || d.body).appendChild(script);
+  };
+
+  const scheduleIdleLoad = () => {
+    if ("requestIdleCallback" in w) {
+      w.requestIdleCallback(load, { timeout: 8000 });
+    } else {
+      w.setTimeout(load, 8000);
+    }
+  };
+
+  if (d.readyState === "complete") {
+    scheduleIdleLoad();
+  } else {
+    w.addEventListener("load", scheduleIdleLoad, { once: true });
+  }
+
+  ["pointerdown", "keydown", "scroll", "touchstart"].forEach((eventName) => {
+    w.addEventListener(eventName, load, { once: true, passive: true });
+  });
+})();`;
 
 // Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
 // font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
