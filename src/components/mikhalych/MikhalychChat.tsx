@@ -32,7 +32,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   const [typing, setTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -71,13 +71,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     }, 18);
   };
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: typing ? "auto" : "smooth" });
+  }, [messages, loading, typing]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -159,9 +157,9 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   };
 
   return (
-    <div className="card flex flex-col" style={{ height: "600px" }}>
+    <div className="card flex flex-col overflow-hidden" style={{ height: "640px" }}>
       {/* История сообщений */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -216,8 +214,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             ⚠️ {error}
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {messages.length === 1 && starterQuestions.length > 0 && (
@@ -237,15 +233,16 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         </div>
       )}
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-        <div className="flex items-end gap-3">
+      <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
+          <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Задайте вопрос Михалычу... (Enter — отправить, Shift+Enter — новая строка)"
-            className="flex-1 input-field resize-none text-sm py-2.5"
+            placeholder="Спросите про материалы, технологию или расчёт..."
+            className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100"
             rows={2}
             disabled={loading || typing}
             aria-label="Сообщение для Михалыча"
@@ -253,9 +250,10 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || loading || typing}
-            className="btn-primary py-2.5 px-4 shrink-0 disabled:opacity-50"
+            className="inline-flex min-h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-accent-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-accent-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Отправить"
           >
+            <span className="hidden sm:inline">Отправить</span>
             <svg
               className="w-5 h-5"
               fill="none"
@@ -271,12 +269,14 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             </svg>
           </button>
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-400 mt-2 text-center">
-          Ответы Михалыча носят справочный характер. Для точных расчётов используйте{" "}
-          <Link href="/" className="text-accent-500 hover:underline">
-            калькуляторы
-          </Link>
-          .
+          <div className="mt-1 flex items-center justify-between gap-3 px-1">
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">Enter — отправить</span>
+            <span className="hidden text-[11px] text-slate-400 dark:text-slate-500 sm:inline">Shift+Enter — новая строка</span>
+          </div>
+        </div>
+        <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+          Ответы справочные. Для точных объёмов используйте{" "}
+          <Link href="/" className="text-accent-600 hover:underline dark:text-accent-400">калькуляторы</Link>.
         </p>
       </div>
     </div>

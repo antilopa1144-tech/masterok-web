@@ -11,6 +11,7 @@ import { MASTEROK_RUSTORE_URL, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_D
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import RecentCalculators from "@/components/calculator/RecentCalculators";
 import ProjectManager from "@/components/calculator/ProjectManager";
+import QuickCalculator from "@/components/tools/QuickCalculator";
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
@@ -53,6 +54,8 @@ const UI_TEXT = {
   mikhalychSecondaryCta: "Приложение",
   toolsTitle: "Полезные инструменты",
   toolsCta: "Все инструменты →",
+  quickCalculatorTitle: "Быстрый калькулятор",
+  quickCalculatorDescription: "Посчитайте прямо на главной",
   featuresTitle: `Почему ${SITE_NAME}?`,
 } as const;
 
@@ -465,6 +468,26 @@ export default async function HomePage() {
               >
                 {UI_TEXT.toolsCta}
               </Link>
+
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      {UI_TEXT.quickCalculatorTitle}
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {UI_TEXT.quickCalculatorDescription}
+                    </p>
+                  </div>
+                  <Link
+                    href="/instrumenty/kalkulyator/"
+                    className="text-xs font-medium text-accent-700 hover:text-accent-800 no-underline"
+                  >
+                    Открыть
+                  </Link>
+                </div>
+                <QuickCalculator compact showHistory={false} enableKeyboard={false} />
+              </div>
 
               {/* Проекты */}
               <div className="mt-6">

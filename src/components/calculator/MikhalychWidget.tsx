@@ -27,8 +27,8 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -48,18 +48,11 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
     }
   }, [open, messages.length, calculatorTitle, calcContext]);
 
-  // Скроллим чат в центр экрана при открытии
   useEffect(() => {
-    if (!open) return;
-    const t = setTimeout(() => {
-      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
-    return () => clearTimeout(t);
-  }, [open]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: typing ? "auto" : "smooth" });
+  }, [messages, loading, typing]);
 
   // Прогрессивная печать ответа ассистента (typing effect)
   const startTyping = (fullContent: string) => {
@@ -218,7 +211,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
         </button>
       </div>
 
-      <div className="h-72 overflow-y-auto p-4 space-y-3" role="log" aria-live="polite">
+      <div ref={messagesContainerRef} className="h-72 overflow-y-auto p-4 space-y-3" role="log" aria-live="polite">
         {messages.map((msg, i) => (
           <div key={i} className={`flex items-start gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${msg.role === "assistant" ? "bg-accent-500" : "bg-slate-600"}`} aria-hidden="true">
@@ -247,30 +240,41 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <div className="px-4 pb-4">
-        <div className="flex gap-2">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/35 p-2 shadow-sm">
+          <div className="flex items-end gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !typing && sendMessage(input)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !typing) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
             placeholder={UI_TEXT.inputPlaceholder}
             disabled={loading || typing}
             aria-label={UI_TEXT.inputAriaLabel}
-            className="flex-1 bg-slate-600/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-accent-500/50"
+            className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-slate-700/70 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || loading || typing}
-            className="bg-accent-500 hover:bg-accent-600 disabled:opacity-40 text-white px-3 py-2 rounded-xl transition-colors text-sm font-medium"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-accent-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-accent-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label={UI_TEXT.sendAriaLabel}
           >
-            →
+            <span className="hidden sm:inline">{UI_TEXT.sendAriaLabel}</span>
+            <span aria-hidden="true">→</span>
           </button>
         </div>
+          <p className="mt-1 px-1 text-[11px] text-slate-400">Enter отправит сообщение</p>
+        </div>
+        <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400">
+          Ответы справочные. Точные объёмы проверяйте калькулятором.
+        </p>
       </div>
     </div>
   );

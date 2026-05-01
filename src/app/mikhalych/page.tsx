@@ -18,9 +18,13 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 const UI_TEXT = {
+  heroBadge: "Строительный AI-прораб",
   heroTitle: "Михалыч — AI-ассистент строителя",
   heroDescription:
     "Опытный строительный мастер с 30-летним стажем. Поможет рассчитать материалы, объяснит технологию и предупредит об ошибках. Говорит просто, по делу.",
+  heroCta: "Задать вопрос",
+  heroTrust: "Отвечает по-русски, без канцелярита и с поправкой на реальную стройку.",
+  scenariosTitle: "Быстрые сценарии",
   skillsTitle: "Что умеет Михалыч?",
   nearbyTitle: "Калькуляторы рядом",
   appTitle: "Михалыч в приложении",
@@ -35,6 +39,12 @@ const HERO_TAGS = [
   "Технологии монтажа",
   "ГОСТ и СНиП",
   "Выбор материалов",
+] as const;
+
+const HERO_SCENARIOS = [
+  "Проверить расчёт материалов",
+  "Разобраться с технологией",
+  "Подобрать нормальный материал",
 ] as const;
 
 const STARTER_QUESTIONS = [
@@ -93,24 +103,57 @@ export default function MikhalychPage() {
     <div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mikhalychJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(mikhalychBreadcrumbLd) }} />
-      <div className="bg-linear-to-br from-slate-800 to-slate-700 text-white">
-        <div className="page-container-wide py-8 md:py-10">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 bg-accent-500 rounded-2xl flex items-center justify-center text-3xl shrink-0" role="img" aria-label="AI-помощник Михалыч">
-              🤖
+      <div className="relative overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl" aria-hidden="true" />
+        <div className="absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" aria-hidden="true" />
+        <div className="page-container-wide relative py-10 md:py-14">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
+            <div className="flex items-start gap-5">
+              <div className="relative shrink-0" role="img" aria-label="AI-помощник Михалыч">
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-accent-500 text-4xl shadow-2xl shadow-accent-500/30">
+                  🤖
+                </div>
+                <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-950 bg-emerald-500 text-[10px] font-bold">
+                  ON
+                </span>
+              </div>
+              <div className="min-w-0">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-accent-400/30 bg-accent-500/10 px-3 py-1 text-xs font-semibold text-accent-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {UI_TEXT.heroBadge}
+                </div>
+                <h1 className="text-3xl font-black leading-tight text-white md:text-5xl">
+                  {UI_TEXT.heroTitle}
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                  {UI_TEXT.heroDescription}
+                </p>
+                <p className="mt-3 max-w-xl text-sm text-slate-400">
+                  {UI_TEXT.heroTrust}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {HERO_TAGS.map((tag) => (
+                    <span key={tag} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 ring-1 ring-white/10">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <a href="#mikhalych-chat" className="btn-primary mt-6 inline-flex text-base">
+                  {UI_TEXT.heroCta}
+                </a>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-                {UI_TEXT.heroTitle}
-              </h1>
-              <p className="text-slate-300 mt-2 leading-relaxed max-w-xl">
-                {UI_TEXT.heroDescription}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {HERO_TAGS.map((tag) => (
-                  <span key={tag} className="text-xs bg-white/10 text-slate-300 px-2.5 py-1 rounded-full">
-                    {tag}
-                  </span>
+
+            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-slate-950/30 backdrop-blur">
+              <p className="mb-3 text-sm font-bold text-white">{UI_TEXT.scenariosTitle}</p>
+              <div className="space-y-2">
+                {HERO_SCENARIOS.map((scenario, index) => (
+                  <div key={scenario} className="flex items-center gap-3 rounded-2xl bg-slate-950/35 px-3 py-3 text-sm text-slate-200">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-accent-500/20 text-xs font-bold text-accent-200">
+                      {index + 1}
+                    </span>
+                    {scenario}
+                  </div>
                 ))}
               </div>
             </div>
@@ -120,7 +163,7 @@ export default function MikhalychPage() {
 
       <div className="page-container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div id="mikhalych-chat" className="scroll-mt-24 lg:col-span-2">
             <MikhalychChat starterQuestions={[...STARTER_QUESTIONS]} />
           </div>
 
