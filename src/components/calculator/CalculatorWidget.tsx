@@ -180,7 +180,7 @@ export default function CalculatorWidget({ calculator }: Props) {
       {/* Результат */}
       {result && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between print:hidden">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.resultsTitle}</h2>
             <div className="flex items-center gap-2" data-print-hide>
               {experienceMode === "pro" && (
@@ -203,6 +203,7 @@ export default function CalculatorWidget({ calculator }: Props) {
             shareState={shareState}
             onShare={handleShare}
             calculatorSlug={calculator.slug}
+            calculatorTitle={calculator.title}
             projectSave={{
               calcId: calculator.id,
               calcTitle: calculator.title,
@@ -213,30 +214,36 @@ export default function CalculatorWidget({ calculator }: Props) {
 
           {/* 3D-модель лестницы */}
           {calculator.slug === "kalkulyator-lestnicy" && (
-            <Staircase3DWrapper
-              stepCount={result.totals.stepCount ?? 16}
-              stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
-              stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
-              stairWidthM={result.totals.stairWidth ?? 1}
-              floorHeightM={result.totals.floorHeight ?? 2.8}
-              materialType={result.totals.materialType ?? 0}
-            />
+            <div data-print-hide>
+              <Staircase3DWrapper
+                stepCount={result.totals.stepCount ?? 16}
+                stepHeightM={result.totals.realStepH ?? (result.totals.stepHeight ?? 170) / 1000}
+                stepWidthM={(result.totals.stepWidth ?? 280) / 1000}
+                stairWidthM={result.totals.stairWidth ?? 1}
+                floorHeightM={result.totals.floorHeight ?? 2.8}
+                materialType={result.totals.materialType ?? 0}
+              />
+            </div>
           )}
 
           {/* 3D-модель кровли */}
           {calculator.slug === "krovlya" && (
-            <Roof3DWrapper
-              spanM={(result.totals.ridgeLength ?? 8) > 0 ? (result.totals.area ?? 80) / (result.totals.ridgeLength ?? 8) : 8}
-              lengthM={result.totals.ridgeLength ?? 8}
-              slopeAngle={result.totals.slope ?? 30}
-              roofType={result.totals.roofingType ?? 0}
-              overhangM={0.5}
-            />
+            <div data-print-hide>
+              <Roof3DWrapper
+                spanM={(result.totals.ridgeLength ?? 8) > 0 ? (result.totals.area ?? 80) / (result.totals.ridgeLength ?? 8) : 8}
+                lengthM={result.totals.ridgeLength ?? 8}
+                slopeAngle={result.totals.slope ?? 30}
+                roofType={result.totals.roofingType ?? 0}
+                overhangM={0.5}
+              />
+            </div>
           )}
 
           {/* Сравнение режимов */}
           {showComparison && comparisonResults && (
-            <ComparisonTable comparisonResults={comparisonResults} currentMode={accuracyMode} />
+            <div className="print:hidden">
+              <ComparisonTable comparisonResults={comparisonResults} currentMode={accuracyMode} />
+            </div>
           )}
 
           {/* Обратная связь */}

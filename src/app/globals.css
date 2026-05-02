@@ -496,10 +496,10 @@ input[type="range"]::-moz-range-thumb {
 @utility bg-cat-interior { background-color: #d1fae5; }
 @utility bg-cat-ceiling { background-color: #dbeafe; }
 
-/* ── Print styles — компактный лист A4 с одним расчётом ─────────────────── */
+/* ── Print — одна компактная смета (EstimatePrintSheet), без «каши» из карточек/3D ─────────────────── */
 @media print {
   @page {
-    margin: 0.8cm 1.2cm;
+    margin: 1cm 1.2cm;
     size: A4;
   }
 
@@ -523,83 +523,126 @@ input[type="range"]::-moz-range-thumb {
     visibility: hidden !important;
   }
 
+  /* Заголовок бренда выводит сам EstimatePrintSheet — глобальная полоса не нужна */
+  body::before {
+    display: none !important;
+    content: none !important;
+  }
+
   /* Чистая типографика */
   html, body {
     background: white !important;
     color: #111 !important;
-    font-size: 9.5pt;
-    line-height: 1.25;
+    font-size: 10pt;
+    line-height: 1.35;
   }
 
-  /* Заголовок страницы с брендом и датой */
-  body::before {
-    content: "masterok.ru — строительный расчёт";
-    display: block;
-    font-size: 8pt;
-    color: #666;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 3pt;
-    margin-bottom: 6pt;
-  }
-
-  /* Убираем фоны и тени, делаем границы тонкими */
-  .card, .card-hover, .result-card {
+  /* Убираем фоны и тени у прочих карточек (если что-то осталось видимым) */
+  .card, .card-hover {
     background: white !important;
     border: 1px solid #ccc !important;
     box-shadow: none !important;
+    padding: 8pt !important;
+    margin-bottom: 8pt !important;
+  }
+
+  /* Компактная печатная смета */
+  .estimate-print-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    break-inside: auto;
+  }
+
+  .estimate-print-sheet .ep-materials thead,
+  .estimate-print-sheet .ep-totals thead {
+    display: table-header-group;
+  }
+
+  .estimate-print-sheet .ep-materials tr,
+  .estimate-print-sheet .ep-totals tr {
     break-inside: avoid;
     page-break-inside: avoid;
-    padding: 6pt 8pt !important;
-    margin-bottom: 4pt !important;
   }
-  .result-card { background: #fafbfc !important; }
 
-  /* Компактные заголовки */
+  .estimate-print-sheet .ep-print-cat {
+    break-after: avoid;
+    page-break-after: avoid;
+    background: #f3f4f6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .estimate-print-sheet h1,
+  .estimate-print-sheet h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+    color: #000 !important;
+  }
+
+  .estimate-print-sheet table {
+    font-size: 9.5pt;
+    width: 100% !important;
+    border-collapse: collapse;
+  }
+
+  .estimate-print-sheet .ep-materials th,
+  .estimate-print-sheet .ep-materials td,
+  .estimate-print-sheet .ep-totals td {
+    border-bottom: 1pt solid #ddd !important;
+    padding: 3pt 4pt !important;
+    vertical-align: top;
+  }
+
+  .estimate-print-sheet .ep-materials th {
+    border-bottom: 2pt solid #000 !important;
+  }
+
+  /* Слайдер/отступы страницы */
+  .slide-up {
+    animation: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   h1, h2, h3, h4 {
     break-after: avoid;
     page-break-after: avoid;
     color: #111 !important;
-    margin: 3pt 0 2pt 0 !important;
+    margin: 4pt 0 3pt 0 !important;
   }
-  h1 { font-size: 12pt; }
-  h2 { font-size: 10.5pt; }
+  h1 { font-size: 13pt; }
+  h2 { font-size: 11pt; }
   h3 { font-size: 10pt; }
   h4 { font-size: 9.5pt; }
 
   /* Плотные списки и параграфы */
-  p, li { margin: 1pt 0 !important; }
-  ul, ol { margin: 2pt 0 !important; padding-left: 14pt !important; }
+  p, li { margin: 2pt 0 !important; }
+  ul, ol { margin: 3pt 0 !important; padding-left: 16pt !important; }
 
-  /* Компактные таблицы */
-  table {
-    font-size: 9pt;
-    width: 100% !important;
-    border-collapse: collapse;
-  }
-  th, td { padding: 2pt 4pt !important; }
-  tr { break-inside: avoid; }
-  thead { display: table-header-group; }
-
-  /* Убираем анимации, пустые зазоры, скрываем все details-аккордеоны */
+  /* Убираем анимации и лишние вертикальные отступы у утилит Tailwind */
   details { display: none !important; }
-  .slide-up, .animate-fade-in { animation: none !important; break-inside: avoid; }
+  .animate-fade-in { animation: none !important; break-inside: avoid; }
   .space-y-6 > * + *,
   .space-y-5 > * + *,
-  .space-y-4 > * + * { margin-top: 4pt !important; }
+  .space-y-4 > * + * { margin-top: 6pt !important; }
   .py-8, .py-6, .py-4 { padding-top: 0 !important; padding-bottom: 0 !important; }
-  .mt-10, .mt-8, .mt-6 { margin-top: 4pt !important; }
+  .mt-10, .mt-8, .mt-6 { margin-top: 6pt !important; }
 
-  /* Убираем layout-grid — растягиваем результат на всю ширину */
   .page-container, .page-container-wide {
     max-width: 100% !important;
-    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
-  .grid { display: block !important; }
+  /* Оставляем только блок сметы по ширине; сетка страницы = одна колонка */
+  .grid {
+    display: block !important;
+  }
 
-  /* Ссылки — без подсветки URL (не нужны на бумаге) */
   a { color: #111 !important; text-decoration: none !important; }
 
-  /* Принудительно светлая тема */
+  /* Принудительно светлая тема для хвостов разметки */
   .dark * {
     color: #111 !important;
     background-color: transparent !important;

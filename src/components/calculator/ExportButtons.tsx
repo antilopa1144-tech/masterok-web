@@ -16,11 +16,11 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const exportEstimate = useEstimateExport(calculatorName);
 
-  const materials: Material[] = result.materials.map((m: { name: string; purchaseQty?: number; quantity: number; unit: string; waste?: number }) => ({
+  const materials: Material[] = result.materials.map((m) => ({
     name: m.name,
-    quantity: m.purchaseQty ?? m.quantity,
+    quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
     unit: m.unit,
-    waste: m.waste ?? 0,
+    category: m.category,
   }));
 
   const accuracyLabel = result.accuracyMode ? ACCURACY_MODE_LABELS[result.accuracyMode] : undefined;

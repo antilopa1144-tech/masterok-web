@@ -17,6 +17,7 @@ import {
   type AccuracyModifiers,
 } from "../../../engine/accuracy";
 import SaveToProjectButton from "./SaveToProjectButton";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 // ── Округление материалов по единицам ────────────────────────────────────────
 
@@ -1327,6 +1328,137 @@ function isResultEmpty(result: CalculatorResult): boolean {
     result.materials.every((m) => !m.quantity || isNaN(m.quantity) || m.quantity === 0);
 }
 
+function EstimatePrintSheet({
+  calculatorTitle,
+  result,
+  priceTotal,
+  accuracyLabel,
+}: {
+  calculatorTitle?: string;
+  result: CalculatorResult;
+  priceTotal: number;
+  accuracyLabel: string;
+}) {
+  const groups: Record<string, CalculatorResult["materials"]> = {};
+  for (const m of result.materials) {
+    const cat = m.category ?? CALCULATOR_UI_TEXT.defaultMaterialCategory;
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(m);
+  }
+
+  const siteHost = SITE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const visibleTotals = getVisibleTotals(result.totals);
+
+  return (
+    <div className="estimate-print-sheet hidden print:block text-black">
+      <header className="mb-3 border-b border-neutral-400 pb-2">
+        <p className="mb-0.5 text-[9pt] text-neutral-600">
+          {SITE_NAME} — {siteHost}
+        </p>
+        <h1 className="m-0 text-[13pt] font-bold leading-tight text-black">
+          {calculatorTitle ?? "Расчёт материалов"}
+        </h1>
+        <p className="mt-1 mb-0 text-[9pt] text-neutral-600">
+          Дата: {new Date().toLocaleDateString("ru-RU")} · Режим: {accuracyLabel}
+        </p>
+      </header>
+
+      {result.warnings.length > 0 && (
+        <section className="mb-3 rounded border border-amber-700 p-2 text-[9pt] print:break-inside-avoid">
+          <p className="mb-1 mt-0 font-bold">Важно</p>
+          <ul className="mb-0 mt-0 pl-4">
+            {result.warnings.map((w, i) => (
+              <li key={i} className="mb-0.5">
+                {w}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="print:break-inside-auto">
+        <h2 className="m-0 mb-2 text-[11pt] font-bold text-black">Материалы к закупке</h2>
+        <table className="ep-materials w-full border-collapse text-[9pt]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1 pr-2 text-left font-semibold text-black">Наименование</th>
+              <th className="w-[30%] py-1 pl-2 text-right font-semibold text-black">Количество</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(groups).flatMap(([groupName, items]) => [
+              <tr key={`${groupName}__h`}>
+                <td
+                  colSpan={2}
+                  className="ep-print-cat pt-2 pb-0.5 text-[8pt] font-bold uppercase tracking-wide text-neutral-800"
+                >
+                  {groupName}
+                </td>
+              </tr>,
+              ...items.map((m, i) => {
+                const rawQty = qtyForMaterial(m);
+                const useGrams = m.unit === "кг" && rawQty > 0 && rawQty < 1;
+                const [displayVal, displayUnit] = useGrams
+                  ? formatWeightParts(rawQty)
+                  : [formatMaterialQty(rawQty, m.unit), pluralizeUnit(rawQty, m.unit)];
+                return (
+                  <tr key={`${groupName}__${i}`} className="border-b border-neutral-300">
+                    <td className="ep-print-td-name py-1 pr-2 align-top text-black">
+                      <span className="font-medium">{m.name}</span>
+                      {m.packageInfo ? (
+                        <div className="mt-0.5 text-[8pt] text-neutral-600">
+                          {m.packageInfo.count}{" "}
+                          {pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} ×{" "}
+                          {m.packageInfo.size} {m.unit}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="ep-print-td-qty whitespace-nowrap py-1 pl-2 text-right align-top tabular-nums text-black">
+                      {displayVal} {displayUnit}
+                    </td>
+                  </tr>
+                );
+              }),
+            ])}
+          </tbody>
+        </table>
+      </section>
+
+      {visibleTotals.length > 0 && (
+        <section className="mt-4 print:break-inside-avoid">
+          <h2 className="m-0 mb-2 text-[11pt] font-bold text-black">Параметры расчёта</h2>
+          <table className="ep-totals w-full border-collapse text-[9pt]">
+            <tbody>
+              {visibleTotals.map(([key, val]) => {
+                const { label, value: formattedValue, unit } = formatTotalMetric(key, val);
+                return (
+                  <tr key={key} className="border-b border-neutral-300">
+                    <td className="py-1 pr-2 text-black">{label}</td>
+                    <td className="py-1 pl-2 text-right font-medium tabular-nums text-black">
+                      {formattedValue}
+                      {unit ? ` ${unit}` : ""}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {priceTotal > 0 && (
+        <p className="mt-3 mb-0 text-[10pt] font-bold text-black print:break-inside-avoid">
+          Ориентировочная стоимость материалов: {formatCurrency(priceTotal)} ₽
+        </p>
+      )}
+
+      <footer className="mt-4 border-t border-neutral-400 pt-2 text-[8pt] text-neutral-600 print:break-inside-avoid">
+        Количества приведены с учётом запаса и округления под закупку. Уточняйте по условиям объекта и маркам материалов.
+      </footer>
+    </div>
+  );
+}
+
 export type ResultBlockProjectSave = {
   calcId: string;
   calcTitle: string;
@@ -1340,6 +1472,7 @@ export function ResultBlock({
   onShare,
   calculatorSlug,
   projectSave,
+  calculatorTitle,
 }: {
   result: CalculatorResult;
   shareState: "idle" | "copied";
@@ -1347,6 +1480,8 @@ export function ResultBlock({
   calculatorSlug?: string;
   /** Если задано — в блоке действий показывается «В проект» (смета в localStorage). */
   projectSave?: ResultBlockProjectSave;
+  /** Короткое название калькулятора для печати/PDF. */
+  calculatorTitle?: string;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const priceScope = calculatorSlug ? `materials:${calculatorSlug}` : PRICE_SCOPES.materials;
@@ -1415,7 +1550,7 @@ export function ResultBlock({
   return (
     <div className="space-y-4 slide-up">
       {result.warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1 dark:bg-amber-950/30 dark:border-amber-900/60">
+        <div className="print:hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1 dark:bg-amber-950/30 dark:border-amber-900/60">
           {result.warnings.map((w, i) => (
             <div key={i} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
               <span className="shrink-0">⚠️</span>
@@ -1427,7 +1562,7 @@ export function ResultBlock({
 
       {/* Режим точности — компактная расшифровка */}
       {result.accuracyExplanation && result.accuracyExplanation.appliedModifiers.length > 0 && (
-        <details className="group">
+        <details className="group print:hidden">
           <summary className="flex items-center gap-2 cursor-pointer list-none text-xs text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-1">
             <span className="font-medium text-slate-500 dark:text-slate-400">
               {result.accuracyExplanation.modeLabel}
@@ -1467,8 +1602,8 @@ export function ResultBlock({
         </details>
       )}
 
-      {/* Карточка результатов */}
-      <div className="result-card overflow-hidden p-0">
+      {/* Карточка результатов (на печати — компактный EstimatePrintSheet ниже) */}
+      <div className="result-card print:hidden overflow-hidden p-0">
         <div className="border-b border-accent-100 bg-gradient-to-br from-white via-accent-50/70 to-violet-50 px-5 py-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
@@ -1605,16 +1740,22 @@ export function ResultBlock({
         </div>
       </div>
 
-      {/* Сколько покупать */}
-      {result.scenarios && (<ScenarioBlock result={result} />)}
+      <EstimatePrintSheet
+        calculatorTitle={calculatorTitle}
+        result={result}
+        priceTotal={priceTotal}
+        accuracyLabel={accuracyLabel}
+      />
 
-      {/* Итого — компактный, скрывается если пусто */}
-      <TotalsBlock totals={result.totals} />
+      <div className="print:hidden">
+        {result.scenarios && <ScenarioBlock result={result} />}
 
-      {/* Советы прораба — после итогов */}
-      {result.practicalNotes && result.practicalNotes.length > 0 && (
-        <PracticalNotes notes={result.practicalNotes} />
-      )}
+        <TotalsBlock totals={result.totals} />
+
+        {result.practicalNotes && result.practicalNotes.length > 0 && (
+          <PracticalNotes notes={result.practicalNotes} />
+        )}
+      </div>
     </div>
   );
 }

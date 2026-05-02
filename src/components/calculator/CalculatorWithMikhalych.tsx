@@ -150,6 +150,7 @@ export default function CalculatorWithMikhalych({
             shareState={shareState}
             onShare={handleShare}
             calculatorSlug={calculator.slug}
+            calculatorTitle={calculator.title}
             projectSave={{
               calcId: calculator.id,
               calcTitle: calculator.title,
@@ -174,14 +175,16 @@ export default function CalculatorWithMikhalych({
           const steps = Math.max(1, Math.round(floorH * 1000 / stepH));
           const realStepH = floorH / steps;
           return (
-            <Staircase3DWrapper
-              stepCount={steps}
-              stepHeightM={realStepH}
-              stepWidthM={stepW / 1000}
-              stairWidthM={stairW}
-              floorHeightM={floorH}
-              materialType={matType}
-            />
+            <div data-print-hide>
+              <Staircase3DWrapper
+                stepCount={steps}
+                stepHeightM={realStepH}
+                stepWidthM={stepW / 1000}
+                stairWidthM={stairW}
+                floorHeightM={floorH}
+                materialType={matType}
+              />
+            </div>
           );
         })()}
 
@@ -193,13 +196,15 @@ export default function CalculatorWithMikhalych({
           const roofType = Number(values.roofingType) || 0;
           const spanEst = ridgeLen > 0 ? area / ridgeLen : 8;
           return (
-            <Roof3DWrapper
-              spanM={spanEst}
-              lengthM={ridgeLen}
-              slopeAngle={slope}
-              roofType={roofType}
-              overhangM={0.5}
-            />
+            <div data-print-hide>
+              <Roof3DWrapper
+                spanM={spanEst}
+                lengthM={ridgeLen}
+                slopeAngle={slope}
+                roofType={roofType}
+                overhangM={0.5}
+              />
+            </div>
           );
         })()}
       </div>
