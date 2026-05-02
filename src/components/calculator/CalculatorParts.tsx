@@ -8,6 +8,7 @@ import { CALCULATOR_UI_TEXT } from "./uiText";
 import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS, displayUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 import { getPrices, setPrice, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
+import { addFeedback } from "@/lib/storage/feedback";
 import {
   ACCURACY_MODES,
   ACCURACY_MODE_LABELS,
@@ -843,21 +844,14 @@ export function FeedbackPanel({
   const handleSubmit = () => {
     if (!value.trim()) return;
     // Store feedback in localStorage for now (can be sent to backend later)
-    try {
-      const key = "masterok-feedback";
-      const prev = JSON.parse(localStorage.getItem(key) ?? "[]");
-      prev.push({
-        calculator: calculatorSlug,
-        material: primaryMaterial.name,
-        calculated: primaryMaterial.purchaseQty,
-        actual: parseFloat(value),
-        unit: primaryMaterial.unit,
-        mode: accuracyMode,
-        ts: Date.now(),
-      });
-      // Keep last 50 entries
-      localStorage.setItem(key, JSON.stringify(prev.slice(-50)));
-    } catch {}
+    void addFeedback({
+      calculator: calculatorSlug,
+      material: primaryMaterial.name,
+      calculated: primaryMaterial.purchaseQty,
+      actual: parseFloat(value),
+      unit: primaryMaterial.unit,
+      mode: accuracyMode,
+    });
     setSubmitted(true);
   };
 
@@ -1348,7 +1342,13 @@ export function ResultBlock({
   const [prices, setPrices] = useState<MaterialPrices>({});
 
   useEffect(() => {
-    setPrices(getPrices(priceScope));
+    let cancelled = false;
+    void getPrices(priceScope).then((storedPrices) => {
+      if (!cancelled) setPrices(storedPrices);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [priceScope]);
 
   const priceTotal = useMemo(() => getPriceTotal(result.materials, prices), [result.materials, prices]);
@@ -1369,7 +1369,7 @@ export function ResultBlock({
   const accuracyMultiplier = result.accuracyExplanation?.combinedMultiplier;
 
   const handlePriceChange = (name: string, value: number) => {
-    setPrice(priceScope, name, value);
+    void setPrice(priceScope, name, value);
     setPrices((prev) => {
       const next = { ...prev };
       if (value > 0) next[name] = value;
@@ -1379,7 +1379,7 @@ export function ResultBlock({
   };
 
   const handleResetAllPrices = () => {
-    resetScope(priceScope);
+    void resetScope(priceScope);
     setPrices({});
   };
 

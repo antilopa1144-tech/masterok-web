@@ -2,72 +2,63 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import {
+  createProject as createStoredProject,
+  deleteProject as deleteStoredProject,
+  getProjects,
+  saveEntryToProject as saveStoredEntryToProject,
+} from "@/lib/storage/projects";
+import type { ProjectWithEntries, StoredProjectEntry } from "@/lib/storage/types";
+import { buildProjectEstimates, type ProjectEstimate } from "@/lib/projects/estimate";
 
-interface SavedCalcEntry {
-  calcId: string;
-  calcTitle: string;
-  slug: string;
-  categorySlug: string;
-  materials: { name: string; quantity: number; unit: string }[];
-  ts: number;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  created: number;
-  entries: SavedCalcEntry[];
-}
-
-const PROJECTS_KEY = "masterok-projects";
-
-function loadProjects(): Project[] {
-  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY) ?? "[]"); } catch { return []; }
-}
-
-function saveProjects(projects: Project[]) {
-  try { localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects)); } catch {}
-}
-
-export function saveToProject(projectId: string, entry: SavedCalcEntry) {
-  const projects = loadProjects();
-  const project = projects.find((p) => p.id === projectId);
-  if (!project) return;
-  // Dedupe by calcId
-  project.entries = project.entries.filter((e) => e.calcId !== entry.calcId);
-  project.entries.push(entry);
-  saveProjects(projects);
+export async function saveToProject(projectId: string, entry: Omit<StoredProjectEntry, "id" | "projectId">) {
+  await saveStoredEntryToProject(projectId, entry);
 }
 
 export default function ProjectManager() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectWithEntries[]>([]);
+  const [estimates, setEstimates] = useState<Record<string, ProjectEstimate>>({});
   const [newName, setNewName] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setProjects(loadProjects());
+  const refreshProjects = useCallback(async () => {
+    const items = await getProjects();
+    setProjects(items);
+    setEstimates(await buildProjectEstimates(items));
   }, []);
 
-  const createProject = useCallback(() => {
+  useEffect(() => {
+    void refreshProjects();
+  }, [refreshProjects]);
+
+  const createProject = useCallback(async () => {
     const name = newName.trim();
     if (!name) return;
-    const project: Project = {
-      id: `proj-${Date.now()}`,
-      name,
-      created: Date.now(),
-      entries: [],
-    };
-    const next = [project, ...projects];
-    setProjects(next);
-    saveProjects(next);
+    const project = await createStoredProject(name);
+    setProjects((prev) => [project, ...prev]);
+    setEstimates((prev) => ({
+      ...prev,
+      [project.id]: {
+        projectId: project.id,
+        totalCost: 0,
+        pricedItems: 0,
+        missingPriceItems: 0,
+        calculationsCount: 0,
+        lines: [],
+      },
+    }));
     setNewName("");
-  }, [newName, projects]);
+  }, [newName]);
 
-  const deleteProject = useCallback((id: string) => {
-    const next = projects.filter((p) => p.id !== id);
-    setProjects(next);
-    saveProjects(next);
-  }, [projects]);
+  const deleteProject = useCallback(async (id: string) => {
+    await deleteStoredProject(id);
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setEstimates((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
 
   if (projects.length === 0 && !newName) {
     return (
@@ -84,9 +75,9 @@ export default function ProjectManager() {
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Название проекта"
             className="input-field text-sm flex-1"
-            onKeyDown={(e) => e.key === "Enter" && createProject()}
+            onKeyDown={(e) => e.key === "Enter" && void createProject()}
           />
-          <button onClick={createProject} className="btn-primary text-sm px-4">
+          <button onClick={() => void createProject()} className="btn-primary text-sm px-4">
             Создать
           </button>
         </div>
@@ -109,10 +100,10 @@ export default function ProjectManager() {
           onChange={(e) => setNewName(e.target.value)}
           placeholder="Новый проект..."
           className="input-field text-xs flex-1 py-1.5"
-          onKeyDown={(e) => e.key === "Enter" && createProject()}
+          onKeyDown={(e) => e.key === "Enter" && void createProject()}
         />
         <button
-          onClick={createProject}
+          onClick={() => void createProject()}
           disabled={!newName.trim()}
           className="text-xs px-3 py-1.5 rounded-lg bg-accent-500 text-white font-medium disabled:opacity-40 transition-opacity"
         >
@@ -133,12 +124,37 @@ export default function ProjectManager() {
                 <span className="text-xs text-slate-400 ml-2">
                   {proj.entries.length} расч.
                 </span>
+                {estimates[proj.id]?.totalCost ? (
+                  <span className="block mt-1 text-xs font-bold text-accent-700 dark:text-accent-400">
+                    ≈ {estimates[proj.id].totalCost.toLocaleString("ru-RU")} ₽
+                  </span>
+                ) : null}
               </div>
               <span className={`text-slate-400 text-xs transition-transform ${expandedId === proj.id ? "rotate-180" : ""}`}>▼</span>
             </button>
 
             {expandedId === proj.id && (
               <div className="px-3 pb-3 space-y-1.5 border-t border-slate-200 dark:border-slate-700 pt-2">
+                {estimates[proj.id] && (
+                  <div className="rounded-xl border border-accent-100 bg-accent-50/70 p-3 text-xs dark:border-accent-900/50 dark:bg-accent-950/20">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-slate-100">Смета проекта</p>
+                        <p className="mt-0.5 text-slate-500 dark:text-slate-400">
+                          {estimates[proj.id].pricedItems} цен указано
+                          {estimates[proj.id].missingPriceItems > 0
+                            ? `, ${estimates[proj.id].missingPriceItems} без цены`
+                            : ""}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-base font-black tabular-nums text-accent-700 dark:text-accent-300">
+                        {estimates[proj.id].totalCost > 0
+                          ? `${estimates[proj.id].totalCost.toLocaleString("ru-RU")} ₽`
+                          : "— ₽"}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {proj.entries.length === 0 ? (
                   <p className="text-xs text-slate-400 py-2">
                     Откройте калькулятор и сохраните результат в этот проект
@@ -158,7 +174,7 @@ export default function ProjectManager() {
                   ))
                 )}
                 <button
-                  onClick={() => deleteProject(proj.id)}
+                  onClick={() => void deleteProject(proj.id)}
                   className="text-[10px] text-red-400 hover:text-red-600 transition-colors mt-1"
                 >
                   Удалить проект

@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-interface Project {
-  id: string;
-  name: string;
-  created: number;
-  entries: unknown[];
-}
+import { getProjects, saveEntryToProject } from "@/lib/storage/projects";
+import type { ProjectWithEntries } from "@/lib/storage/types";
 
 interface SaveEntry {
   calcId: string;
@@ -16,23 +11,6 @@ interface SaveEntry {
   categorySlug: string;
   materials: { name: string; quantity: number; unit: string }[];
   ts: number;
-}
-
-const PROJECTS_KEY = "masterok-projects";
-
-function loadProjects(): Project[] {
-  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY) ?? "[]"); } catch { return []; }
-}
-
-function saveEntryToProject(projectId: string, entry: SaveEntry) {
-  try {
-    const projects = loadProjects();
-    const project = projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const entries = project.entries as SaveEntry[];
-    project.entries = [...entries.filter((e: SaveEntry) => e.calcId !== entry.calcId), entry];
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-  } catch {}
 }
 
 interface Props {
@@ -44,13 +22,19 @@ interface Props {
 }
 
 export default function SaveToProjectButton({ calcId, calcTitle, slug, categorySlug, materials }: Props) {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectWithEntries[]>([]);
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setProjects(loadProjects());
+    let cancelled = false;
+    void getProjects().then((items) => {
+      if (!cancelled) setProjects(items);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   useEffect(() => {
@@ -62,8 +46,8 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const handleSave = (projectId: string) => {
-    saveEntryToProject(projectId, {
+  const handleSave = async (projectId: string) => {
+    await saveEntryToProject(projectId, {
       calcId, calcTitle, slug, categorySlug,
       materials: materials.map((m) => ({ name: m.name, quantity: m.quantity, unit: m.unit })),
       ts: Date.now(),
@@ -89,7 +73,7 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
           {projects.map((p) => (
             <button
               key={p.id}
-              onClick={() => handleSave(p.id)}
+              onClick={() => void handleSave(p.id)}
               className="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors flex items-center justify-between"
             >
               <span className="truncate">{p.name}</span>

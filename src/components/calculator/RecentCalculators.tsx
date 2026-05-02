@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import {
+  getRecentCalculators,
+  trackRecentCalculator as trackRecentCalculatorInStorage,
+} from "@/lib/storage/recent";
+import type { StoredRecentCalculator } from "@/lib/storage/types";
 
 interface RecentCalc {
   id: string;
@@ -14,28 +19,23 @@ interface RecentCalc {
   categoryBg: string;
 }
 
-const RECENT_KEY = "masterok-recent-calcs";
-const MAX_RECENT = 6;
-
 /** Track a calculator visit (call from calculator page) */
 export function trackRecentCalculator(calc: RecentCalc) {
-  try {
-    const prev: RecentCalc[] = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-    const filtered = prev.filter((c) => c.id !== calc.id);
-    const next = [calc, ...filtered].slice(0, MAX_RECENT);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-  } catch {}
+  void trackRecentCalculatorInStorage(calc);
 }
 
 /** Display recently viewed calculators */
 export default function RecentCalculators() {
-  const [recent, setRecent] = useState<RecentCalc[]>([]);
+  const [recent, setRecent] = useState<StoredRecentCalculator[]>([]);
 
   useEffect(() => {
-    try {
-      const data = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-      setRecent(data);
-    } catch {}
+    let cancelled = false;
+    void getRecentCalculators().then((items) => {
+      if (!cancelled) setRecent(items);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (recent.length === 0) return null;

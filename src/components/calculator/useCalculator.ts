@@ -11,12 +11,14 @@ import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { shareOrCopy } from "@/lib/clipboard";
 import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackComparisonOpen } from "@/lib/analytics";
+import {
+  addCalculationHistory,
+  getAccuracyModeSetting,
+  getCalculationHistory,
+  setAccuracyModeSetting,
+} from "@/lib/storage/history";
 
 // ── Constants ────────────────────────────────────────────────────────────────
-
-const HISTORY_KEY = "masterok-calc-history";
-const ACCURACY_MODE_KEY = "masterok-accuracy-mode";
-const MAX_HISTORY = 10;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,42 +41,6 @@ export interface HistoryEntry {
   values: Record<string, number>;
   result: CalculatorResult;
   ts: number;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadHistory(): HistoryEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
-function loadSavedAccuracyMode(): AccuracyMode | null {
-  try {
-    const saved = localStorage.getItem(ACCURACY_MODE_KEY);
-    if (saved === "basic" || saved === "realistic" || saved === "professional") return saved;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function saveAccuracyMode(mode: AccuracyMode) {
-  try {
-    localStorage.setItem(ACCURACY_MODE_KEY, mode);
-  } catch {}
-}
-
-function saveHistory(entry: HistoryEntry) {
-  try {
-    const prev = loadHistory().filter(
-      (h) => !(h.calcId === entry.calcId && JSON.stringify(h.values) === JSON.stringify(entry.values))
-    );
-    const next = [entry, ...prev].slice(0, MAX_HISTORY);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-  } catch {}
 }
 
 export function formatNumber(n: number): string {
@@ -106,7 +72,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>(() => {
     const fromUrl = searchParams.get("accuracyMode") as AccuracyMode | null;
     if (fromUrl === "basic" || fromUrl === "realistic" || fromUrl === "professional") return fromUrl;
-    return loadSavedAccuracyMode() ?? DEFAULT_ACCURACY_MODE;
+    return DEFAULT_ACCURACY_MODE;
   });
   const [comparisonResults, setComparisonResults] = useState<Record<AccuracyMode, CalculatorResult> | null>(null);
   const [showComparison, setShowComparison] = useState(false);
@@ -117,8 +83,25 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   // Загружаем историю при монтировании
   useEffect(() => {
-    setHistory(loadHistory());
+    let cancelled = false;
+    void getCalculationHistory().then((items) => {
+      if (!cancelled) setHistory(items);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("accuracyMode")) return;
+    let cancelled = false;
+    void getAccuracyModeSetting().then((saved) => {
+      if (!cancelled && saved) setAccuracyMode(saved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   // Если URL содержит параметры — автоматически считаем
   useEffect(() => {
@@ -177,7 +160,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
     trackAccuracyModeChange(calculator.slug, accuracyMode, mode);
     setAccuracyMode(mode);
-    if (mode !== "custom") saveAccuracyMode(mode);
+    if (mode !== "custom") void setAccuracyModeSetting(mode);
     // Apply or clear custom modifiers
     setCustomModifiers(mode === "custom" ? customModifiers : null);
     // Trigger recalculation with new mode
@@ -207,8 +190,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         result: res,
         ts: Date.now(),
       };
-      saveHistory(entry);
-      setHistory(loadHistory());
+      void addCalculationHistory(entry).then(setHistory);
     });
   }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode]);
 

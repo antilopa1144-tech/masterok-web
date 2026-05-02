@@ -7,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
+import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
@@ -201,6 +202,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <YandexMetrika />
         </Suspense>
+        <StorageMigrationInitializer />
         <Header />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />

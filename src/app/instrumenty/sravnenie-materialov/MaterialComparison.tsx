@@ -146,11 +146,17 @@ export default function MaterialComparison() {
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
 
   useEffect(() => {
-    setUserPrices(getPrices(COMPARISON_SCOPE));
+    let cancelled = false;
+    void getPrices(COMPARISON_SCOPE).then((prices) => {
+      if (!cancelled) setUserPrices(prices);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handlePriceChange = (name: string, value: number) => {
-    setPrice(COMPARISON_SCOPE, name, value);
+    void setPrice(COMPARISON_SCOPE, name, value);
     setUserPrices((prev) => {
       const next = { ...prev };
       if (value > 0) next[name] = value;

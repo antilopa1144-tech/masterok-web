@@ -147,7 +147,13 @@ export default function RenovationCostCalculator() {
   const scopeKey = `${PRICE_SCOPES.renovation}:${typeId}`;
 
   useEffect(() => {
-    setCustomPrices(getUserPrices(scopeKey));
+    let cancelled = false;
+    void getUserPrices(scopeKey).then((prices) => {
+      if (!cancelled) setCustomPrices(prices);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [scopeKey]);
 
   const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
@@ -155,14 +161,14 @@ export default function RenovationCostCalculator() {
   // Persist custom prices
   useEffect(() => {
     if (Object.keys(customPrices).length > 0) {
-      setUserPrices(scopeKey, customPrices);
+      void setUserPrices(scopeKey, customPrices);
     }
   }, [customPrices, scopeKey]);
 
   const priceFor = (key: string): number => customPrices[key] ?? 0;
 
   const handleResetPrices = () => {
-    resetScope(scopeKey);
+    void resetScope(scopeKey);
     setCustomPrices({});
   };
 
