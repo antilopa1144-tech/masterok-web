@@ -293,7 +293,7 @@ export default async function HomePage() {
             <span>{totalCount}+ {UI_TEXT.heroBadgeSuffix}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4 min-h-[8.25rem] sm:min-h-[7.25rem] md:min-h-[6.5rem]">
             {UI_TEXT.heroTitle}{" "}
             <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
             <span className="block mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-500 dark:text-slate-400">
@@ -301,7 +301,7 @@ export default async function HomePage() {
             </span>
           </h1>
 
-          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed min-h-[6.75rem] sm:min-h-[5.5rem] md:min-h-[5.5rem]">
             {UI_TEXT.heroDescription}
           </p>
 
