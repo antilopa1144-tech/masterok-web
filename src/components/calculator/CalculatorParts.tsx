@@ -16,6 +16,7 @@ import {
   type AccuracyMode,
   type AccuracyModifiers,
 } from "../../../engine/accuracy";
+import SaveToProjectButton from "./SaveToProjectButton";
 
 // ── Округление материалов по единицам ────────────────────────────────────────
 
@@ -1326,16 +1327,26 @@ function isResultEmpty(result: CalculatorResult): boolean {
     result.materials.every((m) => !m.quantity || isNaN(m.quantity) || m.quantity === 0);
 }
 
+export type ResultBlockProjectSave = {
+  calcId: string;
+  calcTitle: string;
+  slug: string;
+  categorySlug: string;
+};
+
 export function ResultBlock({
   result,
   shareState,
   onShare,
   calculatorSlug,
+  projectSave,
 }: {
   result: CalculatorResult;
   shareState: "idle" | "copied";
   onShare: () => void;
   calculatorSlug?: string;
+  /** Если задано — в блоке действий показывается «В проект» (смета в localStorage). */
+  projectSave?: ResultBlockProjectSave;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const priceScope = calculatorSlug ? `materials:${calculatorSlug}` : PRICE_SCOPES.materials;
@@ -1578,6 +1589,19 @@ export function ResultBlock({
           >
             🖨 {CALCULATOR_UI_TEXT.print}
           </button>
+          {projectSave && (
+            <SaveToProjectButton
+              calcId={projectSave.calcId}
+              calcTitle={projectSave.calcTitle}
+              slug={projectSave.slug}
+              categorySlug={projectSave.categorySlug}
+              materials={result.materials.map((m) => ({
+                name: m.name,
+                quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
+                unit: m.unit,
+              }))}
+            />
+          )}
         </div>
       </div>
 

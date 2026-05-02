@@ -145,7 +145,18 @@ export default function CalculatorWithMikhalych({
 
         {/* Результат */}
         {result && (
-          <ResultBlock result={result} shareState={shareState} onShare={handleShare} calculatorSlug={calculator.slug} />
+          <ResultBlock
+            result={result}
+            shareState={shareState}
+            onShare={handleShare}
+            calculatorSlug={calculator.slug}
+            projectSave={{
+              calcId: calculator.id,
+              calcTitle: calculator.title,
+              slug: calculator.slug,
+              categorySlug: calculator.categorySlug,
+            }}
+          />
         )}
 
         {/* Cross-sell: сопутствующие калькуляторы — только после расчёта */}
