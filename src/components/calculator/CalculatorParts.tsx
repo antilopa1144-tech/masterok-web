@@ -1201,7 +1201,7 @@ function ResultMetricCard({
             {value}
             {unit && <span className="ml-1 text-sm font-medium text-slate-500 dark:text-slate-400">{unit}</span>}
           </p>
-          {hint && <p className="mt-1 truncate text-[11px] text-slate-400 dark:text-slate-500">{hint}</p>}
+          {hint && <p className="mt-1 text-[11px] leading-snug text-slate-400 dark:text-slate-500">{hint}</p>}
         </div>
       </div>
     </div>
@@ -1271,7 +1271,7 @@ function PriceEstimate({
           const hasCustom = price > 0;
           const qtyLabel = `${formatMaterialQty(qty, m.unit)} ${pluralizeUnit(qty, m.unit)}`;
           return (
-            <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-1.5 rounded-lg px-1 py-1.5 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-2">
+            <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-1.5 rounded-lg px-1 py-1.5 text-sm">
               <span className="flex min-w-0 items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                 {hasCustom && (
                   <span
@@ -1283,7 +1283,7 @@ function PriceEstimate({
                 <span className="min-w-0 flex-1 truncate">{m.name}</span>
                 <span className="shrink-0 text-[10px] text-slate-400">× {qtyLabel}</span>
               </span>
-              <div className="flex items-center gap-2 sm:contents">
+              <div className="flex items-center gap-2">
                 <input
                   type="number"
                   inputMode="numeric"
@@ -1292,13 +1292,13 @@ function PriceEstimate({
                   value={price || ""}
                   placeholder="₽"
                   onChange={(e) => onPriceChange(m.name, Number(e.target.value) || 0)}
-                  className={`w-24 text-right text-xs border rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30 sm:w-20 ${
+                  className={`w-24 text-right text-xs border rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
                     hasCustom
                       ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
                       : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   }`}
                 />
-                <span className="ml-auto w-20 text-right text-xs tabular-nums text-slate-400 sm:ml-0 sm:w-16">
+                <span className="ml-auto w-20 text-right text-xs tabular-nums text-slate-400">
                   {lineTotal > 0 ? `${formatCurrency(lineTotal)} ₽` : "—"}
                 </span>
               </div>
@@ -1518,7 +1518,7 @@ export function ResultBlock({
           </div>
         </div>
 
-        <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div>
             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>

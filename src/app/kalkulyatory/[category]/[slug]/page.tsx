@@ -171,10 +171,10 @@ export default async function CalculatorPage({ params }: PageProps) {
       </div>
 
       {/* Основной контент */}
-      <div className="page-container py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="page-container-wide py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_18rem] gap-8">
           {/* Левая колонка — калькулятор */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="min-w-0 space-y-6">
             <Suspense
               fallback={
                 <div
@@ -244,7 +244,7 @@ export default async function CalculatorPage({ params }: PageProps) {
           </div>
 
           {/* Правая колонка */}
-          <div className="space-y-4" data-print-hide>
+          <div className="hidden xl:block space-y-4" data-print-hide>
             {/* Скачать приложение */}
             <div className="card p-5">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.appPromoTitle}</h3>
