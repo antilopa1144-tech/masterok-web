@@ -5,10 +5,15 @@
  * so there is no runtime API access.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import type { BlogPost } from "./blog";
+
 // GHOST_API_URL: задайте в .env.local или CI secrets.
 // Fallback для локальных билдов (внутренний сервер Ghost).
 const GHOST_API_URL = process.env.GHOST_API_URL ?? "http://5.129.248.119";
 const GHOST_CONTENT_API_KEY = process.env.GHOST_CONTENT_API_KEY ?? "";
+const BLOG_IMAGE_MANIFEST_PATH = path.join(process.cwd(), "public", "blog-images", "manifest.json");
 
 // ── Ghost API types ─────────────────────────────────────────────────────────
 
@@ -54,6 +59,59 @@ interface GhostResponse<T> {
   };
 }
 
+interface BlogImageManifest {
+  posts?: Array<{
+    replacements?: Array<{
+      from: string;
+      to: string;
+    }>;
+  }>;
+}
+
+let _blogImageUrlMap: Map<string, string> | null | undefined;
+
+function getBlogImageUrlMap(): Map<string, string> | null {
+  if (_blogImageUrlMap !== undefined) return _blogImageUrlMap;
+
+  if (!existsSync(BLOG_IMAGE_MANIFEST_PATH)) {
+    _blogImageUrlMap = null;
+    return _blogImageUrlMap;
+  }
+
+  try {
+    const manifest = JSON.parse(readFileSync(BLOG_IMAGE_MANIFEST_PATH, "utf8")) as BlogImageManifest;
+    const map = new Map<string, string>();
+    for (const post of manifest.posts ?? []) {
+      for (const replacement of post.replacements ?? []) {
+        if (replacement.from && replacement.to) {
+          map.set(replacement.from, replacement.to);
+        }
+      }
+    }
+    _blogImageUrlMap = map.size > 0 ? map : null;
+  } catch {
+    _blogImageUrlMap = null;
+  }
+
+  return _blogImageUrlMap;
+}
+
+function applyBlogImageManifest(value: string): string {
+  const map = getBlogImageUrlMap();
+  if (!map || !value) return value;
+
+  let next = value;
+  for (const [from, to] of map) {
+    next = next.split(from).join(to);
+    next = next.split(escapeHtmlAttribute(from)).join(to);
+  }
+  return next;
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
 // ── API helper ──────────────────────────────────────────────────────────────
 
 async function ghostFetch<T>(
@@ -93,8 +151,6 @@ async function ghostFetch<T>(
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-import type { BlogPost } from "./blog";
-
 /**
  * Ghost stores tags as objects. We use the primary_tag name as "category"
  * and all other tags as regular tags. Convention:
@@ -132,9 +188,9 @@ function transformPost(post: GhostPost): BlogPost {
     icon,
     tags,
     relatedCalculator,
-    heroImage: post.feature_image ?? "",
+    heroImage: applyBlogImageManifest(post.feature_image ?? ""),
     heroImageAlt: post.feature_image_alt ?? "",
-    content: post.html ?? "",
+    content: applyBlogImageManifest(post.html ?? ""),
   };
 }
 

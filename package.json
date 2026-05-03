@@ -15,7 +15,10 @@
     "sync:parity": "npx tsx scripts/generate-parity-fixtures.ts",
     "sync:meta": "npx tsx scripts/generate-calculators-meta.ts",
     "sync:all": "npm run sync:specs && npm run sync:parity && npm run sync:meta",
-    "test:parity": "vitest run tests/parity.test.ts"
+    "test:parity": "vitest run tests/parity.test.ts",
+    "blog:images:check": "node scripts/optimize-ghost-images.mjs --dry-run",
+    "blog:images:webp": "node scripts/optimize-ghost-images.mjs --write-files",
+    "blog:images:ghost": "node scripts/optimize-ghost-images.mjs --write-ghost"
   },
   "dependencies": {
     "@types/three": "^0.169.0",
