@@ -10,6 +10,13 @@ import { formatWeightParts } from "@/lib/format/weight";
 import { getPrices, setPrice, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import { addFeedback } from "@/lib/storage/feedback";
 import {
+  getMaterialPriceBasis,
+  getMaterialPriceTotal,
+  getMaterialStoredPrice,
+  getRelevantPriceCount,
+  type MaterialPriceMap,
+} from "@/lib/pricing/materialPriceBasis";
+import {
   ACCURACY_MODES,
   ACCURACY_MODE_LABELS,
   ACCURACY_MODE_DESCRIPTIONS,
@@ -966,7 +973,7 @@ function PracticalNotes({ notes }: { notes: string[] }) {
 
 // ── Оценка стоимости ──────────────────────────────────────────────────────
 
-type MaterialPrices = Record<string, number>;
+type MaterialPrices = MaterialPriceMap;
 
 type WorkPriceBenchmark = {
   id: string;
@@ -1099,10 +1106,6 @@ function pickFeaturedTotal(totals: CalculatorResult["totals"]) {
   return { key, rawValue: value, ...formatTotalMetric(key, value) };
 }
 
-function getPriceTotal(materials: CalculatorResult["materials"], prices: MaterialPrices) {
-  return materials.reduce((sum, m) => sum + qtyForMaterial(m) * (prices[m.name] ?? 0), 0);
-}
-
 function formatCurrency(value: number) {
   return value.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
 }
@@ -1230,7 +1233,7 @@ function PriceEstimate({
   prices: MaterialPrices;
   total: number;
   filledCount: number;
-  onPriceChange: (name: string, value: number) => void;
+  onPriceChange: (key: string, value: number) => void;
   onResetAll: () => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -1259,7 +1262,7 @@ function PriceEstimate({
       <div className="mt-4 space-y-2 rounded-xl border border-amber-100 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-3 mb-2">
           <p className="text-xs leading-snug text-slate-400 dark:text-slate-400">
-            Введите цену за единицу — итог обновится автоматически
+            Введите цену за покупаемую единицу: мешок, рулон, пруток, ведро, м³ или шт.
           </p>
           {filledCount > 0 && (
             <button
@@ -1273,11 +1276,10 @@ function PriceEstimate({
           )}
         </div>
         {materials.map((m, index) => {
-          const qty = qtyForMaterial(m);
-          const price = prices[m.name] ?? 0;
-          const lineTotal = qty * price;
+          const basis = getMaterialPriceBasis(m);
+          const price = getMaterialStoredPrice(prices, m, basis);
+          const lineTotal = basis.quantity * price;
           const hasCustom = price > 0;
-          const qtyLabel = `${formatMaterialQty(qty, m.unit)} ${pluralizeUnit(qty, m.unit)}`;
           return (
             <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-2 rounded-xl px-1 py-2 text-sm">
               <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
@@ -1287,23 +1289,28 @@ function PriceEstimate({
                   aria-label={hasCustom ? "Цена указана" : "Цена не указана"}
                 />
                 <span className="min-w-0 flex-1 leading-snug">{m.name}</span>
-                <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">× {qtyLabel}</span>
+                <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">× {basis.calculationLabel}</span>
               </div>
-              <div className="grid grid-cols-[minmax(6.5rem,1fr)_minmax(4.5rem,auto)] items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={price || ""}
-                  placeholder="₽"
-                  onChange={(e) => onPriceChange(m.name, parsePriceInput(e.target.value))}
-                  className={`w-full rounded-xl border px-3 py-2 text-right text-sm tabular-nums text-slate-700 outline-none transition-colors focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${
-                    hasCustom
-                      ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10"
-                      : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
-                  }`}
-                  aria-label={`Цена за единицу: ${m.name}`}
-                />
-                <span className="text-right text-xs tabular-nums text-slate-400">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)] items-start gap-2">
+                <div className="min-w-0">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={price || ""}
+                    placeholder={`₽/${basis.unitLabel}`}
+                    onChange={(e) => onPriceChange(basis.key, parsePriceInput(e.target.value))}
+                    className={`w-full rounded-xl border px-3 py-2 text-right text-sm tabular-nums text-slate-700 outline-none transition-colors focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${
+                      hasCustom
+                        ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10"
+                        : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                    }`}
+                    aria-label={`Цена за ${basis.unitDescription}: ${m.name}`}
+                  />
+                  <p className="mt-1 text-[10px] leading-snug text-slate-400 dark:text-slate-500">
+                    Цена за {basis.unitDescription}
+                  </p>
+                </div>
+                <span className="pt-2 text-right text-xs tabular-nums text-slate-400">
                   {lineTotal > 0 ? `${formatCurrency(lineTotal)} ₽` : "—"}
                 </span>
               </div>
@@ -1500,8 +1507,8 @@ export function ResultBlock({
     };
   }, [priceScope]);
 
-  const priceTotal = useMemo(() => getPriceTotal(result.materials, prices), [result.materials, prices]);
-  const filledPriceCount = useMemo(() => Object.values(prices).filter((v) => v > 0).length, [prices]);
+  const priceTotal = useMemo(() => getMaterialPriceTotal(result.materials, prices), [result.materials, prices]);
+  const filledPriceCount = useMemo(() => getRelevantPriceCount(result.materials, prices), [result.materials, prices]);
   const featuredTotal = useMemo(() => pickFeaturedTotal(result.totals), [result.totals]);
   const categoryCount = useMemo(
     () => new Set(result.materials.map((m) => m.category ?? CALCULATOR_UI_TEXT.defaultMaterialCategory)).size,
@@ -1517,12 +1524,12 @@ export function ResultBlock({
     : result.accuracyExplanation?.modeLabel ?? "Расчёт";
   const accuracyMultiplier = result.accuracyExplanation?.combinedMultiplier;
 
-  const handlePriceChange = (name: string, value: number) => {
-    void setPrice(priceScope, name, value);
+  const handlePriceChange = (key: string, value: number) => {
+    void setPrice(priceScope, key, value);
     setPrices((prev) => {
       const next = { ...prev };
-      if (value > 0) next[name] = value;
-      else delete next[name];
+      if (value > 0) next[key] = value;
+      else delete next[key];
       return next;
     });
   };

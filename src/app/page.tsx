@@ -9,9 +9,7 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { MASTEROK_RUSTORE_URL, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
-import RecentCalculators from "@/components/calculator/RecentCalculators";
-import ProjectManager from "@/components/calculator/ProjectManager";
-import QuickCalculator from "@/components/tools/QuickCalculator";
+import { RecentCalculators, ProjectManager, QuickCalculator } from "@/components/home/HomeLazyWidgets";
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
