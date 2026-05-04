@@ -1107,6 +1107,12 @@ function formatCurrency(value: number) {
   return value.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
 }
 
+function parsePriceInput(value: string) {
+  const normalized = value.replace(/\s/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
 function pickWorkPriceBenchmarks(materials: CalculatorResult["materials"], calculatorSlug?: string) {
   if (calculatorSlug) {
     const allowedIds = WORK_PRICE_HINTS_BY_CALCULATOR[calculatorSlug];
@@ -1251,8 +1257,8 @@ function PriceEstimate({
       </summary>
 
       <div className="mt-4 space-y-2 rounded-xl border border-amber-100 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-slate-400 dark:text-slate-400">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <p className="text-xs leading-snug text-slate-400 dark:text-slate-400">
             Введите цену за единицу — итог обновится автоматически
           </p>
           {filledCount > 0 && (
@@ -1273,34 +1279,31 @@ function PriceEstimate({
           const hasCustom = price > 0;
           const qtyLabel = `${formatMaterialQty(qty, m.unit)} ${pluralizeUnit(qty, m.unit)}`;
           return (
-            <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-1.5 rounded-lg px-1 py-1.5 text-sm">
-              <span className="flex min-w-0 items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                {hasCustom && (
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500"
-                    title="Кастомная цена"
-                    aria-label="Кастомная цена"
-                  />
-                )}
-                <span className="min-w-0 flex-1 truncate">{m.name}</span>
-                <span className="shrink-0 text-[10px] text-slate-400">× {qtyLabel}</span>
-              </span>
-              <div className="flex items-center gap-2">
+            <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-2 rounded-xl px-1 py-2 text-sm">
+              <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                <span
+                  className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${hasCustom ? "bg-accent-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                  title={hasCustom ? "Цена указана" : "Цена не указана"}
+                  aria-label={hasCustom ? "Цена указана" : "Цена не указана"}
+                />
+                <span className="min-w-0 flex-1 leading-snug">{m.name}</span>
+                <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">× {qtyLabel}</span>
+              </div>
+              <div className="grid grid-cols-[minmax(6.5rem,1fr)_minmax(4.5rem,auto)] items-center gap-2">
                 <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
+                  type="text"
+                  inputMode="decimal"
                   value={price || ""}
                   placeholder="₽"
-                  onChange={(e) => onPriceChange(m.name, Number(e.target.value) || 0)}
-                  className={`w-24 text-right text-xs border rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
+                  onChange={(e) => onPriceChange(m.name, parsePriceInput(e.target.value))}
+                  className={`w-full rounded-xl border px-3 py-2 text-right text-sm tabular-nums text-slate-700 outline-none transition-colors focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${
                     hasCustom
-                      ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10"
+                      : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
                   }`}
+                  aria-label={`Цена за единицу: ${m.name}`}
                 />
-                <span className="ml-auto w-20 text-right text-xs tabular-nums text-slate-400">
+                <span className="text-right text-xs tabular-nums text-slate-400">
                   {lineTotal > 0 ? `${formatCurrency(lineTotal)} ₽` : "—"}
                 </span>
               </div>
@@ -1616,15 +1619,6 @@ export function ResultBlock({
                 </p>
               </div>
             </div>
-            {priceTotal > 0 && (
-              <div className="hidden min-w-[13rem] rounded-2xl border border-white/80 bg-white/75 px-4 py-3 text-sm shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 xl:block">
-                <p className="text-xs text-slate-400 dark:text-slate-500">Итоговая стоимость</p>
-                <p className="mt-0.5 text-2xl font-black tabular-nums text-accent-700 dark:text-accent-300">
-                  {formatCurrency(priceTotal)} ₽
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">по введённым ценам</p>
-              </div>
-            )}
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -7,23 +7,6 @@ import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerF
 
 const cementManufacturerField = buildManufacturerField("cement", { label: "Производитель цемента" });
 
-// Пропорции на 1 м³ бетона (цемент М400, по СНиП)
-// [цемент кг, песок м³, щебень м³, вода л]
-const PROPORTIONS: Record<number, [number, number, number, number]> = {
-  1: [170, 0.56, 0.88, 210], // М100
-  2: [215, 0.54, 0.86, 200], // М150
-  3: [290, 0.50, 0.82, 190], // М200
-  4: [340, 0.47, 0.80, 185], // М250
-  5: [380, 0.44, 0.78, 180], // М300
-  6: [420, 0.41, 0.76, 175], // М350
-  7: [480, 0.38, 0.73, 170], // М400
-};
-
-const GRADE_LABELS: Record<number, string> = {
-  1: "М100 (В7.5)", 2: "М150 (В12.5)", 3: "М200 (В15)", 4: "М250 (В20)",
-  5: "М300 (В22.5)", 6: "М350 (В25)", 7: "М400 (В30)",
-};
-
 export const concreteDef: CalculatorDefinition = {
   id: "concrete_universal",
   slug: "beton",
@@ -39,6 +22,17 @@ export const concreteDef: CalculatorDefinition = {
   complexity: 2,
   fields: [
     {
+      key: "inputMode",
+      label: "Как задать объём",
+      type: "radio",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Знаю объём" },
+        { value: 1, label: "По площади и толщине" },
+      ],
+      hint: "Если объём уже известен — введите м³. Для плиты, стяжки или площадки можно посчитать объём по площади и толщине слоя.",
+    },
+    {
       key: "concreteVolume",
       label: "Объём бетона",
       type: "slider",
@@ -47,6 +41,29 @@ export const concreteDef: CalculatorDefinition = {
       max: 100,
       step: 0.1,
       defaultValue: 5,
+      group: "bySize",
+    },
+    {
+      key: "area",
+      label: "Площадь заливки",
+      type: "slider",
+      unit: "м²",
+      min: 0.1,
+      max: 1000,
+      step: 0.1,
+      defaultValue: 20,
+      group: "byArea",
+    },
+    {
+      key: "thickness",
+      label: "Толщина слоя",
+      type: "slider",
+      unit: "мм",
+      min: 50,
+      max: 1000,
+      step: 10,
+      defaultValue: 200,
+      group: "byArea",
     },
     {
       key: "concreteGrade",

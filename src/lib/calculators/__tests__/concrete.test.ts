@@ -64,6 +64,27 @@ describe("Калькулятор бетона", () => {
     });
   });
 
+  describe("Ввод по площади и толщине", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 20,
+      thickness: 200,
+      concreteGrade: 3,
+      manualMix: 0,
+      reserve: 5,
+    });
+
+    it("считает чистый объём как площадь × толщину", () => {
+      expect(result.totals.sourceVolume).toBeCloseTo(4, 3);
+    });
+
+    it("оставляет готовый список материалов для закупки", () => {
+      const concrete = findMaterial(result, "Бетон М200");
+      expect(concrete).toBeDefined();
+      expect(concrete?.purchaseQty).toBeGreaterThan(4);
+    });
+  });
+
   describe("Граничные условия", () => {
     it("объём < 0.5 м³ → предупреждение о малом объёме", () => {
       const result = calc({ concreteVolume: 0.3, concreteGrade: 3, manualMix: 0, reserve: 5 });
