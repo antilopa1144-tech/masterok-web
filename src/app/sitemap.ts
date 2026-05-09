@@ -39,7 +39,7 @@ export const dynamic = "force-static";
 // Менять руками при значимых изменениях.
 
 /** Структура главной/основных навигационных страниц. Меняется редко. */
-const STATIC_PAGES_LAST_MODIFIED = "2026-04-19";
+const STATIC_PAGES_LAST_MODIFIED = "2026-05-09";
 
 /** Реестр калькуляторов (добавление/удаление калькуляторов, формулы). */
 const CALCULATORS_LAST_MODIFIED = "2026-04-28";
@@ -115,6 +115,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: latestPostDate,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/ai/`,
+      lastModified: STATIC_PAGES_LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
   ];
 
