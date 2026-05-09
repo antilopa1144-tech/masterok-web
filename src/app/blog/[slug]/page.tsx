@@ -21,7 +21,56 @@ const UI_TEXT = {
   calculatorCtaFallback: "Открыть калькулятор",
   relatedPostsTitle: "Читайте также",
   relatedPostsReadMore: "Читать →",
+  authorPrefix: "Редакция",
+  authorAbout: "о проекте",
+  publishedLabel: "Опубликовано",
+  updatedLabel: "Обновлено",
+  tocTitle: "В этой статье",
+  disclaimerText: "Этот материал — справочный. Для серьёзных инженерных решений по фундаменту, несущим конструкциям и инженерным системам обращайтесь к проектировщику. Цифры из статьи можно перепроверить в калькуляторе.",
 } as const;
+
+// Дата считается «обновлённой», только если редактирование произошло
+// заметно позже публикации — иначе любой клик в Ghost создавал бы видимость
+// свежести.
+const UPDATED_THRESHOLD_DAYS = 7;
+
+function isMeaningfullyUpdated(published: string, updated?: string): boolean {
+  if (!updated || updated === published) return false;
+  const p = new Date(published).getTime();
+  const u = new Date(updated).getTime();
+  if (!Number.isFinite(p) || !Number.isFinite(u)) return false;
+  return u - p > UPDATED_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function formatRuDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+interface TocEntry {
+  id: string;
+  text: string;
+}
+
+/**
+ * Извлекает <h2 id="...">текст</h2> из HTML статьи в порядке появления.
+ * Ghost генерирует id автоматически (как процент-кодированный кириллицу).
+ * Возвращает пустой массив, если заголовков меньше двух (TOC бессмысленен).
+ */
+function extractToc(html: string): TocEntry[] {
+  const entries: TocEntry[] = [];
+  const re = /<h2(?:\s+[^>]*?)?\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const id = m[1];
+    const text = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (id && text) entries.push({ id, text });
+  }
+  return entries.length >= 2 ? entries : [];
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -194,6 +243,11 @@ export default async function BlogPostPage({ params }: Props) {
   // Если редактор задал meta_title в Ghost — используем его.
   const schemaHeadline = post.metaTitle ?? post.title;
 
+  // Дата обновления, видимая пользователю. Показываем только если правка
+  // существенная — иначе любое касание в Ghost имитирует свежесть.
+  const showUpdated = isMeaningfullyUpdated(post.date, post.updatedAt);
+  const tocEntries = extractToc(post.content);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -207,8 +261,8 @@ export default async function BlogPostPage({ params }: Props) {
     author: {
       "@type": "Organization",
       "@id": `${baseUrl}/#organization`,
-      name: SITE_NAME,
-      url: baseUrl,
+      name: `Редакция ${SITE_NAME}`,
+      url: `${baseUrl}/o-proekte/`,
     },
     publisher: {
       "@type": "Organization",
@@ -317,12 +371,20 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-400">{post.readTime}</span>
             <span className="text-xs text-slate-400 dark:text-slate-400">
-              {new Date(post.date).toLocaleDateString("ru-RU", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              <time dateTime={post.date}>{formatRuDate(post.date)}</time>
             </span>
+            {showUpdated && post.updatedAt && (
+              <span className="text-xs text-slate-400 dark:text-slate-400">
+                · {UI_TEXT.updatedLabel} <time dateTime={post.updatedAt}>{formatRuDate(post.updatedAt)}</time>
+              </span>
+            )}
+            <Link
+              href="/o-proekte/"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 no-underline"
+              rel="author"
+            >
+              · {UI_TEXT.authorPrefix} {SITE_NAME}
+            </Link>
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
@@ -349,7 +411,38 @@ export default async function BlogPostPage({ params }: Props) {
       </div>
 
       <article className="page-container py-8 max-w-3xl">
+        {tocEntries.length > 0 && (
+          <nav
+            aria-label={UI_TEXT.tocTitle}
+            className="mb-8 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+          >
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              {UI_TEXT.tocTitle}
+            </p>
+            <ol className="space-y-1.5 text-sm">
+              {tocEntries.map((entry, i) => (
+                <li key={entry.id} className="flex gap-2">
+                  <span className="text-slate-400 dark:text-slate-500 tabular-nums">{i + 1}.</span>
+                  <a
+                    href={`#${entry.id}`}
+                    className="text-slate-700 dark:text-slate-200 hover:text-accent-700 dark:hover:text-accent-400 no-underline hover:underline"
+                  >
+                    {entry.text}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+
         <div className="prose-custom">{renderContent(post.content)}</div>
+
+        <aside
+          role="note"
+          className="mt-8 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm text-slate-600 dark:text-slate-400 leading-relaxed"
+        >
+          {UI_TEXT.disclaimerText}
+        </aside>
 
         {post.tags.length > 0 && (
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">

@@ -165,12 +165,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ── 6. Blog post pages ─────────────────────────────────────────────────────
   //    lastModified от post.updatedAt (фактическая дата редактирования в Ghost),
   //    fallback на post.date (дата публикации) если updatedAt не пришёл.
+  //    images добавляются как Image-extension к sitemap для попадания
+  //    обложек статей в Google Image Search.
 
   const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
     lastModified: post.updatedAt ?? post.date,
     changeFrequency: "monthly" as const,
     priority: 0.7,
+    ...(post.heroImage ? { images: [post.heroImage] } : {}),
   }));
 
   // ── 7. Blog tag pages ───────────────────────────────────────────────────────
