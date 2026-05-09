@@ -163,6 +163,9 @@ function transformPost(post: GhostPost): BlogPost {
   const tags = post.tags
     ?.filter((t) => !t.name.startsWith("#") && t.id !== post.primary_tag?.id)
     .map((t) => t.name) ?? [];
+  const internalTags = post.tags
+    ?.filter((t) => t.name.startsWith("#"))
+    .map((t) => t.name) ?? [];
 
   // Extract relatedCalculator from internal tags: #calc:slug:category
   let relatedCalculator: { slug: string; categorySlug: string } | undefined;
@@ -178,15 +181,20 @@ function transformPost(post: GhostPost): BlogPost {
   const iconTag = post.tags?.find((t) => t.name.startsWith("#icon:"));
   const icon = iconTag ? iconTag.name.replace("#icon:", "") : "";
 
+  const metaTitleRaw = post.meta_title?.trim();
+
   return {
     slug: post.slug,
     title: post.title,
+    metaTitle: metaTitleRaw && metaTitleRaw !== post.title ? metaTitleRaw : undefined,
     description: post.custom_excerpt ?? post.meta_description ?? post.excerpt ?? "",
     date: post.published_at?.split("T")[0] ?? "",
+    updatedAt: post.updated_at?.split("T")[0] ?? undefined,
     readTime: post.reading_time ? `${post.reading_time} мин` : "",
     category,
     icon,
     tags,
+    internalTags,
     relatedCalculator,
     heroImage: applyBlogImageManifest(post.feature_image ?? ""),
     heroImageAlt: post.feature_image_alt ?? "",

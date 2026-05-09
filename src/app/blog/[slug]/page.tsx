@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
+import { ALL_CALCULATORS_META, getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
@@ -50,14 +50,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const baseUrl = SITE_URL;
-  const title = post.title;
+  // Display H1 (post.title) — авторский, иногда длинный («…золотую середину…»).
+  // <title> для поиска используем короткий meta_title из Ghost, если редактор задал.
+  const seoTitle = post.metaTitle ?? post.title;
   const description = post.description;
   const canonicalUrl = `${baseUrl}/blog/${post.slug}/`;
 
   return buildPageMetadata({
-    title,
+    title: seoTitle,
     openGraphTitle: post.title,
-    twitterTitle: title,
+    twitterTitle: seoTitle,
     description,
     url: canonicalUrl,
     type: "article",
@@ -76,6 +78,70 @@ function renderContent(content: string) {
     ADD_ATTR: ["loading", "fetchpriority", "target", "rel"],
   });
   return parse(clean);
+}
+
+// ── Related calculator fallback ─────────────────────────────────────────────
+// Если редактор не задал #calc:slug:category в Ghost, пытаемся сматчить
+// калькулятор по тегам/title. Это безопасный fallback: ссылка появляется
+// только если найден реально существующий slug в реестре.
+
+const TAG_TO_CALCULATOR_SLUG: Array<{ pattern: RegExp; slug: string }> = [
+  { pattern: /грунтовк/i, slug: "gruntovka" },
+  { pattern: /шпакл[её]вк/i, slug: "shpaklevka" },
+  { pattern: /штукатурк|ротбанд/i, slug: "shtukaturka" },
+  { pattern: /краск|покраск/i, slug: "kraska" },
+  { pattern: /обои|раппорт/i, slug: "oboi" },
+  { pattern: /плиточн.* кле[йя]/i, slug: "klej-dlya-plitki" },
+  { pattern: /затирк/i, slug: "zatirka" },
+  { pattern: /плитк|кафель/i, slug: "plitka" },
+  { pattern: /ламинат/i, slug: "laminat" },
+  { pattern: /паркет/i, slug: "parket" },
+  { pattern: /линолеум/i, slug: "linoleum" },
+  { pattern: /стяжк/i, slug: "styazhka" },
+  { pattern: /наливн.* пол/i, slug: "nalivnoy-pol" },
+  { pattern: /водян.* т[её]пл.* пол/i, slug: "vodyanoy-teplyy-pol" },
+  { pattern: /т[её]пл.* пол/i, slug: "teplyy-pol" },
+  { pattern: /гипсокартон|гкл/i, slug: "gipsokarton" },
+  { pattern: /кр[её]пеж|саморез|дюбел/i, slug: "krepezh" },
+  { pattern: /кладк/i, slug: "kladka-kirpicha" },
+  { pattern: /кирпич/i, slug: "kirpich" },
+  { pattern: /газобетон|газоблок/i, slug: "gazobeton" },
+  { pattern: /пеноблок|керамзитоблок/i, slug: "penobloki" },
+  { pattern: /профнастил|профлист/i, slug: "krovlya" },
+  { pattern: /металлочерепиц/i, slug: "krovlya" },
+  { pattern: /м[яa]гк.* кровл/i, slug: "myagkaya-krovlya" },
+  { pattern: /кровл|крыш/i, slug: "krovlya" },
+  { pattern: /водосток/i, slug: "vodostok" },
+  { pattern: /сайдинг/i, slug: "sayding" },
+  { pattern: /фасад.* панел/i, slug: "fasadnye-paneli" },
+  { pattern: /утеплен.* фасад/i, slug: "uteplenie-fasada-minvatoj" },
+  { pattern: /утеплен.* потолк|утеплен.* кровл/i, slug: "uteplenie-potolka" },
+  { pattern: /утеплен/i, slug: "uteplenie" },
+  { pattern: /гидроизоляц|вологозащит/i, slug: "gidroizolyaciya-vlagozaschita" },
+  { pattern: /отопл|радиатор/i, slug: "otoplenie-radiatory" },
+  { pattern: /вентиляц/i, slug: "ventilyaciya" },
+  { pattern: /электр|кабель|узо|автомат/i, slug: "elektrika" },
+  { pattern: /забор/i, slug: "zabor" },
+  { pattern: /бетон/i, slug: "beton" },
+  { pattern: /арматур/i, slug: "armatura" },
+  { pattern: /ленточн.* фундамент/i, slug: "lentochnyy-fundament" },
+  { pattern: /плитн.* фундамент/i, slug: "plitnyj-fundament" },
+  { pattern: /фундамент/i, slug: "lentochnyy-fundament" },
+  { pattern: /отмостк/i, slug: "otmostka" },
+  { pattern: /тротуарн.* плитк/i, slug: "trotuarnaya-plitka" },
+  { pattern: /ванн/i, slug: "vannaya-komnata" },
+];
+
+function pickRelatedCalculator(post: { title: string; tags: string[] }):
+  | { slug: string; categorySlug: string }
+  | undefined {
+  const haystack = [post.title, ...post.tags].join(" ").toLowerCase();
+  for (const { pattern, slug } of TAG_TO_CALCULATOR_SLUG) {
+    if (!pattern.test(haystack)) continue;
+    const calc = ALL_CALCULATORS_META.find((c) => c.slug === slug);
+    if (calc) return { slug: calc.slug, categorySlug: calc.categorySlug };
+  }
+  return undefined;
 }
 
 // ── Related posts ───────────────────────────────────────────────────────────
@@ -111,22 +177,31 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   const baseUrl = SITE_URL;
-  const relatedCalculatorDef = post.relatedCalculator
-    ? getCalculatorBySlug(post.relatedCalculator.slug)
+  // Если редактор задал #calc:slug:category в Ghost — используем явное значение.
+  // Иначе пытаемся подобрать калькулятор по тегам. Никогда не показываем
+  // неподтверждённую ссылку: pickRelatedCalculator проверяет существование slug.
+  const effectiveRelatedCalculator =
+    post.relatedCalculator ?? pickRelatedCalculator(post);
+  const relatedCalculatorDef = effectiveRelatedCalculator
+    ? getCalculatorBySlug(effectiveRelatedCalculator.slug)
     : undefined;
 
   const relatedPosts = await getRelatedPosts(post);
 
   const wordCount = post.content.split(/\s+/).length;
 
+  // headline — Google предпочитает короткий variant (≤ 110 chars) для AMP/News.
+  // Если редактор задал meta_title в Ghost — используем его.
+  const schemaHeadline = post.metaTitle ?? post.title;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title,
+    headline: schemaHeadline,
     description: post.description,
     url: `${baseUrl}/blog/${post.slug}/`,
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.updatedAt ?? post.date,
     wordCount,
     articleSection: post.category,
     author: {
@@ -159,8 +234,11 @@ export default async function BlogPostPage({ params }: Props) {
     inLanguage: "ru",
   };
 
-  // HowTo Schema for instructional articles (titles with "Как", "расчёт", "расход")
-  const isHowToArticle = /как |расчёт|расход|пошагов|инструкци/i.test(post.title);
+  // HowTo Schema — только если редактор явно разрешил через скрытый тег
+  // #howto в Ghost. Auto-detect по title давал фейковый HowTo для справочных
+  // статей вида «расход X на м²», что нарушает Google guidelines (HowTo
+  // должен описывать реальную последовательность действий).
+  const isHowToArticle = post.internalTags.includes("#howto");
   const howToLd = isHowToArticle ? (() => {
     // Extract h2 headings as steps from HTML content
     const h2Regex = /<h2[^>]*>([^<]+)<\/h2>/gi;
@@ -260,8 +338,8 @@ export default async function BlogPostPage({ params }: Props) {
                 src={post.heroImage}
                 alt={post.heroImageAlt || post.title}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
-                width={800}
-                height={320}
+                width={1200}
+                height={630}
                 loading="eager"
                 fetchPriority="high"
               />
@@ -292,7 +370,7 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         )}
 
-        {post.relatedCalculator && (
+        {effectiveRelatedCalculator && (
           <div className="mt-8 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-2xl p-6 text-center">
             <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
               {UI_TEXT.articleCtaTitle}
@@ -301,7 +379,7 @@ export default async function BlogPostPage({ params }: Props) {
               {UI_TEXT.articleCtaDescription}
             </p>
             <Link
-              href={`/kalkulyatory/${post.relatedCalculator.categorySlug}/${post.relatedCalculator.slug}/`}
+              href={`/kalkulyatory/${effectiveRelatedCalculator.categorySlug}/${effectiveRelatedCalculator.slug}/`}
               className="btn-primary no-underline"
             >
               {relatedCalculatorDef?.title ?? UI_TEXT.calculatorCtaFallback} →

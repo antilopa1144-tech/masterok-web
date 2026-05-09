@@ -3,12 +3,26 @@ import { fetchAllPosts, fetchPostBySlug } from "./ghost";
 export interface BlogPost {
   slug: string;
   title: string;
+  /**
+   * Короткий SEO-title из Ghost (поле meta_title). Используется в <title>,
+   * og:title, schema.headline. Если не задан — fallback на title.
+   */
+  metaTitle?: string;
   description: string;
+  /** Дата публикации (YYYY-MM-DD). */
   date: string;
+  /** Дата последнего редактирования в CMS (YYYY-MM-DD). Используется для dateModified и sitemap lastmod. */
+  updatedAt?: string;
   readTime: string;
   category: string;
   icon: string;
   tags: string[];
+  /**
+   * Внутренние теги Ghost (#tag) — флаги, которые редактор использует
+   * для управления рендерингом статьи (например, #howto разрешает HowTo
+   * schema). Не показываются пользователю.
+   */
+  internalTags: string[];
   /** Slug калькулятора для CTA-ссылки */
   relatedCalculator?: { slug: string; categorySlug: string };
   /** Hero image URL */

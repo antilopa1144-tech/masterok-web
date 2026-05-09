@@ -163,11 +163,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // ── 6. Blog post pages ─────────────────────────────────────────────────────
-  //    lastModified от post.date — реальная дата редактирования из Ghost CMS.
+  //    lastModified от post.updatedAt (фактическая дата редактирования в Ghost),
+  //    fallback на post.date (дата публикации) если updatedAt не пришёл.
 
   const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
-    lastModified: post.date,
+    lastModified: post.updatedAt ?? post.date,
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
