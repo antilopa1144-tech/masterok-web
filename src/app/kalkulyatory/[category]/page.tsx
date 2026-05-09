@@ -64,26 +64,50 @@ export default async function CategoryPage({ params }: PageProps) {
   const allBlogPosts = await getAllPosts();
   const baseUrl = SITE_URL;
 
+  const pageUrl = `${baseUrl}/kalkulyatory/${cat.slug}/`;
+
+  // BreadcrumbList и ItemList объединены под CollectionPage — это даёт
+  // поисковикам и LLM единое описание страницы-каталога. ItemList элементы
+  // обогащены description калькулятора (`calc.description`), чтобы AI-системы
+  // могли цитировать конкретное назначение калькулятора без перехода.
   const breadcrumbLd = {
-    "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: UI_TEXT.rootBreadcrumb, item: `${baseUrl}/` },
-      { "@type": "ListItem", position: 2, name: cat.label },
+      { "@type": "ListItem", position: 2, name: cat.label, item: pageUrl },
     ],
   };
 
   const itemListLd = {
-    "@context": "https://schema.org",
     "@type": "ItemList",
     name: `${cat.label} ${UI_TEXT.itemListNameSuffix}`,
     numberOfItems: calculators.length,
     itemListElement: calculators.map((calc, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      name: calc.title,
       url: `${baseUrl}/kalkulyatory/${cat.slug}/${calc.slug}/`,
+      item: {
+        "@type": "WebApplication",
+        name: calc.title,
+        description: calc.description,
+        url: `${baseUrl}/kalkulyatory/${cat.slug}/${calc.slug}/`,
+        applicationCategory: "UtilitiesApplication",
+        operatingSystem: "Web",
+        isAccessibleForFree: true,
+      },
     })),
+  };
+
+  const collectionPageLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${cat.label} ${UI_TEXT.titleSuffix}`,
+    description: `${UI_TEXT.descriptionPrefix} ${cat.description.toLowerCase()}. ${UI_TEXT.descriptionSuffix}`,
+    url: pageUrl,
+    inLanguage: "ru",
+    isPartOf: { "@type": "WebSite", "@id": `${baseUrl}/#website`, url: `${baseUrl}/` },
+    breadcrumb: breadcrumbLd,
+    mainEntity: itemListLd,
   };
 
   const faqLd = faqItems.length > 0 ? {
@@ -103,11 +127,7 @@ export default async function CategoryPage({ params }: PageProps) {
     <div>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageLd) }}
       />
       {faqLd && (
         <script
