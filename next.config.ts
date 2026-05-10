@@ -48,10 +48,20 @@ const nextConfig: NextConfig = {
     };
   },
 
-  // next/image не используем — blog images с Ghost (внешний URL),
-  // остальные ассеты локальные. Оставляем unoptimized чтобы не требовать sharp в runtime.
+  // Image optimization включена для Ghost-CMS hero-картинок.
+  // Без неё PNG 1408×768 отдавался целиком (~600 КиБ) и блокировал LCP блога.
+  // Sharp идёт с next.js, на Timeweb Node.js 24 работает из коробки.
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      { protocol: "https", hostname: "cms.getmasterok.ru" },
+      { protocol: "http", hostname: "5.129.248.119" },
+    ],
+    // Размеры под наши hero (1200×630), карточки related (400×128), thumbnails.
+    deviceSizes: [400, 640, 768, 1024, 1200, 1536],
+    imageSizes: [128, 256, 384],
+    // Кэш на 1 год — у Ghost картинки иммутабельны (UUID в URL).
+    minimumCacheTTL: 31536000,
   },
 
   // 301-редиректы для удалённых/переименованных URL
@@ -98,7 +108,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http://5.129.248.119",
       "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://openrouter.ai",
+      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://openrouter.ai wss://mc.yandex.ru wss://mc.yandex.com",
       "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
       "object-src 'none'",
       "base-uri 'self'",

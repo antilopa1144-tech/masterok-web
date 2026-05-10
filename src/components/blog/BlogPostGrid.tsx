@@ -76,6 +76,7 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
                   className="w-full h-40 object-cover"
                   width={400}
                   height={160}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   loading="lazy"
                 />
               </Link>
