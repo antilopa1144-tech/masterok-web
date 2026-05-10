@@ -45,9 +45,17 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     };
   }
   const posts = await getPostsByTag(tag);
+  // Description ограничен ~155 символами — больше Google режет в SERP с многоточием.
+  // Если короткие заголовки уместятся, добавляем хвост «и другие материалы»; иначе
+  // обрезаем по слову.
+  const fullDescription =
+    `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`;
+  const description = fullDescription.length <= 160
+    ? fullDescription
+    : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, нормами по ГОСТ и пошаговыми инструкциями.`;
   return buildPageMetadata({
     title: `${tag} — статьи о строительстве`,
-    description: `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`,
+    description,
     url: `${SITE_URL}/blog/tag/${tagToSlug(tag)}/`,
   });
 }

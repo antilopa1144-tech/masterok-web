@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ReverseCalculator from "./ReverseCalculator";
 
 const META = {
-  title: `Калькулятор «Сколько осталось» — на какую площадь хватит материала`,
+  title: `«Сколько осталось» — на какую площадь хватит материала`,
   description: "Обратный калькулятор: введите сколько материала осталось, узнайте на какую площадь его хватит. Краска, грунтовка, клей, штукатурка, шпаклёвка.",
 };
 

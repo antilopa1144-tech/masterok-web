@@ -42,6 +42,13 @@ function isMeaningfullyUpdated(published: string, updated?: string): boolean {
   return u - p > UPDATED_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 }
 
+function truncateDescription(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxLen * 0.7 ? cut.slice(0, lastSpace) : cut).replace(/[,;:.\s]+$/, "") + "…";
+}
+
 function formatRuDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ru-RU", {
     day: "numeric",
@@ -102,7 +109,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Display H1 (post.title) — авторский, иногда длинный («…золотую середину…»).
   // <title> для поиска используем короткий meta_title из Ghost, если редактор задал.
   const seoTitle = post.metaTitle ?? post.title;
-  const description = post.description;
+  // Google показывает ~155-160 символов description; длинные обрезает с многоточием.
+  // Авторские excerpt в Ghost иногда выходят 230+ — режем по словам.
+  const description = truncateDescription(post.description, 158);
   const canonicalUrl = `${baseUrl}/blog/${post.slug}/`;
 
   return buildPageMetadata({
