@@ -44,7 +44,28 @@ describe("buildPageMetadata", () => {
     expect(metadata.openGraph?.title).toBe("Статья");
     expect((metadata.openGraph as any)?.publishedTime).toBe("2026-03-12");
     expect((metadata.openGraph as any)?.tags).toEqual(["ремонт", "плитка"]);
-    expect(metadata.twitter?.title).toBe("Статья | Мастерок");
+    // Суффикс «| Мастерок» снимается до того как корневой layout добавит свой
+    // через title.template — иначе получался бы дубликат «… | Мастерок | Мастерок».
+    expect(metadata.title).toBe("Статья");
+    expect(metadata.twitter?.title).toBe("Статья");
     expect(metadata.alternates?.canonical).toBe("https://example.test/article/");
+  });
+
+  it("снимает разные варианты суффикса с названием сайта", () => {
+    const cases: Array<[string, string]> = [
+      ["Калькулятор бетона | Мастерок", "Калькулятор бетона"],
+      ["Калькулятор бетона — Мастерок", "Калькулятор бетона"],
+      ["Калькулятор бетона - Мастерок", "Калькулятор бетона"],
+      ["Калькулятор бетона  Мастерок", "Калькулятор бетона"],
+      ["Калькулятор бетона", "Калькулятор бетона"],
+    ];
+    for (const [input, expected] of cases) {
+      const metadata = buildPageMetadata({
+        title: input,
+        description: "x",
+        url: "https://example.test/",
+      });
+      expect(metadata.title).toBe(expected);
+    }
   });
 });
