@@ -260,4 +260,46 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "vodyanoy-teplyy-pol", reason: "Водяной тёплый пол как дополнение" },
     { slug: "teplyy-pol", reason: "Электрический тёплый пол" },
   ],
+
+  // ── Благоустройство участка ────────────────────────────────────────────
+  gazon: [
+    { slug: "drenazh-uchastka", reason: "Дренаж против застоя воды под газоном" },
+    { slug: "zabor", reason: "Забор по периметру участка" },
+    { slug: "trotuarnaya-plitka", reason: "Дорожки между газонными зонами" },
+  ],
+  "drenazh-uchastka": [
+    { slug: "gazon", reason: "Газон поверх дренируемой площадки" },
+    { slug: "septik", reason: "Поля фильтрации септика" },
+    { slug: "otmostka", reason: "Отмостка с отводом воды" },
+    { slug: "trotuarnaya-plitka", reason: "Дорожки на сухом основании" },
+  ],
+  septik: [
+    { slug: "septik-iz-kolets", reason: "Альтернатива — септик из ЖБИ-колец" },
+    { slug: "drenazh-uchastka", reason: "Дренаж и поля фильтрации" },
+    { slug: "ventilyaciya", reason: "Вентиляция канализационного стояка" },
+  ],
+  "septik-iz-kolets": [
+    { slug: "septik", reason: "Сравнить с пластиковым септиком" },
+    { slug: "drenazh-uchastka", reason: "Поля фильтрации после септика" },
+    { slug: "beton", reason: "Бетон для крышки и днища колодца" },
+  ],
+  zabor: [
+    { slug: "gazon", reason: "Газон внутри участка" },
+    { slug: "trotuarnaya-plitka", reason: "Дорожка вдоль забора" },
+    { slug: "beton", reason: "Бетон для подбетонки столбов" },
+    { slug: "krepezh", reason: "Саморезы и крепёж для профлиста" },
+  ],
+  "trotuarnaya-plitka": [
+    { slug: "drenazh-uchastka", reason: "Дренаж под основанием дорожек" },
+    { slug: "beton", reason: "Бетонное основание под плитку" },
+    { slug: "gazon", reason: "Газон между дорожками" },
+    { slug: "zabor", reason: "Забор по границе участка" },
+  ],
+  otmostka: [
+    { slug: "beton", reason: "Бетон для отмостки" },
+    { slug: "armatura", reason: "Армирование отмостки" },
+    { slug: "drenazh-uchastka", reason: "Дренаж по контуру отмостки" },
+    { slug: "gidroizolyaciya-vlagozaschita", reason: "Гидроизоляция стыка с цоколем" },
+    { slug: "trotuarnaya-plitka", reason: "Отмостка из плитки" },
+  ],
 };
