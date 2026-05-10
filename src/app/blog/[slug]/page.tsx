@@ -402,8 +402,8 @@ export default async function BlogPostPage({ params }: Props) {
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
                 width={1200}
                 height={630}
-                sizes="(max-width: 768px) 100vw, 768px"
-                priority
+                loading="eager"
+                fetchPriority="high"
               />
             </div>
           )}
@@ -499,7 +499,6 @@ export default async function BlogPostPage({ params }: Props) {
                         className="w-full h-32 object-cover"
                         width={400}
                         height={128}
-                        sizes="(max-width: 640px) 100vw, 33vw"
                         loading="lazy"
                       />
                     </Link>

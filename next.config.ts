@@ -48,20 +48,12 @@ const nextConfig: NextConfig = {
     };
   },
 
-  // Image optimization включена для Ghost-CMS hero-картинок.
-  // Без неё PNG 1408×768 отдавался целиком (~600 КиБ) и блокировал LCP блога.
-  // Sharp идёт с next.js, на Timeweb Node.js 24 работает из коробки.
+  // Image optimization выключена: blog hero-картинки уже сжаты в webp
+  // через build-time скрипт (public/blog-images/manifest.json подменяет
+  // Ghost URLs на локальные .webp). Next Image runtime-proxy не нужен
+  // и конфликтует с trailingSlash (генерирует /_next/image/? — 400).
   images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      { protocol: "https", hostname: "cms.getmasterok.ru" },
-      { protocol: "http", hostname: "5.129.248.119" },
-    ],
-    // Размеры под наши hero (1200×630), карточки related (400×128), thumbnails.
-    deviceSizes: [400, 640, 768, 1024, 1200, 1536],
-    imageSizes: [128, 256, 384],
-    // Кэш на 1 год — у Ghost картинки иммутабельны (UUID в URL).
-    minimumCacheTTL: 31536000,
+    unoptimized: true,
   },
 
   // 301-редиректы для удалённых/переименованных URL
