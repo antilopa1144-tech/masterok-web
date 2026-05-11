@@ -548,6 +548,56 @@ function pluralizeUnit(qty: number, unit: string): string {
   return forms ? pluralizeRu(Math.ceil(qty), forms) : unit;
 }
 
+/** Подбор круглой цветной иконки и тона по названию категории */
+function getCategoryVisual(name: string, fallbackIndex: number): { icon: string; tone: "accent" | "violet" | "emerald" | "amber" | "slate" } {
+  const n = name.toLowerCase();
+  // Подложка / подкладка — отдельно (до общего "покрытия", т.к. "под" может мэтчить лишнее)
+  if (/подложк|подкладк|подбив/.test(n))
+    return { icon: "📐", tone: "emerald" };
+  // Плинтус / пороги / окантовка
+  if (/плинтус|порож|порог|окантов|молдинг/.test(n))
+    return { icon: "📏", tone: "amber" };
+  // Монтаж / установка / клинья
+  if (/монтаж|установк|клинь|распорн/.test(n))
+    return { icon: "🔨", tone: "amber" };
+  // Покрытия и финиш
+  if (/покрыт|напольн|кровл|облиц|плитк|ламин|паркет|линол|обои|штукатур|крас|шпакл/.test(n))
+    return { icon: "📦", tone: "violet" };
+  // Каркас / профили / стропила
+  if (/каркас|профил|стойк|обреш|балк|стропил|лаг|косоур|тетив/.test(n))
+    return { icon: "🏗", tone: "violet" };
+  // Крепёж
+  if (/креп|саморе|шуруп|дюбел|гвозд|анкер|термошайб|болт|шайб|гайк/.test(n))
+    return { icon: "🪛", tone: "violet" };
+  // Двери / окна / форточки / фурнитура
+  if (/двер|форточ|окн|петл|шпингал|фурнитур|ручк|замок/.test(n))
+    return { icon: "🚪", tone: "violet" };
+  // Уплотнение / герметизация
+  if (/уплотн|герметик|пен|скотч|лент(?!а арматур)/.test(n))
+    return { icon: "🌀", tone: "violet" };
+  // Изоляция и утепление
+  if (/изол|утепл|мембран|пароизол|гидроизол|вата|пенопласт|пеноплэкс|эковат/.test(n))
+    return { icon: "🛡", tone: "emerald" };
+  // Грунтовка / подготовка основания
+  if (/подгот|основан|выравн|стяжк|наливн|грунт/.test(n))
+    return { icon: "🪣", tone: "emerald" };
+  // Фундамент / бетон / арматура
+  if (/фундамент|бетон|раствор|цемент|арматур|щеб|песок|брус|свай/.test(n))
+    return { icon: "🧱", tone: "amber" };
+  // Электрика
+  if (/электр|кабел|провод|розетк|выключател|автомат|узо|светильник/.test(n))
+    return { icon: "⚡", tone: "amber" };
+  // Сантехника и трубы
+  if (/труб|кран|сантехн|радиатор|стояк|вентил|канализ/.test(n))
+    return { icon: "🔧", tone: "emerald" };
+  // Основное (бэйдж по умолчанию для "Основное")
+  if (/основн/.test(n))
+    return { icon: "📦", tone: "accent" };
+  // Fallback: ротация по индексу группы
+  const tones = ["violet", "emerald", "amber", "accent"] as const;
+  return { icon: "📦", tone: tones[fallbackIndex % tones.length] };
+}
+
 export function MaterialList({ materials }: { materials: CalculatorResult["materials"] }) {
   const groups: Record<string, typeof materials> = {};
   for (const m of materials) {
@@ -556,30 +606,35 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
     groups[cat].push(m);
   }
 
+  const toneClasses: Record<string, string> = {
+    accent:  "bg-accent-100/80  text-accent-600  dark:bg-accent-900/30  dark:text-accent-300",
+    violet:  "bg-violet-100/80  text-violet-600  dark:bg-violet-900/30  dark:text-violet-300",
+    emerald: "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300",
+    amber:   "bg-amber-100/80   text-amber-600   dark:bg-amber-900/30   dark:text-amber-300",
+    slate:   "bg-slate-100      text-slate-600   dark:bg-slate-800      dark:text-slate-200",
+  };
+
   return (
-    <div className="space-y-3">
-      {Object.entries(groups).map(([groupName, items], groupIndex) => (
+    <div className="space-y-4">
+      {Object.entries(groups).map(([groupName, items], groupIndex) => {
+        const visual = getCategoryVisual(groupName, groupIndex);
+        return (
         <div
           key={groupName}
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+          className="overflow-hidden rounded-2xl border border-[#E5EAF2] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-700 dark:bg-slate-900"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`h-8 w-1 rounded-full ${
-                groupIndex % 4 === 0 ? "bg-accent-500" :
-                groupIndex % 4 === 1 ? "bg-violet-500" :
-                groupIndex % 4 === 2 ? "bg-emerald-500" :
-                "bg-sky-500"
-              }`} />
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{groupName}</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                  {items.length} {pluralizeRu(items.length, ["позиция", "позиции", "позиций"])}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 px-4 pt-3 pb-2 sm:px-5 sm:pt-4 sm:pb-3">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base sm:h-10 sm:w-10 sm:text-lg ${toneClasses[visual.tone]}`} aria-hidden>
+              {visual.icon}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">{groupName}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                {items.length} {pluralizeRu(items.length, ["позиция", "позиции", "позиций"])}
+              </p>
             </div>
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-slate-100 px-4 pb-2 sm:px-5 dark:divide-slate-800">
             {items.map((m, i) => {
               const rawQty = m.purchaseQty ?? m.withReserve ?? m.quantity;
               const useGrams = m.unit === "кг" && rawQty > 0 && rawQty < 1;
@@ -595,10 +650,10 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                 && Math.abs(rawQty - reserveQty) > 0.005
                 && `${displayVal} ${displayUnit}` !== `${reserveVal} ${reserveUnit}`;
               return (
-                <div key={i} className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                <div key={i} className="grid grid-cols-[1fr_auto] items-start gap-3 py-3 transition-colors">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug min-w-0 break-words">{m.name}</span>
                   <div className="text-right shrink-0 max-w-[12rem]">
-                    <div className="text-base font-bold tabular-nums text-slate-950 dark:text-slate-50">
+                    <div className="text-lg font-bold tabular-nums text-slate-950 dark:text-slate-50">
                       {displayVal}{" "}
                       <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{displayUnit}</span>
                     </div>
@@ -618,7 +673,8 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1106,6 +1162,42 @@ function pickFeaturedTotal(totals: CalculatorResult["totals"]) {
   return { key, rawValue: value, ...formatTotalMetric(key, value) };
 }
 
+const SECONDARY_TOTAL_PRIORITY = [
+  // Вес — самое полезное на стройке после площади/объёма
+  "totalKg", "cementKg", "cpsTotalKg", "rebarWeightKg", "rebarTons", "ecoWoolKg",
+  // Жидкости и расход
+  "litersWithReserve", "litersNeeded", "totalL", "kgPerSqm", "lPerSqm",
+  // Длины — если ключевой параметр был площадью
+  "perimeter", "totalPerimeter", "totalLinearM", "ridgeLength", "totalPipe",
+  // Объёмы — если ключевой параметр был площадью
+  "totalVolume", "volume", "concreteM3", "mortarVolume",
+  // Площади — если ключевой параметр был объёмом/длиной
+  "totalArea", "area", "realArea", "wallArea", "floorArea", "roofArea",
+  // Счётные итоги
+  "totalSheets", "sheetsNeeded", "tilesNeeded", "blocksNeeded", "bricksNeeded",
+  "packs", "rolls", "stepCount",
+];
+
+function pickSecondaryTotal(totals: CalculatorResult["totals"], excludeKey?: string) {
+  const excludeUnit = excludeKey ? (TOTAL_UNITS[excludeKey] ?? "") : "";
+  // Filter out: the primary key itself, AND any total with the same unit
+  // (avoids "Площадь 50 м² + Площадь плиты 0.72 м²").
+  const visible = getVisibleTotals(totals).filter(([k]) => {
+    if (k === excludeKey) return false;
+    if (excludeUnit && (TOTAL_UNITS[k] ?? "") === excludeUnit) return false;
+    return true;
+  });
+  if (visible.length === 0) return null;
+
+  for (const key of SECONDARY_TOTAL_PRIORITY) {
+    const found = visible.find(([totalKey]) => totalKey === key);
+    if (found) return { key: found[0], rawValue: found[1], ...formatTotalMetric(found[0], found[1]) };
+  }
+
+  const [key, value] = visible[0];
+  return { key, rawValue: value, ...formatTotalMetric(key, value) };
+}
+
 function formatCurrency(value: number) {
   return value.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
 }
@@ -1191,32 +1283,52 @@ function ResultMetricCard({
   value: string;
   unit?: string;
   hint?: string;
-  tone?: "accent" | "violet" | "emerald" | "slate";
+  tone?: "accent" | "violet" | "emerald" | "slate" | "amber";
 }) {
   const toneClasses = {
-    accent: "bg-accent-50 text-accent-700 ring-accent-100 dark:bg-accent-900/20 dark:text-accent-300 dark:ring-accent-800/50",
-    violet: "bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-900/20 dark:text-violet-300 dark:ring-violet-800/50",
-    emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-800/50",
-    slate: "bg-slate-50 text-slate-700 ring-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700",
+    accent:  "bg-accent-100/80  text-accent-600  dark:bg-accent-900/30  dark:text-accent-300",
+    violet:  "bg-violet-100/80  text-violet-600  dark:bg-violet-900/30  dark:text-violet-300",
+    emerald: "bg-emerald-100/80 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300",
+    amber:   "bg-amber-100/80   text-amber-600   dark:bg-amber-900/30   dark:text-amber-300",
+    slate:   "bg-slate-100      text-slate-600   dark:bg-slate-800      dark:text-slate-200",
   }[tone];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex items-start gap-3">
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ring-1 ${toneClasses}`}>
+    <div className="rounded-2xl border border-[#E5EAF2] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-md sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl sm:h-14 sm:w-14 sm:text-2xl ${toneClasses}`} aria-hidden>
           {icon}
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="mt-0.5 text-xl font-bold leading-tight tabular-nums text-slate-950 dark:text-white">
+          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="mt-0.5 text-2xl font-bold leading-tight tabular-nums text-slate-950 sm:text-[26px] dark:text-white">
             {value}
-            {unit && <span className="ml-1 text-sm font-medium text-slate-500 dark:text-slate-400">{unit}</span>}
+            {unit && <span className="ml-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">{unit}</span>}
           </p>
-          {hint && <p className="mt-1 text-[11px] leading-snug text-slate-400 dark:text-slate-500">{hint}</p>}
+          {hint && <p className="mt-1 truncate text-[11px] leading-snug text-slate-400 dark:text-slate-500">{hint}</p>}
         </div>
       </div>
     </div>
   );
+}
+
+/** Разбивка стоимости по категориям материалов */
+function getCostByCategory(
+  materials: CalculatorResult["materials"],
+  prices: MaterialPrices
+): { name: string; total: number }[] {
+  const sums: Record<string, number> = {};
+  for (const m of materials) {
+    const basis = getMaterialPriceBasis(m);
+    const price = getMaterialStoredPrice(prices, m, basis);
+    if (price <= 0) continue;
+    const cat = m.category ?? CALCULATOR_UI_TEXT.defaultMaterialCategory;
+    sums[cat] = (sums[cat] ?? 0) + basis.quantity * price;
+  }
+  return Object.entries(sums)
+    .filter(([, v]) => v > 0)
+    .map(([name, total]) => ({ name, total }))
+    .sort((a, b) => b.total - a.total);
 }
 
 function PriceEstimate({
@@ -1236,100 +1348,128 @@ function PriceEstimate({
   onPriceChange: (key: string, value: number) => void;
   onResetAll: () => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const hasPrices = total > 0;
+  const breakdown = useMemo(() => getCostByCategory(materials, prices), [materials, prices]);
 
   return (
-    <details className="group rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/20" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary className="flex items-center gap-3 cursor-pointer list-none text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-accent-700 transition-colors">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg shadow-sm dark:bg-slate-900">💰</span>
-        <span className="min-w-0">
-          <span className="block font-bold">Оценка стоимости</span>
-          <span className="block text-[11px] font-normal text-slate-500 dark:text-slate-400">Цена за единицу материала</span>
-        </span>
-        {total > 0 && (
-          <span className="ml-auto whitespace-nowrap text-lg text-accent-700 dark:text-accent-400 font-bold tabular-nums">
-            {formatCurrency(total)} ₽
-          </span>
-        )}
-        {total === 0 && filledCount === 0 && (
-          <span className="ml-auto hidden rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-semibold text-accent-700 shadow-sm dark:border-amber-800 dark:bg-slate-900 dark:text-accent-300 sm:inline-flex">
-            Ввести цены
-          </span>
-        )}
-        <span className="group-open:rotate-180 transition-transform text-slate-400">▼</span>
-      </summary>
-
-      <div className="mt-4 space-y-2 rounded-xl border border-amber-100 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <p className="text-xs leading-snug text-slate-400 dark:text-slate-400">
-            Введите цену за покупаемую единицу: мешок, рулон, пруток, ведро, м³ или шт.
+    <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50/40 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-5 dark:border-amber-900/60 dark:from-amber-950/30 dark:to-orange-950/20">
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm dark:bg-slate-900" aria-hidden>💰</span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Оценка стоимости проекта</p>
+          <p className="text-2xl font-bold leading-tight tabular-nums text-slate-950 sm:text-[26px] dark:text-white">
+            {hasPrices ? (
+              <>{formatCurrency(total)} <span className="text-base font-semibold text-slate-500 dark:text-slate-400">₽</span></>
+            ) : (
+              <span className="text-slate-400 dark:text-slate-500">— ₽</span>
+            )}
           </p>
-          {filledCount > 0 && (
-            <button
-              type="button"
-              onClick={onResetAll}
-              className="text-[11px] text-slate-400 hover:text-red-500 transition-colors"
-              title="Сбросить все введённые цены"
-            >
-              Сбросить
-            </button>
-          )}
         </div>
-        {materials.map((m, index) => {
-          const basis = getMaterialPriceBasis(m);
-          const price = getMaterialStoredPrice(prices, m, basis);
-          const lineTotal = basis.quantity * price;
-          const hasCustom = price > 0;
-          return (
-            <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-2 rounded-xl px-1 py-2 text-sm">
-              <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                <span
-                  className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${hasCustom ? "bg-accent-500" : "bg-slate-300 dark:bg-slate-600"}`}
-                  title={hasCustom ? "Цена указана" : "Цена не указана"}
-                  aria-label={hasCustom ? "Цена указана" : "Цена не указана"}
-                />
-                <span className="min-w-0 flex-1 leading-snug">{m.name}</span>
-                <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">× {basis.calculationLabel}</span>
-              </div>
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)] items-start gap-2">
-                <div className="min-w-0">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={price || ""}
-                    placeholder={`₽/${basis.unitLabel}`}
-                    onChange={(e) => onPriceChange(basis.key, parsePriceInput(e.target.value))}
-                    className={`w-full rounded-xl border px-3 py-2 text-right text-sm tabular-nums text-slate-700 outline-none transition-colors focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${
-                      hasCustom
-                        ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10"
-                        : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
-                    }`}
-                    aria-label={`Цена за ${basis.unitDescription}: ${m.name}`}
-                  />
-                  <p className="mt-1 text-[10px] leading-snug text-slate-400 dark:text-slate-500">
-                    Цена за {basis.unitDescription}
-                  </p>
-                </div>
-                <span className="pt-2 text-right text-xs tabular-nums text-slate-400">
-                  {lineTotal > 0 ? `${formatCurrency(lineTotal)} ₽` : "—"}
-                </span>
-              </div>
+      </div>
+
+      {hasPrices && breakdown.length > 0 && (
+        <div className="mt-4 space-y-1.5 border-t border-amber-200/70 pt-3 text-sm dark:border-amber-900/40">
+          {breakdown.map((b) => (
+            <div key={b.name} className="flex items-center justify-between gap-3">
+              <span className="truncate text-slate-600 dark:text-slate-300">{b.name}</span>
+              <span className="shrink-0 font-semibold tabular-nums text-slate-800 dark:text-slate-100">
+                {formatCurrency(b.total)} ₽
+              </span>
             </div>
-          );
-        })}
-        {total > 0 && (
-          <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-200 dark:border-slate-700 text-sm font-bold">
-            <span className="text-slate-700 dark:text-slate-200">Итого</span>
-            <span className="text-accent-700 dark:text-accent-400">
+          ))}
+          <div className="flex items-center justify-between gap-3 border-t border-amber-200/70 pt-2.5 mt-2 dark:border-amber-900/40">
+            <span className="font-semibold text-slate-700 dark:text-slate-200">Итого (ориентировочно)</span>
+            <span className="text-lg font-bold tabular-nums text-accent-600 dark:text-accent-400">
               {formatCurrency(total)} ₽
             </span>
           </div>
-        )}
-      </div>
-      <div className="mt-3">
-        <WorkPriceHints materials={materials} calculatorSlug={calculatorSlug} />
-      </div>
-    </details>
+        </div>
+      )}
+
+      {!hasPrices && (
+        <p className="mt-4 rounded-xl bg-white/70 px-3 py-2.5 text-xs leading-snug text-slate-500 dark:bg-slate-900/40 dark:text-slate-400">
+          <span className="mr-1">💡</span>
+          Итоговая стоимость может отличаться в зависимости от региона и поставщика. Введите цены, чтобы рассчитать общую стоимость материалов.
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        className="mt-4 inline-flex w-full items-center justify-center gap-1.5 text-sm font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300"
+      >
+        {editing ? "Свернуть форму цен" : hasPrices ? "Изменить цены вручную" : "Ввести цены вручную"}
+        <span className={`transition-transform ${editing ? "rotate-180" : ""}`}>→</span>
+      </button>
+
+      {editing && (
+        <div className="mt-4 space-y-2 rounded-xl border border-amber-100 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <p className="text-xs leading-snug text-slate-400 dark:text-slate-400">
+              Введите цену за покупаемую единицу: мешок, рулон, пруток, ведро, м³ или шт.
+            </p>
+            {filledCount > 0 && (
+              <button
+                type="button"
+                onClick={onResetAll}
+                className="text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+                title="Сбросить все введённые цены"
+              >
+                Сбросить
+              </button>
+            )}
+          </div>
+          {materials.map((m, index) => {
+            const basis = getMaterialPriceBasis(m);
+            const price = getMaterialStoredPrice(prices, m, basis);
+            const lineTotal = basis.quantity * price;
+            const hasCustom = price > 0;
+            return (
+              <div key={`${m.category ?? "default"}-${m.name}-${index}`} className="grid gap-2 rounded-xl px-1 py-2 text-sm">
+                <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                  <span
+                    className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${hasCustom ? "bg-accent-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                    aria-label={hasCustom ? "Цена указана" : "Цена не указана"}
+                  />
+                  <span className="min-w-0 flex-1 leading-snug">{m.name}</span>
+                  <span className="shrink-0 whitespace-nowrap text-[10px] text-slate-400">× {basis.calculationLabel}</span>
+                </div>
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)] items-start gap-2">
+                  <div className="min-w-0">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={price || ""}
+                      placeholder={`₽/${basis.unitLabel}`}
+                      onChange={(e) => onPriceChange(basis.key, parsePriceInput(e.target.value))}
+                      className={`w-full rounded-xl border px-3 py-2 text-right text-sm tabular-nums text-slate-700 outline-none transition-colors focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${
+                        hasCustom
+                          ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10"
+                          : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                      }`}
+                      aria-label={`Цена за ${basis.unitDescription}: ${m.name}`}
+                    />
+                    <p className="mt-1 text-[10px] leading-snug text-slate-400 dark:text-slate-500">
+                      Цена за {basis.unitDescription}
+                    </p>
+                  </div>
+                  <span className="pt-2 text-right text-xs tabular-nums text-slate-400">
+                    {lineTotal > 0 ? `${formatCurrency(lineTotal)} ₽` : "—"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {editing && (
+        <div className="mt-3">
+          <WorkPriceHints materials={materials} calculatorSlug={calculatorSlug} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1510,6 +1650,10 @@ export function ResultBlock({
   const priceTotal = useMemo(() => getMaterialPriceTotal(result.materials, prices), [result.materials, prices]);
   const filledPriceCount = useMemo(() => getRelevantPriceCount(result.materials, prices), [result.materials, prices]);
   const featuredTotal = useMemo(() => pickFeaturedTotal(result.totals), [result.totals]);
+  const secondaryTotal = useMemo(
+    () => pickSecondaryTotal(result.totals, featuredTotal?.key),
+    [result.totals, featuredTotal?.key]
+  );
   const categoryCount = useMemo(
     () => new Set(result.materials.map((m) => m.category ?? CALCULATOR_UI_TEXT.defaultMaterialCategory)).size,
     [result.materials]
@@ -1614,12 +1758,24 @@ export function ResultBlock({
 
       {/* Карточка результатов (на печати — компактный EstimatePrintSheet ниже) */}
       <div className="result-card print:hidden overflow-hidden p-0">
-        <div className="border-b border-accent-100 bg-gradient-to-br from-white via-accent-50/70 to-violet-50 px-5 py-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <div className="border-b border-accent-100 bg-gradient-to-br from-white via-accent-50/70 to-violet-50 px-4 py-5 sm:px-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-600 text-xl text-white shadow-lg shadow-accent-500/20">✓</span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-accent-700 dark:text-accent-300">Расчёт готов</p>
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-600 text-xl text-white shadow-lg shadow-accent-500/20" aria-hidden>✓</span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-accent-700 dark:text-accent-300">Расчёт готов</p>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-slate-700"
+                    title={accuracyMultiplier && accuracyMultiplier !== 1 ? `Коэффициент точности ×${accuracyMultiplier.toFixed(2)}` : "Стандартный расчёт"}
+                  >
+                    <span className="text-accent-600 dark:text-accent-400">✦</span>
+                    {accuracyLabel}
+                    {accuracyMultiplier && accuracyMultiplier !== 1 && (
+                      <span className="text-slate-400 dark:text-slate-500">×{accuracyMultiplier.toFixed(2)}</span>
+                    )}
+                  </span>
+                </div>
                 <h3 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{CALCULATOR_UI_TEXT.resultsTitle}</h3>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Материалы сгруппированы для закупки, стоимость считается по вашим ценам.
@@ -1628,10 +1784,10 @@ export function ResultBlock({
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <ResultMetricCard
               icon="📦"
-              label="Материалы"
+              label="Всего материалов"
               value={String(result.materials.length)}
               unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
               hint={`${categoryCount} ${pluralizeRu(categoryCount, ["раздел", "раздела", "разделов"])}`}
@@ -1647,26 +1803,30 @@ export function ResultBlock({
                 tone="emerald"
               />
             )}
-            <ResultMetricCard
-              icon="₽"
-              label="Стоимость"
-              value={priceTotal > 0 ? formatCurrency(priceTotal) : "—"}
-              unit="₽"
-              hint={filledPriceCount > 0 ? `${filledPriceCount} цен указано` : "можно заполнить ниже"}
-              tone="accent"
-            />
-            <ResultMetricCard
-              icon="✦"
-              label="Режим"
-              value={accuracyLabel}
-              hint={accuracyMultiplier && accuracyMultiplier !== 1 ? `коэфф. ×${accuracyMultiplier.toFixed(2)}` : "стандартный расчёт"}
-              tone="slate"
-            />
+            {secondaryTotal ? (
+              <ResultMetricCard
+                icon="⚖"
+                label={secondaryTotal.label}
+                value={secondaryTotal.value}
+                unit={secondaryTotal.unit}
+                hint="расчётный итог"
+                tone="slate"
+              />
+            ) : (
+              <ResultMetricCard
+                icon="🧾"
+                label="Позиций к закупке"
+                value={String(result.materials.length)}
+                unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
+                hint="готово к покупке"
+                tone="slate"
+              />
+            )}
           </div>
         </div>
 
-        <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div>
+        <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0">
             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>
               {primaryMaterial && (
@@ -1678,7 +1838,7 @@ export function ResultBlock({
             <MaterialList materials={result.materials} />
           </div>
 
-          <aside className="space-y-3">
+          <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
             <PriceEstimate
               materials={result.materials}
               calculatorSlug={calculatorSlug}
@@ -1688,55 +1848,66 @@ export function ResultBlock({
               onPriceChange={handlePriceChange}
               onResetAll={handleResetAllPrices}
             />
-            <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-xs text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-200">
-              <p className="font-semibold">Данные остаются у вас</p>
-              <p className="mt-1 text-violet-600/80 dark:text-violet-300/80">
-                Цены и сохранённые расчёты хранятся локально в браузере.
-              </p>
-            </div>
           </aside>
         </div>
 
-        {/* Кнопки действий — компактная полоса под материалами */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-700" data-print-hide>
-          <button
-            onClick={handleCopyMaterials}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
-            title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
-          >
-            {copyState === "copied" ? "✓" : copyState === "failed" ? "✕" : "📋"}{" "}
-            {copyState === "copied"
-              ? CALCULATOR_UI_TEXT.copied
-              : copyState === "failed"
-              ? "Ошибка"
-              : CALCULATOR_UI_TEXT.copy}
-          </button>
-          <button
-            onClick={onShare}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
-            title={CALCULATOR_UI_TEXT.shareLinkTitle}
-          >
-            {shareState === "copied" ? "✓" : "🔗"} {shareState === "copied" ? CALCULATOR_UI_TEXT.copied : CALCULATOR_UI_TEXT.share}
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
-            title={CALCULATOR_UI_TEXT.printTitle}
-          >
-            🖨 {CALCULATOR_UI_TEXT.print}
-          </button>
+        <div className="px-4 pb-4 sm:px-5">
+          <div className="flex items-start gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 p-3 text-sm text-violet-800 sm:p-4 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-200">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-base dark:bg-violet-900/40" aria-hidden>🔒</span>
+            <div className="min-w-0">
+              <p className="font-semibold leading-snug">Сохраняйте расчёты и возвращайтесь к ним позже.</p>
+              <p className="mt-0.5 text-xs leading-snug text-violet-700/80 dark:text-violet-300/80">
+                Данные не передаются третьим лицам и хранятся только у вас, локально в браузере.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Кнопки действий — полоса под информационной плашкой */}
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-5 dark:border-slate-700" data-print-hide>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleCopyMaterials}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-px hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              title={CALCULATOR_UI_TEXT.copyForMessengerTitle}
+            >
+              <span aria-hidden>{copyState === "copied" ? "✓" : copyState === "failed" ? "✕" : "📋"}</span>
+              {copyState === "copied"
+                ? CALCULATOR_UI_TEXT.copied
+                : copyState === "failed"
+                ? "Ошибка"
+                : CALCULATOR_UI_TEXT.copy}
+            </button>
+            <button
+              onClick={onShare}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-px hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              title={CALCULATOR_UI_TEXT.shareLinkTitle}
+            >
+              <span aria-hidden>{shareState === "copied" ? "✓" : "🔗"}</span>
+              {shareState === "copied" ? CALCULATOR_UI_TEXT.copied : CALCULATOR_UI_TEXT.share}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-px hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              title={CALCULATOR_UI_TEXT.printTitle}
+            >
+              <span aria-hidden>🖨</span> {CALCULATOR_UI_TEXT.print}
+            </button>
+          </div>
           {projectSave && (
-            <SaveToProjectButton
-              calcId={projectSave.calcId}
-              calcTitle={projectSave.calcTitle}
-              slug={projectSave.slug}
-              categorySlug={projectSave.categorySlug}
-              materials={result.materials.map((m) => ({
-                name: m.name,
-                quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
-                unit: m.unit,
-              }))}
-            />
+            <div className="w-full sm:ml-auto sm:w-auto">
+              <SaveToProjectButton
+                calcId={projectSave.calcId}
+                calcTitle={projectSave.calcTitle}
+                slug={projectSave.slug}
+                categorySlug={projectSave.categorySlug}
+                materials={result.materials.map((m) => ({
+                  name: m.name,
+                  quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
+                  unit: m.unit,
+                }))}
+              />
+            </div>
           )}
         </div>
       </div>

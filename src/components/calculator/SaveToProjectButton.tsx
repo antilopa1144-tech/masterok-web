@@ -67,17 +67,17 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative w-full sm:w-auto" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-accent-700/50 dark:hover:text-accent-400"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-accent-500/40 sm:w-auto"
         title="Сохранить расчёт в проект"
       >
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5A1.5 1.5 0 013.5 1h6.586a1.5 1.5 0 011.06.44l2.415 2.414A1.5 1.5 0 0114 4.914V12.5A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5v-10z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 1v3.5A.5.5 0 005.5 5h5a.5.5 0 00.5-.5V1M8 8v4M6 10h4" />
         </svg>
-        В проект
+        Сохранить расчёт
       </button>
 
       {open && (
