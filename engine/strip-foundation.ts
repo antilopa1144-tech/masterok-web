@@ -9,6 +9,7 @@ import type {
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import frostDepthRf from "../configs/regional/frost-depth-rf.json";
+import { getInputDefault } from "./spec-helpers";
 
 interface StripFoundationInputs {
   perimeter?: number;
@@ -55,10 +56,6 @@ function getRegionDisplayName(regionId: string | undefined): string | null {
   if (!regionId) return null;
   const region = (frostDepthRf.regions as FrostRegion[]).find((r) => r.id === regionId);
   return region?.name ?? null;
-}
-
-function getInputDefault(spec: StripFoundationCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function buildMaterials(

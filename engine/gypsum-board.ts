@@ -9,6 +9,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface GypsumBoardInputs {
   area?: number;
@@ -37,10 +38,6 @@ const PRIMER_CAN = 10;
 const PROFILE_LENGTH = 3;
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: GypsumBoardCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: GypsumBoardCanonicalSpec, inputs: GypsumBoardInputs): number {
   return Math.max(1, Math.min(1000, inputs.area ?? getInputDefault(spec, "area", 40)));

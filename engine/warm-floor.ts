@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface WarmFloorInputs {
   roomArea?: number;
@@ -52,10 +53,6 @@ const WARM_FLOOR_FACTOR_TABLE: FactorTable = {
 };
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: WarmFloorCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 /* ─── type 0: Mats ─── */
 

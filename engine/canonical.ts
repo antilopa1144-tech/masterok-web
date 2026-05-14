@@ -20,6 +20,130 @@ export interface CanonicalMaterialResult {
   packageInfo?: { count: number; size: number; packageUnit: string };
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+ * Сопутствующие материалы (companion materials).
+ *
+ * Декларативная схема: каждый материал описан в конфиге, движок
+ * `engine/companion-materials.ts` парсит её и формирует CanonicalMaterialResult[].
+ *
+ * Источник истины: конфиг калькулятора. Никаких хардкоженых списков
+ * материалов в engine/<calc>.ts. Это позволяет:
+ *   - синхронизировать материалы с Flutter автоматически через sync:specs
+ *   - условно включать материалы (skip_when/only_when)
+ *   - поддерживать альтернативы (известь vs пластификатор)
+ *   - менять материалы без правки кода
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Способ расчёта количества материала из входов/totals.
+ *  - fixed: ровно N штук (например, кювета).
+ *  - per_input: значение из input умножается на consumption (доорежки=N).
+ *  - per_total: значение из totals × consumption (например, периметр × 0.5).
+ *  - area_consumption: площадь (по totals_key) × расход на м² × reserve.
+ *  - perimeter_consumption: периметр × расход на м × reserve.
+ *  - volume_consumption: объём × расход × reserve.
+ *  - per_count_step: fixed + ceil((base − step_from) / step) штук,
+ *    с опциональным max. Используется для кистей/инструмента, где
+ *    нужно расти ступеньками с площадью.
+ *  - linear_overlap: для сеток/мембран — base × overlap_factor.
+ */
+export type CompanionFormula =
+  | { type: "fixed"; value: number }
+  | { type: "per_input"; input_key: string; per_unit: number }
+  | { type: "per_total"; totals_key: string; per_unit: number }
+  | {
+      type: "area_consumption";
+      totals_key: string;
+      consumption_per_m2: number;
+      reserve_factor?: number;
+    }
+  | {
+      type: "perimeter_consumption";
+      totals_key: string;
+      consumption_per_m: number;
+      reserve_factor?: number;
+    }
+  | {
+      type: "volume_consumption";
+      totals_key: string;
+      consumption_per_m3: number;
+      reserve_factor?: number;
+    }
+  | {
+      type: "per_count_step";
+      totals_key: string;
+      fixed: number;
+      step: number;
+      max?: number;
+    }
+  | {
+      type: "linear_overlap";
+      totals_key: string;
+      overlap_factor: number;
+    };
+
+/**
+ * Условие включения/исключения материала.
+ *
+ *  - input_eq/input_neq: значение input == / != value
+ *  - input_in: значение input ∈ values
+ *  - input_gte/input_lte: сравнение с порогом
+ *  - totals_gt/totals_lt: проверка против вычисленного значения
+ *  - and/or: композиция условий
+ *  - never: «никогда» (для отключения материала без удаления — debug)
+ */
+export type CompanionCondition =
+  | { type: "input_eq"; input_key: string; value: number }
+  | { type: "input_neq"; input_key: string; value: number }
+  | { type: "input_in"; input_key: string; values: number[] }
+  | { type: "input_gte"; input_key: string; value: number }
+  | { type: "input_lte"; input_key: string; value: number }
+  | { type: "totals_gt"; totals_key: string; value: number }
+  | { type: "totals_lt"; totals_key: string; value: number }
+  | { type: "and"; all: CompanionCondition[] }
+  | { type: "or"; any: CompanionCondition[] }
+  | { type: "never" };
+
+/**
+ * Информация об упаковке материала.
+ * Если задана — exact_need округляется до целых упаковок (Math.ceil),
+ * иначе округление до целой единицы (Math.ceil(exactNeed)).
+ */
+export interface CompanionPackageRule {
+  size: number;
+  /** Единица счёта упаковки в множ. числе: "мешков", "канистр", "рулонов", "вёдер". */
+  unit: string;
+}
+
+/**
+ * Декларация одного сопутствующего материала.
+ *
+ * Поля:
+ *  - key: стабильный ID для дедупликации и тестов.
+ *  - label: имя для пользователя на русском.
+ *  - category: группировка в UI (Основное / Подготовка / Расходники / Инструмент / ...).
+ *  - unit: единица измерения количества (л, кг, м², шт, ...).
+ *  - formula: способ расчёта количества (см. CompanionFormula).
+ *  - package: правила упаковки (опционально).
+ *  - skip_when/only_when: условия включения.
+ *  - alternative_group: материалы с одинаковым group взаимоисключаются —
+ *    первый подходящий по условиям включается, остальные пропускаются.
+ *    Используется для пары «известь vs пластификатор».
+ *  - rationale: текст для UI/explainability — почему этот материал в списке.
+ */
+export interface CompanionMaterialSpec {
+  key: string;
+  label: string;
+  category: string;
+  unit: string;
+  formula: CompanionFormula;
+  package?: CompanionPackageRule;
+  skip_when?: CompanionCondition;
+  only_when?: CompanionCondition;
+  alternative_group?: string;
+  rationale?: string;
+}
+
 export interface CanonicalCalculatorResult {
   canonicalSpecId: string;
   formulaVersion: string;
@@ -187,6 +311,9 @@ export interface PaintMaterialRules {
   tape_reserve_factor: number;
   ceiling_premium_factor: number;
   default_roller_absorption_l: number;
+  avg_opening_area_m2: number;
+  avg_opening_perimeter_m: number;
+  tape_sides_per_opening: number;
 }
 
 export interface PaintWarningRules {
@@ -205,6 +332,7 @@ export interface PaintCanonicalSpec extends CanonicalCalculatorSpecBase {
   packaging_rules: PaintPackagingRules;
   material_rules: PaintMaterialRules;
   warnings_rules: PaintWarningRules;
+  companion_materials?: CompanionMaterialSpec[];
 }
 
 
@@ -416,6 +544,7 @@ export interface LaminateCanonicalSpec extends CanonicalCalculatorSpecBase {
   packaging_rules: LaminatePackagingRules;
   material_rules: LaminateMaterialRules;
   warnings_rules: LaminateWarningRules;
+  companion_materials?: CompanionMaterialSpec[];
 }
 
 export interface ParquetLayoutProfileSpec {
@@ -629,6 +758,7 @@ export interface BrickCanonicalSpec extends CanonicalCalculatorSpecBase {
   packaging_rules: BrickPackagingRules;
   material_rules: BrickMaterialRules;
   warnings_rules: BrickWarningRules;
+  companion_materials?: CompanionMaterialSpec[];
 }
 
 export interface DrywallSheetSizeSpec {
@@ -716,6 +846,7 @@ export interface ConcreteCanonicalSpec extends CanonicalCalculatorSpecBase {
   packaging_rules: ConcretePackagingRules;
   material_rules: ConcreteMaterialRules;
   warnings_rules: ConcreteWarningRules;
+  companion_materials?: CompanionMaterialSpec[];
 }
 
 export interface InsulationTypeSpec {
@@ -723,6 +854,13 @@ export interface InsulationTypeSpec {
   key: string;
   label: string;
   dowels_per_sqm: number;
+  /** Высота стандартной упаковки в мм для авто-расчёта числа плит в пачке.
+   *  Минвата ~600 мм, ЭППС ~400 мм, ППС ~500 мм. Для сыпучих (эковата) = 0. */
+  pack_height_mm: number;
+  /** Справочная цена за 1 м² при толщине 100 мм, ₽. Для других толщин
+   *  масштабируется линейно: cost = base × (thickness / 100). Эти цены
+   *  усреднены по рынку РФ 2026; реальные могут отличаться по регионам. */
+  cost_estimate_per_m2_at_100mm_rub: number;
 }
 
 export interface InsulationPlateSizeSpec {
@@ -759,14 +897,32 @@ export interface InsulationWarningRules {
   professional_area_threshold_m2: number;
 }
 
+/**
+ * Климатическая зона России для рекомендации толщины утепления стен.
+ * Значения соответствуют СП 50.13330.2012 «Тепловая защита зданий»,
+ * нормируемое сопротивление теплопередаче по ГСОП (градусо-сутки
+ * отопительного периода). Для упрощения 5 крупных зон.
+ */
+export interface InsulationClimateZoneSpec {
+  id: number;
+  key: string;
+  label: string;
+  /** Минимально допустимая толщина утеплителя стен по СП 50.13330, мм. */
+  min_thickness_walls_mm: number;
+  /** Рекомендуемая толщина для комфортного дома, мм (обычно ≥ min). */
+  rec_thickness_walls_mm: number;
+}
+
 export interface InsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
     insulation_types: InsulationTypeSpec[];
     plate_sizes: InsulationPlateSizeSpec[];
+    climate_zones?: InsulationClimateZoneSpec[];
   };
   packaging_rules: InsulationPackagingRules;
   material_rules: InsulationMaterialRules;
   warnings_rules: InsulationWarningRules;
+  companion_materials?: CompanionMaterialSpec[];
 }
 
 export interface RebarPackagingRules {

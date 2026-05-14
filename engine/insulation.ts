@@ -1,14 +1,15 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   InsulationCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
+import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface InsulationInputs {
   area?: number;
@@ -16,65 +17,38 @@ interface InsulationInputs {
   thickness?: number;
   plateSize?: number;
   reserve?: number;
+  mountSystem?: number;
+  /**
+   * Сколько плит в упаковке. 0 = авто-расчёт от толщины:
+   *   piecesPerPack = floor(insulation_type.pack_height_mm / thickness).
+   * Реальные данные производителей (Rockwool, Knauf, Технониколь, Изовер,
+   * Пеноплекс) показывают, что число плит обратно пропорционально толщине,
+   * а высота упаковки стабильна для каждого типа материала.
+   */
+  piecesPerPack?: number;
+  /**
+   * Климатическая зона для рекомендации толщины (СП 50.13330).
+   * 0=Юг, 1=Центр (default), 2=Урал, 3=Сибирь, 4=Крайний Север.
+   * Если толщина пользователя меньше min для зоны — выдаём warning.
+   */
+  climateZone?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── defaults (fallback if spec.material_rules is missing a field) ─── */
-
-const DEFAULTS = {
-  plate_areas: { 0: 0.72, 1: 0.50, 2: 2.00 } as Record<number, number>,
-  dowels_per_sqm: { 0: 7, 1: 5, 2: 6, 3: 0 } as Record<number, number>,
-  plate_reserve: 1.05,
-  dowel_reserve: 1.05,
-  membrane_reserve: 1.15,
-  alu_tape_m2_per_m2: 2,
-  alu_tape_roll_m: 50,
-  glue_kg_per_m2: 2.5,
-  glue_bag_kg: 25,
-  primer_l_per_m2: 0.15,
-  primer_reserve: 1.15,
-  primer_can_l: 10,
-  ecowool_density: 35,
-  ecowool_waste: 1.10,
-  ecowool_bag_kg: 15,
-};
-
-const PLATE_LABELS: Record<number, string> = { 0: "1200×600", 1: "1000×500", 2: "2000×1000" };
-
-function mr<T>(spec: InsulationCanonicalSpec, key: string, fallback: T): T {
-  const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
-  return (rules?.[key] as T) ?? fallback;
-}
-
-function buildPlateAreas(spec: InsulationCanonicalSpec): Record<number, number> {
-  const sizes = spec.normative_formula?.plate_sizes;
-  if (!sizes || sizes.length === 0) return DEFAULTS.plate_areas;
-  const map: Record<number, number> = {};
-  for (const s of sizes) map[s.id] = s.area_m2;
-  return map;
-}
-
-function buildDowelsPerSqm(spec: InsulationCanonicalSpec): Record<number, number> {
-  const types = spec.normative_formula?.insulation_types;
-  if (!types || types.length === 0) return DEFAULTS.dowels_per_sqm;
-  const map: Record<number, number> = {};
-  for (const t of types) map[t.id] = t.dowels_per_sqm;
-  return map;
-}
-
-/* ─── labels ─── */
-
-const INSULATION_TYPE_LABELS: Record<number, string> = {
-  0: "Минеральная вата",
-  1: "ЭППС / пеноплекс",
-  2: "ЕПС / пенопласт",
-  3: "Эковата",
-};
-
 /* ─── helpers ─── */
 
-function getInputDefault(spec: InsulationCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
+function getPlateSpec(spec: InsulationCanonicalSpec, plateSize: number) {
+  return (
+    spec.normative_formula.plate_sizes.find((p) => p.id === plateSize) ??
+    spec.normative_formula.plate_sizes[0]
+  );
+}
+
+function getInsulationTypeSpec(spec: InsulationCanonicalSpec, insulationType: number) {
+  return (
+    spec.normative_formula.insulation_types.find((t) => t.id === insulationType) ??
+    spec.normative_formula.insulation_types[0]
+  );
 }
 
 function resolveInsulationType(spec: InsulationCanonicalSpec, inputs: InsulationInputs): number {
@@ -94,77 +68,98 @@ export function computeCanonicalInsulation(
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
-  // Read constants from spec, fallback to defaults
-  const PLATE_AREAS = buildPlateAreas(spec);
-  const DOWELS_PER_SQM = buildDowelsPerSqm(spec);
-  const PLATE_RESERVE = mr(spec, "plate_reserve", DEFAULTS.plate_reserve);
-  const DOWEL_RESERVE = mr(spec, "dowel_reserve", DEFAULTS.dowel_reserve);
-  const MEMBRANE_RESERVE = mr(spec, "membrane_reserve", DEFAULTS.membrane_reserve);
-  const ALU_TAPE_M2_PER_M2 = mr(spec, "alu_tape_m2_per_m2", DEFAULTS.alu_tape_m2_per_m2);
-  const ALU_TAPE_ROLL_M = mr(spec, "alu_tape_roll_m", DEFAULTS.alu_tape_roll_m);
-  const GLUE_KG_PER_M2 = mr(spec, "glue_kg_per_m2", DEFAULTS.glue_kg_per_m2);
-  const GLUE_BAG_KG = mr(spec, "glue_bag_kg", DEFAULTS.glue_bag_kg);
-  const PRIMER_L_PER_M2 = mr(spec, "primer_l_per_m2", DEFAULTS.primer_l_per_m2);
-  const PRIMER_RESERVE = mr(spec, "primer_reserve", DEFAULTS.primer_reserve);
-  const PRIMER_CAN_L = mr(spec, "primer_can_l", DEFAULTS.primer_can_l);
-  const ECOWOOL_DENSITY = mr(spec, "ecowool_density", DEFAULTS.ecowool_density);
-  const ECOWOOL_WASTE = mr(spec, "ecowool_waste", DEFAULTS.ecowool_waste);
-  const ECOWOOL_BAG_KG = mr(spec, "ecowool_bag_kg", DEFAULTS.ecowool_bag_kg);
+  const {
+    dowel_reserve: DOWEL_RESERVE,
+    ecowool_density: ECOWOOL_DENSITY,
+    ecowool_waste: ECOWOOL_WASTE,
+    ecowool_bag_kg: ECOWOOL_BAG_KG,
+  } = spec.material_rules;
 
   const area = Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 40)));
   const insulationType = resolveInsulationType(spec, inputs);
-  const thickness = Math.max(50, Math.min(200, inputs.thickness ?? getInputDefault(spec, "thickness", 100)));
+  const thickness = Math.max(50, Math.min(300, inputs.thickness ?? getInputDefault(spec, "thickness", 100)));
   const plateSize = resolvePlateSize(spec, inputs);
   const reserve = Math.max(0, Math.min(15, inputs.reserve ?? getInputDefault(spec, "reserve", 5)));
+  const mountSystem = Math.max(0, Math.min(1, Math.round(inputs.mountSystem ?? getInputDefault(spec, "mountSystem", 0))));
+  const rawPiecesPerPack = Math.max(0, Math.min(24, Math.round(inputs.piecesPerPack ?? getInputDefault(spec, "piecesPerPack", 0))));
+  const climateZone = Math.max(0, Math.min(4, Math.round(inputs.climateZone ?? getInputDefault(spec, "climateZone", 1))));
 
+  const plateSpec = getPlateSpec(spec, plateSize);
+  const insulationTypeSpec = getInsulationTypeSpec(spec, insulationType);
   const areaWithReserve = area * (1 + reserve / 100);
-  const plateArea = PLATE_AREAS[plateSize] ?? 0.72;
+  const plateArea = plateSpec.area_m2;
 
-  /* ── plate-based types (0, 1, 2) ── */
-  let platesNeeded = 0;
+  /* ── Число плит в упаковке ──
+   *
+   * Авто-режим (piecesPerPack=0): floor(pack_height_mm / thickness).
+   * Это соответствует физике упаковки производителей (Rockwool, Knauf,
+   * Технониколь, Изовер, Пеноплекс): высота пачки стабильна, число плит
+   * обратно пропорционально толщине.
+   *
+   * Минвата:   pack_height = 600 мм → 50мм=12шт, 100мм=6шт, 150мм=4шт
+   * ЭППС:      pack_height = 400 мм → 50мм=8шт, 100мм=4шт, 150мм=2-3шт
+   * ППС:       pack_height = 500 мм → 50мм=10шт, 100мм=5шт, 150мм=3шт
+   *
+   * Пользователь может переопределить вручную (выбрать из пресетов в UI),
+   * если знает упаковку конкретного производителя.
+   */
+  const piecesPerPack = (() => {
+    if (insulationType === 3) return 1; // эковата — мешки, не плиты
+    if (rawPiecesPerPack > 0) return rawPiecesPerPack;
+    const packHeight = insulationTypeSpec.pack_height_mm;
+    if (packHeight <= 0 || thickness <= 0) return 1;
+    return Math.max(1, Math.floor(packHeight / thickness));
+  })();
+
+  /* ── основной материал и крепёж (зависят от insulationType и системы монтажа) ──
+   *
+   * Изменение vs предыдущей версии (formula_version v1, было до 2026-05):
+   *   Раньше платы и мешки эковаты округлялись Math.ceil() ДО умножения на
+   *   accuracyMode и сценарные коэффициенты. Это давало двойное округление и
+   *   завышало результат (CLAUDE.md: «округляй только на последнем этапе»).
+   *
+   *   Теперь физическая потребность держится дробной до самого финального ceil
+   *   внутри optimizePackaging. Цифры могут уменьшиться на 1–2 шт. в граничных
+   *   случаях — это корректное поведение, см. золотые тесты в insulation.test.ts.
+   */
+  let platesPhysical = 0;
   let dowelsNeeded = 0;
-  let membraneArea = 0;
-  let aluTapeRolls = 0;
-  let glueKg = 0;
-  let glueBags = 0;
 
   if (insulationType <= 2) {
-    platesNeeded = Math.ceil(areaWithReserve / plateArea);
-    dowelsNeeded = Math.ceil(area * (DOWELS_PER_SQM[insulationType] ?? 0) * DOWEL_RESERVE);
+    platesPhysical = areaWithReserve / plateArea;
+    // Дюбели нужны только для штукатурного фасада (mountSystem=0).
+    // В каркасной системе плита держится враспор — дюбели не нужны.
+    if (mountSystem === 0) {
+      dowelsNeeded = Math.ceil(area * insulationTypeSpec.dowels_per_sqm * DOWEL_RESERVE);
+    }
   }
 
-  if (insulationType === 0) {
-    membraneArea = Math.ceil(area * MEMBRANE_RESERVE);
-    aluTapeRolls = Math.ceil((area * ALU_TAPE_M2_PER_M2) / ALU_TAPE_ROLL_M);
-  }
-
-  if (insulationType === 1 || insulationType === 2) {
-    glueKg = area * GLUE_KG_PER_M2;
-    glueBags = Math.ceil(glueKg / GLUE_BAG_KG);
-  }
-
-  /* ── primer (all types) ── */
-  const primerCans = Math.ceil(area * PRIMER_L_PER_M2 * PRIMER_RESERVE / PRIMER_CAN_L);
-
-  /* ── ecowool (type 3) ── */
+  /* ── эковата (type 3) ── */
   let ecowoolVolume = 0;
-  let ecowoolKg = 0;
-  let ecowoolBags = 0;
+  let ecowoolKgPhysical = 0;
+  let ecowoolBagsPhysical = 0;
 
   if (insulationType === 3) {
     ecowoolVolume = area * (thickness / 1000);
-    ecowoolKg = Math.ceil(ecowoolVolume * ECOWOOL_DENSITY * ECOWOOL_WASTE);
-    ecowoolBags = Math.ceil(ecowoolKg / ECOWOOL_BAG_KG);
+    ecowoolKgPhysical = ecowoolVolume * ECOWOOL_DENSITY * ECOWOOL_WASTE;
+    ecowoolBagsPhysical = ecowoolKgPhysical / ECOWOOL_BAG_KG;
   }
 
-  /* ── scenarios (plates are the primary packaging unit for types 0-2) ── */
-  const basePrimaryRaw = insulationType <= 2 ? platesNeeded : ecowoolBags;
+  /* ── scenarios (plates are the primary packaging unit for types 0-2) ──
+   *
+   * Размер упаковки для плит = piecesPerPack (например 6 для 100мм минваты).
+   * optimizePackaging сразу даст:
+   *   - purchase_quantity = округлённое до упаковки число штук
+   *   - packageCount = число упаковок
+   * Эковата (insulationType=3) — единица «мешок», size=1.
+   */
+  const basePrimaryRaw = insulationType <= 2 ? platesPhysical : ecowoolBagsPhysical;
   const accuracyMult = getPrimaryMultiplier("insulation", accuracyMode);
   const basePrimary = basePrimaryRaw * accuracyMult;
-  const packageSize = 1;
+  const packageSize = insulationType <= 2 ? piecesPerPack : 1;
   const packageUnit = insulationType <= 2 ? "шт" : "мешков";
   const packageLabel = insulationType <= 2
-    ? `insulation-plate-${PLATE_LABELS[plateSize]}`
+    ? `insulation-pack-${piecesPerPack}`
     : "ecowool-bag-15kg";
 
   const packageOptions = [{
@@ -206,74 +201,79 @@ export function computeCanonicalInsulation(
 
   const recScenario = scenarios.REC;
 
-  /* ── build materials list ── */
+  // Финальные целочисленные значения для отображения и для totals.
+  // Берём из REC purchase_quantity — единственное место, где остаётся ceil.
+  const platesNeeded = insulationType <= 2 ? Math.ceil(recScenario.purchase_quantity) : 0;
+  const ecowoolBags = insulationType === 3 ? Math.ceil(recScenario.purchase_quantity) : 0;
+  const ecowoolKg = ecowoolBags * ECOWOOL_BAG_KG;
+
+  /* ── основной материал (плита/эковата) + крепёж: в коде, т.к. они связаны
+     со сценариями MIN/REC/MAX. Всё остальное (мембраны, клей, грунт,
+     стеклосетка, штукатурка, брус каркаса, саморезы) — декларативно через
+     spec.companion_materials. ── */
   const materials: CanonicalMaterialResult[] = [];
 
   if (insulationType <= 2) {
+    // Плиты после optimizePackaging уже кратны упаковке (piecesPerPack).
+    // recScenario.buy_plan.packages_count даёт число упаковок к покупке.
+    const packsNeeded = recScenario.buy_plan.packages_count;
     materials.push({
-      name: `${INSULATION_TYPE_LABELS[insulationType]} (${PLATE_LABELS[plateSize]} мм)`,
+      name: `${insulationTypeSpec.label} ${plateSpec.label} × ${thickness} мм`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: platesNeeded,
+      purchaseQty: platesNeeded,
+      packageInfo: piecesPerPack > 1
+        ? { count: packsNeeded, size: piecesPerPack, packageUnit: "упаковок" }
+        : undefined,
       category: "Основное",
     });
 
-    materials.push({
-      name: "Дюбели тарельчатые",
-      quantity: dowelsNeeded,
-      unit: "шт",
-      withReserve: dowelsNeeded,
-      purchaseQty: dowelsNeeded,
-      category: "Крепёж",
-    });
-  }
-
-  if (insulationType === 0) {
-    materials.push({
-      name: "Пароизоляционная мембрана",
-      quantity: membraneArea,
-      unit: "м²",
-      withReserve: membraneArea,
-      purchaseQty: membraneArea,
-      category: "Изоляция",
-    });
-
-    materials.push({
-      name: "Алюминиевая лента (скотч)",
-      quantity: aluTapeRolls,
-      unit: "рулонов",
-      withReserve: aluTapeRolls,
-      purchaseQty: aluTapeRolls,
-      category: "Изоляция",
-    });
-  }
-
-  if (insulationType === 1 || insulationType === 2) {
-    materials.push({
-      name: `Клей для ${insulationType === 1 ? "ЭППС" : "ЕПС"} (${GLUE_BAG_KG} кг)`,
-      quantity: roundDisplay(glueKg, 3),
-      unit: "кг",
-      withReserve: glueBags * GLUE_BAG_KG,
-      purchaseQty: glueBags * GLUE_BAG_KG,
-      packageInfo: { count: glueBags, size: GLUE_BAG_KG, packageUnit: "мешков" },
-      category: "Клей",
-    });
+    if (dowelsNeeded > 0) {
+      materials.push({
+        name: "Дюбели тарельчатые",
+        quantity: dowelsNeeded,
+        unit: "шт",
+        withReserve: dowelsNeeded,
+        purchaseQty: dowelsNeeded,
+        category: "Крепёж",
+      });
+    }
   }
 
   if (insulationType === 3) {
     materials.push({
       name: `Эковата (${ECOWOOL_BAG_KG} кг)`,
-      quantity: ecowoolKg,
+      quantity: roundDisplay(ecowoolKgPhysical, 3),
       unit: "кг",
-      withReserve: ecowoolBags * ECOWOOL_BAG_KG,
-      purchaseQty: ecowoolBags * ECOWOOL_BAG_KG,
+      withReserve: ecowoolKg,
+      purchaseQty: ecowoolKg,
       packageInfo: { count: ecowoolBags, size: ECOWOOL_BAG_KG, packageUnit: "мешков" },
       category: "Основное",
     });
   }
 
-  materials.push(buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE }));
+  // Сопутствующие материалы — декларативно из конфига.
+  if (spec.companion_materials && spec.companion_materials.length > 0) {
+    const companionTotals = {
+      area,
+      areaWithReserve,
+      thickness,
+      ecowoolVolume,
+    };
+    const companionInputs = {
+      insulationType,
+      plateSize,
+      reserve,
+      mountSystem,
+      thickness,
+    };
+    const companions = evaluateCompanionMaterials(spec.companion_materials, {
+      inputs: companionInputs,
+      totals: companionTotals,
+    });
+    materials.push(...companions);
+  }
 
   /* ── warnings ── */
   const warnings: string[] = [];
@@ -287,12 +287,34 @@ export function computeCanonicalInsulation(
     warnings.push("При площади более 100 м² рекомендуется профессиональный монтаж");
   }
 
+  /* ── Климатическая рекомендация (СП 50.13330) ──
+   * Сравниваем выбранную толщину с минимумом и рекомендацией для региона.
+   * Если толщина меньше нормы — warning, если в рекомендуемом диапазоне — note. */
+  const zones = spec.normative_formula.climate_zones;
+  const zone = zones?.find((z) => z.id === climateZone);
 
   const practicalNotes: string[] = [];
-  if (thickness < 100) {
-    practicalNotes.push(`Утеплитель ${thickness} мм — для средней полосы России минимум 100-150 мм`);
+  if (zone && thickness < zone.min_thickness_walls_mm) {
+    warnings.push(
+      `Для региона «${zone.label}» толщина ${thickness} мм меньше нормы СП 50.13330 ` +
+      `(минимум ${zone.min_thickness_walls_mm} мм). Стены не достигнут нормы тепловой защиты.`,
+    );
+  } else if (zone && thickness < zone.rec_thickness_walls_mm) {
+    practicalNotes.push(
+      `Регион «${zone.label}»: толщина ${thickness} мм соответствует минимуму СП 50.13330, ` +
+      `но для комфорта рекомендуется ${zone.rec_thickness_walls_mm} мм.`,
+    );
+  } else if (zone && thickness >= zone.rec_thickness_walls_mm) {
+    practicalNotes.push(
+      `Регион «${zone.label}»: толщина ${thickness} мм соответствует рекомендации СП 50.13330 ` +
+      `(норма ≥ ${zone.min_thickness_walls_mm} мм, оптимум ${zone.rec_thickness_walls_mm} мм).`,
+    );
   }
-  practicalNotes.push("Стыки плит утеплителя не должны совпадать с стыками предыдущего слоя — укладывайте вразбежку");
+
+  if (thickness < 100 && climateZone >= 1) {
+    practicalNotes.push(`Утеплитель ${thickness} мм — для средней полосы России минимум 100–150 мм.`);
+  }
+  practicalNotes.push("Стыки плит утеплителя не должны совпадать с стыками предыдущего слоя — укладывайте вразбежку.");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -304,15 +326,14 @@ export function computeCanonicalInsulation(
       thickness: roundDisplay(thickness, 3),
       plateSize,
       reserve,
+      mountSystem,
+      climateZone,
       areaWithReserve: roundDisplay(areaWithReserve, 3),
       plateArea,
       platesNeeded: insulationType <= 2 ? platesNeeded : 0,
-      dowelsNeeded: insulationType <= 2 ? dowelsNeeded : 0,
-      membraneArea: insulationType === 0 ? membraneArea : 0,
-      aluTapeRolls: insulationType === 0 ? aluTapeRolls : 0,
-      glueKg: insulationType === 1 || insulationType === 2 ? roundDisplay(glueKg, 3) : 0,
-      glueBags: insulationType === 1 || insulationType === 2 ? glueBags : 0,
-      primerCans,
+      piecesPerPack: insulationType <= 2 ? piecesPerPack : 0,
+      packsNeeded: insulationType <= 2 ? recScenario.buy_plan.packages_count : 0,
+      dowelsNeeded,
       ecowoolVolume: insulationType === 3 ? roundDisplay(ecowoolVolume, 6) : 0,
       ecowoolKg: insulationType === 3 ? ecowoolKg : 0,
       ecowoolBags: insulationType === 3 ? ecowoolBags : 0,

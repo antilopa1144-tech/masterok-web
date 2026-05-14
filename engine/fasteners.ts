@@ -14,6 +14,7 @@ import {
   getPrimaryMultiplier,
   getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 /* ─── constants ─── */
 
@@ -72,10 +73,6 @@ interface FastenersInputs {
 }
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: FastenersCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 /* ─── main ─── */
 

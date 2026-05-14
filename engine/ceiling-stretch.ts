@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface CeilingStretchInputs {
   area?: number;
@@ -29,10 +30,6 @@ const INSERT_RESERVE = 1.1;
 const MASKING_TAPE_ROLL = 50;
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: CeilingStretchCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: CeilingStretchCanonicalSpec, inputs: CeilingStretchInputs): number {
   return Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 20)));

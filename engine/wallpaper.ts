@@ -16,6 +16,7 @@ import {
   getPrimaryMultiplier,
   getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface WallpaperInputs {
   inputMode?: number;
@@ -49,10 +50,6 @@ interface WallpaperGeometry {
   wallArea: number;
   openingsArea: number;
   netArea: number;
-}
-
-function getInputDefault(spec: WallpaperCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveWallHeight(spec: WallpaperCanonicalSpec, inputs: WallpaperInputs): number {

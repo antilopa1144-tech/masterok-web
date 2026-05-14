@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface RoofingInputs {
   roofingType?: number;
@@ -34,10 +35,6 @@ const ROOFING_TYPE_LABELS: Record<number, string> = {
 };
 
 /* --- helpers --- */
-
-function getInputDefault(spec: RoofingCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function clampInt(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(value)));

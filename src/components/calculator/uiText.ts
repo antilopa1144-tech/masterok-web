@@ -22,6 +22,8 @@ export const CALCULATOR_UI_TEXT = {
     `Допустимые значения: ${min} — ${max}${unit ? ` ${unit}` : ""}`,
   defaultMaterialCategory: "Основное",
   withoutReserve: "без запаса",
+  toBuyPrefix: "К покупке",
+  consumptionPrefix: "Расход материала",
   scenariosTitle: "Сколько покупать",
   scenarioLabels: {
     need: "Нужно",

@@ -8,7 +8,8 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface DrywallInputs {
   workType?: number;
@@ -54,10 +55,6 @@ const DW_DEFAULTS = {
 function dwMr<T>(spec: DrywallCanonicalSpec, key: string, fallback: T): T {
   const rules = spec.material_rules as unknown as Record<string, unknown> | undefined;
   return (rules?.[key] as T) ?? fallback;
-}
-
-function getInputDefault(spec: DrywallCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveWorkType(spec: DrywallCanonicalSpec, inputs: DrywallInputs): number {

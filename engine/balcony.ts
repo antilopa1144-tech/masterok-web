@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface BalconyInputs {
   length?: number;
@@ -31,10 +32,6 @@ const INSULATION_LABELS: Record<number, string> = {
   2: "Пенофол",
   3: "ПСБ + пенофол",
 };
-
-function getInputDefault(spec: BalconyCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function buildMaterials(
   spec: BalconyCanonicalSpec,

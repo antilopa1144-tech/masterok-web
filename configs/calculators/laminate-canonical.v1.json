@@ -15,7 +15,9 @@
     { "key": "doorThresholds", "default_value": 1, "min": 0, "max": 10 },
     { "key": "underlayType", "default_value": 3, "min": 2, "max": 5 },
     { "key": "laminateClass", "default_value": 32, "min": 31, "max": 34 },
-    { "key": "laminateThickness", "default_value": 8, "min": 6, "max": 14 }
+    { "key": "laminateThickness", "default_value": 8, "min": 6, "max": 14 },
+    { "key": "floorBase", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "outerCorners", "default_value": 0, "min": 0, "max": 20 }
   ],
   "field_factors": {
     "enabled": [
@@ -61,5 +63,66 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "companion_materials": [
+    {
+      "key": "outer_corners",
+      "label": "Внешние углы для плинтуса",
+      "category": "Плинтус",
+      "unit": "шт",
+      "rationale": "Внешние углы у дверных откосов, выступов и колонн. По числу выступающих углов комнаты.",
+      "only_when": { "type": "input_gte", "input_key": "outerCorners", "value": 1 },
+      "formula": {
+        "type": "per_input",
+        "input_key": "outerCorners",
+        "per_unit": 1
+      }
+    },
+    {
+      "key": "plinth_end_caps",
+      "label": "Заглушки для плинтуса (пара: левая+правая)",
+      "category": "Плинтус",
+      "unit": "шт",
+      "rationale": "Концы плинтуса у дверных проёмов. 2 заглушки на каждый дверной проём.",
+      "formula": {
+        "type": "per_input",
+        "input_key": "doorThresholds",
+        "per_unit": 2
+      }
+    },
+    {
+      "key": "vapor_barrier_concrete",
+      "label": "Пароизоляционная плёнка",
+      "category": "Подготовка",
+      "unit": "м²",
+      "rationale": "Защита ламината от остаточной влаги бетонной стяжки. Не нужна для сухого деревянного основания (может вызвать конденсат).",
+      "only_when": { "type": "input_eq", "input_key": "floorBase", "value": 0 },
+      "formula": {
+        "type": "linear_overlap",
+        "totals_key": "area",
+        "overlap_factor": 1.1
+      }
+    },
+    {
+      "key": "underlay_tape",
+      "label": "Скотч для стыков подложки",
+      "category": "Подложка",
+      "unit": "рулон",
+      "rationale": "Проклейка стыков рулонной подложки. Не нужна для подложки-гармошки (EPS) — там самоклеящиеся стыки.",
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "hasUnderlayment", "value": 1 },
+          { "type": "input_lte", "input_key": "underlayType", "value": 3 }
+        ]
+      },
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 40,
+        "max": 4
+      }
+    }
+  ]
 }

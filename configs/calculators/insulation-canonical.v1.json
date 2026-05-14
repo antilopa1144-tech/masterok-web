@@ -4,24 +4,35 @@
   "input_schema": [
     { "key": "area", "unit": "m2", "default_value": 40, "min": 1, "max": 500 },
     { "key": "insulationType", "default_value": 0, "min": 0, "max": 3 },
-    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 200 },
+    { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 300 },
     { "key": "plateSize", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "reserve", "unit": "%", "default_value": 5, "min": 0, "max": 15 }
+    { "key": "reserve", "unit": "%", "default_value": 5, "min": 0, "max": 15 },
+    { "key": "mountSystem", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "piecesPerPack", "default_value": 0, "min": 0, "max": 24 },
+    { "key": "climateZone", "default_value": 1, "min": 0, "max": 4 },
+    { "key": "layerScheme", "default_value": 0, "min": 0, "max": 1 }
   ],
   "field_factors": {
     "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
   },
   "normative_formula": {
     "insulation_types": [
-      { "id": 0, "key": "mineral_wool", "label": "Минеральная вата", "dowels_per_sqm": 7 },
-      { "id": 1, "key": "epps", "label": "ЭППС / пеноплекс", "dowels_per_sqm": 5 },
-      { "id": 2, "key": "eps", "label": "ЕПС / пенопласт", "dowels_per_sqm": 6 },
-      { "id": 3, "key": "ecowool", "label": "Эковата", "dowels_per_sqm": 0 }
+      { "id": 0, "key": "mineral_wool", "label": "Минеральная вата", "dowels_per_sqm": 7, "pack_height_mm": 600, "cost_estimate_per_m2_at_100mm_rub": 400 },
+      { "id": 1, "key": "epps", "label": "ЭППС / пеноплекс", "dowels_per_sqm": 5, "pack_height_mm": 400, "cost_estimate_per_m2_at_100mm_rub": 850 },
+      { "id": 2, "key": "eps", "label": "ЕПС / пенопласт", "dowels_per_sqm": 6, "pack_height_mm": 500, "cost_estimate_per_m2_at_100mm_rub": 220 },
+      { "id": 3, "key": "ecowool", "label": "Эковата", "dowels_per_sqm": 0, "pack_height_mm": 0, "cost_estimate_per_m2_at_100mm_rub": 350 }
     ],
     "plate_sizes": [
       { "id": 0, "key": "1200x600", "label": "1200×600", "area_m2": 0.72 },
       { "id": 1, "key": "1000x500", "label": "1000×500", "area_m2": 0.50 },
       { "id": 2, "key": "2000x1000", "label": "2000×1000", "area_m2": 2.00 }
+    ],
+    "climate_zones": [
+      { "id": 0, "key": "south", "label": "Юг России (Краснодар, Сочи, Крым, Ростов)", "min_thickness_walls_mm": 80, "rec_thickness_walls_mm": 100 },
+      { "id": 1, "key": "center", "label": "Центральная Россия (Москва, СПб, Поволжье)", "min_thickness_walls_mm": 100, "rec_thickness_walls_mm": 150 },
+      { "id": 2, "key": "ural", "label": "Урал, Северо-Запад", "min_thickness_walls_mm": 150, "rec_thickness_walls_mm": 150 },
+      { "id": 3, "key": "siberia", "label": "Сибирь (Новосибирск, Иркутск, Красноярск)", "min_thickness_walls_mm": 150, "rec_thickness_walls_mm": 200 },
+      { "id": 4, "key": "north", "label": "Крайний Север (Якутск, Норильск, Мурманск)", "min_thickness_walls_mm": 200, "rec_thickness_walls_mm": 250 }
     ]
   },
   "packaging_rules": {
@@ -50,5 +61,161 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "companion_materials": [
+    {
+      "key": "vapor_barrier_membrane",
+      "label": "Пароизоляционная мембрана (изнутри помещения)",
+      "category": "Изоляция",
+      "unit": "м²",
+      "rationale": "Для минваты в каркасной системе: защищает утеплитель от водяного пара изнутри.",
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "insulationType", "value": 0 },
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+        ]
+      },
+      "formula": {
+        "type": "linear_overlap",
+        "totals_key": "area",
+        "overlap_factor": 1.15
+      },
+      "package": { "size": 30, "unit": "рулонов" }
+    },
+    {
+      "key": "wind_barrier_membrane",
+      "label": "Гидроветрозащитная мембрана (снаружи)",
+      "category": "Изоляция",
+      "unit": "м²",
+      "rationale": "Защищает минвату от выдувания и атмосферной влаги. Обязательна для наружного утепления минватой.",
+      "only_when": { "type": "input_eq", "input_key": "insulationType", "value": 0 },
+      "formula": {
+        "type": "linear_overlap",
+        "totals_key": "area",
+        "overlap_factor": 1.15
+      },
+      "package": { "size": 30, "unit": "рулонов" }
+    },
+    {
+      "key": "alu_tape",
+      "label": "Скотч соединительный для пароизоляции",
+      "category": "Изоляция",
+      "unit": "рулонов",
+      "rationale": "Проклейка стыков пароизоляционной мембраны.",
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "insulationType", "value": 0 },
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+        ]
+      },
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 50
+      }
+    },
+    {
+      "key": "facade_glue",
+      "label": "Клей фасадный для плит (25 кг)",
+      "category": "Клей",
+      "unit": "кг",
+      "rationale": "Приклеивание плит к основанию в системе мокрого штукатурного фасада.",
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_in", "input_key": "insulationType", "values": [0, 1, 2] },
+          { "type": "input_eq", "input_key": "mountSystem", "value": 0 }
+        ]
+      },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 5.0,
+        "reserve_factor": 1.0
+      },
+      "package": { "size": 25, "unit": "мешков" }
+    },
+    {
+      "key": "fiber_mesh",
+      "label": "Стеклосетка фасадная (армирующая)",
+      "category": "Армирование",
+      "unit": "м²",
+      "rationale": "Армирующий слой в базовой штукатурке системы мокрого фасада.",
+      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+      "formula": {
+        "type": "linear_overlap",
+        "totals_key": "area",
+        "overlap_factor": 1.1
+      },
+      "package": { "size": 50, "unit": "рулонов" }
+    },
+    {
+      "key": "base_plaster",
+      "label": "Базовая штукатурка армирующего слоя (25 кг)",
+      "category": "Штукатурка",
+      "unit": "кг",
+      "rationale": "Базовый армирующий слой 3-4 мм поверх сетки в системе мокрого фасада.",
+      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 5.0,
+        "reserve_factor": 1.0
+      },
+      "package": { "size": 25, "unit": "мешков" }
+    },
+    {
+      "key": "primer",
+      "label": "Грунтовка фасадная (10 л)",
+      "category": "Подготовка",
+      "unit": "л",
+      "rationale": "Грунтование основания перед оштукатуриванием. Не нужна для эковаты и каркасных систем.",
+      "skip_when": {
+        "type": "or",
+        "any": [
+          { "type": "input_eq", "input_key": "insulationType", "value": 3 },
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+        ]
+      },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 0.15,
+        "reserve_factor": 1.15
+      },
+      "package": { "size": 10, "unit": "канистр" }
+    },
+    {
+      "key": "frame_lumber",
+      "label": "Брус 50×50 мм для каркаса",
+      "category": "Каркас",
+      "unit": "пог.м",
+      "rationale": "Несущий каркас для плит/эковаты. Расход ~2.2 пог.м на м² при шаге 600 мм.",
+      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 2.2,
+        "reserve_factor": 1.05
+      }
+    },
+    {
+      "key": "frame_screws",
+      "label": "Саморезы по дереву 4.2×75 мм",
+      "category": "Каркас",
+      "unit": "шт",
+      "rationale": "Крепёж бруса каркаса к основанию.",
+      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 6,
+        "reserve_factor": 1.1
+      },
+      "package": { "size": 200, "unit": "упаковок" }
+    }
+  ]
 }

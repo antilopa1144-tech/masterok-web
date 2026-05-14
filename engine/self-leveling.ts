@@ -13,8 +13,8 @@ import {
   DEFAULT_ACCURACY_MODE,
   applyAccuracyMode,
   getPrimaryMultiplier,
-  getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface SelfLevelingInputs {
   inputMode?: number;
@@ -37,10 +37,6 @@ const SELF_LEVELING_FACTOR_TABLE: FactorTable = {
   logistics_buffer: { min: 1, rec: 1, max: 1.03 },
   packaging_rounding: { min: 1, rec: 1, max: 1.02 },
 };
-
-function getInputDefault(spec: SelfLevelingCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function estimatePerimeter(area: number) {
   if (area <= 0) return 0;

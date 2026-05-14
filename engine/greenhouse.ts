@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 /* ─── labels ─── */
 
@@ -46,10 +47,6 @@ interface GreenhouseInputs {
 }
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: GreenhouseCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function snapPolycarbonate(t: number): 4 | 6 | 8 | 10 {
   if (t >= 9) return 10;

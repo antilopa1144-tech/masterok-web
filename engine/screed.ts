@@ -12,8 +12,8 @@ import {
   DEFAULT_ACCURACY_MODE,
   applyAccuracyMode,
   getPrimaryMultiplier,
-  getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface ScreedInputs {
   inputMode?: number;
@@ -60,10 +60,6 @@ const SCREED_FACTOR_TABLE: FactorTable = {
   logistics_buffer: { min: 1, rec: 1, max: 1 },
   packaging_rounding: { min: 1, rec: 1, max: 1 },
 };
-
-function getInputDefault(spec: ScreedCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function estimatePerimeter(area: number): number {
   if (area <= 0) return 0;

@@ -81,7 +81,10 @@
     "tape_reserve_factor": 1.1,
     "ceiling_premium_factor": 1.15,
     "default_roller_absorption_l": 0.3,
-    "legacy_first_coat_multiplier": 1.2
+    "legacy_first_coat_multiplier": 1.2,
+    "avg_opening_area_m2": 2,
+    "avg_opening_perimeter_m": 6,
+    "tape_sides_per_opening": 2
   },
   "warnings_rules": {
     "primer_required_surface_ids": [2, 4, 5, 7, 8],
@@ -90,5 +93,145 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "companion_materials": [
+    {
+      "key": "primer",
+      "label": "Грунтовка глубокого проникновения (10 л)",
+      "category": "Подготовка",
+      "unit": "л",
+      "rationale": "Грунтование основания перед окраской. Не нужна для ранее окрашенных поверхностей.",
+      "skip_when": { "type": "input_eq", "input_key": "surfacePrep", "value": 2 },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 0.11,
+        "reserve_factor": 1.0
+      },
+      "package": { "size": 10, "unit": "канистр" }
+    },
+    {
+      "key": "sandpaper",
+      "label": "Шкурка наждачная P240 (для шлифовки между слоями)",
+      "category": "Подготовка",
+      "unit": "м²",
+      "rationale": "Шлифовка поверхности между слоями краски для лучшей адгезии. Расход ~0.05 м² шкурки на м² окраски.",
+      "only_when": { "type": "input_gte", "input_key": "coats", "value": 2 },
+      "formula": {
+        "type": "area_consumption",
+        "totals_key": "area",
+        "consumption_per_m2": 0.05,
+        "reserve_factor": 1.0
+      }
+    },
+    {
+      "key": "roller_interior",
+      "label": "Валик малярный микрофибра 250 мм",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Для интерьерной краски: микрофибра не оставляет ворса. По 1 валику на 50 м².",
+      "only_when": { "type": "input_eq", "input_key": "paintType", "value": 0 },
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 50,
+        "max": 6
+      }
+    },
+    {
+      "key": "roller_facade",
+      "label": "Валик малярный велюровый 250 мм (для фасада)",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Для фасадной краски: велюровый валик лучше переносит густую фасадную краску.",
+      "only_when": { "type": "input_eq", "input_key": "paintType", "value": 1 },
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 50,
+        "max": 6
+      }
+    },
+    {
+      "key": "brush_corner",
+      "label": "Кисть плоская 50 мм (для углов и откосов)",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Для прокрашивания углов и труднодоступных мест. +1 шт за каждые 80 м².",
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 80,
+        "max": 4
+      }
+    },
+    {
+      "key": "brush_narrow",
+      "label": "Кисть узкая 25 мм (для радиаторов и труб)",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Узкая кисть для радиаторов, труб и мелких элементов.",
+      "only_when": { "type": "input_eq", "input_key": "paintType", "value": 0 },
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "tray",
+      "label": "Кювета малярная",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Лоток для краски. По 1 шт на каждые 100 м² (можно использовать вкладыши).",
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 100,
+        "max": 3
+      }
+    },
+    {
+      "key": "tape",
+      "label": "Малярная лента 50 м",
+      "category": "Расходники",
+      "unit": "рулонов",
+      "rationale": "Защита стыков и окантовка проёмов.",
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "estimatedPerimeter",
+        "fixed": 1,
+        "step": 25,
+        "max": 5
+      }
+    },
+    {
+      "key": "protective_film",
+      "label": "Защитная плёнка укрывная (4×5 м)",
+      "category": "Расходники",
+      "unit": "шт",
+      "rationale": "Защита пола и мебели от брызг краски.",
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 1,
+        "step": 30,
+        "max": 4
+      }
+    },
+    {
+      "key": "gloves",
+      "label": "Перчатки нитриловые (пара)",
+      "category": "Расходники",
+      "unit": "пар",
+      "rationale": "Защита рук. ~1 пара на день работы; работа = ~30 м² в день.",
+      "formula": {
+        "type": "per_count_step",
+        "totals_key": "area",
+        "fixed": 2,
+        "step": 30,
+        "max": 10
+      }
+    }
+  ]
 }

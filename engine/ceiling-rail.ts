@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface CeilingRailInputs {
   area?: number;
@@ -29,10 +30,6 @@ const SCREWS_PER_RAIL = 2;
 const SCREWS_PER_KG = 1000;  // 3.5×25 мм
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: CeilingRailCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: CeilingRailCanonicalSpec, inputs: CeilingRailInputs): number {
   return Math.max(1, Math.min(200, inputs.area ?? getInputDefault(spec, "area", 20)));

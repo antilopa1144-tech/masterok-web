@@ -15,6 +15,7 @@ import {
   getAccessoriesMultiplier,
   getLayerRecommendation,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface PrimerInputs {
   inputMode?: number;
@@ -27,10 +28,6 @@ interface PrimerInputs {
   coats?: number;
   canSize?: number;
   accuracyMode?: AccuracyMode;
-}
-
-function getInputDefault(spec: PrimerCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveWorkArea(spec: PrimerCanonicalSpec, rawInputs: PrimerInputs): number {

@@ -17,6 +17,7 @@ import {
   getPrimaryMultiplier,
   getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface TileInputs {
   inputMode?: number;
@@ -30,10 +31,6 @@ interface TileInputs {
   layoutPattern?: number;
   roomComplexity?: number;
   accuracyMode?: AccuracyMode;
-}
-
-function getInputDefault(spec: TileCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveArea(spec: TileCanonicalSpec, inputs: TileInputs): { inputMode: number; area: number } {

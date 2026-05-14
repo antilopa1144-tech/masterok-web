@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface CeilingCassetteInputs {
   area?: number;
@@ -28,10 +29,6 @@ const WALL_PROFILE_LENGTH = 3;
 const WALL_PROFILE_RESERVE = 1.05;
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: CeilingCassetteCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: CeilingCassetteCanonicalSpec, inputs: CeilingCassetteInputs): number {
   return Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 30)));

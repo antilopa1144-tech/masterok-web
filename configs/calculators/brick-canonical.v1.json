@@ -9,7 +9,8 @@
     { "key": "brickType", "default_value": 0, "min": 0, "max": 2 },
     { "key": "wallThickness", "default_value": 1, "min": 0, "max": 3 },
     { "key": "workingConditions", "default_value": 1, "min": 1, "max": 4 },
-    { "key": "wasteMode", "default_value": 0, "min": 0, "max": 2 }
+    { "key": "wasteMode", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "mortarAdditive", "default_value": 0, "min": 0, "max": 1 }
   ],
   "field_factors": {
     "enabled": [
@@ -55,5 +56,103 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "companion_materials": [
+    {
+      "key": "lime",
+      "label": "Известь гашёная (тесто)",
+      "category": "Раствор",
+      "unit": "кг",
+      "rationale": "Традиционная пластифицирующая добавка в кладочный раствор. Улучшает удержание воды и пластичность.",
+      "alternative_group": "mortar_additive",
+      "only_when": { "type": "input_eq", "input_key": "mortarAdditive", "value": 0 },
+      "formula": {
+        "type": "volume_consumption",
+        "totals_key": "mortarVolume",
+        "consumption_per_m3": 150,
+        "reserve_factor": 1.1
+      },
+      "package": { "size": 25, "unit": "мешков" }
+    },
+    {
+      "key": "plasticizer",
+      "label": "Пластификатор для кладочного раствора",
+      "category": "Раствор",
+      "unit": "л",
+      "rationale": "Современная альтернатива извести. Применяется при mortarAdditive=1.",
+      "alternative_group": "mortar_additive",
+      "only_when": { "type": "input_eq", "input_key": "mortarAdditive", "value": 1 },
+      "formula": {
+        "type": "volume_consumption",
+        "totals_key": "mortarVolume",
+        "consumption_per_m3": 0.5,
+        "reserve_factor": 1.1
+      }
+    },
+    {
+      "key": "trowel",
+      "label": "Кельма каменщика",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Основной инструмент каменщика.",
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "hammer_pick",
+      "label": "Молоток-кирочка для подколки",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Для подколки кирпича в местах подгонки.",
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "level",
+      "label": "Уровень строительный 600 мм",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Контроль ровности кладки.",
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "twine",
+      "label": "Шнур-причалка строительный",
+      "category": "Инструмент",
+      "unit": "м",
+      "rationale": "Натягивается между углами для контроля ровности рядов. Расход = периметр × 1.5 (с запасом).",
+      "formula": {
+        "type": "per_total",
+        "totals_key": "perimeter",
+        "per_unit": 1.5
+      }
+    },
+    {
+      "key": "jointer",
+      "label": "Расшивка для швов",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Инструмент для оформления швов кладки.",
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "mortar_tub",
+      "label": "Ёмкость для замеса раствора (60 л)",
+      "category": "Инструмент",
+      "unit": "шт",
+      "rationale": "Корыто или ведро для замеса раствора. 1 шт на объект.",
+      "formula": { "type": "fixed", "value": 1 }
+    },
+    {
+      "key": "waterproofing_under",
+      "label": "Рубероид (гидроизоляция между фундаментом и стеной)",
+      "category": "Гидроизоляция",
+      "unit": "м²",
+      "rationale": "Обязательный слой между фундаментом и первым рядом кладки по СП 15.13330.",
+      "formula": {
+        "type": "linear_overlap",
+        "totals_key": "footprintArea",
+        "overlap_factor": 1.1
+      },
+      "package": { "size": 15, "unit": "рулонов" }
+    }
+  ]
 }

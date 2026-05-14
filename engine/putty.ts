@@ -17,6 +17,7 @@ import {
   getAccessoriesMultiplier,
   getLayerRecommendation,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 const SCENARIO_NAMES: ScenarioName[] = ["MIN", "REC", "MAX"];
 
@@ -40,10 +41,6 @@ interface ResolvedPuttyComponent {
   component: PuttyComponentSpec;
   consumptionPerLayer: number;
   layers: number;
-}
-
-function getInputDefault(spec: PuttyCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveWorkArea(spec: PuttyCanonicalSpec, rawInputs: PuttyInputs): number {

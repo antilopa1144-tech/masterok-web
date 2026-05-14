@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface SoundInsulationInputs {
   area?: number;
@@ -42,10 +43,6 @@ const SEAL_TAPE_ROLL = 30;
 const SEAL_TAPE_RESERVE = 1.1;
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: SoundInsulationCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: SoundInsulationCanonicalSpec, inputs: SoundInsulationInputs): number {
   return Math.max(1, Math.min(500, inputs.area ?? getInputDefault(spec, "area", 30)));

@@ -11,7 +11,9 @@ import type {
   PaintSurfaceSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
+import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface PaintInputs {
   inputMode?: number;
@@ -46,10 +48,6 @@ interface WorkAreaResolution {
   estimatedPerimeter: number;
 }
 
-function getInputDefault(spec: PaintCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
-
 function estimatePerimeter(area: number): number {
   if (area <= 0) return 0;
   return 4 * Math.sqrt(area);
@@ -58,12 +56,12 @@ function estimatePerimeter(area: number): number {
 function resolveWorkArea(spec: PaintCanonicalSpec, rawInputs: PaintInputs): WorkAreaResolution {
   const inputMode = Math.round(rawInputs.inputMode ?? getInputDefault(spec, "inputMode", 1));
   const openingsArea = Math.max(0, rawInputs.openingsArea ?? rawInputs.doorsWindows ?? getInputDefault(spec, "openingsArea", 0));
-  // Estimate perimeter of openings for masking tape.
-  // Assume average opening is ~2m² (standard door 0.8×2=1.6m², window 1.2×1.5=1.8m²)
-  // Each opening has perimeter ~6m. Multiply by 2 sides (inside+outside of tape).
-  const avgOpeningArea = 2;
+  // Источник истины для типовых размеров проёма: spec.material_rules.
+  // Дверь 0.8×2=1.6 м², окно 1.2×1.5=1.8 м² → среднее ~2 м², периметр ~6 м.
+  // Лента клеится с двух сторон проёма (внутри и снаружи) → tape_sides_per_opening=2.
+  const avgOpeningArea = spec.material_rules.avg_opening_area_m2;
   const estimatedOpeningsCount = openingsArea > 0 ? Math.max(1, Math.round(openingsArea / avgOpeningArea)) : 0;
-  const openingsPerimeter = estimatedOpeningsCount * 6 * 2;
+  const openingsPerimeter = estimatedOpeningsCount * spec.material_rules.avg_opening_perimeter_m * spec.material_rules.tape_sides_per_opening;
   const hasSplitAreas = rawInputs.wallArea !== undefined || rawInputs.ceilingArea !== undefined;
   const hasCanonicalRoomDimensions = rawInputs.roomWidth !== undefined && rawInputs.roomLength !== undefined && rawInputs.roomHeight !== undefined;
   const hasLegacyRoomDimensions = rawInputs.length !== undefined && rawInputs.width !== undefined && rawInputs.height !== undefined;
@@ -183,26 +181,17 @@ function resolvePackagingOptions(spec: PaintCanonicalSpec, rawCanSize: number | 
   }));
 }
 
+/**
+ * Базовый материал: только краска. Грунтовка, инструмент, лента, плёнка,
+ * перчатки, шкурка — все через spec.companion_materials в конфиге.
+ */
 function buildMaterials(
   paintType: PaintScopeSpec,
-  surface: PaintSurfaceSpec,
-  workArea: number,
-  estimatedPerimeter: number,
   recExactNeed: number,
   recPurchaseQuantity: number,
   recPackageSize: number,
   recPackageCount: number,
-  materialRules: PaintCanonicalSpec["material_rules"],
 ): CanonicalMaterialResult[] {
-  const primerExact = roundDisplay(workArea * materialRules.primer_l_per_m2, 3);
-  const primerPurchaseQty = primerExact > 0 ? Math.ceil(primerExact / materialRules.primer_package_size_l) : 0;
-  const primerPurchase = roundDisplay(primerPurchaseQty * materialRules.primer_package_size_l, 3);
-  const tapeMeters = roundDisplay(estimatedPerimeter * materialRules.tape_runs_per_room * materialRules.tape_reserve_factor, 3);
-  const tapeRolls = tapeMeters > 0 ? Math.max(1, Math.ceil(tapeMeters / materialRules.tape_roll_length_m)) : 0;
-  const rollers = workArea > 0 ? Math.ceil(workArea / materialRules.roller_area_m2_per_piece) : 0;
-  const brushes = workArea > 0 ? materialRules.brushes_count : 0;
-  const trays = workArea > 0 ? materialRules.trays_count : 0;
-
   return [
     {
       name: `${paintType.label} (${recPackageSize} л)`,
@@ -212,47 +201,6 @@ function buildMaterials(
       purchaseQty: roundDisplay(recPurchaseQuantity, 3),
       packageInfo: { count: recPackageCount, size: recPackageSize, packageUnit: "банок" },
       category: "Основное",
-    },
-    {
-      name: `Грунтовка под покраску ${surface.label.toLowerCase()} (${materialRules.primer_package_size_l} л)`,
-      quantity: primerExact,
-      unit: "л",
-      withReserve: primerPurchase,
-      purchaseQty: primerPurchase,
-      packageInfo: { count: primerPurchaseQty, size: materialRules.primer_package_size_l, packageUnit: "канистр" },
-      category: "Подготовка",
-    },
-    {
-      name: "Валик малярный (микрофибра, 250 мм)",
-      quantity: rollers,
-      unit: "шт",
-      withReserve: rollers,
-      purchaseQty: rollers,
-      category: "Инструмент",
-    },
-    {
-      name: "Кисть плоская (для углов, 50 мм)",
-      quantity: brushes,
-      unit: "шт",
-      withReserve: brushes,
-      purchaseQty: brushes,
-      category: "Инструмент",
-    },
-    {
-      name: "Кювета для краски",
-      quantity: trays,
-      unit: "шт",
-      withReserve: trays,
-      purchaseQty: trays,
-      category: "Инструмент",
-    },
-    {
-      name: `Малярная лента (${materialRules.tape_roll_length_m} м)`,
-      quantity: roundDisplay(tapeMeters / materialRules.tape_roll_length_m, 3),
-      unit: "рулон",
-      withReserve: tapeRolls,
-      purchaseQty: tapeRolls,
-      category: "Расходники",
     },
   ];
 }
@@ -344,20 +292,37 @@ export function computeCanonicalPaint(
   }
   practicalNotes.push("Красьте стену целиком за один приём — стыки подсохшей и свежей краски будут видны");
 
+  const baseMaterials = buildMaterials(
+    paintType,
+    recScenario.exact_need,
+    recScenario.purchase_quantity,
+    paintPackageSize,
+    paintPackageCount,
+  );
+
+  const companionTotals = {
+    area: effectiveArea,
+    wallArea: effectiveWallArea,
+    ceilingArea: effectiveCeilingArea,
+    estimatedPerimeter: work.estimatedPerimeter,
+  };
+  const companionInputs = {
+    paintType: paintType.id,
+    surfaceType: surface.id,
+    surfacePrep: preparation.id,
+    coats,
+  };
+  const companions = spec.companion_materials
+    ? evaluateCompanionMaterials(spec.companion_materials, {
+        inputs: companionInputs,
+        totals: companionTotals,
+      })
+    : [];
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: buildMaterials(
-      paintType,
-      surface,
-      effectiveArea,
-      work.estimatedPerimeter,
-      recScenario.exact_need,
-      recScenario.purchase_quantity,
-      paintPackageSize,
-      paintPackageCount,
-      spec.material_rules,
-    ),
+    materials: [...baseMaterials, ...companions],
     totals: {
       area: roundDisplay(effectiveArea, 3),
       wallArea: roundDisplay(effectiveWallArea, 3),

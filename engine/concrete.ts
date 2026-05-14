@@ -8,7 +8,9 @@ import type {
   ConcreteProportionSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
+import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface ConcreteInputs {
   concreteVolume?: number;
@@ -18,21 +20,8 @@ interface ConcreteInputs {
   inputMode?: number;
   area?: number;
   thickness?: number;
+  application?: number;
   accuracyMode?: AccuracyMode;
-}
-
-const GRADE_LABELS: Record<number, string> = {
-  1: "М100 (В7.5)",
-  2: "М150 (В12.5)",
-  3: "М200 (В15)",
-  4: "М250 (В20)",
-  5: "М300 (В22.5)",
-  6: "М350 (В25)",
-  7: "М400 (В30)",
-};
-
-function getInputDefault(spec: ConcreteCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveProportions(spec: ConcreteCanonicalSpec, grade: number): ConcreteProportionSpec {
@@ -49,26 +38,29 @@ function resolveVolume(spec: ConcreteCanonicalSpec, inputs: ConcreteInputs): { i
   return { inputMode: 0, sourceVolume: roundDisplay(Math.max(0.1, inputs.concreteVolume ?? getInputDefault(spec, "concreteVolume", 5)), 6) };
 }
 
+/**
+ * Базовые материалы: основной бетон + компоненты ручного замеса.
+ *
+ * Гидроизоляция, плёнка для твердения, арматура, опалубка — теперь декларативно
+ * через spec.companion_materials (см. конфиг). Вода удалена из списка покупок:
+ * вода идёт из водопровода, в товарном списке не нужна; её объём остаётся в
+ * totals для технических расчётов.
+ */
 function buildMaterials(
   spec: ConcreteCanonicalSpec,
   gradeLabel: string,
-  totalVolume: number,
   proportions: ConcreteProportionSpec,
   manualMix: number,
   recExactNeed: number,
   recPurchaseQuantity: number,
   recPackageSize: number,
   recPackageCount: number,
-  masticBuckets: number,
-  masticKg: number,
-  filmRolls: number,
-  filmArea: number,
   cementBags: number,
   cementKg: number,
   sandM3: number,
   gravelM3: number,
-  waterL: number,
 ): CanonicalMaterialResult[] {
+  void proportions;
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Бетон ${gradeLabel}`,
@@ -107,37 +99,8 @@ function buildMaterials(
         purchaseQty: Math.ceil(gravelM3),
         category: "Компоненты",
       },
-      {
-        name: "Вода",
-        quantity: roundDisplay(waterL, 3),
-        unit: "л",
-        withReserve: roundDisplay(waterL, 3),
-        purchaseQty: Math.ceil(waterL),
-        category: "Компоненты",
-      },
     );
   }
-
-  materials.push(
-    {
-      name: `Мастика гидроизоляционная (${spec.packaging_rules.mastic_bucket_kg} кг)`,
-      quantity: roundDisplay(masticKg, 3),
-      unit: "кг",
-      withReserve: roundDisplay(masticBuckets * spec.packaging_rules.mastic_bucket_kg, 3),
-      purchaseQty: masticBuckets * spec.packaging_rules.mastic_bucket_kg,
-      packageInfo: { count: masticBuckets, size: spec.packaging_rules.mastic_bucket_kg, packageUnit: "вёдер" },
-      category: "Гидроизоляция",
-    },
-    {
-      name: `Плёнка полиэтиленовая (${spec.packaging_rules.film_roll_m2} м²)`,
-      quantity: roundDisplay(filmArea, 3),
-      unit: "м²",
-      withReserve: roundDisplay(filmRolls * spec.packaging_rules.film_roll_m2, 3),
-      purchaseQty: filmRolls * spec.packaging_rules.film_roll_m2,
-      packageInfo: { count: filmRolls, size: spec.packaging_rules.film_roll_m2, packageUnit: "рулонов" },
-      category: "Гидроизоляция",
-    },
-  );
 
   return materials;
 }
@@ -154,26 +117,27 @@ export function computeCanonicalConcrete(
   const manualMix = Math.round(inputs.manualMix ?? getInputDefault(spec, "manualMix", 0)) === 1 ? 1 : 0;
   const reserve = Math.max(0, Math.min(50, inputs.reserve ?? getInputDefault(spec, "reserve", 10)));
   const proportions = resolveProportions(spec, concreteGrade);
-  const gradeLabel = GRADE_LABELS[concreteGrade] ?? GRADE_LABELS[3];
+  const gradeLabel = proportions.label;
+
+  const application = Math.max(0, Math.min(2, Math.round(inputs.application ?? getInputDefault(spec, "application", 0))));
 
   const sourceVolume = volume.sourceVolume;
   const totalVolumeRaw = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
   const accuracyMult = getPrimaryMultiplier("concrete", accuracyMode);
   const totalVolume = roundDisplay(totalVolumeRaw * accuracyMult, 6);
 
-  // Waterproofing calculations
+  // Геометрия для опалубки и боковой гидроизоляции.
+  // estimated_slab_thickness_m — это высота борта/толщина плиты, используется
+  // и для оценки периметра, и для площади опалубки/боковой обмазки.
   const estimatedThickness = spec.material_rules.estimated_slab_thickness_m;
   const topSurfaceArea = roundDisplay(totalVolume / estimatedThickness, 6);
   const perimeterEst = roundDisplay(Math.sqrt(topSurfaceArea) * 4, 6);
-  const waterproofArea = roundDisplay(perimeterEst * estimatedThickness, 6);
-  const masticKg = roundDisplay(waterproofArea * spec.material_rules.waterproof_mastic_kg_per_m2 * spec.material_rules.waterproof_reserve_factor, 6);
-  const masticBuckets = Math.ceil(masticKg / spec.packaging_rules.mastic_bucket_kg);
+  // formworkArea (= waterproofArea) — площадь боковин: периметр × высота.
+  // Используется одновременно для опалубки и для обмазочной мастики.
+  const formworkArea = roundDisplay(perimeterEst * estimatedThickness, 6);
 
-  // Film
-  const filmArea = roundDisplay(topSurfaceArea * spec.material_rules.film_reserve_factor, 6);
-  const filmRolls = Math.ceil(filmArea / spec.packaging_rules.film_roll_m2);
-
-  // Manual mix components
+  // Компоненты ручного замеса. Вода считается в totals для технической
+  // справки, но в покупаемых материалах не выводится (берётся из водопровода).
   let cementKg = 0;
   let cementBags = 0;
   let sandM3 = 0;
@@ -247,35 +211,51 @@ export function computeCanonicalConcrete(
     practicalNotes.push(`Марка ${gradeLabel} — обязательно вибрирование, иначе потеряете до 30% прочности`);
   }
 
+  const baseMaterials = buildMaterials(
+    spec,
+    gradeLabel,
+    proportions,
+    manualMix,
+    recScenario.exact_need,
+    recScenario.purchase_quantity,
+    recScenario.buy_plan.package_size,
+    recScenario.buy_plan.packages_count,
+    cementBags,
+    cementKg,
+    sandM3,
+    gravelM3,
+  );
+
+  const companionTotals = {
+    totalVolume,
+    topSurfaceArea,
+    formworkArea,
+    waterproofArea: formworkArea, // alias для конфига гидроизоляции
+    perimeterEst,
+  };
+  const companionInputs = {
+    application,
+    concreteGrade,
+    manualMix,
+  };
+  const companions = spec.companion_materials
+    ? evaluateCompanionMaterials(spec.companion_materials, {
+        inputs: companionInputs,
+        totals: companionTotals,
+      })
+    : [];
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: buildMaterials(
-      spec,
-      gradeLabel,
-      totalVolume,
-      proportions,
-      manualMix,
-      recScenario.exact_need,
-      recScenario.purchase_quantity,
-      recScenario.buy_plan.package_size,
-      recScenario.buy_plan.packages_count,
-      masticBuckets,
-      masticKg,
-      filmRolls,
-      filmArea,
-      cementBags,
-      cementKg,
-      sandM3,
-      gravelM3,
-      waterL,
-    ),
+    materials: [...baseMaterials, ...companions],
     totals: {
       sourceVolume: roundDisplay(sourceVolume, 3),
       totalVolume: roundDisplay(totalVolume, 3),
       inputMode: volume.inputMode,
       concreteGrade,
       manualMix,
+      application,
       reserve: roundDisplay(reserve, 3),
       gradeIndex: concreteGrade,
       cementKgPerM3: proportions.cement_kg,
@@ -284,11 +264,7 @@ export function computeCanonicalConcrete(
       waterLPerM3: proportions.water_l,
       topSurfaceArea: roundDisplay(topSurfaceArea, 3),
       perimeterEst: roundDisplay(perimeterEst, 3),
-      waterproofArea: roundDisplay(waterproofArea, 3),
-      masticKg: roundDisplay(masticKg, 3),
-      masticBuckets,
-      filmArea: roundDisplay(filmArea, 3),
-      filmRolls,
+      formworkArea: roundDisplay(formworkArea, 3),
       cementKg: roundDisplay(cementKg, 3),
       cementBags,
       sandM3: roundDisplay(sandM3, 3),

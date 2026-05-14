@@ -14,8 +14,8 @@ import {
   DEFAULT_ACCURACY_MODE,
   applyAccuracyMode,
   getPrimaryMultiplier,
-  getAccessoriesMultiplier,
 } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface PlasterInputs {
   inputMode?: number;
@@ -48,10 +48,6 @@ const PLASTER_FACTOR_TABLE: FactorTable = {
   logistics_buffer: { min: 1, rec: 1, max: 1.04 },
   packaging_rounding: { min: 1, rec: 1, max: 1.02 },
 };
-
-function getInputDefault(spec: PlasterCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveWorkArea(spec: PlasterCanonicalSpec, rawInputs: PlasterInputs): WorkAreaResolution {
   const inputMode = Math.round(rawInputs.inputMode ?? getInputDefault(spec, "inputMode", 0));

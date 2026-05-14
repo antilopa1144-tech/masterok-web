@@ -8,6 +8,8 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
+import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface BrickInputs {
   inputMode?: number;
@@ -18,11 +20,8 @@ interface BrickInputs {
   wallThickness?: number;
   workingConditions?: number;
   wasteMode?: number;
+  mortarAdditive?: number;
   accuracyMode?: AccuracyMode;
-}
-
-function getInputDefault(spec: BrickCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function resolveArea(
@@ -72,7 +71,6 @@ function buildMaterials(
   cementBags: number,
   sandM3: number,
   meshArea: number,
-  plasticizerL: number,
   flexibleTies: number,
 ): CanonicalMaterialResult[] {
   const materials: CanonicalMaterialResult[] = [
@@ -107,14 +105,6 @@ function buildMaterials(
       withReserve: Math.ceil(meshArea),
       purchaseQty: Math.ceil(meshArea),
       category: "Армирование",
-    },
-    {
-      name: "Пластификатор",
-      quantity: roundDisplay(plasticizerL, 3),
-      unit: "л",
-      withReserve: roundDisplay(plasticizerL, 1),
-      purchaseQty: Math.ceil(plasticizerL),
-      category: "Раствор",
     },
   ];
 
@@ -211,6 +201,14 @@ export function computeCanonicalBrick(
 
   const recScenario = scenarios.REC;
 
+  const mortarAdditive = Math.max(0, Math.min(1, Math.round(inputs.mortarAdditive ?? getInputDefault(spec, "mortarAdditive", 0))));
+
+  // footprintArea — площадь пятна стены сверху (для рубероида на фундаменте).
+  // Принимаем толщину стены × длину как приближение.
+  const wallThicknessM = (spec.normative_formula.wall_thickness_mm[String(wallThickness)] ?? 250) / 1000;
+  const footprintArea = roundDisplay(areaInfo.wallWidth * wallThicknessM, 6);
+  const perimeter = roundDisplay(areaInfo.wallWidth * 2 + wallThicknessM * 2, 6);
+
   const warnings: string[] = [];
   if (wallThickness === spec.warnings_rules.non_load_bearing_wall_thickness) {
     warnings.push("Толщина стены в 0.5 кирпича (120 мм) — только для ненесущих перегородок");
@@ -228,20 +226,39 @@ export function computeCanonicalBrick(
   }
   practicalNotes.push("Кладку начинайте с углов, проверяйте горизонт каждые 3-4 ряда");
 
+  const baseMaterials = buildMaterials(
+    spec,
+    brickType,
+    wallThickness,
+    recScenario.exact_need,
+    cementBags,
+    sandM3,
+    meshArea,
+    flexibleTies,
+  );
+
+  const companionInputs = {
+    mortarAdditive,
+    brickType,
+    wallThickness,
+  };
+  const companionTotals = {
+    mortarVolume,
+    perimeter,
+    footprintArea,
+    area,
+  };
+  const companions = spec.companion_materials
+    ? evaluateCompanionMaterials(spec.companion_materials, {
+        inputs: companionInputs,
+        totals: companionTotals,
+      })
+    : [];
+
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: buildMaterials(
-      spec,
-      brickType,
-      wallThickness,
-      recScenario.exact_need,
-      cementBags,
-      sandM3,
-      meshArea,
-      plasticizerL,
-      flexibleTies,
-    ),
+    materials: [...baseMaterials, ...companions],
     totals: {
       area: area,
       inputMode: areaInfo.inputMode,
@@ -266,7 +283,10 @@ export function computeCanonicalBrick(
       meshLayers: meshLayers,
       meshArea: meshArea,
       plasticizerL: plasticizerL,
+      mortarAdditive,
       flexibleTies: flexibleTies,
+      footprintArea,
+      perimeter,
       minExactNeedBricks: scenarios.MIN.exact_need,
       recExactNeedBricks: recScenario.exact_need,
       maxExactNeedBricks: scenarios.MAX.exact_need,

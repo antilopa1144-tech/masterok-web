@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface WarmFloorPipesInputs {
   inputMode?: number;
@@ -65,10 +66,6 @@ const PIPE_TYPE_LABELS: Record<number, string> = {
 };
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: WarmFloorPipesCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function resolveArea(spec: WarmFloorPipesCanonicalSpec, inputs: WarmFloorPipesInputs) {
   const inputMode = Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0));

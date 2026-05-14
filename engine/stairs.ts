@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface StairsInputs {
   floorHeight?: number;
@@ -16,10 +17,6 @@ interface StairsInputs {
   stairWidth?: number;
   materialType?: number;
   accuracyMode?: AccuracyMode;
-}
-
-function getInputDefault(spec: StairsCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 const WOOD_SCREWS_PER_KG = 600;  // 3.5×35 мм

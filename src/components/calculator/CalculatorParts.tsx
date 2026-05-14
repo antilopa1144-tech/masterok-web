@@ -31,6 +31,16 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 /** Единицы, для которых количество всегда целое число */
 const INTEGER_UNITS = new Set(["шт", "мешков", "рулонов", "листов", "упаковок", "канистр", "уп", "упак.", "рулон", "ведро", "баллон", "вёдер", "банок", "туб", "г"]);
 
+/**
+ * Дискретные единицы (штучные товары и тары). Для них:
+ *  - количество всегда целое — невозможны «0.5 рулона» или «1.4 мешка»;
+ *  - не показываем подпись «без запаса / расход» — она бессмысленна
+ *    (расход в штуках = округлённая покупка минус целое = 0).
+ */
+function isDiscreteUnit(unit: string): boolean {
+  return INTEGER_UNITS.has(unit) && unit !== "г";
+}
+
 function formatMaterialQty(value: number, unit: string): string {
   if (value === undefined || value === null || isNaN(value)) return "—";
   // Целые единицы (штуки, мешки, рулоны) — всегда округляем вверх
@@ -641,11 +651,16 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
               const [displayVal, displayUnit] = useGrams
                 ? formatWeightParts(rawQty)
                 : [formatMaterialQty(rawQty, m.unit), pluralizeUnit(rawQty, m.unit)];
-              // "без запаса" line
+              // Подпись «расход материала» — точный физический расход без запаса.
+              // Имеет смысл только для делимых материалов (л, кг, м², м³, м, м.п.).
+              // Для штучных (шт, рулонов, мешков, ...) расход = округление вниз,
+              // что обычно совпадает с покупкой — подпись не нужна.
               const reserveQty = m.quantity;
               const reserveUnit = useGrams ? formatWeightParts(reserveQty)[1] : pluralizeUnit(reserveQty, m.unit);
               const reserveVal = useGrams ? formatWeightParts(reserveQty)[0] : formatMaterialQty(reserveQty, m.unit);
-              const showWithoutReserve = !m.packageInfo
+              const isDiscrete = isDiscreteUnit(m.unit);
+              const showConsumption = !isDiscrete
+                && !m.packageInfo
                 && m.withReserve != null
                 && Math.abs(rawQty - reserveQty) > 0.005
                 && `${displayVal} ${displayUnit}` !== `${reserveVal} ${reserveUnit}`;
@@ -653,6 +668,9 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                 <div key={i} className="grid grid-cols-[1fr_auto] items-start gap-3 py-3 transition-colors">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug min-w-0 break-words">{m.name}</span>
                   <div className="text-right shrink-0 max-w-[12rem]">
+                    <div className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">
+                      {CALCULATOR_UI_TEXT.toBuyPrefix}
+                    </div>
                     <div className="text-lg font-bold tabular-nums text-slate-950 dark:text-slate-50">
                       {displayVal}{" "}
                       <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{displayUnit}</span>
@@ -662,9 +680,9 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                         {m.packageInfo.count} {pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} × {m.packageInfo.size} {m.unit}
                       </div>
                     )}
-                    {showWithoutReserve && (
+                    {showConsumption && (
                       <div className="text-xs text-slate-400 dark:text-slate-400">
-                        {CALCULATOR_UI_TEXT.withoutReserve}: {reserveVal} {reserveUnit}
+                        {CALCULATOR_UI_TEXT.consumptionPrefix}: {reserveVal} {reserveUnit}
                       </div>
                     )}
                   </div>

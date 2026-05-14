@@ -14,16 +14,190 @@
     ]
   },
   "insulation": {
-    "label": "Производитель утеплителя",
+    "label": "Производитель и линейка",
     "items": [
-      { "name": "Технониколь", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [50, 100, 150, 200], "packArea": 6.0 }, "notes": "Крупнейший РФ-производитель. Роклайт (30 кг/м³), Техноблок (45), Техновент (80)." },
-      { "name": "Rockwool (Роквул)", "country": "РФ/Дания", "specs": { "density": 37, "thicknessOptions": [50, 100, 150], "packArea": 5.76 }, "notes": "Лайт Баттс Скандик (37 кг/м³), Акустик Баттс, Руф Баттс. Заводы в РФ работают." },
-      { "name": "Isover (Изовер)", "country": "РФ/Франция", "specs": { "density": 15, "thicknessOptions": [50, 100, 150, 200], "packArea": 14.27 }, "notes": "Saint-Gobain, заводы в Егорьевске и Челябинске." },
-      { "name": "Knauf Insulation", "country": "РФ/Германия", "specs": { "density": 20, "thicknessOptions": [50, 100, 150], "packArea": 10.0 }, "notes": "Стекловата, заводы в РФ." },
-      { "name": "Paroc (Парок)", "country": "РФ/Финляндия", "specs": { "density": 35, "thicknessOptions": [50, 100, 150], "packArea": 7.2 }, "notes": "Базальт, производство в РФ." },
-      { "name": "URSA", "country": "РФ/Испания", "specs": { "density": 15, "thicknessOptions": [50, 100, 150], "packArea": 18.0 }, "notes": "Стекловата, заводы в Серпухове и Чудово." },
-      { "name": "Пеноплэкс (XPS)", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [20, 30, 50, 100], "packArea": 5.76 }, "notes": "Экструзионный пенополистирол, водонепроницаемый." },
-      { "name": "ТехноНиколь XPS Carbon", "country": "Россия", "specs": { "density": 35, "thicknessOptions": [20, 30, 50, 100], "packArea": 5.76 }, "notes": "Аналог Пеноплэкса от ТехноНиколь." }
+      {
+        "name": "Технониколь Роклайт",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 12, "100": 6, "150": 4 },
+          "density": 30,
+          "application": "Универсальная минвата для каркасных стен, перегородок, кровли. Бюджетная линейка."
+        },
+        "notes": "Базальт, плотность 30 кг/м³. Самая популярная линейка ТехноНиколь."
+      },
+      {
+        "name": "Технониколь Техноблок Стандарт",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 10, "100": 5, "150": 3 },
+          "density": 45,
+          "application": "Для штукатурного фасада и каркаса с повышенной плотностью."
+        },
+        "notes": "Плотность 45 кг/м³. Подходит для мокрого фасада."
+      },
+      {
+        "name": "Технониколь Техновент Стандарт",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 6, "100": 3, "150": 2 },
+          "density": 80,
+          "application": "Для вентилируемого фасада. Высокая плотность защищает от продувания."
+        },
+        "notes": "Плотность 80 кг/м³. Только под вентфасад."
+      },
+      {
+        "name": "Rockwool Лайт Баттс Скандик",
+        "country": "РФ/Дания",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 12, "100": 6, "150": 4 },
+          "density": 37,
+          "application": "Минвата для каркасных стен, межэтажных перекрытий, мансард."
+        },
+        "notes": "Самая популярная линейка Rockwool. Плотность 37 кг/м³."
+      },
+      {
+        "name": "Rockwool Акустик Баттс",
+        "country": "РФ/Дания",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100],
+          "packPieces": { "50": 10, "100": 5 },
+          "density": 45,
+          "application": "Звукоизоляция межкомнатных перегородок и потолков."
+        },
+        "notes": "Плотность 45 кг/м³, специально для звукоизоляции."
+      },
+      {
+        "name": "Rockwool Венти Баттс",
+        "country": "РФ/Дания",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 6, "100": 3, "150": 2 },
+          "density": 90,
+          "application": "Для вентилируемого фасада, наружное утепление под облицовку."
+        },
+        "notes": "Плотность 90 кг/м³. Высокая прочность."
+      },
+      {
+        "name": "Knauf Insulation TS 037 Aquastatik",
+        "country": "РФ/Германия",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 12, "100": 6, "150": 4 },
+          "density": 18,
+          "application": "Лёгкая стекловата для кровли, потолков, каркасных стен."
+        },
+        "notes": "Размер плиты 1230×610 (близко к 1200×600). Гидрофобизирована."
+      },
+      {
+        "name": "Изовер Каркас-П37",
+        "country": "РФ/Франция",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 12, "100": 8, "150": 6 },
+          "density": 17,
+          "application": "Лёгкая стекловата под каркас, кровлю и перекрытия."
+        },
+        "notes": "Saint-Gobain. Размер 1230×610. Большие площади в пачке."
+      },
+      {
+        "name": "Изовер Профи",
+        "country": "РФ/Франция",
+        "specs": {
+          "insulationTypeId": 0,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 12, "100": 8, "150": 5 },
+          "density": 13,
+          "application": "Универсальная стекловата для всех конструкций."
+        },
+        "notes": "Saint-Gobain. Хорошая теплоизоляция при низкой плотности."
+      },
+      {
+        "name": "Пеноплэкс Комфорт",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 1,
+          "plateSizeId": 0,
+          "thicknessOptions": [20, 30, 50, 100],
+          "packPieces": { "20": 20, "30": 13, "50": 8, "100": 4 },
+          "density": 25,
+          "application": "ЭППС для лоджий, балконов, внутреннего утепления."
+        },
+        "notes": "Размер 1185×585. Самая популярная линейка Пеноплэкс."
+      },
+      {
+        "name": "Пеноплэкс Фундамент",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 1,
+          "plateSizeId": 0,
+          "thicknessOptions": [50, 100],
+          "packPieces": { "50": 8, "100": 4 },
+          "density": 29,
+          "application": "ЭППС повышенной плотности для фундаментов и цоколя."
+        },
+        "notes": "Размер 1185×585. Влагостойкий, выдерживает грунтовые нагрузки."
+      },
+      {
+        "name": "ТехноНиколь XPS Carbon ECO",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 1,
+          "plateSizeId": 0,
+          "thicknessOptions": [20, 30, 50, 100],
+          "packPieces": { "20": 20, "30": 13, "50": 8, "100": 4 },
+          "density": 26,
+          "application": "ЭППС для стен, полов, кровли — аналог Пеноплэкс Комфорт."
+        },
+        "notes": "Размер 1180×580. Бюджетная альтернатива Пеноплэксу."
+      },
+      {
+        "name": "Knauf Therm Wall (ППС)",
+        "country": "РФ/Германия",
+        "specs": {
+          "insulationTypeId": 2,
+          "plateSizeId": 1,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 10, "100": 5, "150": 3 },
+          "density": 15,
+          "application": "Пенопласт ППС для штукатурного фасада."
+        },
+        "notes": "Размер 1000×500. Лёгкий, бюджетный."
+      },
+      {
+        "name": "ПСБ-С 25Ф (ППС-фасадный)",
+        "country": "Россия",
+        "specs": {
+          "insulationTypeId": 2,
+          "plateSizeId": 1,
+          "thicknessOptions": [50, 100, 150],
+          "packPieces": { "50": 10, "100": 5, "150": 3 },
+          "density": 25,
+          "application": "Фасадный пенопласт ППС-25Ф под штукатурку."
+        },
+        "notes": "Размер 1000×500. ГОСТ Р 56148. Самозатухающий."
+      }
     ]
   },
   "laminate": {

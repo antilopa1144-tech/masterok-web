@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 /* ─── labels ─── */
 
@@ -36,10 +37,6 @@ interface SepticRingsInputs {
 }
 
 /* ─── helpers ─── */
-
-function getInputDefault(spec: SepticRingsCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function snapDiameter(d: number): 1000 | 1500 | 2000 {
   if (d >= 1750) return 2000;

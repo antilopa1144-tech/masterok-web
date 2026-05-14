@@ -8,7 +8,9 @@ import type {
   LaminateLayoutProfileSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier, getAccessoriesMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
+import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface LaminateInputs {
   inputMode?: number;
@@ -25,11 +27,9 @@ interface LaminateInputs {
   underlayType?: number;
   laminateClass?: number;
   laminateThickness?: number;
+  floorBase?: number;
+  outerCorners?: number;
   accuracyMode?: AccuracyMode;
-}
-
-function getInputDefault(spec: LaminateCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
 }
 
 function estimatePerimeter(area: number): number {
@@ -77,7 +77,6 @@ function buildMaterials(
   innerCorners: number,
   connectors: number,
   wedges: number,
-  vaporBarrierArea: number,
   doorThresholds: number,
 ): CanonicalMaterialResult[] {
   const materials: CanonicalMaterialResult[] = [
@@ -122,14 +121,6 @@ function buildMaterials(
       category: "Монтаж",
     },
     {
-      name: "Пароизоляционная плёнка",
-      quantity: roundDisplay(vaporBarrierArea, 6),
-      unit: "м²",
-      withReserve: roundDisplay(vaporBarrierArea, 6),
-      purchaseQty: Math.ceil(vaporBarrierArea),
-      category: "Подготовка",
-    },
-    {
       name: "Порожек стыковочный",
       quantity: doorThresholds,
       unit: "шт",
@@ -148,15 +139,10 @@ function buildMaterials(
       purchaseQty: underlaymentRolls,
       category: "Подложка",
     });
-    materials.push({
-      name: "Скотч для стыков подложки",
-      quantity: 1,
-      unit: "рулон",
-      withReserve: 1,
-      purchaseQty: 1,
-      category: "Подложка",
-    });
   }
+
+  // Внешние углы плинтуса, заглушки, пароизоляция (только на бетон), скотч
+  // стыков подложки (только для рулонной) — через spec.companion_materials.
 
   return materials;
 }
@@ -273,9 +259,31 @@ export function computeCanonicalLaminate(
     innerCorners,
     plinthConnectors,
     wedges,
-    vaporBarrierArea,
     doorThresholds,
   );
+
+  // Companion materials: внешние углы, заглушки плинтуса, условная пароизоляция
+  // (только для бетонного основания), скотч стыков подложки.
+  const floorBase = Math.max(0, Math.min(1, Math.round(inputs.floorBase ?? getInputDefault(spec, "floorBase", 0))));
+  const outerCorners = Math.max(0, Math.round(inputs.outerCorners ?? getInputDefault(spec, "outerCorners", 0)));
+  if (spec.companion_materials && spec.companion_materials.length > 0) {
+    const companionInputs = {
+      hasUnderlayment: hasUnderlayment ? 1 : 0,
+      underlayType: Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3)))),
+      doorThresholds,
+      floorBase,
+      outerCorners,
+    };
+    const companionTotals = {
+      area: geometry.area,
+      perimeter: geometry.perimeter,
+    };
+    const companions = evaluateCompanionMaterials(spec.companion_materials, {
+      inputs: companionInputs,
+      totals: companionTotals,
+    });
+    materials.push(...companions);
+  }
 
   if (expansionJointPieces > 0) {
     materials.push({

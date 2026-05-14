@@ -8,6 +8,7 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { getInputDefault } from "./spec-helpers";
 
 interface RebarInputs {
   structureType?: number;
@@ -43,10 +44,6 @@ const STRUCTURE_TYPE_LABELS: Record<number, string> = {
   2: "Армопояс",
   3: "Плита перекрытия",
 };
-
-function getInputDefault(spec: RebarCanonicalSpec, key: string, fallback: number): number {
-  return spec.input_schema.find((field) => field.key === key)?.default_value ?? fallback;
-}
 
 function clampToNearest(value: number, allowed: number[], fallback: number): number {
   if (allowed.includes(value)) return value;
