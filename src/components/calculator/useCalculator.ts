@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
+import type { CalculatorResult, CalculatorField, HideCondition } from "@/lib/calculators/types";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
 import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
@@ -19,6 +19,41 @@ import {
 } from "@/lib/storage/history";
 
 // ── Constants ────────────────────────────────────────────────────────────────
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Проверка одного декларативного условия скрытия (HideCondition).
+ * Если поле отсутствует в values — условие считается невыполненным
+ * (поле не скрывается из-за отсутствующего ключа).
+ */
+function evalHideCondition(c: HideCondition, values: Record<string, number>): boolean {
+  const v = values[c.key];
+  if (v === undefined || v === null || Number.isNaN(v)) return false;
+  switch (c.op) {
+    case "gt": return v > c.value;
+    case "gte": return v >= c.value;
+    case "lt": return v < c.value;
+    case "lte": return v <= c.value;
+    case "eq": return v === c.value;
+    case "ne": return v !== c.value;
+  }
+}
+
+/**
+ * Стоит ли скрыть поле для текущих значений формы.
+ * hideIf-массив объединяется через OR, hideIfAll — через AND.
+ */
+export function shouldHideField(field: CalculatorField, values: Record<string, number>): boolean {
+  if (field.hideIf) {
+    const conds = Array.isArray(field.hideIf) ? field.hideIf : [field.hideIf];
+    if (conds.some((c) => evalHideCondition(c, values))) return true;
+  }
+  if (field.hideIfAll && field.hideIfAll.length > 0) {
+    if (field.hideIfAll.every((c) => evalHideCondition(c, values))) return true;
+  }
+  return false;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -311,7 +346,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   // Фильтруем поля по inputMode и по hideIf-условиям.
   const inputMode = Math.round(values.inputMode ?? 0);
   const visibleFields = calculator.fields.filter((f) => {
-    if (f.hideIf && f.hideIf(values)) return false;
+    if (shouldHideField(f, values)) return false;
     if (!f.group) return true;
     if (f.group === "bySize") return inputMode === 0;
     if (f.group === "byArea") return inputMode === 1;

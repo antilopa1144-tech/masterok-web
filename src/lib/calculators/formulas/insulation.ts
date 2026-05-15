@@ -61,7 +61,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 2, label: "Пенопласт ППС (плиты)" },
         { value: 3, label: "Эковата (напыление)" },
       ],
-      hideIf: (v) => (v.manufacturer ?? 0) > 0,
+      hideIf: { key: "manufacturer", op: "gt", value: 0 },
     },
     {
       key: "thickness",
@@ -88,7 +88,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 1, label: "1000×500 мм (Технониколь)" },
         { value: 2, label: "2000×1000 мм (пеноплекс стандарт)" },
       ],
-      hideIf: (v) => (v.manufacturer ?? 0) > 0,
+      hideIf: { key: "manufacturer", op: "gt", value: 0 },
     },
     {
       key: "mountSystem",
@@ -128,8 +128,11 @@ export const insulationDef: CalculatorDefinition = {
       // Плотность критична только для минваты (тип 0). У ЭППС, ППС, эковаты
       // плотность стандартная или не применима — поле прячем.
       // Также прячем при выбранном бренде — она уже в specs.density.
-      hideIf: (v) =>
-        (v.manufacturer ?? 0) > 0 || (v.insulationType ?? 0) !== 0,
+      // OR-логика: достаточно ОДНОГО из условий, чтобы поле было скрыто.
+      hideIf: [
+        { key: "manufacturer", op: "gt", value: 0 },
+        { key: "insulationType", op: "ne", value: 0 },
+      ],
     },
     {
       key: "piecesPerPack",
@@ -146,7 +149,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 12, label: "12 шт (минвата 50 мм)" },
       ],
       hint: "По умолчанию калькулятор сам подбирает упаковку по толщине: для минваты ~600 мм / толщина, для ЭППС ~400 мм / толщина. Если на пачке указано другое — выберите вручную.",
-      hideIf: (v) => (v.manufacturer ?? 0) > 0,
+      hideIf: { key: "manufacturer", op: "gt", value: 0 },
     },
     {
       key: "climateZone",
