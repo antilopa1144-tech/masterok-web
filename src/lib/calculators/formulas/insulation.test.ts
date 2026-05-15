@@ -57,6 +57,136 @@ describe("insulation formula — подстановка specs производи
   });
 });
 
+describe("insulation formula — плотность утеплителя", () => {
+  it("по умолчанию (45 кг/м³) без warning о несовместимости", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая"))).toBe(false);
+  });
+
+  it("35 кг/м³ на мокром штукатурном фасаде → warning", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 35 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая") && w.includes("80 кг/м³"))).toBe(true);
+  });
+
+  it("80 кг/м³ в каркасной системе → совет про экономию (но не warning)", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 1, density: 80 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая"))).toBe(false);
+    expect(r.practicalNotes?.some((n) => n.includes("избыточна для каркасной"))).toBe(true);
+  });
+
+  it("35 кг/м³ в каркасе → ОК, без советов о переплате", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 1, density: 35 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая"))).toBe(false);
+    expect(r.practicalNotes?.some((n) => n.includes("избыточна"))).toBe(false);
+  });
+
+  it("totals.effectiveDensity сохраняется", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, density: 80 });
+    expect(r.totals.effectiveDensity).toBe(80);
+  });
+
+  it("ЭППС — плотность не проверяется (это минвата-специфика)", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 1, mountSystem: 0, density: 35 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая"))).toBe(false);
+  });
+
+  it("цена минваты масштабируется по плотности (80 кг/м³ ≈ ×1.35 от 45 кг/м³)", () => {
+    const r45 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 1, density: 45 });
+    const r80 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 80 });
+    const note45 = r45.practicalNotes?.find((n) => n.includes("Минеральная вата"))!;
+    const note80 = r80.practicalNotes?.find((n) => n.includes("Минеральная вата"))!;
+    // ru-RU локаль использует разные виды узких пробелов в разных версиях Node —
+    // нормализуем все non-ASCII пробелы (U+00A0, U+202F и т.д.) к ASCII пробелу.
+    const norm = (s: string) => s.replace(/\s/g, " ");
+    expect(norm(note45)).toContain("16 000");
+    expect(norm(note80)).toContain("21 600");
+  });
+
+  it("если бренд выбран, его плотность побеждает input.density", () => {
+    // Rockwool Венти Баттс (manufacturer=6) = density 90
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, manufacturer: 6, density: 35 });
+    expect(r.totals.brandDensity).toBe(90);
+    // Цена должна быть по бренд-плотности 90 ≈ ближайший пресет 100 (×1.5)
+    const note = r.practicalNotes?.find((n) => n.includes("Минеральная вата"))!;
+    expect(note).toContain("(плотность 90 кг/м³)");
+  });
+});
+
+describe("insulation formula — двухслойная укладка", () => {
+  it("layerScheme=0 (один слой): одна позиция плит в материалах", () => {
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 0 });
+    const plates = r.materials.filter((m) => m.category === "Основное");
+    expect(plates).toHaveLength(1);
+    expect(plates[0].name).not.toContain("Слой");
+  });
+
+  it("layerScheme=1 при толщине 200 мм: два слоя по 100 мм", () => {
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
+    const plates = r.materials.filter((m) => m.name.includes("Слой"));
+    expect(plates).toHaveLength(2);
+    expect(plates[0].name).toContain("Слой 1");
+    expect(plates[0].name).toContain("100 мм");
+    expect(plates[1].name).toContain("Слой 2");
+    expect(plates[1].name).toContain("100 мм");
+  });
+
+  it("layerScheme=1 при толщине 150 мм: слои 50+100", () => {
+    const r = calc({ area: 40, thickness: 150, insulationType: 0, layerScheme: 1 });
+    const plates = r.materials.filter((m) => m.name.includes("Слой"));
+    expect(plates).toHaveLength(2);
+    expect(plates[0].name).toContain("50 мм");
+    expect(plates[1].name).toContain("100 мм");
+    // У слоя 50 мм 12 плит в упаковке, у 100 мм — 6
+    expect(plates[0].packageInfo?.size).toBe(12);
+    expect(plates[1].packageInfo?.size).toBe(6);
+  });
+
+  it("layerScheme=1 при толщине 300 мм: слои 150+150", () => {
+    const r = calc({ area: 40, thickness: 300, insulationType: 0, layerScheme: 1 });
+    const plates = r.materials.filter((m) => m.name.includes("Слой"));
+    expect(plates).toHaveLength(2);
+    expect(plates[0].name).toContain("150 мм");
+    expect(plates[1].name).toContain("150 мм");
+  });
+
+  it("layerScheme=1 при толщине вне карты (80 мм): fallback к одному слою", () => {
+    const r = calc({ area: 40, thickness: 80, insulationType: 0, layerScheme: 1 });
+    const layered = r.materials.filter((m) => m.name.includes("Слой"));
+    expect(layered).toHaveLength(0);
+  });
+
+  it("дюбели в двухслойной схеме переименованы (удлинённые, с указанием полной толщины)", () => {
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
+    const dowels = r.materials.find((m) => m.name.includes("Дюбели"));
+    expect(dowels).toBeDefined();
+    expect(dowels!.name).toContain("удлинённые");
+    expect(dowels!.name).toContain("200 мм");
+  });
+
+  it("companion-материалы (мембрана, клей, штукатурка) не дублируются между слоями", () => {
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
+    const membranes = r.materials.filter((m) => m.name.includes("мембрана"));
+    const glues = r.materials.filter((m) => m.name.includes("Клей"));
+    expect(membranes).toHaveLength(1);
+    expect(glues).toHaveLength(1);
+  });
+
+  it("practicalNotes содержит инструкцию про смещение стыков (СП 23-101-2004)", () => {
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
+    expect(r.practicalNotes?.some((n) => n.includes("Двухслойная") && n.includes("СП 23-101-2004"))).toBe(true);
+  });
+
+  it("с брендом: разные упаковки для каждого слоя из brand.packPieces", () => {
+    // Rockwool Лайт Баттс Скандик (manufacturer=4): 50мм=12, 100мм=6, 150мм=4
+    const r = calc({ area: 40, thickness: 150, insulationType: 0, layerScheme: 1, manufacturer: 4 });
+    const plates = r.materials.filter((m) => m.name.includes("Слой"));
+    expect(plates[0].packageInfo?.size).toBe(12); // 50 мм
+    expect(plates[1].packageInfo?.size).toBe(6);  // 100 мм
+    expect(plates[0].name).toContain("Rockwool");
+    expect(plates[1].name).toContain("Rockwool");
+  });
+});
+
 describe("insulation formula — сравнение типов по стоимости", () => {
   it("в practicalNotes есть блок сравнения с 4 типами", () => {
     const r = calc({ area: 40, thickness: 100, insulationType: 0 });

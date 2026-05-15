@@ -5,7 +5,10 @@ import insulationSpec from "../../../../configs/calculators/insulation-canonical
 import defaultFactorTables from "../../../../configs/factor-tables.json";
 import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
-const insulationManufacturerField = buildManufacturerField("insulation");
+const insulationManufacturerField = buildManufacturerField("insulation", {
+  label: "Производитель и линейка",
+  hint: "Выбор линейки автоматически подставит тип утеплителя, размер плиты, число плит в упаковке и плотность. Если не указан — настройте параметры вручную ниже.",
+});
 
 export const insulationDef: CalculatorDefinition = {
   id: "insulation",
@@ -20,6 +23,21 @@ export const insulationDef: CalculatorDefinition = {
   tags: ["утеплитель", "минвата", "пеноплекс", "пенопласт", "утепление", "теплоизоляция"],
   popularity: 68,
   complexity: 1,
+  /**
+   * Порядок полей: главное наверх (что выбираем) → детали (как считаем).
+   *
+   * Когда выбран конкретный производитель (manufacturer > 0), технические
+   * поля «Тип утеплителя», «Размер плиты», «Плит в упаковке» скрываются —
+   * все эти параметры уже зашиты в линейке бренда и подставляются автоматически
+   * в `calculate()` через specs (insulationTypeId, plateSizeId, packPieces).
+   *
+   * Поля, которые остаются видимыми всегда:
+   *  - Площадь — пользовательский ввод
+   *  - Производитель — главный выбор
+   *  - Толщина — пользователь выбирает сам (от региона/задачи)
+   *  - Система монтажа — определяет companion-материалы
+   *  - Климатическая зона — для проверки толщины по СП 50.13330
+   */
   fields: [
     {
       key: "area",
@@ -31,6 +49,7 @@ export const insulationDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 50,
     },
+    ...(insulationManufacturerField ? [insulationManufacturerField] : []),
     {
       key: "insulationType",
       label: "Тип утеплителя",
@@ -42,6 +61,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 2, label: "Пенопласт ППС (плиты)" },
         { value: 3, label: "Эковата (напыление)" },
       ],
+      hideIf: (v) => (v.manufacturer ?? 0) > 0,
     },
     {
       key: "thickness",
@@ -68,6 +88,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 1, label: "1000×500 мм (Технониколь)" },
         { value: 2, label: "2000×1000 мм (пеноплекс стандарт)" },
       ],
+      hideIf: (v) => (v.manufacturer ?? 0) > 0,
     },
     {
       key: "mountSystem",
@@ -79,6 +100,36 @@ export const insulationDef: CalculatorDefinition = {
         { value: 1, label: "Каркасная система / вентфасад" },
       ],
       hint: "В мокром фасаде нужны клей, дюбели, сетка и штукатурка. В каркасной — брус, ветрозащита и пароизоляция, но не нужны клей с дюбелями.",
+    },
+    {
+      key: "layerScheme",
+      label: "Схема укладки",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "В один слой" },
+        { value: 1, label: "В два слоя со смещением стыков" },
+      ],
+      hint: "Для толщин ≥ 150 мм по СП 23-101-2004 рекомендуется укладка в два слоя со смещением стыков на 1/2 плиты — это устраняет мостики холода. Калькулятор автоматически подберёт толщины слоёв (например, 200 мм = 100+100, 150 мм = 50+100).",
+    },
+    {
+      key: "density",
+      label: "Плотность минваты",
+      type: "select",
+      defaultValue: 45,
+      options: [
+        { value: 35, label: "35 кг/м³ — каркас, кровля (бюджетная)" },
+        { value: 45, label: "45 кг/м³ — звукоизоляция, перегородки" },
+        { value: 80, label: "80 кг/м³ — мокрый штукатурный фасад" },
+        { value: 100, label: "100 кг/м³ — вентфасад под облицовку" },
+        { value: 150, label: "150 кг/м³ — кровля под стяжку, пол" },
+      ],
+      hint: "Плотность определяет применение и цену. Для каркаса хватит 35 кг/м³, для штукатурного фасада нужно минимум 80, для пола под стяжку — 150. При выбранной линейке бренда плотность подставляется автоматически.",
+      // Плотность критична только для минваты (тип 0). У ЭППС, ППС, эковаты
+      // плотность стандартная или не применима — поле прячем.
+      // Также прячем при выбранном бренде — она уже в specs.density.
+      hideIf: (v) =>
+        (v.manufacturer ?? 0) > 0 || (v.insulationType ?? 0) !== 0,
     },
     {
       key: "piecesPerPack",
@@ -95,6 +146,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 12, label: "12 шт (минвата 50 мм)" },
       ],
       hint: "По умолчанию калькулятор сам подбирает упаковку по толщине: для минваты ~600 мм / толщина, для ЭППС ~400 мм / толщина. Если на пачке указано другое — выберите вручную.",
+      hideIf: (v) => (v.manufacturer ?? 0) > 0,
     },
     {
       key: "climateZone",
@@ -110,7 +162,6 @@ export const insulationDef: CalculatorDefinition = {
       ],
       hint: "Калькулятор проверит толщину утепления по нормам СП 50.13330 для вашего региона и подскажет если её мало.",
     },
-    ...(insulationManufacturerField ? [insulationManufacturerField] : []),
   ],
   calculate(inputs) {
     const spec = insulationSpec as any;
@@ -162,7 +213,93 @@ export const insulationDef: CalculatorDefinition = {
       }
     }
 
-    const canonical = computeCanonicalInsulation(spec, enrichedInputs as Parameters<typeof computeCanonicalInsulation>[1], factorTable);
+    /**
+     * Двухслойная укладка (layerScheme=1).
+     *
+     * По СП 23-101-2004 при толщине утепления ≥ 150 мм рекомендуется укладка
+     * в два слоя со смещением стыков на 1/2 плиты — это устраняет мостики
+     * холода по швам между плитами. Толщины слоёв берём из стандартной карты.
+     *
+     * Реализация: вызываем движок дважды (для t1 и t2). Основной материал
+     * — две позиции с разной толщиной. Companion-материалы (мембрана, клей,
+     * сетка, штукатурка) одинаковые для обоих — берём из первого расчёта.
+     * Дюбели берём из любого, но переименовываем чтобы напомнить пользователю
+     * заказать более длинные (по полной толщине + основание).
+     */
+    const LAYER_SPLIT: Record<number, [number, number]> = {
+      100: [50, 50],
+      150: [50, 100],
+      200: [100, 100],
+      250: [100, 150],
+      300: [150, 150],
+    };
+    const baseThickness = Number(enrichedInputs.thickness ?? inputs.thickness ?? 100);
+    const userScheme = Math.round(Number(inputs.layerScheme ?? 0));
+    const split = userScheme === 1 ? LAYER_SPLIT[baseThickness] : undefined;
+    const isTwoLayer = userScheme === 1 && !!split;
+
+    let canonical = computeCanonicalInsulation(
+      spec,
+      enrichedInputs as Parameters<typeof computeCanonicalInsulation>[1],
+      factorTable,
+    );
+
+    if (isTwoLayer && split) {
+      const [t1, t2] = split;
+      // Считаем оба слоя; для каждого свои упаковки и плиты.
+      // brand packPieces зависит от толщины — переопределяем piecesPerPack=0
+      // (авто-расчёт по слою) если бренд не задал явное значение для слоя.
+      function calcLayer(layerThickness: number) {
+        const layerInputs: Record<string, unknown> = { ...enrichedInputs, thickness: layerThickness };
+        if (manufacturer) {
+          const packPieces = (manufacturer.specs as Record<string, unknown>).packPieces as Record<string, number> | undefined;
+          if (packPieces && packPieces[String(layerThickness)] !== undefined) {
+            layerInputs.piecesPerPack = packPieces[String(layerThickness)];
+          } else {
+            // Бренд не выпускает эту толщину или packPieces не задан —
+            // даём авто-расчёт от pack_height_mm.
+            layerInputs.piecesPerPack = 0;
+          }
+        }
+        return computeCanonicalInsulation(
+          spec,
+          layerInputs as Parameters<typeof computeCanonicalInsulation>[1],
+          factorTable,
+        );
+      }
+      const layerA = calcLayer(t1);
+      const layerB = calcLayer(t2);
+
+      // Слияние материалов:
+      //  - две позиции «Основное» (плиты разной толщины)
+      //  - дюбели — из layerB (с пометкой про длину)
+      //  - всё остальное — из layerA (это companion, они одинаковые)
+      const layerAMain = layerA.materials.find((m) => m.category === "Основное");
+      const layerBMain = layerB.materials.find((m) => m.category === "Основное");
+      const layerADowels = layerA.materials.find((m) => m.name.includes("Дюбели"));
+      const otherCompanions = layerA.materials.filter(
+        (m) => m.category !== "Основное" && !m.name.includes("Дюбели"),
+      );
+      const merged: typeof canonical.materials = [];
+      if (layerAMain) merged.push({ ...layerAMain, name: `Слой 1 — ${layerAMain.name}` });
+      if (layerBMain) merged.push({ ...layerBMain, name: `Слой 2 — ${layerBMain.name}` });
+      if (layerADowels) {
+        merged.push({
+          ...layerADowels,
+          name: `Дюбели тарельчатые удлинённые (под толщину ${t1 + t2} мм + основание)`,
+        });
+      }
+      merged.push(...otherCompanions);
+
+      canonical = {
+        ...canonical,
+        materials: merged,
+        practicalNotes: [
+          ...(canonical.practicalNotes ?? []),
+          `Двухслойная укладка: ${t1}+${t2} мм. Верхний слой укладывается со смещением стыков на 1/2 плиты — это устраняет мостики холода по швам (СП 23-101-2004).`,
+        ],
+      };
+    }
 
     const materials = manufacturer
       ? canonical.materials.map((m) =>
@@ -182,6 +319,62 @@ export const insulationDef: CalculatorDefinition = {
     }
 
     /**
+     * Совместимость плотности минваты с системой монтажа.
+     *
+     * Только для минваты (insulationType=0). У ЭППС, ППС и эковаты плотность
+     * стандартная или не применима — поле скрыто в UI и не проверяется.
+     *
+     * Источник плотности (по приоритету):
+     *  1. Бренд (manufacturer.specs.density)
+     *  2. Явный input.density (если пользователь выбрал)
+     *  3. Дефолт 45 кг/м³
+     *
+     * Сравниваем с density_presets[].applications — если выбранная плотность
+     * не подходит к mountSystem, выдаём warning или совет.
+     */
+    const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
+    const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
+    let effectiveDensity = 0;
+    if (manufacturer) {
+      effectiveDensity = Number((manufacturer.specs as Record<string, unknown>).density ?? 0);
+    } else if (insulationType === 0) {
+      effectiveDensity = Number(inputs.density ?? 45);
+    }
+
+    if (insulationType === 0 && effectiveDensity > 0) {
+      totals.effectiveDensity = effectiveDensity;
+      const presets = (spec.normative_formula?.density_presets ?? []) as Array<{
+        value: number;
+        applications: number[];
+        label?: string;
+      }>;
+      // Ищем ближайший пресет по плотности (для совместимости с брендами).
+      const closest = presets.reduce<typeof presets[number] | null>((best, p) => {
+        if (!best) return p;
+        return Math.abs(p.value - effectiveDensity) < Math.abs(best.value - effectiveDensity) ? p : best;
+      }, null);
+      if (closest && !closest.applications.includes(mountSystem)) {
+        // Лёгкая минвата на штукатурном фасаде — критично.
+        if (mountSystem === 0 && effectiveDensity < 70) {
+          brandWarnings.push(
+            `Плотность ${effectiveDensity} кг/м³ слишком низкая для мокрого штукатурного фасада. ` +
+            `Под штукатуркой плита просядет и потрескается. Возьмите минимум 80 кг/м³ ` +
+            `(например, Rockwool Венти Баттс или Технониколь Технофас).`,
+          );
+        }
+        // Плотная минвата в каркасе — переплата.
+        if (mountSystem === 1 && effectiveDensity >= 80) {
+          canonical.practicalNotes = [
+            ...(canonical.practicalNotes ?? []),
+            `Плотность ${effectiveDensity} кг/м³ избыточна для каркасной системы. ` +
+            `Для каркаса достаточно 35–45 кг/м³ (например, Технониколь Роклайт или Rockwool Лайт Баттс) — ` +
+            `это сэкономит ~30–40% бюджета без потери теплоизоляции.`,
+          ];
+        }
+      }
+    }
+
+    /**
      * Справочное сравнение стоимости типов утеплителя.
      *
      * Для текущей площади и толщины показываем примерную стоимость материала
@@ -189,22 +382,41 @@ export const insulationDef: CalculatorDefinition = {
      * выйдет ~16 000 ₽, ЭППС ~34 000 ₽, ППС ~9 000 ₽».
      *
      * Цены — усреднённые рыночные значения 2026 года; делим/умножаем линейно
-     * по толщине. Накладные расходы, доставку и работу не учитываем.
+     * по толщине. Для минваты применяем коэффициент плотности (плотная дороже
+     * лёгкой ~в 2 раза). Накладные расходы, доставку и работу не учитываем.
      */
     const area = Number(inputs.area ?? 0);
     const thickness = Number(inputs.thickness ?? 100);
     const types = spec.normative_formula?.insulation_types as Array<Record<string, unknown>> | undefined;
     if (area > 0 && thickness > 0 && types && types.length > 0) {
+      const densityPresets = (spec.normative_formula?.density_presets ?? []) as Array<{
+        value: number;
+        cost_multiplier: number;
+      }>;
+      // Поправка цены для минваты по выбранной плотности.
+      const densityCostMult = (() => {
+        if (effectiveDensity <= 0 || densityPresets.length === 0) return 1;
+        const closest = densityPresets.reduce<typeof densityPresets[number] | null>((best, p) => {
+          if (!best) return p;
+          return Math.abs(p.value - effectiveDensity) < Math.abs(best.value - effectiveDensity) ? p : best;
+        }, null);
+        return closest?.cost_multiplier ?? 1;
+      })();
+
       const lines: string[] = [];
       lines.push(`Примерная стоимость материала для ${area} м² × ${thickness} мм (справочно, рынок РФ 2026):`);
       for (const t of types) {
         const base = Number(t.cost_estimate_per_m2_at_100mm_rub ?? 0);
         if (!(base > 0)) continue;
-        const totalRub = area * base * (thickness / 100);
+        // Поправка плотности применяется только к минвате (тип 0).
+        const tId = Number(t.id ?? -1);
+        const mult = tId === 0 ? densityCostMult : 1;
+        const totalRub = area * base * mult * (thickness / 100);
         // Округляем до сотен рублей, добавляем разделитель тысяч
         const rounded = Math.round(totalRub / 100) * 100;
         const formatted = rounded.toLocaleString("ru-RU");
-        lines.push(`• ${t.label}: ~${formatted} ₽`);
+        const densityNote = tId === 0 && effectiveDensity > 0 ? ` (плотность ${effectiveDensity} кг/м³)` : "";
+        lines.push(`• ${t.label}${densityNote}: ~${formatted} ₽`);
       }
       lines.push("Цены без работы и доставки, могут заметно меняться по регионам и брендам.");
       canonical.practicalNotes = [...(canonical.practicalNotes ?? []), lines.join("\n")];

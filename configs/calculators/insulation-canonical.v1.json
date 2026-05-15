@@ -10,7 +10,8 @@
     { "key": "mountSystem", "default_value": 0, "min": 0, "max": 1 },
     { "key": "piecesPerPack", "default_value": 0, "min": 0, "max": 24 },
     { "key": "climateZone", "default_value": 1, "min": 0, "max": 4 },
-    { "key": "layerScheme", "default_value": 0, "min": 0, "max": 1 }
+    { "key": "layerScheme", "default_value": 0, "min": 0, "max": 1 },
+    { "key": "density", "unit": "kg_m3", "default_value": 45, "min": 0, "max": 200 }
   ],
   "field_factors": {
     "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]
@@ -33,6 +34,13 @@
       { "id": 2, "key": "ural", "label": "Урал, Северо-Запад", "min_thickness_walls_mm": 150, "rec_thickness_walls_mm": 150 },
       { "id": 3, "key": "siberia", "label": "Сибирь (Новосибирск, Иркутск, Красноярск)", "min_thickness_walls_mm": 150, "rec_thickness_walls_mm": 200 },
       { "id": 4, "key": "north", "label": "Крайний Север (Якутск, Норильск, Мурманск)", "min_thickness_walls_mm": 200, "rec_thickness_walls_mm": 250 }
+    ],
+    "density_presets": [
+      { "value": 35, "label": "35 кг/м³ — лёгкая (каркас, кровля, перекрытия)", "cost_multiplier": 0.65, "applications": [1] },
+      { "value": 45, "label": "45 кг/м³ — средняя (звукоизоляция, перегородки)", "cost_multiplier": 1.0, "applications": [0, 1] },
+      { "value": 80, "label": "80 кг/м³ — плотная (мокрый штукатурный фасад)", "cost_multiplier": 1.35, "applications": [0] },
+      { "value": 100, "label": "100 кг/м³ — для вентфасада", "cost_multiplier": 1.5, "applications": [1] },
+      { "value": 150, "label": "150 кг/м³ — для кровли под нагрузку, пола под стяжку", "cost_multiplier": 1.8, "applications": [0, 1] }
     ]
   },
   "packaging_rules": {

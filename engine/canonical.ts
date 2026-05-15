@@ -913,11 +913,31 @@ export interface InsulationClimateZoneSpec {
   rec_thickness_walls_mm: number;
 }
 
+/**
+ * Пресет плотности утеплителя. Плотность определяет применение и цену:
+ *  - 35 кг/м³ — лёгкая (каркас, кровля)
+ *  - 45 кг/м³ — средняя (звукоизоляция, перегородки)
+ *  - 80 кг/м³ — плотная (мокрый штукатурный фасад)
+ *  - 100 кг/м³ — для вентфасада
+ *  - 150 кг/м³ — кровля под стяжку
+ *
+ * `cost_multiplier` — поправочный коэффициент к базовой цене типа (плотная
+ * минвата дороже лёгкой примерно в 2 раза). `applications` — список систем
+ * монтажа (mountSystem id), для которых эта плотность подходит.
+ */
+export interface InsulationDensityPresetSpec {
+  value: number;
+  label: string;
+  cost_multiplier: number;
+  applications: number[];
+}
+
 export interface InsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
     insulation_types: InsulationTypeSpec[];
     plate_sizes: InsulationPlateSizeSpec[];
     climate_zones?: InsulationClimateZoneSpec[];
+    density_presets?: InsulationDensityPresetSpec[];
   };
   packaging_rules: InsulationPackagingRules;
   material_rules: InsulationMaterialRules;

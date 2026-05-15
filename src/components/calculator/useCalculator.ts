@@ -308,9 +308,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
   }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
 
-  // Фильтруем поля по inputMode
+  // Фильтруем поля по inputMode и по hideIf-условиям.
   const inputMode = Math.round(values.inputMode ?? 0);
   const visibleFields = calculator.fields.filter((f) => {
+    if (f.hideIf && f.hideIf(values)) return false;
     if (!f.group) return true;
     if (f.group === "bySize") return inputMode === 0;
     if (f.group === "byArea") return inputMode === 1;

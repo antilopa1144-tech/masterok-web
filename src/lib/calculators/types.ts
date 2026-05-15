@@ -19,6 +19,13 @@ export interface CalculatorField {
   options?: FieldOption[];
   hint?: string;
   group?: string;
+  /**
+   * Условие скрытия поля. Если функция возвращает true — поле не отображается.
+   * Используется, например, чтобы скрыть «Тип утеплителя», «Размер плиты»,
+   * «Плит в упаковке» когда выбран конкретный производитель — все эти параметры
+   * уже зашиты в линейке бренда и подставляются автоматически.
+   */
+  hideIf?: (values: Record<string, number>) => boolean;
 }
 
 export type CategoryId =
