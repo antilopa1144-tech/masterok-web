@@ -212,11 +212,12 @@ describe("упаковки утеплителя (auto-расчёт от толщ
 });
 
 describe("companion materials — сценарии", () => {
-  it("штукатурный фасад с минватой: дюбели + ветрозащита + сетка + штукатурка + клей + грунт", () => {
+  it("штукатурный фасад с минватой: дюбели + сетка + штукатурка + клей + грунт (БЕЗ ветрозащиты)", () => {
     const r = calc({ accuracyMode: "basic", insulationType: 0, mountSystem: 0 });
 
     expect(hasMaterial(r, (n) => n.includes("Дюбели"))).toBe(true);
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("гидроветрозащитная"))).toBe(true);
+    // Гидроветрозащита под штукатуркой не нужна — там нет вентиляции.
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("гидроветрозащитная"))).toBe(false);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("стеклосетка"))).toBe(true);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("базовая штукатурка"))).toBe(true);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("клей фасадный"))).toBe(true);

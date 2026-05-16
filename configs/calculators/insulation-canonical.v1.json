@@ -97,8 +97,20 @@
       "label": "Гидроветрозащитная мембрана (снаружи)",
       "category": "Изоляция",
       "unit": "м²",
-      "rationale": "Защищает минвату от выдувания и атмосферной влаги. Обязательна для наружного утепления минватой.",
-      "only_when": { "type": "input_eq", "input_key": "insulationType", "value": 0 },
+      "rationale": "Защищает волокнистый утеплитель (минвата, эковата) от выдувания и атмосферной влаги. Только для каркасных/вентилируемых систем — под штукатуркой не нужна.",
+      "only_when": {
+        "type": "and",
+        "all": [
+          {
+            "type": "or",
+            "any": [
+              { "type": "input_eq", "input_key": "insulationType", "value": 0 },
+              { "type": "input_eq", "input_key": "insulationType", "value": 3 }
+            ]
+          },
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+        ]
+      },
       "formula": {
         "type": "linear_overlap",
         "totals_key": "area",

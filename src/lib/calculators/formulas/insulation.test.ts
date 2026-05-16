@@ -163,12 +163,19 @@ describe("insulation formula — двухслойная укладка", () => {
     expect(dowels!.name).toContain("200 мм");
   });
 
-  it("companion-материалы (мембрана, клей, штукатурка) не дублируются между слоями", () => {
-    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
-    const membranes = r.materials.filter((m) => m.name.includes("мембрана"));
-    const glues = r.materials.filter((m) => m.name.includes("Клей"));
-    expect(membranes).toHaveLength(1);
-    expect(glues).toHaveLength(1);
+  it("companion-материалы не дублируются между слоями (каждый ровно по 1 шт)", () => {
+    // Каркасная система с минватой даёт две *разные* мембраны (пароизол + ветрозащита)
+    // + брус, скотч, саморезы. При двух слоях ни один companion не должен
+    // дублироваться — берётся только из первого расчёта.
+    const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1, mountSystem: 1 });
+    const vapor = r.materials.filter((m) => m.name.startsWith("Пароизоляц"));
+    const wind = r.materials.filter((m) => m.name.toLowerCase().includes("ветрозащит"));
+    const lumber = r.materials.filter((m) => m.name.toLowerCase().includes("брус"));
+    const screws = r.materials.filter((m) => m.name.toLowerCase().includes("саморез"));
+    expect(vapor).toHaveLength(1);
+    expect(wind).toHaveLength(1);
+    expect(lumber).toHaveLength(1);
+    expect(screws).toHaveLength(1);
   });
 
   it("practicalNotes содержит инструкцию про смещение стыков (СП 23-101-2004)", () => {

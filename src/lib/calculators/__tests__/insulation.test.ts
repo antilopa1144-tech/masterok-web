@@ -35,13 +35,22 @@ describe("Калькулятор утеплителя", () => {
       expect(dowels?.purchaseQty).toBe(368);
     });
 
-    it("ветрозащитная мембрана для минваты (присутствует)", () => {
-      // Гидроветрозащитная мембрана добавляется для всех систем монтажа минваты.
-      expect(findMaterial(result, "мембрана")).toBeDefined();
+    it("при штукатурном фасаде (mountSystem=0 default) ветрозащиты НЕТ", () => {
+      // Под штукатуркой нет вентиляции — ветрозащита там лишняя.
+      expect(findMaterial(result, "ветрозащит")).toBeUndefined();
     });
 
-    it("площадь мембраны округлена до целых рулонов 30 м²: ceil(50×1.15/30)×30 = 60 м²", () => {
-      const membrane = findMaterial(result, "мембрана");
+    it("при каркасной системе ветрозащита появляется, рулон 30 м²", () => {
+      const r2 = calc({
+        area: 50,
+        insulationType: 0,
+        thickness: 100,
+        plateSize: 0,
+        mountSystem: 1,
+      });
+      const membrane = findMaterial(r2, "ветрозащит");
+      expect(membrane).toBeDefined();
+      // ceil(50 × 1.15 / 30) × 30 = 60 м²
       expect(membrane?.purchaseQty).toBe(60);
     });
 

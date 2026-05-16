@@ -232,8 +232,12 @@ export function computeCanonicalInsulation(
     });
 
     if (dowelsNeeded > 0) {
+      // Длина дюбеля = толщина утеплителя + 30 мм запас на закрепление в стене
+      // (10 мм клеевого слоя + 20 мм глубина анкеровки в основание).
+      // Стандарт по СП 293.1325800 для штукатурных фасадных систем.
+      const dowelLen = thickness + 30;
       materials.push({
-        name: "Дюбели тарельчатые",
+        name: `Дюбели тарельчатые 10×${dowelLen} мм`,
         quantity: dowelsNeeded,
         unit: "шт",
         withReserve: dowelsNeeded,
