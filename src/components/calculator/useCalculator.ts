@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { CalculatorResult, CalculatorField, HideCondition } from "@/lib/calculators/types";
+import type { CalculatorResult, CalculatorField, HideCondition, FieldOption } from "@/lib/calculators/types";
+import { getManufacturerCategory } from "@/lib/manufacturers";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
 import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
@@ -53,6 +54,37 @@ export function shouldHideField(field: CalculatorField, values: Record<string, n
     if (field.hideIfAll.every((c) => evalHideCondition(c, values))) return true;
   }
   return false;
+}
+
+/**
+ * Возвращает реальные опции селекта, учитывая `optionsFromBrand`.
+ *
+ * Если поле объявило зависимость от бренда и пользователь выбрал конкретную
+ * линейку — опции формируются из `manufacturer.specs[specKey]`. Иначе берутся
+ * статичные `field.options`.
+ *
+ * Пример: `thickness` у Пеноплэкс Комфорт → [20, 30, 50, 100] мм вместо
+ * стандартных [50, 80, 100, 150, 200, 250, 300]. Пользователь не сможет
+ * выбрать толщину, которой бренд не выпускает.
+ */
+export function resolveFieldOptions(
+  field: CalculatorField,
+  values: Record<string, number>,
+): FieldOption[] | undefined {
+  const cfg = field.optionsFromBrand;
+  if (!cfg) return field.options;
+  const manufacturerIdx = values.manufacturer;
+  if (!manufacturerIdx || manufacturerIdx <= 0) return field.options;
+  const category = getManufacturerCategory(cfg.category);
+  if (!category) return field.options;
+  const brand = category.items[manufacturerIdx - 1];
+  if (!brand) return field.options;
+  const raw = (brand.specs as Record<string, unknown>)[cfg.specKey];
+  if (!Array.isArray(raw) || raw.length === 0) return field.options;
+  const template = cfg.labelTemplate ?? "%v";
+  return raw
+    .filter((v): v is number => typeof v === "number")
+    .map((v) => ({ value: v, label: template.replace("%v", String(v)) }));
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -185,11 +217,31 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   const handleChange = useCallback((key: string, value: number) => {
     setValues((prev) => {
-      const next = { ...prev, [key]: value };
+      const next: Record<string, number> = { ...prev, [key]: value };
+
+      // Авто-подстановка значений зависимых полей: если изменился бренд, то
+      // у полей с `optionsFromBrand` текущие значения могут оказаться вне
+      // допустимого набора (например, у Пеноплэкс Комфорт нет 80 мм). В этом
+      // случае подменяем на ближайшее значение из новых опций.
+      if (key === "manufacturer") {
+        for (const f of calculator.fields) {
+          if (!f.optionsFromBrand) continue;
+          const opts = resolveFieldOptions(f, next);
+          if (!opts || opts.length === 0) continue;
+          const current = next[f.key];
+          if (opts.some((o) => o.value === current)) continue;
+          // Берём ближайшее по абсолютной разнице.
+          const closest = opts.reduce((best, o) =>
+            Math.abs(o.value - current) < Math.abs(best.value - current) ? o : best
+          );
+          next[f.key] = closest.value;
+        }
+      }
+
       runAutoCalc(next);
       return next;
     });
-  }, [runAutoCalc]);
+  }, [runAutoCalc, calculator.fields]);
 
   // Recalculate when accuracy mode changes
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
@@ -343,15 +395,23 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
   }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
 
-  // Фильтруем поля по inputMode и по hideIf-условиям.
+  // Фильтруем поля по inputMode и по hideIf-условиям, и подменяем динамические
+  // options (зависящие от выбранного бренда — `optionsFromBrand`).
   const inputMode = Math.round(values.inputMode ?? 0);
-  const visibleFields = calculator.fields.filter((f) => {
-    if (shouldHideField(f, values)) return false;
-    if (!f.group) return true;
-    if (f.group === "bySize") return inputMode === 0;
-    if (f.group === "byArea") return inputMode === 1;
-    return true;
-  });
+  const visibleFields = calculator.fields
+    .filter((f) => {
+      if (shouldHideField(f, values)) return false;
+      if (!f.group) return true;
+      if (f.group === "bySize") return inputMode === 0;
+      if (f.group === "byArea") return inputMode === 1;
+      return true;
+    })
+    .map((f) => {
+      if (!f.optionsFromBrand) return f;
+      const resolved = resolveFieldOptions(f, values);
+      if (resolved === f.options) return f;
+      return { ...f, options: resolved };
+    });
 
   // История только для текущего калькулятора
   const calcHistory = history.filter((h) => h.calcId === calculator.id);

@@ -91,6 +91,15 @@ export const insulationDef: CalculatorDefinition = {
         { value: 250, label: "250 мм (Крайний Север)" },
         { value: 300, label: "300 мм (Крайний Север, рекомендация)" },
       ],
+      // Если выбрана конкретная линейка бренда — заменяем опции на те, которые
+      // эта линейка реально выпускает (specs.thicknessOptions). Например,
+      // у Пеноплэкс Комфорт это [20, 30, 50, 100] — пользователь не сможет
+      // выбрать 80 мм или 150 мм, которых у этого продукта нет.
+      optionsFromBrand: {
+        category: "insulation",
+        specKey: "thicknessOptions",
+        labelTemplate: "%v мм",
+      },
     },
     {
       key: "plateSize",
