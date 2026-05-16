@@ -138,6 +138,31 @@ export interface CalculatorScenario {
 }
 
 export type CalculatorScenarios = Record<ScenarioName, CalculatorScenario>;
+/**
+ * Кастомная карточка в шапке результата.
+ *
+ * Если калькулятор возвращает `summaryCards` (3 шт.) — они показываются вместо
+ * стандартного набора «Всего материалов / Площадь / Ключевой параметр».
+ * Это нужно когда стандартные totals неинформативны для пользователя —
+ * например в утеплителе важнее «купить N упаковок» чем «всего 7 позиций».
+ *
+ * Формат не привязан к движку: можно показать стоимость, число упаковок,
+ * рекомендацию по бренду — всё что собрала формула в `calculate()`.
+ */
+export interface SummaryCard {
+  icon: string;
+  /** Маленькая подпись сверху (например «К покупке») */
+  label: string;
+  /** Главное значение (число или короткая строка) */
+  value: string;
+  /** Единица или короткое уточнение справа от value */
+  unit?: string;
+  /** Дополнительная строка снизу (например «Технониколь Роклайт») */
+  hint?: string;
+  /** Цветовая палитра карточки */
+  tone?: "violet" | "emerald" | "slate" | "amber";
+}
+
 export interface CalculatorResult {
   materials: MaterialResult[];
   totals: Record<string, number>;
@@ -148,6 +173,8 @@ export interface CalculatorResult {
   practicalNotes?: string[];
   accuracyMode?: import("../../../engine/accuracy").AccuracyMode;
   accuracyExplanation?: import("../../../engine/accuracy").AccuracyExplanation;
+  /** Кастомные карточки в шапке результата (если есть — заменяют стандартные). */
+  summaryCards?: SummaryCard[];
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;

@@ -1810,42 +1810,60 @@ export function ResultBlock({
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <ResultMetricCard
-              icon="📦"
-              label="Всего материалов"
-              value={String(result.materials.length)}
-              unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
-              hint={`${categoryCount} ${pluralizeRu(categoryCount, ["раздел", "раздела", "разделов"])}`}
-              tone="violet"
-            />
-            {featuredTotal && (
-              <ResultMetricCard
-                icon="📐"
-                label={featuredTotal.label}
-                value={featuredTotal.value}
-                unit={featuredTotal.unit}
-                hint="ключевой параметр"
-                tone="emerald"
-              />
-            )}
-            {secondaryTotal ? (
-              <ResultMetricCard
-                icon="⚖"
-                label={secondaryTotal.label}
-                value={secondaryTotal.value}
-                unit={secondaryTotal.unit}
-                hint="расчётный итог"
-                tone="slate"
-              />
+            {result.summaryCards && result.summaryCards.length > 0 ? (
+              // Кастомные карточки от калькулятора (например в утеплителе:
+              // «К покупке N упаковок» / «Стоимость» / «На задачу»).
+              result.summaryCards.slice(0, 3).map((card, i) => (
+                <ResultMetricCard
+                  key={`summary-${i}`}
+                  icon={card.icon}
+                  label={card.label}
+                  value={card.value}
+                  unit={card.unit}
+                  hint={card.hint}
+                  tone={card.tone ?? "violet"}
+                />
+              ))
             ) : (
-              <ResultMetricCard
-                icon="🧾"
-                label="Позиций к закупке"
-                value={String(result.materials.length)}
-                unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
-                hint="готово к покупке"
-                tone="slate"
-              />
+              <>
+                <ResultMetricCard
+                  icon="📦"
+                  label="Всего материалов"
+                  value={String(result.materials.length)}
+                  unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
+                  hint={`${categoryCount} ${pluralizeRu(categoryCount, ["раздел", "раздела", "разделов"])}`}
+                  tone="violet"
+                />
+                {featuredTotal && (
+                  <ResultMetricCard
+                    icon="📐"
+                    label={featuredTotal.label}
+                    value={featuredTotal.value}
+                    unit={featuredTotal.unit}
+                    hint="ключевой параметр"
+                    tone="emerald"
+                  />
+                )}
+                {secondaryTotal ? (
+                  <ResultMetricCard
+                    icon="⚖"
+                    label={secondaryTotal.label}
+                    value={secondaryTotal.value}
+                    unit={secondaryTotal.unit}
+                    hint="расчётный итог"
+                    tone="slate"
+                  />
+                ) : (
+                  <ResultMetricCard
+                    icon="🧾"
+                    label="Позиций к закупке"
+                    value={String(result.materials.length)}
+                    unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
+                    hint="готово к покупке"
+                    tone="slate"
+                  />
+                )}
+              </>
             )}
           </div>
         </div>

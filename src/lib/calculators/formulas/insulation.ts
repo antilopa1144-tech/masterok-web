@@ -447,6 +447,99 @@ export const insulationDef: CalculatorDefinition = {
       canonical.practicalNotes = [...(canonical.practicalNotes ?? []), lines.join("\n")];
     }
 
+    /**
+     * 3 главные карточки результата, специфичные для утеплителя.
+     *
+     * Меняем стандартный набор «Всего материалов / Площадь / Плит» на:
+     *  1. К покупке — упаковки (понятно сколько идти за товаром)
+     *  2. Стоимость — примерная сумма по типу+плотности
+     *  3. На задачу — площадь × толщина + плотность/бренд (контекст)
+     */
+    const summaryCards: import("../types").SummaryCard[] = (() => {
+      // Для двухслойной укладки в `materials` две позиции «Основное» — суммируем.
+      const mainMats = materials.filter((m) => m.category === "Основное");
+      const totalPacks = mainMats.reduce((s, m) => s + (m.packageInfo?.count ?? 0), 0);
+      const packUnit = mainMats[0]?.packageInfo?.packageUnit ?? "упаковок";
+      const piecesPerPack = mainMats[0]?.packageInfo?.size ?? 0;
+      const totalPieces = mainMats.reduce((s, m) => s + (m.purchaseQty ?? 0), 0);
+      const matUnit = mainMats[0]?.unit ?? "шт";
+
+      // Карточка 1: к покупке. Если есть упаковки — показываем их.
+      const card1: import("../types").SummaryCard = totalPacks > 0
+        ? {
+            icon: "📦",
+            label: "К покупке",
+            value: String(totalPacks),
+            unit: packUnit,
+            hint: manufacturer
+              ? manufacturer.name
+              : `по ${piecesPerPack} ${matUnit} в упак. — ${totalPieces} ${matUnit} всего`,
+            tone: "violet",
+          }
+        : {
+            icon: "📦",
+            label: "К покупке",
+            value: String(totalPieces),
+            unit: matUnit,
+            hint: manufacturer ? manufacturer.name : "основной материал",
+            tone: "violet",
+          };
+
+      // Карточка 2: стоимость (если посчитали).
+      // Берём из practicalNotes — мы уже округлили до сотен.
+      // Альтернативно — считаем заново здесь от выбранного типа.
+      let costStr = "—";
+      let costHint = "";
+      if (area > 0 && thickness > 0) {
+        const insType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
+        const types = spec.normative_formula?.insulation_types as Array<Record<string, unknown>> | undefined;
+        const t = types?.find((x) => Number(x.id) === insType);
+        const base = Number(t?.cost_estimate_per_m2_at_100mm_rub ?? 0);
+        if (base > 0) {
+          const densityPresets = (spec.normative_formula?.density_presets ?? []) as Array<{ value: number; cost_multiplier: number }>;
+          let densityMult = 1;
+          if (insType === 0 && effectiveDensity > 0 && densityPresets.length > 0) {
+            const closest = densityPresets.reduce<typeof densityPresets[number] | null>((best, p) => {
+              if (!best) return p;
+              return Math.abs(p.value - effectiveDensity) < Math.abs(best.value - effectiveDensity) ? p : best;
+            }, null);
+            densityMult = closest?.cost_multiplier ?? 1;
+          }
+          const totalRub = area * base * densityMult * (thickness / 100);
+          const rounded = Math.round(totalRub / 100) * 100;
+          costStr = `~${rounded.toLocaleString("ru-RU")}`;
+          if (totalPacks > 0) {
+            const perPack = Math.round(rounded / totalPacks);
+            costHint = `~${perPack.toLocaleString("ru-RU")} ₽ за упаковку`;
+          } else {
+            costHint = "справочно, 2026";
+          }
+        }
+      }
+      const card2: import("../types").SummaryCard = {
+        icon: "💰",
+        label: "Примерная стоимость",
+        value: costStr,
+        unit: "₽",
+        hint: costHint,
+        tone: "emerald",
+      };
+
+      // Карточка 3: контекст задачи.
+      const layerHint = Number(inputs.layerScheme ?? 0) === 1 ? " (в два слоя)" : "";
+      const densityHint = effectiveDensity > 0 ? `плотность ${effectiveDensity} кг/м³` : "";
+      const card3: import("../types").SummaryCard = {
+        icon: "📐",
+        label: "На задачу",
+        value: `${area} м² × ${thickness}`,
+        unit: "мм",
+        hint: `${densityHint}${layerHint}`,
+        tone: "slate",
+      };
+
+      return [card1, card2, card3];
+    })();
+
     return {
       materials,
       totals,
@@ -455,6 +548,7 @@ export const insulationDef: CalculatorDefinition = {
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes: canonical.practicalNotes ?? [],
+      summaryCards,
     };
   },
   formulaDescription: `
