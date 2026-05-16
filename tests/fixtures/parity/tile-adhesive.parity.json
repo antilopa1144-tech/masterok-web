@@ -1,7 +1,7 @@
 {
   "calculator_id": "tile-adhesive",
   "formula_version": "tile-adhesive-canonical-v1",
-  "generated_at": "2026-04-25T23:01:51.552Z",
+  "generated_at": "2026-05-16T08:06:51.658Z",
   "cases": [
     {
       "id": "defaults",

@@ -1,7 +1,7 @@
 {
   "calculator_id": "drywall-ceiling",
   "formula_version": "drywall-ceiling-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.493Z",
+  "generated_at": "2026-05-16T08:06:51.425Z",
   "cases": [
     {
       "id": "defaults",

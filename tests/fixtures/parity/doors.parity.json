@@ -1,7 +1,7 @@
 {
   "calculator_id": "doors",
   "formula_version": "doors-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.480Z",
+  "generated_at": "2026-05-16T08:06:51.406Z",
   "cases": [
     {
       "id": "defaults",

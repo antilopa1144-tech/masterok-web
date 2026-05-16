@@ -1,7 +1,7 @@
 {
   "calculator_id": "self-leveling",
   "formula_version": "self-leveling-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.618Z",
+  "generated_at": "2026-05-16T08:06:51.611Z",
   "cases": [
     {
       "id": "defaults",

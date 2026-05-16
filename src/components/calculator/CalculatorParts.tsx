@@ -678,6 +678,13 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                     {m.packageInfo && (
                       <div className="text-xs text-slate-400 dark:text-slate-400">
                         {m.packageInfo.count} {pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} × {m.packageInfo.size} {m.unit}
+                        {/* Для дискретных единиц (шт, листов, рулонов) показываем
+                            итоговое произведение — чтобы было однозначно понятно
+                            «11 упак × 6 шт = 66 плит». Для непрерывных (кг, л, м²)
+                            итог = withReserve, который уже выведен сверху. */}
+                        {isDiscrete && (
+                          <> = {m.packageInfo.count * m.packageInfo.size} {pluralizeUnit(m.packageInfo.count * m.packageInfo.size, m.unit)}</>
+                        )}
                       </div>
                     )}
                     {showConsumption && (

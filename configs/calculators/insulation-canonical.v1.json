@@ -11,7 +11,8 @@
     { "key": "piecesPerPack", "default_value": 0, "min": 0, "max": 24 },
     { "key": "climateZone", "default_value": 1, "min": 0, "max": 4 },
     { "key": "layerScheme", "default_value": 0, "min": 0, "max": 1 },
-    { "key": "density", "unit": "kg_m3", "default_value": 45, "min": 0, "max": 200 }
+    { "key": "density", "unit": "kg_m3", "default_value": 45, "min": 0, "max": 200 },
+    { "key": "application", "default_value": 0, "min": 0, "max": 4 }
   ],
   "field_factors": {
     "enabled": ["geometry_complexity", "worker_skill", "waste_factor"]

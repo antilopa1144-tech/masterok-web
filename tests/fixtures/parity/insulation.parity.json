@@ -1,7 +1,7 @@
 {
   "calculator_id": "insulation",
   "formula_version": "insulation-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.549Z",
+  "generated_at": "2026-05-16T08:06:51.505Z",
   "cases": [
     {
       "id": "defaults",
@@ -11,7 +11,13 @@
         "insulationType": 0,
         "thickness": 100,
         "plateSize": 0,
-        "reserve": 5
+        "reserve": 5,
+        "mountSystem": 0,
+        "piecesPerPack": 0,
+        "climateZone": 1,
+        "layerScheme": 0,
+        "density": 45,
+        "application": 0
       },
       "expected_totals": {
         "area": 40,
@@ -19,47 +25,49 @@
         "thickness": 100,
         "plateSize": 0,
         "reserve": 5,
+        "mountSystem": 0,
+        "application": 0,
+        "climateZone": 1,
         "areaWithReserve": 42,
         "plateArea": 0.72,
-        "platesNeeded": 59,
+        "platesNeeded": 66,
+        "piecesPerPack": 6,
+        "packsNeeded": 11,
         "dowelsNeeded": 294,
-        "membraneArea": 46,
-        "aluTapeRolls": 2,
-        "glueKg": 0,
-        "glueBags": 0,
-        "primerCans": 1,
         "ecowoolVolume": 0,
         "ecowoolKg": 0,
         "ecowoolBags": 0,
-        "minExactNeed": 54.9408,
-        "recExactNeed": 62.54,
-        "maxExactNeed": 81.31144,
-        "minPurchase": 55,
-        "recPurchase": 63,
-        "maxPurchase": 82
+        "minExactNeed": 54.32,
+        "recExactNeed": 61.833333,
+        "maxExactNeed": 80.392667,
+        "minPurchase": 60,
+        "recPurchase": 66,
+        "maxPurchase": 84
       },
-      "expected_materials_count": 5,
+      "expected_materials_count": 7,
       "expected_material_names": [
-        "Минеральная вата (1200×600 мм)",
+        "Минеральная вата 1200×600 × 100 мм",
         "Дюбели тарельчатые",
-        "Пароизоляционная мембрана",
-        "Алюминиевая лента (скотч)",
-        "Грунтовка глубокого проникновения (10 л)"
+        "Гидроветрозащитная мембрана (снаружи)",
+        "Клей фасадный для плит (25 кг)",
+        "Стеклосетка фасадная (армирующая)",
+        "Базовая штукатурка армирующего слоя (25 кг)",
+        "Грунтовка фасадная (10 л)"
       ],
       "expected_warnings_count": 0,
       "expected_warnings": [],
       "expected_scenarios": {
         "MIN": {
-          "exact_need": 54.9408,
-          "purchase_quantity": 55
+          "exact_need": 54.32,
+          "purchase_quantity": 60
         },
         "REC": {
-          "exact_need": 62.54,
-          "purchase_quantity": 63
+          "exact_need": 61.833333,
+          "purchase_quantity": 66
         },
         "MAX": {
-          "exact_need": 81.31144,
-          "purchase_quantity": 82
+          "exact_need": 80.392667,
+          "purchase_quantity": 84
         }
       }
     }

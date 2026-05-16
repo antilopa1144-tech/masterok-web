@@ -1,7 +1,7 @@
 {
   "calculator_id": "brick",
   "formula_version": "brick-canonical-v1",
-  "generated_at": "2026-04-08T06:09:15.342Z",
+  "generated_at": "2026-05-16T08:06:51.366Z",
   "cases": [
     {
       "id": "defaults",
@@ -14,7 +14,8 @@
         "brickType": 0,
         "wallThickness": 1,
         "workingConditions": 1,
-        "wasteMode": 0
+        "wasteMode": 0,
+        "mortarAdditive": 0
       },
       "expected_totals": {
         "area": 15,
@@ -40,7 +41,10 @@
         "meshLayers": 8,
         "meshArea": 44,
         "plasticizerL": 0.2,
+        "mortarAdditive": 0,
         "flexibleTies": 0,
+        "footprintArea": 1.25,
+        "perimeter": 10.5,
         "minExactNeedBricks": 1495.9728,
         "recExactNeedBricks": 1702.89,
         "maxExactNeedBricks": 2214.01404,
@@ -48,13 +52,20 @@
         "recPurchaseBricks": 1703,
         "maxPurchaseBricks": 2215
       },
-      "expected_materials_count": 5,
+      "expected_materials_count": 12,
       "expected_material_names": [
         "Кирпич одинарный (65 мм)",
         "Цемент М400 (50 кг)",
         "Песок строительный",
         "Кладочная сетка",
-        "Пластификатор"
+        "Известь гашёная (тесто)",
+        "Кельма каменщика",
+        "Молоток-кирочка для подколки",
+        "Уровень строительный 600 мм",
+        "Шнур-причалка строительный",
+        "Расшивка для швов",
+        "Ёмкость для замеса раствора (60 л)",
+        "Рубероид (гидроизоляция между фундаментом и стеной)"
       ],
       "expected_warnings_count": 0,
       "expected_warnings": [],

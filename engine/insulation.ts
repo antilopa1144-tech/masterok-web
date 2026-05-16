@@ -18,6 +18,7 @@ interface InsulationInputs {
   plateSize?: number;
   reserve?: number;
   mountSystem?: number;
+  application?: number;
   /**
    * Сколько плит в упаковке. 0 = авто-расчёт от толщины:
    *   piecesPerPack = floor(insulation_type.pack_height_mm / thickness).
@@ -81,6 +82,7 @@ export function computeCanonicalInsulation(
   const plateSize = resolvePlateSize(spec, inputs);
   const reserve = Math.max(0, Math.min(15, inputs.reserve ?? getInputDefault(spec, "reserve", 5)));
   const mountSystem = Math.max(0, Math.min(1, Math.round(inputs.mountSystem ?? getInputDefault(spec, "mountSystem", 0))));
+  const application = Math.max(0, Math.min(4, Math.round(inputs.application ?? getInputDefault(spec, "application", 0))));
   const rawPiecesPerPack = Math.max(0, Math.min(24, Math.round(inputs.piecesPerPack ?? getInputDefault(spec, "piecesPerPack", 0))));
   const climateZone = Math.max(0, Math.min(4, Math.round(inputs.climateZone ?? getInputDefault(spec, "climateZone", 1))));
 
@@ -266,6 +268,7 @@ export function computeCanonicalInsulation(
       plateSize,
       reserve,
       mountSystem,
+      application,
       thickness,
     };
     const companions = evaluateCompanionMaterials(spec.companion_materials, {
@@ -327,6 +330,7 @@ export function computeCanonicalInsulation(
       plateSize,
       reserve,
       mountSystem,
+      application,
       climateZone,
       areaWithReserve: roundDisplay(areaWithReserve, 3),
       plateArea,

@@ -1,7 +1,7 @@
 {
   "calculator_id": "greenhouse",
   "formula_version": "greenhouse-canonical-v1",
-  "generated_at": "2026-04-26T20:54:04.357Z",
+  "generated_at": "2026-05-16T08:06:51.479Z",
   "cases": [
     {
       "id": "defaults",
