@@ -5,6 +5,8 @@ export type FieldType = "number" | "slider" | "select" | "switch" | "radio";
 export interface FieldOption {
   value: number;
   label: string;
+  /** Группа в `<optgroup>` для select */
+  optGroup?: string;
 }
 
 export interface CalculatorField {
@@ -67,6 +69,8 @@ export interface CalculatorField {
      */
     labelTemplate?: string;
   };
+  /** Толщины из каталога утеплителя (`productId` → insulation-catalog). */
+  optionsFromProduct?: boolean;
 }
 
 export interface HideCondition {

@@ -4,6 +4,11 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorResult, CalculatorField, HideCondition, FieldOption } from "@/lib/calculators/types";
 import { getManufacturerCategory } from "@/lib/manufacturers";
+import {
+  buildProductSelectOptions,
+  getDefaultProductIdForForm,
+  getProductThicknessOptions,
+} from "@/lib/calculators/insulation-catalog";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
 import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
@@ -71,6 +76,19 @@ export function resolveFieldOptions(
   field: CalculatorField,
   values: Record<string, number>,
 ): FieldOption[] | undefined {
+  if (field.key === "productId") {
+    const form = Math.round(values.materialForm ?? 0);
+    return buildProductSelectOptions(form);
+  }
+
+  if (field.optionsFromProduct) {
+    const productId = Math.round(values.productId ?? 0);
+    const thicknesses = getProductThicknessOptions(productId);
+    if (thicknesses.length > 0) {
+      return thicknesses.map((v) => ({ value: v, label: `${v} мм` }));
+    }
+  }
+
   const cfg = field.optionsFromBrand;
   if (!cfg) return field.options;
   const manufacturerIdx = values.manufacturer;
@@ -223,18 +241,34 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       // у полей с `optionsFromBrand` текущие значения могут оказаться вне
       // допустимого набора (например, у Пеноплэкс Комфорт нет 80 мм). В этом
       // случае подменяем на ближайшее значение из новых опций.
-      if (key === "manufacturer") {
+      if (key === "manufacturer" || key === "materialForm") {
         for (const f of calculator.fields) {
-          if (!f.optionsFromBrand) continue;
+          if (!f.optionsFromBrand && !f.optionsFromProduct) continue;
           const opts = resolveFieldOptions(f, next);
           if (!opts || opts.length === 0) continue;
           const current = next[f.key];
           if (opts.some((o) => o.value === current)) continue;
-          // Берём ближайшее по абсолютной разнице.
           const closest = opts.reduce((best, o) =>
-            Math.abs(o.value - current) < Math.abs(best.value - current) ? o : best
+            Math.abs(o.value - current) < Math.abs(best.value - current) ? o : best,
           );
           next[f.key] = closest.value;
+        }
+      }
+
+      if (key === "materialForm") {
+        next.productId = getDefaultProductIdForForm(value);
+      }
+
+      if (key === "productId" || key === "materialForm") {
+        const thicknessOpts = resolveFieldOptions(
+          calculator.fields.find((f) => f.key === "thickness")!,
+          next,
+        );
+        if (thicknessOpts?.length) {
+          const t = next.thickness;
+          if (!thicknessOpts.some((o) => o.value === t)) {
+            next.thickness = thicknessOpts[Math.floor(thicknessOpts.length / 2)]!.value;
+          }
         }
       }
 

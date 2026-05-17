@@ -24,8 +24,20 @@ interface InsulationInputs {
   reserve?: number;
   mountSystem?: number;
   application?: number;
+  /** 0 = плиты, 1 = рулоны, 2 = напыляемая */
+  productForm?: number;
   /** Переопределение площади плиты (м²), напр. 1185×585 = 0,693 для Пеноплэкс */
   plateAreaM2?: number;
+  /** Площадь одного рулона (м²) */
+  rollAreaM2?: number;
+  rollsPerPack?: number;
+  rollWidthMm?: number;
+  rollLengthMm?: number;
+  packHeightMmOverride?: number;
+  ecowoolDensityKgM3?: number;
+  ecowoolBagKg?: number;
+  /** Отображаемое имя линейки из каталога */
+  productLineName?: string;
   /**
    * Сколько плит в упаковке. 0 = авто-расчёт от толщины:
    *   piecesPerPack = floor(insulation_type.pack_height_mm / thickness).
@@ -116,10 +128,18 @@ export function computeCanonicalInsulation(
    * Пользователь может переопределить вручную (выбрать из пресетов в UI),
    * если знает упаковку конкретного производителя.
    */
+  const productForm = Math.max(
+    0,
+    Math.min(2, Math.round(inputs.productForm ?? (insulationType === 3 ? 2 : 0))),
+  );
+  const isRollForm = productForm === 1;
+  const isSprayForm = productForm === 2 || insulationType === 3;
+
   const piecesPerPack = (() => {
-    if (insulationType === 3) return 1; // эковата — мешки, не плиты
+    if (isSprayForm) return 1;
+    if (isRollForm) return Math.max(1, Math.round(inputs.rollsPerPack ?? 1));
     if (rawPiecesPerPack > 0) return rawPiecesPerPack;
-    const packHeight = insulationTypeSpec.pack_height_mm;
+    const packHeight = inputs.packHeightMmOverride ?? insulationTypeSpec.pack_height_mm;
     if (packHeight <= 0 || thickness <= 0) return 1;
     return Math.max(1, Math.floor(packHeight / thickness));
   })();
@@ -136,29 +156,35 @@ export function computeCanonicalInsulation(
    *   случаях — это корректное поведение, см. золотые тесты в insulation.test.ts.
    */
   let platesPhysical = 0;
+  let rollsPhysical = 0;
   let dowelsNeeded = 0;
+  const rollArea =
+    inputs.rollAreaM2 != null && inputs.rollAreaM2 > 0 ? inputs.rollAreaM2 : 0;
 
-  if (insulationType <= 2) {
+  if (isRollForm && rollArea > 0) {
+    rollsPhysical = areaWithReserve / rollArea;
+    // Рулонная минвата — в каркас/кровлю; тарельчатые дюбели СФТК не применяются.
+  } else if (!isSprayForm && insulationType <= 2) {
     platesPhysical = areaWithReserve / plateArea;
-    // Дюбели нужны только для штукатурного фасада (mountSystem=0).
-    // В каркасной системе плита держится враспор — дюбели не нужны.
     if (mountSystem === 0) {
       dowelsNeeded = Math.ceil(area * insulationTypeSpec.dowels_per_sqm * DOWEL_RESERVE);
     }
   }
 
-  /* ── эковата (type 3) ── */
+  /* ── эковата ── */
   let ecowoolVolume = 0;
   let ecowoolKgPhysical = 0;
   let ecowoolBagsPhysical = 0;
+  const ecowoolDensity = inputs.ecowoolDensityKgM3 ?? ECOWOOL_DENSITY;
+  const ecowoolBagKg = inputs.ecowoolBagKg ?? ECOWOOL_BAG_KG;
 
-  if (insulationType === 3) {
+  if (isSprayForm) {
     ecowoolVolume = area * (thickness / 1000);
-    ecowoolKgPhysical = ecowoolVolume * ECOWOOL_DENSITY * ECOWOOL_WASTE;
-    ecowoolBagsPhysical = ecowoolKgPhysical / ECOWOOL_BAG_KG;
+    ecowoolKgPhysical = ecowoolVolume * ecowoolDensity * ECOWOOL_WASTE;
+    ecowoolBagsPhysical = ecowoolKgPhysical / ecowoolBagKg;
   }
 
-  /* ── scenarios (plates are the primary packaging unit for types 0-2) ──
+  /* ── scenarios ──
    *
    * Размер упаковки для плит = piecesPerPack (например 6 для 100мм минваты).
    * optimizePackaging сразу даст:
@@ -166,14 +192,20 @@ export function computeCanonicalInsulation(
    *   - packageCount = число упаковок
    * Эковата (insulationType=3) — единица «мешок», size=1.
    */
-  const basePrimaryRaw = insulationType <= 2 ? platesPhysical : ecowoolBagsPhysical;
+  const basePrimaryRaw = isSprayForm
+    ? ecowoolBagsPhysical
+    : isRollForm
+      ? rollsPhysical
+      : platesPhysical;
   const accuracyMult = getPrimaryMultiplier("insulation", accuracyMode);
   const basePrimary = basePrimaryRaw * accuracyMult;
-  const packageSize = insulationType <= 2 ? piecesPerPack : 1;
-  const packageUnit = insulationType <= 2 ? "шт" : "мешков";
-  const packageLabel = insulationType <= 2
-    ? `insulation-pack-${piecesPerPack}`
-    : "ecowool-bag-15kg";
+  const packageSize = isSprayForm ? 1 : piecesPerPack;
+  const packageUnit = isSprayForm ? "мешков" : isRollForm ? "рулонов" : "шт";
+  const packageLabel = isSprayForm
+    ? `ecowool-bag-${ecowoolBagKg}kg`
+    : isRollForm
+      ? `insulation-roll-${piecesPerPack}`
+      : `insulation-pack-${piecesPerPack}`;
 
   const packageOptions = [{
     size: packageSize,
@@ -216,9 +248,12 @@ export function computeCanonicalInsulation(
 
   // Финальные целочисленные значения для отображения и для totals.
   // Берём из REC purchase_quantity — единственное место, где остаётся ceil.
-  const platesNeeded = insulationType <= 2 ? Math.ceil(recScenario.purchase_quantity) : 0;
-  const ecowoolBags = insulationType === 3 ? Math.ceil(recScenario.purchase_quantity) : 0;
-  const ecowoolKg = ecowoolBags * ECOWOOL_BAG_KG;
+  const platesNeeded = !isSprayForm && !isRollForm && insulationType <= 2
+    ? Math.ceil(recScenario.purchase_quantity)
+    : 0;
+  const rollsNeeded = isRollForm ? Math.ceil(recScenario.purchase_quantity) : 0;
+  const ecowoolBags = isSprayForm ? Math.ceil(recScenario.purchase_quantity) : 0;
+  const ecowoolKg = ecowoolBags * ecowoolBagKg;
 
   /* ── основной материал (плита/эковата) + крепёж: в коде, т.к. они связаны
      со сценариями MIN/REC/MAX. Всё остальное (мембраны, клей, грунт,
@@ -226,20 +261,57 @@ export function computeCanonicalInsulation(
      spec.companion_materials. ── */
   const materials: CanonicalMaterialResult[] = [];
 
-  if (insulationType <= 2) {
-    // Плиты после optimizePackaging уже кратны упаковке (piecesPerPack).
-    // recScenario.buy_plan.packages_count даёт число упаковок к покупке.
-    const packsNeeded = recScenario.buy_plan.packages_count;
+  const productTitle = inputs.productLineName?.trim();
+
+  if (isRollForm && rollArea > 0) {
+    const rollW = inputs.rollWidthMm ?? 0;
+    const rollL = inputs.rollLengthMm ?? 0;
+    const sizeLabel =
+      rollW > 0 && rollL > 0 ? ` ${rollW}×${rollL} мм` : ` ${rollArea} м²/рулон`;
+    const baseName = productTitle
+      ? `${productTitle} × ${thickness} мм`
+      : `${insulationTypeSpec.label} (рулон)${sizeLabel} × ${thickness} мм`;
     materials.push({
-      name: `${insulationTypeSpec.label} ${plateSpec.label} × ${thickness} мм`,
+      name: baseName,
+      quantity: roundDisplay(recScenario.exact_need, 6),
+      unit: "рулонов",
+      withReserve: rollsNeeded,
+      purchaseQty: rollsNeeded,
+      packageInfo:
+        piecesPerPack > 1
+          ? {
+              count: recScenario.buy_plan.packages_count,
+              size: piecesPerPack,
+              packageUnit: "упаковок",
+            }
+          : undefined,
+      category: "Утеплитель (рулоны)",
+    });
+  } else if (!isSprayForm && insulationType <= 2) {
+    const packsNeeded = recScenario.buy_plan.packages_count;
+    const plateLabel =
+      inputs.plateAreaM2 != null && inputs.plateAreaM2 > 0
+        ? `${roundDisplay(inputs.plateAreaM2, 3)} м²/плита`
+        : plateSpec.label;
+    const baseName = productTitle
+      ? `${productTitle} × ${thickness} мм`
+      : `${insulationTypeSpec.label} ${plateLabel} × ${thickness} мм`;
+    materials.push({
+      name: baseName,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: platesNeeded,
       purchaseQty: platesNeeded,
-      packageInfo: piecesPerPack > 1
-        ? { count: packsNeeded, size: piecesPerPack, packageUnit: "упаковок" }
-        : undefined,
-      category: "Основное",
+      packageInfo:
+        piecesPerPack > 1 && !isRollForm
+          ? { count: packsNeeded, size: piecesPerPack, packageUnit: "упаковок" }
+          : undefined,
+      category:
+        insulationType === 1
+          ? "Утеплитель (пеноплекс)"
+          : insulationType === 2
+            ? "Утеплитель (пенопласт)"
+            : "Утеплитель (плиты)",
     });
 
     if (dowelsNeeded > 0) {
@@ -250,20 +322,23 @@ export function computeCanonicalInsulation(
         unit: "шт",
         withReserve: dowelsNeeded,
         purchaseQty: dowelsNeeded,
-        category: "Крепёж",
+        category: "Крепёж (СФТК)",
       });
     }
   }
 
-  if (insulationType === 3) {
+  if (isSprayForm) {
+    const baseName = productTitle
+      ? `${productTitle} × ${thickness} мм`
+      : `Эковата (${ecowoolBagKg} кг)`;
     materials.push({
-      name: `Эковата (${ECOWOOL_BAG_KG} кг)`,
+      name: baseName,
       quantity: roundDisplay(ecowoolKgPhysical, 3),
       unit: "кг",
       withReserve: ecowoolKg,
       purchaseQty: ecowoolKg,
-      packageInfo: { count: ecowoolBags, size: ECOWOOL_BAG_KG, packageUnit: "мешков" },
-      category: "Основное",
+      packageInfo: { count: ecowoolBags, size: ecowoolBagKg, packageUnit: "мешков" },
+      category: "Напыляемая изоляция",
     });
   }
 
@@ -329,7 +404,20 @@ export function computeCanonicalInsulation(
   if (thickness < 100 && climateZone >= 1) {
     practicalNotes.push(`Утеплитель ${thickness} мм — для средней полосы России минимум 100–150 мм.`);
   }
-  practicalNotes.push("Стыки плит утеплителя не должны совпадать с стыками предыдущего слоя — укладывайте вразбежку.");
+  if (isRollForm && rollArea > 0) {
+    practicalNotes.push(
+      `Рулон покрывает ${rollArea} м². Укладывайте внахлёст полос 5–10 см на стыках — запас ${reserve}% уже учтён.`,
+    );
+  } else if (!isSprayForm) {
+    practicalNotes.push(
+      "Стыки плит утеплителя не должны совпадать с стыками предыдущего слоя — укладывайте вразбежку.",
+    );
+  }
+  if (isRollForm && mountSystem === 0) {
+    warnings.push(
+      "Рулонная минвата не монтируется в систему мокрого штукатурного фасада. Выберите плиты (Фасад Баттс, Технофас) или каркасную систему.",
+    );
+  }
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -346,9 +434,12 @@ export function computeCanonicalInsulation(
       climateZone,
       areaWithReserve: roundDisplay(areaWithReserve, 3),
       plateArea,
-      platesNeeded: insulationType <= 2 ? platesNeeded : 0,
-      piecesPerPack: insulationType <= 2 ? piecesPerPack : 0,
-      packsNeeded: insulationType <= 2 ? recScenario.buy_plan.packages_count : 0,
+      productForm,
+      rollArea: isRollForm ? roundDisplay(rollArea, 4) : 0,
+      rollsNeeded,
+      platesNeeded: !isSprayForm && !isRollForm ? platesNeeded : 0,
+      piecesPerPack: !isSprayForm ? piecesPerPack : 0,
+      packsNeeded: !isSprayForm ? recScenario.buy_plan.packages_count : 0,
       dowelsNeeded,
       ecowoolVolume: insulationType === 3 ? roundDisplay(ecowoolVolume, 6) : 0,
       ecowoolKg: insulationType === 3 ? ecowoolKg : 0,

@@ -464,9 +464,39 @@ export function FieldInput({
             className="input-field"
             aria-label={field.label}
           >
-            {field.options?.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
+            {(() => {
+              const opts = field.options ?? [];
+              const groups = new Map<string, typeof opts>();
+              const ungrouped: typeof opts = [];
+              for (const opt of opts) {
+                if (opt.optGroup) {
+                  const g = groups.get(opt.optGroup) ?? [];
+                  g.push(opt);
+                  groups.set(opt.optGroup, g);
+                } else {
+                  ungrouped.push(opt);
+                }
+              }
+              if (groups.size === 0) {
+                return opts.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ));
+              }
+              return (
+                <>
+                  {[...groups.entries()].map(([label, groupOpts]) => (
+                    <optgroup key={label} label={label}>
+                      {groupOpts.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {ungrouped.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </>
+              );
+            })()}
           </select>
         )}
       </div>

@@ -59,6 +59,24 @@ describe("computeCanonicalInsulation — основной расчёт (basic mo
     expect(calc({ accuracyMode: "basic", insulationType: 2, thickness: 100 }).totals.piecesPerPack).toBe(5);
   });
 
+  it("рулоны (productForm=1): рулоны вместо плит, категория «Утеплитель (рулоны)»", () => {
+    const r = calc({
+      accuracyMode: "basic",
+      area: 40,
+      thickness: 100,
+      productForm: 1,
+      rollAreaM2: 6,
+      insulationType: 0,
+      productLineName: "Технониколь Мат прошивной Техно 37",
+    });
+    expect(r.totals.platesNeeded).toBe(0);
+    expect(r.totals.rollsNeeded).toBeGreaterThan(0);
+    expect(r.totals.rollArea).toBe(6);
+    expect(hasMaterial(r, (n) => n.includes("Техно 37"))).toBe(true);
+    const roll = r.materials.find((m) => m.category === "Утеплитель (рулоны)");
+    expect(roll?.unit).toBe("рулонов");
+  });
+
   it("piecesPerPack=8 (явный override) → используется заданное число вместо авто", () => {
     const r = calc({ accuracyMode: "basic", thickness: 100, piecesPerPack: 8 });
     expect(r.totals.piecesPerPack).toBe(8);
@@ -171,7 +189,7 @@ describe("упаковки утеплителя (auto-расчёт от толщ
   it("минвата 100 мм → 6 плит в упаковке (pack_height=600 мм)", () => {
     const r = calc({ accuracyMode: "basic", insulationType: 0, thickness: 100 });
     expect(r.totals.piecesPerPack).toBe(6);
-    const plate = r.materials.find((m) => m.category === "Основное");
+    const plate = r.materials.find((m) => m.category === "Утеплитель (плиты)");
     expect(plate?.packageInfo?.size).toBe(6);
     expect(plate?.packageInfo?.packageUnit).toBe("упаковок");
   });
