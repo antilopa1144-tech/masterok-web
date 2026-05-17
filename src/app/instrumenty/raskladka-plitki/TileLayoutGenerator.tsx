@@ -1,230 +1,29 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useMemo, useRef, useCallback } from "react";
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type LayoutMode = "straight" | "offset-half" | "offset-third" | "diagonal";
-
-interface TileResult {
-  wholeTiles: number;
-  cutTiles: number;
-  totalTiles: number;
-  wastePercent: number;
-  rows: number;
-  cols: number;
-  cutRight: number; // mm of last column cut
-  cutBottom: number; // mm of last row cut
-  tileGrid: TileCell[][];
-  mode: LayoutMode;
-}
-
-interface TileCell {
-  type: "whole" | "cut" | "corner";
-  widthMm: number;
-  heightMm: number;
-  offsetMm?: number; // horizontal offset for staggered layouts
-}
-
-const LAYOUT_MODES: { value: LayoutMode; label: string; desc: string }[] = [
-  { value: "straight", label: "Прямая", desc: "Классическая раскладка без смещения" },
-  { value: "offset-half", label: "Со смещением 1/2", desc: "Кирпичная кладка, каждый ряд сдвинут на половину" },
-  { value: "offset-third", label: "Со смещением 1/3", desc: "Каждый ряд сдвинут на треть плитки" },
-  { value: "diagonal", label: "Диагональная", desc: "Укладка под 45°, больше подрезки" },
-];
-
-const TILE_PRESETS = [
-  { label: "20×20", w: 200, h: 200 },
-  { label: "30×30", w: 300, h: 300 },
-  { label: "30×60", w: 300, h: 600 },
-  { label: "40×40", w: 400, h: 400 },
-  { label: "60×60", w: 600, h: 600 },
-  { label: "60×120", w: 600, h: 1200 },
-];
-
-const SURFACE_PRESETS = [
-  { label: "Ванная стена 1.7×2.5м", w: 1700, h: 2500 },
-  { label: "Ванная пол 1.7×1.5м", w: 1700, h: 1500 },
-  { label: "Кухня фартук 2.4×0.6м", w: 2400, h: 600 },
-  { label: "Пол 3×4м", w: 3000, h: 4000 },
-  { label: "Стена 4×2.7м", w: 4000, h: 2700 },
-];
-
-// ── Calculation ──────────────────────────────────────────────────────────────
-
-function calculateLayout(
-  surfaceW: number,
-  surfaceH: number,
-  tileW: number,
-  tileH: number,
-  groutMm: number,
-  mode: LayoutMode = "straight",
-): TileResult {
-  // Diagonal mode: multiply area by ~1.41 for waste, use straight grid as visual
-  if (mode === "diagonal") {
-    const straight = calculateStraightLayout(surfaceW, surfaceH, tileW, tileH, groutMm);
-    const diagonalWaste = Math.min(straight.wastePercent + 15, 35); // diagonal adds ~15% waste
-    const extraTiles = Math.ceil(straight.totalTiles * 0.15);
-    return {
-      ...straight,
-      cutTiles: straight.cutTiles + extraTiles,
-      totalTiles: straight.totalTiles + extraTiles,
-      wastePercent: diagonalWaste,
-      mode: "diagonal",
-    };
-  }
-
-  // Offset modes: calculate with staggered rows
-  if (mode === "offset-half" || mode === "offset-third") {
-    const offsetFraction = mode === "offset-half" ? 0.5 : 1 / 3;
-    return calculateOffsetLayout(surfaceW, surfaceH, tileW, tileH, groutMm, offsetFraction, mode);
-  }
-
-  return { ...calculateStraightLayout(surfaceW, surfaceH, tileW, tileH, groutMm), mode: "straight" };
-}
-
-function calculateStraightLayout(
-  surfaceW: number, surfaceH: number, tileW: number, tileH: number, groutMm: number,
-): TileResult {
-  const stepW = tileW + groutMm;
-  const stepH = tileH + groutMm;
-
-  const wholeCols = Math.floor(surfaceW / stepW);
-  const wholeRows = Math.floor(surfaceH / stepH);
-
-  const usedW = wholeCols * stepW;
-  const usedH = wholeRows * stepH;
-
-  const remainW = surfaceW - usedW;
-  const remainH = surfaceH - usedH;
-
-  const hasRightCut = remainW > groutMm;
-  const hasBottomCut = remainH > groutMm;
-
-  const cutRight = hasRightCut ? remainW - groutMm : 0;
-  const cutBottom = hasBottomCut ? remainH - groutMm : 0;
-
-  const cols = wholeCols + (hasRightCut ? 1 : 0);
-  const rows = wholeRows + (hasBottomCut ? 1 : 0);
-
-  const grid: TileCell[][] = [];
-  for (let r = 0; r < rows; r++) {
-    const row: TileCell[] = [];
-    const isLastRow = hasBottomCut && r === rows - 1;
-    const cellH = isLastRow ? cutBottom : tileH;
-
-    for (let c = 0; c < cols; c++) {
-      const isLastCol = hasRightCut && c === cols - 1;
-      const cellW = isLastCol ? cutRight : tileW;
-
-      let type: TileCell["type"] = "whole";
-      if (isLastRow && isLastCol) type = "corner";
-      else if (isLastRow || isLastCol) type = "cut";
-
-      row.push({ type, widthMm: cellW, heightMm: cellH });
-    }
-    grid.push(row);
-  }
-
-  const wholeTiles = wholeCols * wholeRows;
-  const cutTilesRight = hasRightCut ? wholeRows : 0;
-  const cutTilesBottom = hasBottomCut ? wholeCols : 0;
-  const cornerTile = hasRightCut && hasBottomCut ? 1 : 0;
-  const cutTiles = cutTilesRight + cutTilesBottom + cornerTile;
-  const totalTiles = wholeTiles + cutTiles;
-
-  const wholeArea = tileW * tileH;
-  let wasteArea = 0;
-  if (hasRightCut) wasteArea += cutTilesRight * (wholeArea - cutRight * tileH);
-  if (hasBottomCut) wasteArea += cutTilesBottom * (wholeArea - tileW * cutBottom);
-  if (cornerTile) wasteArea += wholeArea - cutRight * cutBottom;
-  const wastePercent = totalTiles > 0 ? (wasteArea / (totalTiles * wholeArea)) * 100 : 0;
-
-  return { wholeTiles, cutTiles, totalTiles, wastePercent, rows, cols, cutRight, cutBottom, tileGrid: grid, mode: "straight" };
-}
-
-function calculateOffsetLayout(
-  surfaceW: number, surfaceH: number, tileW: number, tileH: number, groutMm: number,
-  offsetFraction: number, mode: LayoutMode,
-): TileResult {
-  const stepW = tileW + groutMm;
-  const stepH = tileH + groutMm;
-  const offsetPx = Math.round(tileW * offsetFraction);
-
-  const wholeRows = Math.floor(surfaceH / stepH);
-  const hasBottomCut = (surfaceH - wholeRows * stepH) > groutMm;
-  const cutBottom = hasBottomCut ? surfaceH - wholeRows * stepH - groutMm : 0;
-  const rows = wholeRows + (hasBottomCut ? 1 : 0);
-
-  const grid: TileCell[][] = [];
-  let totalWhole = 0;
-  let totalCut = 0;
-
-  for (let r = 0; r < rows; r++) {
-    const row: TileCell[] = [];
-    const isLastRow = hasBottomCut && r === rows - 1;
-    const cellH = isLastRow ? cutBottom : tileH;
-    const rowOffset = (r % 2 === 1) ? offsetPx : 0;
-
-    // First tile might be cut if offset
-    let x = 0;
-    if (rowOffset > 0) {
-      const firstW = Math.min(offsetPx, surfaceW);
-      row.push({ type: "cut", widthMm: firstW, heightMm: cellH, offsetMm: 0 });
-      totalCut++;
-      x = firstW + groutMm;
-    }
-
-    while (x < surfaceW) {
-      const remaining = surfaceW - x;
-      if (remaining >= tileW) {
-        row.push({ type: isLastRow ? "cut" : "whole", widthMm: tileW, heightMm: cellH });
-        if (isLastRow) totalCut++; else totalWhole++;
-        x += stepW;
-      } else if (remaining > groutMm) {
-        const cutW = remaining - groutMm;
-        row.push({ type: "cut", widthMm: Math.max(1, cutW), heightMm: cellH });
-        totalCut++;
-        break;
-      } else {
-        break;
-      }
-    }
-    grid.push(row);
-  }
-
-  const totalTiles = totalWhole + totalCut;
-  const wholeArea = tileW * tileH;
-  let wasteArea = 0;
-  for (const row of grid) {
-    for (const cell of row) {
-      if (cell.type !== "whole") {
-        wasteArea += wholeArea - cell.widthMm * cell.heightMm;
-      }
-    }
-  }
-  const wastePercent = totalTiles > 0 ? (wasteArea / (totalTiles * wholeArea)) * 100 : 0;
-
-  return {
-    wholeTiles: totalWhole, cutTiles: totalCut, totalTiles, wastePercent,
-    rows, cols: grid[0]?.length ?? 0,
-    cutRight: 0, cutBottom,
-    tileGrid: grid, mode,
-  };
-}
+import {
+  calculateTileLayout,
+  computeLayoutSvgBoundsMm,
+  LAYOUT_MODE_OPTIONS,
+  SURFACE_SIZE_PRESETS,
+  TILE_SIZE_PRESETS,
+  type LayoutMode,
+  type TileLayoutResult,
+} from "@/lib/tools/tile-layout";
 
 // ── SVG Renderer ─────────────────────────────────────────────────────────────
 
-function TileLayoutSVG({ result, tileW, tileH, groutMm }: {
-  result: TileResult;
-  tileW: number;
-  tileH: number;
-  groutMm: number;
-}) {
-  const scale = Math.min(600 / (result.cols * (tileW + groutMm)), 400 / (result.rows * (tileH + groutMm)), 1);
+function TileLayoutSVG({ result, groutMm }: { result: TileLayoutResult; groutMm: number }) {
+  const bounds = computeLayoutSvgBoundsMm(result.tileGrid, groutMm);
+  const scale = Math.min(
+    600 / Math.max(bounds.widthMm, 1),
+    400 / Math.max(bounds.heightMm, 1),
+    1,
+  );
 
-  const svgW = result.tileGrid[0]?.reduce((sum, cell) => sum + (cell.widthMm + groutMm) * scale, 0) ?? 0;
-  const svgH = result.tileGrid.reduce((sum, row) => sum + (row[0].heightMm + groutMm) * scale, 0);
+  const svgW = bounds.widthMm * scale;
+  const svgH = bounds.heightMm * scale;
 
   const COLORS = {
     whole: "#3B82F6",
@@ -240,6 +39,8 @@ function TileLayoutSVG({ result, tileW, tileH, groutMm }: {
       viewBox={`0 0 ${svgW} ${svgH}`}
       className="w-full max-w-[600px] border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800"
       style={{ aspectRatio: `${svgW} / ${svgH}` }}
+      role="img"
+      aria-label="Схема раскладки плитки"
     >
       {result.tileGrid.map((row, ri) => {
         let xOffset = 0;
@@ -307,9 +108,12 @@ export default function TileLayoutGenerator() {
   }, []);
 
   const result = useMemo(
-    () => calculateLayout(surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode),
+    () => calculateTileLayout(surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode),
     [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode],
   );
+
+  const purchaseTotal =
+    result.totalTiles + (result.purchaseReserveTiles > 0 ? result.purchaseReserveTiles : 0);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -326,7 +130,7 @@ export default function TileLayoutGenerator() {
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {SURFACE_PRESETS.map((p) => (
+            {SURFACE_SIZE_PRESETS.map((p) => (
               <button
                 key={p.label}
                 onClick={() => { setSurfaceW(p.w); setSurfaceH(p.h); }}
@@ -354,7 +158,7 @@ export default function TileLayoutGenerator() {
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {TILE_PRESETS.map((p) => (
+            {TILE_SIZE_PRESETS.map((p) => (
               <button
                 key={p.label}
                 onClick={() => { setTileW(p.w); setTileH(p.h); }}
@@ -376,7 +180,7 @@ export default function TileLayoutGenerator() {
             Способ укладки
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {LAYOUT_MODES.map((m) => (
+            {LAYOUT_MODE_OPTIONS.map((m) => (
               <button
                 key={m.value}
                 onClick={() => setLayoutMode(m.value)}
@@ -419,6 +223,11 @@ export default function TileLayoutGenerator() {
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Раскладка
+            {layoutMode === "diagonal" && (
+              <span className="ml-2 normal-case font-normal text-amber-600 dark:text-amber-400">
+                (схема — прямая сетка)
+              </span>
+            )}
           </h3>
           <button
             onClick={handleExportPNG}
@@ -429,7 +238,7 @@ export default function TileLayoutGenerator() {
         </div>
 
         <div ref={svgContainerRef}>
-          <TileLayoutSVG result={result} tileW={tileW} tileH={tileH} groutMm={groutMm} />
+          <TileLayoutSVG result={result} groutMm={groutMm} />
         </div>
 
         {/* Legend */}
@@ -444,10 +253,10 @@ export default function TileLayoutGenerator() {
               Подрезка ({result.cutTiles} шт)
             </div>
           )}
-          {result.cutRight > 0 && result.cutBottom > 0 && (
+          {result.tileGrid.some((row) => row.some((c) => c.type === "corner")) && (
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-              Угловая подрезка
+              Угол
             </div>
           )}
         </div>
@@ -461,7 +270,7 @@ export default function TileLayoutGenerator() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.totalTiles}</p>
-            <p className="text-xs text-slate-500">Всего плиток</p>
+            <p className="text-xs text-slate-500">Плиток по схеме</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-600">{result.wholeTiles}</p>
@@ -473,9 +282,28 @@ export default function TileLayoutGenerator() {
           </div>
           <div>
             <p className="text-2xl font-bold text-red-500">{result.wastePercent.toFixed(1)}%</p>
-            <p className="text-xs text-slate-500">Отход</p>
+            <p className="text-xs text-slate-500">Отход материала</p>
           </div>
         </div>
+
+        {result.purchaseReserveTiles > 0 && (
+          <div className="rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 mt-4">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              К закупке с запасом на диагональ: {purchaseTotal} шт
+            </p>
+            <p className="text-xs text-amber-700/90 dark:text-amber-300/90 mt-1">
+              По схеме {result.totalTiles} + {result.purchaseReserveTiles} на подрезку под 45° и бой
+            </p>
+          </div>
+        )}
+
+        {result.notes.length > 0 && (
+          <ul className="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-4 mt-3">
+            {result.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        )}
 
         {result.cutRight > 0 && (
           <p className="text-xs text-slate-400 mt-3">
@@ -488,14 +316,24 @@ export default function TileLayoutGenerator() {
           </p>
         )}
 
-        {/* Practical tips */}
         {(result.cutRight > 0 && result.cutRight < tileW * 0.3) && (
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg p-3 mt-3">
             <p className="text-xs text-amber-700 dark:text-amber-300">
-              Подрезка справа меньше 30% плитки ({result.cutRight} мм). Рассмотрите смещение раскладки от центра — тогда подрезка будет одинаковой с обеих сторон и визуально лучше.
+              Подрезка справа меньше 30% плитки ({result.cutRight} мм). Сместите стартовую линию от центра — подрезка слева и справа станет симметричнее.
             </p>
           </div>
         )}
+
+        <p className="text-xs text-slate-400 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
+          Клей, затирка и упаковки — в{" "}
+          <Link
+            href="/kalkulyatory/poly/plitka/"
+            className="text-accent-600 hover:text-accent-700 underline"
+          >
+            калькуляторе плитки
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );
