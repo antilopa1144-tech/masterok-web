@@ -4,6 +4,11 @@ import { computeCanonicalInsulation } from "../../../../engine/insulation";
 import insulationSpec from "../../../../configs/calculators/insulation-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
 import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+import {
+  checkMineralWoolDensity,
+  dowelLengthMm,
+  enrichInsulationInputs,
+} from "./insulation-inputs";
 
 const insulationManufacturerField = buildManufacturerField("insulation", {
   label: "Производитель и линейка",
@@ -59,9 +64,20 @@ export const insulationDef: CalculatorDefinition = {
       type: "slider",
       unit: "м²",
       min: 1,
-      max: 1000,
+      max: 500,
       step: 1,
       defaultValue: 50,
+    },
+    {
+      key: "reserve",
+      label: "Запас на подрезку",
+      type: "slider",
+      unit: "%",
+      min: 0,
+      max: 15,
+      step: 1,
+      defaultValue: 5,
+      hint: "5% — норма для плит; 10–15% — сложная геометрия или много углов.",
     },
     ...(insulationManufacturerField ? [insulationManufacturerField] : []),
     {
@@ -109,7 +125,8 @@ export const insulationDef: CalculatorDefinition = {
       options: [
         { value: 0, label: "1200×600 мм (Rockwool, Knauf)" },
         { value: 1, label: "1000×500 мм (Технониколь)" },
-        { value: 2, label: "2000×1000 мм (пеноплекс стандарт)" },
+        { value: 2, label: "2000×1000 мм (крупноформатный ЭППС)" },
+        { value: 3, label: "1185×585 мм (Пеноплэкс, Технониколь XPS)" },
       ],
       hideIf: { key: "manufacturer", op: "gt", value: 0 },
     },
@@ -119,10 +136,10 @@ export const insulationDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Мокрый штукатурный фасад" },
+        { value: 0, label: "Мокрый штукатурный фасад (СФТК)" },
         { value: 1, label: "Каркасная система / вентфасад" },
       ],
-      hint: "В мокром фасаде нужны клей, дюбели, сетка и штукатурка. В каркасной — брус, ветрозащита и пароизоляция, но не нужны клей с дюбелями.",
+      hint: "Для внутренних стен, кровли и пола калькулятор автоматически выберет каркасную систему. СФТК — для наружного фасада и цоколя с облицовкой.",
     },
     {
       key: "layerScheme",
@@ -139,11 +156,11 @@ export const insulationDef: CalculatorDefinition = {
       key: "density",
       label: "Плотность минваты",
       type: "select",
-      defaultValue: 45,
+      defaultValue: 80,
       options: [
         { value: 35, label: "35 кг/м³ — каркас, кровля (бюджетная)" },
-        { value: 45, label: "45 кг/м³ — звукоизоляция, перегородки" },
-        { value: 80, label: "80 кг/м³ — мокрый штукатурный фасад" },
+        { value: 45, label: "45 кг/м³ — звукоизоляция, перегородки (только каркас)" },
+        { value: 80, label: "80 кг/м³ — мокрый штукатурный фасад (СФТК)" },
         { value: 100, label: "100 кг/м³ — вентфасад под облицовку" },
         { value: 150, label: "150 кг/м³ — кровля под стяжку, пол" },
       ],
@@ -192,6 +209,17 @@ export const insulationDef: CalculatorDefinition = {
     const spec = insulationSpec as any;
     const factorTable = defaultFactorTables.factors as any;
 
+    const manufacturer = getManufacturerByIndex("insulation", inputs.manufacturer);
+    const { enriched: enrichedFromApp, warnings: applicationWarnings } = enrichInsulationInputs(
+      inputs as Record<string, unknown>,
+      !!manufacturer,
+    );
+    const enrichedInputs: Record<string, unknown> = {
+      ...enrichedFromApp,
+      accuracyMode: inputs.accuracyMode,
+    };
+    const brandWarnings: string[] = [...applicationWarnings];
+
     /**
      * Подстановка specs выбранного бренда в inputs перед расчётом.
      *
@@ -204,10 +232,6 @@ export const insulationDef: CalculatorDefinition = {
      * Приоритет: пользователь явно меняет input → бренд override срабатывает
      * до движка → если толщина не из линейки, добавляем warning.
      */
-    const manufacturer = getManufacturerByIndex("insulation", inputs.manufacturer);
-    const enrichedInputs: Record<string, unknown> = { ...inputs, accuracyMode: inputs.accuracyMode };
-    const brandWarnings: string[] = [];
-
     if (manufacturer) {
       const s = manufacturer.specs as Record<string, unknown>;
 
@@ -216,6 +240,9 @@ export const insulationDef: CalculatorDefinition = {
       }
       if (typeof s.plateSizeId === "number") {
         enrichedInputs.plateSize = s.plateSizeId;
+      }
+      if (typeof s.plateAreaM2 === "number" && Number(s.plateAreaM2) > 0) {
+        enrichedInputs.plateAreaM2 = s.plateAreaM2;
       }
 
       const thickness = Number(enrichedInputs.thickness ?? inputs.thickness ?? 100);
@@ -309,9 +336,11 @@ export const insulationDef: CalculatorDefinition = {
       if (layerAMain) merged.push({ ...layerAMain, name: `Слой 1 — ${layerAMain.name}` });
       if (layerBMain) merged.push({ ...layerBMain, name: `Слой 2 — ${layerBMain.name}` });
       if (layerADowels) {
+        const totalThickness = t1 + t2;
+        const dowelLen = dowelLengthMm(totalThickness);
         merged.push({
           ...layerADowels,
-          name: `Дюбели тарельчатые удлинённые (под толщину ${t1 + t2} мм + основание)`,
+          name: `Дюбели тарельчатые 10×${dowelLen} мм (сквозные, ${totalThickness} мм утепления)`,
         });
       }
       merged.push(...otherCompanions);
@@ -343,67 +372,24 @@ export const insulationDef: CalculatorDefinition = {
       }
     }
 
-    /**
-     * Совместимость плотности минваты с системой монтажа.
-     *
-     * Только для минваты (insulationType=0). У ЭППС, ППС и эковаты плотность
-     * стандартная или не применима — поле скрыто в UI и не проверяется.
-     *
-     * Источник плотности (по приоритету):
-     *  1. Бренд (manufacturer.specs.density)
-     *  2. Явный input.density (если пользователь выбрал)
-     *  3. Дефолт 45 кг/м³
-     *
-     * Сравниваем с density_presets[].applications — если выбранная плотность
-     * не подходит к mountSystem, выдаём warning или совет.
-     */
     const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
     const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
     let effectiveDensity = 0;
     if (manufacturer) {
       effectiveDensity = Number((manufacturer.specs as Record<string, unknown>).density ?? 0);
     } else if (insulationType === 0) {
-      effectiveDensity = Number(inputs.density ?? 45);
+      effectiveDensity = Number(enrichedInputs.density ?? inputs.density ?? 80);
     }
 
     if (insulationType === 0 && effectiveDensity > 0) {
       totals.effectiveDensity = effectiveDensity;
-      const presets = (spec.normative_formula?.density_presets ?? []) as Array<{
-        value: number;
-        applications: number[];
-        label?: string;
-      }>;
-      // Ищем ближайший пресет по плотности (для совместимости с брендами).
-      const closest = presets.reduce<typeof presets[number] | null>((best, p) => {
-        if (!best) return p;
-        return Math.abs(p.value - effectiveDensity) < Math.abs(best.value - effectiveDensity) ? p : best;
-      }, null);
-      if (closest && !closest.applications.includes(mountSystem)) {
-        // Лёгкая минвата на штукатурном фасаде — критично.
-        if (mountSystem === 0 && effectiveDensity < 70) {
-          brandWarnings.push(
-            `Плотность ${effectiveDensity} кг/м³ слишком низкая для мокрого штукатурного фасада. ` +
-            `Под штукатуркой плита просядет и потрескается. Возьмите минимум 80 кг/м³ ` +
-            `(например, Технониколь Техноблок Стандарт или Knauf Insulation FKD-S Thermal).`,
-          );
-        }
-        // Слишком плотная минвата (≥90 кг/м³) на штукатурном фасаде — для вентфасада.
-        if (mountSystem === 0 && effectiveDensity >= 90) {
-          brandWarnings.push(
-            `Плотность ${effectiveDensity} кг/м³ — это материал для вентилируемого фасада, ` +
-            `не для штукатурного. Если хотите штукатурный фасад, выберите линейку 80–90 кг/м³ ` +
-            `(Технониколь Техноблок 45, Технофас 80, Rockwool Фасад Баттс).`,
-          );
-        }
-        // Плотная минвата в каркасе — переплата.
-        if (mountSystem === 1 && effectiveDensity >= 80) {
-          canonical.practicalNotes = [
-            ...(canonical.practicalNotes ?? []),
-            `Плотность ${effectiveDensity} кг/м³ избыточна для каркасной системы. ` +
-            `Для каркаса достаточно 35–45 кг/м³ (например, Технониколь Роклайт или Rockwool Лайт Баттс) — ` +
-            `это сэкономит ~30–40% бюджета без потери теплоизоляции.`,
-          ];
-        }
+      const densityCheck = checkMineralWoolDensity(effectiveDensity, mountSystem);
+      brandWarnings.push(...densityCheck.warnings);
+      if (densityCheck.practicalNotes.length > 0) {
+        canonical.practicalNotes = [
+          ...(canonical.practicalNotes ?? []),
+          ...densityCheck.practicalNotes,
+        ];
       }
     }
 
@@ -561,30 +547,27 @@ export const insulationDef: CalculatorDefinition = {
   },
   formulaDescription: `
 **Расчёт утеплителя:**
-Плит = ⌈Площадь × 1.05 / Площадь_плиты⌉
+Плит = упаковка по сценарию REC: ⌈(Площадь × (1 + Запас%)) / S_плиты⌉, округление до целых упаковок.
 
 Стандартные размеры плит:
-- Минвата Knauf/Rockwool: 1200×600 мм = 0.72 м²
-- Пеноплекс: 1200×600 или 2000×1000 мм
-- Пенопласт ППС: 1000×500 мм = 0.5 м²
+- Минвата Knauf/Rockwool: 1200×600 мм = 0,72 м²
+- Пеноплэкс / Технониколь XPS: 1185×585 мм = 0,693 м²
+- Пенопласт ППС: 1000×500 мм = 0,5 м²
 
-Нормы крепления: 5–8 дюблей-зонтиков на 1 м²
-Запас 5% на подрезку
+**Дюбели (только СФТК):** минвата 7 шт/м², ЭППС 5, ППС 6 (+5% запас). Длина: толщина + 50 мм в основание.
 
-**Сопутствующие материалы зависят от системы монтажа:**
-| Материал                  | Мокрый штукатурный фасад | Каркасная система |
-|---------------------------|--------------------------|-------------------|
-| Клей фасадный             | да (5 кг/м²)             | нет               |
-| Дюбели тарельчатые        | да                       | нет (плита враспор) |
-| Стеклосетка армирующая    | да                       | нет               |
-| Базовая штукатурка        | да (5 кг/м²)             | нет               |
-| Грунтовка фасадная        | да                       | нет               |
-| Пароизоляционная мембрана | нет                      | да (для минваты)  |
-| Гидроветрозащитная плёнка | нет                      | да (для минваты)  |
-| Брус каркаса 50×50        | нет                      | да (~2.2 пог.м/м²) |
+**Сопутствующие материалы** зависят от назначения и системы монтажа:
+| Материал                  | СФТК (фасад, цоколь) | Каркас / вентфасад |
+|---------------------------|----------------------|---------------------|
+| Клей фасадный 5 кг/м²     | да                   | нет                 |
+| Дюбели тарельчатые        | да                   | нет                 |
+| Стеклосетка, штукатурка   | да                   | нет                 |
+| Грунтовка                 | да                   | нет                 |
+| Пароизоляция              | нет                  | да (минвата)        |
+| Гидроветрозащита          | нет                  | да (минвата, эковата) |
+| Брус каркаса              | нет                  | да                  |
 
-Гидроветрозащита для минваты добавляется в обеих системах.
-Для эковаты грунтовка не нужна — её задувают в готовый каркас.
+Для внутренних стен, кровли и пола калькулятор переключает каркасную систему автоматически.
   `,
   howToUse: [
     "Введите площадь утепляемой поверхности",
@@ -614,11 +597,11 @@ faq: [
 <ul>
   <li><strong>N</strong> — количество плит</li>
   <li><strong>S</strong> — площадь утепления (м&sup2;)</li>
-  <li><strong>K<sub>запас</sub></strong> — коэффициент запаса 1.05 (5% на подрезку)</li>
+  <li><strong>K<sub>запас</sub></strong> — запас на подрезку (по умолчанию 5%, настраивается)</li>
   <li><strong>S<sub>плиты</sub></strong> — площадь одной плиты (м&sup2;)</li>
 </ul>
-<p>Количество дюбелей-зонтиков:</p>
-<p><strong>D = S &times; 6</strong> (6 штук на 1 м&sup2; — стандартная схема крепления)</p>
+<p>Количество дюбелей-зонтиков (только СФТК):</p>
+<p><strong>D = &lceil;S &times; N &times; 1,05&rceil;</strong>, N = 7 (минвата), 5 (ЭППС), 6 (ППС) шт/м&sup2;</p>
 
 <h2>Размеры плит и площадь покрытия</h2>
 <table>
@@ -628,8 +611,8 @@ faq: [
   <tbody>
     <tr><td>Rockwool Фасад Баттс</td><td>1200&times;600</td><td>0.72</td><td>4 шт = 2.88 м&sup2;</td></tr>
     <tr><td>Knauf Insulation</td><td>1200&times;600</td><td>0.72</td><td>8 шт = 5.76 м&sup2;</td></tr>
-    <tr><td>Технониколь XPS</td><td>1200&times;600</td><td>0.72</td><td>4 шт = 2.88 м&sup2;</td></tr>
-    <tr><td>Пеноплекс Комфорт</td><td>2000&times;1000</td><td>2.00</td><td>4 шт = 8.00 м&sup2;</td></tr>
+    <tr><td>Технониколь XPS / Пеноплэкс</td><td>1185&times;585</td><td>0.693</td><td>4–8 шт в упаковке</td></tr>
+    <tr><td>Крупноформатный ЭППС</td><td>2000&times;1000</td><td>2.00</td><td>4 шт = 8.00 м&sup2;</td></tr>
   </tbody>
 </table>
 
@@ -647,7 +630,7 @@ faq: [
     faq: [
       {
         question: "Сколько плит утеплителя нужно на 100 м²?",
-        answer: "<p>Количество плит зависит от размера. Для стандартной минваты 1200&times;600 мм (0.72 м&sup2;/плита):</p><p>N = &lceil;100 &times; 1.05 / 0.72&rceil; = <strong>146 плит</strong></p><p>Упаковок (8 шт/уп): &lceil;146 / 8&rceil; = <strong>19 упаковок</strong></p><p>Для пеноплекса 2000&times;1000 мм (2.0 м&sup2;/плита):</p><p>N = &lceil;100 &times; 1.05 / 2.0&rceil; = <strong>53 плиты</strong> = <strong>14 упаковок</strong> (4 шт/уп)</p><p>Дюбелей-зонтиков: 100 &times; 6 = <strong>600 штук</strong>.</p>",
+        answer: "<p>Для минваты 1200&times;600 мм (0.72 м&sup2;/плита) при запасе 5%: &lceil;105 / 0.72&rceil; = <strong>146 плит</strong> (округление до упаковок — в калькуляторе).</p><p>Дюбели (минвата, СФТК): &lceil;100 &times; 7 &times; 1,05&rceil; = <strong>735 штук</strong>, длина 150 мм при слое 100 мм.</p>",
       },
       {
         question: "Минвата или пеноплекс — что лучше для утепления?",
@@ -655,7 +638,7 @@ faq: [
       },
       {
         question: "Сколько дюбелей-зонтиков нужно на 1 м² утеплителя?",
-        answer: "<p>Стандартная норма — <strong>5–8 дюбелей на 1 м&sup2;</strong>, но расход зависит от зоны фасада:</p><ul><li><strong>Центральное поле стены</strong> — 5–6 шт/м&sup2;</li><li><strong>Углы здания</strong> (1 м от угла) — 8 шт/м&sup2;</li><li><strong>Зоны у проёмов</strong> — 8 шт/м&sup2;</li><li><strong>Верхний пояс</strong> (у парапета) — 8–10 шт/м&sup2;</li></ul><p>Длина дюбеля: <strong>толщина утеплителя + 50 мм</strong> (заглубление в основание). Для утеплителя 100 мм нужны дюбели <strong>150–160 мм</strong>.</p>",
+        answer: "<p>В калькуляторе заложены нормы: <strong>минвата 7 шт/м&sup2;</strong>, ЭППС 5, ППС 6 (+5% запас). На объекте углы и проёмы загущают до 8–10 шт/м&sup2;.</p><p>Длина дюбеля: <strong>толщина утеплителя + 50 мм</strong> в несущее основание. Для слоя 100 мм — дюбели <strong>150 мм</strong>.</p>",
       },
     ],
   },

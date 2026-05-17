@@ -58,13 +58,18 @@ describe("insulation formula — подстановка specs производи
 });
 
 describe("insulation formula — плотность утеплителя", () => {
-  it("по умолчанию (45 кг/м³) без warning о несовместимости", () => {
-    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0 });
+  it("по умолчанию (80 кг/м³, фасад) без warning о низкой плотности", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, application: 0 });
     expect(r.warnings.some((w) => w.includes("слишком низкая"))).toBe(false);
   });
 
+  it("45 кг/м³ на мокром штукатурном фасаде → warning", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 45, application: 0 });
+    expect(r.warnings.some((w) => w.includes("слишком низкая") && w.includes("80 кг/м³"))).toBe(true);
+  });
+
   it("35 кг/м³ на мокром штукатурном фасаде → warning", () => {
-    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 35 });
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 35, application: 0 });
     expect(r.warnings.some((w) => w.includes("слишком низкая") && w.includes("80 кг/м³"))).toBe(true);
   });
 
@@ -91,8 +96,8 @@ describe("insulation formula — плотность утеплителя", () =>
   });
 
   it("цена минваты масштабируется по плотности (80 кг/м³ ≈ ×1.35 от 45 кг/м³)", () => {
-    const r45 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 1, density: 45 });
-    const r80 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 80 });
+    const r45 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 1, density: 45, application: 1 });
+    const r80 = calc({ area: 40, thickness: 100, insulationType: 0, mountSystem: 0, density: 80, application: 0 });
     const note45 = r45.practicalNotes?.find((n) => n.includes("Минеральная вата"))!;
     const note80 = r80.practicalNotes?.find((n) => n.includes("Минеральная вата"))!;
     // ru-RU локаль использует разные виды узких пробелов в разных версиях Node —
@@ -159,7 +164,8 @@ describe("insulation formula — двухслойная укладка", () => {
     const r = calc({ area: 40, thickness: 200, insulationType: 0, layerScheme: 1 });
     const dowels = r.materials.find((m) => m.name.includes("Дюбели"));
     expect(dowels).toBeDefined();
-    expect(dowels!.name).toContain("удлинённые");
+    expect(dowels!.name).toContain("сквозные");
+    expect(dowels!.name).toContain("250");
     expect(dowels!.name).toContain("200 мм");
   });
 
@@ -194,6 +200,29 @@ describe("insulation formula — двухслойная укладка", () => {
   });
 });
 
+describe("insulation formula — назначение (application)", () => {
+  it("внутренняя стена: каркас, пароизоляция, без фасадного клея", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      insulationType: 0,
+      application: 1,
+      mountSystem: 0,
+    });
+    expect(r.totals.mountSystem).toBe(1);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("клей фасадный"))).toBe(false);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(true);
+    expect(r.warnings.some((w) => w.includes("мокрый штукатурный"))).toBe(true);
+  });
+
+  it("кровля: каркас без дюбелей и СФТК-материалов", () => {
+    const r = calc({ area: 30, thickness: 150, insulationType: 0, application: 2 });
+    expect(r.totals.mountSystem).toBe(1);
+    expect(r.materials.some((m) => m.name.includes("Дюбели"))).toBe(false);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("стеклосетка"))).toBe(false);
+  });
+});
+
 describe("insulation formula — сравнение типов по стоимости", () => {
   it("в practicalNotes есть блок сравнения с 4 типами", () => {
     const r = calc({ area: 40, thickness: 100, insulationType: 0 });
@@ -210,21 +239,19 @@ describe("insulation formula — сравнение типов по стоимо
   const norm = (s: string) => s.replace(/ | /g, " ");
 
   it("цена линейно зависит от толщины (50 мм = половина 100 мм)", () => {
-    const r100 = calc({ area: 40, thickness: 100, insulationType: 0 });
-    const r50 = calc({ area: 40, thickness: 50, insulationType: 0 });
+    const r100 = calc({ area: 40, thickness: 100, insulationType: 0, density: 80, application: 0 });
+    const r50 = calc({ area: 40, thickness: 50, insulationType: 0, density: 80, application: 0 });
     const note100 = norm(r100.practicalNotes?.find((n) => n.includes("Примерная"))!);
     const note50 = norm(r50.practicalNotes?.find((n) => n.includes("Примерная"))!);
-    // Минвата: 400 ₽/м² × 40 м² × 1.0 = 16 000 ₽
-    // При 50 мм: 16 000 × 0.5 = 8 000 ₽
-    expect(note100).toContain("16 000");
-    expect(note50).toContain("8 000");
+    // Минвата 80 кг/м³: 400 × 1.35 × 40 ≈ 21 600 ₽; при 50 мм ≈ 10 800 ₽
+    expect(note100).toContain("21 600");
+    expect(note50).toContain("10 800");
   });
 
   it("сравнение масштабируется на площадь", () => {
-    const r1 = calc({ area: 100, thickness: 100, insulationType: 0 });
+    const r1 = calc({ area: 100, thickness: 100, insulationType: 0, density: 80, application: 0 });
     const note = norm(r1.practicalNotes?.find((n) => n.includes("Примерная"))!);
-    // 400 × 100 = 40 000 ₽ за минвату
-    expect(note).toContain("40 000");
+    expect(note).toContain("54 000");
   });
 
   it("заголовок содержит площадь и толщину пользователя", () => {

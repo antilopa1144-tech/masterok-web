@@ -11,6 +11,11 @@ import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimary
 import { getInputDefault } from "./spec-helpers";
 import { evaluateCompanionMaterials } from "./companion-materials";
 
+/** Длина тарельчатого дюбеля: толщина утеплителя + 50 мм анкеровки в основание (СП 293.1325800). */
+export function insulationDowelLengthMm(insulationThicknessMm: number): number {
+  return Math.round(insulationThicknessMm + 50);
+}
+
 interface InsulationInputs {
   area?: number;
   insulationType?: number;
@@ -19,6 +24,8 @@ interface InsulationInputs {
   reserve?: number;
   mountSystem?: number;
   application?: number;
+  /** Переопределение площади плиты (м²), напр. 1185×585 = 0,693 для Пеноплэкс */
+  plateAreaM2?: number;
   /**
    * Сколько плит в упаковке. 0 = авто-расчёт от толщины:
    *   piecesPerPack = floor(insulation_type.pack_height_mm / thickness).
@@ -57,7 +64,8 @@ function resolveInsulationType(spec: InsulationCanonicalSpec, inputs: Insulation
 }
 
 function resolvePlateSize(spec: InsulationCanonicalSpec, inputs: InsulationInputs): number {
-  return Math.max(0, Math.min(2, Math.round(inputs.plateSize ?? getInputDefault(spec, "plateSize", 0))));
+  const maxId = Math.max(0, spec.normative_formula.plate_sizes.length - 1);
+  return Math.max(0, Math.min(maxId, Math.round(inputs.plateSize ?? getInputDefault(spec, "plateSize", 0))));
 }
 
 /* ─── main ─── */
@@ -89,7 +97,10 @@ export function computeCanonicalInsulation(
   const plateSpec = getPlateSpec(spec, plateSize);
   const insulationTypeSpec = getInsulationTypeSpec(spec, insulationType);
   const areaWithReserve = area * (1 + reserve / 100);
-  const plateArea = plateSpec.area_m2;
+  const plateArea =
+    inputs.plateAreaM2 != null && inputs.plateAreaM2 > 0
+      ? inputs.plateAreaM2
+      : plateSpec.area_m2;
 
   /* ── Число плит в упаковке ──
    *
@@ -232,10 +243,7 @@ export function computeCanonicalInsulation(
     });
 
     if (dowelsNeeded > 0) {
-      // Длина дюбеля = толщина утеплителя + 30 мм запас на закрепление в стене
-      // (10 мм клеевого слоя + 20 мм глубина анкеровки в основание).
-      // Стандарт по СП 293.1325800 для штукатурных фасадных систем.
-      const dowelLen = thickness + 30;
+      const dowelLen = insulationDowelLengthMm(thickness);
       materials.push({
         name: `Дюбели тарельчатые 10×${dowelLen} мм`,
         quantity: dowelsNeeded,

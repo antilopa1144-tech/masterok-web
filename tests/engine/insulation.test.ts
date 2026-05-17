@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeCanonicalInsulation } from "../../engine/insulation";
+import { computeCanonicalInsulation, insulationDowelLengthMm } from "../../engine/insulation";
 import type { InsulationCanonicalSpec } from "../../engine/canonical";
 import type { FactorTable } from "../../engine/factors";
 import insulationSpec from "../../configs/calculators/insulation-canonical.v1.json";
@@ -18,8 +18,13 @@ const hasMaterial = (
 ): boolean => r.materials.some((m) => predicate(m.name));
 
 describe("computeCanonicalInsulation — основной расчёт (basic mode)", () => {
+  it("длина дюбеля: толщина + 50 мм (100 мм → 150 мм)", () => {
+    expect(insulationDowelLengthMm(100)).toBe(150);
+    expect(insulationDowelLengthMm(200)).toBe(250);
+  });
+
   it("минвата 40 м², плита 1200×600 × 100 мм, запас 5%, штукатурный фасад → 66 плит = 11 упаковок", () => {
-    const r = calc({ accuracyMode: "basic" });
+    const r = calc({ accuracyMode: "basic", area: 40 });
 
     expect(r.totals.area).toBe(40);
     expect(r.totals.insulationType).toBe(0);
@@ -34,6 +39,8 @@ describe("computeCanonicalInsulation — основной расчёт (basic mo
     expect(r.totals.packsNeeded).toBe(11);
     expect(r.totals.platesNeeded).toBe(66);
     expect(r.totals.dowelsNeeded).toBe(294);
+    const dowels = r.materials.find((m) => m.name.includes("Дюбели"));
+    expect(dowels?.name).toContain("150");
     expect(r.scenarios.REC.exact_need).toBeCloseTo(61.83, 2);
     expect(r.scenarios.REC.purchase_quantity).toBe(66);
     expect(r.scenarios.MAX.purchase_quantity).toBe(84);
@@ -69,6 +76,7 @@ describe("computeCanonicalInsulation — основной расчёт (basic mo
   it("эковата (type=3) — мешки вместо плит", () => {
     const r = calc({
       accuracyMode: "basic",
+      area: 40,
       insulationType: 3,
       thickness: 150,
     });

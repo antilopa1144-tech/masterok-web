@@ -2,16 +2,16 @@
   "calculator_id": "insulation",
   "formula_version": "insulation-canonical-v1",
   "input_schema": [
-    { "key": "area", "unit": "m2", "default_value": 40, "min": 1, "max": 500 },
+    { "key": "area", "unit": "m2", "default_value": 50, "min": 1, "max": 500 },
     { "key": "insulationType", "default_value": 0, "min": 0, "max": 3 },
     { "key": "thickness", "unit": "mm", "default_value": 100, "min": 50, "max": 300 },
-    { "key": "plateSize", "default_value": 0, "min": 0, "max": 2 },
+    { "key": "plateSize", "default_value": 0, "min": 0, "max": 3 },
     { "key": "reserve", "unit": "%", "default_value": 5, "min": 0, "max": 15 },
     { "key": "mountSystem", "default_value": 0, "min": 0, "max": 1 },
     { "key": "piecesPerPack", "default_value": 0, "min": 0, "max": 24 },
     { "key": "climateZone", "default_value": 1, "min": 0, "max": 4 },
     { "key": "layerScheme", "default_value": 0, "min": 0, "max": 1 },
-    { "key": "density", "unit": "kg_m3", "default_value": 45, "min": 0, "max": 200 },
+    { "key": "density", "unit": "kg_m3", "default_value": 80, "min": 0, "max": 200 },
     { "key": "application", "default_value": 0, "min": 0, "max": 4 }
   ],
   "field_factors": {
@@ -27,7 +27,8 @@
     "plate_sizes": [
       { "id": 0, "key": "1200x600", "label": "1200×600", "area_m2": 0.72 },
       { "id": 1, "key": "1000x500", "label": "1000×500", "area_m2": 0.50 },
-      { "id": 2, "key": "2000x1000", "label": "2000×1000", "area_m2": 2.00 }
+      { "id": 2, "key": "2000x1000", "label": "2000×1000", "area_m2": 2.00 },
+      { "id": 3, "key": "1185x585", "label": "1185×585", "area_m2": 0.693 }
     ],
     "climate_zones": [
       { "id": 0, "key": "south", "label": "Юг России (Краснодар, Сочи, Крым, Ростов)", "min_thickness_walls_mm": 80, "rec_thickness_walls_mm": 100 },
@@ -38,10 +39,10 @@
     ],
     "density_presets": [
       { "value": 35, "label": "35 кг/м³ — лёгкая (каркас, кровля, перекрытия)", "cost_multiplier": 0.65, "applications": [1] },
-      { "value": 45, "label": "45 кг/м³ — средняя (звукоизоляция, перегородки)", "cost_multiplier": 1.0, "applications": [0, 1] },
-      { "value": 80, "label": "80 кг/м³ — плотная (мокрый штукатурный фасад)", "cost_multiplier": 1.35, "applications": [0] },
-      { "value": 100, "label": "100 кг/м³ — для вентфасада", "cost_multiplier": 1.5, "applications": [1] },
-      { "value": 150, "label": "150 кг/м³ — для кровли под нагрузку, пола под стяжку", "cost_multiplier": 1.8, "applications": [0, 1] }
+      { "value": 45, "label": "45 кг/м³ — звукоизоляция, перегородки (каркас)", "cost_multiplier": 1.0, "applications": [1] },
+      { "value": 80, "label": "80 кг/м³ — мокрый штукатурный фасад (СФТК)", "cost_multiplier": 1.35, "applications": [0] },
+      { "value": 100, "label": "100 кг/м³ — вентфасад под облицовку", "cost_multiplier": 1.5, "applications": [1] },
+      { "value": 150, "label": "150 кг/м³ — пол под стяжку, нагруженная кровля", "cost_multiplier": 1.8, "applications": [1] }
     ]
   },
   "packaging_rules": {
@@ -54,7 +55,7 @@
     "membrane_reserve": 1.15,
     "alu_tape_m2_per_m2": 2,
     "alu_tape_roll_m": 50,
-    "glue_kg_per_m2": 2.5,
+    "glue_kg_per_m2": 5.0,
     "glue_bag_kg": 25,
     "primer_l_per_m2": 0.15,
     "primer_reserve": 1.15,
@@ -135,7 +136,7 @@
         "type": "per_count_step",
         "totals_key": "area",
         "fixed": 1,
-        "step": 50
+        "step": 25
       }
     },
     {
@@ -148,7 +149,8 @@
         "type": "and",
         "all": [
           { "type": "input_in", "input_key": "insulationType", "values": [0, 1, 2] },
-          { "type": "input_eq", "input_key": "mountSystem", "value": 0 }
+          { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_in", "input_key": "application", "values": [0, 4] }
         ]
       },
       "formula": {
@@ -165,7 +167,13 @@
       "category": "Армирование",
       "unit": "м²",
       "rationale": "Армирующий слой в базовой штукатурке системы мокрого фасада.",
-      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_in", "input_key": "application", "values": [0, 4] }
+        ]
+      },
       "formula": {
         "type": "linear_overlap",
         "totals_key": "area",
@@ -179,7 +187,13 @@
       "category": "Штукатурка",
       "unit": "кг",
       "rationale": "Базовый армирующий слой 3-4 мм поверх сетки в системе мокрого фасада.",
-      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_in", "input_key": "application", "values": [0, 4] }
+        ]
+      },
       "formula": {
         "type": "area_consumption",
         "totals_key": "area",
@@ -198,7 +212,8 @@
         "type": "or",
         "any": [
           { "type": "input_eq", "input_key": "insulationType", "value": 3 },
-          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [1, 2, 3] }
         ]
       },
       "formula": {

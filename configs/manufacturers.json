@@ -138,7 +138,8 @@
         "country": "Россия",
         "specs": {
           "insulationTypeId": 1,
-          "plateSizeId": 0,
+          "plateSizeId": 3,
+          "plateAreaM2": 0.693,
           "thicknessOptions": [20, 30, 50, 100],
           "packPieces": { "20": 20, "30": 13, "50": 8, "100": 4 },
           "density": 25,
@@ -151,7 +152,8 @@
         "country": "Россия",
         "specs": {
           "insulationTypeId": 1,
-          "plateSizeId": 0,
+          "plateSizeId": 3,
+          "plateAreaM2": 0.693,
           "thicknessOptions": [50, 100],
           "packPieces": { "50": 8, "100": 4 },
           "density": 29,
@@ -164,7 +166,8 @@
         "country": "Россия",
         "specs": {
           "insulationTypeId": 1,
-          "plateSizeId": 0,
+          "plateSizeId": 3,
+          "plateAreaM2": 0.693,
           "thicknessOptions": [20, 30, 50, 100],
           "packPieces": { "20": 20, "30": 13, "50": 8, "100": 4 },
           "density": 26,

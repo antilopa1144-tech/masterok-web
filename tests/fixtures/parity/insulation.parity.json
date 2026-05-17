@@ -1,11 +1,11 @@
 {
   "calculator_id": "insulation",
   "formula_version": "insulation-canonical-v1",
-  "generated_at": "2026-05-16T08:06:51.505Z",
+  "generated_at": "2026-05-17T12:00:00.000Z",
   "cases": [
     {
       "id": "defaults",
-      "description": "Default inputs for insulation",
+      "description": "Default inputs for insulation (СФТК, минвата 100 мм, 40 м²)",
       "inputs": {
         "area": 40,
         "insulationType": 0,
@@ -16,7 +16,7 @@
         "piecesPerPack": 0,
         "climateZone": 1,
         "layerScheme": 0,
-        "density": 45,
+        "density": 80,
         "application": 0
       },
       "expected_totals": {
@@ -44,11 +44,10 @@
         "recPurchase": 66,
         "maxPurchase": 84
       },
-      "expected_materials_count": 7,
+      "expected_materials_count": 6,
       "expected_material_names": [
         "Минеральная вата 1200×600 × 100 мм",
         "Дюбели тарельчатые",
-        "Гидроветрозащитная мембрана (снаружи)",
         "Клей фасадный для плит (25 кг)",
         "Стеклосетка фасадная (армирующая)",
         "Базовая штукатурка армирующего слоя (25 кг)",
