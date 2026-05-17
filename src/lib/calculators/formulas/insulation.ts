@@ -106,24 +106,35 @@ export const insulationDef: CalculatorDefinition = {
       hideIf: { key: "productId", op: "gt", value: 0 },
     },
     {
+      key: "climateZone",
+      label: "Климатическая зона (СП 50.13330)",
+      type: "select",
+      defaultValue: 1,
+      options: [
+        { value: 0, label: "Юг — Краснодар, Сочи, Крым, Ростов" },
+        { value: 1, label: "Центр — Москва, СПб, Поволжье" },
+        { value: 2, label: "Урал, Северо-Запад" },
+        { value: 3, label: "Сибирь — Новосибирск, Иркутск, Красноярск" },
+        { value: 4, label: "Крайний Север — Якутск, Норильск, Мурманск" },
+      ],
+      hint: "При смене региона толщина подставится автоматически по рекомендации СП 50.13330 (можно изменить вручную).",
+    },
+    {
       key: "thickness",
       label: "Толщина утеплителя",
       type: "select",
-      defaultValue: 100,
+      defaultValue: 150,
       options: [
-        { value: 50, label: "50 мм (Юг)" },
-        { value: 80, label: "80 мм (Юг)" },
-        { value: 100, label: "100 мм (Центр, минимум)" },
-        { value: 150, label: "150 мм (Центр–Урал, рекомендация)" },
-        { value: 200, label: "200 мм (Сибирь)" },
-        { value: 250, label: "250 мм (Крайний Север)" },
-        { value: 300, label: "300 мм (Крайний Север, рекомендация)" },
+        { value: 50, label: "50 мм" },
+        { value: 80, label: "80 мм" },
+        { value: 100, label: "100 мм" },
+        { value: 150, label: "150 мм" },
+        { value: 200, label: "200 мм" },
+        { value: 250, label: "250 мм" },
+        { value: 300, label: "300 мм" },
       ],
-      // Если выбрана конкретная линейка бренда — заменяем опции на те, которые
-      // эта линейка реально выпускает (specs.thicknessOptions). Например,
-      // у Пеноплэкс Комфорт это [20, 30, 50, 100] — пользователь не сможет
-      // выбрать 80 мм или 150 мм, которых у этого продукта нет.
       optionsFromProduct: true,
+      hint: "Подбирается по климатической зоне; для выбранной линейки — только реальные толщины с этикетки.",
     },
     {
       key: "plateSize",
@@ -182,6 +193,8 @@ export const insulationDef: CalculatorDefinition = {
       // показываем всегда: и без бренда (выбор пользователя), и с брендом
       // (информативно — пользователь видит плотность линейки, см. hint).
       hideIf: [
+        { key: "productId", op: "gt", value: 0 },
+        { key: "materialForm", op: "ne", value: INSULATION_FORM_SLABS },
         { key: "insulationType", op: "ne", value: 0 },
       ],
     },
@@ -200,21 +213,10 @@ export const insulationDef: CalculatorDefinition = {
         { value: 12, label: "12 шт (минвата 50 мм)" },
       ],
       hint: "По умолчанию калькулятор сам подбирает упаковку по толщине: для минваты ~600 мм / толщина, для ЭППС ~400 мм / толщина. Если на пачке указано другое — выберите вручную.",
-      hideIf: { key: "productId", op: "gt", value: 0 },
-    },
-    {
-      key: "climateZone",
-      label: "Климатическая зона (СП 50.13330)",
-      type: "select",
-      defaultValue: 1,
-      options: [
-        { value: 0, label: "Юг — Краснодар, Сочи, Крым, Ростов" },
-        { value: 1, label: "Центр — Москва, СПб, Поволжье" },
-        { value: 2, label: "Урал, Северо-Запад" },
-        { value: 3, label: "Сибирь — Новосибирск, Иркутск, Красноярск" },
-        { value: 4, label: "Крайний Север — Якутск, Норильск, Мурманск" },
+      hideIf: [
+        { key: "productId", op: "gt", value: 0 },
+        { key: "materialForm", op: "ne", value: INSULATION_FORM_SLABS },
       ],
-      hint: "Калькулятор проверит толщину утепления по нормам СП 50.13330 для вашего региона и подскажет если её мало.",
     },
   ],
   calculate(inputs) {

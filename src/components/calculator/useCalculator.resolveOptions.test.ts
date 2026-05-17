@@ -56,6 +56,32 @@ describe("resolveFieldOptions — динамические опции от бр�
   });
 });
 
+describe("resolveFieldOptions — каталог утеплителя (productId)", () => {
+  const productField: CalculatorField = {
+    key: "productId",
+    label: "Линейка",
+    type: "select",
+    defaultValue: 1,
+    options: [],
+  };
+
+  it("плиты: минвата, пеноплекс, пенопласт", () => {
+    const r = resolveFieldOptions(productField, { materialForm: 0 });
+    const labels = r?.map((o) => o.label).join(" ") ?? "";
+    expect(labels).toContain("Лайт Баттс");
+    expect(labels).toContain("Пеноплэкс");
+    expect(labels).not.toContain("Тепло Roll");
+  });
+
+  it("рулоны: только рулонные линейки", () => {
+    const r = resolveFieldOptions(productField, { materialForm: 1 });
+    const labels = r?.map((o) => o.label).join(" ") ?? "";
+    expect(labels).toContain("Техно 37");
+    expect(labels).not.toContain("Лайт Баттс");
+    expect(labels).not.toContain("Пеноплэкс");
+  });
+});
+
 describe("shouldHideField — декларативные условия", () => {
   it("hideIf gt: скрывает когда значение больше", () => {
     const f: CalculatorField = {

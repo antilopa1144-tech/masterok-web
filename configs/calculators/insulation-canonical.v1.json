@@ -150,6 +150,7 @@
         "all": [
           { "type": "input_in", "input_key": "insulationType", "values": [0, 1, 2] },
           { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_eq", "input_key": "productForm", "value": 0 },
           { "type": "input_in", "input_key": "application", "values": [0, 4] }
         ]
       },
@@ -171,6 +172,7 @@
         "type": "and",
         "all": [
           { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_eq", "input_key": "productForm", "value": 0 },
           { "type": "input_in", "input_key": "application", "values": [0, 4] }
         ]
       },
@@ -191,6 +193,7 @@
         "type": "and",
         "all": [
           { "type": "input_eq", "input_key": "mountSystem", "value": 0 },
+          { "type": "input_eq", "input_key": "productForm", "value": 0 },
           { "type": "input_in", "input_key": "application", "values": [0, 4] }
         ]
       },
@@ -213,6 +216,7 @@
         "any": [
           { "type": "input_eq", "input_key": "insulationType", "value": 3 },
           { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "productForm", "values": [1, 2] },
           { "type": "input_in", "input_key": "application", "values": [1, 2, 3] }
         ]
       },

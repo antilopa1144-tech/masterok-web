@@ -3,7 +3,8 @@ import type { InsulationCanonicalSpec } from "../../../../engine/canonical";
 import type { FactorTable } from "../../../../engine/factors";
 import insulationSpec from "../../../../configs/calculators/insulation-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
-import type { CalculatorResult, SummaryCard } from "../types";
+import type { CalculatorResult, MaterialResult, SummaryCard } from "../types";
+import { getRecommendedThicknessMm } from "../insulation-smart";
 import {
   applyCatalogProductToInputs,
   getInsulationProduct,
@@ -13,12 +14,17 @@ import {
   INSULATION_FORM_SLABS,
   INSULATION_FORM_SPRAY,
   INSULATION_PRODUCT_MANUAL,
+  type InsulationCatalogProduct,
 } from "../insulation-catalog";
 import {
   checkMineralWoolDensity,
   dowelLengthMm,
   enrichInsulationInputs,
 } from "./insulation-inputs";
+import {
+  buildMaterialListBanner,
+  organizeInsulationMaterials,
+} from "../insulation-material-list";
 
 const spec = insulationSpec as unknown as InsulationCanonicalSpec;
 const factorTable = defaultFactorTables.factors as unknown as FactorTable;
@@ -40,12 +46,60 @@ function isMainInsulationCategory(category?: string): boolean {
   );
 }
 
+function formKeyFromMaterialForm(materialForm: number): InsulationCatalogProduct["form"] {
+  if (materialForm === INSULATION_FORM_ROLLS) return "rolls";
+  if (materialForm === INSULATION_FORM_SPRAY) return "spray";
+  return "slabs";
+}
+
+function enrichInsulationMaterials(
+  materials: MaterialResult[],
+  product: ReturnType<typeof getInsulationProduct>,
+  materialForm: number,
+  thickness: number,
+): MaterialResult[] {
+  return materials.map((m) => {
+    if (!isMainInsulationCategory(m.category)) return m;
+    const parts: string[] = [];
+    if (product) {
+      if (product.form === "slabs" && product.plateLengthMm && product.plateWidthMm) {
+        parts.push(
+          `Плита ${product.plateLengthMm}×${product.plateWidthMm} мм · ${product.plateAreaM2} м²`,
+        );
+      } else if (product.form === "rolls" && product.rollWidthMm && product.rollLengthMm) {
+        parts.push(
+          `Рулон ${product.rollWidthMm}×${product.rollLengthMm} мм · ${product.rollAreaM2} м²`,
+        );
+      } else if (product.form === "spray") {
+        parts.push(`Напыление · плотность укладки ~${product.ecowoolDensityKgM3 ?? 35} кг/м³`);
+      }
+      if (product.densityKgM3) parts.push(`${product.densityKgM3} кг/м³`);
+    } else if (materialForm === INSULATION_FORM_ROLLS) {
+      parts.push("Рулон (ручной подбор размера)");
+    }
+    parts.push(`Слой ${thickness} мм`);
+    if (m.packageInfo && m.packageInfo.count > 0) {
+      parts.push(
+        `${m.packageInfo.count} ${m.packageInfo.packageUnit} × ${m.packageInfo.size} ${m.unit}`,
+      );
+    }
+    return { ...m, subtitle: parts.join(" · ") };
+  });
+}
+
 export function runInsulationCalculate(
   inputs: Record<string, number>,
 ): CalculatorResult {
   const brandWarnings: string[] = [];
   const productId = Math.round(inputs.productId ?? INSULATION_PRODUCT_MANUAL);
-  const product = getInsulationProduct(productId);
+  const userMaterialForm = Math.round(inputs.materialForm ?? INSULATION_FORM_SLABS);
+  let product = getInsulationProduct(productId);
+  if (product && product.form !== formKeyFromMaterialForm(userMaterialForm)) {
+    brandWarnings.push(
+      `Линейка «${product.manufacturer} ${product.lineName}» не подходит к форме «${userMaterialForm === INSULATION_FORM_ROLLS ? "рулоны" : userMaterialForm === INSULATION_FORM_SPRAY ? "напыление" : "плиты"}». Выберите линейку из списка для этой формы.`,
+    );
+    product = null;
+  }
   const hasCatalogProduct = product != null;
 
   const { enriched: enrichedFromApp, warnings: applicationWarnings } = enrichInsulationInputs(
@@ -134,15 +188,36 @@ export function runInsulationCalculate(
     };
   }
 
-  const materials = canonical.materials;
+  const thickness = Number(inputs.thickness ?? 100);
+  const climateZone = Math.round(inputs.climateZone ?? 1);
+  const recThickness = getRecommendedThicknessMm(climateZone);
+  if (thickness < recThickness - 1) {
+    brandWarnings.push(
+      `Толщина ${thickness} мм меньше рекомендуемой для выбранного региона (${recThickness} мм по СП 50.13330).`,
+    );
+  }
+
+  const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
+  const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
+  const area = Number(inputs.area ?? 0);
+
+  const materialsCtx = {
+    materialForm,
+    mountSystem,
+    area,
+    thickness,
+    product,
+  };
+  let materials = organizeInsulationMaterials(
+    enrichInsulationMaterials(canonical.materials, product, materialForm, thickness),
+    materialsCtx,
+  );
+  const materialListBanner = buildMaterialListBanner(materialsCtx);
   const totals: Record<string, number> = {
     ...canonical.totals,
     productId,
     materialForm,
   };
-
-  const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
-  const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
   let effectiveDensity = 0;
   if (product?.densityKgM3) {
     effectiveDensity = product.densityKgM3;
@@ -158,9 +233,6 @@ export function runInsulationCalculate(
       canonical.practicalNotes = [...(canonical.practicalNotes ?? []), ...densityCheck.practicalNotes];
     }
   }
-
-  const area = Number(inputs.area ?? 0);
-  const thickness = Number(inputs.thickness ?? 100);
 
   if (product?.note) {
     canonical.practicalNotes = [`${product.manufacturer} ${product.lineName}: ${product.note}`, ...(canonical.practicalNotes ?? [])];
@@ -212,6 +284,7 @@ export function runInsulationCalculate(
     canonicalSpecId: canonical.canonicalSpecId,
     practicalNotes: canonical.practicalNotes ?? [],
     summaryCards,
+    materialListBanner,
   };
 }
 

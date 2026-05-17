@@ -122,6 +122,10 @@ export interface MaterialResult {
   purchaseQty?: number;
   category?: string;
   packageInfo?: { count: number; size: number; packageUnit: string };
+  /** Доп. строка под названием (размер плиты, упаковка). */
+  subtitle?: string;
+  /** Основная позиция в списке (утеплитель). */
+  highlight?: boolean;
 }
 
 
@@ -179,6 +183,8 @@ export interface CalculatorResult {
   accuracyExplanation?: import("../../../engine/accuracy").AccuracyExplanation;
   /** Кастомные карточки в шапке результата (если есть — заменяют стандартные). */
   summaryCards?: SummaryCard[];
+  /** Баннер над списком материалов (калькулятор утеплителя). */
+  materialListBanner?: string;
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;

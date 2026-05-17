@@ -7,6 +7,7 @@ import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { pluralizeRu, pluralizePackageUnit, PACKAGE_UNIT_FORMS, displayUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
+import { InsulationMaterialList } from "./InsulationMaterialList";
 import { getPrices, setPrice, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import { addFeedback } from "@/lib/storage/feedback";
 import {
@@ -696,7 +697,12 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                 && `${displayVal} ${displayUnit}` !== `${reserveVal} ${reserveUnit}`;
               return (
                 <div key={i} className="grid grid-cols-[1fr_auto] items-start gap-3 py-3 transition-colors">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug min-w-0 break-words">{m.name}</span>
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug break-words">{m.name}</span>
+                    {m.subtitle && (
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 leading-snug">{m.subtitle}</p>
+                    )}
+                  </div>
                   <div className="text-right shrink-0 max-w-[12rem]">
                     <div className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">
                       {CALCULATOR_UI_TEXT.toBuyPrefix}
@@ -1908,7 +1914,14 @@ export function ResultBlock({
                 </span>
               )}
             </div>
-            <MaterialList materials={result.materials} />
+            {calculatorSlug === "uteplenie" ? (
+              <InsulationMaterialList
+                materials={result.materials}
+                banner={result.materialListBanner}
+              />
+            ) : (
+              <MaterialList materials={result.materials} />
+            )}
           </div>
 
           <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">

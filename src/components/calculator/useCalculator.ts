@@ -9,6 +9,10 @@ import {
   getDefaultProductIdForForm,
   getProductThicknessOptions,
 } from "@/lib/calculators/insulation-catalog";
+import {
+  fieldUsesDynamicOptions,
+  thicknessForClimateAndProduct,
+} from "@/lib/calculators/insulation-smart";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
 import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
@@ -241,9 +245,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       // у полей с `optionsFromBrand` текущие значения могут оказаться вне
       // допустимого набора (например, у Пеноплэкс Комфорт нет 80 мм). В этом
       // случае подменяем на ближайшее значение из новых опций.
-      if (key === "manufacturer" || key === "materialForm") {
+      if (key === "manufacturer" || key === "materialForm" || key === "productId") {
         for (const f of calculator.fields) {
-          if (!f.optionsFromBrand && !f.optionsFromProduct) continue;
+          if (!fieldUsesDynamicOptions(f)) continue;
           const opts = resolveFieldOptions(f, next);
           if (!opts || opts.length === 0) continue;
           const current = next[f.key];
@@ -259,7 +263,27 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         next.productId = getDefaultProductIdForForm(value);
       }
 
-      if (key === "productId" || key === "materialForm") {
+      if (calculator.id === "insulation") {
+        if (key === "climateZone" || key === "materialForm") {
+          next.thickness = thicknessForClimateAndProduct(
+            Math.round(next.climateZone ?? 1),
+            Math.round(next.productId ?? 0),
+            calculator.fields,
+          );
+        } else if (key === "productId") {
+          const thicknessOpts = resolveFieldOptions(
+            calculator.fields.find((f) => f.key === "thickness")!,
+            next,
+          );
+          if (thicknessOpts?.length && !thicknessOpts.some((o) => o.value === next.thickness)) {
+            next.thickness = thicknessForClimateAndProduct(
+              Math.round(next.climateZone ?? 1),
+              Math.round(next.productId ?? 0),
+              calculator.fields,
+            );
+          }
+        }
+      } else if (key === "productId" || key === "materialForm") {
         const thicknessOpts = resolveFieldOptions(
           calculator.fields.find((f) => f.key === "thickness")!,
           next,
@@ -275,7 +299,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       runAutoCalc(next);
       return next;
     });
-  }, [runAutoCalc, calculator.fields]);
+  }, [runAutoCalc, calculator.fields, calculator.id]);
 
   // Recalculate when accuracy mode changes
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
@@ -441,9 +465,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       return true;
     })
     .map((f) => {
-      if (!f.optionsFromBrand) return f;
+      if (!fieldUsesDynamicOptions(f)) return f;
       const resolved = resolveFieldOptions(f, values);
-      if (resolved === f.options) return f;
+      if (!resolved) return f;
       return { ...f, options: resolved };
     });
 

@@ -357,6 +357,7 @@ export function computeCanonicalInsulation(
       mountSystem,
       application,
       thickness,
+      productForm,
     };
     const companions = evaluateCompanionMaterials(spec.companion_materials, {
       inputs: companionInputs,

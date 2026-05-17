@@ -296,6 +296,13 @@ describe("insulation formula — сравнение типов по стоимо
     expect(compNote).toContain("ЭППС");
   });
 
+  it("материалы с подзаголовком размера плиты из каталога", () => {
+    const r = calc({ area: 40, thickness: 100, productId: 1, materialForm: INSULATION_FORM_SLABS });
+    const main = r.materials.find((m) => m.category === "Утеплитель (плиты)");
+    expect(main?.subtitle).toContain("1200×600");
+    expect(main?.subtitle).toContain("37 кг/м³");
+  });
+
   it("с выбранной линейкой — сравнение типов не дублируется", () => {
     const r = calc({ area: 40, thickness: 100, productId: 5, materialForm: INSULATION_FORM_SLABS });
     const multi = r.practicalNotes?.filter((n) => n.includes("Минеральная вата") && n.includes("ЭППС"));

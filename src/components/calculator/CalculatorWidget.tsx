@@ -139,7 +139,13 @@ export default function CalculatorWidget({ calculator }: Props) {
 
         {visibleFields.map((field) => (
           <FieldInput
-            key={field.key}
+            key={
+              calculator.id === "insulation" && field.key === "productId"
+                ? `${field.key}-${values.materialForm ?? 0}`
+                : calculator.id === "insulation" && field.key === "thickness"
+                  ? `${field.key}-${values.productId ?? 0}-${values.climateZone ?? 1}`
+                  : field.key
+            }
             field={field}
             value={values[field.key] ?? field.defaultValue}
             onChange={(v) => handleChange(field.key, v)}
