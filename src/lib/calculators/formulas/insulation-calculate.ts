@@ -199,11 +199,15 @@ export function runInsulationCalculate(
 
   const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
   const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
+  const application = Math.round(
+    Number(enrichedInputs.application ?? inputs.application ?? 0),
+  );
   const area = Number(inputs.area ?? 0);
 
   const materialsCtx = {
     materialForm,
     mountSystem,
+    application,
     area,
     thickness,
     product,
@@ -217,6 +221,7 @@ export function runInsulationCalculate(
     ...canonical.totals,
     productId,
     materialForm,
+    application,
   };
   let effectiveDensity = 0;
   if (product?.densityKgM3) {
@@ -227,7 +232,7 @@ export function runInsulationCalculate(
 
   if (insulationType === 0 && effectiveDensity > 0) {
     totals.effectiveDensity = effectiveDensity;
-    const densityCheck = checkMineralWoolDensity(effectiveDensity, mountSystem);
+    const densityCheck = checkMineralWoolDensity(effectiveDensity, mountSystem, application);
     brandWarnings.push(...densityCheck.warnings);
     if (densityCheck.practicalNotes.length > 0) {
       canonical.practicalNotes = [...(canonical.practicalNotes ?? []), ...densityCheck.practicalNotes];

@@ -1,5 +1,9 @@
 import type { MaterialResult } from "./types";
 import {
+  applicationMountLabel,
+  INSULATION_APPLICATION,
+} from "./insulation-application";
+import {
   INSULATION_FORM_ROLLS,
   INSULATION_FORM_SLABS,
   INSULATION_FORM_SPRAY,
@@ -89,35 +93,45 @@ function buildMainSubtitle(
 export interface InsulationMaterialListContext {
   materialForm: number;
   mountSystem: number;
+  application: number;
   area: number;
   thickness: number;
   product: InsulationCatalogProduct | null;
 }
 
 export function buildMaterialListBanner(ctx: InsulationMaterialListContext): string {
-  const { materialForm, mountSystem, area, thickness, product } = ctx;
+  const { materialForm, mountSystem, application, area, thickness, product } = ctx;
   const productName = product ? `${product.manufacturer} ${product.lineName}` : null;
+  const appLabel = applicationMountLabel(application, mountSystem, materialForm);
+  const place =
+    application === INSULATION_APPLICATION.FACADE
+      ? "Фасад"
+      : application === INSULATION_APPLICATION.INTERNAL
+        ? "Внутренняя стена"
+        : application === INSULATION_APPLICATION.ROOF
+          ? "Кровля"
+          : application === INSULATION_APPLICATION.FLOOR
+            ? "Пол / перекрытие"
+            : application === INSULATION_APPLICATION.FOUNDATION
+              ? "Цоколь / фундамент"
+              : "Утепление";
 
-  if (materialForm === INSULATION_FORM_ROLLS) {
-    const mount =
-      mountSystem === 0
-        ? "для рулонов выберите каркасную систему"
-        : "каркас + мембраны";
-    return `Рулон · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""} · ${mount}`;
-  }
   if (materialForm === INSULATION_FORM_SPRAY) {
-    return `Напыляемая эковата · ${area} м² × ${thickness} мм · каркас, без СФТК`;
+    return `${place} · напыляемая эковата · ${area} м² × ${thickness} мм · ${appLabel}`;
   }
-  if (mountSystem === 0) {
+  if (materialForm === INSULATION_FORM_ROLLS) {
+    return `${place} · рулон · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""} · ${appLabel}`;
+  }
+  if (mountSystem === 0 && application === INSULATION_APPLICATION.FACADE) {
     const type =
       product?.insulationTypeId === 1
         ? "пеноплекс"
         : product?.insulationTypeId === 2
           ? "пенопласт"
           : "минвата";
-    return `СФТК (мокрый фасад) · ${type} · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""}`;
+    return `${place} · СФТК · ${type} · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""}`;
   }
-  return `Каркас / вентфасад · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""} · мембраны + брус`;
+  return `${place} · ${area} м² × ${thickness} мм${productName ? ` · ${productName}` : ""} · ${appLabel}`;
 }
 
 /** Упорядочивает и обогащает список материалов под калькулятор утеплителя. */

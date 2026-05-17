@@ -131,25 +131,35 @@ describe("insulation formula — различие результатов по т
     expect(spray.summaryCards?.[2].hint).toContain("напыление");
   });
 
-  it("СФТК: пеноплекс даёт клей, минвата в каркасе — мембраны", () => {
+  it("СФТК: пеноплекс даёт клей; вентфасад — ветрозащита; внутренняя — пароизоляция", () => {
     const eps = calc({
       area: 40,
       thickness: 100,
       productId: 5,
       materialForm: INSULATION_FORM_SLABS,
       mountSystem: 0,
+      application: 0,
     });
-    const woolFrame = calc({
+    const woolVentFacade = calc({
       area: 40,
       thickness: 100,
       productId: 1,
       materialForm: INSULATION_FORM_SLABS,
       mountSystem: 1,
+      application: 0,
+    });
+    const woolInterior = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      application: 1,
     });
     expect(eps.materials.some((m) => m.name.toLowerCase().includes("клей фасадный"))).toBe(true);
-    expect(woolFrame.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(true);
-    expect(woolFrame.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(true);
     expect(eps.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(false);
+    expect(woolVentFacade.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(true);
+    expect(woolVentFacade.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(false);
+    expect(woolInterior.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(true);
+    expect(woolInterior.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(false);
   });
 });
 
@@ -279,6 +289,60 @@ describe("insulation formula — назначение (application)", () => {
     expect(r.totals.mountSystem).toBe(1);
     expect(r.materials.some((m) => m.name.includes("Дюбели"))).toBe(false);
     expect(r.materials.some((m) => m.name.toLowerCase().includes("стеклосетка"))).toBe(false);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(true);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("брус"))).toBe(true);
+  });
+
+  it("пол минвата: пароизоляция, без ветрозащиты и бруса каркаса", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      application: 3,
+      mountSystem: 0,
+    });
+    expect(r.totals.mountSystem).toBe(1);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(true);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(false);
+    expect(r.materials.some((m) => m.name.includes("Брус 50×50"))).toBe(false);
+    expect(r.materials.some((m) => m.name.includes("Клей фасадный"))).toBe(false);
+    expect(r.materialListBanner).toContain("Пол");
+  });
+
+  it("пол пеноплекс: без мембран и каркаса", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 5,
+      application: 3,
+    });
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(false);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(false);
+    expect(r.materials.some((m) => m.name.includes("Брус"))).toBe(false);
+  });
+
+  it("внутренняя стена: пароизоляция без ветрозащиты", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      application: 1,
+    });
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(true);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(false);
+    expect(r.materials.some((m) => m.name.includes("Брус"))).toBe(true);
+  });
+
+  it("цоколь: без пароизоляции и бруса", () => {
+    const r = calc({
+      area: 30,
+      thickness: 100,
+      productId: 5,
+      application: 4,
+    });
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц"))).toBe(false);
+    expect(r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит"))).toBe(false);
+    expect(r.materials.some((m) => m.name.includes("Брус"))).toBe(false);
   });
 });
 

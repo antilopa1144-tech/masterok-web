@@ -64,11 +64,33 @@ const scenarios: Array<{ name: string; inputs: Record<string, number> }> = [
   },
   {
     name: "Рулон Техно 37",
-    inputs: { materialForm: 1, productId: 8, thickness: 100, mountSystem: 1, climateZone: 1 },
+    inputs: {
+      materialForm: 1,
+      productId: 8,
+      thickness: 100,
+      mountSystem: 1,
+      application: 2,
+      climateZone: 1,
+    },
   },
   {
     name: "Эковата",
-    inputs: { materialForm: 2, productId: 10, thickness: 100, mountSystem: 1, climateZone: 1 },
+    inputs: {
+      materialForm: 2,
+      productId: 10,
+      thickness: 100,
+      mountSystem: 1,
+      application: 2,
+      climateZone: 1,
+    },
+  },
+  {
+    name: "Пол минвата",
+    inputs: { materialForm: 0, productId: 1, thickness: 100, application: 3, climateZone: 1 },
+  },
+  {
+    name: "Внутренняя стена",
+    inputs: { materialForm: 0, productId: 1, thickness: 100, application: 1, climateZone: 1 },
   },
 ];
 
@@ -77,7 +99,7 @@ const mainHashes = new Set<string>();
 for (const s of scenarios) {
   const r = calc(s.inputs);
   const main = mainMaterialNames(r.materials);
-  const hash = main.join(";;");
+  const hash = `${s.inputs.application ?? 0};;${s.inputs.materialForm ?? 0};;${main.join(";;")}`;
   console.log(`--- ${s.name} ---`);
   console.log("  Основное:", main[0] ?? "(нет)");
   console.log("  Сопутствующие:", companionSummary(r.materials).join("; ") || "(нет)");
@@ -105,8 +127,8 @@ for (const s of scenarios) {
     assert(!r.materials.some((m) => m.name.includes("Дюбели")), "рулон каркас: без дюбелей");
     assert(!r.materials.some((m) => m.name.includes("Клей фасадный")), "рулон: без клея СФТК");
     assert(!r.materials.some((m) => m.name.includes("Стеклосетка")), "рулон: без сетки");
-    assert(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц")), "рулон каркас: пароизоляция");
-    assert(r.materialListBanner?.includes("Рулон") ?? false, "рулон: баннер списка");
+    assert(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц")), "рулон кровля: пароизоляция");
+    assert(r.materialListBanner?.includes("Кровля") ?? false, "рулон: баннер кровли");
     assert(r.materials.some((m) => m.highlight), "рулон: highlight основного");
   }
   if (s.name === "Эковата") {
@@ -114,7 +136,19 @@ for (const s of scenarios) {
     assert(r.summaryCards?.[0]?.unit === "мешков", "эковата: мешки");
     assert(!r.materials.some((m) => m.name.includes("Дюбели")), "эковата: без дюбелей");
     assert(!r.materials.some((m) => m.name.includes("Клей фасадный")), "эковата: без клея СФТК");
-    assert(r.materialListBanner?.includes("Напыляемая") ?? false, "эковата: баннер");
+    assert(
+      r.materialListBanner?.toLowerCase().includes("напыляем") ?? false,
+      "эковата: баннер",
+    );
+  }
+  if (s.name === "Пол минвата") {
+    assert(!r.materials.some((m) => m.name.includes("Брус 50×50")), "пол: без бруса");
+    assert(!r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит")), "пол: без ветрозащиты");
+    assert(r.materialListBanner?.includes("Пол") ?? false, "пол: баннер");
+  }
+  if (s.name === "Внутренняя стена") {
+    assert(!r.materials.some((m) => m.name.toLowerCase().includes("ветрозащит")), "внутри: без ветрозащиты");
+    assert(r.materials.some((m) => m.name.toLowerCase().includes("пароизоляц")), "внутри: пароизоляция");
   }
 }
 

@@ -9,6 +9,7 @@ import {
   getDefaultProductIdForForm,
   getProductThicknessOptions,
 } from "@/lib/calculators/insulation-catalog";
+import { getApplicationProfile } from "@/lib/calculators/insulation-application";
 import {
   fieldUsesDynamicOptions,
   thicknessForClimateAndProduct,
@@ -264,6 +265,11 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       }
 
       if (calculator.id === "insulation") {
+        if (key === "application") {
+          const profile = getApplicationProfile(Math.round(value));
+          next.mountSystem =
+            profile.fixedMountSystem ?? profile.defaultMountSystem;
+        }
         if (key === "climateZone" || key === "materialForm") {
           next.thickness = thicknessForClimateAndProduct(
             Math.round(next.climateZone ?? 1),

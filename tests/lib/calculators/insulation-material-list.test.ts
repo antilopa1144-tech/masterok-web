@@ -27,6 +27,7 @@ describe("organizeInsulationMaterials", () => {
     const out = organizeInsulationMaterials(materials, {
       materialForm: 0,
       mountSystem: 0,
+      application: 0,
       area: 50,
       thickness: 100,
       product: null,
@@ -46,6 +47,7 @@ describe("organizeInsulationMaterials", () => {
     const out = organizeInsulationMaterials(materials, {
       materialForm: 0,
       mountSystem: 0,
+      application: 0,
       area: 50,
       thickness: 100,
       product: null,
@@ -59,6 +61,7 @@ describe("buildMaterialListBanner", () => {
     const banner = buildMaterialListBanner({
       materialForm: 0,
       mountSystem: 0,
+      application: 0,
       area: 50,
       thickness: 100,
       product: null,
@@ -71,11 +74,12 @@ describe("buildMaterialListBanner", () => {
     const banner = buildMaterialListBanner({
       materialForm: 1,
       mountSystem: 1,
+      application: 2,
       area: 40,
       thickness: 100,
       product: null,
     });
-    expect(banner).toContain("Рулон");
+    expect(banner).toContain("Кровля");
     expect(banner).not.toContain("СФТК");
   });
 });

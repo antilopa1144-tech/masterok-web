@@ -255,20 +255,35 @@ describe("companion materials — сценарии", () => {
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("брус"))).toBe(false);
   });
 
-  it("каркасная система с минватой: пароизоляция изнутри, ветрозащита, брус, саморезы — БЕЗ дюбелей/клея/грунта/штукатурки", () => {
-    const r = calc({ accuracyMode: "basic", insulationType: 0, mountSystem: 1 });
+  it("вентфасад с минватой: ветрозащита, без пароизоляции и бруса", () => {
+    const r = calc({
+      accuracyMode: "basic",
+      insulationType: 0,
+      mountSystem: 1,
+      application: 0,
+    });
 
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("пароизоляц"))).toBe(true);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("гидроветрозащитная"))).toBe(true);
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("брус"))).toBe(true);
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("саморез"))).toBe(true);
-
-    // Этих быть НЕ должно в каркасе
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("пароизоляц"))).toBe(false);
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("брус"))).toBe(false);
     expect(hasMaterial(r, (n) => n.includes("Дюбели"))).toBe(false);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("клей"))).toBe(false);
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("грунтовка"))).toBe(false);
+  });
+
+  it("каркас внутренней стены: пароизоляция, брус, саморезы — без ветрозащиты и СФТК", () => {
+    const r = calc({
+      accuracyMode: "basic",
+      insulationType: 0,
+      mountSystem: 1,
+      application: 1,
+    });
+
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("пароизоляц"))).toBe(true);
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("гидроветрозащитная"))).toBe(false);
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("брус"))).toBe(true);
+    expect(hasMaterial(r, (n) => n.toLowerCase().includes("саморез"))).toBe(true);
+    expect(hasMaterial(r, (n) => n.includes("Дюбели"))).toBe(false);
     expect(hasMaterial(r, (n) => n.toLowerCase().includes("стеклосетка"))).toBe(false);
-    expect(hasMaterial(r, (n) => n.toLowerCase().includes("базовая штукатурка"))).toBe(false);
   });
 
   it("ЭППС в штукатурном фасаде: клей есть, мембран НЕТ (это для минваты)", () => {
@@ -308,7 +323,13 @@ describe("companion materials — сценарии", () => {
   });
 
   it("брус каркаса на 40 м²: 2.2 пог.м/м² × 1.05 = 92.4 пог.м → ceil 93", () => {
-    const r = calc({ accuracyMode: "basic", insulationType: 0, mountSystem: 1, area: 40 });
+    const r = calc({
+      accuracyMode: "basic",
+      insulationType: 0,
+      mountSystem: 1,
+      application: 1,
+      area: 40,
+    });
     const lumber = r.materials.find((m) => m.name.toLowerCase().includes("брус"));
     expect(lumber).toBeDefined();
     expect(lumber!.quantity).toBeCloseTo(92.4, 1);

@@ -83,7 +83,8 @@
         "type": "and",
         "all": [
           { "type": "input_eq", "input_key": "insulationType", "value": 0 },
-          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [1, 2, 3] }
         ]
       },
       "formula": {
@@ -109,7 +110,8 @@
               { "type": "input_eq", "input_key": "insulationType", "value": 3 }
             ]
           },
-          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [0, 2] }
         ]
       },
       "formula": {
@@ -129,7 +131,8 @@
         "type": "and",
         "all": [
           { "type": "input_eq", "input_key": "insulationType", "value": 0 },
-          { "type": "input_eq", "input_key": "mountSystem", "value": 1 }
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [1, 2, 3] }
         ]
       },
       "formula": {
@@ -234,7 +237,13 @@
       "category": "Каркас",
       "unit": "пог.м",
       "rationale": "Несущий каркас для плит/эковаты. Расход ~2.2 пог.м на м² при шаге 600 мм.",
-      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [1, 2] }
+        ]
+      },
       "formula": {
         "type": "area_consumption",
         "totals_key": "area",
@@ -248,7 +257,13 @@
       "category": "Каркас",
       "unit": "шт",
       "rationale": "Крепёж бруса каркаса к основанию.",
-      "only_when": { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+      "only_when": {
+        "type": "and",
+        "all": [
+          { "type": "input_eq", "input_key": "mountSystem", "value": 1 },
+          { "type": "input_in", "input_key": "application", "values": [1, 2] }
+        ]
+      },
       "formula": {
         "type": "area_consumption",
         "totals_key": "area",
