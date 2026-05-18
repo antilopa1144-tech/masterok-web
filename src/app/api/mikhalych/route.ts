@@ -4,8 +4,8 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 // Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
-// DeepSeek V4 Flash — вышла 2026-04-24, рвёт бенчмарки по скорости/цене.
-const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-flash";
+// DeepSeek V4 Pro — основная модель Михалыча (качество ответов прораба).
+const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-pro";
 
 // Модели, у которых по умолчанию включён reasoning / chain-of-thought и нужен
 // явный отказ от него, иначе ответ приходит в расширенном формате
