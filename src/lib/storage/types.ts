@@ -8,6 +8,14 @@ export interface StoredProject {
   updatedAt: number;
 }
 
+export interface StoredProjectMaterial {
+  name: string;
+  quantity: number;
+  unit: string;
+  /** Группа в смете (как в калькуляторе): «Арматура», «Бетон»… */
+  category?: string;
+}
+
 export interface StoredProjectEntry {
   id: string;
   projectId: string;
@@ -15,8 +23,13 @@ export interface StoredProjectEntry {
   calcTitle: string;
   slug: string;
   categorySlug: string;
-  materials: { name: string; quantity: number; unit: string }[];
+  materials: StoredProjectMaterial[];
   ts: number;
+}
+
+export interface ProjectEstimateMeta {
+  reservePercent: number;
+  deliveryRub: number;
 }
 
 export interface ProjectWithEntries extends StoredProject {

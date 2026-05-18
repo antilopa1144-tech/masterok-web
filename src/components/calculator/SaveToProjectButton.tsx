@@ -9,7 +9,7 @@ interface Props {
   calcTitle: string;
   slug: string;
   categorySlug: string;
-  materials: { name: string; quantity: number; unit: string }[];
+  materials: { name: string; quantity: number; unit: string; category?: string }[];
 }
 
 export default function SaveToProjectButton({ calcId, calcTitle, slug, categorySlug, materials }: Props) {
@@ -48,7 +48,12 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
   const handleSave = async (projectId: string) => {
     await saveEntryToProject(projectId, {
       calcId, calcTitle, slug, categorySlug,
-      materials: materials.map((m) => ({ name: m.name, quantity: m.quantity, unit: m.unit })),
+      materials: materials.map((m) => ({
+        name: m.name,
+        quantity: m.quantity,
+        unit: m.unit,
+        ...(m.category ? { category: m.category } : {}),
+      })),
       ts: Date.now(),
     });
     setSaved(projectId);

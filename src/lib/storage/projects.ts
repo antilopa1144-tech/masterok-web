@@ -75,6 +75,43 @@ export async function createProject(name: string): Promise<ProjectWithEntries> {
   return project;
 }
 
+export async function renameProject(id: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+
+  const database = await getDbOrNull();
+  if (!database) {
+    const projects = readLegacyProjects();
+    const project = projects.find((p) => p.id === id);
+    if (project) {
+      project.name = trimmed;
+      project.updatedAt = Date.now();
+      writeLegacyProjects(projects);
+    }
+    return;
+  }
+
+  await database.projects.update(id, { name: trimmed, updatedAt: Date.now() });
+}
+
+export async function deleteEntryFromProject(projectId: string, entryId: string): Promise<void> {
+  const database = await getDbOrNull();
+  if (!database) {
+    const projects = readLegacyProjects();
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+    project.entries = project.entries.filter((e) => e.id !== entryId);
+    project.updatedAt = Date.now();
+    writeLegacyProjects(projects);
+    return;
+  }
+
+  await database.transaction("rw", database.projects, database.projectEntries, async () => {
+    await database.projectEntries.delete(entryId);
+    await database.projects.update(projectId, { updatedAt: Date.now() });
+  });
+}
+
 export async function deleteProject(id: string): Promise<void> {
   const database = await getDbOrNull();
   if (!database) {

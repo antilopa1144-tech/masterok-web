@@ -1991,6 +1991,7 @@ export function ResultBlock({
                   name: m.name,
                   quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
                   unit: m.unit,
+                  category: m.category,
                 }))}
               />
             </div>
