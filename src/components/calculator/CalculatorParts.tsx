@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, type ReactNode } from "react";
 import type { CalculatorResult, CalculatorField, CalculatorDefinition } from "@/lib/calculators/types";
 import { formatNumber, type HistoryEntry } from "./useCalculator";
 import { HIDDEN_TOTALS, TOTAL_LABELS, TOTAL_UNITS, INTEGER_TOTAL_KEYS, WEIGHT_KG_TOTAL_KEYS, TOTAL_LABEL_FORMS } from "./totalsDisplay";
@@ -1684,6 +1684,7 @@ export function ResultBlock({
   calculatorSlug,
   projectSave,
   calculatorTitle,
+  reviewSlot,
 }: {
   result: CalculatorResult;
   shareState: "idle" | "copied";
@@ -1693,6 +1694,8 @@ export function ResultBlock({
   projectSave?: ResultBlockProjectSave;
   /** Короткое название калькулятора для печати/PDF. */
   calculatorTitle?: string;
+  /** Блок Михалыча сразу после сводки, перед списком материалов. */
+  reviewSlot?: ReactNode;
 }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const priceScope = calculatorSlug ? `materials:${calculatorSlug}` : PRICE_SCOPES.materials;
@@ -1903,6 +1906,11 @@ export function ResultBlock({
             )}
           </div>
         </div>
+
+
+        {reviewSlot && (
+          <div className="border-t border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-700">{reviewSlot}</div>
+        )}
 
         <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0">

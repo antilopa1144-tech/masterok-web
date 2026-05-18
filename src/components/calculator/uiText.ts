@@ -97,11 +97,19 @@ export const MIKHALYCH_WIDGET_UI_TEXT = {
   genericApiError: "Не удалось получить ответ. Попробуйте ещё раз чуть позже.",
   networkError: "Не удалось получить ответ. Проверьте соединение и попробуйте снова.",
   greetingWithContext: (calculatorTitle: string) =>
-    `Привет! Вижу, что вы работаете с **${calculatorTitle}**. Уже вижу параметры расчёта. Задавайте вопросы — отвечу с учётом ваших данных.`,
+    `Привет! Вижу полный расчёт по **${calculatorTitle}** — все материалы и параметры на месте. Задавайте вопросы, отвечу с учётом ваших цифр.`,
   greetingWithoutContext: (calculatorTitle: string) =>
     `Привет! Задайте вопрос по **${calculatorTitle}** — расскажу о технологии, нормах расхода и типичных ошибках.`,
   introDescription: "Опытный строительный мастер отвечает на вопросы о",
-  contextVisible: "✓ Михалыч видит ваши параметры расчёта",
+  contextVisible: "✓ Михалыч видит весь расчёт — все материалы",
+  reviewTitle: "Михалыч посмотрел расчёт",
+  reviewSubtitle: "Краткий разбор по вашим цифрам и полному списку материалов",
+  reviewThinking: "Докручиваю мысль…",
+  askMore: "Уточнить в чате →",
+  hideReview: "Скрыть советы Михалыча",
+  reviewError: "Не вышло получить комментарий. Можно спросить в чате ниже.",
+  rateLimitedReview: "Михалыч перегружен — попробуйте через минуту или откройте чат.",
+  retryReview: "Повторить",
 } as const;
 
 export function getMikhalychAssistantErrorMessage(status?: number) {

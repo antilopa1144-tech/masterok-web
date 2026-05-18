@@ -14,6 +14,8 @@ import { MIKHALYCH_WIDGET_UI_TEXT as UI_TEXT, getMikhalychAssistantErrorMessage 
 interface Props {
   calculatorTitle: string;
   calcContext?: string;
+  /** Увеличивается снаружи — открыть чат (например из блока «посмотрел расчёт»). */
+  openSignal?: number;
 }
 
 interface Message {
@@ -21,7 +23,7 @@ interface Message {
   content: string;
 }
 
-export default function MikhalychWidget({ calculatorTitle, calcContext }: Props) {
+export default function MikhalychWidget({ calculatorTitle, calcContext, openSignal = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -38,6 +40,10 @@ export default function MikhalychWidget({ calculatorTitle, calcContext }: Props)
       if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
 
   useEffect(() => {
     if (open && messages.length === 0) {

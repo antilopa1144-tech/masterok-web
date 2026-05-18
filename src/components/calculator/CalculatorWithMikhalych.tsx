@@ -1,17 +1,17 @@
 "use client";
 
-import type { CalculatorField } from "@/lib/calculators/types";
+import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  useCalculator,
-  formatNumber,
-  type CalculatorWidgetProps,
-} from "./useCalculator";
+import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
+import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
+import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
+import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
+import CompanionLinks from "./CompanionLinks";
+import { CALCULATOR_UI_TEXT } from "./uiText";
+import Staircase3DWrapper from "./Staircase3DWrapper";
+import Roof3DWrapper from "./Roof3DWrapper";
 
-// Михалыч (AI-чат с react-markdown + remark-gfm + большим UI) — самый тяжёлый
-// клиентский кусок этой страницы. Грузим его лениво, чтобы не блокировать
-// First Load JS виджета калькулятора. Это экономит ~80-100 KB и ~200ms TBT.
-// SSR отключён, потому что Михалычу нужен браузерный fetch streaming + localStorage.
 const MikhalychWidget = dynamic(() => import("./MikhalychWidget"), {
   ssr: false,
   loading: () => (
@@ -22,49 +22,23 @@ const MikhalychWidget = dynamic(() => import("./MikhalychWidget"), {
     </div>
   ),
 });
-import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
-import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
-import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
-import CompanionLinks from "./CompanionLinks";
-import { CALCULATOR_UI_TEXT } from "./uiText";
-import Staircase3DWrapper from "./Staircase3DWrapper";
-import Roof3DWrapper from "./Roof3DWrapper";
+
+const MikhalychCalcReview = dynamic(() => import("./MikhalychCalcReview"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+  ),
+});
 
 export type { CalculatorWidgetProps };
 
-/** Генерирует человекочитаемый контекст для Михалыча */
-function buildCalcContext(
-  calculatorTitle: string,
-  fields: CalculatorField[],
-  values: Record<string, number>,
-  result: ReturnType<typeof useCalculator>["result"]
-): string {
-  const fieldLines = fields
-    .filter((f) => !["inputMode"].includes(f.key))
-    .map((f) => `${f.label}: ${formatNumber(values[f.key] ?? f.defaultValue)}${f.unit ? " " + f.unit : ""}`)
-    .join(", ");
-
-  let ctx = `Калькулятор "${calculatorTitle}". Параметры: ${fieldLines}.`;
-
-  if (result && result.materials.length > 0) {
-    const matLines = result.materials.slice(0, 4)
-      .map((m) => `${m.name}: ${formatNumber(m.purchaseQty ?? m.withReserve ?? m.quantity)} ${m.unit}`)
-      .join(", ");
-    ctx += ` Результат расчёта: ${matLines}.`;
-  }
-
-  return ctx;
-}
-
-function getCompanionContext(slug: string): string {
+function getCompanionSlugs(slug: string): string[] {
   const companions = CALCULATOR_COMPANIONS[slug];
-  if (!companions || companions.length === 0) return "";
-  const names = companions
+  if (!companions?.length) return [];
+  return companions
     .map((c) => getCalculatorMetaBySlug(c.slug))
     .filter(Boolean)
     .map((c) => c!.title);
-  if (names.length === 0) return "";
-  return ` Связанные калькуляторы на сайте: ${names.join(", ")}. Рекомендуй их, если пользователь спрашивает о смежных материалах.`;
 }
 
 export default function CalculatorWithMikhalych({
@@ -72,6 +46,9 @@ export default function CalculatorWithMikhalych({
 }: {
   calculator: CalculatorWidgetProps;
 }) {
+  const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
+  const [chatOpenSignal, setChatOpenSignal] = useState(0);
+
   const {
     values,
     result,
@@ -91,19 +68,35 @@ export default function CalculatorWithMikhalych({
 
   const accentColor = category?.color ?? "#f97316";
 
-  // Контекст для Михалыча — обновляется при каждом расчёте
-  const companionCtx = getCompanionContext(calculator.slug);
-  const mikhalychContext = hasCalculated
-    ? buildCalcContext(calculator.title, calculator.fields, values, result) + companionCtx
-    : undefined;
+  const reviewInput = useMemo(() => {
+    if (!hasCalculated || !result || result.materials.length === 0) return null;
+    return {
+      calculatorTitle: calculator.title,
+      calculatorSlug: calculator.slug,
+      fields: calculator.fields,
+      values,
+      result,
+      companionSlugs: getCompanionSlugs(calculator.slug),
+    };
+  }, [hasCalculated, result, calculator, values]);
+
+  const mikhalychContext = reviewInput ? buildMikhalychCalcContext(reviewInput) : undefined;
+
+  const openMikhalychChat = () => {
+    setChatOpenSignal((n) => n + 1);
+    requestAnimationFrame(() => {
+      mikhalychAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   return (
     <>
-      {/* Калькулятор */}
       <div className="space-y-6">
         <div className="card p-6 space-y-5" data-print-hide>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.parametersTitle}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {CALCULATOR_UI_TEXT.parametersTitle}
+            </h2>
             <div className="flex items-center gap-3">
               {calcHistory.length > 0 && (
                 <button
@@ -114,7 +107,10 @@ export default function CalculatorWithMikhalych({
                   🕒 {calcHistory.length}
                 </button>
               )}
-              <button onClick={handleReset} className="text-sm text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <button
+                onClick={handleReset}
+                className="text-sm text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
                 Сбросить
               </button>
             </div>
@@ -143,7 +139,6 @@ export default function CalculatorWithMikhalych({
           </button>
         </div>
 
-        {/* Результат */}
         {result && (
           <ResultBlock
             result={result}
@@ -157,15 +152,16 @@ export default function CalculatorWithMikhalych({
               slug: calculator.slug,
               categorySlug: calculator.categorySlug,
             }}
+            reviewSlot={
+              reviewInput ? (
+                <MikhalychCalcReview input={reviewInput} onAskMore={openMikhalychChat} />
+              ) : undefined
+            }
           />
         )}
 
-        {/* Cross-sell: сопутствующие калькуляторы — только после расчёта */}
-        {hasCalculated && (
-          <CompanionLinks slug={calculator.slug} values={values} />
-        )}
+        {hasCalculated && <CompanionLinks slug={calculator.slug} values={values} />}
 
-        {/* 3D-модель лестницы — обновляется при каждом изменении полей */}
         {calculator.slug === "kalkulyator-lestnicy" && hasCalculated && (() => {
           const floorH = Number(values.floorHeight) || 2.8;
           const stepH = Number(values.stepHeight) || 170;
@@ -188,7 +184,6 @@ export default function CalculatorWithMikhalych({
           );
         })()}
 
-        {/* 3D-модель кровли — обновляется при каждом изменении полей */}
         {calculator.slug === "krovlya" && hasCalculated && (() => {
           const area = Number(values.area) || 80;
           const slope = Number(values.slope) || 30;
@@ -209,12 +204,11 @@ export default function CalculatorWithMikhalych({
         })()}
       </div>
 
-      {/* Михалыч */}
-      <div data-print-hide>
+      <div ref={mikhalychAnchorRef} data-print-hide className="scroll-mt-24">
         <MikhalychWidget
           calculatorTitle={calculator.title}
           calcContext={mikhalychContext}
-          key={mikhalychContext ?? "no-context"}
+          openSignal={chatOpenSignal}
         />
       </div>
     </>
