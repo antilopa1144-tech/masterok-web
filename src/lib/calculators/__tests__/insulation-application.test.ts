@@ -34,4 +34,11 @@ describe("insulation-application", () => {
   it("профиль пола — плотность 150", () => {
     expect(getApplicationProfile(INSULATION_APPLICATION.FLOOR).defaultDensityMineral).toBe(150);
   });
+
+  it("пол: плиты и рулоны, без напыления", () => {
+    const p = getApplicationProfile(INSULATION_APPLICATION.FLOOR);
+    expect(p.allowedMaterialForms).toEqual([0, 1]);
+    expect(p.defaultProductId).toBe(5);
+    expect(p.allowLayerScheme).toBe(false);
+  });
 });

@@ -23,6 +23,13 @@ export interface ApplicationProfile {
   readonly showMountSystemField: boolean;
   readonly defaultDensityMineral: number;
   readonly recommendedInsulationType?: number;
+  /** 0 плиты, 1 рулоны, 2 напыление */
+  readonly allowedMaterialForms: readonly number[];
+  readonly defaultMaterialForm: number;
+  /** Линейка по умолчанию (id каталога) для defaultMaterialForm */
+  readonly defaultProductId: number;
+  /** Двухслойная укладка плит (кровля/фасад), не для пола под стяжку */
+  readonly allowLayerScheme: boolean;
 }
 
 export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
@@ -32,6 +39,10 @@ export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
     defaultMountSystem: 0,
     showMountSystemField: true,
     defaultDensityMineral: 80,
+    allowedMaterialForms: [0],
+    defaultMaterialForm: 0,
+    defaultProductId: 2,
+    allowLayerScheme: true,
   },
   {
     id: INSULATION_APPLICATION.INTERNAL,
@@ -40,6 +51,10 @@ export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
     fixedMountSystem: 1,
     showMountSystemField: false,
     defaultDensityMineral: 45,
+    allowedMaterialForms: [0, 1, 2],
+    defaultMaterialForm: 0,
+    defaultProductId: 1,
+    allowLayerScheme: true,
   },
   {
     id: INSULATION_APPLICATION.ROOF,
@@ -48,6 +63,10 @@ export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
     fixedMountSystem: 1,
     showMountSystemField: false,
     defaultDensityMineral: 35,
+    allowedMaterialForms: [0, 1, 2],
+    defaultMaterialForm: 0,
+    defaultProductId: 1,
+    allowLayerScheme: true,
   },
   {
     id: INSULATION_APPLICATION.FLOOR,
@@ -56,6 +75,10 @@ export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
     fixedMountSystem: 1,
     showMountSystemField: false,
     defaultDensityMineral: 150,
+    allowedMaterialForms: [0, 1],
+    defaultMaterialForm: 0,
+    defaultProductId: 5,
+    allowLayerScheme: false,
   },
   {
     id: INSULATION_APPLICATION.FOUNDATION,
@@ -65,6 +88,10 @@ export const APPLICATION_PROFILES: readonly ApplicationProfile[] = [
     showMountSystemField: false,
     defaultDensityMineral: 80,
     recommendedInsulationType: 1,
+    allowedMaterialForms: [0],
+    defaultMaterialForm: 0,
+    defaultProductId: 6,
+    allowLayerScheme: false,
   },
 ] as const;
 
@@ -76,6 +103,37 @@ export function getApplicationProfile(application: number): ApplicationProfile {
 
 export function shouldShowMountSystemField(application: number): boolean {
   return getApplicationProfile(application).showMountSystemField;
+}
+
+export function getAllowedMaterialForms(application: number): readonly number[] {
+  return getApplicationProfile(application).allowedMaterialForms;
+}
+
+export function applicationAllowsLayerScheme(application: number): boolean {
+  return getApplicationProfile(application).allowLayerScheme;
+}
+
+/** Подбор формы, линейки и системы при смене «Что утепляем». */
+export function syncFieldsForApplicationChange(
+  application: number,
+  current: Record<string, number>,
+): Record<string, number> {
+  const profile = getApplicationProfile(application);
+  const materialForm = profile.allowedMaterialForms.includes(
+    Math.round(current.materialForm ?? profile.defaultMaterialForm),
+  )
+    ? Math.round(current.materialForm ?? profile.defaultMaterialForm)
+    : profile.defaultMaterialForm;
+
+  const mountSystem = profile.fixedMountSystem ?? profile.defaultMountSystem;
+
+  return {
+    ...current,
+    application,
+    materialForm,
+    mountSystem,
+    layerScheme: profile.allowLayerScheme ? Math.round(current.layerScheme ?? 0) : 0,
+  };
 }
 
 export function resolveMountSystemForApplication(

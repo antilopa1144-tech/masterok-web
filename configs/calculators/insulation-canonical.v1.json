@@ -38,11 +38,11 @@
       { "id": 4, "key": "north", "label": "Крайний Север (Якутск, Норильск, Мурманск)", "min_thickness_walls_mm": 200, "rec_thickness_walls_mm": 250 }
     ],
     "density_presets": [
-      { "value": 35, "label": "35 кг/м³ — лёгкая (каркас, кровля, перекрытия)", "cost_multiplier": 0.65, "applications": [1] },
+      { "value": 35, "label": "35 кг/м³ — лёгкая (каркас, кровля)", "cost_multiplier": 0.65, "applications": [1, 2] },
       { "value": 45, "label": "45 кг/м³ — звукоизоляция, перегородки (каркас)", "cost_multiplier": 1.0, "applications": [1] },
       { "value": 80, "label": "80 кг/м³ — мокрый штукатурный фасад (СФТК)", "cost_multiplier": 1.35, "applications": [0] },
-      { "value": 100, "label": "100 кг/м³ — вентфасад под облицовку", "cost_multiplier": 1.5, "applications": [1] },
-      { "value": 150, "label": "150 кг/м³ — пол под стяжку, нагруженная кровля", "cost_multiplier": 1.8, "applications": [1] }
+      { "value": 100, "label": "100 кг/м³ — вентфасад под облицовку", "cost_multiplier": 1.5, "applications": [0, 2] },
+      { "value": 150, "label": "150 кг/м³ — пол под стяжку, нагруженная кровля", "cost_multiplier": 1.8, "applications": [3, 2] }
     ]
   },
   "packaging_rules": {
@@ -92,7 +92,7 @@
         "totals_key": "area",
         "overlap_factor": 1.15
       },
-      "package": { "size": 30, "unit": "рулонов" }
+      "package": { "size": 30, "unit": "рулон" }
     },
     {
       "key": "wind_barrier_membrane",
@@ -119,7 +119,7 @@
         "totals_key": "area",
         "overlap_factor": 1.15
       },
-      "package": { "size": 30, "unit": "рулонов" }
+      "package": { "size": 30, "unit": "рулон" }
     },
     {
       "key": "alu_tape",

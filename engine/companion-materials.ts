@@ -153,13 +153,25 @@ function applyPackaging(
 ): AppliedPackaging {
   if (spec.package && spec.package.size > 0) {
     const count = exactNeed > 0 ? Math.ceil(exactNeed / spec.package.size) : 0;
+    const packageUnit = spec.package.unit ?? "";
+    const purchaseAsRolls = /рулон/i.test(packageUnit);
+    if (purchaseAsRolls) {
+      return {
+        withReserve: exactNeed,
+        purchaseQty: count,
+        packageInfo:
+          count > 0
+            ? { count, size: spec.package.size, packageUnit }
+            : undefined,
+      };
+    }
     const total = count * spec.package.size;
     return {
       withReserve: total,
       purchaseQty: total,
       packageInfo:
         count > 0
-          ? { count, size: spec.package.size, packageUnit: spec.package.unit }
+          ? { count, size: spec.package.size, packageUnit }
           : undefined,
     };
   }

@@ -1,4 +1,5 @@
 import catalogJson from "../../../configs/insulation-catalog.v1.json";
+import { getApplicationProfile } from "./insulation-application";
 
 export const INSULATION_FORM_SLABS = 0;
 export const INSULATION_FORM_ROLLS = 1;
@@ -28,6 +29,8 @@ export interface InsulationCatalogProduct {
   ecowoolDensityKgM3?: number;
   costPerM2At100mm?: number;
   note?: string;
+  /** INSULATION_APPLICATION ids; без поля — доступна везде (обратная совместимость) */
+  applications?: number[];
 }
 
 const catalog = catalogJson as {
@@ -45,26 +48,58 @@ export function getInsulationProduct(id: number): InsulationCatalogProduct | nul
   return catalog.products.find((p) => p.id === id) ?? null;
 }
 
+function formKeyFromMaterialForm(materialForm: number): InsulationCatalogProduct["form"] {
+  if (materialForm === INSULATION_FORM_ROLLS) return "rolls";
+  if (materialForm === INSULATION_FORM_SPRAY) return "spray";
+  return "slabs";
+}
+
+export function productMatchesApplication(
+  product: InsulationCatalogProduct,
+  application: number,
+): boolean {
+  if (!product.applications || product.applications.length === 0) return true;
+  return product.applications.includes(application);
+}
+
+export function filterProductsForContext(
+  materialForm: number,
+  application: number,
+): InsulationCatalogProduct[] {
+  const formKey = formKeyFromMaterialForm(materialForm);
+  return catalog.products.filter(
+    (p) => p.form === formKey && productMatchesApplication(p, application),
+  );
+}
+
+export function getDefaultProductIdForApplication(
+  application: number,
+  materialForm?: number,
+): number {
+  const profile = getApplicationProfile(application);
+  const form = materialForm ?? profile.defaultMaterialForm;
+  const candidates = filterProductsForContext(form, application);
+  if (candidates.length > 0) {
+    const preferred = candidates.find((p) => p.id === profile.defaultProductId);
+    return preferred?.id ?? candidates[0]!.id;
+  }
+  return getDefaultProductIdForForm(form);
+}
+
 export function getDefaultProductIdForForm(materialForm: number): number {
-  const formKey = materialForm === INSULATION_FORM_ROLLS
-    ? "rolls"
-    : materialForm === INSULATION_FORM_SPRAY
-      ? "spray"
-      : "slabs";
+  const formKey = formKeyFromMaterialForm(materialForm);
   return catalog.products.find((p) => p.form === formKey)?.id ?? INSULATION_PRODUCT_MANUAL;
 }
 
-export function buildProductSelectOptions(materialForm: number): Array<{
+export function buildProductSelectOptions(
+  materialForm: number,
+  application?: number,
+): Array<{
   value: number;
   label: string;
   optGroup?: string;
 }> {
-  const formKey =
-    materialForm === INSULATION_FORM_ROLLS
-      ? "rolls"
-      : materialForm === INSULATION_FORM_SPRAY
-        ? "spray"
-        : "slabs";
+  const formKey = formKeyFromMaterialForm(materialForm);
 
   const order =
     formKey === "slabs"
@@ -77,7 +112,12 @@ export function buildProductSelectOptions(materialForm: number): Array<{
 
   for (const sg of order) {
     const groupLabel = catalog.subgroups[sg]?.label ?? sg;
-    const items = catalog.products.filter((p) => p.form === formKey && p.subgroup === sg);
+    const items = catalog.products.filter(
+      (p) =>
+        p.form === formKey &&
+        p.subgroup === sg &&
+        (application === undefined || productMatchesApplication(p, application)),
+    );
     for (const p of items) {
       const sizeHint =
         p.form === "rolls" && p.rollWidthMm && p.rollLengthMm

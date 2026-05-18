@@ -26,6 +26,7 @@ export interface EnrichInsulationInputsResult {
 export function enrichInsulationInputs(
   inputs: Record<string, unknown>,
   hasManufacturer: boolean,
+  catalogDensityKgM3?: number,
 ): EnrichInsulationInputsResult {
   const warnings: string[] = [];
   const enriched: Record<string, unknown> = { ...inputs };
@@ -52,9 +53,17 @@ export function enrichInsulationInputs(
   }
 
   if (application === INSULATION_APPLICATION.FLOOR && insulationType === 0) {
-    warnings.push(
-      "Для пола под стяжку минвата обычно 100–150 кг/м³; лёгкая 35–45 кг/м³ — только между лагами без нагрузки сверху.",
-    );
+    const d = catalogDensityKgM3 ?? Number(enriched.density ?? inputs.density ?? 0);
+    if (d > 0 && d < 100) {
+      warnings.push(
+        `Плотность ${d} кг/м³ слишком мала для пола под стяжку. ` +
+          "Между лагами без стяжки — рулон или лёгкая минвата; под стяжку — ЭППС (пеноплекс) или плотная минвата от 100–150 кг/м³.",
+      );
+    } else {
+      warnings.push(
+        "Пол по лагам — рулонная минвата; под стяжку на грунте — обычно ЭППС (не боится влаги и нагрузки).",
+      );
+    }
   }
 
   if (!hasManufacturer && insulationType === 0) {
@@ -107,6 +116,18 @@ export function checkMineralWoolDensity(
     warnings.push(
       `Плотность ${effectiveDensity} кг/м³ — материал для вентилируемого фасада. ` +
         `Для мокрого штукатурного фасада оптимально ${WET_FACADE_MIN_DENSITY}–${WET_FACADE_MAX_DENSITY} кг/м³.`,
+    );
+  }
+
+  if (
+    mountSystem === 1 &&
+    application === INSULATION_APPLICATION.FLOOR &&
+    effectiveDensity > 0 &&
+    effectiveDensity < 100
+  ) {
+    warnings.push(
+      `Для пола под нагрузку плотность ${effectiveDensity} кг/м³ недостаточна — риск просадки. ` +
+        "Под стяжку выберите ЭППС или минвату от 100 кг/м³.",
     );
   }
 

@@ -49,7 +49,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 3, label: "Пол или перекрытие" },
         { value: 4, label: "Цоколь или фундамент" },
       ],
-      hint: "От назначения зависят система монтажа, мембраны и сопутствующие материалы. Фасад — СФТК или вентфасад; пол — между лагами/под стяжку без «фасадного» каркаса; внутренние стены — каркас и пароизоляция, без ветрозащиты.",
+      hint: "Сначала выберите зону: от неё зависят форма (плиты/рулоны), линейки в каталоге и сопутствующие материалы. Пол — ЭППС под стяжку или рулон между лагами; фасад — плиты минваты/ППС.",
     },
     {
       key: "area",
@@ -82,13 +82,13 @@ export const insulationDef: CalculatorDefinition = {
         { value: INSULATION_FORM_ROLLS, label: "Рулоны (минвата, стекловата)" },
         { value: INSULATION_FORM_SPRAY, label: "Напыляемая (эковата)" },
       ],
-      hint: "Сначала выберите формат — затем конкретную линейку производителя с её размерами и упаковкой.",
+      hint: "Плиты — стены, фасад, пол под стяжку (ЭППС, плотная минвата). Рулоны — пол по лагам, чердак. Список линеек фильтруется по полю «Что утепляем».",
     },
     {
       key: "productId",
       label: "Линейка производителя",
       type: "select",
-      defaultValue: 1,
+      defaultValue: 2,
       options: buildProductSelectOptions(INSULATION_FORM_SLABS),
       hint: "У каждой позиции зашиты размер, плотность и число плит/рулонов в упаковке — расчёт будет точным для этикетки.",
     },
@@ -117,7 +117,7 @@ export const insulationDef: CalculatorDefinition = {
         { value: 3, label: "Сибирь — Новосибирск, Иркутск, Красноярск" },
         { value: 4, label: "Крайний Север — Якутск, Норильск, Мурманск" },
       ],
-      hint: "При смене региона толщина подставится автоматически по рекомендации СП 50.13330 (можно изменить вручную).",
+      hint: "Толщина подбирается по региону и назначению (стена, пол, цоколь). Для пола ориентиры ниже, чем для наружных стен.",
     },
     {
       key: "thickness",
@@ -174,6 +174,8 @@ export const insulationDef: CalculatorDefinition = {
       hideIf: [
         { key: "materialForm", op: "ne", value: INSULATION_FORM_SLABS },
         { key: "productId", op: "eq", value: INSULATION_PRODUCT_MANUAL },
+        { key: "application", op: "eq", value: 3 },
+        { key: "application", op: "eq", value: 4 },
       ],
     },
     {

@@ -8,8 +8,12 @@ import {
   buildProductSelectOptions,
   getDefaultProductIdForForm,
   getProductThicknessOptions,
+  getDefaultProductIdForApplication,
 } from "@/lib/calculators/insulation-catalog";
-import { getApplicationProfile } from "@/lib/calculators/insulation-application";
+import {
+  getAllowedMaterialForms,
+  syncFieldsForApplicationChange,
+} from "@/lib/calculators/insulation-application";
 import {
   fieldUsesDynamicOptions,
   thicknessForClimateAndProduct,
@@ -81,9 +85,16 @@ export function resolveFieldOptions(
   field: CalculatorField,
   values: Record<string, number>,
 ): FieldOption[] | undefined {
+  if (field.key === "materialForm") {
+    const application = Math.round(values.application ?? 0);
+    const allowed = getAllowedMaterialForms(application);
+    return (field.options ?? []).filter((o) => allowed.includes(o.value));
+  }
+
   if (field.key === "productId") {
     const form = Math.round(values.materialForm ?? 0);
-    return buildProductSelectOptions(form);
+    const application = Math.round(values.application ?? 0);
+    return buildProductSelectOptions(form, application);
   }
 
   if (field.optionsFromProduct) {
@@ -260,21 +271,30 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         }
       }
 
-      if (key === "materialForm") {
-        next.productId = getDefaultProductIdForForm(value);
-      }
-
       if (calculator.id === "insulation") {
+        const application = Math.round(next.application ?? 0);
+
         if (key === "application") {
-          const profile = getApplicationProfile(Math.round(value));
-          next.mountSystem =
-            profile.fixedMountSystem ?? profile.defaultMountSystem;
+          Object.assign(next, syncFieldsForApplicationChange(Math.round(value), next));
+          next.productId = getDefaultProductIdForApplication(
+            Math.round(next.application ?? 0),
+            Math.round(next.materialForm ?? 0),
+          );
         }
-        if (key === "climateZone" || key === "materialForm") {
+
+        if (key === "materialForm") {
+          next.productId = getDefaultProductIdForApplication(
+            application,
+            Math.round(value),
+          );
+        }
+
+        if (key === "application" || key === "climateZone" || key === "materialForm") {
           next.thickness = thicknessForClimateAndProduct(
             Math.round(next.climateZone ?? 1),
             Math.round(next.productId ?? 0),
             calculator.fields,
+            Math.round(next.application ?? 0),
           );
         } else if (key === "productId") {
           const thicknessOpts = resolveFieldOptions(
@@ -286,9 +306,12 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
               Math.round(next.climateZone ?? 1),
               Math.round(next.productId ?? 0),
               calculator.fields,
+              Math.round(next.application ?? 0),
             );
           }
         }
+      } else if (key === "materialForm") {
+        next.productId = getDefaultProductIdForForm(value);
       } else if (key === "productId" || key === "materialForm") {
         const thicknessOpts = resolveFieldOptions(
           calculator.fields.find((f) => f.key === "thickness")!,

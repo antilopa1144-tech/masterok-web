@@ -8,22 +8,47 @@ import {
   INSULATION_FORM_SLABS,
   INSULATION_PRODUCT_MANUAL,
 } from "./insulation-catalog";
+import { INSULATION_APPLICATION } from "./insulation-application";
 import type { CalculatorField } from "./types";
 
 /** Рекомендуемая толщина стен, мм — зоны 0..4 (СП 50.13330). */
-const ZONE_REC_MM = [100, 150, 150, 200, 250] as const;
+const ZONE_REC_WALLS_MM = [100, 150, 150, 200, 250] as const;
+/** Пол / перекрытие по грунту или лагам — меньше, чем наружная стена. */
+const ZONE_REC_FLOOR_MM = [80, 100, 100, 150, 150] as const;
+/** Цоколь / фундамент (ЭППС). */
+const ZONE_REC_FOUNDATION_MM = [100, 100, 150, 150, 200] as const;
 
 /** Минимальная толщина стен, мм — зоны 0..4. */
-const ZONE_MIN_MM = [80, 100, 150, 150, 200] as const;
+const ZONE_MIN_WALLS_MM = [80, 100, 150, 150, 200] as const;
+const ZONE_MIN_FLOOR_MM = [50, 80, 80, 100, 100] as const;
 
-export function getRecommendedThicknessMm(climateZone: number): number {
-  const z = Math.max(0, Math.min(ZONE_REC_MM.length - 1, Math.round(climateZone)));
-  return ZONE_REC_MM[z] ?? 150;
+function thicknessTableForApplication(application: number): readonly number[] {
+  if (application === INSULATION_APPLICATION.FLOOR) return ZONE_REC_FLOOR_MM;
+  if (application === INSULATION_APPLICATION.FOUNDATION) return ZONE_REC_FOUNDATION_MM;
+  return ZONE_REC_WALLS_MM;
 }
 
-export function getMinThicknessMm(climateZone: number): number {
-  const z = Math.max(0, Math.min(ZONE_MIN_MM.length - 1, Math.round(climateZone)));
-  return ZONE_MIN_MM[z] ?? 100;
+function minThicknessTableForApplication(application: number): readonly number[] {
+  if (application === INSULATION_APPLICATION.FLOOR) return ZONE_MIN_FLOOR_MM;
+  return ZONE_MIN_WALLS_MM;
+}
+
+export function getRecommendedThicknessMm(
+  climateZone: number,
+  application: number = INSULATION_APPLICATION.FACADE,
+): number {
+  const table = thicknessTableForApplication(application);
+  const z = Math.max(0, Math.min(table.length - 1, Math.round(climateZone)));
+  return table[z] ?? 150;
+}
+
+export function getMinThicknessMm(
+  climateZone: number,
+  application: number = INSULATION_APPLICATION.FACADE,
+): number {
+  const table = minThicknessTableForApplication(application);
+  const z = Math.max(0, Math.min(table.length - 1, Math.round(climateZone)));
+  return table[z] ?? 100;
 }
 
 /** Ближайшая толщина из линейки или общего списка. */
@@ -56,8 +81,9 @@ export function thicknessForClimateAndProduct(
   climateZone: number,
   productId: number,
   fields: CalculatorField[],
+  application: number = INSULATION_APPLICATION.FACADE,
 ): number {
-  const rec = getRecommendedThicknessMm(climateZone);
+  const rec = getRecommendedThicknessMm(climateZone, application);
   return snapThicknessMm(rec, productId, defaultThicknessOptionsFromField(fields));
 }
 

@@ -51,6 +51,7 @@ describe("insulation formula — каталог линеек (productId)", () =>
       thickness: 100,
       productId: 5,
       materialForm: INSULATION_FORM_SLABS,
+      application: 3,
       insulationType: 0,
     });
     expect(r.totals.insulationType).toBe(1);
@@ -82,7 +83,13 @@ describe("insulation formula — каталог линеек (productId)", () =>
   });
 
   it("плотность линейки → totals.effectiveDensity", () => {
-    const r = calc({ area: 40, thickness: 100, productId: 1, materialForm: INSULATION_FORM_SLABS });
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      materialForm: INSULATION_FORM_SLABS,
+      application: 1,
+    });
     expect(r.totals.effectiveDensity).toBe(37);
   });
 });
@@ -94,6 +101,7 @@ describe("insulation formula — рулоны и напыление", () => {
       thickness: 100,
       productId: 8,
       materialForm: INSULATION_FORM_ROLLS,
+      application: 2,
     });
     expect(r.totals.materialForm).toBe(INSULATION_FORM_ROLLS);
     expect(r.totals.rollArea).toBe(6);
@@ -109,6 +117,7 @@ describe("insulation formula — рулоны и напыление", () => {
       thickness: 100,
       productId: 10,
       materialForm: INSULATION_FORM_SPRAY,
+      application: 1,
     });
     expect(r.totals.insulationType).toBe(3);
     expect(r.materials.some((m) => m.name.includes("Эковата"))).toBe(true);
@@ -217,8 +226,9 @@ describe("insulation formula — двухслойная укладка", () => {
     const r = calc({
       area: 40,
       thickness: 200,
-      productId: 1,
+      productId: 2,
       materialForm: INSULATION_FORM_SLABS,
+      application: 0,
       layerScheme: 0,
     });
     const plates = mainInsulation(r.materials);
@@ -230,8 +240,9 @@ describe("insulation formula — двухслойная укладка", () => {
     const r = calc({
       area: 40,
       thickness: 200,
-      productId: 1,
+      productId: 2,
       materialForm: INSULATION_FORM_SLABS,
+      application: 0,
       layerScheme: 1,
     });
     const plates = r.materials.filter((m) => m.name.includes("Слой"));
@@ -247,6 +258,7 @@ describe("insulation formula — двухслойная укладка", () => {
       thickness: 150,
       productId: 1,
       materialForm: INSULATION_FORM_SLABS,
+      application: 1,
       layerScheme: 1,
     });
     const plates = r.materials.filter((m) => m.name.includes("Слой"));
@@ -259,8 +271,10 @@ describe("insulation formula — двухслойная укладка", () => {
     const r = calc({
       area: 40,
       thickness: 200,
-      productId: 1,
+      productId: 2,
       materialForm: INSULATION_FORM_SLABS,
+      application: 0,
+      mountSystem: 0,
       layerScheme: 1,
     });
     const dowels = r.materials.find((m) => m.name.includes("Дюбели"));
@@ -297,7 +311,7 @@ describe("insulation formula — назначение (application)", () => {
     const r = calc({
       area: 40,
       thickness: 100,
-      productId: 1,
+      productId: 11,
       application: 3,
       mountSystem: 0,
     });
@@ -309,7 +323,19 @@ describe("insulation formula — назначение (application)", () => {
     expect(r.materialListBanner).toContain("Пол");
   });
 
-  it("пол пеноплекс: без мембран и каркаса", () => {
+  it("пол: лёгкая минвата с фасада — предупреждение о несовместимости", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      application: 3,
+    });
+    expect(
+      r.warnings.some((w) => w.includes("не рассчитана") || w.includes("несовместим")),
+    ).toBe(true);
+  });
+
+  it("пол пеноплекс: без мембран и каркаса (типичный пол под стяжку)", () => {
     const r = calc({
       area: 40,
       thickness: 100,
@@ -361,14 +387,26 @@ describe("insulation formula — сравнение типов по стоимо
   });
 
   it("материалы с подзаголовком размера плиты из каталога", () => {
-    const r = calc({ area: 40, thickness: 100, productId: 1, materialForm: INSULATION_FORM_SLABS });
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 1,
+      materialForm: INSULATION_FORM_SLABS,
+      application: 1,
+    });
     const main = r.materials.find((m) => m.category === "Утеплитель (плиты)");
     expect(main?.subtitle).toContain("1200×600");
     expect(main?.subtitle).toContain("37 кг/м³");
   });
 
   it("с выбранной линейкой — сравнение типов не дублируется", () => {
-    const r = calc({ area: 40, thickness: 100, productId: 5, materialForm: INSULATION_FORM_SLABS });
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 5,
+      materialForm: INSULATION_FORM_SLABS,
+      application: 3,
+    });
     const multi = r.practicalNotes?.filter((n) => n.includes("Минеральная вата") && n.includes("ЭППС"));
     expect(multi?.length ?? 0).toBe(0);
     expect(r.practicalNotes?.some((n) => n.includes("Пеноплэкс"))).toBe(true);

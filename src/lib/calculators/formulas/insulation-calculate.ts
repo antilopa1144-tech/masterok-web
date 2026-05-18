@@ -14,8 +14,13 @@ import {
   INSULATION_FORM_SLABS,
   INSULATION_FORM_SPRAY,
   INSULATION_PRODUCT_MANUAL,
+  productMatchesApplication,
   type InsulationCatalogProduct,
 } from "../insulation-catalog";
+import {
+  applicationAllowsLayerScheme,
+  INSULATION_APPLICATION,
+} from "../insulation-application";
 import {
   checkMineralWoolDensity,
   dowelLengthMm,
@@ -91,9 +96,17 @@ export function runInsulationCalculate(
   inputs: Record<string, number>,
 ): CalculatorResult {
   const brandWarnings: string[] = [];
+  const application = Math.round(inputs.application ?? INSULATION_APPLICATION.FACADE);
   const productId = Math.round(inputs.productId ?? INSULATION_PRODUCT_MANUAL);
   const userMaterialForm = Math.round(inputs.materialForm ?? INSULATION_FORM_SLABS);
   let product = getInsulationProduct(productId);
+  if (product && !productMatchesApplication(product, application)) {
+    brandWarnings.push(
+      `Линейка «${product.manufacturer} ${product.lineName}» не рассчитана для выбранного назначения. ` +
+        "Выберите материал из списка для этой зоны утепления.",
+    );
+    product = null;
+  }
   if (product && product.form !== formKeyFromMaterialForm(userMaterialForm)) {
     brandWarnings.push(
       `Линейка «${product.manufacturer} ${product.lineName}» не подходит к форме «${userMaterialForm === INSULATION_FORM_ROLLS ? "рулоны" : userMaterialForm === INSULATION_FORM_SPRAY ? "напыление" : "плиты"}». Выберите линейку из списка для этой формы.`,
@@ -105,6 +118,7 @@ export function runInsulationCalculate(
   const { enriched: enrichedFromApp, warnings: applicationWarnings } = enrichInsulationInputs(
     inputs as Record<string, unknown>,
     hasCatalogProduct,
+    product?.densityKgM3,
   );
   const enrichedInputs: Record<string, unknown> = {
     ...enrichedFromApp,
@@ -137,6 +151,7 @@ export function runInsulationCalculate(
   const baseThickness = Number(enrichedInputs.thickness ?? inputs.thickness ?? 100);
   const userScheme = Math.round(Number(inputs.layerScheme ?? 0));
   const canUseTwoLayers =
+    applicationAllowsLayerScheme(application) &&
     materialForm === INSULATION_FORM_SLABS &&
     product?.insulationTypeId !== 3;
   const split = userScheme === 1 && canUseTwoLayers ? LAYER_SPLIT[baseThickness] : undefined;
@@ -190,24 +205,30 @@ export function runInsulationCalculate(
 
   const thickness = Number(inputs.thickness ?? 100);
   const climateZone = Math.round(inputs.climateZone ?? 1);
-  const recThickness = getRecommendedThicknessMm(climateZone);
+  const applicationResolved = Math.round(
+    Number(enrichedInputs.application ?? inputs.application ?? application),
+  );
+  const recThickness = getRecommendedThicknessMm(climateZone, applicationResolved);
+  const thicknessContext =
+    applicationResolved === INSULATION_APPLICATION.FLOOR
+      ? "пола/перекрытия"
+      : applicationResolved === INSULATION_APPLICATION.FOUNDATION
+        ? "цоколя"
+        : "стен";
   if (thickness < recThickness - 1) {
     brandWarnings.push(
-      `Толщина ${thickness} мм меньше рекомендуемой для выбранного региона (${recThickness} мм по СП 50.13330).`,
+      `Толщина ${thickness} мм меньше рекомендуемой для ${thicknessContext} в выбранном регионе (${recThickness} мм).`,
     );
   }
 
   const insulationType = Number(enrichedInputs.insulationType ?? inputs.insulationType ?? 0);
   const mountSystem = Number(enrichedInputs.mountSystem ?? inputs.mountSystem ?? 0);
-  const application = Math.round(
-    Number(enrichedInputs.application ?? inputs.application ?? 0),
-  );
   const area = Number(inputs.area ?? 0);
 
   const materialsCtx = {
     materialForm,
     mountSystem,
-    application,
+    application: applicationResolved,
     area,
     thickness,
     product,
@@ -221,7 +242,7 @@ export function runInsulationCalculate(
     ...canonical.totals,
     productId,
     materialForm,
-    application,
+    application: applicationResolved,
   };
   let effectiveDensity = 0;
   if (product?.densityKgM3) {
@@ -232,7 +253,11 @@ export function runInsulationCalculate(
 
   if (insulationType === 0 && effectiveDensity > 0) {
     totals.effectiveDensity = effectiveDensity;
-    const densityCheck = checkMineralWoolDensity(effectiveDensity, mountSystem, application);
+    const densityCheck = checkMineralWoolDensity(
+      effectiveDensity,
+      mountSystem,
+      applicationResolved,
+    );
     brandWarnings.push(...densityCheck.warnings);
     if (densityCheck.practicalNotes.length > 0) {
       canonical.practicalNotes = [...(canonical.practicalNotes ?? []), ...densityCheck.practicalNotes];
