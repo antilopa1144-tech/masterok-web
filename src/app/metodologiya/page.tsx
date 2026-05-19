@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
-import { SITE_CITATIONS, SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_URL, siteCitationsToSchema } from "@/lib/site";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 
 const PAGE_URL = `${SITE_URL}/metodologiya/`;
@@ -45,11 +45,7 @@ export default function MethodologyPage() {
       name: SITE_NAME,
       url: SITE_URL,
     },
-    citation: SITE_CITATIONS.map((c) => ({
-      "@type": "CreativeWork",
-      name: c.name,
-      description: c.description,
-    })),
+    citation: siteCitationsToSchema(),
   };
 
   const breadcrumbLd = {

@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ReverseCalculator from "./ReverseCalculator";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import { buildToolPageMetadata } from "@/lib/tools/metadata";
 
 const META = {
   title: `«Сколько осталось» — на какую площадь хватит материала`,
   description: "Обратный калькулятор: введите сколько материала осталось, узнайте на какую площадь его хватит. Краска, грунтовка, клей, штукатурка, шпаклёвка.",
 };
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = buildToolPageMetadata("skolko-ostalos", {
   title: META.title,
   description: META.description,
-  url: `${SITE_URL}/instrumenty/skolko-ostalos/`,
 });
 
 const jsonLd = {
@@ -60,6 +60,7 @@ export default function Page() {
       <div className="page-container py-8">
         <ReverseCalculator />
       </div>
+      <ToolPageExtras slug="skolko-ostalos" />
     </>
   );
 }

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 import { ALL_CALCULATORS_META as ALL_CALCULATORS } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
-import { getAllPosts, getAllTags, tagToSlug } from "@/lib/blog";
+import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
 import { ALL_TOOLS } from "@/lib/tools";
-import { SITE_URL } from "@/lib/site";
+import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_LAST_REVIEWED, SITE_URL } from "@/lib/site";
 
 const BASE_URL = SITE_URL;
 
@@ -56,6 +56,9 @@ const CHECKLISTS_LAST_MODIFIED = "2026-04-19";
 /** Юридические/служебные страницы. Меняются ещё реже. */
 const LEGAL_LAST_MODIFIED = "2026-01-01";
 
+/** Методология расчётов (E-E-A-T, GEO). Синхронизировать с SITE_LAST_REVIEWED при пересмотре. */
+const METHODOLOGY_LAST_MODIFIED = SITE_LAST_REVIEWED;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allPosts = await getAllPosts();
   const allTags = await getAllTags();
@@ -85,6 +88,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: STATIC_PAGES_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/metodologiya/`,
+      lastModified: METHODOLOGY_LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
       url: `${BASE_URL}/politika-konfidencialnosti/`,
@@ -178,12 +187,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── 7. Blog tag pages ───────────────────────────────────────────────────────
 
-  const tagPages: MetadataRoute.Sitemap = allTags.map((tag) => ({
-    url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
-    lastModified: latestPostDate,
-    changeFrequency: "weekly" as const,
-    priority: 0.5,
-  }));
+  const tagPages: MetadataRoute.Sitemap = (
+    await Promise.all(
+      allTags.map(async (tag) => {
+        const posts = await getPostsByTag(tag);
+        if (posts.length < BLOG_TAG_MIN_POSTS_FOR_INDEX) return null;
+        return {
+          url: `${BASE_URL}/blog/tag/${tagToSlug(tag)}/`,
+          lastModified: latestPostDate,
+          changeFrequency: "weekly" as const,
+          priority: 0.5,
+        };
+      }),
+    )
+  ).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
   return [
     ...staticPages,

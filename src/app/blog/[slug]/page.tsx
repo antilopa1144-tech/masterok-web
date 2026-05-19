@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ALL_CALCULATORS_META, getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_NAME, SITE_OG_IMAGE_URL, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import parse from "html-react-parser";
@@ -278,6 +278,12 @@ export default async function BlogPostPage({ params }: Props) {
       "@id": `${baseUrl}/#organization`,
       name: SITE_NAME,
       url: baseUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: SITE_OG_IMAGE_URL,
+        width: 1200,
+        height: 630,
+      },
     },
     mainEntityOfPage: {
       "@type": "WebPage",

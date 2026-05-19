@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import CuringTimer from "./CuringTimer";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import { buildToolPageMetadata } from "@/lib/tools/metadata";
 
 const META = {
   title: `Таймер схватывания и высыхания строительных смесей`,
@@ -11,10 +12,9 @@ const META = {
 
 const PAGE_URL = `${SITE_URL}/instrumenty/tajmer-skhvatyvaniya/`;
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = buildToolPageMetadata("tajmer-skhvatyvaniya", {
   title: META.title,
   description: META.description,
-  url: PAGE_URL,
 });
 
 const breadcrumbLd = {
@@ -66,6 +66,7 @@ export default function Page() {
       <div className="page-container py-8">
         <CuringTimer />
       </div>
+      <ToolPageExtras slug="tajmer-skhvatyvaniya" />
     </>
   );
 }

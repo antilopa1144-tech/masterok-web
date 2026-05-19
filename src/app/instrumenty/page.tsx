@@ -1,135 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
-import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
-import { ALL_TOOLS } from "@/lib/tools";
-
-const META = {
-  title: `Инструменты строителя — конвертер, площадь, чек-листы`,
-  description: "Бесплатные инструменты для строительства и ремонта: конвертер единиц, расчёт площади комнаты, калькулятор и чек-листы работ.",
-} as const;
+import { ALL_TOOLS, HUB_META, TOOL_CARDS, toolHref } from "@/lib/tools/config";
 
 const PAGE_URL = `${SITE_URL}/instrumenty/`;
+const CHECKLIST_PREVIEW_COUNT = 4;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: META.title,
-  description: META.description,
+  title: HUB_META.title,
+  description: HUB_META.description,
   url: PAGE_URL,
 });
 
 const UI_TEXT = {
   heroBadge: "Инструменты строителя",
   heroTitle: "Полезные инструменты",
-  heroDescription: "Конвертер единиц, расчёт площади нестандартных помещений, калькулятор и чек-листы работ — всё для стройки и ремонта.",
+  heroDescription: HUB_META.description,
   previewTitle: "Чек-листы работ",
   previewLink: "Все чек-листы →",
   checklistItemsSuffix: "пунктов",
-  checklistTemplatesSuffix: "шаблонов",
 } as const;
 
-const TOOLS = [
-  {
-    href: "/instrumenty/stoimost-remonta/",
-    icon: "cost",
-    title: "Стоимость ремонта",
-    desc: "Примерная смета на ремонт квартиры. Косметический, стандартный, капитальный — материалы и работы.",
-    badge: "Новый",
-    color: "#10B981",
-    bg: "#D1FAE5",
-  },
-  {
-    href: "/instrumenty/raskladka-plitki/",
-    icon: "tile",
-    title: "Раскладка плитки",
-    desc: "Визуальная раскладка плитки на стену или пол. Подрезка, отход, количество — видно сразу.",
-    badge: "Новый",
-    color: "#F97316",
-    bg: "#FFF7ED",
-  },
-  {
-    href: "/instrumenty/normy-raskhoda/",
-    icon: "book",
-    title: "Нормы расхода",
-    desc: "Справочник расхода на 1 м² по ГОСТ и паспортам: штукатурка, грунтовка, клей, краска.",
-    badge: "Справочник",
-    color: "#06B6D4",
-    bg: "#CFFAFE",
-  },
-  {
-    href: "/instrumenty/sravnenie-materialov/",
-    icon: "compare",
-    title: "Сравнение материалов",
-    desc: "Полы, стены, утеплители — таблица сравнения по цене, сроку службы, сложности монтажа.",
-    badge: "Новый",
-    color: "#8B5CF6",
-    bg: "#EDE9FE",
-  },
-  {
-    href: "/instrumenty/skolko-ostalos/",
-    icon: "measure",
-    title: "Сколько осталось?",
-    desc: "Обратный калькулятор: введите остаток материала — узнайте на какую площадь хватит.",
-    badge: "Новый",
-    color: "#3B82F6",
-    bg: "#DBEAFE",
-  },
-  {
-    href: "/instrumenty/tajmer-skhvatyvaniya/",
-    icon: "timer",
-    title: "Таймер схватывания",
-    desc: "Выберите материал — таймер покажет когда можно продолжать. Уведомление на телефон.",
-    badge: "Новый",
-    color: "#F59E0B",
-    bg: "#FEF3C7",
-  },
-  {
-    href: "/instrumenty/konverter/",
-    icon: "converter",
-    title: "Конвертер единиц",
-    desc: "Длина, площадь, объём, масса, давление. Быстрый пересчёт строительных единиц.",
-    badge: "мм → м → дюйм",
-    color: "#3B82F6",
-    bg: "#DBEAFE",
-  },
-  {
-    href: "/instrumenty/ploshchad-komnaty/",
-    icon: "area",
-    title: "Площадь комнаты",
-    desc: "Прямоугольник, Г-образная, Т-образная, трапеция. Площадь пола, периметр, площадь стен.",
-    badge: "Сложные формы",
-    color: "#10B981",
-    bg: "#D1FAE5",
-  },
-  {
-    href: "/instrumenty/kalkulyator/",
-    icon: "calculator",
-    title: "Калькулятор",
-    desc: "Обычный калькулятор как на телефоне — для быстрых вычислений прямо на объекте.",
-    badge: "На ходу",
-    color: "#F59E0B",
-    bg: "#FEF3C7",
-  },
-  {
-    href: "/instrumenty/chek-listy/",
-    icon: "checklist",
-    title: "Чек-листы работ",
-    desc: "Готовые пошаговые чек-листы для ремонта и строительства. Скачать и распечатать.",
-    badge: `${ALL_CHECKLISTS.length} ${UI_TEXT.checklistTemplatesSuffix}`,
-    color: "#8B5CF6",
-    bg: "#EDE9FE",
-  },
-];
+const checklistPreview = ALL_CHECKLISTS.slice(0, CHECKLIST_PREVIEW_COUNT);
 
 function InstrumentyCollectionJsonLd() {
   const toolPages = ALL_TOOLS.filter((t) => t.slug !== "");
   const schema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: META.title,
-    description: META.description,
+    name: HUB_META.title,
+    description: HUB_META.description,
     url: PAGE_URL,
     mainEntity: {
       "@type": "ItemList",
@@ -137,7 +40,7 @@ function InstrumentyCollectionJsonLd() {
       itemListElement: toolPages.map((tool, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: `${SITE_URL}/instrumenty/${tool.slug}/`,
+        url: `${SITE_URL}${toolHref(tool.slug)}`,
         name: tool.title,
       })),
     },
@@ -156,7 +59,6 @@ export default function InstrumentyPage() {
   return (
     <>
       <InstrumentyCollectionJsonLd />
-      {/* Hero */}
       <section className="border-b border-slate-200 dark:border-slate-800 bg-linear-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900">
         <div className="page-container-wide py-10 md:py-14">
           <div className="max-w-2xl">
@@ -174,10 +76,14 @@ export default function InstrumentyPage() {
         </div>
       </section>
 
-      {/* Инструменты */}
       <section className="page-container-wide py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-5">
-          {TOOLS.map((tool) => (
+          {TOOL_CARDS.map((tool) => {
+            const badge =
+              tool.href === toolHref("chek-listy")
+                ? `${ALL_CHECKLISTS.length} шаблонов`
+                : tool.badge;
+            return (
             <Link
               key={tool.href}
               href={tool.href}
@@ -199,18 +105,18 @@ export default function InstrumentyPage() {
                       className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0"
                       style={{ backgroundColor: tool.bg, color: tool.color }}
                     >
-                      {tool.badge}
+                      {badge}
                     </span>
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{tool.desc}</p>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* Чек-листы превью */}
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{UI_TEXT.previewTitle}</h2>
@@ -218,8 +124,8 @@ export default function InstrumentyPage() {
             {UI_TEXT.previewLink}
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {ALL_CHECKLISTS.map((cl) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {checklistPreview.map((cl) => (
             <Link
               key={cl.slug}
               href={`/instrumenty/chek-listy/${cl.slug}/`}
@@ -235,25 +141,9 @@ export default function InstrumentyPage() {
               <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed line-clamp-2 mb-3">
                 {cl.description}
               </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
-                  {cl.totalItems} {UI_TEXT.checklistItemsSuffix}
-                </span>
-                <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
-                  {cl.duration}
-                </span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    cl.complexity === 1
-                      ? "bg-green-50 text-green-700"
-                      : cl.complexity === 2
-                      ? "bg-amber-50 text-amber-700"
-                      : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  {CHECKLIST_COMPLEXITY_LABELS[cl.complexity]}
-                </span>
-              </div>
+              <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                {cl.totalItems} {UI_TEXT.checklistItemsSuffix}
+              </span>
             </Link>
           ))}
         </div>
@@ -261,8 +151,3 @@ export default function InstrumentyPage() {
     </>
   );
 }
-
-
-
-
-

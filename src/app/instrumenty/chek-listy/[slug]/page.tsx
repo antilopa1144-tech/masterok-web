@@ -6,6 +6,11 @@ import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import PrintButton, { ExportChecklistPDF } from "./PrintButton";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import {
+  buildChecklistDetailBreadcrumbJsonLd,
+  buildChecklistHowToJsonLd,
+} from "@/lib/tools/checklist-schema";
 
 const UI_TEXT = {
   notFoundTitle: "Чек-лист не найден",
@@ -64,33 +69,11 @@ export default async function ChecklistPage({ params }: Props) {
 
   const colors = COMPLEXITY_COLORS[cl.complexity];
 
-  const checklistJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    name: cl.title,
-    description: cl.description,
-    totalTime: cl.duration,
-    step: cl.steps.flatMap((step, si) =>
-      step.items.map((item, ii) => ({
-        "@type": "HowToStep",
-        position: si * 10 + ii + 1,
-        name: item,
-        text: item,
-      }))
-    ).slice(0, 20),
-  };
-
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Чек-листы", item: `${SITE_URL}/instrumenty/chek-listy/` },
-      { "@type": "ListItem", position: 3, name: cl.title },
-    ],
-  };
+  const checklistJsonLd = buildChecklistHowToJsonLd(cl);
+  const breadcrumbLd = buildChecklistDetailBreadcrumbJsonLd(cl);
 
   return (
+    <>
     <div className="page-container py-8 max-w-4xl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(checklistJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
@@ -179,6 +162,8 @@ export default async function ChecklistPage({ params }: Props) {
         </p>
       </div>
     </div>
+    <ToolPageExtras slug="chek-listy" />
+    </>
   );
 }
 

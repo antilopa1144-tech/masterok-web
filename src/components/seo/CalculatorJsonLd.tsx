@@ -1,4 +1,4 @@
-import { SITE_CITATIONS, SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/site";
+import { SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_SAME_AS, SITE_URL, siteCitationsToSchema } from "@/lib/site";
 
 interface CalculatorJsonLdProps {
   calc: {
@@ -60,11 +60,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     // Ссылки на первоисточники — нормативные документы РФ (ГОСТ/СНиП/СП),
     // на которых основаны расчёты. Помогает GEO (Perplexity, ChatGPT, Claude)
     // понять доказательную базу.
-    citation: SITE_CITATIONS.map((c) => ({
-      "@type": "CreativeWork",
-      name: c.name,
-      description: c.description,
-    })),
+    citation: siteCitationsToSchema(),
     // AggregateRating убран — фейковые рейтинги нарушают гайдлайны Google
     // и могут привести к ручному штрафу. Добавить обратно только при наличии
     // реальной системы отзывов пользователей.

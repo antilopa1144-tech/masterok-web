@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPostsByTag, resolveTagFromSlug, tagToSlug } from "@/lib/blog";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const UI_TEXT = {
@@ -45,6 +45,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     };
   }
   const posts = await getPostsByTag(tag);
+  const indexable = posts.length >= BLOG_TAG_MIN_POSTS_FOR_INDEX;
   // Description ограничен ~155 символами — больше Google режет в SERP с многоточием.
   // Если короткие заголовки уместятся, добавляем хвост «и другие материалы»; иначе
   // обрезаем по слову.
@@ -53,11 +54,14 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   const description = fullDescription.length <= 160
     ? fullDescription
     : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, нормами по ГОСТ и пошаговыми инструкциями.`;
-  return buildPageMetadata({
-    title: `${tag} — статьи о строительстве`,
-    description,
-    url: `${SITE_URL}/blog/tag/${tagToSlug(tag)}/`,
-  });
+  return {
+    ...buildPageMetadata({
+      title: `${tag} — статьи о строительстве`,
+      description,
+      url: `${SITE_URL}/blog/tag/${tagToSlug(tag)}/`,
+    }),
+    ...(indexable ? {} : { robots: { index: false, follow: true } }),
+  };
 }
 
 export default async function TagPage({ params }: TagPageProps) {

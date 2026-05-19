@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import MaterialComparison from "./MaterialComparison";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import { buildToolPageMetadata } from "@/lib/tools/metadata";
 
 const META = {
   title: `Сравнение строительных материалов — таблица характеристик`,
   description: "Сравнение напольных покрытий, утеплителей и отделочных материалов: стоимость, срок службы, сложность монтажа, расход сопутствующих материалов.",
 };
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = buildToolPageMetadata("sravnenie-materialov", {
   title: META.title,
   description: META.description,
-  url: `${SITE_URL}/instrumenty/sravnenie-materialov/`,
 });
 
 const jsonLd = {
@@ -60,6 +60,7 @@ export default function Page() {
       <div className="page-container py-8">
         <MaterialComparison />
       </div>
+      <ToolPageExtras slug="sravnenie-materialov" />
     </>
   );
 }

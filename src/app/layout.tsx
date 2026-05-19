@@ -106,15 +106,6 @@ export const metadata: Metadata = {
   },
   description:
     SITE_METADATA_DESCRIPTION,
-  keywords: [
-    "строительный калькулятор",
-    "калькулятор бетона",
-    "калькулятор кирпича",
-    "расчёт материалов",
-    "калькулятор кровли",
-    "калькулятор ламината",
-    "расчёт стройматериалов онлайн",
-  ],
   authors: [{ name: `Редакция ${SITE_NAME}`, url: `${SITE_URL}/o-proekte/` }],
   creator: `Редакция ${SITE_NAME}`,
   publisher: SITE_NAME,
@@ -162,8 +153,6 @@ export const metadata: Metadata = {
     "geo.region": "RU",
     "geo.placename": "Россия",
     "content-language": "ru",
-    "geo.position": "55.7558;37.6173",
-    "ICBM": "55.7558, 37.6173",
   },
 };
 

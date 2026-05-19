@@ -3,7 +3,8 @@ import Link from "next/link";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/metadata";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import { buildToolPageMetadata } from "@/lib/tools/metadata";
 
 const META = {
   title: `Чек-листы для ремонта и строительства — ${SITE_NAME}`,
@@ -12,10 +13,9 @@ const META = {
 
 const PAGE_URL = `${SITE_URL}/instrumenty/chek-listy/`;
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = buildToolPageMetadata("chek-listy", {
   title: META.title,
   description: META.description,
-  url: PAGE_URL,
 });
 
 const UI_TEXT = {
@@ -158,6 +158,7 @@ export default function ChekListyPage() {
           </Link>
         </div>
       </section>
+      <ToolPageExtras slug="chek-listy" />
     </>
   );
 }

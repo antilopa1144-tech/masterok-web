@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 
 interface SearchResult {
-  type: "calculator" | "blog" | "checklist";
+  type: "calculator" | "blog" | "checklist" | "tool";
   id: string;
   title: string;
   description: string;
@@ -20,18 +20,37 @@ interface SearchResult {
   categoryLabel: string;
 }
 
+interface ToolSearchItem {
+  slug: string;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  bg: string;
+}
+
 interface Props {
   calculators: CalculatorMeta[];
   blogPosts?: { slug: string; title: string; description: string; category: string }[];
   checklists?: { slug: string; title: string; description: string; category: string }[];
+  tools?: ToolSearchItem[];
+  /** Синхронизация с ?q= в URL (главная + schema.org SearchAction). */
+  syncUrlQuery?: boolean;
 }
 
-export default function CalculatorSearch({ calculators, blogPosts, checklists }: Props) {
+export default function CalculatorSearch({
+  calculators,
+  blogPosts,
+  checklists,
+  tools,
+  syncUrlQuery = false,
+}: Props) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const results = useMemo((): SearchResult[] => {
     const q = query.trim().toLowerCase();
@@ -39,7 +58,7 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
 
     const calcResults: SearchResult[] = calculators
       .filter((c) => [c.title, c.description, ...c.tags].join(" ").toLowerCase().includes(q))
-      .slice(0, 6)
+      .slice(0, 5)
       .map((c) => {
         const cat = CATEGORIES.find((ct) => ct.id === c.category);
         return {
@@ -72,7 +91,7 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
 
     const checklistResults: SearchResult[] = (checklists ?? [])
       .filter((cl) => [cl.title, cl.description, cl.category].join(" ").toLowerCase().includes(q))
-      .slice(0, 2)
+      .slice(0, 1)
       .map((cl) => ({
         type: "checklist",
         id: cl.slug,
@@ -85,10 +104,35 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
         categoryLabel: "Чек-лист",
       }));
 
-    return [...calcResults, ...blogResults, ...checklistResults].slice(0, 8);
-  }, [query, calculators, blogPosts, checklists]);
+    const toolResults: SearchResult[] = (tools ?? [])
+      .filter((t) => [t.title, t.description].join(" ").toLowerCase().includes(q))
+      .slice(0, 2)
+      .map((t) => ({
+        type: "tool",
+        id: t.slug,
+        title: t.title,
+        description: t.description,
+        href: `/instrumenty/${t.slug}/`,
+        icon: t.icon,
+        color: t.color,
+        bgColor: t.bg,
+        categoryLabel: "Инструмент",
+      }));
+
+    return [...calcResults, ...blogResults, ...checklistResults, ...toolResults].slice(0, 8);
+  }, [query, calculators, blogPosts, checklists, tools]);
 
   const showDropdown = isOpen && query.trim().length > 0;
+
+  // SearchAction schema на главной указывает ?q= — подставляем запрос из URL.
+  useEffect(() => {
+    if (!syncUrlQuery) return;
+    const q = searchParams.get("q")?.trim();
+    if (q) {
+      setQuery(q);
+      setIsOpen(true);
+    }
+  }, [syncUrlQuery, searchParams]);
 
   // Закрытие по клику вне области
   useEffect(() => {
@@ -110,7 +154,10 @@ export default function CalculatorSearch({ calculators, blogPosts, checklists }:
     setQuery("");
     setIsOpen(false);
     setActiveIndex(-1);
-  }, []);
+    if (syncUrlQuery && searchParams.get("q")) {
+      router.replace("/", { scroll: false });
+    }
+  }, [syncUrlQuery, searchParams, router]);
 
   // Клавиатурная навигация
   const handleKeyDown = useCallback(

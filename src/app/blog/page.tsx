@@ -20,7 +20,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 const UI_TEXT = {
-  breadcrumbHome: "Калькуляторы",
+  breadcrumbHome: "Главная",
   breadcrumbCurrent: "Блог",
   heroTitle: "Строительные советы и статьи",
   heroDescription: "Практичные материалы о расчёте стройматериалов, технологиях монтажа и выборе материалов. Всё по ГОСТ и СНиП, без воды.",

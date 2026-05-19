@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { buildPageMetadata } from "@/lib/metadata";
+import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import TileLayoutGenerator from "./TileLayoutGenerator";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
   title: `Раскладка плитки онлайн — визуализация и расчёт подрезки`,
   description: "Визуализатор раскладки плитки на стену или пол: введите размеры, увидите раскладку, подрезку и количество плитки. Прямая и диагональная укладка.",
 };
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = buildToolPageMetadata("raskladka-plitki", {
   title: META.title,
   description: META.description,
-  url: `${SITE_URL}/instrumenty/raskladka-plitki/`,
 });
 
 const breadcrumbLd = {
@@ -64,6 +64,7 @@ export default function Page() {
       <div className="page-container py-8">
         <TileLayoutGenerator />
       </div>
+      <ToolPageExtras slug="raskladka-plitki" />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { ALL_CALCULATORS_META, getPopularCalculatorsMeta } from "@/lib/calculato
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
+import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { MASTEROK_RUSTORE_URL, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
@@ -57,56 +58,7 @@ const UI_TEXT = {
   featuresTitle: `Почему ${SITE_NAME}?`,
 } as const;
 
-const TOOLS = [
-  {
-    href: "/instrumenty/stoimost-remonta/",
-    icon: "engineering",
-    title: "Стоимость ремонта",
-    desc: "Смета по типу отделки",
-    bg: "#FEE2E2",
-    color: "#EF4444",
-  },
-  {
-    href: "/instrumenty/raskladka-plitki/",
-    icon: "area",
-    title: "Раскладка плитки",
-    desc: "Визуализация подрезки",
-    bg: "#DBEAFE",
-    color: "#3B82F6",
-  },
-  {
-    href: "/instrumenty/normy-raskhoda/",
-    icon: "target",
-    title: "Нормы расхода",
-    desc: "Справочник по ГОСТ",
-    bg: "#D1FAE5",
-    color: "#10B981",
-  },
-  {
-    href: "/instrumenty/sravnenie-materialov/",
-    icon: "hammer",
-    title: "Сравнение материалов",
-    desc: "Цена, срок, монтаж",
-    bg: "#FEF3C7",
-    color: "#F59E0B",
-  },
-  {
-    href: "/instrumenty/konverter/",
-    icon: "converter",
-    title: "Конвертер единиц",
-    desc: "мм → м → дюйм",
-    bg: "#EDE9FE",
-    color: "#8B5CF6",
-  },
-  {
-    href: "/instrumenty/chek-listy/",
-    icon: "checklist",
-    title: "Чек-листы",
-    desc: "11 шаблонов работ",
-    bg: "#CFFAFE",
-    color: "#06B6D4",
-  },
-] as const;
+const HOME_TOOLS = getHomeToolCards(ALL_CHECKLISTS.length);
 
 const FEATURES = [
   {
@@ -314,11 +266,22 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 max-w-xl mx-auto">
-            <CalculatorSearch
-              calculators={ALL_CALCULATORS_META}
-              blogPosts={blogPosts.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
-              checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
-            />
+            <Suspense
+              fallback={
+                <div
+                  className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+                  aria-hidden="true"
+                />
+              }
+            >
+              <CalculatorSearch
+                syncUrlQuery
+                calculators={ALL_CALCULATORS_META}
+                blogPosts={blogPosts.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
+                checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
+                tools={TOOLS_FOR_SEARCH}
+              />
+            </Suspense>
           </div>
 
           <div className="grid grid-cols-3 gap-6 max-w-sm mx-auto mt-10">
@@ -437,7 +400,7 @@ export default async function HomePage() {
                 </h2>
               </div>
               <div className="space-y-3">
-                {TOOLS.map((tool) => (
+                {HOME_TOOLS.map((tool) => (
                   <Link
                     key={tool.href}
                     href={tool.href}
@@ -555,7 +518,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {TOOLS.map((tool) => (
+          {HOME_TOOLS.map((tool) => (
             <Link
               key={tool.href}
               href={tool.href}

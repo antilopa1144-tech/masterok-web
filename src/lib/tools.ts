@@ -1,84 +1,9 @@
 /**
- * Registry of tool pages under /instrumenty/.
- * Used by sitemap, navigation, and tool listing page.
+ * @deprecated Импортируйте из `@/lib/tools/config`.
+ * Оставлено для обратной совместимости sitemap и llms.
  */
-
-export interface ToolPage {
-  slug: string;
-  title: string;
-  description: string;
-  priority: number;
-}
-
-export const ALL_TOOLS: ToolPage[] = [
-  {
-    slug: "",
-    title: "Инструменты",
-    description: "Онлайн-инструменты для ремонта и строительства",
-    priority: 0.7,
-  },
-  {
-    slug: "stoimost-remonta",
-    title: "Калькулятор стоимости ремонта",
-    description: "Примерная смета ремонта квартиры: материалы и работы по типам отделки",
-    priority: 0.7,
-  },
-  {
-    slug: "raskladka-plitki",
-    title: "Генератор раскладки плитки",
-    description: "Визуализация раскладки плитки на стену или пол с расчётом подрезки и отхода",
-    priority: 0.7,
-  },
-  {
-    slug: "normy-raskhoda",
-    title: "Нормы расхода материалов",
-    description: "Справочник расхода на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, клей по ГОСТ",
-    priority: 0.7,
-  },
-  {
-    slug: "sravnenie-materialov",
-    title: "Сравнение строительных материалов",
-    description: "Сравнение напольных покрытий, утеплителей и отделки: цена, срок службы, монтаж",
-    priority: 0.6,
-  },
-  {
-    slug: "skolko-ostalos",
-    title: "Калькулятор «Сколько осталось»",
-    description: "На какую площадь хватит оставшегося материала: краска, грунтовка, клей, шпаклёвка",
-    priority: 0.6,
-  },
-  {
-    slug: "tajmer-skhvatyvaniya",
-    title: "Таймер схватывания и высыхания",
-    description: "Таймер для строительных работ: когда можно наносить следующий слой",
-    priority: 0.6,
-  },
-  {
-    slug: "konverter",
-    title: "Конвертер единиц",
-    description: "Перевод единиц измерения: длина, площадь, объём, масса",
-    priority: 0.6,
-  },
-  {
-    slug: "ploshchad-komnaty",
-    title: "Калькулятор площади комнаты",
-    description: "Расчёт площади стен, пола и потолка по размерам помещения",
-    priority: 0.6,
-  },
-  {
-    slug: "kalkulyator",
-    title: "Простой калькулятор",
-    description: "Обычный калькулятор для быстрых вычислений",
-    priority: 0.5,
-  },
-  {
-    slug: "chek-listy",
-    title: "Чек-листы для ремонта",
-    description: "Готовые чек-листы для контроля этапов ремонта",
-    priority: 0.7,
-  },
-];
-
-export function getToolBySlug(slug: string): ToolPage | undefined {
-  return ALL_TOOLS.find((t) => t.slug === slug);
-}
+export {
+  ALL_TOOLS,
+  getToolBySlug,
+  type ToolPageMeta as ToolPage,
+} from "@/lib/tools/config";

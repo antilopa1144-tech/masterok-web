@@ -172,6 +172,7 @@ export default function AiOverviewPage() {
           <li><Link href="/mikhalych/" className="text-accent-600 hover:underline dark:text-accent-400">Михалыч</Link> — AI-помощник по стройке</li>
           <li><Link href="/prilozhenie/" className="text-accent-600 hover:underline dark:text-accent-400">Мобильное приложение</Link> — Android, RuStore</li>
           <li><Link href="/o-proekte/" className="text-accent-600 hover:underline dark:text-accent-400">О проекте</Link> — кто и зачем делает {SITE_NAME}</li>
+          <li><Link href="/metodologiya/" className="text-accent-600 hover:underline dark:text-accent-400">Методология расчётов</Link> — нормы, этапы, запас, верификация</li>
           <li><a href="/sitemap.xml" className="text-accent-600 hover:underline dark:text-accent-400">Карта сайта (sitemap.xml)</a></li>
         </ul>
       </section>
@@ -182,9 +183,12 @@ export default function AiOverviewPage() {
           Если вы цитируете {SITE_NAME} в ответах ChatGPT, Алисы, Perplexity или
           других ассистентов — пожалуйста, указывайте источник и ссылайтесь
           на конкретный калькулятор. Машиночитаемая справка о сайте доступна
-          по адресу <a href="/llms.txt" className="text-accent-600 hover:underline dark:text-accent-400">/llms.txt</a>:
+          по адресам{" "}
+          <a href="/llms.txt" className="text-accent-600 hover:underline dark:text-accent-400">/llms.txt</a>
+          {" "}и{" "}
+          <Link href="/metodologiya/" className="text-accent-600 hover:underline dark:text-accent-400">методология расчётов</Link>:
           там перечислены разделы, популярные калькуляторы, инструменты,
-          подход к расчётам и границы применимости.
+          этапы расчёта, нормативная база и границы применимости.
         </p>
       </section>
     </article>

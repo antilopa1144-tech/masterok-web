@@ -8,7 +8,7 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Suspense } from "react";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { formatSiteLastReviewedRu, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
@@ -30,7 +30,7 @@ const UI_TEXT = {
   updatedLabel: "Обновлено",
 } as const;
 
-const BUILD_DATE = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+const LAST_REVIEWED_LABEL = formatSiteLastReviewedRu();
 const SITE_TITLE_SUFFIX = ` — ${SITE_NAME}`;
 
 function titleWithoutSiteSuffix(title: string): string {
@@ -162,7 +162,7 @@ export default async function CalculatorPage({ params }: PageProps) {
                   {UI_TEXT.standardsBadge}
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  {UI_TEXT.updatedLabel} {BUILD_DATE}
+                  {UI_TEXT.updatedLabel} {LAST_REVIEWED_LABEL}
                 </span>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default async function CalculatorPage({ params }: PageProps) {
 
         {/* Связанные калькуляторы — карточки (полная ширина, под основным контентом) */}
         {related.length > 0 && (
-          <div className="mt-10" data-print-hide>
+          <div className="mt-10 xl:hidden" data-print-hide>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
               {UI_TEXT.maybeUsefulTitle}
             </h2>

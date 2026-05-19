@@ -28,9 +28,48 @@ export const SITE_LAST_REVIEWED = "2026-04-30";
 export const MASTEROK_RUSTORE_URL = "https://www.rustore.ru/catalog/app/ru.masterok.app";
 export const SITE_SAME_AS = [MASTEROK_RUSTORE_URL] as const;
 
-// Ключевые нормативные документы — используются в citation schema калькуляторов.
+// Ключевые нормативные документы — используются в citation schema калькуляторов и GEO.
 export const SITE_CITATIONS = [
-  { name: "ГОСТ", description: "Государственные стандарты Российской Федерации" },
-  { name: "СНиП", description: "Строительные нормы и правила" },
-  { name: "СП", description: "Своды правил по проектированию и строительству" },
+  {
+    name: "ГОСТ",
+    description: "Государственные стандарты Российской Федерации",
+    url: "https://fgis.gost.ru/",
+  },
+  {
+    name: "СНиП",
+    description: "Строительные нормы и правила (историческая нормативная база)",
+    url: "https://www.consultant.ru/document/cons_doc_LAW_9650/",
+  },
+  {
+    name: "СП",
+    description: "Своды правил по проектированию и строительству",
+    url: "https://www.consultant.ru/law/search/?q=%D1%81%D0%B2%D0%BE%D0%B4+%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D0%BB",
+  },
 ] as const;
+
+/** Минимум статей на странице тега для индексации (ниже — noindex, thin content). */
+export const BLOG_TAG_MIN_POSTS_FOR_INDEX = 3;
+
+/** Дата последнего пересмотра в формате для UI («18 апреля 2026 г.»). */
+export function formatSiteLastReviewedRu(): string {
+  return new Date(`${SITE_LAST_REVIEWED}T12:00:00`).toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** Citation-объекты для JSON-LD (schema.org CreativeWork). */
+export function siteCitationsToSchema(): Array<{
+  "@type": "CreativeWork";
+  name: string;
+  description: string;
+  url: string;
+}> {
+  return SITE_CITATIONS.map((c) => ({
+    "@type": "CreativeWork",
+    name: c.name,
+    description: c.description,
+    url: c.url,
+  }));
+}

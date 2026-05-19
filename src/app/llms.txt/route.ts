@@ -24,6 +24,7 @@ export async function GET() {
   lines.push(`- [Михалыч](${SITE_URL}/mikhalych/): AI-помощник строителя`);
   lines.push(`- [Инструменты](${SITE_URL}/instrumenty/): конвертеры, сравнения, чек-листы`);
   lines.push(`- [О проекте](${SITE_URL}/o-proekte/): информация о сервисе`);
+  lines.push(`- [Методология расчётов](${SITE_URL}/metodologiya/): источники норм, этапы, запас, упаковки, верификация`);
   lines.push(`- [Приложение](${SITE_URL}/prilozhenie/): мобильное приложение для Android`);
   lines.push(`- [Справка для ИИ](${SITE_URL}/ai/): что считает сайт, как устроены формулы, ограничения`);
   lines.push("");

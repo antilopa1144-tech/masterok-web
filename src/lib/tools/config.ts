@@ -1,0 +1,433 @@
+/**
+ * Единый конфиг раздела /instrumenty/ — карточки, sitemap, SEO, связи с калькуляторами.
+ */
+
+export interface CalcRef {
+  slug: string;
+  categorySlug: string;
+}
+
+export interface ToolFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface ToolConfig {
+  slug: string;
+  title: string;
+  /** Короткое имя для карточки на хабе */
+  cardTitle: string;
+  description: string;
+  cardDescription: string;
+  priority: number;
+  icon: string;
+  badge: string;
+  color: string;
+  bg: string;
+  relatedCalculators: CalcRef[];
+  faq: ToolFaqItem[];
+  seoIntro: string;
+  /** Не индексировать (утилита общего назначения) */
+  noindex?: boolean;
+}
+
+export function calcHref(ref: CalcRef): string {
+  return `/kalkulyatory/${ref.categorySlug}/${ref.slug}/`;
+}
+
+export function toolHref(slug: string): string {
+  return `/instrumenty/${slug}/`;
+}
+
+export const TOOL_CONFIGS: ToolConfig[] = [
+  {
+    slug: "stoimost-remonta",
+    title: "Калькулятор стоимости ремонта",
+    cardTitle: "Стоимость ремонта",
+    description:
+      "Примерная смета ремонта квартиры: материалы и работы по типам отделки. Введите площадь и свои цены.",
+    cardDescription:
+      "Примерная смета на ремонт квартиры. Косметический, стандартный, капитальный — материалы и работы.",
+    priority: 0.7,
+    icon: "cost",
+    badge: "Смета",
+    color: "#10B981",
+    bg: "#D1FAE5",
+    relatedCalculators: [
+      { slug: "laminat", categorySlug: "poly" },
+      { slug: "plitka", categorySlug: "poly" },
+      { slug: "kraska", categorySlug: "otdelka" },
+      { slug: "styazhka", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Калькулятор даёт ориентир по бюджету ремонта: вы указываете площадь, тип отделки и свои цены на материалы и работы. Итог — не договор с подрядчиком, а порядок величины затрат для планирования закупки и сравнения смет.",
+    faq: [
+      {
+        question: "Насколько точна смета?",
+        answer:
+          "Это ориентир по типовым нормам расхода на м² и вашим ценам. Реальная смета зависит от города, брендов материалов, состояния квартиры и объёма демонтажа. Перед договором сверьте цифры с прорабом.",
+      },
+      {
+        question: "Можно ли задать свои цены?",
+        answer:
+          "Да. Цены сохраняются в браузере и подставляются при следующем визите. Нормы расхода материалов зафиксированы в инструменте, цены — ваши.",
+      },
+      {
+        question: "Чем отличаются типы ремонта?",
+        answer:
+          "Косметический — обои, покраска, плинтус без черновых работ. Стандартный — выравнивание, стяжка, плитка в мокрых зонах, ламинат. Капитальный — демонтаж, перепланировка, полный цикл от черновой отделки.",
+      },
+    ],
+  },
+  {
+    slug: "raskladka-plitki",
+    title: "Генератор раскладки плитки",
+    cardTitle: "Раскладка плитки",
+    description:
+      "Визуализация раскладки плитки на стену или пол с расчётом подрезки, отхода и количества плиток. Прямая и диагональная укладка.",
+    cardDescription:
+      "Визуальная раскладка плитки на стену или пол. Подрезка, отход, количество — видно сразу.",
+    priority: 0.7,
+    icon: "tile",
+    badge: "Визуализация",
+    color: "#F97316",
+    bg: "#FFF7ED",
+    relatedCalculators: [
+      { slug: "plitka", categorySlug: "poly" },
+      { slug: "klej-dlya-plitki", categorySlug: "poly" },
+      { slug: "zatirka", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Инструмент строит схему укладки по размерам поверхности и плитки, считает целые плитки, подрезку и процент отхода. Удобно до закупки — чтобы заранее оценить раскладку и запас.",
+    faq: [
+      {
+        question: "Учитывается ли шов?",
+        answer: "Да, задаётся ширина шва в миллиметрах — она входит в расчёт сетки и количества плиток.",
+      },
+      {
+        question: "Какой запас заложен в отход?",
+        answer:
+          "Отход считается по фактической раскладке (доля подрезанных плиток). Для закупки добавьте 5–10% к итогу в калькуляторе плитки — на бой и подрезку на объекте.",
+      },
+      {
+        question: "Можно ли перенести результат в калькулятор плитки?",
+        answer:
+          "Площадь и количество из раскладки используйте как ориентир; точный расчёт клея и затирки — в калькуляторе плитки с учётом формата и способа укладки.",
+      },
+    ],
+  },
+  {
+    slug: "normy-raskhoda",
+    title: "Нормы расхода строительных материалов",
+    cardTitle: "Нормы расхода",
+    description:
+      "Справочник расхода строительных материалов на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, плиточный клей, затирка, стяжка. По ГОСТ, СП и паспортам.",
+    cardDescription: "Справочник расхода на 1 м² по ГОСТ и паспортам: штукатурка, грунтовка, клей, краска.",
+    priority: 0.7,
+    icon: "book",
+    badge: "Справочник",
+    color: "#06B6D4",
+    bg: "#CFFAFE",
+    relatedCalculators: [
+      { slug: "gruntovka", categorySlug: "otdelka" },
+      { slug: "shpaklevka", categorySlug: "otdelka" },
+      { slug: "kraska", categorySlug: "otdelka" },
+      { slug: "klej-dlya-plitki", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Таблицы типового расхода на 1 м² с указанием условий (толщина слоя, тип основания) и источника: ГОСТ, СП, паспорт производителя. Для закупки используйте калькуляторы — они учитывают площадь, запас и упаковку.",
+    faq: [
+      {
+        question: "Почему расход в таблице и в калькуляторе может отличаться?",
+        answer:
+          "В таблице — норма на 1 м² при типовых условиях. Калькулятор учитывает вашу площадь, число слоёв, запас, упаковку и режим точности. Оба источника дополняют друг друга.",
+      },
+      {
+        question: "Можно ли считать только по этой таблице?",
+        answer:
+          "Для ориентира — да. Для закупки мешков и банок лучше калькулятор: он округляет до реальной фасовки.",
+      },
+    ],
+  },
+  {
+    slug: "sravnenie-materialov",
+    title: "Сравнение строительных материалов",
+    cardTitle: "Сравнение материалов",
+    description:
+      "Сравнение напольных покрытий, утеплителей и отделочных материалов: стоимость, срок службы, сложность монтажа.",
+    cardDescription:
+      "Полы, стены, утеплители — таблица сравнения по цене, сроку службы, сложности монтажа.",
+    priority: 0.6,
+    icon: "compare",
+    badge: "Выбор",
+    color: "#8B5CF6",
+    bg: "#EDE9FE",
+    relatedCalculators: [
+      { slug: "laminat", categorySlug: "poly" },
+      { slug: "parket", categorySlug: "poly" },
+      { slug: "uteplenie", categorySlug: "fasad" },
+      { slug: "oboi", categorySlug: "otdelka" },
+    ],
+    seoIntro:
+      "Сводные таблицы помогают сравнить материалы по ключевым параметрам до покупки. Цены в таблице — ориентир по рынку РФ; уточняйте в своём регионе и у поставщика.",
+    faq: [
+      {
+        question: "Данные по ценам актуальны?",
+        answer:
+          "Указаны порядки величин для сравнения категорий, а не прайс на сегодня. Перед закупкой проверьте цену в магазине или смете.",
+      },
+    ],
+  },
+  {
+    slug: "skolko-ostalos",
+    title: "Калькулятор «Сколько осталось»",
+    cardTitle: "Сколько осталось?",
+    description:
+      "Обратный калькулятор: введите остаток краски, грунтовки, клея или штукатурки — узнайте, на какую площадь хватит материала.",
+    cardDescription:
+      "Обратный калькулятор: введите остаток материала — узнайте, на какую площадь хватит.",
+    priority: 0.6,
+    icon: "measure",
+    badge: "Остаток",
+    color: "#3B82F6",
+    bg: "#DBEAFE",
+    relatedCalculators: [
+      { slug: "kraska", categorySlug: "otdelka" },
+      { slug: "gruntovka", categorySlug: "otdelka" },
+      { slug: "klej-dlya-plitki", categorySlug: "poly" },
+      { slug: "shtukaturka", categorySlug: "steny" },
+    ],
+    seoIntro:
+      "Считает площадь по остатку ведра, банки или мешка и типовому расходу на м². Удобно на объекте, когда нужно понять, хватит ли материала на комнату или нужно докупить.",
+    faq: [
+      {
+        question: "Как выбрать материал в списке?",
+        answer:
+          "Выберите ближайший тип (краска, грунтовка, клей и т.д.) — подставятся типовой расход и число слоёв. При необходимости измените число слоёв вручную.",
+      },
+      {
+        question: "Почему результат отличается от калькулятора краски?",
+        answer:
+          "Здесь упрощённые нормы для быстрой оценки. Точный расчёт с укрывистостью и основанием — в полном калькуляторе материала.",
+      },
+    ],
+  },
+  {
+    slug: "tajmer-skhvatyvaniya",
+    title: "Таймер схватывания и высыхания",
+    cardTitle: "Таймер схватывания",
+    description:
+      "Таймер для строительных работ: штукатурка, шпаклёвка, клей, краска. Когда можно наносить следующий слой.",
+    cardDescription:
+      "Выберите материал — таймер покажет, когда можно продолжать. Уведомление в браузере.",
+    priority: 0.6,
+    icon: "timer",
+    badge: "Таймер",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
+    relatedCalculators: [
+      { slug: "shtukaturka", categorySlug: "steny" },
+      { slug: "shpaklevka", categorySlug: "otdelka" },
+      { slug: "klej-dlya-plitki", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Пресеты времени схватывания и высыхания для типовых материалов при +20 °C и нормальной влажности. На морозе, сквозняке или толстом слое сроки увеличиваются — ориентируйтесь на паспорт смеси.",
+    faq: [
+      {
+        question: "Придёт ли уведомление на телефон?",
+        answer:
+          "Браузер может показать push-уведомление, если вы разрешили их для сайта и вкладка была открыта. Это не замена таймеру в приложении — не закрывайте вкладку на критичных этапах.",
+      },
+    ],
+  },
+  {
+    slug: "konverter",
+    title: "Конвертер единиц измерения",
+    cardTitle: "Конвертер единиц",
+    description:
+      "Перевод строительных единиц: длина, площадь, объём, масса, давление, температура. мм, м, м², л, кг.",
+    cardDescription: "Длина, площадь, объём, масса, давление. Быстрый пересчёт строительных единиц.",
+    priority: 0.6,
+    icon: "converter",
+    badge: "Единицы",
+    color: "#3B82F6",
+    bg: "#DBEAFE",
+    relatedCalculators: [
+      { slug: "beton", categorySlug: "fundament" },
+      { slug: "styazhka", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Пересчёт единиц, с которыми часто путаются на объекте: метры и миллиметры, литры и килограммы смесей, квадратные метры плитки.",
+    faq: [
+      {
+        question: "Можно ли перевести мешок 25 кг в литры?",
+        answer:
+          "Для сыпучих смесей нужна плотность конкретного материала. Конвертер массы и объёма работает при известной плотности; для расхода смесей используйте строительные калькуляторы.",
+      },
+    ],
+  },
+  {
+    slug: "ploshchad-komnaty",
+    title: "Калькулятор площади комнаты",
+    cardTitle: "Площадь комнаты",
+    description:
+      "Расчёт площади пола, периметра и площади стен: прямоугольник, Г-, Т-образная, трапеция, треугольник, круг.",
+    cardDescription:
+      "Прямоугольник, Г-образная, Т-образная, трапеция. Площадь пола, периметр, площадь стен.",
+    priority: 0.6,
+    icon: "area",
+    badge: "Геометрия",
+    color: "#10B981",
+    bg: "#D1FAE5",
+    relatedCalculators: [
+      { slug: "oboi", categorySlug: "otdelka" },
+      { slug: "laminat", categorySlug: "poly" },
+      { slug: "kraska", categorySlug: "otdelka" },
+      { slug: "plitka", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Считает площадь пола и стен по размерам комнаты. Результат можно перенести в калькуляторы отделки — там учтутся проёмы, запас и упаковка.",
+    faq: [
+      {
+        question: "Почему периметр Г-образной комнаты приближённый?",
+        answer:
+          "Для сложных контуров без чертежа даётся оценка по внешнему периметру. Для точного плинтуса измерьте стены рулеткой по полу.",
+      },
+    ],
+  },
+  {
+    slug: "kalkulyator",
+    title: "Калькулятор на объекте",
+    cardTitle: "Калькулятор",
+    description:
+      "Простой арифметический калькулятор для быстрых вычислений на ремонте. Не заменяет строительные калькуляторы Мастерок.",
+    cardDescription: "Арифметика на объекте — для быстрых вычислений, не для расчёта материалов.",
+    priority: 0.5,
+    icon: "calculator",
+    badge: "Арифметика",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
+    noindex: true,
+    relatedCalculators: [
+      { slug: "beton", categorySlug: "fundament" },
+      { slug: "kraska", categorySlug: "otdelka" },
+    ],
+    seoIntro:
+      "Обычный калькулятор для сложения и умножения на объекте. Расчёт материалов, запаса и упаковок — в специализированных калькуляторах раздела «Калькуляторы».",
+    faq: [],
+  },
+  {
+    slug: "chek-listy",
+    title: "Чек-листы для ремонта",
+    cardTitle: "Чек-листы работ",
+    description:
+      "Готовые пошаговые чек-листы для ремонта и строительства: плитка, стяжка, ГКЛ, покраска. Распечатать или открыть на телефоне.",
+    cardDescription:
+      "Готовые пошаговые чек-листы для ремонта и строительства. Скачать и распечатать.",
+    priority: 0.7,
+    icon: "checklist",
+    badge: "Чек-листы",
+    color: "#8B5CF6",
+    bg: "#EDE9FE",
+    relatedCalculators: [
+      { slug: "plitka", categorySlug: "poly" },
+      { slug: "gipsokarton", categorySlug: "steny" },
+      { slug: "styazhka", categorySlug: "poly" },
+    ],
+    seoIntro:
+      "Пошаговые списки работ в правильном порядке — чтобы не пропустить этап на объекте. Дополняют калькуляторы: сначала план работ, затем расчёт материалов.",
+    faq: [
+      {
+        question: "Можно ли отмечать выполненные пункты?",
+        answer:
+          "На экране отображаются чекбоксы для печати и PDF. Сохранение прогресса в аккаунте пока не предусмотрено — используйте печать или PDF на объекте.",
+      },
+    ],
+  },
+];
+
+/** Для sitemap и llms.txt (включая пустой slug = хаб) */
+export interface ToolPageMeta {
+  slug: string;
+  title: string;
+  description: string;
+  priority: number;
+}
+
+export const ALL_TOOLS: ToolPageMeta[] = [
+  {
+    slug: "",
+    title: "Инструменты",
+    description:
+      "Бесплатные инструменты для ремонта: смета, раскладка плитки, нормы расхода, сравнение материалов, таймер, площадь, конвертер, чек-листы.",
+    priority: 0.7,
+  },
+  ...TOOL_CONFIGS.map((t) => ({
+    slug: t.slug,
+    title: t.title,
+    description: t.description,
+    priority: t.priority,
+  })),
+];
+
+export function getToolBySlug(slug: string): ToolPageMeta | undefined {
+  return ALL_TOOLS.find((t) => t.slug === slug);
+}
+
+export function getToolConfig(slug: string): ToolConfig | undefined {
+  return TOOL_CONFIGS.find((t) => t.slug === slug);
+}
+
+/** Карточки для хаба и главной (без дублирования полей) */
+export const TOOL_CARDS = TOOL_CONFIGS.map((t) => ({
+  href: toolHref(t.slug),
+  icon: t.icon,
+  title: t.cardTitle,
+  desc: t.cardDescription,
+  badge: t.badge,
+  color: t.color,
+  bg: t.bg,
+}));
+
+/** Для поиска на главной */
+export const TOOLS_FOR_SEARCH = TOOL_CONFIGS.filter((t) => !t.noindex).map((t) => ({
+  slug: t.slug,
+  title: t.cardTitle,
+  description: t.cardDescription,
+  icon: t.icon,
+  color: t.color,
+  bg: t.bg,
+}));
+
+/** Карточки на главной (sidebar) — фиксированный набор без kalkulyator */
+export const HOME_TOOL_SLUGS = [
+  "stoimost-remonta",
+  "raskladka-plitki",
+  "normy-raskhoda",
+  "sravnenie-materialov",
+  "konverter",
+  "chek-listy",
+] as const;
+
+export function getHomeToolCards(checklistCount: number) {
+  return HOME_TOOL_SLUGS.map((slug) => {
+    const t = TOOL_CONFIGS.find((c) => c.slug === slug)!;
+    return {
+      href: toolHref(slug),
+      icon: t.icon,
+      title: t.cardTitle,
+      desc:
+        slug === "chek-listy"
+          ? `${checklistCount} шаблонов работ`
+          : t.cardDescription,
+      bg: t.bg,
+      color: t.color,
+    };
+  });
+}
+
+export const HUB_META = {
+  title: "Инструменты строителя — смета, плитка, нормы, чек-листы",
+  description:
+    "Бесплатные инструменты для ремонта: смета, раскладка плитки, нормы расхода на 1 м², сравнение материалов, таймер схватывания, площадь комнаты, конвертер и чек-листы работ.",
+} as const;
