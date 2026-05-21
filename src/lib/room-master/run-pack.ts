@@ -45,8 +45,8 @@ export function mergePackResults(
   return {
     materials,
     totals,
-    warnings: warnings.length > 0 ? warnings : undefined,
-    practicalNotes: practicalNotes.length > 0 ? practicalNotes : undefined,
+    warnings: warnings.length > 0 ? warnings : [],
+    practicalNotes: practicalNotes.length > 0 ? practicalNotes : [],
   };
 }
 
