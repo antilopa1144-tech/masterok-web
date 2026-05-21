@@ -142,7 +142,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
       });
 
       if (!res.ok) {
-        // Try to extract error details from OpenRouter response body
+        // Try to extract error details from upstream response body
         let errorDetail = "";
         try {
           const errorBody = await res.json();

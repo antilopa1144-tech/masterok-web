@@ -132,9 +132,9 @@ export default function ProjectManager() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
           </svg>
         </div>
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Мои проекты</p>
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Мой ремонт</p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          Сохраняйте расчёты по проектам и смотрите общую смету.
+          Сохраняйте расчёты в проекты и собирайте смету по объекту.
         </p>
         <div className="mt-3 flex gap-2 max-w-xs mx-auto">
           <input
@@ -156,7 +156,7 @@ export default function ProjectManager() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Мои проекты</h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Мой ремонт</h3>
         <Link href="/proekty/" className="text-xs font-medium text-accent-700 hover:text-accent-800 no-underline dark:text-accent-400">
           Все →
         </Link>

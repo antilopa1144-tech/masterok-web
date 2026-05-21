@@ -23,6 +23,9 @@ export async function GET() {
   lines.push(`- [Блог](${SITE_URL}/blog/): статьи по строительству и ремонту`);
   lines.push(`- [Михалыч](${SITE_URL}/mikhalych/): AI-помощник строителя`);
   lines.push(`- [Инструменты](${SITE_URL}/instrumenty/): конвертеры, сравнения, чек-листы`);
+  lines.push(`- [Мой ремонт](${SITE_URL}/proekty/): проекты, сводные сметы и списки закупки (данные в браузере)`);
+  lines.push(`- [Мастер «Мой ремонт»](${SITE_URL}/instrumenty/moy-remont/): ванная/кухня/комната — один ввод размеров, пакет расчётов`);
+  lines.push(`- [Календарь ремонта](${SITE_URL}/instrumenty/kalendar-remonta/): этапы, чек-листы и таймеры схватывания по сценарию`);
   lines.push(`- [О проекте](${SITE_URL}/o-proekte/): информация о сервисе`);
   lines.push(`- [Методология расчётов](${SITE_URL}/metodologiya/): источники норм, этапы, запас, упаковки, верификация`);
   lines.push(`- [Приложение](${SITE_URL}/prilozhenie/): мобильное приложение для Android`);

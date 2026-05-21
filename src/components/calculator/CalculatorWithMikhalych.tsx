@@ -11,6 +11,7 @@ import CompanionLinks from "./CompanionLinks";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
+import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 
 const MikhalychWidget = dynamic(() => import("./MikhalychWidget"), {
   ssr: false,
@@ -92,6 +93,7 @@ export default function CalculatorWithMikhalych({
   return (
     <>
       <div className="space-y-6">
+        <TileLayoutTransferBanner />
         <div className="card p-6 space-y-5" data-print-hide>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">

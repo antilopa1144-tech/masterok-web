@@ -100,7 +100,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http://5.129.248.119",
       "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://openrouter.ai wss://mc.yandex.ru wss://mc.yandex.com",
+      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
       "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
       "object-src 'none'",
       "base-uri 'self'",

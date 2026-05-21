@@ -15,6 +15,7 @@ import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { trackRecentCalculator } from "./RecentCalculators";
+import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 export type { CalculatorWidgetProps };
 
 interface Props {
@@ -24,7 +25,10 @@ interface Props {
 export default function CalculatorWidget({ calculator }: Props) {
   const searchParams = useSearchParams();
   const fromCalc = searchParams.get("from");
-  const fromCalcDef = useMemo(() => fromCalc ? getCalculatorMetaBySlug(fromCalc) : null, [fromCalc]);
+  const fromCalcDef = useMemo(() => {
+    if (!fromCalc || fromCalc === "raskladka") return null;
+    return getCalculatorMetaBySlug(fromCalc);
+  }, [fromCalc]);
   const [experienceMode, setExperienceMode] = useState<"beginner" | "pro">("beginner");
   const [pulse, setPulse] = useState(false);
   const {
@@ -86,6 +90,7 @@ export default function CalculatorWidget({ calculator }: Props) {
   return (
     <div className="space-y-6" onKeyDown={handleFormKeyDown}>
       {/* Баннер: значения перенесены из другого калькулятора */}
+      <TileLayoutTransferBanner />
       {fromCalcDef && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
           <span>📐</span>

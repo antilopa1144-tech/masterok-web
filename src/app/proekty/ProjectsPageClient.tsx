@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import { createProject, deleteProject, getProjects } from "@/lib/storage/projects";
 import { buildProjectEstimates, type ProjectEstimate } from "@/lib/projects/estimate";
 import type { ProjectWithEntries } from "@/lib/storage/types";
@@ -161,6 +162,7 @@ export default function ProjectsPageClient() {
 
   return (
     <div className="space-y-6">
+      <RenovationHubStrip compact />
       {projects.length === 0 ? (
         <div className="card p-10 text-center space-y-4">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-accent-50 dark:bg-accent-900/20">

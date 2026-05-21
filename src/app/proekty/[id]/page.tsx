@@ -4,9 +4,10 @@ import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
 import ProjectDetailClient from "./ProjectDetailClient";
 
+/** Персональная смета в localStorage — для индексации только список /proekty/. */
 export const metadata: Metadata = {
   title: `Смета проекта — ${SITE_NAME}`,
-  robots: { index: false, follow: false },
+  robots: { index: false, follow: true },
 };
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { Suspense } from "react";
 import CuringTimer from "./CuringTimer";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
@@ -64,7 +65,9 @@ export default function Page() {
       </div>
 
       <div className="page-container py-8">
-        <CuringTimer />
+        <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка…</div>}>
+          <CuringTimer />
+        </Suspense>
       </div>
       <ToolPageExtras slug="tajmer-skhvatyvaniya" />
     </>

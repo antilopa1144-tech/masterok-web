@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getMikhalychChatModel,
+  getMikhalychUpstreamProvider,
+  mikhalychChatCompletion,
+} from "@/lib/mikhalych/deepseek-upstream";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
-
-// Модель задаётся на сервере. Меняется через MIKHALYCH_MODEL в Timeweb env без пересборки.
-// DeepSeek V4 Pro — основная модель Михалыча (качество ответов прораба).
-const MODEL = process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-pro";
-
-// Модели, у которых по умолчанию включён reasoning / chain-of-thought и нужен
-// явный отказ от него, иначе ответ приходит в расширенном формате
-// и/или max_tokens целиком уходит на reasoning-токены до контента.
-// Проверяется через supported_parameters в /api/v1/models — если есть "reasoning",
-// модель reasoning-enabled и ей нужен reasoning.enabled=false для быстрого ответа.
-const REASONING_MODELS = new Set<string>([
-  "deepseek/deepseek-v4-flash",
-  "deepseek/deepseek-v4-pro",
-  "deepseek/deepseek-r1",
-]);
+const MODEL = getMikhalychChatModel();
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
@@ -91,12 +80,34 @@ export function OPTIONS(req: NextRequest) {
   return new Response(null, { status: 204, headers: corsHeaders(req) });
 }
 
+/** Проверка конфигурации после деплоя (без вызова AI). */
+export async function GET(req: NextRequest) {
+  const headers = corsHeaders(req);
+  const provider = getMikhalychUpstreamProvider();
+  if (!provider) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Set DEEPSEEK_API_KEY or OPENROUTER_API_KEY on server",
+      },
+      { status: 503, headers },
+    );
+  }
+  return NextResponse.json(
+    { ok: true, provider, chatModel: MODEL },
+    { headers },
+  );
+}
+
 export async function POST(req: NextRequest) {
   const headers = corsHeaders(req);
 
-  if (!OPENROUTER_API_KEY) {
+  if (!getMikhalychUpstreamProvider()) {
     return NextResponse.json(
-      { error: "OPENROUTER_API_KEY not configured on server" },
+      {
+        error:
+          "AI not configured on server. Set DEEPSEEK_API_KEY (recommended) or OPENROUTER_API_KEY in Timeweb env.",
+      },
       { status: 500, headers },
     );
   }
@@ -136,14 +147,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const client = (req.headers.get("x-client") ?? "web").slice(0, 40);
-  const referer = SITE_ORIGIN;
-
-  // Дефолтные параметры — подобраны под «живую речь» Михалыча на DeepSeek V4.
-  // temperature 0.7 — золотая середина: не канцелярит, но не галлюцинирует по стройке.
-  // top_p 0.9 — широкий пул слов, больше речевого разнообразия.
-  // frequency_penalty 0.15 — меньше повторов слов-паразитов.
-  // presence_penalty 0.1 — охотнее вводит новые речевые ходы и байки.
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
     messages,
@@ -155,25 +158,11 @@ export async function POST(req: NextRequest) {
     stream: body.stream === true,
   };
 
-  // Для reasoning-моделей явно выключаем chain-of-thought — иначе модель тратит
-  // max_tokens на внутренние рассуждения и либо возвращает пустой content,
-  // либо OpenRouter отвечает 400 на несовместимость параметров. Формат —
-  // OpenRouter-specific: `reasoning: { enabled: false }`. Документация:
-  // https://openrouter.ai/docs/use-cases/reasoning-tokens
-  if (REASONING_MODELS.has(MODEL)) {
-    upstreamRequest.reasoning = { enabled: false };
-  }
-
   try {
-    const upstream = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": referer,
-        "X-Title": `Masterok - ${client}`,
-      },
-      body: JSON.stringify(upstreamRequest),
+    const client = (req.headers.get("x-client") ?? "web").slice(0, 40);
+    const upstream = await mikhalychChatCompletion(upstreamRequest, {
+      clientLabel: client,
+      siteOrigin: SITE_ORIGIN,
     });
 
     if (body.stream) {
@@ -200,7 +189,6 @@ export async function POST(req: NextRequest) {
 
     const data = await upstream.json();
     if (!upstream.ok) {
-      // Серверное логирование для диагностики через Timeweb logs.
       console.error("[mikhalych] upstream error", {
         status: upstream.status,
         model: MODEL,

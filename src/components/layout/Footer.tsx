@@ -13,6 +13,7 @@ const UI_TEXT = {
   aiAssistant: "Михалыч — AI-ассистент",
   blog: "Блог",
   app: "Приложение",
+  myRenovation: "Мой ремонт — сметы",
   reportTitle: "Нашли ошибку в расчёте?",
   reportDescription: "Напишите нашему ИИ-ассистенту",
   askMikhalych: "Спросить Михалыча →",
@@ -117,6 +118,12 @@ export default function Footer() {
                 <Link href="/mikhalych/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="bot" size={14} color="currentColor" />
                   {UI_TEXT.aiAssistant}
+                </Link>
+              </li>
+              <li>
+                <Link href="/proekty/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                  <CategoryIcon icon="checklist" size={14} color="currentColor" />
+                  {UI_TEXT.myRenovation}
                 </Link>
               </li>
               <li>

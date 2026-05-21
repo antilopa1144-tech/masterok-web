@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SYSTEM_PROMPT } from "@/lib/mikhalych";
 import { CALC_REVIEW_TASK } from "@/lib/mikhalych/calc-review-prompt";
+import {
+  getMikhalychReviewModel,
+  getMikhalychUpstreamProvider,
+  mikhalychChatCompletion,
+} from "@/lib/mikhalych/deepseek-upstream";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
-const MODEL = process.env.MIKHALYCH_REVIEW_MODEL ?? process.env.MIKHALYCH_MODEL ?? "deepseek/deepseek-v4-pro";
-
-const REASONING_MODELS = new Set<string>([
-  "deepseek/deepseek-v4-flash",
-  "deepseek/deepseek-v4-pro",
-  "deepseek/deepseek-r1",
-]);
+const MODEL = getMikhalychReviewModel();
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 30;
@@ -62,8 +59,14 @@ export function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const headers = corsHeaders(req);
 
-  if (!OPENROUTER_API_KEY) {
-    return NextResponse.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 500, headers });
+  if (!getMikhalychUpstreamProvider()) {
+    return NextResponse.json(
+      {
+        error:
+          "AI not configured on server. Set DEEPSEEK_API_KEY (recommended) or OPENROUTER_API_KEY in Timeweb env.",
+      },
+      { status: 500, headers },
+    );
   }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -101,20 +104,11 @@ export async function POST(req: NextRequest) {
     presence_penalty: 0.15,
   };
 
-  if (REASONING_MODELS.has(MODEL)) {
-    upstreamRequest.reasoning = { enabled: false };
-  }
-
   try {
-    const upstream = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": SITE_ORIGIN,
-        "X-Title": `Masterok calc-review - ${slug}`,
-      },
-      body: JSON.stringify(upstreamRequest),
+    const client = (req.headers.get("x-client") ?? "web").slice(0, 40);
+    const upstream = await mikhalychChatCompletion(upstreamRequest, {
+      clientLabel: client,
+      siteOrigin: SITE_ORIGIN,
     });
 
     const data = await upstream.json();

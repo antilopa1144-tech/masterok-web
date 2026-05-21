@@ -117,7 +117,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         });
 
         if (!response.ok) {
-          // Извлекаем детали ошибки от OpenRouter — это помогает диагностировать
+          // Извлекаем детали ошибки от upstream — это помогает диагностировать
           // проблемы с моделью/параметрами, не лазая в логи Timeweb.
           let detail = "";
           try {

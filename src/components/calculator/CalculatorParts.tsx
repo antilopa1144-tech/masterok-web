@@ -24,7 +24,10 @@ import {
   type AccuracyMode,
   type AccuracyModifiers,
 } from "../../../engine/accuracy";
+import Link from "next/link";
 import SaveToProjectButton from "./SaveToProjectButton";
+import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
+import { getScenarioForCalculator } from "@/lib/renovation-hub/context";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 // ── Округление материалов по единицам ────────────────────────────────────────
@@ -1949,12 +1952,41 @@ export function ResultBlock({
           <div className="flex items-start gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 p-3 text-sm text-violet-800 sm:p-4 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-200">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-base dark:bg-violet-900/40" aria-hidden>🔒</span>
             <div className="min-w-0">
-              <p className="font-semibold leading-snug">Сохраняйте расчёты и возвращайтесь к ним позже.</p>
+              <p className="font-semibold leading-snug">
+                {projectSave
+                  ? "Добавьте расчёт в «Мой ремонт» — соберёте сводную смету и список закупки по объекту."
+                  : "Сохраняйте расчёты и возвращайтесь к ним позже."}
+              </p>
               <p className="mt-0.5 text-xs leading-snug text-violet-700/80 dark:text-violet-300/80">
                 Данные не передаются третьим лицам и хранятся только у вас, локально в браузере.
               </p>
+              {projectSave && (
+                <Link
+                  href="/proekty/"
+                  className="mt-2 inline-block text-xs font-semibold text-violet-800 underline hover:text-violet-950 dark:text-violet-200 dark:hover:text-white no-underline hover:underline"
+                >
+                  Открыть «Мой ремонт» →
+                </Link>
+              )}
             </div>
           </div>
+          {projectSave && (() => {
+            const scenarioId = getScenarioForCalculator(calculatorSlug);
+            if (!scenarioId) return null;
+            const showTile =
+              calculatorSlug === "plitka" ||
+              calculatorSlug === "vannaya-komnata" ||
+              calculatorSlug === "klej-dlya-plitki";
+            return (
+              <RenovationHubStrip
+                scenarioId={scenarioId}
+                packId={scenarioId === "apartment" ? null : scenarioId}
+                showTileLayout={showTile}
+                compact
+                className="mt-3"
+              />
+            );
+          })()}
         </div>
 
         {/* Кнопки действий — полоса под информационной плашкой */}
@@ -1995,6 +2027,7 @@ export function ResultBlock({
                 calcTitle={projectSave.calcTitle}
                 slug={projectSave.slug}
                 categorySlug={projectSave.categorySlug}
+                calendarScenarioId={getScenarioForCalculator(calculatorSlug)}
                 materials={result.materials.map((m) => ({
                   name: m.name,
                   quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,

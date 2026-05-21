@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createProject, getProjects, saveEntryToProject } from "@/lib/storage/projects";
 import type { ProjectWithEntries } from "@/lib/storage/types";
+import { calendarHref } from "@/lib/renovation-hub/context";
+import type { RenovationScenarioId } from "@/lib/renovation-calendar/scenarios";
 
 interface Props {
   calcId: string;
@@ -10,9 +13,18 @@ interface Props {
   slug: string;
   categorySlug: string;
   materials: { name: string; quantity: number; unit: string; category?: string }[];
+  /** Ссылка на календарь после сохранения. */
+  calendarScenarioId?: RenovationScenarioId | null;
 }
 
-export default function SaveToProjectButton({ calcId, calcTitle, slug, categorySlug, materials }: Props) {
+export default function SaveToProjectButton({
+  calcId,
+  calcTitle,
+  slug,
+  categorySlug,
+  materials,
+  calendarScenarioId,
+}: Props) {
   const [projects, setProjects] = useState<ProjectWithEntries[]>([]);
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -82,14 +94,25 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
           <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5A1.5 1.5 0 013.5 1h6.586a1.5 1.5 0 011.06.44l2.415 2.414A1.5 1.5 0 0114 4.914V12.5A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5v-10z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 1v3.5A.5.5 0 005.5 5h5a.5.5 0 00.5-.5V1M8 8v4M6 10h4" />
         </svg>
-        Сохранить расчёт
+        В проект
       </button>
 
       {open && (
         <div className="absolute bottom-full right-0 mb-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 z-50 overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Сохранить в проект</p>
-            <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 truncate">{calcTitle}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Мой ремонт</p>
+                <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 truncate">{calcTitle}</p>
+              </div>
+              <Link
+                href="/proekty/"
+                className="shrink-0 text-[10px] font-medium text-accent-600 hover:text-accent-700 dark:text-accent-400 no-underline"
+                onClick={() => setOpen(false)}
+              >
+                Все →
+              </Link>
+            </div>
           </div>
 
           {projects.length > 0 && (
@@ -103,10 +126,14 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
                 >
                   <span className="truncate">{p.name}</span>
                   {saved === p.id ? (
-                    <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-green-600 dark:text-green-400">
+                    <Link
+                      href={`/proekty/${p.id}`}
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-green-600 dark:text-green-400 no-underline"
+                      onClick={() => setOpen(false)}
+                    >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l3.5 3.5L13 5"/></svg>
-                      Сохранено
-                    </span>
+                      Смета →
+                    </Link>
                   ) : (
                     <span className="shrink-0 text-[10px] text-slate-400">{p.entries.length} расч.</span>
                   )}
@@ -115,6 +142,17 @@ export default function SaveToProjectButton({ calcId, calcTitle, slug, categoryS
             </div>
           )}
 
+          {calendarScenarioId && (
+            <div className="border-t border-slate-100 px-3 py-2 dark:border-slate-800">
+              <Link
+                href={calendarHref(calendarScenarioId)}
+                className="text-[11px] font-medium text-sky-700 hover:text-sky-900 dark:text-sky-300 no-underline"
+                onClick={() => setOpen(false)}
+              >
+                📅 Календарь этапов →
+              </Link>
+            </div>
+          )}
           <div className="border-t border-slate-100 p-3 dark:border-slate-800">
             <p className="mb-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {projects.length === 0 ? "Создать первый проект" : "Новый проект"}

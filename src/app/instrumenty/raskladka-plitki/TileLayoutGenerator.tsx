@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
+import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import {
   calculateTileLayout,
   computeLayoutSvgBoundsMm,
@@ -11,6 +14,10 @@ import {
   type LayoutMode,
   type TileLayoutResult,
 } from "@/lib/tools/tile-layout";
+import {
+  buildPlitkaCalculatorHref,
+  parseTileLayoutFromSearchParams,
+} from "@/lib/tools/tile-layout-to-calc";
 
 // ── SVG Renderer ─────────────────────────────────────────────────────────────
 
@@ -76,6 +83,7 @@ function TileLayoutSVG({ result, groutMm }: { result: TileLayoutResult; groutMm:
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function TileLayoutGenerator() {
+  const searchParams = useSearchParams();
   const [surfaceW, setSurfaceW] = useState(1700);
   const [surfaceH, setSurfaceH] = useState(2500);
   const [tileW, setTileW] = useState(300);
@@ -83,6 +91,17 @@ export default function TileLayoutGenerator() {
   const [groutMm, setGroutMm] = useState(2);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("straight");
   const svgContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const parsed = parseTileLayoutFromSearchParams(searchParams);
+    if (!parsed?.surfaceW || !parsed.surfaceH) return;
+    setSurfaceW(parsed.surfaceW);
+    setSurfaceH(parsed.surfaceH);
+    if (parsed.tileW) setTileW(parsed.tileW);
+    if (parsed.tileH) setTileH(parsed.tileH);
+    if (parsed.groutMm) setGroutMm(parsed.groutMm);
+    if (parsed.layoutMode) setLayoutMode(parsed.layoutMode);
+  }, [searchParams]);
 
   const handleExportPNG = useCallback(() => {
     const svgEl = svgContainerRef.current?.querySelector("svg");
@@ -115,8 +134,48 @@ export default function TileLayoutGenerator() {
   const purchaseTotal =
     result.totalTiles + (result.purchaseReserveTiles > 0 ? result.purchaseReserveTiles : 0);
 
+  const plitkaCalcHref = useMemo(
+    () =>
+      buildPlitkaCalculatorHref(
+        {
+          surfaceW,
+          surfaceH,
+          tileW,
+          tileH,
+          groutMm,
+          layoutMode,
+        },
+        { tilesTotal: purchaseTotal },
+      ),
+    [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode, purchaseTotal],
+  );
+
+  const surfaceAreaM2 = useMemo(
+    () => Math.round(((surfaceW * surfaceH) / 1_000_000) * 100) / 100,
+    [surfaceW, surfaceH],
+  );
+
+  const layoutMaterials = useMemo(
+    () => [
+      {
+        name: "Плитка к закупке (с запасом)",
+        quantity: purchaseTotal,
+        unit: "шт",
+        category: "Плитка",
+      },
+      {
+        name: "Площадь поверхности",
+        quantity: surfaceAreaM2,
+        unit: "м²",
+        category: "Плитка",
+      },
+    ],
+    [purchaseTotal, surfaceAreaM2],
+  );
+
   return (
     <div className="max-w-3xl space-y-6">
+      <RenovationHubStrip scenarioId="bathroom" showTileLayout compact />
       <div className="card p-6 space-y-5">
         {/* Surface size */}
         <div>
@@ -324,16 +383,25 @@ export default function TileLayoutGenerator() {
           </div>
         )}
 
-        <p className="text-xs text-slate-400 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
-          Клей, затирка и упаковки — в{" "}
-          <Link
-            href="/kalkulyatory/poly/plitka/"
-            className="text-accent-600 hover:text-accent-700 underline"
-          >
-            калькуляторе плитки
-          </Link>
-          .
-        </p>
+        <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Перенесём в калькулятор: {surfaceAreaM2} м², плитка {tileW}×{tileH} мм, шов {groutMm} мм и схему укладки —
+            сразу посчитаем клей, затирку и упаковки.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <Link href={plitkaCalcHref} className="btn-primary inline-flex text-sm no-underline">
+              Клей, затирка и упаковки →
+            </Link>
+            <SaveToProjectButton
+              calcId="instrument-raskladka-plitki"
+              calcTitle="Раскладка плитки"
+              slug="plitka"
+              categorySlug="poly"
+              materials={layoutMaterials}
+              calendarScenarioId="bathroom"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
