@@ -6,6 +6,7 @@ import MarkdownContent from "./MarkdownContent";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
+  MIKHALYCH_CHAT_GENERATION,
   checkRateLimit,
   getApiHeaders,
 } from "@/lib/mikhalych";
@@ -24,7 +25,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     {
       role: "assistant",
       content:
-        "Привет! Я Михалыч — строительный ИИ-мастер. Задавай любой вопрос: расчёт материалов, технология монтажа, выбор инструмента. Постараюсь помочь по делу.",
+        "Я Михалыч. Спрашивай по стройке — отвечу прямо, иногда с сухим стёбом, если идея кривая. Цифры по материалам — подскажу калькулятор.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -108,11 +109,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
               { role: "system", content: SYSTEM_PROMPT },
               ...apiMessages.map((m) => ({ role: m.role, content: m.content })),
             ],
-            temperature: 0.7,
-            top_p: 0.9,
-            frequency_penalty: 0.15,
-            presence_penalty: 0.1,
-            max_tokens: 1024,
+            ...MIKHALYCH_CHAT_GENERATION,
           }),
         });
 

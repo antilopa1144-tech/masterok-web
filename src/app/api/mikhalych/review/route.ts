@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SYSTEM_PROMPT } from "@/lib/mikhalych";
-import { CALC_REVIEW_TASK } from "@/lib/mikhalych/calc-review-prompt";
+import { MIKHALYCH_REVIEW_GENERATION } from "@/lib/mikhalych/params";
+import { MIKHALYCH_REVIEW_SYSTEM_PROMPT } from "@/lib/mikhalych/prompts/review";
 import {
   getMikhalychReviewModel,
   getMikhalychUpstreamProvider,
@@ -8,12 +8,13 @@ import {
 } from "@/lib/mikhalych/deepseek-upstream";
 
 const MODEL = getMikhalychReviewModel();
+const REVIEW_GEN = MIKHALYCH_REVIEW_GENERATION;
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 30;
 const WINDOW_MS = 60_000;
 const MAX_CONTEXT_CHARS = 12_000;
-const MAX_REVIEW_TOKENS = 450;
+const MAX_REVIEW_TOKENS = REVIEW_GEN.max_tokens;
 
 function toOrigin(url: string): string {
   try {
@@ -91,17 +92,17 @@ export async function POST(req: NextRequest) {
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
     messages: [
-      { role: "system", content: `${SYSTEM_PROMPT}\n\n${CALC_REVIEW_TASK}` },
+      { role: "system", content: MIKHALYCH_REVIEW_SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Просмотри расчёт целиком и дай комментарий прораба.\n\n${context}`,
+        content: `Вот расчёт — короткий комментарий прораба:\n\n${context}`,
       },
     ],
-    temperature: 0.75,
+    temperature: REVIEW_GEN.temperature,
     max_tokens: MAX_REVIEW_TOKENS,
-    top_p: 0.9,
-    frequency_penalty: 0.2,
-    presence_penalty: 0.15,
+    top_p: REVIEW_GEN.top_p,
+    frequency_penalty: REVIEW_GEN.frequency_penalty,
+    presence_penalty: REVIEW_GEN.presence_penalty,
   };
 
   try {

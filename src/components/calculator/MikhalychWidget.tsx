@@ -5,7 +5,7 @@ import MarkdownContent from "@/components/mikhalych/MarkdownContent";
 import {
   SYSTEM_PROMPT,
   MIKHALYCH_API_URL,
-  MAX_TOKENS,
+  MIKHALYCH_CHAT_GENERATION,
   checkRateLimit,
   getApiHeaders,
 } from "@/lib/mikhalych";
@@ -111,7 +111,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
     if (calcContext && messages.length <= 1) {
       apiMessages[apiMessages.length - 1] = {
         role: "user",
-        content: `[Контекст: ${calcContext}]\n\n${text.trim()}`,
+        content: `[Контекст расчёта — опирайся на цифры]\n${calcContext}\n\nВопрос: ${text.trim()}`,
       };
     }
 
@@ -133,11 +133,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
             { role: "system", content: SYSTEM_PROMPT },
             ...lastMessages.map((m) => ({ role: m.role, content: m.content })),
           ],
-          temperature: 0.7,
-          top_p: 0.9,
-          frequency_penalty: 0.15,
-          presence_penalty: 0.1,
-          max_tokens: MAX_TOKENS,
+          ...MIKHALYCH_CHAT_GENERATION,
         }),
       });
 

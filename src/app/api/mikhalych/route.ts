@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MIKHALYCH_CHAT_GENERATION } from "@/lib/mikhalych/params";
 import {
   getMikhalychChatModel,
   getMikhalychUpstreamProvider,
@@ -6,13 +7,14 @@ import {
 } from "@/lib/mikhalych/deepseek-upstream";
 
 const MODEL = getMikhalychChatModel();
+const CHAT_GEN = MIKHALYCH_CHAT_GENERATION;
 
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 4_000;
-const MAX_RESPONSE_TOKENS = 2048;
+const MAX_RESPONSE_TOKENS = CHAT_GEN.max_tokens;
 
 function toOrigin(url: string): string {
   try {
@@ -150,11 +152,11 @@ export async function POST(req: NextRequest) {
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
     messages,
-    temperature: clampNumber(body.temperature, 0.7, 0, 1.2),
+    temperature: clampNumber(body.temperature, CHAT_GEN.temperature, 0, 1.2),
     max_tokens: clampNumber(body.max_tokens, MAX_RESPONSE_TOKENS, 64, MAX_RESPONSE_TOKENS),
-    top_p: clampNumber(body.top_p, 0.9, 0.1, 1),
-    frequency_penalty: clampNumber(body.frequency_penalty, 0.15, -1, 1),
-    presence_penalty: clampNumber(body.presence_penalty, 0.1, -1, 1),
+    top_p: clampNumber(body.top_p, CHAT_GEN.top_p, 0.1, 1),
+    frequency_penalty: clampNumber(body.frequency_penalty, CHAT_GEN.frequency_penalty, -1, 1),
+    presence_penalty: clampNumber(body.presence_penalty, CHAT_GEN.presence_penalty, -1, 1),
     stream: body.stream === true,
   };
 
