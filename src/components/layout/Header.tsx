@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -78,9 +79,14 @@ export default function Header() {
       <div className="page-container-wide">
         <div className="flex items-center justify-between h-16 gap-2">
           <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0">
-            <div className="w-8 h-8 bg-accent-500 rounded-lg flex items-center justify-center">
-              <CategoryIcon icon="hammer" size={18} color="#fff" />
-            </div>
+            <Image
+              src="/icon1.png"
+              alt=""
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-lg shrink-0"
+              priority
+            />
             <span className="font-bold text-lg text-slate-900 dark:text-slate-100 hidden sm:inline">
               {UI_TEXT.logo}
             </span>

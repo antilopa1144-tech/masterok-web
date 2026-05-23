@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
@@ -53,9 +54,13 @@ export default function Footer() {
               href="/"
               className="flex items-center gap-2 font-bold text-lg text-slate-900 dark:text-white mb-3 no-underline hover:text-accent-700 dark:hover:text-accent-400 transition-colors"
             >
-              <div className="w-7 h-7 bg-accent-500 rounded-lg flex items-center justify-center">
-                <CategoryIcon icon="hammer" size={15} color="#fff" />
-              </div>
+              <Image
+                src="/icon1.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg shrink-0"
+              />
               <span>{SITE_NAME}</span>
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">

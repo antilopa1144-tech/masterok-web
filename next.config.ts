@@ -72,6 +72,22 @@ const nextConfig: NextConfig = {
         destination: "/o-proekte/",
         permanent: true,
       },
+      // Старые favicon из public/ — 301 на актуальные (закладки и краулеры).
+      {
+        source: "/favicon-16x16.png",
+        destination: "/favicon.ico",
+        permanent: true,
+      },
+      {
+        source: "/favicon-32x32.png",
+        destination: "/favicon.ico",
+        permanent: true,
+      },
+      {
+        source: "/apple-touch-icon.png",
+        destination: "/apple-icon.png",
+        permanent: true,
+      },
     ];
   },
 
