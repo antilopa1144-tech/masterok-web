@@ -550,7 +550,7 @@ export function FieldInput({
               const v = parseFloat(e.target.value);
               if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
             }}
-            className={`w-20 text-right text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1.5 min-h-[36px] focus:outline-none focus:ring-2 transition-colors ${
+            className={`w-20 text-right text-base md:text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1.5 min-h-[44px] md:min-h-[36px] focus:outline-none focus:ring-2 transition-colors ${
               isOutOfRange
                 ? "text-red-600 border-red-300 focus:ring-red-500/30 focus:border-red-500"
                 : "text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 focus:ring-accent-500/30 focus:border-accent-500"
@@ -999,7 +999,7 @@ export function FeedbackPanel({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={CALCULATOR_UI_TEXT.feedbackPlaceholder}
-          className="flex-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 min-h-[36px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+          className="flex-1 text-base md:text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-2 py-1.5 min-h-[44px] md:min-h-[36px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
         />
         <span className="text-xs text-slate-400 dark:text-slate-400">{primaryMaterial.unit}</span>
         <button

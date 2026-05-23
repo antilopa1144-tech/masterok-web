@@ -178,7 +178,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             <Suspense
               fallback={
                 <div
-                  className="card p-6 animate-pulse space-y-4 min-h-[800px] lg:min-h-[1000px]"
+                  className="card p-6 animate-pulse space-y-4 min-h-[420px] md:min-h-[600px] lg:min-h-[1000px]"
                   aria-hidden="true"
                 >
                   {/* Резервируем место под виджет калькулятора, чтобы избежать CLS

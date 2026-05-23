@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
@@ -73,6 +73,15 @@ function HeaderNavItem({
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [menuOpen]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-800">

@@ -55,7 +55,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 md:min-h-0 md:min-w-0"
         aria-label="Переключить тему"
       >
         <CategoryIcon icon="sun" size={18} color="#64748b" />
@@ -66,7 +66,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors"
+      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 md:min-h-0 md:min-w-0"
       aria-label={isDark ? 'Включить светлую тему' : 'Включить тёмную тему'}
     >
       {isDark ? (

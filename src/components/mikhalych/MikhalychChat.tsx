@@ -154,7 +154,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   };
 
   return (
-    <div className="card flex flex-col overflow-hidden" style={{ height: "640px" }}>
+    <div className="card flex flex-col overflow-hidden h-[min(640px,calc(100dvh-11rem))] sm:h-[min(640px,calc(100dvh-10rem))] lg:h-[640px]">
       {/* История сообщений */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
         {messages.map((msg, i) => (
