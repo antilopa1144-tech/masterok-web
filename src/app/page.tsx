@@ -144,9 +144,9 @@ export default async function HomePage() {
     url: SITE_URL,
     logo: {
       "@type": "ImageObject",
-      url: `${SITE_URL}/apple-touch-icon.png`,
-      width: 180,
-      height: 180,
+      url: `${SITE_URL}/web-app-manifest-192x192.png`,
+      width: 192,
+      height: 192,
     },
     description: SITE_WEBPAGE_DESCRIPTION,
     foundingDate: "2024",
