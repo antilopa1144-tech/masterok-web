@@ -50,12 +50,15 @@ export default function RecentCalculators() {
           Последние {recent.length}
         </span>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+      <p className="mb-2 text-xs text-slate-400 dark:text-slate-500 md:hidden" aria-hidden>
+        Листайте влево →
+      </p>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide snap-x snap-mandatory scroll-px-1">
         {recent.map((calc) => (
           <Link
             key={calc.id}
             href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
-            className="card-hover p-4 flex items-center gap-3 no-underline shrink-0 min-w-[200px] max-w-[260px]"
+            className="card-hover p-4 flex items-center gap-3 no-underline shrink-0 min-w-[200px] max-w-[260px] snap-start"
           >
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"

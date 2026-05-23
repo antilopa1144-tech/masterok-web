@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { getRendererPixelRatio } from "@/lib/three-display";
 
 interface Staircase3DProps {
   stepCount: number;
@@ -108,7 +109,7 @@ export default function Staircase3D(props: Staircase3DProps) {
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRendererPixelRatio());
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 

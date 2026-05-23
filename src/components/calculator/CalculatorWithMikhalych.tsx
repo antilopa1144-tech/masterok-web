@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useNearViewport } from "@/hooks/useNearViewport";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
@@ -49,6 +50,7 @@ export default function CalculatorWithMikhalych({
 }) {
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
   const [chatOpenSignal, setChatOpenSignal] = useState(0);
+  const nearMikhalych = useNearViewport(mikhalychAnchorRef, { rootMargin: "500px" });
 
   const {
     values,
@@ -82,6 +84,7 @@ export default function CalculatorWithMikhalych({
   }, [hasCalculated, result, calculator, values]);
 
   const mikhalychContext = reviewInput ? buildMikhalychCalcContext(reviewInput) : undefined;
+  const loadMikhalych = nearMikhalych || chatOpenSignal > 0 || reviewInput !== null;
 
   const openMikhalychChat = () => {
     setChatOpenSignal((n) => n + 1);
@@ -155,7 +158,7 @@ export default function CalculatorWithMikhalych({
               categorySlug: calculator.categorySlug,
             }}
             reviewSlot={
-              reviewInput ? (
+              reviewInput && loadMikhalych ? (
                 <MikhalychCalcReview input={reviewInput} onAskMore={openMikhalychChat} />
               ) : undefined
             }
@@ -206,12 +209,20 @@ export default function CalculatorWithMikhalych({
         })()}
       </div>
 
-      <div ref={mikhalychAnchorRef} data-print-hide className="scroll-mt-24">
-        <MikhalychWidget
-          calculatorTitle={calculator.title}
-          calcContext={mikhalychContext}
-          openSignal={chatOpenSignal}
-        />
+      <div ref={mikhalychAnchorRef} data-print-hide className="scroll-mt-24 min-h-[120px]">
+        {loadMikhalych ? (
+          <MikhalychWidget
+            calculatorTitle={calculator.title}
+            calcContext={mikhalychContext}
+            openSignal={chatOpenSignal}
+          />
+        ) : (
+          <div className="card flex min-h-[120px] items-center justify-center p-6">
+            <p className="text-center text-sm text-slate-400 dark:text-slate-500">
+              Прокрутите вниз — здесь появится чат с Михалычем
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

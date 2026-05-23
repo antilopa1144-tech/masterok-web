@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { getRendererPixelRatio } from "@/lib/three-display";
 
 interface Roof3DProps {
   spanM: number;
@@ -113,7 +114,7 @@ export default function Roof3D(props: Roof3DProps) {
     const camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 200);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getRendererPixelRatio());
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 

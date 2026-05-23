@@ -129,29 +129,7 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Планшет: только ключевые фишки + скачать */}
-          <nav
-            className="hidden md:flex lg:hidden items-center gap-1 shrink-0"
-            aria-label={UI_TEXT.featureNavigation}
-          >
-            {HEADER_FEATURE_LINKS.filter(
-              (l) =>
-                l.highlight ||
-                l.href.includes("kalendar-remonta") ||
-                l.href.includes("moy-remont"),
-            ).map(
-              (link) => (
-                <HeaderNavItem
-                  key={link.href}
-                  link={link}
-                  pathname={pathname}
-                  showBadge={link.highlight}
-                />
-              ),
-            )}
-          </nav>
-
-          <div className="hidden md:flex items-center gap-1 shrink-0">
+          <div className="hidden lg:flex items-center gap-1 shrink-0">
             <ThemeToggle />
             <Link
               href="/prilozhenie/"
@@ -163,7 +141,7 @@ export default function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 md:hidden shrink-0">
+          <div className="flex items-center gap-2 lg:hidden shrink-0">
             <Link
               href="/proekty/"
               className="inline-flex items-center gap-1 rounded-lg bg-accent-50 px-2.5 py-2 text-xs font-semibold text-accent-800 no-underline dark:bg-accent-900/30 dark:text-accent-200 min-h-[44px]"
@@ -209,7 +187,7 @@ export default function Header() {
 
       {menuOpen && (
         <nav
-          className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 max-h-[min(85vh,640px)] overflow-y-auto"
+          className="lg:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 max-h-[min(85vh,640px)] overflow-y-auto"
           aria-label={UI_TEXT.mobileNavigation}
         >
           <div className="page-container py-3 space-y-1">

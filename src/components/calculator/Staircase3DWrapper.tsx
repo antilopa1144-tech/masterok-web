@@ -41,7 +41,7 @@ export default function Staircase3DWrapper(props: Props) {
       >
         <span className="text-3xl">🏗️</span>
         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Показать 3D-модель лестницы</span>
-        <span className="text-xs text-slate-400">Вращайте мышкой, зумируйте колёсиком</span>
+        <span className="text-xs text-slate-400">На телефоне — крутите пальцем, щипок для масштаба</span>
       </button>
     );
   }
@@ -52,7 +52,7 @@ export default function Staircase3DWrapper(props: Props) {
         <Staircase3D {...props} />
       </ErrorBoundary>
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-400">Вращайте мышкой / пальцем</p>
+        <p className="text-xs text-slate-400">Вращайте пальцем или мышью</p>
         <button onClick={() => setVisible(false)} className="text-xs text-slate-400 hover:text-slate-600 underline">Скрыть</button>
       </div>
     </div>

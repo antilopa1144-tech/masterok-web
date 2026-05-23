@@ -1,16 +1,15 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import dynamic from "next/dynamic";
+import ViewportDeferred from "@/components/ui/ViewportDeferred";
 
-export const RecentCalculators = dynamic(
+const RecentCalculatorsInner = dynamic(
   () => import("@/components/calculator/RecentCalculators"),
-  {
-    ssr: false,
-    loading: () => null,
-  },
+  { ssr: false, loading: () => null },
 );
 
-export const QuickCalculator = dynamic(
+const QuickCalculatorInner = dynamic(
   () => import("@/components/tools/QuickCalculator"),
   {
     ssr: false,
@@ -20,7 +19,7 @@ export const QuickCalculator = dynamic(
   },
 );
 
-export const ProjectManager = dynamic(
+const ProjectManagerInner = dynamic(
   () => import("@/components/calculator/ProjectManager"),
   {
     ssr: false,
@@ -33,3 +32,29 @@ export const ProjectManager = dynamic(
     ),
   },
 );
+
+/** Недавние калькуляторы — JS только при скролле к блоку. */
+export function RecentCalculators() {
+  return (
+    <ViewportDeferred rootMargin="600px" fallback={null}>
+      <RecentCalculatorsInner />
+    </ViewportDeferred>
+  );
+}
+
+/** Боковая панель desktop: быстрый калькулятор монтируется при появлении aside. */
+export function QuickCalculator(props: ComponentProps<typeof QuickCalculatorInner>) {
+  return (
+    <ViewportDeferred rootMargin="200px" minHeight={280}>
+      <QuickCalculatorInner {...props} />
+    </ViewportDeferred>
+  );
+}
+
+export function ProjectManager() {
+  return (
+    <ViewportDeferred rootMargin="200px" minHeight={120}>
+      <ProjectManagerInner />
+    </ViewportDeferred>
+  );
+}
