@@ -9,9 +9,16 @@ export default function ScrollToTop() {
   const aboveProjectBar = /^\/proekty\/[^/]+\/?$/.test(pathname ?? "");
 
   useEffect(() => {
+    let ticking = false;
     function handleScroll() {
-      setVisible(window.scrollY > 400);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setVisible(window.scrollY > 400);
+        ticking = false;
+      });
     }
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);

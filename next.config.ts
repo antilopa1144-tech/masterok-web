@@ -23,6 +23,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Без output → стандартный server mode (next start)
 
+  // Tree-shaking для barrel-import lucide-react (Header, CategoryIcon).
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
+
   // Trailing slash для SEO (URL всегда с / на конце)
   trailingSlash: true,
 

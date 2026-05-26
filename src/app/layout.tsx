@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
-import YandexMetrika from "@/components/analytics/YandexMetrika";
+import YandexMetrikaLoader from "@/components/analytics/YandexMetrikaLoader";
 import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
+import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
@@ -30,52 +30,7 @@ const THEME_INIT_SCRIPT = `(() => {
   }
 })();`;
 
-// Webvisor отключён сознательно: тащил +43 KB JS, +200ms TBT mobile, открывал WebSocket
-// к mc.yandex.com/solid.ws (блокировался CSP, генерировал ошибки в консоли).
-// Клики/линки/время на странице/отказы продолжают писаться через clickmap+trackLinks.
-//
-// Важно для Lighthouse/PageSpeed: сам tag.js грузим не сразу afterInteractive,
-// а после idle/первого взаимодействия/таймаута. Очередь ym() создаётся сразу,
-// поэтому первый hit и SPA-навигация не теряются, но тяжёлый сторонний JS
-// не попадает в критический TBT на первом рендере.
-const YM_INIT_SCRIPT = `(() => {
-  const id = ${YM_COUNTER};
-  const src = "https://mc.yandex.ru/metrika/tag.js";
-  const w = window;
-  const d = document;
-
-  w.ym = w.ym || function(){(w.ym.a = w.ym.a || []).push(arguments)};
-  w.ym.l = 1 * new Date();
-  w.ym(id, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true});
-
-  let loaded = false;
-  const load = () => {
-    if (loaded || d.querySelector('script[src="' + src + '"]')) return;
-    loaded = true;
-    const script = d.createElement("script");
-    script.async = true;
-    script.src = src;
-    (d.head || d.body).appendChild(script);
-  };
-
-  const scheduleIdleLoad = () => {
-    if ("requestIdleCallback" in w) {
-      w.requestIdleCallback(load, { timeout: 8000 });
-    } else {
-      w.setTimeout(load, 8000);
-    }
-  };
-
-  if (d.readyState === "complete") {
-    scheduleIdleLoad();
-  } else {
-    w.addEventListener("load", scheduleIdleLoad, { once: true });
-  }
-
-  ["pointerdown", "keydown", "scroll", "touchstart"].forEach((eventName) => {
-    w.addEventListener(eventName, load, { once: true, passive: true });
-  });
-})();`;
+const YM_INIT_SCRIPT = getYandexMetrikaDeferredInitScript(YM_COUNTER);
 
 // Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
 // font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
@@ -160,9 +115,6 @@ export default function RootLayout({
   return (
     <html lang="ru" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* next/font self-hostит Inter — preconnect к Google Fonts не нужен.
-            Yandex.Metrika подгружается afterInteractive, dns-prefetch ускоряет первый запрос. */}
-        <link rel="dns-prefetch" href="https://mc.yandex.ru" />
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
@@ -184,16 +136,14 @@ export default function RootLayout({
         >
           Перейти к основному содержимому
         </a>
-        <Suspense fallback={null}>
-          <YandexMetrika />
-        </Suspense>
+        <YandexMetrikaLoader />
         <StorageMigrationInitializer />
         <Header />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
         <ScrollToTop />
-        <Script id="ym-init" strategy="afterInteractive">{YM_INIT_SCRIPT}</Script>
-        <Script id="sw-unregister" strategy="afterInteractive">{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
+        <Script id="ym-init" strategy="lazyOnload">{YM_INIT_SCRIPT}</Script>
+        <Script id="sw-unregister" strategy="lazyOnload">{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
       </body>
     </html>
   );

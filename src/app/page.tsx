@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ALL_CALCULATORS_META, getPopularCalculatorsMeta } from "@/lib/calculators/meta.generated";
@@ -9,8 +10,19 @@ import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { MASTEROK_RUSTORE_URL, SITE_DEFAULT_TITLE, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
-import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import { RecentCalculators, ProjectManager, QuickCalculator } from "@/components/home/HomeLazyWidgets";
+
+const CalculatorSearch = dynamic(
+  () => import("@/components/calculator/CalculatorSearch"),
+  {
+    loading: () => (
+      <div
+        className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
