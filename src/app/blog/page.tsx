@@ -7,7 +7,8 @@ import { buildPageMetadata } from "@/lib/metadata";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
 
 const META = {
-  title: `Блог — строительные советы и статьи`,
+  // SEO-title по единой системе. Брендовый « — Мастерок» добавит layout template.
+  title: `Блог о строительстве и ремонте`,
   description: "Статьи о строительстве и ремонте: как правильно рассчитать материалы, технологии укладки плитки, стяжки, гипсокартона. Советы по ГОСТ и СНиП.",
 } as const;
 

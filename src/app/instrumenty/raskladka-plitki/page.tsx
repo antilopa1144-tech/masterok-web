@@ -12,7 +12,6 @@ const META = {
 };
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-plitki", {
-  title: META.title,
   description: META.description,
 });
 

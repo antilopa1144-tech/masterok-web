@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPostsByTag, resolveTagFromSlug, tagToSlug } from "@/lib/blog";
-import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_NAME, SITE_URL } from "@/lib/site";
+import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
 const UI_TEXT = {
@@ -54,9 +54,10 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   const description = fullDescription.length <= 160
     ? fullDescription
     : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, нормами по ГОСТ и пошаговыми инструкциями.`;
+  // SEO-title по единой системе сайта; брендовый « — Мастерок» добавит template.
   return {
     ...buildPageMetadata({
-      title: `${tag} — статьи о строительстве`,
+      title: `Статьи на тему «${tag}»`,
       description,
       url: `${SITE_URL}/blog/tag/${tagToSlug(tag)}/`,
     }),

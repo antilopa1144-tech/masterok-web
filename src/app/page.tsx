@@ -7,21 +7,23 @@ import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { MASTEROK_RUSTORE_URL, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
+import { MASTEROK_RUSTORE_URL, SITE_DEFAULT_TITLE, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 import { RecentCalculators, ProjectManager, QuickCalculator } from "@/components/home/HomeLazyWidgets";
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
+// Главная — title уже включает брендовый суффикс « — Мастерок» (см. SITE_DEFAULT_TITLE).
+// Используем absolute, чтобы template из layout не добавил суффикс второй раз.
 const META = {
-  title: `Строительные калькуляторы онлайн — ${CALC_COUNT} расчётов по ГОСТ`,
+  title: SITE_DEFAULT_TITLE,
   description:
     `${CALC_COUNT}+ бесплатных строительных калькуляторов: бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон. Нормы по ГОСТ и СНиП. С ИИ-прорабом Михалыч.`,
 } as const;
 
 export const metadata: Metadata = {
-  title: META.title,
+  title: { absolute: META.title },
   description: META.description,
   alternates: {
     canonical: `${SITE_URL}/`,

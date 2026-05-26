@@ -14,7 +14,6 @@ const META = {
 };
 
 export const metadata: Metadata = buildToolPageMetadata("moy-remont", {
-  title: META.title,
   description: META.description,
 });
 

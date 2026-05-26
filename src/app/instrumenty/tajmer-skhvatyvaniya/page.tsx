@@ -14,7 +14,6 @@ const META = {
 const PAGE_URL = `${SITE_URL}/instrumenty/tajmer-skhvatyvaniya/`;
 
 export const metadata: Metadata = buildToolPageMetadata("tajmer-skhvatyvaniya", {
-  title: META.title,
   description: META.description,
 });
 

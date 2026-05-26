@@ -10,7 +10,7 @@ export const guttersDef: CalculatorDefinition = {
   title: "Калькулятор водосточной системы",
   h1: "Калькулятор водостока онлайн — расчёт труб и желобов",
   description: "Рассчитайте количество желобов, труб, воронок и крепежа для водосточной системы. Технониколь, Docke, Profil.",
-  metaTitle: withSiteMetaTitle("Калькулятор водостока | Расчёт водосточной системы"),
+  metaTitle: withSiteMetaTitle("Калькулятор водостока: расчёт материалов онлайн"),
   metaDescription: "Бесплатный калькулятор водостока: рассчитайте желоба, трубы, воронки и держатели для системы Технониколь, Docke или Profil по периметру кровли.",
   category: "roofing",
   categorySlug: "krovlya",

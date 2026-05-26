@@ -9,6 +9,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#EDE9FE",
     icon: "foundation",
     description: "Расчёт бетона, арматуры, опалубки для фундаментов",
+    seoSubject: "фундамента",
   },
   {
     id: "walls",
@@ -18,6 +19,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#CCFBF1",
     icon: "walls",
     description: "Кирпич, газоблок, гипсокартон, штукатурка",
+    seoSubject: "стен и перегородок",
   },
   {
     id: "flooring",
@@ -27,6 +29,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#FEF3C7",
     icon: "flooring",
     description: "Плитка, ламинат, паркет, стяжка, тёплый пол",
+    seoSubject: "пола",
   },
   {
     id: "roofing",
@@ -38,6 +41,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#FEE2E2",
     icon: "roofing",
     description: "Металлочерепица, профнастил, ондулин, водосток",
+    seoSubject: "кровли",
   },
   {
     id: "facade",
@@ -47,6 +51,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#EDE9FE",
     icon: "facade",
     description: "Сайдинг, фасадные панели, мокрый фасад",
+    seoSubject: "фасада",
   },
   {
     id: "engineering",
@@ -56,6 +61,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#CFFAFE",
     icon: "engineering",
     description: "Тёплый пол, отопление, электрика, вентиляция",
+    seoSubject: "инженерных систем",
   },
   {
     id: "interior",
@@ -65,6 +71,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#D1FAE5",
     icon: "interior",
     description: "Краска, обои, плитка, декоративная штукатурка",
+    seoSubject: "внутренней отделки",
   },
   {
     id: "ceiling",
@@ -74,6 +81,7 @@ export const CATEGORIES: Category[] = [
     bgColor: "#DBEAFE",
     icon: "ceiling",
     description: "Натяжные, реечные, гипсокартон, покраска",
+    seoSubject: "потолков",
   },
 ];
 

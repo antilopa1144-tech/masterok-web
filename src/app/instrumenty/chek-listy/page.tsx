@@ -14,7 +14,6 @@ const META = {
 const PAGE_URL = `${SITE_URL}/instrumenty/chek-listy/`;
 
 export const metadata: Metadata = buildToolPageMetadata("chek-listy", {
-  title: META.title,
   description: META.description,
 });
 

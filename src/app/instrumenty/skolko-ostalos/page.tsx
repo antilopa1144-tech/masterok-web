@@ -11,7 +11,6 @@ const META = {
 };
 
 export const metadata: Metadata = buildToolPageMetadata("skolko-ostalos", {
-  title: META.title,
   description: META.description,
 });
 

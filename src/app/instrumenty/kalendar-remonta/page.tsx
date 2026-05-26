@@ -14,7 +14,6 @@ const META = {
 };
 
 export const metadata: Metadata = buildToolPageMetadata("kalendar-remonta", {
-  title: META.title,
   description: META.description,
 });
 

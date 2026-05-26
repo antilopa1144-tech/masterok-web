@@ -13,7 +13,6 @@ const META = {
 const PAGE_URL = `${SITE_URL}/instrumenty/stoimost-remonta/`;
 
 export const metadata: Metadata = buildToolPageMetadata("stoimost-remonta", {
-  title: META.title,
   description: META.description,
 });
 

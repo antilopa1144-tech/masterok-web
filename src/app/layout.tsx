@@ -106,7 +106,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     default: SITE_DEFAULT_TITLE,
-    template: `%s | ${SITE_NAME}`,
+    template: `%s — ${SITE_NAME}`,
   },
   description:
     SITE_METADATA_DESCRIPTION,

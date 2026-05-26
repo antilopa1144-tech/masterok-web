@@ -97,6 +97,12 @@ export interface Category {
   bgColor: string;
   icon: string;
   description: string;
+  /**
+   * Родительный падеж в шаблоне SEO-title «Калькуляторы X».
+   * Например: «фундамента», «стен и перегородок», «кровли».
+   * Если не задано — собирается из label, что часто звучит криво.
+   */
+  seoSubject: string;
 }
 
 export interface CalculatorMeta {

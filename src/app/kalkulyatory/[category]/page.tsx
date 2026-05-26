@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCalculatorsMetaByCategory as getCalculatorsByCategory } from "@/lib/calculators/meta.generated";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/calculators/categories";
-import { SITE_TITLE_SUFFIX, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
+import type { Category } from "@/lib/calculators/types";
 import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
@@ -16,11 +17,27 @@ const UI_TEXT = {
   emptyState: "Калькуляторы этой категории скоро появятся",
   allCalculators: "Все калькуляторы",
   complexitySuffix: "сложность",
-  titleSuffix: `— ${SITE_TITLE_SUFFIX}`,
+  // SEO-title по схеме: «Калькуляторы X: расчёт материалов онлайн» (X из seoSubject категории).
+  // Если итог с « — Мастерок» > 60 символов — fallback на компактную форму «Калькуляторы X онлайн».
+  titleLongTpl: ": расчёт материалов онлайн",
+  titleShortTpl: " онлайн",
   descriptionPrefix: "Бесплатные калькуляторы:",
   descriptionSuffix: "Точный расчёт по ГОСТ.",
   itemListNameSuffix: "— строительные калькуляторы",
 } as const;
+
+/**
+ * SEO-title для страницы категории по схеме:
+ *   Калькуляторы [seoSubject]: расчёт материалов онлайн
+ * Если итог с « — Мастерок» (+11 симв., добавит layout template) превышает 60 —
+ * fallback на компактную форму «Калькуляторы [seoSubject] онлайн».
+ */
+function buildCategoryTitle(cat: Category): string {
+  const SUFFIX_LEN = 11; // " — Мастерок"
+  const long = `Калькуляторы ${cat.seoSubject}${UI_TEXT.titleLongTpl}`;
+  if (long.length + SUFFIX_LEN <= 60) return long;
+  return `Калькуляторы ${cat.seoSubject}${UI_TEXT.titleShortTpl}`;
+}
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -42,7 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cat = getCategoryBySlug(slug);
   if (!cat) return {};
 
-  const title = `${cat.label} ${UI_TEXT.titleSuffix}`;
+  const title = buildCategoryTitle(cat);
   const description = `${UI_TEXT.descriptionPrefix} ${cat.description.toLowerCase()}. ${UI_TEXT.descriptionSuffix}`;
   const pageUrl = `${SITE_URL}/kalkulyatory/${cat.slug}/`;
 
@@ -65,6 +82,7 @@ export default async function CategoryPage({ params }: PageProps) {
   const baseUrl = SITE_URL;
 
   const pageUrl = `${baseUrl}/kalkulyatory/${cat.slug}/`;
+  const seoTitle = buildCategoryTitle(cat);
 
   // BreadcrumbList и ItemList объединены под CollectionPage — это даёт
   // поисковикам и LLM единое описание страницы-каталога. ItemList элементы
@@ -101,7 +119,7 @@ export default async function CategoryPage({ params }: PageProps) {
   const collectionPageLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: `${cat.label} ${UI_TEXT.titleSuffix}`,
+    name: seoTitle,
     description: `${UI_TEXT.descriptionPrefix} ${cat.description.toLowerCase()}. ${UI_TEXT.descriptionSuffix}`,
     url: pageUrl,
     inLanguage: "ru",

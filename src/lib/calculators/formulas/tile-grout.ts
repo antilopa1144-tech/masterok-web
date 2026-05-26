@@ -10,7 +10,7 @@ export const tileGroutDef: CalculatorDefinition = {
   title: "Калькулятор затирки для плитки",
   h1: "Калькулятор затирки для плитки онлайн — расчёт расхода",
   description: "Рассчитайте количество затирки (фуги) для плитки с учётом ширины и глубины шва. Ceresit, Mapei, Litokol.",
-  metaTitle: withSiteMetaTitle("Калькулятор затирки для плитки | Расчёт Ceresit, Mapei"),
+  metaTitle: withSiteMetaTitle("Калькулятор затирки для плитки: материалы онлайн"),
   metaDescription: "Бесплатный калькулятор затирки: рассчитайте кг затирки Ceresit CE 33, Mapei Keracolor, Litokol Starlike по размеру плитки и ширине шва.",
   category: "flooring",
   categorySlug: "poly",

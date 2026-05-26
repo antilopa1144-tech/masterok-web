@@ -14,7 +14,6 @@ const META = {
 };
 
 export const metadata: Metadata = buildToolPageMetadata("normy-raskhoda", {
-  title: META.title,
   description: META.description,
 });
 

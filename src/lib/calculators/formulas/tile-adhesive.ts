@@ -13,7 +13,7 @@ export const tileAdhesiveDef: CalculatorDefinition = {
   title: "Калькулятор плиточного клея",
   h1: "Калькулятор плиточного клея онлайн — расчёт расхода Ceresit, Knauf",
   description: "Рассчитайте количество плиточного клея по площади, размеру плитки и толщине нанесения. Ceresit CM, Knauf Флексклебер.",
-  metaTitle: withSiteMetaTitle("Калькулятор плиточного клея | Расчёт Ceresit CM, Knauf"),
+  metaTitle: withSiteMetaTitle("Калькулятор плиточного клея: материалы онлайн"),
   metaDescription: "Бесплатный калькулятор плиточного клея: рассчитайте мешки Ceresit CM 11, CM 17, Knauf Флексклебер по площади, размеру плитки и толщине клеевого слоя.",
   category: "flooring",
   categorySlug: "poly",

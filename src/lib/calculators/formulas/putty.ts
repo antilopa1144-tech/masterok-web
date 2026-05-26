@@ -14,7 +14,7 @@ export const puttyDef: CalculatorDefinition = {
   title: "Калькулятор шпаклёвки",
   h1: "Калькулятор шпаклёвки онлайн - расчёт расхода на стены и потолок",
   description: "Рассчитайте количество шпаклёвки (стартовой и финишной) для стен и потолка. Knauf, Волма, Ceresit.",
-  metaTitle: withSiteMetaTitle("Калькулятор шпаклёвки | Расчёт расхода Knauf Fugen, Волма"),
+  metaTitle: withSiteMetaTitle("Калькулятор шпаклёвки: расчёт материалов онлайн"),
   metaDescription: "Бесплатный калькулятор шпаклёвки: рассчитайте мешки стартовой и финишной смеси Knauf, Волма, Ceresit по площади и толщине слоя.",
   category: "interior",
   categorySlug: "otdelka",

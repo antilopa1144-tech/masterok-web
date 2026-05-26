@@ -10,7 +10,7 @@ export const ceilingRailDef: CalculatorDefinition = {
   title: "Калькулятор реечного потолка",
   h1: "Калькулятор реечного потолка онлайн — расчёт реек и профилей",
   description: "Рассчитайте количество алюминиевых реек, направляющих профилей и крепежа для реечного потолка.",
-  metaTitle: withSiteMetaTitle("Калькулятор реечного потолка | Расчёт реек Armstrong, Cesal"),
+  metaTitle: withSiteMetaTitle("Калькулятор реечного потолка: материалы онлайн"),
   metaDescription: "Бесплатный калькулятор реечного потолка: рассчитайте алюминиевые рейки, профили и крепёж для потолка Cesal или Armstrong по площади помещения.",
   category: "ceiling",
   categorySlug: "potolki",

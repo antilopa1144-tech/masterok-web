@@ -13,7 +13,7 @@ export const selfLevelingDef: CalculatorDefinition = {
   title: 'Калькулятор наливного пола',
   h1: 'Калькулятор наливного пола онлайн — расчёт расхода смеси',
   description: 'Рассчитайте количество самовыравнивающейся смеси для наливного пола. Ceresit CN, Knauf Боден, Волма Нивелир.',
-  metaTitle: withSiteMetaTitle("Калькулятор наливного пола | Расчёт Ceresit CN, Knauf"),
+  metaTitle: withSiteMetaTitle("Калькулятор наливного пола: материалы онлайн"),
   metaDescription: 'Бесплатный калькулятор наливного пола: рассчитайте мешки Ceresit CN 175, Knauf Боден 25, Волма Нивелир по площади, толщине слоя и расходу смеси.',
   category: 'flooring',
   categorySlug: 'poly',

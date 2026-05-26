@@ -10,7 +10,7 @@ export const decorPlasterDef: CalculatorDefinition = {
   title: "Калькулятор декоративной штукатурки",
   h1: "Калькулятор декоративной штукатурки онлайн — расчёт расхода",
   description: "Рассчитайте количество декоративной штукатурки (короед, шуба, камешковая, венецианская) по площади стен.",
-  metaTitle: withSiteMetaTitle("Калькулятор декоративной штукатурки | Расчёт Ceresit, Baumit"),
+  metaTitle: withSiteMetaTitle("Калькулятор декоративной штукатурки"),
   metaDescription: "Бесплатный калькулятор декоративной штукатурки: рассчитайте расход короеда, камешковой или венецианской штукатурки Ceresit и Baumit по площади стен.",
   category: "facade",
   categorySlug: "fasad",

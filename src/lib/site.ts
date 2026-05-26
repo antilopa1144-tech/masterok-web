@@ -1,8 +1,11 @@
 export const SITE_NAME = "Мастерок";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
 export const SITE_WEBPAGE_DESCRIPTION = "Бесплатные строительные калькуляторы онлайн";
+// Используется в template ({ title.default } и для категорий/списков калькуляторов).
 export const SITE_TITLE_SUFFIX = "строительные калькуляторы онлайн";
-export const SITE_DEFAULT_TITLE = `${SITE_NAME} — ${SITE_TITLE_SUFFIX}`;
+// Главная: коммерческий шаблон с указанием количества расчётов.
+// Обновлять CALC_COUNT при добавлении калькуляторов (см. ALL_CALCULATORS.length).
+export const SITE_DEFAULT_TITLE = `Строительные калькуляторы онлайн: 66+ расчётов по ГОСТ — ${SITE_NAME}`;
 // NB: Обновляйте число при добавлении калькуляторов (ALL_CALCULATORS.length в calculators/index.ts)
 export const SITE_METADATA_DESCRIPTION =
   "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и 66+ строительных расчётов. Точно, быстро, по ГОСТ.";

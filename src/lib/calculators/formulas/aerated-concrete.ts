@@ -10,7 +10,7 @@ export const aeratedConcreteDef: CalculatorDefinition = {
   title: "Калькулятор газобетона",
   h1: "Калькулятор газобетона онлайн — расчёт блоков и клея",
   description: "Рассчитайте количество газобетонных блоков, клея и армирования для стен и перегородок. Нормы по ГОСТ 31360-2007.",
-  metaTitle: withSiteMetaTitle("Калькулятор газобетона | Расчёт блоков и клея"),
+  metaTitle: withSiteMetaTitle("Калькулятор газобетона: расчёт материалов онлайн"),
   metaDescription: "Бесплатный калькулятор газобетона: рассчитайте блоки Ytong, Bonolit, Hebel, клей и армирование для наружных стен и перегородок по ГОСТ 31360-2007.",
   category: "walls",
   categorySlug: "steny",
