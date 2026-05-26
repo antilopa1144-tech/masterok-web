@@ -185,17 +185,33 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "public, max-age=1800" }],
       },
       // HTML страниц — короткий клиентский кэш + длинный CDN-кэш с фоновой ревалидацией.
-      // Ключевая оптимизация для crawl budget: бот получит готовый HTML за ~50ms вместо
-      // 700ms TTFB. Реальные пользователи получают свежий HTML каждые 5 минут;
-      // CDN отдаёт старую версию пока обновляется (stale-while-revalidate).
-      // ISR-страницы с export const revalidate = N сами управляют своим Cache-Control,
-      // эти заголовки применяются как fallback.
+      //
+      // Cache-Control стратегия (обновлено 2026-05-26):
+      //
+      //   max-age:                — кэш в браузере пользователя
+      //   s-maxage:               — кэш на CDN/обратном прокси (Caddy у TimeWeb)
+      //   stale-while-revalidate: — отдавать старую версию пока обновляется
+      //
+      // Раньше был max-age=0 → браузер пользователя при F5 каждый раз качал
+      // полный HTML заново. Для бота это нормально, для UX — плохо
+      // (повторные визиты на главную/калькуляторы давали лишний TTFB 1с).
+      //
+      // Теперь:
+      //   - max-age=120-300 (2-5 минут) — при быстром возврате (back/forward)
+      //     браузер берёт из локального кэша мгновенно.
+      //   - s-maxage в 10× больше — CDN держит ту же копию долго.
+      //   - stale-while-revalidate — если бот придёт во время фоновой
+      //     ревалидации, ему отдадут готовый HTML, не заставив ждать.
+      //
+      // ISR-страницы (export const revalidate = N) сами управляют своим
+      // Cache-Control через Next.js — эти заголовки применяются как fallback
+      // для не-ISR маршрутов и переопределяются от Next.js где надо.
       {
         source: "/",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=300, stale-while-revalidate=86400",
+            value: "public, max-age=300, s-maxage=300, stale-while-revalidate=86400",
           },
         ],
       },
@@ -204,7 +220,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+            value: "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
           },
         ],
       },
@@ -213,7 +229,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+            value: "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
           },
         ],
       },
@@ -222,17 +238,17 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=1800, stale-while-revalidate=86400",
+            value: "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
           },
         ],
       },
-      // Статические информационные страницы — длинный кэш
+      // Статические информационные страницы — длинный кэш (контент почти не меняется).
       {
         source: "/(o-proekte|prilozhenie|metodologiya|politika-konfidencialnosti|mikhalych)/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
           },
         ],
       },
