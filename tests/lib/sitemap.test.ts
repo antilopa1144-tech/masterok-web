@@ -4,9 +4,19 @@ import {
   buildSitemapIndexXml,
   generateSitemapIds,
   getSitemapChunkUrl,
+  parseSitemapChunkId,
 } from "@/lib/sitemap/chunks";
 
 describe("sitemap chunks", () => {
+  it("parseSitemapChunkId принимает число и строку из Next.js", () => {
+    expect(parseSitemapChunkId(0)).toBe(0);
+    expect(parseSitemapChunkId("0")).toBe(0);
+    expect(parseSitemapChunkId("2")).toBe(2);
+    expect(parseSitemapChunkId("4")).toBe(4);
+    expect(parseSitemapChunkId(99)).toBeNull();
+    expect(parseSitemapChunkId("")).toBeNull();
+  });
+
   it("generateSitemapIds возвращает id для каждого чанка", () => {
     const ids = generateSitemapIds();
     expect(ids).toHaveLength(SITEMAP_CHUNKS.length);

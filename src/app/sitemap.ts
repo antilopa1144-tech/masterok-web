@@ -4,7 +4,11 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
 import { ALL_TOOLS } from "@/lib/tools";
-import { generateSitemapIds, type SitemapChunkId } from "@/lib/sitemap/chunks";
+import {
+  generateSitemapIds,
+  parseSitemapChunkId,
+  type SitemapChunkId,
+} from "@/lib/sitemap/chunks";
 import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_LAST_REVIEWED, SITE_URL } from "@/lib/site";
 
 const BASE_URL = SITE_URL;
@@ -232,9 +236,12 @@ async function buildBlogSitemap(): Promise<MetadataRoute.Sitemap> {
 export default async function sitemap({
   id,
 }: {
-  id: SitemapChunkId;
+  id: SitemapChunkId | string;
 }): Promise<MetadataRoute.Sitemap> {
-  switch (id) {
+  const chunkId = parseSitemapChunkId(id);
+  if (chunkId === null) return [];
+
+  switch (chunkId) {
     case 0:
       return buildStaticSitemap();
     case 1:

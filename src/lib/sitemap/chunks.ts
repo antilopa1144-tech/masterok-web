@@ -18,6 +18,24 @@ export const SITEMAP_CHUNKS = [
 export type SitemapChunkName = (typeof SITEMAP_CHUNKS)[number];
 export type SitemapChunkId = number;
 
+/**
+ * Next.js передаёт `id` из URL `/sitemap/{id}.xml` как строку (`"0"`, не `0`).
+ * `switch (id) { case 0: }` при строке всегда уходит в default → пустой sitemap.
+ */
+export function parseSitemapChunkId(
+  id: SitemapChunkId | string | undefined,
+): SitemapChunkId | null {
+  if (id === undefined || id === null || id === "") return null;
+
+  const n =
+    typeof id === "number"
+      ? id
+      : Number.parseInt(String(id).replace(/\.xml$/i, ""), 10);
+
+  if (!Number.isInteger(n) || n < 0 || n >= SITEMAP_CHUNKS.length) return null;
+  return n;
+}
+
 /** Для `generateSitemaps()` в `app/sitemap.ts`. */
 export function generateSitemapIds(): Array<{ id: SitemapChunkId }> {
   return SITEMAP_CHUNKS.map((_, id) => ({ id }));
