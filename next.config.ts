@@ -93,6 +93,15 @@ const nextConfig: NextConfig = {
         destination: "/apple-icon.png",
         permanent: true,
       },
+      // Категория сменила slug: interior → otdelka. Старые URL калькуляторов
+      // (напр. /kalkulyatory/interior/otkosy-okon-i-dverej/) Google знает из
+      // истории и долбит в 403/404 (см. GSC «Blocked 403» / «Not found 404»).
+      // 301 на актуальный путь возвращает SEO-вес и убирает ошибки индексации.
+      {
+        source: "/kalkulyatory/interior/:slug*",
+        destination: "/kalkulyatory/otdelka/:slug*",
+        permanent: true,
+      },
     ];
   },
 
@@ -119,7 +128,11 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.yandex.com https://yastatic.net",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https: http://5.129.248.119",
+      // http://5.129.248.119 (Ghost CMS) убран: blog hero-картинки уже
+      // подменяются на локальные .webp при билде (см. images.unoptimized выше),
+      // а HTTP-источник всё равно конфликтовал с upgrade-insecure-requests.
+      // https: покрывает любой оставшийся HTTPS-источник.
+      "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
       "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",

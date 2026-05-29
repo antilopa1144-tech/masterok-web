@@ -21,7 +21,12 @@ export const SITE_OG_IMAGE_WIDTH = 1200;
 export const SITE_OG_IMAGE_HEIGHT = 630;
 
 export const SITE_FOOTER_DESCRIPTION = `${SITE_WEBPAGE_DESCRIPTION}. Точный расчёт материалов по ГОСТ и СНиП.`;
-export const SITE_FOUNDING_DATE = "2024-06-01";
+// Дата основания проекта «Мастерок» (бренд + сайт + приложение запущены в 2026).
+// Используется как foundingDate организации и datePublished страниц сайта.
+// НЕ может быть раньше регистрации домена getmasterok.ru (февраль 2026) —
+// иначе Google видит противоречие с WHOIS (страница «старше» домена) и
+// теряет доверие к Schema-разметке.
+export const SITE_FOUNDING_DATE = "2026-02-01";
 
 // Дата последнего осмысленного пересмотра контента сайта.
 // Обновляется ВРУЧНУЮ при реальных изменениях формул/контента, а НЕ на каждом билде —

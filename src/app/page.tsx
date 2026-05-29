@@ -8,7 +8,7 @@ import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { MASTEROK_RUSTORE_URL, SITE_DEFAULT_TITLE, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
+import { MASTEROK_RUSTORE_URL, SITE_DEFAULT_TITLE, SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL, SITE_WEBPAGE_DESCRIPTION } from "@/lib/site";
 
 import { RecentCalculators, ProjectManager, QuickCalculator } from "@/components/home/HomeLazyWidgets";
 
@@ -163,7 +163,7 @@ export default async function HomePage() {
       height: 192,
     },
     description: SITE_WEBPAGE_DESCRIPTION,
-    foundingDate: "2024",
+    foundingDate: SITE_FOUNDING_DATE.slice(0, 4),
     areaServed: {
       "@type": "Country",
       name: "Россия",
