@@ -70,14 +70,51 @@ describe("tile-layout", () => {
     });
   });
 
-  describe("диагональ", () => {
-    it("схема = прямая, запас к закупке отдельно", () => {
+  describe("диагональ (под 45°)", () => {
+    it("строит геометрию ромбов, отход выше прямой раскладки", () => {
       const straight = calculateTileLayout(3000, 4000, 600, 600, 2, "straight");
       const diagonal = calculateTileLayout(3000, 4000, 600, 600, 2, "diagonal");
-      expect(countCellsInGrid(diagonal.tileGrid)).toBe(diagonal.totalTiles);
-      expect(diagonal.totalTiles).toBe(straight.totalTiles);
-      expect(diagonal.purchaseReserveTiles).toBe(Math.ceil(straight.totalTiles * 0.15));
+      // Настоящая диагональ: есть геометрия ромбов, плиток больше (краевые доборы).
+      expect(diagonal.diagonal).toBeDefined();
+      expect(diagonal.diagonal!.cells.length).toBe(diagonal.totalTiles);
+      expect(diagonal.totalTiles).toBeGreaterThan(straight.totalTiles);
+      // Диагональ всегда отходнее прямой (треугольные доборы по периметру).
+      expect(diagonal.wastePercent).toBeGreaterThan(straight.wastePercent);
+      expect(diagonal.wastePercent).toBeGreaterThan(8);
+      expect(diagonal.wastePercent).toBeLessThan(20);
+      expect(diagonal.purchaseReserveTiles).toBeGreaterThan(0);
       expect(diagonal.notes.length).toBeGreaterThan(0);
+    });
+
+    it("есть и целые ромбы, и краевые доборы", () => {
+      const d = calculateTileLayout(1700, 2500, 300, 300, 2, "diagonal");
+      expect(d.wholeTiles).toBeGreaterThan(0);
+      expect(d.cutTiles).toBeGreaterThan(0);
+      expect(d.diagonal!.cells.some((c) => c.type === "whole")).toBe(true);
+      expect(d.diagonal!.cells.some((c) => c.type === "edge")).toBe(true);
+    });
+  });
+
+  describe("точность подрезки (регресс-тесты)", () => {
+    it("фартук 2400×600 плиткой 300×600 — 7 целых + 1 подрез, НЕ всё в подрезку", () => {
+      // Баг: floor(600/602)=0 давал whole=0 на поверхности, равной высоте плитки.
+      const r = calculateTileLayout(2400, 600, 300, 600, 2, "straight");
+      expect(r.wholeTiles).toBe(7);
+      expect(r.cutTiles).toBe(1);
+      expect(r.cutBottom).toBe(0); // по высоте подрезки нет — плитка точно в размер
+    });
+
+    it("крупные подрезы (>½ плитки) не схлопывают отход в ноль", () => {
+      // Пол 3000×4000 плиткой 600×600: подрезы 590 и 386 мм — из одной плитки
+      // два таких куска не нарезать, отход должен остаться заметным.
+      const r = calculateTileLayout(3000, 4000, 600, 600, 2, "straight");
+      expect(r.wastePercent).toBeGreaterThan(3);
+    });
+
+    it("поверхность меньше плитки — есть предупреждение", () => {
+      const r = calculateTileLayout(150, 150, 300, 300, 2, "straight");
+      expect(r.wholeTiles).toBe(0);
+      expect(r.notes.some((n) => n.includes("меньше одной плитки"))).toBe(true);
     });
   });
 

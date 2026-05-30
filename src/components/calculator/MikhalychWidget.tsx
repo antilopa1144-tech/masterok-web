@@ -2,13 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import MarkdownContent from "@/components/mikhalych/MarkdownContent";
-import {
-  SYSTEM_PROMPT,
-  MIKHALYCH_API_URL,
-  MIKHALYCH_CHAT_GENERATION,
-  checkRateLimit,
-  getApiHeaders,
-} from "@/lib/mikhalych";
+import type { MikhalychChatResponse } from "@/lib/mikhalych";
+import { checkRateLimit, streamMikhalychChat } from "@/lib/mikhalych";
+import { MIKHALYCH_TOOL_STATUS } from "@/lib/mikhalych/tool-labels";
+import MikhalychAgentExtras from "@/components/mikhalych/MikhalychAgentExtras";
 import { MIKHALYCH_WIDGET_UI_TEXT as UI_TEXT, getMikhalychAssistantErrorMessage } from "./uiText";
 
 interface Props {
@@ -29,6 +26,11 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [statusHint, setStatusHint] = useState<string | null>(null);
+  const [agentMeta, setAgentMeta] = useState<Pick<
+    MikhalychChatResponse,
+    "toolsUsed" | "calculatorLinks" | "projectEntries"
+  > | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -60,34 +62,6 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
     el.scrollTo({ top: el.scrollHeight, behavior: typing ? "auto" : "smooth" });
   }, [messages, loading, typing]);
 
-  // Прогрессивная печать ответа ассистента (typing effect)
-  const startTyping = (fullContent: string) => {
-    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-    setTyping(true);
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-    let shown = 0;
-    const total = fullContent.length;
-    const charsPerTick = Math.max(2, Math.ceil(total / 220)); // длинные ответы — быстрее
-
-    typingTimerRef.current = setInterval(() => {
-      shown = Math.min(total, shown + charsPerTick);
-      setMessages((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last && last.role === "assistant") {
-          copy[copy.length - 1] = { ...last, content: fullContent.slice(0, shown) };
-        }
-        return copy;
-      });
-      if (shown >= total) {
-        if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-        typingTimerRef.current = null;
-        setTyping(false);
-      }
-    }, 18);
-  };
-
   // Safety: reset loading if stuck for more than 30 seconds
   useEffect(() => {
     if (!loading) return;
@@ -108,49 +82,64 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
     const userMsg: Message = { role: "user", content: text.trim() };
 
     const apiMessages: Message[] = [...messages, userMsg];
-    if (calcContext && messages.length <= 1) {
-      apiMessages[apiMessages.length - 1] = {
-        role: "user",
-        content: `[Контекст расчёта — опирайся на цифры]\n${calcContext}\n\nВопрос: ${text.trim()}`,
-      };
-    }
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+    setAgentMeta(null);
+    setStatusHint("Думаю…");
 
     try {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
       const lastMessages = apiMessages.slice(-10);
-      const res = await fetch(MIKHALYCH_API_URL, {
-        method: "POST",
-        headers: getApiHeaders(),
-        signal: controller.signal,
-        body: JSON.stringify({
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...lastMessages.map((m) => ({ role: m.role, content: m.content })),
-          ],
-          ...MIKHALYCH_CHAT_GENERATION,
-        }),
-      });
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setLoading(false);
 
-      if (!res.ok) {
-        // Try to extract error details from upstream response body
-        let errorDetail = "";
-        try {
-          const errorBody = await res.json();
-          errorDetail = errorBody?.error?.message ?? errorBody?.message ?? "";
-        } catch { /* ignore parse errors */ }
-        const baseMsg = getMikhalychAssistantErrorMessage(res.status);
-        throw new Error(errorDetail ? `${baseMsg} (${errorDetail})` : baseMsg);
+      const result = await streamMikhalychChat(
+        {
+          messages: lastMessages.map((m) => ({ role: m.role, content: m.content })),
+          calcContext: calcContext || undefined,
+          stream: true,
+        },
+        {
+          onStatus: (m) => setStatusHint(m),
+          onToolStart: (tool) =>
+            setStatusHint(MIKHALYCH_TOOL_STATUS[tool] ?? `Выполняю: ${tool}…`),
+          onToolEnd: () => setStatusHint("Формирую ответ…"),
+          onDelta: (delta) => {
+            setStatusHint(null);
+            setTyping(true);
+            setMessages((prev) => {
+              const copy = [...prev];
+              const last = copy[copy.length - 1];
+              if (last?.role === "assistant") {
+                copy[copy.length - 1] = { ...last, content: last.content + delta };
+              }
+              return copy;
+            });
+          },
+        },
+        controller.signal,
+      );
+      setTyping(false);
+      setAgentMeta({
+        toolsUsed: result.toolsUsed,
+        calculatorLinks: result.calculatorLinks,
+        projectEntries: result.projectEntries,
+      });
+      setStatusHint(null);
+      if (!result.content.trim()) {
+        setMessages((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            copy[copy.length - 1] = { ...last, content: UI_TEXT.genericApiError };
+          }
+          return copy;
+        });
       }
-      const data = await res.json();
-      const content =
-        data.choices?.[0]?.message?.content ?? UI_TEXT.genericApiError;
-      startTyping(content);
     } catch (err) {
       const msg =
         err instanceof Error && err.message
@@ -159,6 +148,8 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
       setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${msg}` }]);
     } finally {
       setLoading(false);
+      setStatusHint(null);
+      setTyping(false);
     }
   };
 
@@ -232,7 +223,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
             </div>
           </div>
         ))}
-        {loading && (
+        {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-accent-500 flex items-center justify-center text-xs" aria-hidden="true">🤖</div>
             <div className="flex gap-1 px-3 py-2 bg-slate-600/50 rounded-xl" aria-label={UI_TEXT.thinking}>
@@ -243,6 +234,13 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
           </div>
         )}
       </div>
+
+      <MikhalychAgentExtras
+        statusHint={statusHint}
+        toolsUsed={agentMeta?.toolsUsed}
+        calculatorLinks={agentMeta?.calculatorLinks}
+        projectEntries={agentMeta?.projectEntries}
+      />
 
       <div className="px-4 pb-4">
         <div className="rounded-2xl border border-white/10 bg-slate-900/35 p-2 shadow-sm">

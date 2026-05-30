@@ -3,13 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import MarkdownContent from "./MarkdownContent";
-import {
-  SYSTEM_PROMPT,
-  MIKHALYCH_API_URL,
-  MIKHALYCH_CHAT_GENERATION,
-  checkRateLimit,
-  getApiHeaders,
-} from "@/lib/mikhalych";
+import type { MikhalychChatResponse } from "@/lib/mikhalych";
+import { checkRateLimit, streamMikhalychChat } from "@/lib/mikhalych";
+import { MIKHALYCH_TOOL_STATUS } from "@/lib/mikhalych/tool-labels";
+import MikhalychAgentExtras from "./MikhalychAgentExtras";
 
 interface Message {
   role: "user" | "assistant";
@@ -25,13 +22,18 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     {
       role: "assistant",
       content:
-        "Я Михалыч. Спрашивай по стройке — отвечу прямо, иногда с сухим стёбом, если идея кривая. Цифры по материалам — подскажу калькулятор.",
+        "Я Михалыч. Спрашивай по стройке и материалам — могу сам прогнать расчёт через калькуляторы Мастерок и подсказать, сколько брать. Цены из сети — только с оговоркой, откуда смотрел.",
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusHint, setStatusHint] = useState<string | null>(null);
+  const [agentMeta, setAgentMeta] = useState<Pick<
+    MikhalychChatResponse,
+    "toolsUsed" | "calculatorLinks" | "projectEntries"
+  > | null>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -93,6 +95,8 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
       setInput("");
       setLoading(true);
       setError(null);
+      setAgentMeta(null);
+      setStatusHint("Думаю…");
 
       try {
         abortRef.current?.abort();
@@ -100,39 +104,46 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         abortRef.current = controller;
         const apiMessages = [...messages, userMsg].slice(-10);
 
-        const response = await fetch(MIKHALYCH_API_URL, {
-          method: "POST",
-          headers: getApiHeaders(),
-          signal: controller.signal,
-          body: JSON.stringify({
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              ...apiMessages.map((m) => ({ role: m.role, content: m.content })),
-            ],
-            ...MIKHALYCH_CHAT_GENERATION,
-          }),
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        setLoading(false);
+
+        const result = await streamMikhalychChat(
+          {
+            messages: apiMessages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            stream: true,
+          },
+          {
+            onStatus: (m) => setStatusHint(m),
+            onToolStart: (tool) =>
+              setStatusHint(MIKHALYCH_TOOL_STATUS[tool] ?? `Выполняю: ${tool}…`),
+            onToolEnd: () => setStatusHint("Формирую ответ…"),
+            onDelta: (delta) => {
+              setStatusHint(null);
+              setMessages((prev) => {
+                const copy = [...prev];
+                const last = copy[copy.length - 1];
+                if (last?.role === "assistant") {
+                  copy[copy.length - 1] = {
+                    ...last,
+                    content: last.content + delta,
+                  };
+                }
+                return copy;
+              });
+            },
+          },
+          controller.signal,
+        );
+
+        setAgentMeta({
+          toolsUsed: result.toolsUsed,
+          calculatorLinks: result.calculatorLinks,
+          projectEntries: result.projectEntries,
         });
-
-        if (!response.ok) {
-          // Извлекаем детали ошибки от upstream — это помогает диагностировать
-          // проблемы с моделью/параметрами, не лазая в логи Timeweb.
-          let detail = "";
-          try {
-            const errorBody = await response.json();
-            detail = errorBody?.error?.message ?? errorBody?.message ?? "";
-          } catch { /* non-JSON — ничего не добавляем */ }
-          const base = `Ошибка AI-сервиса (${response.status}). Попробуйте позже.`;
-          throw new Error(detail ? `${base} ${detail}` : base);
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-
-        if (!content) {
-          throw new Error("Пустой ответ от AI");
-        }
-
-        startTyping(content);
+        setStatusHint(null);
       } catch (err) {
         const msg =
           err instanceof Error
@@ -141,6 +152,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         setError(msg);
       } finally {
         setLoading(false);
+        setStatusHint(null);
       }
     },
     [messages, loading, typing]
@@ -191,7 +203,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           </div>
         ))}
 
-        {loading && (
+        {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-sm">
               🤖
@@ -212,6 +224,13 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           </div>
         )}
       </div>
+
+      <MikhalychAgentExtras
+        statusHint={statusHint}
+        toolsUsed={agentMeta?.toolsUsed}
+        calculatorLinks={agentMeta?.calculatorLinks}
+        projectEntries={agentMeta?.projectEntries}
+      />
 
       {messages.length === 1 && starterQuestions.length > 0 && (
         <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
@@ -272,8 +291,9 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           </div>
         </div>
         <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
-          Ответы справочные. Для точных объёмов используйте{" "}
-          <Link href="/" className="text-accent-600 hover:underline dark:text-accent-400">калькуляторы</Link>.
+          Ответы справочные. Объёмы материалов Михалыч считает через{" "}
+          <Link href="/" className="text-accent-600 hover:underline dark:text-accent-400">калькуляторы</Link>{" "}
+          Мастерок.
         </p>
       </div>
     </div>

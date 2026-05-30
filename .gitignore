@@ -48,6 +48,9 @@ next-env.d.ts
 # local npm cache
 /.npm-cache/
 
+# PoC-песочница агента Михалыча (прототип, не часть сборки приложения)
+/packages/
+
 # lighthouse reports (large, ephemeral)
 lighthouse-report.json
 lighthouse-report*.json

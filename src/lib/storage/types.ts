@@ -30,6 +30,10 @@ export interface StoredProjectEntry {
 export interface ProjectEstimateMeta {
   reservePercent: number;
   deliveryRub: number;
+  // Реквизиты шапки документа сметы. Опциональны — старые сохранённые
+  // проекты без этих полей продолжают работать (показываются как пустые).
+  objectName?: string;
+  customerName?: string;
 }
 
 export interface ProjectWithEntries extends StoredProject {

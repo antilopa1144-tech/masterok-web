@@ -41,3 +41,6 @@ export function getApiHeaders(): Record<string, string> {
     "Content-Type": "application/json",
   };
 }
+
+export { postMikhalychChat, streamMikhalychChat } from "./mikhalych/client";
+export type { MikhalychChatRequest, MikhalychChatResponse } from "./mikhalych/client";

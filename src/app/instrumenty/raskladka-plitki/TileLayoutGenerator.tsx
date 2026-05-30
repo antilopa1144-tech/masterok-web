@@ -80,6 +80,56 @@ function TileLayoutSVG({ result, groutMm }: { result: TileLayoutResult; groutMm:
   );
 }
 
+// ── Diagonal SVG Renderer ──────────────────────────────────────────────────
+
+function DiagonalLayoutSVG({ result }: { result: TileLayoutResult }) {
+  const d = result.diagonal;
+  if (!d) return null;
+
+  const scale = Math.min(600 / Math.max(d.surfaceW, 1), 400 / Math.max(d.surfaceH, 1), 1);
+  const svgW = d.surfaceW * scale;
+  const svgH = d.surfaceH * scale;
+  const half = d.halfDiagonalMm * scale;
+  const clipId = "diag-clip";
+
+  const COLORS = { whole: "#3B82F6", edge: "#F59E0B" };
+
+  return (
+    <svg
+      viewBox={`0 0 ${svgW} ${svgH}`}
+      className="w-full max-w-[600px] border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800"
+      style={{ aspectRatio: `${svgW} / ${svgH}` }}
+      role="img"
+      aria-label="Схема диагональной раскладки плитки под 45°"
+    >
+      {/* Клип по границам поверхности — краевые ромбы обрезаются ровно по стене. */}
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={0} y={0} width={svgW} height={svgH} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        {d.cells.map((cell, i) => {
+          const cx = cell.cx * scale;
+          const cy = cell.cy * scale;
+          // Ромб = квадрат, повёрнутый на 45°: 4 вершины по осям.
+          const pts = `${cx},${cy - half} ${cx + half},${cy} ${cx},${cy + half} ${cx - half},${cy}`;
+          return (
+            <polygon
+              key={i}
+              points={pts}
+              fill={COLORS[cell.type]}
+              opacity={0.85}
+              stroke="#E2E8F0"
+              strokeWidth={Math.max(half * 0.02, 0.5)}
+            />
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function TileLayoutGenerator() {
@@ -284,7 +334,7 @@ export default function TileLayoutGenerator() {
             Раскладка
             {layoutMode === "diagonal" && (
               <span className="ml-2 normal-case font-normal text-amber-600 dark:text-amber-400">
-                (схема — прямая сетка)
+                (под 45°)
               </span>
             )}
           </h3>
@@ -297,7 +347,11 @@ export default function TileLayoutGenerator() {
         </div>
 
         <div ref={svgContainerRef}>
-          <TileLayoutSVG result={result} groutMm={groutMm} />
+          {result.diagonal ? (
+            <DiagonalLayoutSVG result={result} />
+          ) : (
+            <TileLayoutSVG result={result} groutMm={groutMm} />
+          )}
         </div>
 
         {/* Legend */}
@@ -309,7 +363,7 @@ export default function TileLayoutGenerator() {
           {result.cutTiles > 0 && (
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-amber-500 opacity-85" />
-              Подрезка ({result.cutTiles} шт)
+              {result.diagonal ? "Краевой добор" : "Подрезка"} ({result.cutTiles} шт)
             </div>
           )}
           {result.tileGrid.some((row) => row.some((c) => c.type === "corner")) && (

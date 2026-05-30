@@ -205,6 +205,8 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
     <>
       <ProjectEstimatePrint
         projectName={project.name}
+        objectName={meta.objectName}
+        customerName={meta.customerName}
         lines={view.procurement}
         prices={view.resolvedPrices}
         totals={totals}
@@ -268,6 +270,32 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
                     month: "short",
                   })}
                 </p>
+
+                {/* Реквизиты документа: объект и заказчик. Необязательны —
+                    пустые поля не мешают, но при заполнении смета выглядит
+                    как настоящий документ (и попадают в печать). */}
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 max-w-xl">
+                  <label className="block">
+                    <span className="text-[11px] text-slate-400">Объект / адрес</span>
+                    <input
+                      type="text"
+                      value={meta.objectName ?? ""}
+                      onChange={(e) => handleMetaChange({ objectName: e.target.value })}
+                      placeholder="напр. Квартира, ул. Ленина 10"
+                      className="input-field mt-0.5 w-full py-1.5 text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[11px] text-slate-400">Заказчик</span>
+                    <input
+                      type="text"
+                      value={meta.customerName ?? ""}
+                      onChange={(e) => handleMetaChange({ customerName: e.target.value })}
+                      placeholder="напр. Иванов И. И."
+                      className="input-field mt-0.5 w-full py-1.5 text-sm"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="flex flex-col items-stretch sm:items-end gap-3 shrink-0">

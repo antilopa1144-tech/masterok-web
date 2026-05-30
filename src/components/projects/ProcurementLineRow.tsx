@@ -47,10 +47,10 @@ function PriceInput({
       placeholder="0"
       onChange={(e) => onPriceChange(e.target.value)}
       onBlur={onPriceBlur}
-      className={`w-full rounded-lg border px-2.5 py-2 text-right text-sm tabular-nums outline-none focus:ring-2 focus:ring-accent-500/30 ${
+      className={`w-full rounded-lg border px-2.5 py-2 text-right text-sm tabular-nums outline-none transition-colors focus:border-accent-400 focus:ring-2 focus:ring-accent-500/30 ${
         price > 0
-          ? "border-accent-200 bg-accent-50/40 dark:border-accent-800 dark:bg-accent-950/30"
-          : "border-amber-200 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-950/20"
+          ? "border-slate-200 bg-transparent dark:border-slate-700"
+          : "border-dashed border-slate-300 bg-slate-50/60 text-slate-500 dark:border-slate-600 dark:bg-slate-800/40"
       }`}
       aria-label={`Цена: ${line.name}`}
     />
@@ -139,12 +139,14 @@ function DesktopRow({
   onPriceChange,
   onPriceBlur,
 }: ProcurementLineRowProps) {
-  const sourceLabel =
-    line.sources.length === 1 ? line.sources[0]!.calcTitle : `${line.sources.length} расчёта`;
+  // Источник (название калькулятора) больше не дублируется в каждой строке —
+  // он показан в заголовке группы. В строке оставляем его только когда позиция
+  // собрана из нескольких расчётов (это реально полезная пометка).
+  const multiSource = line.sources.length > 1;
 
   return (
     <div
-      className={`grid grid-cols-[2rem_minmax(0,1fr)_6.5rem_6.5rem_6.5rem_6.5rem] gap-2 px-4 py-3 items-center border-b border-slate-50 dark:border-slate-800/60 transition-colors ${
+      className={`grid grid-cols-[2rem_minmax(0,1fr)_7rem_7rem_8rem] gap-2 px-4 py-3 items-center border-b border-slate-50 dark:border-slate-800/60 transition-colors ${
         purchased
           ? "bg-green-50/60 dark:bg-green-950/25"
           : "hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
@@ -174,6 +176,11 @@ function DesktopRow({
             Куплено
           </span>
         )}
+        {multiSource && !purchased && (
+          <span className="inline-flex mt-0.5 text-[10px] font-medium text-slate-400">
+            из {line.sources.length} расчётов
+          </span>
+        )}
       </div>
       <p className="text-sm font-semibold tabular-nums text-right">
         {formatQuantity(line.quantity, line.unit)}
@@ -188,7 +195,6 @@ function DesktopRow({
       <p className={`text-sm font-bold tabular-nums text-right ${sum > 0 ? "" : "text-slate-400"}`}>
         {sum > 0 ? `${formatCost(sum)} ₽` : "—"}
       </p>
-      <p className="text-[11px] text-slate-400 text-right leading-tight">{sourceLabel}</p>
     </div>
   );
 }

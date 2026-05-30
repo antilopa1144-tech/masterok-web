@@ -13,6 +13,23 @@ export interface TileCell {
   heightMm: number;
 }
 
+/** Один ромб/добор диагональной раскладки (плитка, повёрнутая на 45°). */
+export interface DiagonalCell {
+  /** Центр ромба в координатах поверхности, мм. */
+  cx: number;
+  cy: number;
+  /** whole — полный ромб целиком внутри; edge — обрезан кромкой поверхности. */
+  type: "whole" | "edge";
+}
+
+export interface DiagonalLayout {
+  /** Половина диагонали ромба (= (tile+grout)/√2 шаг), мм. */
+  halfDiagonalMm: number;
+  cells: DiagonalCell[];
+  surfaceW: number;
+  surfaceH: number;
+}
+
 export interface TileLayoutResult {
   wholeTiles: number;
   cutTiles: number;
@@ -24,9 +41,11 @@ export interface TileLayoutResult {
   cutBottom: number;
   tileGrid: TileCell[][];
   mode: LayoutMode;
-  /** Доп. плитки к закупке (только диагональ — схема остаётся прямой) */
+  /** Доп. плитки к закупке (только диагональ — на подрезку углов под 45°) */
   purchaseReserveTiles: number;
   notes: string[];
+  /** Геометрия диагональной раскладки для SVG (только mode === "diagonal"). */
+  diagonal?: DiagonalLayout;
 }
 
 export interface LayoutModeOption {
@@ -105,22 +124,38 @@ function summarizeGrid(
   let cutTiles = 0;
   let maxCols = 0;
   const wholeArea = tileW * tileH;
-  let wasteArea = 0;
+  // Подрезы делим на «мелкие» (≤ половины плитки по обеим сторонам — из одной
+  // целой плитки выходит две таких) и «крупные» (нужна отдельная плитка на каждую,
+  // остаток слишком мал для парного края). Это даёт реалистичный отход без
+  // переоптимизма: нельзя нарезать два куска по 590 мм из плитки 600 мм.
+  let cutPlacedArea = 0;
+  let smallCuts = 0;
+  let largeCuts = 0;
 
   for (const row of grid) {
     maxCols = Math.max(maxCols, row.length);
     for (const cell of row) {
-      if (cell.type === "whole") wholeTiles++;
-      else cutTiles++;
-      if (cell.type !== "whole") {
-        wasteArea += wholeArea - cell.widthMm * cell.heightMm;
+      if (cell.type === "whole") {
+        wholeTiles++;
+      } else {
+        cutTiles++;
+        cutPlacedArea += cell.widthMm * cell.heightMm;
+        const reusable = cell.widthMm <= tileW / 2 + 0.5 && cell.heightMm <= tileH / 2 + 0.5;
+        if (reusable) smallCuts++;
+        else largeCuts++;
       }
     }
   }
 
   const totalTiles = wholeTiles + cutTiles;
-  const wastePercent =
-    totalTiles > 0 ? (wasteArea / (totalTiles * wholeArea)) * 100 : 0;
+
+  // Из мелких подрезов парами выходит по 2 куска из 1 плитки → ceil(smallCuts/2)
+  // плиток. Крупные подрезы расходуют по целой плитке каждый.
+  const cutTilesConsumed = Math.ceil(smallCuts / 2) + largeCuts;
+  const cutConsumedArea = cutTilesConsumed * wholeArea;
+  const wasteArea = Math.max(0, cutConsumedArea - cutPlacedArea);
+  const consumedArea = wholeTiles * wholeArea + cutConsumedArea;
+  const wastePercent = consumedArea > 0 ? (wasteArea / consumedArea) * 100 : 0;
 
   return { wholeTiles, cutTiles, totalTiles, wastePercent, cols: maxCols };
 }
@@ -150,6 +185,34 @@ export function computeLayoutSvgBoundsMm(
   return { widthMm: maxRowW, heightMm: totalH };
 }
 
+/**
+ * Сколько целых плиток влезает в длину и какой остаётся хвост под подрезку.
+ * N целых плиток занимают N*tile + (N-1)*grout (последний шов не нужен —
+ * плитка упирается в стену). Без этой поправки ровная поверхность
+ * (кратная плитке) давала ложную подрезку из-за лишнего шва. См. tile-layout.test.
+ */
+function fitWholeTiles(
+  surface: number,
+  tile: number,
+  grout: number,
+): { wholeCount: number; hasCut: boolean; cutSize: number } {
+  // Первая плитка без ведущего шва, каждая следующая — со швом перед ней.
+  let wholeCount = 0;
+  let used = 0;
+  while (used + tile <= surface + 0.5) {
+    wholeCount++;
+    used += tile;
+    // шов добавляем только если за ним поместится ещё хотя бы кусок плитки
+    if (used + grout < surface) used += grout;
+    else break;
+  }
+  const remain = surface - used;
+  // Подрезка нужна, только если остался заметный кусок (> 1 мм после шва).
+  const hasCut = remain > grout + 0.5;
+  const cutSize = hasCut ? Math.round(remain - grout) : 0;
+  return { wholeCount, hasCut, cutSize };
+}
+
 function calculateStraightLayout(
   surfaceW: number,
   surfaceH: number,
@@ -157,23 +220,17 @@ function calculateStraightLayout(
   tileH: number,
   groutMm: number,
 ): Omit<TileLayoutResult, "mode" | "purchaseReserveTiles" | "notes"> {
-  const stepW = tileW + groutMm;
-  const stepH = tileH + groutMm;
+  const fitW = fitWholeTiles(surfaceW, tileW, groutMm);
+  const fitH = fitWholeTiles(surfaceH, tileH, groutMm);
 
-  const wholeCols = Math.floor(surfaceW / stepW);
-  const wholeRows = Math.floor(surfaceH / stepH);
+  const wholeCols = fitW.wholeCount;
+  const wholeRows = fitH.wholeCount;
 
-  const usedW = wholeCols * stepW;
-  const usedH = wholeRows * stepH;
+  const hasRightCut = fitW.hasCut;
+  const hasBottomCut = fitH.hasCut;
 
-  const remainW = surfaceW - usedW;
-  const remainH = surfaceH - usedH;
-
-  const hasRightCut = remainW > groutMm;
-  const hasBottomCut = remainH > groutMm;
-
-  const cutRight = hasRightCut ? remainW - groutMm : 0;
-  const cutBottom = hasBottomCut ? remainH - groutMm : 0;
+  const cutRight = fitW.cutSize;
+  const cutBottom = fitH.cutSize;
 
   const cols = wholeCols + (hasRightCut ? 1 : 0);
   const rows = wholeRows + (hasBottomCut ? 1 : 0);
@@ -304,6 +361,87 @@ function calculateOffsetLayout(
   };
 }
 
+/**
+ * Геометрия диагональной раскладки: плитки повёрнуты на 45° и образуют
+ * шахматный узор ромбов. Центры ромбов стоят на сетке с шагом, равным
+ * диагонали плитки (с учётом шва). Ромб, у которого хоть один угол выходит
+ * за поверхность, помечается edge (по краю режется → подрезка под 45°).
+ */
+function buildDiagonalLayout(
+  surfaceW: number,
+  surfaceH: number,
+  tileW: number,
+  tileH: number,
+  groutMm: number,
+): DiagonalLayout {
+  // Для диагонали считаем плитку квадратной по меньшей стороне (классическая
+  // диагональ кладётся квадратом). Диагональ квадрата = side·√2.
+  const side = Math.min(tileW, tileH);
+  const diagonal = (side + groutMm) * Math.SQRT2;
+  const half = diagonal / 2;
+
+  const cells: DiagonalCell[] = [];
+  // Центры ромбов: шахматка с шагом half по обеим осям (соседние ряды смещены).
+  // Идём с запасом за края (-1 ряд), чтобы покрыть краевые подрезы.
+  const colCount = Math.ceil(surfaceW / half) + 2;
+  const rowCount = Math.ceil(surfaceH / half) + 2;
+
+  for (let r = -1; r < rowCount; r++) {
+    for (let c = -1; c < colCount; c++) {
+      // Шахматка: ромб стоит там, где (r + c) чётно.
+      if ((r + c) % 2 !== 0) continue;
+      const cx = c * half;
+      const cy = r * half;
+      // Углы ромба (вершины квадрата, повёрнутого на 45°).
+      const minX = cx - half;
+      const maxX = cx + half;
+      const minY = cy - half;
+      const maxY = cy + half;
+      // Ромб целиком за пределами поверхности — пропускаем.
+      if (maxX <= 0 || minX >= surfaceW || maxY <= 0 || minY >= surfaceH) continue;
+      const fullyInside = minX >= -0.5 && maxX <= surfaceW + 0.5 && minY >= -0.5 && maxY <= surfaceH + 0.5;
+      cells.push({ cx, cy, type: fullyInside ? "whole" : "edge" });
+    }
+  }
+
+  return { halfDiagonalMm: half, cells, surfaceW, surfaceH };
+}
+
+/**
+ * Подсказки пользователю по введённым размерам — чтобы не получить
+ * бессмысленный или неудобный результат (поверхность меньше плитки,
+ * слишком узкая подрезка по краю и т.п.).
+ */
+function buildInputNotes(
+  surfaceW: number,
+  surfaceH: number,
+  tileW: number,
+  tileH: number,
+  base: Pick<TileLayoutResult, "cutRight" | "cutBottom" | "wholeTiles">,
+): string[] {
+  const notes: string[] = [];
+
+  if (surfaceW < tileW || surfaceH < tileH) {
+    notes.push(
+      "Поверхность меньше одной плитки — потребуется резать каждую плитку. Проверьте, что размеры введены в миллиметрах.",
+    );
+  }
+  if (base.wholeTiles === 0 && (surfaceW >= tileW || surfaceH >= tileH)) {
+    notes.push(
+      "Ни одной целой плитки не помещается. Возможно, плитку стоит повернуть (поменять ширину и высоту местами).",
+    );
+  }
+  // Слишком узкая подрезка по краю — её сложно резать и она выглядит неаккуратно.
+  const thinRight = base.cutRight > 0 && base.cutRight < tileW * 0.3;
+  const thinBottom = base.cutBottom > 0 && base.cutBottom < tileH * 0.3;
+  if (thinRight || thinBottom) {
+    notes.push(
+      "Узкая подрезка по краю (меньше ⅓ плитки) — её трудно резать ровно. Сдвиньте старт от центра, чтобы краевые подрезы были крупнее и симметричнее.",
+    );
+  }
+  return notes;
+}
+
 export function calculateTileLayout(
   surfaceW: number,
   surfaceH: number,
@@ -325,23 +463,48 @@ export function calculateTileLayout(
       ...base,
       mode,
       purchaseReserveTiles: 0,
-      notes: [],
+      notes: buildInputNotes(surfaceW, surfaceH, tileW, tileH, base),
     };
   }
 
   const base = calculateStraightLayout(surfaceW, surfaceH, tileW, tileH, groutMm);
+  const inputNotes = buildInputNotes(surfaceW, surfaceH, tileW, tileH, base);
 
   if (mode === "diagonal") {
-    const reserve = Math.ceil(base.totalTiles * DIAGONAL_PURCHASE_RESERVE);
+    const diagonal = buildDiagonalLayout(surfaceW, surfaceH, tileW, tileH, groutMm);
+    const wholeTiles = diagonal.cells.filter((c) => c.type === "whole").length;
+    const edgeTiles = diagonal.cells.filter((c) => c.type === "edge").length;
+    // Краевые ромбы режутся по диагонали — из одной плитки часто выходит
+    // две краевые половины, поэтому к закупке: целые + ceil(краевые/2) + запас.
+    const edgeTilesConsumed = Math.ceil(edgeTiles / 2);
+    const totalTiles = wholeTiles + edgeTiles;
+    const reserve = Math.ceil((wholeTiles + edgeTilesConsumed) * DIAGONAL_PURCHASE_RESERVE);
+    // Отход диагонали: целые ромбы укладываются без потерь, а каждый краевой
+    // ромб режется под 45° с заметным остатком. Эмпирически отход диагонали
+    // стабильно выше прямой раскладки (треугольные доборы по периметру,
+    // частые непарные обрезки углов) — порядка 8–15%. Считаем как долю
+    // израсходованной площади, не уложенной в дело: целые = 0 потерь,
+    // краевые ромбы теряют ~40% площади израсходованной на них плитки.
+    const side = Math.min(tileW, tileH);
+    const tileArea = side * side;
+    const consumedArea = (wholeTiles + edgeTilesConsumed) * tileArea;
+    const edgeWasteArea = edgeTilesConsumed * tileArea * 0.4;
+    const wastePercent = consumedArea > 0 ? (edgeWasteArea / consumedArea) * 100 : 0;
+
     return {
       ...base,
       mode: "diagonal",
+      wholeTiles,
+      cutTiles: edgeTiles,
+      totalTiles,
       purchaseReserveTiles: reserve,
-      wastePercent: Math.min(base.wastePercent + 15, 45),
+      wastePercent,
+      diagonal,
       notes: [
-        "Схема показана как прямая сетка — так удобнее планировать подрезку по стенам.",
-        `Для укладки под 45° заложите ещё ~${reserve} плиток (+15%) на подрезку углов и бой.`,
+        "Плитка уложена под 45° — по периметру идут треугольные доборы (половинки плиток).",
+        `К закупке заложите ещё ~${reserve} плиток (+15%) на подрезку углов и бой.`,
         "Точный расчёт клея и затирки — в калькуляторе плитки (с запасом по схеме укладки).",
+        ...inputNotes,
       ],
     };
   }
@@ -350,6 +513,6 @@ export function calculateTileLayout(
     ...base,
     mode: "straight",
     purchaseReserveTiles: 0,
-    notes: [],
+    notes: inputNotes,
   };
 }

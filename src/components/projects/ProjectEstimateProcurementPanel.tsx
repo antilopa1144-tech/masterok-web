@@ -145,13 +145,12 @@ export default function ProjectEstimateProcurementPanel({
       )}
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
-        <div className="hidden md:grid md:grid-cols-[2rem_minmax(0,1fr)_6.5rem_6.5rem_6.5rem_6.5rem] gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="hidden md:grid md:grid-cols-[2rem_minmax(0,1fr)_7rem_7rem_8rem] gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
           <span title="Отметить купленным" />
           <span>Материал</span>
           <span className="text-right">Кол-во</span>
-          <span className="text-right">₽/ед.</span>
+          <span className="text-right">Цена за ед.</span>
           <span className="text-right">Сумма</span>
-          <span className="text-right">Источник</span>
         </div>
 
         {filtered.length === 0 ? (
@@ -168,30 +167,36 @@ export default function ProjectEstimateProcurementPanel({
                 const p = resolvedPrices[l.name] ?? 0;
                 return s + l.quantity * p;
               }, 0);
+              // Когда категория одна (типичный проект из одного расчёта),
+              // заголовок-аккордеон — лишний уровень вложенности и шум.
+              // Показываем его только при нескольких категориях.
+              const showCategoryHeader = groups.length > 1;
 
               return (
                 <div key={category}>
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(category)}
-                    className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/90 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-[1] text-left hover:bg-slate-100/90 dark:hover:bg-slate-800/70 transition-colors"
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <IconChevron open={!collapsed} className="w-4 h-4 shrink-0 text-slate-400" />
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
-                        {category}
+                  {showCategoryHeader && (
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/90 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-[1] text-left hover:bg-slate-100/90 dark:hover:bg-slate-800/70 transition-colors"
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <IconChevron open={!collapsed} className="w-4 h-4 shrink-0 text-slate-400" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                          {category}
+                        </span>
+                        <span className="text-[10px] font-medium text-slate-400 shrink-0">
+                          {catLines.length}
+                        </span>
                       </span>
-                      <span className="text-[10px] font-medium text-slate-400 shrink-0">
-                        {catLines.length}
-                      </span>
-                    </span>
-                    {catTotal > 0 && (
-                      <span className="text-xs font-bold tabular-nums text-slate-500 shrink-0">
-                        {formatCost(catTotal)} ₽
-                      </span>
-                    )}
-                  </button>
-                  {!collapsed &&
+                      {catTotal > 0 && (
+                        <span className="text-xs font-bold tabular-nums text-slate-500 shrink-0">
+                          {formatCost(catTotal)} ₽
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {(!collapsed || !showCategoryHeader) &&
                     catLines.map((line) => {
                       const price = resolvedPrices[line.name] ?? 0;
                       const sum = line.quantity * price;
@@ -221,7 +226,7 @@ export default function ProjectEstimateProcurementPanel({
 
       <section className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,360px)]">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900 space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Накладные</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Дополнительные расходы</h3>
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
               <span className="text-xs text-slate-500">Запас на подрезку / бой, %</span>

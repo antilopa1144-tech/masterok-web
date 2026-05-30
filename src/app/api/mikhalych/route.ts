@@ -1,4 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  runMikhalychAgent,
+  runMikhalychAgentAsSseStream,
+  isMikhalychAgentEnabled,
+  toOpenAIChatCompletionPayload,
+} from "@/lib/mikhalych/agent";
+import { createSseResponse } from "@/lib/mikhalych/agent/sse";
+import {
+  corsHeaders,
+  getSiteOrigin,
+  isRateLimited,
+  jsonError,
+  MAX_MESSAGE_CHARS,
+  normalizeChatMessages,
+} from "@/lib/mikhalych/api-common";
 import { MIKHALYCH_CHAT_GENERATION } from "@/lib/mikhalych/params";
 import {
   getMikhalychChatModel,
@@ -8,49 +23,16 @@ import {
 
 const MODEL = getMikhalychChatModel();
 const CHAT_GEN = MIKHALYCH_CHAT_GENERATION;
-
-const RATE_LIMIT = new Map<string, number[]>();
-const MAX_REQUESTS = 20;
-const WINDOW_MS = 60_000;
+const SITE_ORIGIN = getSiteOrigin();
 const MAX_MESSAGES = 12;
-const MAX_MESSAGE_CHARS = 4_000;
 const MAX_RESPONSE_TOKENS = CHAT_GEN.max_tokens;
-
-function toOrigin(url: string): string {
-  try {
-    return new URL(url).origin;
-  } catch {
-    return "https://getmasterok.ru";
-  }
-}
-
-const SITE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru");
-const ALLOWED_ORIGINS = new Set([
-  SITE_ORIGIN,
-  "https://www.getmasterok.ru",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-]);
-
-function corsHeaders(req: NextRequest): Record<string, string> {
-  const origin = req.headers.get("origin");
-  const allowOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : SITE_ORIGIN;
-
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Vary": "Origin",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Client",
-    "Access-Control-Max-Age": "86400",
-  };
-}
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, value));
 }
 
-function normalizeMessages(messages: unknown): Array<{ role: string; content: string }> | null {
+function normalizeLegacyMessages(messages: unknown): Array<{ role: string; content: string }> | null {
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return null;
 
   const allowedRoles = new Set(["system", "user", "assistant"]);
@@ -67,15 +49,6 @@ function normalizeMessages(messages: unknown): Array<{ role: string; content: st
 
   if (normalized.some((message) => message === null)) return null;
   return normalized as Array<{ role: string; content: string }>;
-}
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const timestamps = (RATE_LIMIT.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (timestamps.length >= MAX_REQUESTS) return true;
-  timestamps.push(now);
-  RATE_LIMIT.set(ip, timestamps);
-  return false;
 }
 
 export function OPTIONS(req: NextRequest) {
@@ -96,7 +69,13 @@ export async function GET(req: NextRequest) {
     );
   }
   return NextResponse.json(
-    { ok: true, provider, chatModel: MODEL },
+    {
+      ok: true,
+      provider,
+      chatModel: MODEL,
+      agentEnabled: isMikhalychAgentEnabled(),
+      agentPath: "/api/mikhalych/agent",
+    },
     { headers },
   );
 }
@@ -125,12 +104,14 @@ export async function POST(req: NextRequest) {
   let body: {
     model?: string;
     messages?: unknown;
+    calcContext?: string;
     temperature?: number;
     max_tokens?: number;
     top_p?: number;
     frequency_penalty?: number;
     presence_penalty?: number;
     stream?: boolean;
+    legacy?: boolean;
   };
   try {
     body = await req.json();
@@ -141,7 +122,53 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const messages = normalizeMessages(body.messages);
+  const useAgent =
+    isMikhalychAgentEnabled() &&
+    body.legacy !== true &&
+    getMikhalychUpstreamProvider() === "deepseek";
+
+  if (useAgent) {
+    const agentMessages = normalizeChatMessages(body.messages);
+    if (!agentMessages) {
+      return NextResponse.json({ error: "Invalid messages" }, { status: 400, headers });
+    }
+    const calcContext =
+      typeof body.calcContext === "string" ? body.calcContext.slice(0, 16_000) : undefined;
+    const client = (req.headers.get("x-client") ?? "web").slice(0, 40);
+    const sessionId = `web-${ip}-${Date.now()}`;
+
+    if (body.stream === true) {
+      const stream = runMikhalychAgentAsSseStream(
+        {
+          messages: agentMessages,
+          calcContext,
+          clientLabel: client,
+          siteOrigin: SITE_ORIGIN,
+        },
+        sessionId,
+      );
+      return createSseResponse(stream, headers);
+    }
+
+    try {
+      const result = await runMikhalychAgent(
+        {
+          messages: agentMessages,
+          calcContext,
+          clientLabel: client,
+          siteOrigin: SITE_ORIGIN,
+        },
+        { sessionId },
+      );
+      return NextResponse.json(toOpenAIChatCompletionPayload(result), { headers });
+    } catch (err) {
+      console.error("[mikhalych] agent failed", err);
+      const message = err instanceof Error ? err.message : "Agent request failed";
+      return NextResponse.json({ error: message }, { status: 502, headers });
+    }
+  }
+
+  const messages = normalizeLegacyMessages(body.messages);
   if (!messages) {
     return NextResponse.json(
       { error: "Invalid messages" },

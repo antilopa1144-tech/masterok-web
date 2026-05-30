@@ -5,6 +5,8 @@ import type { ProjectEstimateTotals } from "@/lib/projects/build-estimate";
 
 interface Props {
   projectName: string;
+  objectName?: string;
+  customerName?: string;
   lines: ProcurementLine[];
   prices: Record<string, number>;
   totals: ProjectEstimateTotals;
@@ -12,6 +14,8 @@ interface Props {
 
 export default function ProjectEstimatePrint({
   projectName,
+  objectName,
+  customerName,
   lines,
   prices,
   totals,
@@ -31,6 +35,12 @@ export default function ProjectEstimatePrint({
           {SITE_NAME} — {siteHost}
         </p>
         <h1 className="m-0 text-[13pt] font-bold leading-tight">Смета: {projectName}</h1>
+        {objectName && (
+          <p className="mt-1 mb-0 text-[9pt] text-neutral-700">Объект: {objectName}</p>
+        )}
+        {customerName && (
+          <p className="mt-0.5 mb-0 text-[9pt] text-neutral-700">Заказчик: {customerName}</p>
+        )}
         <p className="mt-1 mb-0 text-[9pt] text-neutral-600">Дата: {dateStr}</p>
       </header>
 
