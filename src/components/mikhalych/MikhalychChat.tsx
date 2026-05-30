@@ -166,9 +166,15 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   };
 
   return (
-    <div className="card flex flex-col overflow-hidden h-[min(640px,calc(100dvh-11rem))] sm:h-[min(640px,calc(100dvh-10rem))] lg:h-[640px]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950 lg:rounded-2xl lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:shadow-sm">
       {/* История сообщений */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-4 sm:px-6 [scrollbar-gutter:stable]"
+        role="log"
+        aria-live="polite"
+      >
+        <div className="mx-auto w-full max-w-3xl space-y-4">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -188,7 +194,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             </div>
 
             <div
-              className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+              className={`max-w-[85%] sm:max-w-[80%] px-4 py-3 rounded-2xl text-[15px] sm:text-sm leading-relaxed ${
                 msg.role === "assistant"
                   ? "bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700"
                   : "bg-accent-500 text-white rounded-tr-none"
@@ -223,17 +229,20 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             ⚠️ {error}
           </div>
         )}
+        </div>
       </div>
 
-      <MikhalychAgentExtras
-        statusHint={statusHint}
-        toolsUsed={agentMeta?.toolsUsed}
-        calculatorLinks={agentMeta?.calculatorLinks}
-        projectEntries={agentMeta?.projectEntries}
-      />
+      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+        <MikhalychAgentExtras
+          statusHint={statusHint}
+          toolsUsed={agentMeta?.toolsUsed}
+          calculatorLinks={agentMeta?.calculatorLinks}
+          projectEntries={agentMeta?.projectEntries}
+        />
+      </div>
 
       {messages.length === 1 && starterQuestions.length > 0 && (
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+        <div className="mx-auto w-full max-w-3xl px-4 pb-2 sm:px-6">
           <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Попробуйте спросить:</p>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.slice(0, 3).map((q, i) => (
@@ -249,8 +258,9 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         </div>
       )}
 
-      <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
+      {/* Ввод прибит к низу. pb с safe-area для iPhone (нижняя «чёлка»). */}
+      <div className="border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-700 dark:bg-slate-950 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
           <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -258,7 +268,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Спросите про материалы, технологию или расчёт..."
-            className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100"
+            className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100"
             rows={2}
             disabled={loading || typing}
             aria-label="Сообщение для Михалыча"
@@ -290,7 +300,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             <span className="hidden text-[11px] text-slate-400 dark:text-slate-500 sm:inline">Shift+Enter — новая строка</span>
           </div>
         </div>
-        <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+        <p className="mx-auto mt-2 w-full max-w-3xl text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
           Ответы справочные. Объёмы материалов Михалыч считает через{" "}
           <Link href="/" className="text-accent-600 hover:underline dark:text-accent-400">калькуляторы</Link>{" "}
           Мастерок.

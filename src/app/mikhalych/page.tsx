@@ -106,11 +106,11 @@ export default function MikhalychPage() {
       <div className="relative overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
         <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl" aria-hidden="true" />
         <div className="absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" aria-hidden="true" />
-        <div className="page-container-wide relative py-10 md:py-14">
+        <div className="page-container-wide relative py-6 md:py-14">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
-            <div className="flex items-start gap-5">
+            <div className="flex items-start gap-4 sm:gap-5">
               <div className="relative shrink-0" role="img" aria-label="AI-помощник Михалыч">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-accent-500 text-4xl shadow-2xl shadow-accent-500/30">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-500 text-2xl shadow-2xl shadow-accent-500/30 sm:h-20 sm:w-20 sm:rounded-3xl sm:text-4xl">
                   🤖
                 </div>
                 <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-950 bg-emerald-500 text-[10px] font-bold">
@@ -122,29 +122,31 @@ export default function MikhalychPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   {UI_TEXT.heroBadge}
                 </div>
-                <h1 className="text-3xl font-black leading-tight text-white md:text-5xl">
+                <h1 className="text-xl font-black leading-tight text-white sm:text-3xl md:text-5xl">
                   {UI_TEXT.heroTitle}
                 </h1>
-                <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                {/* Описание и теги съедают высоту перед чатом — на мобиле скрыты,
+                    суть видна сразу в самом чате (приветствие + быстрые вопросы). */}
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300 sm:mt-4 sm:text-base md:text-lg">
                   {UI_TEXT.heroDescription}
                 </p>
-                <p className="mt-3 max-w-xl text-sm text-slate-400">
+                <p className="mt-3 hidden max-w-xl text-sm text-slate-400 sm:block">
                   {UI_TEXT.heroTrust}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 hidden flex-wrap gap-2 sm:flex">
                   {HERO_TAGS.map((tag) => (
                     <span key={tag} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 ring-1 ring-white/10">
                       {tag}
                     </span>
                   ))}
                 </div>
-                <a href="#mikhalych-chat" className="btn-primary mt-6 inline-flex text-base">
+                <a href="#mikhalych-chat" className="btn-primary mt-4 hidden text-base sm:mt-6 sm:inline-flex">
                   {UI_TEXT.heroCta}
                 </a>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-slate-950/30 backdrop-blur">
+            <div className="hidden rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-slate-950/30 backdrop-blur lg:block">
               <p className="mb-3 text-sm font-bold text-white">{UI_TEXT.scenariosTitle}</p>
               <div className="space-y-2">
                 {HERO_SCENARIOS.map((scenario, index) => (
@@ -161,13 +163,18 @@ export default function MikhalychPage() {
         </div>
       </div>
 
-      <div className="page-container py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div id="mikhalych-chat" className="scroll-mt-24 lg:col-span-2">
+      {/* Чат. На мобиле — почти на весь экран (минус хедер 4rem), ввод у низа,
+          как в ChatGPT/Claude. На десктопе — высокая колонка + сайдбар. */}
+      <div className="page-container py-0 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
+          <div
+            id="mikhalych-chat"
+            className="scroll-mt-20 lg:col-span-2 h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-9rem)] lg:max-h-[760px]"
+          >
             <MikhalychChat starterQuestions={[...STARTER_QUESTIONS]} />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 px-4 py-6 lg:p-0">
             <div className="card p-5">
               <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-3">
                 {UI_TEXT.skillsTitle}
