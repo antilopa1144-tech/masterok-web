@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
 import MikhalychChat from "@/components/mikhalych/MikhalychChat";
+import MikhalychAvatar from "@/components/mikhalych/MikhalychAvatar";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -107,13 +108,7 @@ export default function MikhalychPage() {
         {/* Компактная шапка чата вместо большого hero */}
         <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-950 sm:px-6">
           <div className="relative shrink-0" role="img" aria-label="AI-помощник Михалыч">
-            <img
-              src="/mikhalych-avatar.png"
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-xl object-cover shadow-sm"
-            />
+            <MikhalychAvatar size={36} className="h-9 w-9 rounded-xl shadow-sm" />
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-950" />
           </div>
           <div className="min-w-0">

@@ -11,6 +11,7 @@ import {
   runMikhalychAgent,
   runMikhalychAgentAsSseStream,
   toOpenAIChatCompletionPayload,
+  MIKHALYCH_AGENT_TOOLS,
 } from "@/lib/mikhalych/agent";
 import { createSseResponse } from "@/lib/mikhalych/agent/sse";
 import { getMikhalychUpstreamProvider } from "@/lib/mikhalych/deepseek-upstream";
@@ -34,14 +35,8 @@ export async function GET(req: NextRequest) {
       mode: "agent",
       agentEnabled: isMikhalychAgentEnabled(),
       provider,
-      tools: [
-        "list_calculators",
-        "get_calculator_schema",
-        "run_calculator",
-        "search_knowledge_base",
-        "web_search",
-        "fetch_url",
-      ],
+      // Список из источника истины — не расходится при добавлении инструментов.
+      tools: MIKHALYCH_AGENT_TOOLS.map((t) => t.function.name),
       langfuse: process.env.LANGFUSE_PUBLIC_KEY ? "configured" : "off",
     },
     { headers },

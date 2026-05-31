@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import MarkdownContent from "@/components/mikhalych/MarkdownContent";
+import MikhalychAvatar from "@/components/mikhalych/MikhalychAvatar";
 import type { MikhalychChatResponse } from "@/lib/mikhalych";
 import { checkRateLimit, streamMikhalychChat } from "@/lib/mikhalych";
 import { MIKHALYCH_TOOL_STATUS } from "@/lib/mikhalych/tool-labels";
@@ -168,13 +169,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
     <div ref={rootRef} className="rounded-2xl overflow-hidden scroll-mt-20 shadow-md ring-1 ring-slate-200 dark:ring-white/5 bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-700">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200 dark:border-white/10">
         <span className="relative shrink-0" aria-hidden="true">
-          <img
-            src="/mikhalych-avatar.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-accent-500/25"
-          />
+          <MikhalychAvatar size={40} className="h-10 w-10 rounded-xl shadow-lg shadow-accent-500/25" />
           <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-800" />
         </span>
         <div className="min-w-0">
@@ -189,7 +184,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
         {messages.map((msg, i) => (
           <div key={i} className={`flex items-start gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             {msg.role === "assistant" ? (
-              <img src="/mikhalych-avatar.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md object-cover shrink-0" aria-hidden="true" />
+              <MikhalychAvatar size={24} className="h-6 w-6 rounded-md" />
             ) : (
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-slate-300 dark:bg-slate-600" aria-hidden="true">
                 👷
@@ -210,7 +205,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
         ))}
         {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-center gap-2">
-            <img src="/mikhalych-avatar.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md object-cover shrink-0" aria-hidden="true" />
+            <MikhalychAvatar size={24} className="h-6 w-6 rounded-md" />
             <div className="flex gap-1 px-3 py-2 bg-white border border-slate-200 rounded-xl dark:bg-slate-600/50 dark:border-transparent" aria-label={UI_TEXT.thinking}>
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />

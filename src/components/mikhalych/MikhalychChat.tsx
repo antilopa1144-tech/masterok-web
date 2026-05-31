@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import MarkdownContent from "./MarkdownContent";
+import MikhalychAvatar from "./MikhalychAvatar";
 import type { MikhalychChatResponse } from "@/lib/mikhalych";
 import { checkRateLimit, streamMikhalychChat } from "@/lib/mikhalych";
 import { MIKHALYCH_TOOL_STATUS } from "@/lib/mikhalych/tool-labels";
@@ -159,7 +160,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           >
             {firstInGroup ? (
               msg.role === "assistant" ? (
-                <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
+                <MikhalychAvatar size={32} className="h-8 w-8 rounded-lg" />
               ) : (
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" aria-hidden="true">
                   👷
@@ -188,7 +189,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
         {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-start gap-3">
-            <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
+            <MikhalychAvatar size={32} className="h-8 w-8 rounded-lg" />
             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-none">
               <div className="flex items-center gap-1.5" aria-label="Михалыч думает...">
                 <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
