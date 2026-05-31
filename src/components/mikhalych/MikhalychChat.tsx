@@ -145,26 +145,35 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         aria-live="polite"
       >
         <div className="mx-auto w-full max-w-3xl space-y-4">
-        {messages.map((msg, i) => (
+        {messages.map((msg, i) => {
+          // Группировка: аватар только у первого сообщения в серии одной роли,
+          // дальше — спейсер той же ширины. Скруглённый «хвостик» пузыря —
+          // тоже только у первого сообщения группы.
+          const firstInGroup = i === 0 || messages[i - 1].role !== msg.role;
+          return (
           <div
             key={i}
             className={`flex items-start gap-3 ${
               msg.role === "user" ? "flex-row-reverse" : ""
-            }`}
+            } ${firstInGroup ? "" : "mt-1"}`}
           >
-            {msg.role === "assistant" ? (
-              <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
+            {firstInGroup ? (
+              msg.role === "assistant" ? (
+                <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
+              ) : (
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" aria-hidden="true">
+                  👷
+                </div>
+              )
             ) : (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" aria-hidden="true">
-                👷
-              </div>
+              <div className="w-8 shrink-0" aria-hidden="true" />
             )}
 
             <div
               className={`max-w-[85%] sm:max-w-[80%] px-4 py-3 rounded-2xl text-[15px] sm:text-sm leading-relaxed ${
                 msg.role === "assistant"
-                  ? "bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700"
-                  : "bg-accent-500 text-white rounded-tr-none"
+                  ? `bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 ${firstInGroup ? "rounded-tl-none" : ""}`
+                  : `bg-accent-500 text-white ${firstInGroup ? "rounded-tr-none" : ""}`
               }`}
             >
               {msg.role === "assistant" ? (
@@ -174,7 +183,8 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-start gap-3">

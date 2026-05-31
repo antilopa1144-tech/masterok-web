@@ -33,6 +33,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
   > | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     setLoading(true);
     setAgentMeta(null);
     setStatusHint("Думаю…");
@@ -183,7 +185,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
         </div>
       </div>
 
-      <div ref={messagesContainerRef} className="h-80 overflow-y-auto overscroll-contain p-4 space-y-3 bg-slate-50 dark:bg-transparent" role="log" aria-live="polite">
+      <div ref={messagesContainerRef} className="h-[60svh] max-h-[560px] sm:h-80 overflow-y-auto overscroll-contain p-4 space-y-3 bg-slate-50 dark:bg-transparent" role="log" aria-live="polite">
         {messages.map((msg, i) => (
           <div key={i} className={`flex items-start gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             {msg.role === "assistant" ? (
@@ -228,12 +230,18 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
       <div className="px-4 pb-4 bg-slate-50 dark:bg-transparent">
         <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-slate-900/35">
           <div className="flex items-end gap-2">
-          <input
-            type="text"
+          <textarea
+            ref={inputRef}
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // авто-рост: подгоняем высоту под текст (макс ~5 строк)
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !loading) {
+              if (e.key === "Enter" && !e.shiftKey && !loading) {
                 e.preventDefault();
                 sendMessage(input);
               }
@@ -241,7 +249,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
             placeholder={UI_TEXT.inputPlaceholder}
             disabled={loading}
             aria-label={UI_TEXT.inputAriaLabel}
-            className="min-h-[44px] flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40 dark:border-white/10 dark:bg-slate-700/70 dark:text-slate-100"
+            className="min-h-[44px] max-h-[120px] flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40 dark:border-white/10 dark:bg-slate-700/70 dark:text-slate-100 dark:placeholder:text-slate-400"
           />
           <button
             onClick={() => sendMessage(input)}
