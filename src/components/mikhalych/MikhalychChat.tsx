@@ -233,7 +233,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Спросите про материалы, технологию или расчёт..."
-            className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100"
+            className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
             rows={2}
             disabled={loading}
             aria-label="Сообщение для Михалыча"
