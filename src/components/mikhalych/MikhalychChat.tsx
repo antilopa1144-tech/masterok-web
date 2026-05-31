@@ -22,7 +22,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     {
       role: "assistant",
       content:
-        "Я Михалыч. Не просто отвечаю — делаю работу: сам прогоняю расчёты через калькуляторы Мастерок, собираю смету всей квартиры, сравниваю материалы и подбираю под бюджет. Поручи задачу обычными словами — «посчитай ремонт ванной», «минвата или пеноплекс», «уложись в 200к». Цены из сети — с оговоркой, откуда смотрел.",
+        "Я Михалыч — не просто отвечаю, а делаю: считаю через калькуляторы, собираю смету, сравниваю материалы, подбираю под бюджет. Поручи задачу обычными словами.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -204,6 +204,25 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             ⚠️ {error}
           </div>
         )}
+
+        {/* Стартовые вопросы ВНУТРИ ленты (скроллятся вместе с ней), а не
+            отдельным фиксированным блоком — иначе на мобиле выдавливали чат. */}
+        {messages.length === 1 && starterQuestions.length > 0 && (
+          <div className="pt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Поручите Михалычу:</p>
+            <div className="flex flex-wrap gap-2">
+              {starterQuestions.slice(0, 3).map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(q)}
+                  className="text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full transition-colors text-left"
+                >
+                  {q.length > 50 ? q.slice(0, 50) + "..." : q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         </div>
       </div>
 
@@ -215,31 +234,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
           projectEntries={agentMeta?.projectEntries}
         />
       </div>
-
-      {messages.length === 1 && starterQuestions.length > 0 && (
-        <div className="mx-auto w-full max-w-3xl px-4 pb-2 sm:px-6">
-          {/* Онбординг: коротко объясняем, что Михалыч — агент, а не просто чат */}
-          <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-accent-200 bg-accent-50/70 px-3 py-2.5 dark:border-accent-800/50 dark:bg-accent-950/30">
-            <span className="text-base leading-none mt-0.5" aria-hidden="true">✨</span>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-              <span className="font-semibold text-slate-800 dark:text-slate-100">Михалыч теперь агент.</span>{" "}
-              Не просто отвечает — сам считает через калькуляторы, собирает смету, сравнивает материалы и подбирает под бюджет. Поручите задачу обычными словами.
-            </p>
-          </div>
-          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Поручите Михалычу:</p>
-          <div className="flex flex-wrap gap-2">
-            {starterQuestions.slice(0, 3).map((q, i) => (
-              <button
-                key={i}
-                onClick={() => sendMessage(q)}
-                className="text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full transition-colors text-left"
-              >
-                {q.length > 50 ? q.slice(0, 50) + "..." : q}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Ввод прибит к низу. pb с safe-area для iPhone (нижняя «чёлка»). */}
       <div className="border-t border-slate-200 bg-slate-50 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-950 sm:px-6">
