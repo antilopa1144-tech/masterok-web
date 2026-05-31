@@ -111,7 +111,7 @@ export default function MikhalychAgentExtras({
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"
+                className="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
