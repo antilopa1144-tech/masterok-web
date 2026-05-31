@@ -102,7 +102,7 @@ export default function MikhalychAgentExtras({
       )}
 
       {projectEntries.length > 0 && !saved && (
-        <div className="rounded-xl border border-accent-200 bg-accent-50/80 dark:border-accent-800 dark:bg-accent-950/40 p-3 space-y-2">
+        <div className="rounded-xl border border-accent-200 bg-accent-50/80 dark:border-accent-800/60 dark:bg-slate-800/60 p-3 space-y-2">
           <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
             Добавить {projectEntries.length === 1 ? "расчёт" : `${projectEntries.length} расчёта`} в смету проекта
           </p>
@@ -141,7 +141,7 @@ export default function MikhalychAgentExtras({
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 placeholder="Название проекта"
-                className="text-xs flex-1 min-w-[140px] rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5"
+                className="text-xs flex-1 min-w-[140px] rounded-lg border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
               <button
                 type="button"

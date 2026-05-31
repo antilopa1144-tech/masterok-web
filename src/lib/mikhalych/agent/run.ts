@@ -25,8 +25,11 @@ import type {
 } from "./types";
 
 const MAX_TOOL_ROUNDS = () => {
-  const raw = Number(process.env.MIKHALYCH_AGENT_MAX_TOOL_ROUNDS ?? "8");
-  if (!Number.isFinite(raw)) return 8;
+  // Дефолт 10 (был 8): агент часто перевызывает run_calculator для исправления
+  // (правило «молча перевызови с верными параметрами») + сравнение двух
+  // материалов + цены — на 8 упирался в лимит. Потолок 12 — защита от циклов.
+  const raw = Number(process.env.MIKHALYCH_AGENT_MAX_TOOL_ROUNDS ?? "10");
+  if (!Number.isFinite(raw)) return 10;
   return Math.min(12, Math.max(2, Math.round(raw)));
 };
 
