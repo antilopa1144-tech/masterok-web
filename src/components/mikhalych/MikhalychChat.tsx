@@ -22,7 +22,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     {
       role: "assistant",
       content:
-        "Я Михалыч. Спрашивай по стройке и материалам — могу сам прогнать расчёт через калькуляторы Мастерок и подсказать, сколько брать. Цены из сети — только с оговоркой, откуда смотрел.",
+        "Я Михалыч. Не просто отвечаю — делаю работу: сам прогоняю расчёты через калькуляторы Мастерок, собираю смету всей квартиры, сравниваю материалы и подбираю под бюджет. Поручи задачу обычными словами — «посчитай ремонт ванной», «минвата или пеноплекс», «уложись в 200к». Цены из сети — с оговоркой, откуда смотрел.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -218,7 +218,15 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
       {messages.length === 1 && starterQuestions.length > 0 && (
         <div className="mx-auto w-full max-w-3xl px-4 pb-2 sm:px-6">
-          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Попробуйте спросить:</p>
+          {/* Онбординг: коротко объясняем, что Михалыч — агент, а не просто чат */}
+          <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-accent-200 bg-accent-50/70 px-3 py-2.5 dark:border-accent-800/50 dark:bg-accent-950/30">
+            <span className="text-base leading-none mt-0.5" aria-hidden="true">✨</span>
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              <span className="font-semibold text-slate-800 dark:text-slate-100">Михалыч теперь агент.</span>{" "}
+              Не просто отвечает — сам считает через калькуляторы, собирает смету, сравнивает материалы и подбирает под бюджет. Поручите задачу обычными словами.
+            </p>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Поручите Михалычу:</p>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.slice(0, 3).map((q, i) => (
               <button
