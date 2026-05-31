@@ -166,11 +166,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-slate-950 lg:rounded-2xl lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:shadow-sm">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* История сообщений */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-4 sm:px-6 [scrollbar-gutter:stable]"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-5 space-y-4 sm:px-6 [scrollbar-gutter:stable]"
         role="log"
         aria-live="polite"
       >
@@ -259,7 +259,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
       )}
 
       {/* Ввод прибит к низу. pb с safe-area для iPhone (нижняя «чёлка»). */}
-      <div className="border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-700 dark:bg-slate-950 sm:px-6">
+      <div className="border-t border-slate-200 bg-slate-50 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-950 sm:px-6">
         <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
           <div className="flex items-end gap-2">
           <textarea
