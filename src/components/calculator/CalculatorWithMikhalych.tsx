@@ -49,7 +49,7 @@ export default function CalculatorWithMikhalych({
   calculator: CalculatorWidgetProps;
 }) {
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
-  const [chatOpenSignal, setChatOpenSignal] = useState(0);
+  const [seedReview, setSeedReview] = useState<string | null>(null);
   const nearMikhalych = useNearViewport(mikhalychAnchorRef, { rootMargin: "500px" });
 
   const {
@@ -84,14 +84,7 @@ export default function CalculatorWithMikhalych({
   }, [hasCalculated, result, calculator, values]);
 
   const mikhalychContext = reviewInput ? buildMikhalychCalcContext(reviewInput) : undefined;
-  const loadMikhalych = nearMikhalych || chatOpenSignal > 0 || reviewInput !== null;
-
-  const openMikhalychChat = () => {
-    setChatOpenSignal((n) => n + 1);
-    requestAnimationFrame(() => {
-      mikhalychAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
+  const loadMikhalych = nearMikhalych || reviewInput !== null;
 
   return (
     <>
@@ -157,12 +150,13 @@ export default function CalculatorWithMikhalych({
               slug: calculator.slug,
               categorySlug: calculator.categorySlug,
             }}
-            reviewSlot={
-              reviewInput && loadMikhalych ? (
-                <MikhalychCalcReview input={reviewInput} onAskMore={openMikhalychChat} />
-              ) : undefined
-            }
           />
+        )}
+
+        {/* Невидимый поставщик: грузит авто-разбор и поднимает его в seedReview,
+            чтобы он стал первым сообщением единого чата Михалыча (без двойного блока). */}
+        {reviewInput && loadMikhalych && (
+          <MikhalychCalcReview input={reviewInput} onReviewReady={setSeedReview} />
         )}
 
         {hasCalculated && <CompanionLinks slug={calculator.slug} values={values} />}
@@ -214,7 +208,7 @@ export default function CalculatorWithMikhalych({
           <MikhalychWidget
             calculatorTitle={calculator.title}
             calcContext={mikhalychContext}
-            openSignal={chatOpenSignal}
+            seedReview={seedReview}
           />
         ) : (
           <div className="card flex min-h-[120px] items-center justify-center p-6">

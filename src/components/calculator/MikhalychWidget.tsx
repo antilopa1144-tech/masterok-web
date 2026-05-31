@@ -11,8 +11,9 @@ import { MIKHALYCH_WIDGET_UI_TEXT as UI_TEXT, getMikhalychAssistantErrorMessage 
 interface Props {
   calculatorTitle: string;
   calcContext?: string;
-  /** Увеличивается снаружи — открыть чат (например из блока «посмотрел расчёт»). */
-  openSignal?: number;
+  /** Готовый авто-разбор расчёта — становится первым сообщением Михалыча,
+   *  чтобы не было двух отдельных блоков (разбор + чат). */
+  seedReview?: string | null;
 }
 
 interface Message {
@@ -20,8 +21,7 @@ interface Message {
   content: string;
 }
 
-export default function MikhalychWidget({ calculatorTitle, calcContext, openSignal = 0 }: Props) {
-  const [open, setOpen] = useState(false);
+export default function MikhalychWidget({ calculatorTitle, calcContext, seedReview }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,27 +34,36 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
   const rootRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     };
   }, []);
 
+  // Первое сообщение Михалыча: готовый авто-разбор расчёта, если он уже есть,
+  // иначе обычное приветствие. Когда разбор дозагружается (был null → текст),
+  // подменяем им первое сообщение — но только пока пользователь не начал диалог.
   useEffect(() => {
-    if (openSignal > 0) setOpen(true);
-  }, [openSignal]);
+    setMessages((prev) => {
+      const seed = seedReview?.trim();
+      const firstContent = seed
+        ? seed
+        : calcContext
+          ? UI_TEXT.greetingWithContext(calculatorTitle)
+          : UI_TEXT.greetingWithoutContext(calculatorTitle);
 
-  useEffect(() => {
-    if (open && messages.length === 0) {
-      const greeting = calcContext
-        ? UI_TEXT.greetingWithContext(calculatorTitle)
-        : UI_TEXT.greetingWithoutContext(calculatorTitle);
-      setMessages([{ role: "assistant", content: greeting }]);
-    }
-  }, [open, messages.length, calculatorTitle, calcContext]);
+      if (prev.length === 0) {
+        return [{ role: "assistant", content: firstContent }];
+      }
+      // Диалог ещё не начался (только первое сообщение ассистента) — обновляем его
+      // свежим разбором, когда тот подгрузился.
+      if (prev.length === 1 && prev[0].role === "assistant" && seed) {
+        return [{ role: "assistant", content: seed }];
+      }
+      return prev;
+    });
+  }, [seedReview, calculatorTitle, calcContext]);
 
   useEffect(() => {
     const el = messagesContainerRef.current;
@@ -153,66 +162,40 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
     }
   };
 
-  if (!open) {
-    return (
-      <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-2xl p-5 text-white">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-accent-500 flex items-center justify-center text-2xl shrink-0" aria-hidden="true">
-            🤖
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-white mb-1">{UI_TEXT.title}</h3>
-            <p className="text-sm text-slate-300 mb-3">
-              {UI_TEXT.introDescription}{" "}
-              <span className="text-accent-400">{calculatorTitle.toLowerCase()}</span>.
-              {calcContext && (
-                <span className="block mt-1 text-xs text-green-400">
-                  {UI_TEXT.contextVisible}
-                </span>
-              )}
-            </p>
-            <button
-              onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-            >
-              {UI_TEXT.askButton}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div ref={rootRef} className="bg-linear-to-br from-slate-800 to-slate-700 rounded-2xl overflow-hidden scroll-mt-20">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <span className="text-xl" aria-hidden="true">🤖</span>
-          <span className="text-sm font-semibold text-white">{UI_TEXT.assistantName}</span>
-          {calcContext && (
-            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-              {UI_TEXT.knowParams}
-            </span>
-          )}
+    <div ref={rootRef} className="rounded-2xl overflow-hidden scroll-mt-20 shadow-md ring-1 ring-slate-200 dark:ring-white/5 bg-white dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-700">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200 dark:border-white/10">
+        <span className="relative shrink-0" aria-hidden="true">
+          <img
+            src="/mikhalych-avatar.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-accent-500/25"
+          />
+          <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-800" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-900 dark:text-white">{UI_TEXT.assistantName}</p>
+          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+            {calcContext ? UI_TEXT.knowParams : "AI-прораб · онлайн"}
+          </p>
         </div>
-        <button
-          onClick={() => setOpen(false)}
-          className="text-slate-400 hover:text-white text-sm transition-colors"
-          aria-label={UI_TEXT.closeChat}
-        >
-          ✕
-        </button>
       </div>
 
-      <div ref={messagesContainerRef} className="h-72 overflow-y-auto p-4 space-y-3" role="log" aria-live="polite">
+      <div ref={messagesContainerRef} className="h-80 overflow-y-auto overscroll-contain p-4 space-y-3 bg-slate-50 dark:bg-transparent" role="log" aria-live="polite">
         {messages.map((msg, i) => (
           <div key={i} className={`flex items-start gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${msg.role === "assistant" ? "bg-accent-500" : "bg-slate-600"}`} aria-hidden="true">
-              {msg.role === "assistant" ? "🤖" : "👷"}
-            </div>
-            <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
+            {msg.role === "assistant" ? (
+              <img src="/mikhalych-avatar.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md object-cover shrink-0" aria-hidden="true" />
+            ) : (
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-slate-300 dark:bg-slate-600" aria-hidden="true">
+                👷
+              </div>
+            )}
+            <div className={`max-w-[85%] sm:max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
               msg.role === "assistant"
-                ? "bg-slate-600/50 text-slate-100"
+                ? "bg-white text-slate-800 border border-slate-200 dark:bg-slate-600/50 dark:text-slate-100 dark:border-transparent"
                 : "bg-accent-500 text-white"
             }`}>
               {msg.role === "assistant" ? (
@@ -225,8 +208,8 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
         ))}
         {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-accent-500 flex items-center justify-center text-xs" aria-hidden="true">🤖</div>
-            <div className="flex gap-1 px-3 py-2 bg-slate-600/50 rounded-xl" aria-label={UI_TEXT.thinking}>
+            <img src="/mikhalych-avatar.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md object-cover shrink-0" aria-hidden="true" />
+            <div className="flex gap-1 px-3 py-2 bg-white border border-slate-200 rounded-xl dark:bg-slate-600/50 dark:border-transparent" aria-label={UI_TEXT.thinking}>
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
               <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
@@ -242,23 +225,23 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, openSign
         projectEntries={agentMeta?.projectEntries}
       />
 
-      <div className="px-4 pb-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/35 p-2 shadow-sm">
+      <div className="px-4 pb-4 bg-slate-50 dark:bg-transparent">
+        <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-slate-900/35">
           <div className="flex items-end gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !typing) {
+              if (e.key === "Enter" && !loading) {
                 e.preventDefault();
                 sendMessage(input);
               }
             }}
             placeholder={UI_TEXT.inputPlaceholder}
-            disabled={loading || typing}
+            disabled={loading}
             aria-label={UI_TEXT.inputAriaLabel}
-            className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-slate-700/70 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
+            className="min-h-[44px] flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/40 dark:border-white/10 dark:bg-slate-700/70 dark:text-slate-100"
           />
           <button
             onClick={() => sendMessage(input)}

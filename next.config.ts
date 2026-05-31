@@ -262,11 +262,23 @@ const nextConfig: NextConfig = {
       },
       // Статические информационные страницы — длинный кэш (контент почти не меняется).
       {
-        source: "/(o-proekte|prilozhenie|metodologiya|politika-konfidencialnosti|mikhalych)/:path*",
+        source: "/(o-proekte|prilozhenie|metodologiya|politika-konfidencialnosti)/:path*",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      // Михалыч — интерактивная страница с чатом. Короткий браузерный кэш
+      // (5 мин), чтобы после деплоя редизайна пользователи не висели час
+      // на старой версии. CDN-кэш длинный — он инвалидируется при деплое.
+      {
+        source: "/mikhalych/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
           },
         ],
       },

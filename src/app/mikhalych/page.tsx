@@ -105,9 +105,13 @@ export default function MikhalychPage() {
         {/* Компактная шапка чата вместо большого hero */}
         <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-950 sm:px-6">
           <div className="relative shrink-0" role="img" aria-label="AI-помощник Михалыч">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-500 text-lg shadow-sm">
-              🤖
-            </div>
+            <img
+              src="/mikhalych-avatar.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-xl object-cover shadow-sm"
+            />
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-950" />
           </div>
           <div className="min-w-0">

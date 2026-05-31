@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import MarkdownContent from "@/components/mikhalych/MarkdownContent";
 import { buildInstantCalcReaction } from "@/lib/mikhalych/calc-reactions";
 import {
   hashMikhalychCalcContext,
@@ -22,10 +21,12 @@ const DEBOUNCE_MS = 1400;
 
 interface Props {
   input: MikhalychCalcContextInput;
-  onAskMore?: () => void;
+  /** Готовый разбор (инстант сразу + AI когда подгрузится) поднимается наверх,
+   *  чтобы показать его как первое сообщение единого чата Михалыча. */
+  onReviewReady?: (text: string) => void;
 }
 
-export default function MikhalychCalcReview({ input, onAskMore }: Props) {
+export default function MikhalychCalcReview({ input, onReviewReady }: Props) {
   const context = buildMikhalychCalcContext(input);
   const contextHash = hashMikhalychCalcContext(context);
   const seed = contextHash.charCodeAt(1) ?? 0;
@@ -37,6 +38,13 @@ export default function MikhalychCalcReview({ input, onAskMore }: Props) {
   const [hidden, setHidden] = useState(() => isCalcReviewDisabled());
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Поднимаем разбор наверх: сначала мгновенную реакцию, затем AI-текст когда
+  // он подгрузится. Чат подменит первое сообщение свежим разбором.
+  useEffect(() => {
+    if (hidden) return;
+    onReviewReady?.(aiText ?? instant);
+  }, [aiText, instant, hidden, onReviewReady]);
 
   const fetchReview = useCallback(async () => {
     if (hidden || isCalcReviewDisabled()) return;
@@ -106,82 +114,7 @@ export default function MikhalychCalcReview({ input, onAskMore }: Props) {
     };
   }, [contextHash, hidden, fetchReview]);
 
-  if (hidden) return null;
-
-  return (
-    <div
-      className="print:hidden rounded-2xl border border-slate-700/80 bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 overflow-hidden shadow-md"
-      aria-live="polite"
-    >
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-        <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-500 text-xl shadow-lg shadow-accent-500/25"
-          aria-hidden
-        >
-          🤖
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-white">{MIKHALYCH_WIDGET_UI_TEXT.reviewTitle}</p>
-          <p className="text-[11px] text-slate-400">{MIKHALYCH_WIDGET_UI_TEXT.reviewSubtitle}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setHidden(true);
-            setCalcReviewDisabled(true);
-          }}
-          className="text-[11px] text-slate-500 hover:text-slate-300 shrink-0"
-          title={MIKHALYCH_WIDGET_UI_TEXT.hideReview}
-        >
-          ✕
-        </button>
-      </div>
-
-      <div className="px-4 py-3 space-y-3">
-        <p className="text-sm leading-relaxed text-slate-200">{instant}</p>
-
-        {loading && (
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="flex gap-1" aria-hidden>
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-bounce [animation-delay:-0.2s]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-bounce" />
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-bounce [animation-delay:0.2s]" />
-            </span>
-            {MIKHALYCH_WIDGET_UI_TEXT.reviewThinking}
-          </div>
-        )}
-
-        {aiText && !loading && (
-          <div className="rounded-xl bg-slate-700/40 px-3 py-2.5 text-sm text-slate-100 leading-relaxed border border-white/5">
-            <MarkdownContent content={aiText} />
-          </div>
-        )}
-
-        {error && !loading && !aiText && (
-          <p className="text-xs text-amber-300/90">{error}</p>
-        )}
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          {onAskMore && (
-            <button
-              type="button"
-              onClick={onAskMore}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-accent-600 hover:bg-accent-500 px-3 py-2 text-xs font-semibold text-white transition-colors"
-            >
-              {MIKHALYCH_WIDGET_UI_TEXT.askMore}
-            </button>
-          )}
-          {!aiText && !loading && error && (
-            <button
-              type="button"
-              onClick={() => void fetchReview()}
-              className="text-xs text-slate-400 hover:text-white underline-offset-2 hover:underline"
-            >
-              {MIKHALYCH_WIDGET_UI_TEXT.retryReview}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  // Невизуальный поставщик данных: разбор показывается как первое сообщение
+  // единого чата Михалыча (см. onReviewReady). Сам блок ничего не рисует.
+  return null;
 }

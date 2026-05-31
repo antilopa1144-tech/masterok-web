@@ -27,7 +27,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [typing, setTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusHint, setStatusHint] = useState<string | null>(null);
   const [agentMeta, setAgentMeta] = useState<Pick<
@@ -38,51 +37,22 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     };
   }, []);
-
-  const startTyping = (fullContent: string) => {
-    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-    setTyping(true);
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-    let shown = 0;
-    const total = fullContent.length;
-    const charsPerTick = Math.max(2, Math.ceil(total / 220));
-
-    typingTimerRef.current = setInterval(() => {
-      shown = Math.min(total, shown + charsPerTick);
-      setMessages((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last && last.role === "assistant") {
-          copy[copy.length - 1] = { ...last, content: fullContent.slice(0, shown) };
-        }
-        return copy;
-      });
-      if (shown >= total) {
-        if (typingTimerRef.current) clearInterval(typingTimerRef.current);
-        typingTimerRef.current = null;
-        setTyping(false);
-      }
-    }, 18);
-  };
 
   useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: typing ? "auto" : "smooth" });
-  }, [messages, loading, typing]);
+    el.scrollTo({ top: el.scrollHeight, behavior: loading ? "auto" : "smooth" });
+  }, [messages, loading]);
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || loading || typing) return;
+      if (!text.trim() || loading) return;
 
       const rateLimitError = checkRateLimit();
       if (rateLimitError) {
@@ -155,7 +125,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         setStatusHint(null);
       }
     },
-    [messages, loading, typing]
+    [messages, loading]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -182,16 +152,13 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
               msg.role === "user" ? "flex-row-reverse" : ""
             }`}
           >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                msg.role === "assistant"
-                  ? "bg-accent-500 text-white"
-                  : "bg-slate-200 text-slate-600"
-              }`}
-              aria-hidden="true"
-            >
-              {msg.role === "assistant" ? "🤖" : "👷"}
-            </div>
+            {msg.role === "assistant" ? (
+              <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
+            ) : (
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300" aria-hidden="true">
+                👷
+              </div>
+            )}
 
             <div
               className={`max-w-[85%] sm:max-w-[80%] px-4 py-3 rounded-2xl text-[15px] sm:text-sm leading-relaxed ${
@@ -211,9 +178,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
 
         {loading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center text-sm">
-              🤖
-            </div>
+            <img src="/mikhalych-avatar.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover shrink-0" aria-hidden="true" />
             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-none">
               <div className="flex items-center gap-1.5" aria-label="Михалыч думает...">
                 <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -270,12 +235,12 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             placeholder="Спросите про материалы, технологию или расчёт..."
             className="min-h-[52px] flex-1 resize-none rounded-xl border-0 bg-white px-3 py-3 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:bg-slate-900 dark:text-slate-100"
             rows={2}
-            disabled={loading || typing}
+            disabled={loading}
             aria-label="Сообщение для Михалыча"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading || typing}
+            disabled={!input.trim() || loading}
             className="inline-flex min-h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-accent-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-accent-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Отправить"
           >
