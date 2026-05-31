@@ -14,6 +14,10 @@ interface Props {
   calculatorLinks?: Array<{ slug: string; title: string; url: string }>;
   toolsUsed?: string[];
   statusHint?: string | null;
+  /** Рендер внутри всегда-тёмного виджета калькулятора (MikhalychWidget):
+   *  карточку «В смету» делаем тёмной независимо от темы сайта, иначе светлый
+   *  фон bg-accent-50 даёт белое пятно на тёмном виджете в светлой теме. */
+  onDark?: boolean;
 }
 
 export default function MikhalychAgentExtras({
@@ -21,6 +25,7 @@ export default function MikhalychAgentExtras({
   calculatorLinks = [],
   toolsUsed = [],
   statusHint,
+  onDark = false,
 }: Props) {
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [projectId, setProjectId] = useState("");
@@ -102,8 +107,12 @@ export default function MikhalychAgentExtras({
       )}
 
       {projectEntries.length > 0 && !saved && (
-        <div className="rounded-xl border border-accent-200 bg-accent-50/80 dark:border-accent-800/60 dark:bg-slate-800/60 p-3 space-y-2">
-          <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+        <div className={`rounded-xl border p-3 space-y-2 ${
+          onDark
+            ? "border-white/10 bg-slate-900/50"
+            : "border-accent-200 bg-accent-50/80 dark:border-accent-800/60 dark:bg-slate-800/60"
+        }`}>
+          <p className={`text-xs font-semibold ${onDark ? "text-slate-100" : "text-slate-800 dark:text-slate-100"}`}>
             Добавить {projectEntries.length === 1 ? "расчёт" : `${projectEntries.length} расчёта`} в смету проекта
           </p>
           {projects.length > 0 ? (
@@ -111,7 +120,11 @@ export default function MikhalychAgentExtras({
               <select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className={`text-xs rounded-lg border px-2 py-1.5 ${
+                  onDark
+                    ? "border-white/10 bg-slate-800 text-slate-100"
+                    : "border-slate-200 bg-white text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                }`}
               >
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -141,7 +154,11 @@ export default function MikhalychAgentExtras({
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 placeholder="Название проекта"
-                className="text-xs flex-1 min-w-[140px] rounded-lg border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className={`text-xs flex-1 min-w-[140px] rounded-lg border px-2 py-1.5 placeholder:text-slate-400 ${
+                  onDark
+                    ? "border-white/10 bg-slate-800 text-slate-100 placeholder:text-slate-500"
+                    : "border-slate-200 bg-white text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                }`}
               />
               <button
                 type="button"

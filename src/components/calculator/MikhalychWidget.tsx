@@ -221,6 +221,7 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
       </div>
 
       <MikhalychAgentExtras
+        onDark
         statusHint={statusHint}
         toolsUsed={agentMeta?.toolsUsed}
         calculatorLinks={agentMeta?.calculatorLinks}
