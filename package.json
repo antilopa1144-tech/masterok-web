@@ -2,7 +2,6 @@
   "name": "masterok-web",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "next dev",
     "prebuild": "npx tsx scripts/generate-calculators-meta.ts",
