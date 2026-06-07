@@ -56,3 +56,4 @@ lighthouse-report.json
 lighthouse-report*.json
 test-results/
 tmp-mikhalych-test.json
+.npm-cache/
