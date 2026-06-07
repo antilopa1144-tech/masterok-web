@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { FieldInput, HistoryPanel, ResultBlock, ExpertTips, CalculatorFAQ, AccuracyModeSelector, ComparisonTable, FeedbackPanel, ExperienceModeToggle } from "./CalculatorParts";
 import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
-import Staircase3DWrapper from "./Staircase3DWrapper";
-import Roof3DWrapper from "./Roof3DWrapper";
 import Link from "next/link";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
@@ -16,6 +15,12 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { trackRecentCalculator } from "./RecentCalculators";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
+
+// Three.js — тяжёлая библиотека (~500 KB), нужна только для 2 калькуляторов из 70+.
+// Ленивая загрузка исключает three из основного бандла — экономия ~150 KB gzip.
+const Staircase3DWrapper = dynamic(() => import("./Staircase3DWrapper"), { ssr: false });
+const Roof3DWrapper = dynamic(() => import("./Roof3DWrapper"), { ssr: false });
+
 export type { CalculatorWidgetProps };
 
 interface Props {

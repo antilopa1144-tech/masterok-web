@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -6,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import YandexMetrikaLoader from "@/components/analytics/YandexMetrikaLoader";
+import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
 import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
 
@@ -107,16 +109,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Nonce из middleware для CSP — позволяет убрать 'unsafe-inline' из script-src
+  const headersList = await headers();
+  const nonce = headersList.get("x-nonce") ?? undefined;
+
   return (
     <html lang="ru" className={inter.variable} suppressHydrationWarning>
       <head>
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
@@ -137,6 +143,7 @@ export default function RootLayout({
           Перейти к основному содержимому
         </a>
         <YandexMetrikaLoader />
+        <WebVitalsReporter />
         <StorageMigrationInitializer />
         <Header />
         <main id="main-content" className="flex-1">{children}</main>

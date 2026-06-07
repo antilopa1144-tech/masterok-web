@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 /*
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -25,7 +30,12 @@ const nextConfig: NextConfig = {
 
   // Tree-shaking для barrel-import lucide-react (Header, CategoryIcon).
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: [
+      "lucide-react",
+      "three",
+      "jspdf",
+      "jspdf-autotable",
+    ],
   },
 
   // Trailing slash для SEO (URL всегда с / на конце)
@@ -163,8 +173,9 @@ const nextConfig: NextConfig = {
           //  4. ВНИМАНИЕ: это необратимо на 6-12 месяцев. Если разорвёшь HTTPS
           //     на каком-то поддомене — пользователи Chrome не смогут попасть.
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-          { key: "Content-Security-Policy", value: csp },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+              // CSP задаётся в middleware.ts с динамическим nonce (nonce-based)
+              // вместо статического 'unsafe-inline' в script-src.
+              { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
@@ -286,4 +297,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

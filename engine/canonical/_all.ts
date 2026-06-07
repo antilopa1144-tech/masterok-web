@@ -1,6 +1,6 @@
-import type { FieldFactorName } from "./factors";
-import type { ScenarioBundle } from "./scenarios";
-import type { AccuracyMode, AccuracyExplanation } from "./accuracy";
+import type { FieldFactorName } from "../factors";
+import type { ScenarioBundle } from "../scenarios";
+import type { AccuracyMode, AccuracyExplanation } from "../accuracy";
 
 export interface CanonicalInputField {
   key: string;

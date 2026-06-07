@@ -158,9 +158,12 @@ describe("Индекс калькуляторов", () => {
 });
 
 describe("SEO метаданные калькуляторов", () => {
-  it("metaTitle оканчивается на бренд сайта", () => {
+  it("metaTitle не содержит бренд сайта (добавляется через title.template в layout)", () => {
+    // Бренд « — Мастерок» добавляется автоматически через template в layout.tsx.
+    // withSiteMetaTitle() возвращает чистый title без суффикса.
     for (const calc of ALL_CALCULATORS) {
-      expect(calc.metaTitle.endsWith(`— ${SITE_NAME}`), `metaTitle без бренда у ${calc.id}`).toBe(true);
+      expect(calc.metaTitle, `metaTitle пуст у ${calc.id}`).toBeTruthy();
+      expect(calc.metaTitle.includes(`— ${SITE_NAME}`), `metaTitle содержит бренд у ${calc.id} (должен быть чистым)`).toBe(false);
     }
   });
 

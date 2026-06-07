@@ -29,13 +29,43 @@ function transliterateTag(tag: string): string {
 // Любой символ кириллицы или %D[01]/%D[89A-F] (кириллица в percent-encoding).
 const CYRILLIC_OR_ENCODED = /[Ѐ-ӿ]|%D[0-9A-Fa-f]/;
 
+/**
+ * Nonce-based Content-Security-Policy.
+ *
+ * Генерируется свежий nonce на каждый запрос. Nonce прокидывается:
+ *  1. В заголовок x-nonce → читается в layout.tsx для inline-скриптов
+ *  2. В CSP-заголовок ответа → браузер разрешает только скрипты с этим nonce
+ *
+ * Это заменяет 'unsafe-inline' в script-src, поднимая Security score до 100%.
+ */
+
+function buildCsp(nonce: string): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-eval' 'nonce-${nonce}' https://mc.yandex.ru https://mc.yandex.com https://yastatic.net`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
+    "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
 // skipTrailingSlashRedirect: true в next.config.ts отключает встроенные 308-редиректы
 // для всех маршрутов. Этот middleware восстанавливает их только для страниц,
 // оставляя API-роуты без редиректа (иначе Dart http.Client ломается на POST-редиректе).
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // API, _next, статика и файлы с расширением — без изменений.
+  // Nonce для CSP + inline-скриптов
+  const nonce = crypto.randomUUID();
+
+  // API, _next, статика и файлы с расширением — без nonce и без редиректов
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
@@ -44,19 +74,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // -------------------------------------------------------------------
-  // SEO-фикс: исторические URL тегов блога с кириллицей в slug.
-  //
-  // Google Search Console прислал письмо про /blog/tag/площадь/ → 404.
-  // В текущем коде все теги транслитерируются (tagToSlug в blog.ts),
-  // но бот помнит старые URL с давних времён. Без обработки они
-  // съедают crawl budget и тянут общую индексацию вниз.
-  //
-  // Решение: ловим любой /blog/tag/<кириллица>/ и редиректим 301 на
-  // транслитерированный slug. Если транслит не даёт валидного тега —
-  // Next.js вернёт 404 на следующем шаге, но это уже будет «честный»
-  // 404 на одном URL, а не цепочка фантомных.
-  // -------------------------------------------------------------------
+  // SEO-фикс: исторические URL тегов блога с кириллицей в slug → 301
   if (pathname.startsWith("/blog/tag/") && CYRILLIC_OR_ENCODED.test(pathname)) {
     const tagSegment = pathname.replace(/^\/blog\/tag\//, "").replace(/\/$/, "");
     let decoded: string;
@@ -69,20 +87,28 @@ export function middleware(request: NextRequest) {
     if (transliterated && transliterated !== tagSegment) {
       const url = new URL(request.url);
       url.pathname = `/blog/tag/${transliterated}/`;
-      // 301 (permanent) — говорит Google «забудь старый URL и не приходи больше».
-      // Это нужно для очистки crawl budget от фантомов.
-      return NextResponse.redirect(url.toString(), 301);
+      const response = NextResponse.redirect(url.toString(), 301);
+      response.headers.set("x-nonce", nonce);
+      return response;
     }
   }
 
-  // Страницы без trailing slash → 308 на версию со слэшем.
+  // Страницы без trailing slash → 308 на версию со слэшем
   if (!pathname.endsWith("/")) {
     const url = new URL(request.url);
     url.pathname = `${pathname}/`;
-    return NextResponse.redirect(url.toString(), 308);
+    const response = NextResponse.redirect(url.toString(), 308);
+    response.headers.set("x-nonce", nonce);
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Прокидываем nonce в ответ: в CSP и в кастомный заголовок для layout
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  response.headers.set("x-nonce", nonce);
+
+  return response;
 }
 
 export const config = {

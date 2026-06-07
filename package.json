@@ -2,6 +2,7 @@
   "name": "masterok-web",
   "version": "0.1.0",
   "private": true,
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "next dev",
     "prebuild": "npx tsx scripts/generate-calculators-meta.ts",
@@ -18,7 +19,12 @@
     "test:parity": "vitest run tests/parity.test.ts",
     "blog:images:check": "node scripts/optimize-ghost-images.mjs --dry-run",
     "blog:images:webp": "node scripts/optimize-ghost-images.mjs --write-files",
-    "blog:images:ghost": "node scripts/optimize-ghost-images.mjs --write-ghost"
+    "blog:images:ghost": "node scripts/optimize-ghost-images.mjs --write-ghost",
+    "analyze": "ANALYZE=true npm run build",
+    "analyze:server": "ANALYZE=true next build",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@types/three": "^0.169.0",
@@ -37,6 +43,8 @@
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.7",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^20",
     "@types/react": "^18",

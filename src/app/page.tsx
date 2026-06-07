@@ -257,7 +257,7 @@ export default async function HomePage() {
             <span>{totalCount}+ {UI_TEXT.heroBadgeSuffix}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4 min-h-[5.5rem] sm:min-h-[7.25rem] md:min-h-[6.5rem]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4" style={{ minHeight: "5.5rem" }}>
             {UI_TEXT.heroTitle}{" "}
             <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
             <span className="block mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-500 dark:text-slate-400">
@@ -265,7 +265,7 @@ export default async function HomePage() {
             </span>
           </h1>
 
-          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed min-h-[4.5rem] sm:min-h-[5.5rem] md:min-h-[5.5rem]">
+          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed" style={{ minHeight: "4.5rem" }}>
             {UI_TEXT.heroDescription}
           </p>
 
@@ -311,10 +311,58 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<div style={{ minHeight: "2.5rem" }} aria-hidden="true" />}>
         <RecentCalculators />
       </Suspense>
 
+      {/* Стриминг: hero отрисован, остальное подъезжает.
+          Fallback — скелетон из 8 карточек, совпадает по высоте с реальной сеткой. */}
+      <Suspense
+        fallback={
+          <div className="page-container-wide py-10" id="calculators">
+            <div className="flex flex-col xl:flex-row gap-8">
+              <div className="flex-1 min-w-0">
+                <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded mb-6 animate-pulse" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="card p-5 space-y-3 animate-pulse">
+                      <div className="w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 space-y-4">
+                  <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="card p-5 space-y-3 animate-pulse">
+                        <div className="w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <aside className="hidden xl:block w-72 shrink-0">
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="card p-4 flex items-center gap-3 animate-pulse">
+                      <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+            </div>
+          </div>
+        }
+      >
       <div className="page-container-wide py-10" id="calculators">
         <div className="flex flex-col xl:flex-row gap-8">
           {/* Main content: categories + popular */}
@@ -465,9 +513,9 @@ export default async function HomePage() {
               </div>
 
               {/* Проекты */}
-              <div className="mt-6">
+              <div className="mt-6" style={{ minHeight: "8rem" }}>
                 <Suspense fallback={
-                  <div className="card p-6 text-center space-y-3">
+                  <div className="card p-6 text-center space-y-3" style={{ minHeight: "8rem" }}>
                     <div className="text-3xl">📁</div>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Мои проекты</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Создайте проект для группировки расчётов.</p>
@@ -582,6 +630,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </Suspense>
     </>
   );
 }

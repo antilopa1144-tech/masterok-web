@@ -154,20 +154,12 @@ function applyPackaging(
   if (spec.package && spec.package.size > 0) {
     const count = exactNeed > 0 ? Math.ceil(exactNeed / spec.package.size) : 0;
     const packageUnit = spec.package.unit ?? "";
-    const purchaseAsRolls = /рулон/i.test(packageUnit);
-    if (purchaseAsRolls) {
-      return {
-        withReserve: exactNeed,
-        purchaseQty: count,
-        packageInfo:
-          count > 0
-            ? { count, size: spec.package.size, packageUnit }
-            : undefined,
-      };
-    }
     const total = count * spec.package.size;
+    // purchaseQty всегда в единицах материала (м², кг, шт) — не в количестве упаковок.
+    // Например: 28.875 м² плёнки в рулонах по 30 м² → 1 рулон → purchaseQty = 30 м².
+    // packageInfo.count содержит количество упаковок для UI («1 рулон»).
     return {
-      withReserve: total,
+      withReserve: roundDisplay(total, 3),
       purchaseQty: total,
       packageInfo:
         count > 0

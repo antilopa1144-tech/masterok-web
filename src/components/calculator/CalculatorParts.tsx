@@ -17,6 +17,7 @@ import {
   getRelevantPriceCount,
   type MaterialPriceMap,
 } from "@/lib/pricing/materialPriceBasis";
+import { getReferencePrice } from "@/lib/pricing/referencePrices";
 import {
   ACCURACY_MODES,
   ACCURACY_MODE_LABELS,
@@ -1473,6 +1474,22 @@ function PriceEstimate({
             <p className="text-xs leading-snug text-slate-400 dark:text-slate-400">
               Введите цену за покупаемую единицу: мешок, рулон, пруток, ведро, м³ или шт.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                for (const m of materials) {
+                  const basis = getMaterialPriceBasis(m);
+                  const refPrice = getReferencePrice(basis.key);
+                  if (refPrice !== undefined && refPrice > 0) {
+                    onPriceChange(basis.key, refPrice);
+                  }
+                }
+              }}
+              className="text-[11px] text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium transition-colors"
+              title="Подставить ориентировочные розничные цены (Москва, 2026)"
+            >
+              📊 Подставить справочные цены
+            </button>
             {filledCount > 0 && (
               <button
                 type="button"

@@ -65,16 +65,31 @@ describe("resolveFieldOptions — каталог утеплителя (productId
     options: [],
   };
 
-  it("плиты: минвата, пеноплекс, пенопласт", () => {
-    const r = resolveFieldOptions(productField, { materialForm: 0 });
+  it("плиты для фасада (application=0): фасадные линейки, без Лайт Баттс и Пеноплэкс", () => {
+    // Фасад (0): Фасад Баттс (apps=[0]), Роклайт (apps=[0,1]).
+    // Лайт Баттс (apps=[1,2]) и Пеноплэкс (apps=[3,4]) — исключены.
+    const r = resolveFieldOptions(productField, { materialForm: 0, application: 0 });
     const labels = r?.map((o) => o.label).join(" ") ?? "";
-    expect(labels).toContain("Лайт Баттс");
-    expect(labels).toContain("Пеноплэкс");
+    expect(labels).toContain("Фасад Баттс");
+    expect(labels).toContain("Роклайт");
+    expect(labels).not.toContain("Лайт Баттс");
+    expect(labels).not.toContain("Пеноплэкс");
     expect(labels).not.toContain("Тепло Roll");
   });
 
-  it("рулоны: только рулонные линейки", () => {
-    const r = resolveFieldOptions(productField, { materialForm: 1 });
+  it("плиты для стен (application=1): стеновые линейки", () => {
+    // Стены (1): Лайт Баттс Скандик (apps=[1,2]), Роклайт (apps=[0,1]).
+    // Пеноплэкс (apps=[3,4]) — исключён.
+    const r = resolveFieldOptions(productField, { materialForm: 0, application: 1 });
+    const labels = r?.map((o) => o.label).join(" ") ?? "";
+    expect(labels).toContain("Лайт Баттс");
+    expect(labels).toContain("Роклайт");
+    expect(labels).not.toContain("Пеноплэкс");
+  });
+
+  it("рулоны: только рулонные линейки (стены, application=1)", () => {
+    // Техно 37 (рулон) — apps=[1,2,3], без фасада. Для фасада (0) исключён.
+    const r = resolveFieldOptions(productField, { materialForm: 1, application: 1 });
     const labels = r?.map((o) => o.label).join(" ") ?? "";
     expect(labels).toContain("Техно 37");
     expect(labels).not.toContain("Лайт Баттс");
