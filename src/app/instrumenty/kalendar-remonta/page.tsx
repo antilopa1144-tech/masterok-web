@@ -40,7 +40,6 @@ export default function KalendarRemontaPage() {
         <div className="page-container py-6">
           <Breadcrumbs
             items={[
-              { label: "Главная", href: "/" },
               { label: "Инструменты", href: "/instrumenty/" },
               { label: "Календарь ремонта" },
             ]}

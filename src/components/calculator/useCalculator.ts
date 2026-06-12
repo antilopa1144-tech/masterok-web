@@ -2,22 +2,10 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { CalculatorResult, CalculatorField, HideCondition, FieldOption } from "@/lib/calculators/types";
-import { getManufacturerCategory } from "@/lib/manufacturers";
-import {
-  buildProductSelectOptions,
-  getDefaultProductIdForForm,
-  getProductThicknessOptions,
-  getDefaultProductIdForApplication,
-} from "@/lib/calculators/insulation-catalog";
-import {
-  getAllowedMaterialForms,
-  syncFieldsForApplicationChange,
-} from "@/lib/calculators/insulation-application";
-import {
-  fieldUsesDynamicOptions,
-  thicknessForClimateAndProduct,
-} from "@/lib/calculators/insulation-smart";
+import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
+import { fieldUsesDynamicOptions } from "@/lib/calculators/insulation-smart";
+import { shouldHideField, resolveFieldOptions } from "@/lib/calculators/field-options";
+import { syncDependentFields } from "@/lib/calculators/field-sync";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
 import { ACCURACY_MODES, DEFAULT_ACCURACY_MODE, setCustomModifiers } from "../../../engine/accuracy";
@@ -33,93 +21,11 @@ import {
   setAccuracyModeSetting,
 } from "@/lib/storage/history";
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Проверка одного декларативного условия скрытия (HideCondition).
- * Если поле отсутствует в values — условие считается невыполненным
- * (поле не скрывается из-за отсутствующего ключа).
- */
-function evalHideCondition(c: HideCondition, values: Record<string, number>): boolean {
-  const v = values[c.key];
-  if (v === undefined || v === null || Number.isNaN(v)) return false;
-  switch (c.op) {
-    case "gt": return v > c.value;
-    case "gte": return v >= c.value;
-    case "lt": return v < c.value;
-    case "lte": return v <= c.value;
-    case "eq": return v === c.value;
-    case "ne": return v !== c.value;
-  }
-}
-
-/**
- * Стоит ли скрыть поле для текущих значений формы.
- * hideIf-массив объединяется через OR, hideIfAll — через AND.
- */
-export function shouldHideField(field: CalculatorField, values: Record<string, number>): boolean {
-  if (field.hideIf) {
-    const conds = Array.isArray(field.hideIf) ? field.hideIf : [field.hideIf];
-    if (conds.some((c) => evalHideCondition(c, values))) return true;
-  }
-  if (field.hideIfAll && field.hideIfAll.length > 0) {
-    if (field.hideIfAll.every((c) => evalHideCondition(c, values))) return true;
-  }
-  return false;
-}
-
-/**
- * Возвращает реальные опции селекта, учитывая `optionsFromBrand`.
- *
- * Если поле объявило зависимость от бренда и пользователь выбрал конкретную
- * линейку — опции формируются из `manufacturer.specs[specKey]`. Иначе берутся
- * статичные `field.options`.
- *
- * Пример: `thickness` у Пеноплэкс Комфорт → [20, 30, 50, 100] мм вместо
- * стандартных [50, 80, 100, 150, 200, 250, 300]. Пользователь не сможет
- * выбрать толщину, которой бренд не выпускает.
- */
-export function resolveFieldOptions(
-  field: CalculatorField,
-  values: Record<string, number>,
-): FieldOption[] | undefined {
-  if (field.key === "materialForm") {
-    const application = Math.round(values.application ?? 0);
-    const allowed = getAllowedMaterialForms(application);
-    return (field.options ?? []).filter((o) => allowed.includes(o.value));
-  }
-
-  if (field.key === "productId") {
-    const form = Math.round(values.materialForm ?? 0);
-    const application = Math.round(values.application ?? 0);
-    return buildProductSelectOptions(form, application);
-  }
-
-  if (field.optionsFromProduct) {
-    const productId = Math.round(values.productId ?? 0);
-    const thicknesses = getProductThicknessOptions(productId);
-    if (thicknesses.length > 0) {
-      return thicknesses.map((v) => ({ value: v, label: `${v} мм` }));
-    }
-  }
-
-  const cfg = field.optionsFromBrand;
-  if (!cfg) return field.options;
-  const manufacturerIdx = values.manufacturer;
-  if (!manufacturerIdx || manufacturerIdx <= 0) return field.options;
-  const category = getManufacturerCategory(cfg.category);
-  if (!category) return field.options;
-  const brand = category.items[manufacturerIdx - 1];
-  if (!brand) return field.options;
-  const raw = (brand.specs as Record<string, unknown>)[cfg.specKey];
-  if (!Array.isArray(raw) || raw.length === 0) return field.options;
-  const template = cfg.labelTemplate ?? "%v";
-  return raw
-    .filter((v): v is number => typeof v === "number")
-    .map((v) => ({ value: v, label: template.replace("%v", String(v)) }));
-}
+// Видимость полей и динамические опции живут в lib (доменная логика).
+// Реэкспорт — чтобы не менять существующие импорты из useCalculator.
+export { shouldHideField, resolveFieldOptions };
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,83 +158,13 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const handleChange = useCallback((key: string, value: number) => {
     setValues((prev) => {
       const next: Record<string, number> = { ...prev, [key]: value };
-
-      // Авто-подстановка значений зависимых полей: если изменился бренд, то
-      // у полей с `optionsFromBrand` текущие значения могут оказаться вне
-      // допустимого набора (например, у Пеноплэкс Комфорт нет 80 мм). В этом
-      // случае подменяем на ближайшее значение из новых опций.
-      if (key === "manufacturer" || key === "materialForm" || key === "productId") {
-        for (const f of calculator.fields) {
-          if (!fieldUsesDynamicOptions(f)) continue;
-          const opts = resolveFieldOptions(f, next);
-          if (!opts || opts.length === 0) continue;
-          const current = next[f.key];
-          if (opts.some((o) => o.value === current)) continue;
-          const closest = opts.reduce((best, o) =>
-            Math.abs(o.value - current) < Math.abs(best.value - current) ? o : best,
-          );
-          next[f.key] = closest.value;
-        }
-      }
-
-      if (calculator.id === "insulation") {
-        const application = Math.round(next.application ?? 0);
-
-        if (key === "application") {
-          Object.assign(next, syncFieldsForApplicationChange(Math.round(value), next));
-          next.productId = getDefaultProductIdForApplication(
-            Math.round(next.application ?? 0),
-            Math.round(next.materialForm ?? 0),
-          );
-        }
-
-        if (key === "materialForm") {
-          next.productId = getDefaultProductIdForApplication(
-            application,
-            Math.round(value),
-          );
-        }
-
-        if (key === "application" || key === "climateZone" || key === "materialForm") {
-          next.thickness = thicknessForClimateAndProduct(
-            Math.round(next.climateZone ?? 1),
-            Math.round(next.productId ?? 0),
-            calculator.fields,
-            Math.round(next.application ?? 0),
-          );
-        } else if (key === "productId") {
-          const thicknessOpts = resolveFieldOptions(
-            calculator.fields.find((f) => f.key === "thickness")!,
-            next,
-          );
-          if (thicknessOpts?.length && !thicknessOpts.some((o) => o.value === next.thickness)) {
-            next.thickness = thicknessForClimateAndProduct(
-              Math.round(next.climateZone ?? 1),
-              Math.round(next.productId ?? 0),
-              calculator.fields,
-              Math.round(next.application ?? 0),
-            );
-          }
-        }
-      } else if (key === "materialForm") {
-        next.productId = getDefaultProductIdForForm(value);
-      } else if (key === "productId" || key === "materialForm") {
-        const thicknessOpts = resolveFieldOptions(
-          calculator.fields.find((f) => f.key === "thickness")!,
-          next,
-        );
-        if (thicknessOpts?.length) {
-          const t = next.thickness;
-          if (!thicknessOpts.some((o) => o.value === t)) {
-            next.thickness = thicknessOpts[Math.floor(thicknessOpts.length / 2)]!.value;
-          }
-        }
-      }
-
+      // Доменные правила зависимых полей (каталог утеплителя, толщина по
+      // климату и т.п.) — в lib/calculators/field-sync.
+      syncDependentFields(calculator, key, value, next);
       runAutoCalc(next);
       return next;
     });
-  }, [runAutoCalc, calculator.fields, calculator.id]);
+  }, [runAutoCalc, calculator]);
 
   // Recalculate when accuracy mode changes
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {

@@ -91,7 +91,6 @@ export default function Page() {
         <div className="page-container py-6">
           <Breadcrumbs
             items={[
-              { href: "/", label: "Главная" },
               { href: "/instrumenty/", label: "Инструменты" },
               { label: "Нормы расхода" },
             ]}

@@ -11,7 +11,7 @@ function calc(inputs: Record<string, unknown>) {
   return insulationDef.calculate({ accuracyMode: "basic", ...inputs } as any);
 }
 
-function mainInsulation(materials: { category?: string; name: string }[]) {
+function mainInsulation<M extends { category?: string; name: string }>(materials: M[]) {
   return materials.filter(
     (m) =>
       m.category?.startsWith("Утеплитель") ||

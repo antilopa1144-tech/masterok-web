@@ -1,6 +1,6 @@
 /**
  * Аудит SEO-метрик статей Ghost CMS.
- * Запуск: GHOST_CONTENT_API_KEY=... node audit-ghost.js
+ * Запуск: GHOST_CONTENT_API_KEY=... node scripts/audit-ghost.js
  * Опционально: GHOST_API_URL=https://cms.getmasterok.ru
  */
 const https = require("https");

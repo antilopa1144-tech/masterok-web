@@ -44,7 +44,6 @@ export default function Page() {
       <div className="bg-gradient-to-b from-violet-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
         <div className="page-container py-6">
           <Breadcrumbs items={[
-            { href: "/", label: "Главная" },
             { href: "/instrumenty/", label: "Инструменты" },
             { label: "Сравнение материалов" },
           ]} />

@@ -57,3 +57,9 @@ lighthouse-report*.json
 test-results/
 tmp-mikhalych-test.json
 .npm-cache/
+
+# Локальные артефакты аудитов
+lighthouse-report.json
+tmp-mikhalych-test.json
+.tmp-sitemap-test/
+.tmp-shots/

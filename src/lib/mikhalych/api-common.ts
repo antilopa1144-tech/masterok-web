@@ -3,6 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 const RATE_LIMIT = new Map<string, number[]>();
 const MAX_REQUESTS = 20;
 const WINDOW_MS = 60_000;
+/** Порог, после которого чистим Map от IP с истёкшим окном (иначе растёт бесконечно). */
+const PRUNE_THRESHOLD = 500;
+
+function pruneStaleRateLimitEntries(now: number): void {
+  for (const [key, timestamps] of RATE_LIMIT) {
+    if (timestamps.every((t) => now - t >= WINDOW_MS)) RATE_LIMIT.delete(key);
+  }
+}
 export const MAX_AGENT_MESSAGES = 12;
 export const MAX_MESSAGE_CHARS = 4_000;
 
@@ -40,6 +48,7 @@ export function corsHeaders(req: NextRequest): Record<string, string> {
 
 export function isRateLimited(ip: string): boolean {
   const now = Date.now();
+  if (RATE_LIMIT.size > PRUNE_THRESHOLD) pruneStaleRateLimitEntries(now);
   const timestamps = (RATE_LIMIT.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
   if (timestamps.length >= MAX_REQUESTS) return true;
   timestamps.push(now);
