@@ -15,18 +15,22 @@ import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCR
 
 const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
+// Применяет тему до первой отрисовки (без мигания).
+// Карта тем дублирует src/lib/theme.ts: значение = тёмная ли тема.
 const THEME_INIT_SCRIPT = `(() => {
   try {
-    const key = 'theme';
-    const stored = localStorage.getItem(key);
+    const themes = { light: 0, dark: 1, bronze: 0, emerald: 0, lavender: 0, ocean: 1, graphite: 1 };
+    const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = stored === 'light' || stored === 'dark'
+    const theme = Object.prototype.hasOwnProperty.call(themes, stored)
       ? stored
       : (prefersDark ? 'dark' : 'light');
 
     const root = document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
-    root.style.colorScheme = theme;
+    if (theme !== 'light' && theme !== 'dark') root.setAttribute('data-theme', theme);
+    const isDark = themes[theme] === 1;
+    root.classList.toggle('dark', isDark);
+    root.style.colorScheme = isDark ? 'dark' : 'light';
   } catch (_) {
     // no-op
   }

@@ -64,6 +64,120 @@
   --radius-3xl: 1.5rem;
 }
 
+/* ── 2.5 Темы оформления ───────────────────────────────────── */
+/* Каждая тема переопределяет токены --color-accent-* / --color-slate-*.
+   Реестр тем и логика применения: src/lib/theme.ts (data-theme на <html>).
+   Тёмные темы (ocean, graphite) дополнительно включают класс .dark,
+   поэтому все dark:-утилиты работают без правок компонентов. */
+
+/* Бронза — тёплая светлая тема в духе Anthropic: слоновая кость + терракота */
+html[data-theme="bronze"] {
+  --color-accent-50: #fdf4ef;
+  --color-accent-100: #f9e4d9;
+  --color-accent-200: #f2cab6;
+  --color-accent-300: #e8a98a;
+  --color-accent-400: #d98561;
+  --color-accent-500: #c96442;
+  --color-accent-600: #ae4f2e;
+  --color-accent-700: #8a3e24;
+  --color-accent-800: #70331e;
+  --color-accent-900: #5c2b1a;
+  --color-slate-50: #faf9f5;
+  --color-slate-100: #f0eee6;
+  --color-slate-200: #e2dfd3;
+  --color-slate-300: #cfcaba;
+  --color-slate-400: #a39d8c;
+  --color-slate-500: #837d6c;
+  --color-slate-600: #645f51;
+  --color-slate-700: #4b463b;
+  --color-slate-800: #32302a;
+  --color-slate-900: #211f1b;
+  --color-slate-950: #161512;
+  --shadow-result: 0 4px 24px rgba(201, 100, 66, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Изумруд — светлая, зелёный акцент */
+html[data-theme="emerald"] {
+  --color-accent-50: #ecfdf5;
+  --color-accent-100: #d1fae5;
+  --color-accent-200: #a7f3d0;
+  --color-accent-300: #6ee7b7;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+  --color-accent-700: #047857;
+  --color-accent-800: #065f46;
+  --color-accent-900: #064e3b;
+  --shadow-result: 0 4px 24px rgba(5, 150, 105, 0.13), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Лаванда — светлая, фиолетовый акцент */
+html[data-theme="lavender"] {
+  --color-accent-50: #f5f3ff;
+  --color-accent-100: #ede9fe;
+  --color-accent-200: #ddd6fe;
+  --color-accent-300: #c4b5fd;
+  --color-accent-400: #a78bfa;
+  --color-accent-500: #8b5cf6;
+  --color-accent-600: #7c3aed;
+  --color-accent-700: #6d28d9;
+  --color-accent-800: #5b21b6;
+  --color-accent-900: #4c1d95;
+  --shadow-result: 0 4px 24px rgba(124, 58, 237, 0.13), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Океан — тёмная, глубокий синий + небесный акцент */
+html[data-theme="ocean"] {
+  --color-accent-50: #f0f9ff;
+  --color-accent-100: #e0f2fe;
+  --color-accent-200: #bae6fd;
+  --color-accent-300: #7dd3fc;
+  --color-accent-400: #38bdf8;
+  --color-accent-500: #0ea5e9;
+  --color-accent-600: #0284c7;
+  --color-accent-700: #0369a1;
+  --color-accent-800: #075985;
+  --color-accent-900: #0c4a6e;
+  --color-slate-50: #f4f8fc;
+  --color-slate-100: #e8eff7;
+  --color-slate-200: #d2dfee;
+  --color-slate-300: #aec3dc;
+  --color-slate-400: #7f9ab9;
+  --color-slate-500: #5e7795;
+  --color-slate-600: #475d79;
+  --color-slate-700: #35475e;
+  --color-slate-800: #233246;
+  --color-slate-900: #15202f;
+  --color-slate-950: #0b1420;
+  --shadow-result: 0 4px 24px rgba(14, 165, 233, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Графит — тёмная, нейтральный серый + бирюзовый акцент */
+html[data-theme="graphite"] {
+  --color-accent-50: #f0fdfa;
+  --color-accent-100: #ccfbf1;
+  --color-accent-200: #99f6e4;
+  --color-accent-300: #5eead4;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
+  --color-accent-700: #0f766e;
+  --color-accent-800: #115e59;
+  --color-accent-900: #134e4a;
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f5f5f5;
+  --color-slate-200: #e5e5e5;
+  --color-slate-300: #d4d4d4;
+  --color-slate-400: #a3a3a3;
+  --color-slate-500: #737373;
+  --color-slate-600: #525252;
+  --color-slate-700: #404040;
+  --color-slate-800: #262626;
+  --color-slate-900: #171717;
+  --color-slate-950: #0a0a0a;
+  --shadow-result: 0 4px 24px rgba(20, 184, 166, 0.13), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 /* ── 3. Базовые стили ──────────────────────────────────────── */
 @layer base {
   *,
@@ -381,6 +495,27 @@
     #0f172a 45%,
     #1e293b 100%
   );
+}
+
+/* Hero-градиенты тем (специфичность html[...] перебивает .dark .hero-gradient) */
+html[data-theme="bronze"] .hero-gradient {
+  background: linear-gradient(135deg, #fdf4ef 0%, #f6efe0 40%, #faf9f5 75%, #f0eee6 100%);
+}
+
+html[data-theme="emerald"] .hero-gradient {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 30%, #f8fafc 65%, #eff6ff 100%);
+}
+
+html[data-theme="lavender"] .hero-gradient {
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 35%, #f8fafc 70%, #eff6ff 100%);
+}
+
+html[data-theme="ocean"] .hero-gradient {
+  background: linear-gradient(135deg, #0b1420 0%, #15202f 45%, #233246 100%);
+}
+
+html[data-theme="graphite"] .hero-gradient {
+  background: linear-gradient(135deg, #0a0a0a 0%, #171717 45%, #262626 100%);
 }
 
 /* ── 7. Слайдеры (range input) ─────────────────────────────── */
