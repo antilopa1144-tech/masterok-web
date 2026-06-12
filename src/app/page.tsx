@@ -43,13 +43,12 @@ export const metadata: Metadata = {
 };
 
 const UI_TEXT = {
-  heroBadgeSuffix: "бесплатных калькуляторов",
   heroTitle: "Строительные калькуляторы",
   heroAccent: "онлайн",
   heroTail: "расчёт материалов по ГОСТ и СНиП",
   heroDescription:
     "Бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон — всё для ремонта и стройки в одном месте. Быстро, бесплатно, без регистрации. И ИИ-прораб Михалыч, если что-то непонятно.",
-  heroPrimaryCta: "Начать расчёт",
+  heroChipsLabel: "Популярное:",
   heroSecondaryCta: "Спросить Михалыча",
   stats: [
     { val: "100%", label: "Бесплатно" },
@@ -250,36 +249,19 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
+      {/* Компактный hero: первый экран = начало работы (поиск + популярное),
+          а не маркетинговый текст. Подробное описание уехало в блок «Почему Мастерок». */}
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container-wide py-14 md:py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 text-sm font-medium px-4 py-2 rounded-full border border-accent-200 dark:border-accent-800/40 mb-6">
-            <CategoryIcon icon="trophy" size={16} />
-            <span>{totalCount}+ {UI_TEXT.heroBadgeSuffix}</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-4" style={{ minHeight: "5.5rem" }}>
+        <div className="page-container-wide py-8 md:py-12 text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-[2.6rem] font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2">
             {UI_TEXT.heroTitle}{" "}
             <span className="text-accent-500">{UI_TEXT.heroAccent}</span>
-            <span className="block mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-500 dark:text-slate-400">
-              {UI_TEXT.heroTail}
-            </span>
           </h1>
-
-          <p className="text-slate-500 dark:text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed" style={{ minHeight: "4.5rem" }}>
-            {UI_TEXT.heroDescription}
+          <p className="text-lg sm:text-xl font-semibold text-slate-500 dark:text-slate-400 mb-6">
+            {UI_TEXT.heroTail}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="#calculators" className="btn-primary text-base px-8 py-3">
-              {UI_TEXT.heroPrimaryCta}
-            </Link>
-            <Link href="/mikhalych/" className="btn-secondary text-base px-6 py-3 inline-flex items-center gap-2">
-              <CategoryIcon icon="bot" size={18} />
-              {UI_TEXT.heroSecondaryCta}
-            </Link>
-          </div>
-
-          <div className="mt-8 max-w-xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <Suspense
               fallback={
                 <div
@@ -298,16 +280,48 @@ export default async function HomePage() {
             </Suspense>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 max-w-sm mx-auto mt-10">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {s.val}
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</div>
-              </div>
-            ))}
+          {/* Чипы: самые популярные калькуляторы — один клик до цели */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-3xl mx-auto">
+            <span className="text-sm text-slate-500 dark:text-slate-400 mr-1">
+              {UI_TEXT.heroChipsLabel}
+            </span>
+            {popular.map((calc) => {
+              const cat = CATEGORIES.find((c) => c.id === calc.category);
+              const label = calc.tags[0]
+                ? calc.tags[0].charAt(0).toUpperCase() + calc.tags[0].slice(1)
+                : calc.title;
+              return (
+                <Link
+                  key={calc.id}
+                  href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
+                  prefetch={false}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 no-underline shadow-sm transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-accent-700 dark:hover:text-accent-400"
+                  title={calc.title}
+                >
+                  <CategoryIcon icon={cat?.icon ?? "wrench"} size={14} color={cat?.color ?? "#64748b"} />
+                  {label}
+                </Link>
+              );
+            })}
+            <Link
+              href="/mikhalych/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-accent-300 bg-accent-50 px-3.5 py-1.5 text-sm font-semibold text-accent-800 no-underline shadow-sm transition-colors hover:bg-accent-100 dark:border-accent-700 dark:bg-accent-900/30 dark:text-accent-200 dark:hover:bg-accent-900/50"
+            >
+              <CategoryIcon icon="bot" size={14} color="currentColor" />
+              {UI_TEXT.heroSecondaryCta}
+            </Link>
           </div>
+
+          {/* Одна тонкая строка фактов вместо трёх крупных цифр */}
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+            {stats.map((s, i) => (
+              <span key={s.label}>
+                {i > 0 && <span className="mx-2 text-slate-300 dark:text-slate-600">·</span>}
+                <strong className="font-semibold text-slate-700 dark:text-slate-200">{s.val}</strong>{" "}
+                {s.label.toLowerCase()}
+              </span>
+            ))}
+          </p>
         </div>
       </section>
 
@@ -605,9 +619,12 @@ export default async function HomePage() {
 
       <section className="page-container-wide py-8 pb-14">
         <div className="card p-6 md:p-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-6 dark:text-slate-100">
+          <h2 className="text-xl font-bold text-slate-900 mb-3 dark:text-slate-100">
             {UI_TEXT.featuresTitle}
           </h2>
+          <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-6 max-w-3xl">
+            {UI_TEXT.heroDescription}
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f) => (
               <div key={f.title} className="flex items-start gap-3">

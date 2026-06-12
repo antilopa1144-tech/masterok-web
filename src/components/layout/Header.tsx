@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/calculators/categories";
+import { TOOL_CARDS } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import HeaderSearch from "@/components/layout/HeaderSearch";
 import { SITE_NAME } from "@/lib/site";
 import {
   HEADER_FEATURE_LINKS,
   HEADER_MAIN_LINKS,
+  HEADER_PROJECTS_LINK,
   isHeaderLinkActive,
   type HeaderNavLink,
 } from "@/lib/navigation/header-links";
@@ -25,6 +28,7 @@ const UI_TEXT = {
   mobileNavigation: "Мобильная навигация",
   categories: "Категории",
   downloadApp: "Скачать приложение",
+  allTools: "Все инструменты →",
 } as const;
 
 function navLinkClass(active: boolean, highlight?: boolean): string {
@@ -70,6 +74,94 @@ function HeaderNavItem({
   );
 }
 
+/** Пункт «Инструменты» с выпадающим списком всех инструментов (desktop). */
+function ToolsDropdown({ link, pathname }: { link: HeaderNavLink; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const active = isHeaderLinkActive(pathname, link.match);
+
+  // Закрываем при переходе на другую страницу
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  const openNow = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const closeSoon = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+
+  return (
+    <div className="relative" onMouseEnter={openNow} onMouseLeave={closeSoon}>
+      <Link
+        href={link.href}
+        className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors no-underline ${navLinkClass(active)}`}
+        aria-current={active ? "page" : undefined}
+        aria-expanded={open}
+        onClick={() => setOpen(false)}
+      >
+        {link.icon && <CategoryIcon icon={link.icon} size={15} color="currentColor" />}
+        <span>{link.label}</span>
+        <svg
+          className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </Link>
+
+      {open && (
+        <div className="absolute left-1/2 z-50 mt-1 w-[34rem] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+          <div className="grid grid-cols-2 gap-1">
+            {TOOL_CARDS.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                prefetch={false}
+                className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 no-underline transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                onClick={() => setOpen(false)}
+              >
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: tool.bg }}
+                >
+                  <CategoryIcon icon={tool.icon} size={16} color={tool.color} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                    {tool.title}
+                  </span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                    {tool.desc}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-2 border-t border-slate-100 pt-2 text-center dark:border-slate-700">
+            <Link
+              href="/instrumenty/"
+              className="text-sm font-medium text-accent-700 no-underline hover:text-accent-800 dark:text-accent-400"
+              onClick={() => setOpen(false)}
+            >
+              {UI_TEXT.allTools}
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -105,31 +197,18 @@ export default function Header() {
             className="hidden lg:flex items-center gap-0.5 min-w-0 flex-1 justify-center"
             aria-label={UI_TEXT.mainNavigation}
           >
-            {HEADER_MAIN_LINKS.map((link) => (
-              <HeaderNavItem key={link.href} link={link} pathname={pathname} />
-            ))}
-
-            <span
-              className="mx-1.5 h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0"
-              aria-hidden
-            />
-
-            <div
-              className="flex items-center gap-0.5"
-              aria-label={UI_TEXT.featureNavigation}
-            >
-              {HEADER_FEATURE_LINKS.map((link) => (
-                <HeaderNavItem
-                  key={link.href}
-                  link={link}
-                  pathname={pathname}
-                  showBadge={link.highlight}
-                />
-              ))}
-            </div>
+            {HEADER_MAIN_LINKS.map((link) =>
+              link.href === "/instrumenty/" ? (
+                <ToolsDropdown key={link.href} link={link} pathname={pathname} />
+              ) : (
+                <HeaderNavItem key={link.href} link={link} pathname={pathname} />
+              ),
+            )}
           </nav>
 
           <div className="hidden lg:flex items-center gap-1 shrink-0">
+            <HeaderSearch />
+            <HeaderNavItem link={HEADER_PROJECTS_LINK} pathname={pathname} showBadge />
             <ThemeToggle />
             <Link
               href="/prilozhenie/"

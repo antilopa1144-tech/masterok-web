@@ -9,15 +9,22 @@ export interface HeaderNavLink {
   highlight?: boolean;
 }
 
-/** Разделы сайта. */
+/**
+ * Разделы сайта (desktop-навигация по центру).
+ * «Инструменты» на desktop раскрывается дропдауном (TOOL_CARDS из lib/tools/config).
+ */
 export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
   { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
-  { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/instrumenty/", label: "Инструменты", match: ["/instrumenty"], icon: "wrench" },
+  { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/blog/", label: "Блог", match: ["/blog"], icon: "book" },
 ];
 
-/** Ключевые фишки продукта — всегда под рукой. */
+/**
+ * Быстрые ссылки для мобильного меню («Ваш ремонт»).
+ * На desktop конкретные инструменты живут в дропдауне «Инструменты»,
+ * а «Проекты» — справа, рядом с утилитами.
+ */
 export const HEADER_FEATURE_LINKS: HeaderNavLink[] = [
   {
     href: "/proekty/",
@@ -45,6 +52,9 @@ export const HEADER_FEATURE_LINKS: HeaderNavLink[] = [
     icon: "tile",
   },
 ];
+
+/** Пункт «Проекты» для правой части desktop-шапки. */
+export const HEADER_PROJECTS_LINK: HeaderNavLink = HEADER_FEATURE_LINKS[0];
 
 export function isHeaderLinkActive(pathname: string, match: readonly string[]): boolean {
   return match.some((m) => (m === "/" ? pathname === "/" : pathname.startsWith(m)));
