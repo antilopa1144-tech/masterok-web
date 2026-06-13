@@ -57,10 +57,16 @@ describe("Калькулятор бетона", () => {
       expect(gravel).toBeDefined();
     });
 
-    it("цемент М400: пропорции М200 = 290 кг/м³ × 5.25 = 1522.5 кг → 31 мешок × 50 кг = 1550 кг", () => {
+    it("цемент М400 согласован с REC-объёмом бетона (не недобирает на отходы)", () => {
       const cement = findMaterial(result, "Цемент М400");
-      // 5.25 * 290 = 1522.5 kg → ceil(1522.5/50) = 31 bags → 31 * 50 = 1550 kg
-      expect(cement?.purchaseQty).toBe(1550);
+      const concrete = findMaterial(result, "Бетон М200");
+      // Компоненты считаются от REC-объёма бетона (с учётом отходов), а не от
+      // totalVolume. REC = 5.25 × 1.06 = 5.565 м³; цемент = 5.565 × 290 = 1613.85 кг
+      // → ceil(1613.85/50) = 33 мешка × 50 = 1650 кг.
+      expect(cement?.purchaseQty).toBe(1650);
+      // Цемента хватает на объём бетона из заголовка, без 6%-недобора.
+      const cementVolumeM3 = (cement!.quantity) / 290;
+      expect(cementVolumeM3).toBeCloseTo(concrete!.withReserve!, 1);
     });
   });
 
