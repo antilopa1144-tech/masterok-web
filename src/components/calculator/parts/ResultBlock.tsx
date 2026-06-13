@@ -404,27 +404,28 @@ export function ResultBlock({
           <div className="border-t border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-700">{reviewSlot}</div>
         )}
 
-        <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>
-              {primaryMaterial && (
-                <span className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400 sm:max-w-[18rem]">
-                  Основное: {primaryDisplay} {pluralizeUnit(primaryQty, primaryMaterial.unit)}
-                </span>
-              )}
-            </div>
-            {calculatorSlug === "uteplenie" ? (
-              <InsulationMaterialList
-                materials={result.materials}
-                banner={result.materialListBanner}
-              />
-            ) : (
-              <MaterialList materials={result.materials} />
+        {/* Список материалов — на всю ширину; оценка стоимости идёт ОТДЕЛЬНЫМ
+            блоком ниже (раньше висела сбоку и отвлекала от главного — списка
+            к покупке). Так понятнее и на десктопе, и на смартфоне. */}
+        <div className="p-4 sm:p-5">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>
+            {primaryMaterial && (
+              <span className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400 sm:max-w-[18rem]">
+                Основное: {primaryDisplay} {pluralizeUnit(primaryQty, primaryMaterial.unit)}
+              </span>
             )}
           </div>
+          {calculatorSlug === "uteplenie" ? (
+            <InsulationMaterialList
+              materials={result.materials}
+              banner={result.materialListBanner}
+            />
+          ) : (
+            <MaterialList materials={result.materials} />
+          )}
 
-          <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
+          <div className="mt-4">
             <PriceEstimate
               materials={result.materials}
               calculatorSlug={calculatorSlug}
@@ -434,7 +435,7 @@ export function ResultBlock({
               onPriceChange={handlePriceChange}
               onResetAll={handleResetAllPrices}
             />
-          </aside>
+          </div>
         </div>
 
         <div className="px-4 pb-4 sm:px-5">

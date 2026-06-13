@@ -3,6 +3,7 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalScreed } from "../../../../engine/screed";
 import screedSpec from "../../../../configs/calculators/screed-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { applyScreedMix } from "./screed-mix";
 export const screedDef: CalculatorDefinition = {
   id: "screed",
   slug: "styazhka",
@@ -10,7 +11,7 @@ export const screedDef: CalculatorDefinition = {
   h1: "Калькулятор стяжки пола онлайн — расчёт цемента и песка",
   description: "Рассчитайте количество цемента, песка и воды для цементно-песчаной стяжки. Учёт толщины слоя.",
   metaTitle: withSiteMetaTitle("Калькулятор стяжки пола: расчёт материалов онлайн"),
-  metaDescription: "Бесплатный калькулятор стяжки: рассчитайте цемент, песок и готовую ЦПС для стяжки пола с учётом площади, толщины слоя и типа смеси.",
+  metaDescription: "Бесплатный калькулятор стяжки пола: рассчитайте цемент и песок для ручного замеса (М400/М500, пропорция 1:3 или 1:4), готовый пескобетон в мешках или полусухую стяжку с учётом площади, толщины и запаса.",
   category: "flooring",
   categorySlug: "poly",
   tags: ["стяжка", "цементная стяжка", "ЦПС", "цемент", "пол", "наливной пол"],
@@ -69,18 +70,59 @@ export const screedDef: CalculatorDefinition = {
       max: 200,
       step: 5,
       defaultValue: 50,
-      hint: "Минимум по СНиП: 30 мм для армирования, 40 мм для тёплого пола",
+      hint: "40–50 мм — обычная стяжка в квартире; от 40 мм — над трубами тёплого пола; 30 мм — минимум только с армированием. Меньше 30 мм трескается.",
     },
     {
       key: "screedType",
-      label: "Тип стяжки",
+      label: "Способ устройства",
+      type: "select",
+      defaultValue: 0,
+      fullWidth: true,
+      options: [
+        { value: 0, label: "Ручной замес (цемент + песок отдельно)" },
+        { value: 1, label: "Готовая смесь в мешках (пескобетон)" },
+        { value: 2, label: "Полусухая стяжка (механизированная)" },
+      ],
+      hint: "Ручной замес дешевле по материалам, но дольше и зависит от рук. Готовая смесь — предсказуемый состав, удобно для квартиры. Полусухая — быстро сохнет и ровная, но нужна машина и бригада.",
+    },
+    // ── Ручной замес: марка цемента + пропорция ──
+    {
+      key: "cementGrade",
+      label: "Марка цемента",
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "ЦПС (цемент + песок 1:3)" },
-        { value: 1, label: "Готовая ЦПС М150 (мешки 40/50 кг)" },
-        { value: 2, label: "Полусухая стяжка" },
+        { value: 0, label: "М400 (ПЦ 400) — универсальная" },
+        { value: 1, label: "М500 (ПЦ 500) — крепче, цемента меньше" },
       ],
+      hint: "М400 — стандарт для стяжки в квартире и доме. М500 крепче: того же раствора получаешь больше, цемента уходит меньше — берут для гаражей, нагруженных полов.",
+      hideIf: { key: "screedType", op: "ne", value: 0 },
+    },
+    {
+      key: "mixProportion",
+      label: "Пропорция цемент : песок",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "1 : 3 — прочнее (жилые комнаты)" },
+        { value: 1, label: "1 : 4 — экономнее (нежилые, подсобки)" },
+      ],
+      hint: "1:3 — рабочая пропорция для жилья, раствор М150–М200. 1:4 экономит цемент, но раствор слабее — под кладовку, гараж, технические помещения.",
+      hideIf: { key: "screedType", op: "ne", value: 0 },
+    },
+    // ── Готовая смесь: номенклатура мешков ──
+    {
+      key: "readyMix",
+      label: "Готовая смесь",
+      type: "select",
+      defaultValue: 0,
+      fullWidth: true,
+      options: [
+        { value: 0, label: "Пескобетон М300 (Каменный цветок, Русеан и т.п.)" },
+        { value: 1, label: "Универсальная ЦПС М200 (для тонких слоёв)" },
+      ],
+      hint: "Пескобетон М300 — рабочая лошадка для стяжки от 30 мм, мешки 40 кг. ЦПС М200 чуть слабее — для тонких выравнивающих слоёв. Расход ~20 кг сухой смеси на 1 м² при слое 10 мм.",
+      hideIf: { key: "screedType", op: "ne", value: 1 },
     },
   ],
   calculate(inputs) {
@@ -88,7 +130,7 @@ export const screedDef: CalculatorDefinition = {
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalScreed(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
-    return {
+    const base = {
       materials: canonical.materials,
       totals: canonical.totals,
       warnings: canonical.warnings,
@@ -99,6 +141,15 @@ export const screedDef: CalculatorDefinition = {
       accuracyMode: canonical.accuracyMode,
       accuracyExplanation: canonical.accuracyExplanation,
     };
+
+    // Веб-надстройка: марка цемента/пропорция (ручной) или вид готовой смеси.
+    // Канонический результат не меняется для дефолта М400 1:3 — паритет с mobile.
+    return applyScreedMix(base, {
+      screedType: inputs.screedType,
+      cementGrade: inputs.cementGrade,
+      mixProportion: inputs.mixProportion,
+      readyMix: inputs.readyMix,
+    });
   },
   formulaDescription: `
 **Расчёт стяжки:**
@@ -115,8 +166,9 @@ export const screedDef: CalculatorDefinition = {
   howToUse: [
     "Введите размеры помещения или площадь",
     "Укажите толщину стяжки (обычно 40–70 мм, минимум 30 мм)",
-    "Выберите тип: самомесная ЦПС 1:3 или готовая в мешках",
-    "Нажмите «Рассчитать» — получите цемент, песок или мешки ЦПС",
+    "Выберите способ: ручной замес, готовая смесь в мешках или полусухая",
+    "Для ручного замеса уточните марку цемента (М400/М500) и пропорцию (1:3 / 1:4)",
+    "Нажмите «Рассчитать» — получите цемент с песком, мешки пескобетона или смесь для полусухой",
   ],
 faq: [
     {
@@ -148,9 +200,10 @@ faq: [
     <tr><th>Тип стяжки</th><th>Цемент М400</th><th>Песок</th><th>Вода</th></tr>
   </thead>
   <tbody>
-    <tr><td>ЦПС 1:3 (ручной замес)</td><td>~300 кг (6 мешков)</td><td>~900 кг (~0.6 м&sup3;)</td><td>~150 л</td></tr>
-    <tr><td>ЦПС 1:4 (облегчённая)</td><td>~250 кг (5 мешков)</td><td>~1 000 кг</td><td>~140 л</td></tr>
-    <tr><td>Готовая ЦПС М150</td><td colspan="3">~2 000 кг/м&sup3; (40&ndash;50 мешков по 40/50 кг)</td></tr>
+    <tr><td>Ручной замес 1:3 (цемент М400)</td><td>~325 кг (7 мешков)</td><td>~900 кг (~0.6 м&sup3;)</td><td>~150 л</td></tr>
+    <tr><td>Ручной замес 1:4 (цемент М400)</td><td>~265 кг (6 мешков)</td><td>~990 кг</td><td>~140 л</td></tr>
+    <tr><td>Ручной замес 1:3 (цемент М500)</td><td>~300 кг (6 мешков)</td><td>~900 кг</td><td>~150 л</td></tr>
+    <tr><td>Готовая смесь (пескобетон М300)</td><td colspan="3">~2 000 кг/м&sup3; (~50 мешков по 40 кг)</td></tr>
     <tr><td>Полусухая стяжка</td><td>~300 кг</td><td>~900 кг</td><td>~80 л</td></tr>
   </tbody>
 </table>
@@ -174,7 +227,7 @@ faq: [
     faq: [
       {
         question: "Сколько цемента нужно на стяжку 50 мм?",
-        answer: "<p>Расчёт для стяжки ЦПС 1:3 толщиной 50 мм на площадь 20 м&sup2;:</p><ul><li>Объём: 20 &times; 0.05 &times; 1.08 = <strong>1.08 м&sup3;</strong></li><li>Цемент М400: 1.08 &times; 300 = <strong>324 кг (7 мешков по 50 кг)</strong></li><li>Песок: 1.08 &times; 900 = <strong>972 кг (~0.65 м&sup3;)</strong></li></ul><p>Для готовой ЦПС М150: 1.08 &times; 2 000 = 2 160 кг &rarr; <strong>54 мешка по 40 кг</strong> или <strong>44 мешка по 50 кг</strong>.</p>",
+        answer: "<p>Расчёт для ручного замеса 1:3 (цемент М400) толщиной 50 мм на площадь 20 м&sup2;:</p><ul><li>Объём с усадкой: 20 &times; 0.05 &times; 1.15 = <strong>1.15 м&sup3;</strong></li><li>Цемент М400: <strong>~374 кг (8 мешков по 50 кг)</strong></li><li>Песок: <strong>~1.4 т</strong></li></ul><p>Цемент М500 при той же пропорции даёт раствор крепче (М200), поэтому цемента уходит меньше. Для готовой смеси (пескобетон М300): 1.10 &times; 2 000 = 2 200 кг &rarr; <strong>~55 мешков по 40 кг</strong>.</p>",
       },
       {
         question: "Нужно ли армировать стяжку пола?",

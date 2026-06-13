@@ -17,7 +17,7 @@ const CalculatorSearch = dynamic(
   {
     loading: () => (
       <div
-        className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+        className="h-[50px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
         aria-hidden="true"
       />
     ),
@@ -265,7 +265,7 @@ export default async function HomePage() {
             <Suspense
               fallback={
                 <div
-                  className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+                  className="h-[50px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
                   aria-hidden="true"
                 />
               }
@@ -324,10 +324,6 @@ export default async function HomePage() {
           </p>
         </div>
       </section>
-
-      <Suspense fallback={<div style={{ minHeight: "2.5rem" }} aria-hidden="true" />}>
-        <RecentCalculators />
-      </Suspense>
 
       {/* Стриминг: hero отрисован, остальное подъезжает.
           Fallback — скелетон из 8 карточек, совпадает по высоте с реальной сеткой. */}
@@ -542,6 +538,12 @@ export default async function HomePage() {
           </aside>
         </div>
       </div>
+
+      {/* Появляется только у возвращающихся пользователей; живёт ниже первого
+          экрана, чтобы её монтирование не сдвигало видимый контент (CLS). */}
+      <Suspense fallback={null}>
+        <RecentCalculators />
+      </Suspense>
 
       <section className="page-container-wide py-8">
         <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 md:p-12 text-white overflow-hidden dark:bg-slate-800">

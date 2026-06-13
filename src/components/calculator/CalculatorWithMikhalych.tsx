@@ -118,15 +118,25 @@ export default function CalculatorWithMikhalych({
             <HistoryPanel calcHistory={calcHistory} onRestore={handleRestoreHistory} />
           )}
 
-          {visibleFields.map((field) => (
-            <FieldInput
-              key={field.key}
-              field={field}
-              value={values[field.key] ?? field.defaultValue}
-              onChange={(v) => handleChange(field.key, v)}
-              accentColor={accentColor}
-            />
-          ))}
+          {/* Двухколоночный грид на sm+: форма компактнее, меньше скролла
+              (особенно на смартфоне). Слайдеры, радио и явные fullWidth-поля
+              занимают всю ширину; короткие селекты/числа делят строку. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+            {visibleFields.map((field) => {
+              const spanFull =
+                field.fullWidth || field.type === "slider" || field.type === "radio";
+              return (
+                <div key={field.key} className={spanFull ? "sm:col-span-2" : undefined}>
+                  <FieldInput
+                    field={field}
+                    value={values[field.key] ?? field.defaultValue}
+                    onChange={(v) => handleChange(field.key, v)}
+                    accentColor={accentColor}
+                  />
+                </div>
+              );
+            })}
+          </div>
 
           <button
             onClick={handleCalculate}

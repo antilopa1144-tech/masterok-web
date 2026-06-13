@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 const HeaderSearchPanel = dynamic(() => import("./HeaderSearchPanel"), {
   loading: () => (
     <div
-      className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+      className="h-[50px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
       aria-hidden="true"
     />
   ),
@@ -93,7 +93,7 @@ export default function HeaderSearch() {
           <Suspense
             fallback={
               <div
-                className="h-[52px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
+                className="h-[50px] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse"
                 aria-hidden="true"
               />
             }

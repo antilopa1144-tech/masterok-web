@@ -71,6 +71,11 @@ export interface CalculatorField {
   };
   /** Толщины из каталога утеплителя (`productId` → insulation-catalog). */
   optionsFromProduct?: boolean;
+  /**
+   * Растянуть поле на всю ширину формы (обе колонки грида на sm+).
+   * Для длинных селектов (тип/марка/линейка), где половина ширины обрезает текст.
+   */
+  fullWidth?: boolean;
 }
 
 export interface HideCondition {

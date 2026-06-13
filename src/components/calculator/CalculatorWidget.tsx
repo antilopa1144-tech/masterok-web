@@ -147,21 +147,34 @@ export default function CalculatorWidget({ calculator }: Props) {
           <HistoryPanel calcHistory={calcHistory} onRestore={handleRestoreHistory} />
         )}
 
-        {visibleFields.map((field) => (
-          <FieldInput
-            key={
-              calculator.id === "insulation" && field.key === "productId"
-                ? `${field.key}-${values.materialForm ?? 0}`
-                : calculator.id === "insulation" && field.key === "thickness"
-                  ? `${field.key}-${values.productId ?? 0}-${values.climateZone ?? 1}`
-                  : field.key
-            }
-            field={field}
-            value={values[field.key] ?? field.defaultValue}
-            onChange={(v) => handleChange(field.key, v)}
-            accentColor={accentColor}
-          />
-        ))}
+        {/* Двухколоночный грид на sm+: форма компактнее, меньше скролла.
+            Слайдеры, радио и явно помеченные fullWidth-поля занимают всю
+            ширину (им нужна вся строка); короткие селекты/числа — в 2 колонки. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+          {visibleFields.map((field) => {
+            const spanFull =
+              field.fullWidth || field.type === "slider" || field.type === "radio";
+            return (
+              <div
+                key={
+                  calculator.id === "insulation" && field.key === "productId"
+                    ? `${field.key}-${values.materialForm ?? 0}`
+                    : calculator.id === "insulation" && field.key === "thickness"
+                      ? `${field.key}-${values.productId ?? 0}-${values.climateZone ?? 1}`
+                      : field.key
+                }
+                className={spanFull ? "sm:col-span-2" : undefined}
+              >
+                <FieldInput
+                  field={field}
+                  value={values[field.key] ?? field.defaultValue}
+                  onChange={(v) => handleChange(field.key, v)}
+                  accentColor={accentColor}
+                />
+              </div>
+            );
+          })}
+        </div>
 
         {experienceMode === "pro" && (
           <>
