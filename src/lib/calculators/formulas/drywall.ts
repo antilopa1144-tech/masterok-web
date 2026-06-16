@@ -98,13 +98,20 @@ export const drywallDef: CalculatorDefinition = {
     const canonical = computeCanonicalDrywall(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
 
     const manufacturer = getManufacturerByIndex("drywall", inputs.manufacturer);
-    const materials = manufacturer
-      ? canonical.materials.map((m) =>
-          /лист|гкл|гипсокартон|профиль/i.test(m.name)
-            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
-            : m
-        )
-      : canonical.materials;
+    const materials = canonical.materials.map((m) => {
+      let next = m;
+      // Листы ГКЛ — штучный товар: к покупке всегда целое число листов.
+      // Движок отдаёт по основному материалу REC-расход (напр. 10.6 шт);
+      // отображение округляет вверх, но в покупку/смету должно идти целое.
+      if (m.category === "Основное" && /гкл|гипсокартон|лист/i.test(m.name)) {
+        const whole = Math.ceil(m.purchaseQty ?? m.withReserve ?? m.quantity);
+        next = { ...next, quantity: whole, withReserve: whole, purchaseQty: whole };
+      }
+      if (manufacturer && /лист|гкл|гипсокартон|профиль/i.test(next.name)) {
+        next = { ...next, name: `${next.name} — ${manufacturer.name}` };
+      }
+      return next;
+    });
 
     return {
       materials,

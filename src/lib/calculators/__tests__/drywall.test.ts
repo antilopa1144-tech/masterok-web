@@ -19,10 +19,13 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов ГКЛ = 10.6 (REC ×1.06)", () => {
+    it("листов ГКЛ к покупке — целое число (11): нельзя купить 10.6 листа", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      // baseSheetsNeeded=10, REC multiplier=1.06 → 10.6
-      expect(sheets?.purchaseQty).toBeCloseTo(10.6, 1);
+      // baseSheetsNeeded=10, REC ×1.06 = 10.6 расхода → к покупке ceil = 11 листов
+      expect(sheets?.purchaseQty).toBe(11);
+      expect(Number.isInteger(sheets?.purchaseQty)).toBe(true);
+      // Точный REC-расход остаётся в totals для справки
+      expect(result.totals.sheetsNeeded).toBeCloseTo(10.6, 1);
     });
 
     it("профиль ПН присутствует", () => {
@@ -73,10 +76,11 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов = 5.3 (одна сторона, REC ×1.06)", () => {
+    it("листов к покупке — целое (6): обшивка одной стороны", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      // baseSheetsNeeded=5, REC ×1.06 → 5.3
-      expect(sheets?.purchaseQty).toBeCloseTo(5.3, 1);
+      // baseSheetsNeeded=5, REC ×1.06 = 5.3 → к покупке ceil = 6 листов
+      expect(sheets?.purchaseQty).toBe(6);
+      expect(result.totals.sheetsNeeded).toBeCloseTo(5.3, 1);
     });
   });
 
@@ -91,10 +95,11 @@ describe("Калькулятор гипсокартона", () => {
       profileStep: 0.6,
     });
 
-    it("листов = 21.2 (2 слоя, REC ×1.06)", () => {
+    it("листов к покупке — целое (22): 2 слоя с каждой стороны", () => {
       const sheets = findMaterial(result, "ГКЛ");
-      // baseSheetsNeeded=20, REC ×1.06 → 21.2
-      expect(sheets?.purchaseQty).toBeCloseTo(21.2, 1);
+      // baseSheetsNeeded=20, REC ×1.06 = 21.2 → к покупке ceil = 22 листа
+      expect(sheets?.purchaseQty).toBe(22);
+      expect(result.totals.sheetsNeeded).toBeCloseTo(21.2, 1);
     });
 
     it("предупреждение о смещении стыков", () => {
