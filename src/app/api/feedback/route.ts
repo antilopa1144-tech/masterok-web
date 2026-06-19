@@ -29,6 +29,20 @@ function clean(v: unknown, max: number): string | undefined {
   return s.length > 0 ? s : undefined;
 }
 
+// Безопасная диагностика: показывает, видит ли запущенный процесс env-переменные
+// Telegram. БЕЗ значений — только факт наличия и длина (для отлова лишних пробелов
+// / обрезки). Помогает понять, пробросил ли хостинг переменные в runtime.
+export function GET() {
+  const token = process.env.TELEGRAM_BOT_TOKEN ?? "";
+  const chatId = process.env.TELEGRAM_FEEDBACK_CHAT_ID ?? "";
+  return NextResponse.json({
+    configured: Boolean(token && chatId),
+    token: { present: token.length > 0, length: token.length },
+    chatId: { present: chatId.length > 0, length: chatId.length },
+    nodeEnv: process.env.NODE_ENV ?? null,
+  });
+}
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (isRateLimited(ip)) {
