@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import FeedbackFooterLink from "@/components/feedback/FeedbackFooterLink";
 import { SITE_FOOTER_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 const UI_TEXT = {
@@ -15,9 +16,9 @@ const UI_TEXT = {
   blog: "Блог",
   app: "Приложение",
   myRenovation: "Мой ремонт — сметы",
-  reportTitle: "Нашли ошибку в расчёте?",
-  reportDescription: "Напишите нашему ИИ-ассистенту",
-  askMikhalych: "Спросить Михалыча →",
+  reportTitle: "Нашли ошибку или есть идея?",
+  reportDescription: "Напишите напрямую — читаю каждый отзыв",
+  leaveFeedback: "Оставить отзыв →",
   copyrightSuffix: `${SITE_NAME}. Все расчёты носят справочный характер.`,
   standards: "Расчёты по ГОСТ и СНиП",
   popularCalculatorFallback: "Калькулятор",
@@ -157,12 +158,9 @@ export default function Footer() {
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {UI_TEXT.reportDescription}
               </p>
-              <Link
-                href="/mikhalych/"
-                className="mt-2 inline-block text-xs font-medium text-accent-700 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 no-underline transition-colors"
-              >
-                {UI_TEXT.askMikhalych}
-              </Link>
+              <FeedbackFooterLink className="mt-2 inline-block text-xs font-medium text-accent-700 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 transition-colors">
+                {UI_TEXT.leaveFeedback}
+              </FeedbackFooterLink>
             </div>
           </div>
         </div>
