@@ -32,14 +32,41 @@ function clean(v: unknown, max: number): string | undefined {
 // Безопасная диагностика: показывает, видит ли запущенный процесс env-переменные
 // Telegram. БЕЗ значений — только факт наличия и длина (для отлова лишних пробелов
 // / обрезки). Помогает понять, пробросил ли хостинг переменные в runtime.
-export function GET() {
+export async function GET() {
   const token = process.env.TELEGRAM_BOT_TOKEN ?? "";
   const chatId = process.env.TELEGRAM_FEEDBACK_CHAT_ID ?? "";
+
+  // Живая проверка достижимости Telegram с сервера (getMe — без отправки сообщений).
+  let telegram: Record<string, unknown> = { checked: false };
+  if (token) {
+    const started = Date.now();
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, { signal: AbortSignal.timeout(8000) });
+      const body = await res.json().catch(() => ({}));
+      telegram = {
+        checked: true,
+        reachable: true,
+        httpStatus: res.status,
+        apiOk: Boolean((body as { ok?: boolean }).ok),
+        botUsername: (body as { result?: { username?: string } }).result?.username ?? null,
+        ms: Date.now() - started,
+      };
+    } catch (err) {
+      telegram = {
+        checked: true,
+        reachable: false,
+        error: err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : "unknown",
+        ms: Date.now() - started,
+      };
+    }
+  }
+
   return NextResponse.json({
     configured: Boolean(token && chatId),
     token: { present: token.length > 0, length: token.length },
     chatId: { present: chatId.length > 0, length: chatId.length },
     nodeEnv: process.env.NODE_ENV ?? null,
+    telegram,
   });
 }
 
@@ -85,5 +112,6 @@ export async function POST(req: NextRequest) {
   const result = await sendFeedbackToTelegram(payload);
   // Пользователю всегда «спасибо», если отзыв валиден: свою часть он сделал.
   // Проблемы доставки видны в логах сервера (см. telegram.ts).
-  return NextResponse.json({ ok: true, delivered: result.delivered });
+  // reason — временно в ответе для отладки доставки на проде.
+  return NextResponse.json({ ok: true, delivered: result.delivered, reason: result.reason });
 }
