@@ -1,7 +1,9 @@
 import type { CalculatorField, CalculatorResult } from "@/lib/calculators/types";
 import { HIDDEN_TOTALS, TOTAL_LABELS } from "@/components/calculator/totalsDisplay";
+import { isFieldVisible } from "@/lib/calculators/field-options";
 
-const SKIP_FIELD_KEYS = new Set(["inputMode"]);
+const MODE_FIELD_KEY = "inputMode";
+const SKIP_FIELD_KEYS = new Set([MODE_FIELD_KEY]);
 
 function formatQty(n: number): string {
   if (!Number.isFinite(n)) return "—";
@@ -47,12 +49,39 @@ export interface MikhalychCalcContextInput {
   companionSlugs?: string[];
 }
 
+/**
+ * Строка о выбранном способе ввода (если у калькулятора два режима).
+ *
+ * Без неё Михалыч видел поля обоих режимов сразу (и «Объём», и «Площадь» +
+ * «Толщина») и смешивал взаимоисключающие параметры — например утверждал, что
+ * «5 м³ на 20 м² = 250 мм», беря объём из одного режима и площадь из другого.
+ * Явно сообщаем активный режим и помечаем неиспользуемые, чтобы он не путался
+ * и не путал пользователя.
+ */
+function buildModeLine(fields: CalculatorField[], values: Record<string, number>): string {
+  const modeField = fields.find((f) => f.key === MODE_FIELD_KEY);
+  if (!modeField?.options || modeField.options.length < 2) return "";
+  const v = values[modeField.key] ?? modeField.defaultValue;
+  const active = modeField.options.find((o) => o.value === v);
+  if (!active) return "";
+  const others = modeField.options
+    .filter((o) => o.value !== active.value)
+    .map((o) => `«${o.label}»`);
+  const otherNote =
+    others.length > 0
+      ? ` Другой способ (${others.join(", ")}) пользователь НЕ выбирал — его поля в этом расчёте не участвуют, не упоминай их.`
+      : "";
+  return `${modeField.label}: «${active.label}».${otherNote}`;
+}
+
 /** Полный текстовый контекст расчёта для Михалыча (все материалы и итоги). */
 export function buildMikhalychCalcContext(input: MikhalychCalcContextInput): string {
   const { calculatorTitle, calculatorSlug, fields, values, result } = input;
 
+  const modeLine = buildModeLine(fields, values);
+
   const paramLines = fields
-    .filter((f) => !SKIP_FIELD_KEYS.has(f.key))
+    .filter((f) => !SKIP_FIELD_KEYS.has(f.key) && isFieldVisible(f, values))
     .map((f) => {
       const v = values[f.key] ?? f.defaultValue;
       const opt = f.options?.find((o) => o.value === v);
@@ -81,6 +110,7 @@ export function buildMikhalychCalcContext(input: MikhalychCalcContextInput): str
 
   return [
     `Калькулятор: «${calculatorTitle}» (slug: ${calculatorSlug}).`,
+    modeLine,
     "",
     "ПАРАМЕТРЫ:",
     ...paramLines.map((p) => `• ${p}`),

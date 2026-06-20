@@ -44,6 +44,27 @@ export function shouldHideField(field: CalculatorField, values: Record<string, n
 }
 
 /**
+ * Видно ли поле при текущих значениях формы.
+ *
+ * Объединяет два правила скрытия:
+ *  1. Декларативные `hideIf`/`hideIfAll` (см. {@link shouldHideField}).
+ *  2. Режим ввода: поля с `group: "bySize"` показываются только при
+ *     `inputMode === 0` («Знаю объём»), а `group: "byArea"` — только при
+ *     `inputMode === 1` («По площади и толщине»). Поля без группы видны всегда.
+ *
+ * Единый источник правды для UI (видимые поля формы) и для контекста Михалыча
+ * (чтобы он не смешивал взаимоисключающие параметры из разных режимов).
+ */
+export function isFieldVisible(field: CalculatorField, values: Record<string, number>): boolean {
+  if (shouldHideField(field, values)) return false;
+  if (!field.group) return true;
+  const inputMode = Math.round(values.inputMode ?? 0);
+  if (field.group === "bySize") return inputMode === 0;
+  if (field.group === "byArea") return inputMode === 1;
+  return true;
+}
+
+/**
  * Возвращает реальные опции селекта, учитывая `optionsFromBrand`.
  *
  * Если поле объявило зависимость от бренда и пользователь выбрал конкретную

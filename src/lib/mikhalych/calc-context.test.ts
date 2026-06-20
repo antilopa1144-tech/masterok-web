@@ -31,6 +31,55 @@ describe("buildMikhalychCalcContext", () => {
   });
 });
 
+describe("buildMikhalychCalcContext — режимы ввода", () => {
+  const twoModeFields: CalculatorField[] = [
+    {
+      key: "inputMode",
+      label: "Как задать объём",
+      type: "radio",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Знаю объём" },
+        { value: 1, label: "По площади и толщине" },
+      ],
+    },
+    { key: "concreteVolume", label: "Объём бетона", type: "slider", unit: "м³", defaultValue: 5, group: "bySize" },
+    { key: "area", label: "Площадь заливки", type: "slider", unit: "м²", defaultValue: 20, group: "byArea" },
+    { key: "thickness", label: "Толщина слоя", type: "slider", unit: "мм", defaultValue: 200, group: "byArea" },
+  ];
+
+  const result = { materials: [{ name: "Бетон", quantity: 5, unit: "м³" }], totals: {}, warnings: [] };
+
+  it("в режиме «Знаю объём» показывает только объём, скрывает поля площади/толщины", () => {
+    const ctx = buildMikhalychCalcContext({
+      calculatorTitle: "Бетон",
+      calculatorSlug: "beton",
+      fields: twoModeFields,
+      values: { inputMode: 0, concreteVolume: 5, area: 20, thickness: 200 },
+      result,
+    });
+    expect(ctx).toContain("Объём бетона");
+    expect(ctx).not.toContain("Площадь заливки");
+    expect(ctx).not.toContain("Толщина слоя");
+    expect(ctx).toContain("«Знаю объём»");
+    expect(ctx).toContain("НЕ выбирал");
+  });
+
+  it("в режиме «По площади» показывает площадь/толщину, скрывает объём", () => {
+    const ctx = buildMikhalychCalcContext({
+      calculatorTitle: "Бетон",
+      calculatorSlug: "beton",
+      fields: twoModeFields,
+      values: { inputMode: 1, concreteVolume: 5, area: 20, thickness: 200 },
+      result,
+    });
+    expect(ctx).toContain("Площадь заливки");
+    expect(ctx).toContain("Толщина слоя");
+    expect(ctx).not.toContain("Объём бетона");
+    expect(ctx).toContain("«По площади и толщине»");
+  });
+});
+
 describe("hashMikhalychCalcContext", () => {
   it("стабилен для одного контекста", () => {
     const a = hashMikhalychCalcContext("same");

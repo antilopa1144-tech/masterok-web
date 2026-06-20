@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
 import { fieldUsesDynamicOptions } from "@/lib/calculators/insulation-smart";
-import { shouldHideField, resolveFieldOptions } from "@/lib/calculators/field-options";
+import { shouldHideField, resolveFieldOptions, isFieldVisible } from "@/lib/calculators/field-options";
 import { syncDependentFields } from "@/lib/calculators/field-sync";
 import type { CalculatorMeta } from "@/lib/calculators/types";
 import type { AccuracyMode, AccuracyModifiers } from "../../../engine/accuracy";
@@ -25,7 +25,7 @@ import {
 
 // Видимость полей и динамические опции живут в lib (доменная логика).
 // Реэкспорт — чтобы не менять существующие импорты из useCalculator.
-export { shouldHideField, resolveFieldOptions };
+export { shouldHideField, resolveFieldOptions, isFieldVisible };
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -318,17 +318,11 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
   }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
 
-  // Фильтруем поля по inputMode и по hideIf-условиям, и подменяем динамические
-  // options (зависящие от выбранного бренда — `optionsFromBrand`).
-  const inputMode = Math.round(values.inputMode ?? 0);
+  // Фильтруем поля по inputMode и по hideIf-условиям (общий предикат
+  // isFieldVisible — тот же, что использует контекст Михалыча), и подменяем
+  // динамические options (зависящие от выбранного бренда — `optionsFromBrand`).
   const visibleFields = calculator.fields
-    .filter((f) => {
-      if (shouldHideField(f, values)) return false;
-      if (!f.group) return true;
-      if (f.group === "bySize") return inputMode === 0;
-      if (f.group === "byArea") return inputMode === 1;
-      return true;
-    })
+    .filter((f) => isFieldVisible(f, values))
     .map((f) => {
       if (!fieldUsesDynamicOptions(f)) return f;
       const resolved = resolveFieldOptions(f, values);
