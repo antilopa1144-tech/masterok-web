@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendFeedbackToTelegram, type FeedbackPayload } from "@/lib/feedback/telegram";
+import type { FeedbackPayload } from "@/lib/feedback/telegram";
+import { deliverFeedback } from "@/lib/feedback/deliver";
+import { isEmailConfigured } from "@/lib/feedback/email";
 
 // Простой in-memory rate-limit (на инстанс). Защита от спама формой.
 const RATE = new Map<string, number[]>();
@@ -29,30 +31,26 @@ function clean(v: unknown, max: number): string | undefined {
   return s.length > 0 ? s : undefined;
 }
 
-// Безопасная диагностика: показывает, видит ли запущенный процесс env-переменные
-// Telegram. БЕЗ значений — только факт наличия и длина (для отлова лишних пробелов
-// / обрезки). Помогает понять, пробросил ли хостинг переменные в runtime.
+// Безопасная диагностика доставки (без значений секретов): какой канал
+// настроен и доступен ли он с прод-сервера. Помогает отладить delivered:false.
 export async function GET() {
-  const token = process.env.TELEGRAM_BOT_TOKEN ?? "";
-  const chatId = process.env.TELEGRAM_FEEDBACK_CHAT_ID ?? "";
+  const resendKey = process.env.RESEND_API_KEY ?? "";
+  const emailTo = process.env.FEEDBACK_EMAIL_TO ?? "";
+  const emailFrom = process.env.FEEDBACK_EMAIL_FROM ?? "";
 
-  // Живая проверка достижимости Telegram с сервера (getMe — без отправки сообщений).
-  let telegram: Record<string, unknown> = { checked: false };
-  if (token) {
+  // Живая проверка достижимости Resend с сервера (список доменов — без отправки писем).
+  let resend: Record<string, unknown> = { checked: false };
+  if (resendKey) {
     const started = Date.now();
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, { signal: AbortSignal.timeout(8000) });
-      const body = await res.json().catch(() => ({}));
-      telegram = {
-        checked: true,
-        reachable: true,
-        httpStatus: res.status,
-        apiOk: Boolean((body as { ok?: boolean }).ok),
-        botUsername: (body as { result?: { username?: string } }).result?.username ?? null,
-        ms: Date.now() - started,
-      };
+      const res = await fetch("https://api.resend.com/domains", {
+        headers: { Authorization: `Bearer ${resendKey}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      // 200 — ключ валиден; 401 — ключ неверный, но сеть доступна (тоже reachable).
+      resend = { checked: true, reachable: true, httpStatus: res.status, keyValid: res.status === 200, ms: Date.now() - started };
     } catch (err) {
-      telegram = {
+      resend = {
         checked: true,
         reachable: false,
         error: err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : "unknown",
@@ -62,11 +60,15 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    configured: Boolean(token && chatId),
-    token: { present: token.length > 0, length: token.length },
-    chatId: { present: chatId.length > 0, length: chatId.length },
+    channel: isEmailConfigured() ? "email" : process.env.TELEGRAM_BOT_TOKEN ? "telegram" : "none",
+    email: {
+      configured: isEmailConfigured(),
+      apiKey: { present: resendKey.length > 0, length: resendKey.length },
+      to: { present: emailTo.length > 0 },
+      from: emailFrom || "default (onboarding@resend.dev)",
+    },
     nodeEnv: process.env.NODE_ENV ?? null,
-    telegram,
+    resend,
   });
 }
 
@@ -109,9 +111,9 @@ export async function POST(req: NextRequest) {
     theme: clean(body.theme, 40),
   };
 
-  const result = await sendFeedbackToTelegram(payload);
+  const result = await deliverFeedback(payload);
   // Пользователю всегда «спасибо», если отзыв валиден: свою часть он сделал.
-  // Проблемы доставки видны в логах сервера (см. telegram.ts).
-  // reason — временно в ответе для отладки доставки на проде.
-  return NextResponse.json({ ok: true, delivered: result.delivered, reason: result.reason });
+  // Проблемы доставки видны в логах сервера. channel/reason — временно
+  // в ответе для отладки доставки на проде.
+  return NextResponse.json({ ok: true, delivered: result.delivered, channel: result.channel, reason: result.reason });
 }
