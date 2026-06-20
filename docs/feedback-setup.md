@@ -37,19 +37,19 @@
 
 ## Диагностика (`GET /api/feedback`)
 
-Безопасный ответ (без значений секретов):
+Лёгкая проверка настройки (без секретов, без обращений к внешним API):
 
 ```json
-{
-  "channel": "email",
-  "email": { "configured": true, "apiKey": { "present": true }, "to": { "present": true } },
-  "resend": { "reachable": true, "httpStatus": 200, "keyValid": true }
-}
+{ "channel": "email", "emailConfigured": true }
 ```
 
-- `email.configured: false` → не заданы `RESEND_API_KEY`/`FEEDBACK_EMAIL_TO` (или не передеплоили).
-- `resend.reachable: false` → сервер не достучался до api.resend.com (сеть/блокировка).
-- `resend.keyValid: false` (httpStatus 401) → ключ неверный.
+- `emailConfigured: false` → не заданы `RESEND_API_KEY`/`FEEDBACK_EMAIL_TO` (или не передеплоили).
+- Реальную доставку проверяют отправкой отзыва: ответ `POST /api/feedback`
+  содержит `delivered: true/false`. Если `false` — причина в логах сервера
+  (см. `src/lib/feedback/email.ts`).
+
+Ключ Resend с правами «только отправка» (Sending access) НЕ имеет доступа к
+`/domains` и т.п. — это нормально, на отправку писем не влияет.
 
 ## Telegram (на будущее)
 
