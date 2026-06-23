@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- noscript tracking pixel must stay a plain img */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
@@ -17,22 +17,20 @@ declare global {
 export default function YandexMetrika() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Первый хит (лендинг) уже отправляет сам ym("init") — без defer:true он шлёт
+  // автоматический pageview. Поэтому здесь пропускаем самый первый рендер, иначе
+  // первая страница считается дважды (завышает просмотры, ломает отказы).
+  const skipFirst = useRef(true);
 
   useEffect(() => {
     if (!YM_COUNTER) return;
+    if (skipFirst.current) {
+      skipFirst.current = false;
+      return;
+    }
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
     window.ym?.(Number(YM_COUNTER), "hit", url);
   }, [pathname, searchParams]);
 
   return null;
-}
-
-/** Inline script for static HTML rendering (called from layout.tsx <head>) */
-export function getYandexMetrikaScript(): string {
-  if (!YM_COUNTER) return "";
-  return `(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return;}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(${YM_COUNTER},"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`;
-}
-
-export function getYandexMetrikaCounterId(): string {
-  return YM_COUNTER;
 }
