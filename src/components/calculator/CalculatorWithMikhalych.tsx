@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useNearViewport } from "@/hooks/useNearViewport";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
@@ -49,6 +49,7 @@ export default function CalculatorWithMikhalych({
   calculator: CalculatorWidgetProps;
 }) {
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const [seedReview, setSeedReview] = useState<string | null>(null);
   const nearMikhalych = useNearViewport(mikhalychAnchorRef, { rootMargin: "500px" });
 
@@ -56,6 +57,7 @@ export default function CalculatorWithMikhalych({
     values,
     result,
     hasCalculated,
+    calcNonce,
     shareState,
     showHistory,
     setShowHistory,
@@ -85,6 +87,28 @@ export default function CalculatorWithMikhalych({
 
   const mikhalychContext = reviewInput ? buildMikhalychCalcContext(reviewInput) : undefined;
   const loadMikhalych = nearMikhalych || reviewInput !== null;
+
+  // После явного «Рассчитать» подкидываем к результату — но только если он не
+  // на виду (чтобы на десктопе с коротким экраном не дёргать страницу зря).
+  // calcNonce растёт лишь по кнопке, поэтому live-пересчёт слайдеров не триггерит.
+  useEffect(() => {
+    if (calcNonce === 0) return;
+    const el = resultRef.current;
+    if (!el) return;
+    // Считаем абсолютную цель сами (top + scrollY − отступ под липкий хедер).
+    // Не используем scrollIntoView: на мобиле он недокручивает блок до верха
+    // даже при неподвижной цели. Window.scrollTo с явной математикой точен.
+    const raf = requestAnimationFrame(() => {
+      const rectTop = el.getBoundingClientRect().top;
+      const HEADER_OFFSET = 80; // высота sticky-хедера (h-16) + воздух
+      // Если результат уже прижат к верху (юзер тапнул кнопку высоко на экране) —
+      // не дёргаем. Иначе (результат начинается в нижних ~65% экрана или ниже
+      // сгиба) подтягиваем его шапку под хедер, чтобы summary было видно сразу.
+      if (rectTop >= 0 && rectTop < window.innerHeight * 0.35) return;
+      window.scrollTo({ top: rectTop + window.scrollY - HEADER_OFFSET, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [calcNonce]);
 
   return (
     <>
@@ -148,19 +172,21 @@ export default function CalculatorWithMikhalych({
         </div>
 
         {result && (
-          <ResultBlock
-            result={result}
-            shareState={shareState}
-            onShare={handleShare}
-            calculatorSlug={calculator.slug}
-            calculatorTitle={calculator.title}
-            projectSave={{
-              calcId: calculator.id,
-              calcTitle: calculator.title,
-              slug: calculator.slug,
-              categorySlug: calculator.categorySlug,
-            }}
-          />
+          <div ref={resultRef} className="scroll-mt-20">
+            <ResultBlock
+              result={result}
+              shareState={shareState}
+              onShare={handleShare}
+              calculatorSlug={calculator.slug}
+              calculatorTitle={calculator.title}
+              projectSave={{
+                calcId: calculator.id,
+                calcTitle: calculator.title,
+                slug: calculator.slug,
+                categorySlug: calculator.categorySlug,
+              }}
+            />
+          </div>
         )}
 
         {/* Невидимый поставщик: грузит авто-разбор и поднимает его в seedReview,

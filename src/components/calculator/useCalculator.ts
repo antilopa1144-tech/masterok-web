@@ -73,6 +73,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [values, setValues] = useState<Record<string, number>>(getInitialValues);
   const [result, setResult] = useState<CalculatorResult | null>(null);
   const [hasCalculated, setHasCalculated] = useState(false);
+  // Растёт только при ЯВНОМ нажатии «Рассчитать» (не при live-пересчёте от
+  // движения слайдеров). Потребитель использует это, чтобы подскроллить к
+  // результату — на мобиле без этого приходится мотать мимо всей формы.
+  const [calcNonce, setCalcNonce] = useState(0);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -190,6 +194,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
       setResult(res);
       setHasCalculated(true);
+      setCalcNonce((n) => n + 1);
       trackAccuracyModeCalculation(calculator.slug, accuracyMode);
 
       // Сохраняем в историю только при явном нажатии кнопки
@@ -337,6 +342,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     values,
     result,
     hasCalculated,
+    calcNonce,
     shareState,
     showHistory,
     setShowHistory,

@@ -39,6 +39,32 @@ function titleWithoutSiteSuffix(title: string): string {
     : title;
 }
 
+/** Карточка калькулятора в блоках перелинковки (низ страницы). */
+function RelatedCalcCard({ meta }: { meta: (typeof ALL_CALCULATORS_META)[number] }) {
+  const cat = getCategoryById(meta.category);
+  return (
+    <Link
+      href={`/kalkulyatory/${meta.categorySlug}/${meta.slug}/`}
+      className="card-hover p-4 flex items-start gap-3 no-underline group"
+    >
+      <span
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ backgroundColor: (cat?.color ?? "#64748b") + "18" }}
+      >
+        <CategoryIcon icon={cat?.icon ?? "wrench"} size={20} color={cat?.color ?? "#64748b"} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
+          {meta.title}
+        </p>
+        <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
+          {meta.description}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
 }
@@ -99,6 +125,12 @@ export default async function CalculatorPage({ params }: PageProps) {
     .sort((a, b) => b.popularity - a.popularity)
     .slice(0, 4);
 
+  // На мобиле нет правой колонки, поэтому две отдельные секции перелинковки
+  // («Может пригодиться» + «Другие популярные») сливаются в одну компактную:
+  // похожие из категории + добор из популярных. Категории не пересекаются,
+  // дублей нет. На десктопе остаётся прежнее разделение (related — в колонке).
+  const mobileRelated = [...related, ...crossCategory].slice(0, 6);
+
   const accentColor = category?.color ?? "#f97316";
   const accentBg = category?.bgColor ?? "#fff7ed";
   const heroStyle = { "--accent-hero-bg": accentBg } as Record<string, string>;
@@ -155,13 +187,15 @@ export default async function CalculatorPage({ params }: PageProps) {
                 >
                   {category?.label ?? UI_TEXT.defaultCategoryLabel}
                 </span>
-                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                {/* На мобиле прячем сложность и дату — чтобы бейджи не уезжали
+                    во второй ряд и hero был короче. На sm+ показываем все. */}
+                <span className="badge hidden sm:inline-flex bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.complexityLabels[calc.complexity - 1]}
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.standardsBadge}
                 </span>
-                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <span className="badge hidden sm:inline-flex bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.updatedLabel} {LAST_REVIEWED_LABEL}
                 </span>
               </div>
@@ -282,82 +316,32 @@ export default async function CalculatorPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Связанные калькуляторы — карточки (полная ширина, под основным контентом) */}
-        {related.length > 0 && (
+        {/* МОБИЛА/ПЛАНШЕТ: одна компактная секция перелинковки в 2 колонки
+            (на десктопе скрыта — там related живёт в правой колонке). */}
+        {mobileRelated.length > 0 && (
           <div className="mt-10 xl:hidden" data-print-hide>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
               {UI_TEXT.maybeUsefulTitle}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {related.map((r) => {
-                const rCat = getCategoryById(r.category);
-                return (
-                  <Link
-                    key={r.id}
-                    href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
-                    className="card-hover p-4 flex items-start gap-3 no-underline group"
-                  >
-                    <span
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: (rCat?.color ?? "#64748b") + "18" }}
-                    >
-                      <CategoryIcon
-                        icon={rCat?.icon ?? "wrench"}
-                        size={20}
-                        color={rCat?.color ?? "#64748b"}
-                      />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
-                        {r.title}
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
-                        {r.description}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mobileRelated.map((r) => (
+                <RelatedCalcCard key={r.id} meta={r} />
+              ))}
             </div>
           </div>
         )}
 
-        {/* Cross-category popular calculators */}
+        {/* ДЕСКТОП: популярные из других категорий (related уже в правой колонке).
+            Скрыто на мобиле — там их роль выполняет слитая секция выше. */}
         {crossCategory.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-10 hidden xl:block">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
               {UI_TEXT.crossCategoryTitle}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {crossCategory.map((r) => {
-                const rCat = getCategoryById(r.category);
-                return (
-                  <Link
-                    key={r.id}
-                    href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
-                    className="card-hover p-4 flex items-start gap-3 no-underline group"
-                  >
-                    <span
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: (rCat?.color ?? "#64748b") + "18" }}
-                    >
-                      <CategoryIcon
-                        icon={rCat?.icon ?? "wrench"}
-                        size={20}
-                        color={rCat?.color ?? "#64748b"}
-                      />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
-                        {r.title}
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
-                        {r.description}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-4 gap-3">
+              {crossCategory.map((r) => (
+                <RelatedCalcCard key={r.id} meta={r} />
+              ))}
             </div>
           </div>
         )}
