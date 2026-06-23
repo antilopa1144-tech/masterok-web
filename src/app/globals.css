@@ -273,6 +273,27 @@ html[data-theme="graphite"] {
   }
 }
 
+/* Справочный блок калькулятора (SeoContentBlock): на мобиле — свёрнутый
+   аккордеон <details>, на десктопе саммари скрыто, а контент раскрыт всегда
+   (перекрываем UA-стиль `details:not([open]) > :not(summary){display:none}`).
+   Контент остаётся в DOM в обоих состояниях — важно для индексации. */
+@media (min-width: 768px) {
+  details.seo-collapsible > summary.seo-collapsible-summary {
+    display: none;
+  }
+  /* Firefox/Safari (старая модель): закрытый <details> скрывает детей через
+     display:none — перекрываем. */
+  details.seo-collapsible > .seo-collapsible-content {
+    display: block;
+  }
+  /* Chromium 131+: закрытый <details> скрывает контент через content-visibility
+     на псевдоэлементе ::details-content — раскрываем его. Браузеры без поддержки
+     псевдо просто игнорируют это правило (их покрывает display:block выше). */
+  details.seo-collapsible::details-content {
+    content-visibility: visible;
+  }
+}
+
 /* ── 5. Компонентные утилиты ───────────────────────────────── */
 
 @utility btn-primary {

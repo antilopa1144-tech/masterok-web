@@ -89,7 +89,19 @@ export default function SeoContentBlock({
   if (!hasFormula && !hasHowTo && !hasDescription && !hasFaq) return null;
 
   return (
-    <section aria-label="Справка и частые вопросы" className="space-y-3">
+    // На мобиле весь справочный блок свёрнут в один аккордеон, чтобы не растягивать
+    // страницу (формулы, описание и длинный FAQ занимают много экранов). На md+
+    // саммари скрыто и контент раскрыт всегда (см. .seo-collapsible в globals.css).
+    // Контент остаётся в DOM при любом состоянии — поисковики его видят.
+    <details className="seo-collapsible group/seo">
+      <summary className="seo-collapsible-summary flex items-center justify-between px-5 py-4 cursor-pointer select-none list-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+        <span className="flex items-center gap-2 text-sm">
+          <span>📖</span>
+          Справка, формулы и частые вопросы
+        </span>
+        <span className="text-slate-400 group-open/seo:rotate-45 transition-transform text-lg leading-none">+</span>
+      </summary>
+      <section aria-label="Справка и частые вопросы" className="seo-collapsible-content space-y-3 mt-3 md:mt-0">
       {/* Как пользоваться — открыт по умолчанию, самый полезный для пользователя */}
       {hasHowTo && (
         <AccordionItem id={`${calculatorId}-howto`} title="Как пользоваться" icon="📋" defaultOpen>
@@ -172,6 +184,7 @@ export default function SeoContentBlock({
           ))}
         </div>
       )}
-    </section>
+      </section>
+    </details>
   );
 }
