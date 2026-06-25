@@ -112,6 +112,20 @@ const nextConfig: NextConfig = {
         destination: "/kalkulyatory/otdelka/:slug*",
         permanent: true,
       },
+      // Калькулятор шпаклёвки сменил slug: putty → shpaklevka. Google знает
+      // старый URL из истории и получает noindex-404 (dynamicParams:false), из-за
+      // чего реальная страница калькулятора висит в GSC «Excluded by noindex».
+      // 301 на актуальный slug возвращает SEO-вес и убирает ошибку индексации.
+      {
+        source: "/kalkulyatory/otdelka/putty",
+        destination: "/kalkulyatory/otdelka/shpaklevka/",
+        permanent: true,
+      },
+      {
+        source: "/kalkulyatory/otdelka/putty/",
+        destination: "/kalkulyatory/otdelka/shpaklevka/",
+        permanent: true,
+      },
     ];
   },
 
