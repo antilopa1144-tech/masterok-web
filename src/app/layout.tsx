@@ -7,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
+import IdleMount from "@/components/ui/IdleMount";
 import YandexMetrikaLoader from "@/components/analytics/YandexMetrikaLoader";
 import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
@@ -153,8 +154,12 @@ export default async function RootLayout({
         <Header />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
-        <ScrollToTop />
-        <FeedbackWidget />
+        {/* Некритичные плавающие оверлеи — монтируем на idle, чтобы их гидрация
+            не попадала в критическую длинную задачу (снижает TBT). */}
+        <IdleMount>
+          <ScrollToTop />
+          <FeedbackWidget />
+        </IdleMount>
         <Script id="ym-init" strategy="lazyOnload" nonce={nonce}>{YM_INIT_SCRIPT}</Script>
         <Script id="sw-unregister" strategy="lazyOnload" nonce={nonce}>{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
       </body>

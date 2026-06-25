@@ -179,7 +179,14 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-800">
       <div className="page-container-wide">
         <div className="flex items-center justify-between h-16 gap-2">
-          <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0">
+          <Link
+            href="/"
+            // Текст логотипа скрыт на мобиле (hidden sm:inline), а у иконки alt="",
+            // поэтому без явного label ссылка остаётся без различимого текста на
+            // мобиле — провал a11y/agent-view «Links must have discernible text».
+            aria-label={`${UI_TEXT.logo} — на главную`}
+            className="flex items-center gap-2.5 no-underline shrink-0"
+          >
             <Image
               src="/icon1.png"
               alt=""
