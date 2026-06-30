@@ -12,6 +12,7 @@ import { formatSiteLastReviewedRu, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import CalculatorNoscriptFields from "@/components/seo/CalculatorNoscriptFields";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
@@ -187,15 +188,13 @@ export default async function CalculatorPage({ params }: PageProps) {
                 >
                   {category?.label ?? UI_TEXT.defaultCategoryLabel}
                 </span>
-                {/* На мобиле прячем сложность и дату — чтобы бейджи не уезжали
-                    во второй ряд и hero был короче. На sm+ показываем все. */}
-                <span className="badge hidden sm:inline-flex bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.complexityLabels[calc.complexity - 1]}
                 </span>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.standardsBadge}
                 </span>
-                <span className="badge hidden sm:inline-flex bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.updatedLabel} {LAST_REVIEWED_LABEL}
                 </span>
               </div>
@@ -246,6 +245,16 @@ export default async function CalculatorPage({ params }: PageProps) {
               faq: calc.faq,
             }} />
             </Suspense>
+
+            {/* Серверный HTML калькулятора для поисковиков (Googlebot).
+                Обычные пользователи видят интерактивный React-калькулятор.
+                Googlebot читает поля ввода, их лейблы и подсказки из <noscript>. */}
+            <CalculatorNoscriptFields
+              title={calc.title}
+              h1={calc.h1}
+              description={calc.metaDescription}
+              fields={calc.fields}
+            />
 
             {/* SEO/GEO/AEO контент — объединённый блок */}
             {calc.seoContent && (

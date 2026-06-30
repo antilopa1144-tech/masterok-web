@@ -149,8 +149,14 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${BASE_URL}/ai/`,
       lastModified: STATIC_PAGES_LAST_MODIFIED,
-      changeFrequency: "monthly",
+      changeFrequency: "monthly" as const,
       priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/all/`,
+      lastModified: CALCULATORS_LAST_MODIFIED,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
     },
   ];
 }

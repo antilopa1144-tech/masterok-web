@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/site";
 import { getToolConfig, toolHref } from "@/lib/tools/config";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
+import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 export const metadata: Metadata = buildToolPageMetadata("kalkulyator");
 
@@ -35,6 +36,7 @@ export default function KalkulyatorLayout({ children }: { children: React.ReactN
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {children}
+      <ToolPageExtras slug="kalkulyator" />
     </>
   );
 }
