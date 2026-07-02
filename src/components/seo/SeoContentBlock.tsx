@@ -50,14 +50,12 @@ function AccordionItem({ id, title, icon, children, defaultOpen }: {
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
-  // Все аккордеоны открыты по умолчанию — Googlebot индексирует
-  // контент в закрытых <details> хуже (даже если он в DOM).
-  // На десктопе (>768px) контент и так был виден через CSS,
-  // на мобиле теперь тоже открыт — это осознанное SEO-решение.
+  // Свёрнутость не вредит индексации: с mobile-first indexing Google даёт
+  // полный вес контенту в закрытых <details>, если он в DOM (а он в DOM).
   return (
     <details
       className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden"
-      open
+      open={defaultOpen}
     >
       <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none list-none font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
         <span className="flex items-center gap-2 text-sm">
@@ -169,7 +167,6 @@ export default function SeoContentBlock({
             <details
               key={`${calculatorId}-faq-${i}`}
               className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
-              open
             >
               <summary className="relative cursor-pointer list-none pr-6 text-sm font-medium text-slate-900 dark:text-slate-100">
                 {item.question}

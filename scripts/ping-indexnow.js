@@ -54,43 +54,4 @@ async function pingIndexNow() {
   }
 }
 
-async function pingGoogle() {
-  const SITEMAP_URL = `https://${HOST}/sitemap.xml`;
-  try {
-    const res = await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(SITEMAP_URL)}`,
-      { method: "GET" }
-    );
-    const ct = res.headers.get("content-type") || "";
-    if (res.ok && ct.includes("text")) {
-      console.log(`✓ Google sitemap ping отправлен (HTTP ${res.status})`);
-    } else {
-      console.warn(`⚠ Google sitemap ping: HTTP ${res.status}, content-type: ${ct}`);
-    }
-  } catch (err) {
-    console.warn(`⚠ Google sitemap ping не отправлен: ${err.message}`);
-  }
-}
-
-async function pingYandex() {
-  const SITEMAP_URL = `https://${HOST}/sitemap.xml`;
-  try {
-    const res = await fetch(
-      `https://webmaster.yandex.ru/ping?sitemap=${encodeURIComponent(SITEMAP_URL)}`,
-      { method: "GET" }
-    );
-    if (res.ok) {
-      console.log(`✓ Yandex Webmaster ping отправлен (HTTP ${res.status})`);
-    } else {
-      console.warn(`⚠ Yandex Webmaster ping вернул HTTP ${res.status}`);
-    }
-  } catch (err) {
-    console.warn(`⚠ Yandex Webmaster ping не отправлен: ${err.message}`);
-  }
-}
-
-async function main() {
-  await Promise.all([pingIndexNow(), pingGoogle(), pingYandex()]);
-}
-
-main();
+pingIndexNow();
