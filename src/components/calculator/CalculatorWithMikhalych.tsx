@@ -13,6 +13,9 @@ import { CALCULATOR_UI_TEXT } from "./uiText";
 import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
+import { pluralizeRu } from "@/lib/format/pluralize";
+
+const MOBILE_PRIMARY_FIELD_COUNT = 6;
 
 const MikhalychWidget = dynamic(() => import("./MikhalychWidget"), {
   ssr: false,
@@ -49,8 +52,10 @@ export default function CalculatorWithMikhalych({
   calculator: CalculatorWidgetProps;
 }) {
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const [seedReview, setSeedReview] = useState<string | null>(null);
+  const [showAllFields, setShowAllFields] = useState(false);
   const nearMikhalych = useNearViewport(mikhalychAnchorRef, { rootMargin: "500px" });
 
   const {
@@ -72,6 +77,14 @@ export default function CalculatorWithMikhalych({
   } = useCalculator(calculator);
 
   const accentColor = category?.color ?? "#f97316";
+  const collapsedFieldCount = Math.max(0, visibleFields.length - MOBILE_PRIMARY_FIELD_COUNT);
+
+  const scrollToSection = (target: HTMLDivElement | null) => {
+    if (!target) return;
+    const HEADER_OFFSET = 112;
+    const top = target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+    window.scrollTo({ top, behavior: "smooth" });
+  };
 
   const reviewInput = useMemo(() => {
     if (!hasCalculated || !result || result.materials.length === 0) return null;
@@ -114,7 +127,33 @@ export default function CalculatorWithMikhalych({
     <>
       <div className="space-y-6">
         <TileLayoutTransferBanner />
-        <div className="card p-6 space-y-5" data-print-hide>
+
+        {hasCalculated && result && (
+          <nav
+            aria-label="Навигация по расчёту"
+            className="sticky top-[4.5rem] z-20 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-lg shadow-slate-900/5 backdrop-blur sm:hidden dark:border-slate-700 dark:bg-slate-900/95"
+            data-print-hide
+          >
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => scrollToSection(formRef.current)}
+                className="min-h-10 rounded-xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Параметры
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection(resultRef.current)}
+                className="min-h-10 rounded-xl bg-accent-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
+              >
+                Результат ↓
+              </button>
+            </div>
+          </nav>
+        )}
+
+        <div ref={formRef} className="card p-5 sm:p-6 space-y-5 scroll-mt-28" data-print-hide>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {CALCULATOR_UI_TEXT.parametersTitle}
@@ -130,7 +169,10 @@ export default function CalculatorWithMikhalych({
                 </button>
               )}
               <button
-                onClick={handleReset}
+                onClick={() => {
+                  handleReset();
+                  setShowAllFields(false);
+                }}
                 className="text-sm text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 Сбросить
@@ -146,11 +188,15 @@ export default function CalculatorWithMikhalych({
               (особенно на смартфоне). Слайдеры, радио и явные fullWidth-поля
               занимают всю ширину; короткие селекты/числа делят строку. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
-            {visibleFields.map((field) => {
+            {visibleFields.map((field, index) => {
               const spanFull =
                 field.fullWidth || field.type === "slider" || field.type === "radio";
+              const isMobileCollapsed = index >= MOBILE_PRIMARY_FIELD_COUNT && !showAllFields;
               return (
-                <div key={field.key} className={spanFull ? "sm:col-span-2" : undefined}>
+                <div
+                  key={field.key}
+                  className={`${spanFull ? "sm:col-span-2" : ""} ${isMobileCollapsed ? "hidden sm:block" : ""}`.trim() || undefined}
+                >
                   <FieldInput
                     field={field}
                     value={values[field.key] ?? field.defaultValue}
@@ -162,12 +208,26 @@ export default function CalculatorWithMikhalych({
             })}
           </div>
 
+          {collapsedFieldCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllFields((value) => !value)}
+              aria-expanded={showAllFields}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600 transition-colors hover:border-accent-300 hover:text-accent-700 sm:hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-accent-700 dark:hover:text-accent-300"
+            >
+              {showAllFields
+                ? "Скрыть дополнительные параметры"
+                : `Ещё ${collapsedFieldCount} ${pluralizeRu(collapsedFieldCount, ["параметр", "параметра", "параметров"])}`}
+              <span className={`transition-transform ${showAllFields ? "rotate-180" : ""}`} aria-hidden>⌄</span>
+            </button>
+          )}
+
           <button
             onClick={handleCalculate}
             className="btn-primary w-full text-base"
             style={{ backgroundColor: category?.color }}
           >
-            Рассчитать
+            {hasCalculated ? "Показать обновлённый результат" : "Рассчитать и показать результат"}
           </button>
         </div>
 

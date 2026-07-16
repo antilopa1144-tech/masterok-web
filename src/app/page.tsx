@@ -48,7 +48,7 @@ const UI_TEXT = {
   heroTail: "расчёт расхода и количества к покупке",
   heroDescription:
     "Бетон, кирпич, плитка, ламинат, кровля, обои, гипсокартон — всё для ремонта и стройки в одном месте. Быстро, бесплатно, без регистрации. И ИИ-прораб Михалыч, если что-то непонятно.",
-  heroChipsLabel: "Популярное:",
+  heroChipsLabel: "Быстрый старт:",
   heroSecondaryCta: "Спросить Михалыча",
   stats: [
     { val: "100%", label: "Бесплатно" },
@@ -72,6 +72,16 @@ const UI_TEXT = {
 } as const;
 
 const HOME_TOOLS = getHomeToolCards(ALL_CHECKLISTS.length);
+const FEATURED_HOME_TOOLS = HOME_TOOLS.slice(0, 6);
+
+const HOME_TASK_LINKS = [
+  { label: "Залить пол", href: "/kalkulyatory/poly/styazhka/", category: "flooring" },
+  { label: "Посчитать блоки", href: "/kalkulyatory/steny/gazobeton/", category: "walls" },
+  { label: "Уложить плитку", href: "/kalkulyatory/poly/plitka/", category: "flooring" },
+  { label: "Утеплить балкон", href: "/kalkulyatory/otdelka/otdelka-balkona/", category: "interior" },
+  { label: "Поклеить обои", href: "/kalkulyatory/otdelka/oboi/", category: "interior" },
+  { label: "Рассчитать кровлю", href: "/kalkulyatory/krovlya/krovlya/", category: "roofing" },
+] as const;
 
 const FEATURES = [
   {
@@ -130,7 +140,7 @@ function getCalculatorCountLabel(count: number) {
 
 export default async function HomePage() {
   const blogPosts = await getAllPosts();
-  const popular = getPopularCalculatorsMeta(8);
+  const popular = getPopularCalculatorsMeta(6);
   const totalCount = ALL_CALCULATORS_META.length;
 
   const jsonLd = {
@@ -208,7 +218,7 @@ export default async function HomePage() {
       {
         "@type": "Question",
         name: "По каким нормам рассчитываются материалы в калькуляторах?",
-        acceptedAnswer: { "@type": "Answer", text: "Расчёты основаны на актуальных нормативных документах Российской Федерации: ГОСТ (государственные стандарты), СНиП (строительные нормы и правила), СП (своды правил). Нормы расхода материалов берутся из технических паспортов производителей и строительных справочников." },
+        acceptedAnswer: { "@type": "Answer", text: "Основа калькуляторов — геометрия и единицы измерения. Где это применимо, используются нормативные документы, технические данные производителей, практический запас и округление до упаковок. Конкретные источники указываются на страницах соответствующих расчётов." },
       },
       {
         "@type": "Question",
@@ -280,26 +290,22 @@ export default async function HomePage() {
             </Suspense>
           </div>
 
-          {/* Чипы: самые популярные калькуляторы — один клик до цели */}
+          {/* Чипы сформулированы как реальные задачи, а не названия материалов. */}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-3xl mx-auto">
             <span className="text-sm text-slate-500 dark:text-slate-400 mr-1">
               {UI_TEXT.heroChipsLabel}
             </span>
-            {popular.map((calc) => {
-              const cat = CATEGORIES.find((c) => c.id === calc.category);
-              const label = calc.tags[0]
-                ? calc.tags[0].charAt(0).toUpperCase() + calc.tags[0].slice(1)
-                : calc.title;
+            {HOME_TASK_LINKS.map((task) => {
+              const cat = CATEGORIES.find((c) => c.id === task.category);
               return (
                 <Link
-                  key={calc.id}
-                  href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
+                  key={task.href}
+                  href={task.href}
                   prefetch={false}
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 no-underline shadow-sm transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-accent-700 dark:hover:text-accent-400"
-                  title={calc.title}
                 >
                   <CategoryIcon icon={cat?.icon ?? "wrench"} size={14} color={cat?.color ?? "#64748b"} />
-                  {label}
+                  {task.label}
                 </Link>
               );
             })}
@@ -472,7 +478,7 @@ export default async function HomePage() {
                 </h2>
               </div>
               <div className="space-y-3">
-                {HOME_TOOLS.map((tool) => (
+                {FEATURED_HOME_TOOLS.map((tool) => (
                   <Link
                     key={tool.href}
                     href={tool.href}
@@ -596,7 +602,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {HOME_TOOLS.map((tool) => (
+          {FEATURED_HOME_TOOLS.map((tool) => (
             <Link
               key={tool.href}
               href={tool.href}

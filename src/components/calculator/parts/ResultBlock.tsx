@@ -219,6 +219,31 @@ export function ResultBlock({
   const primaryDisplay = primaryMaterial
     ? formatMaterialQty(primaryQty, primaryMaterial.unit)
     : "—";
+  const primaryPurchaseHint = useMemo(() => {
+    if (!primaryMaterial) return undefined;
+
+    const exactQty = primaryMaterial.quantity;
+    const exactText = `${formatMaterialQty(exactQty, primaryMaterial.unit)} ${pluralizeUnit(exactQty, primaryMaterial.unit)}`;
+    const parts = [`расчётная потребность ${exactText}`];
+
+    if (
+      primaryMaterial.withReserve != null
+      && Math.abs(primaryMaterial.withReserve - exactQty) > 0.005
+    ) {
+      parts.push(
+        `с запасом ${formatMaterialQty(primaryMaterial.withReserve, primaryMaterial.unit)} ${pluralizeUnit(primaryMaterial.withReserve, primaryMaterial.unit)}`,
+      );
+    }
+
+    if (primaryMaterial.packageInfo) {
+      const { count, packageUnit, size } = primaryMaterial.packageInfo;
+      parts.unshift(
+        `${count} ${pluralizePackageUnit(count, packageUnit)} × ${size} ${primaryMaterial.unit}`,
+      );
+    }
+
+    return parts.join(" · ");
+  }, [primaryMaterial]);
   const accuracyLabel = result.accuracyMode
     ? ACCURACY_MODE_LABELS[result.accuracyMode]
     : result.accuracyExplanation?.modeLabel ?? "Расчёт";
@@ -357,14 +382,25 @@ export function ResultBlock({
               ))
             ) : (
               <>
-                <ResultMetricCard
-                  icon="📦"
-                  label="Всего материалов"
-                  value={String(result.materials.length)}
-                  unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
-                  hint={`${categoryCount} ${pluralizeRu(categoryCount, ["раздел", "раздела", "разделов"])}`}
-                  tone="violet"
-                />
+                {primaryMaterial ? (
+                  <ResultMetricCard
+                    icon="🛒"
+                    label={`${CALCULATOR_UI_TEXT.toBuyPrefix}: ${primaryMaterial.name}`}
+                    value={primaryDisplay}
+                    unit={pluralizeUnit(primaryQty, primaryMaterial.unit)}
+                    hint={primaryPurchaseHint}
+                    tone="accent"
+                  />
+                ) : (
+                  <ResultMetricCard
+                    icon="📦"
+                    label="Всего материалов"
+                    value={String(result.materials.length)}
+                    unit={pluralizeRu(result.materials.length, ["позиция", "позиции", "позиций"])}
+                    hint={`${categoryCount} ${pluralizeRu(categoryCount, ["раздел", "раздела", "разделов"])}`}
+                    tone="violet"
+                  />
+                )}
                 {featuredTotal && (
                   <ResultMetricCard
                     icon="📐"

@@ -72,7 +72,6 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
               const reserveVal = useGrams ? formatWeightParts(reserveQty)[0] : formatMaterialQty(reserveQty, m.unit);
               const isDiscrete = isDiscreteUnit(m.unit);
               const showConsumption = !isDiscrete
-                && !m.packageInfo
                 && m.withReserve != null
                 && Math.abs(rawQty - reserveQty) > 0.005
                 && `${displayVal} ${displayUnit}` !== `${reserveVal} ${reserveUnit}`;
