@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useState, useMemo, useRef, useCallback } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
+import ToolSectionNav from "@/components/tools/ToolSectionNav";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import {
+  trackToolExport,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 import {
   calculateLaminateLayout,
   LAMINATE_MODE_OPTIONS,
@@ -112,6 +119,17 @@ export default function LaminateLayoutGenerator() {
   const [boardH, setBoardH] = useState(192);
   const [mode, setMode] = useState<LaminateMode>("deck-third");
   const svgRef = useRef<HTMLDivElement>(null);
+  const parametersRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const { hasStarted, markStarted, selectMode } = useToolAnalytics(
+    "raskladka-laminata",
+    resultRef,
+  );
+
+  const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const result = useMemo(
     () => calculateLaminateLayout(surfaceW, surfaceH, boardW, boardH, mode),
@@ -126,6 +144,7 @@ export default function LaminateLayoutGenerator() {
   const handleExportPNG = useCallback(() => {
     const svgEl = svgRef.current?.querySelector("svg");
     if (!svgEl) return;
+    trackToolExport("raskladka-laminata", "png");
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -159,23 +178,35 @@ export default function LaminateLayoutGenerator() {
   return (
     <div className="max-w-3xl space-y-6">
       <RenovationHubStrip scenarioId="room" compact />
-      <div className="card p-6 space-y-5">
+      <div ref={parametersRef} className="card scroll-mt-24 p-5 sm:p-6 space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Параметры раскладки</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Схема и итог обновляются сразу после изменения значения.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {surfaceAreaM2} м²
+          </span>
+        </div>
         {/* Размер помещения */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер помещения (мм)
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" inputMode="numeric" min={300} max={30000} value={surfaceW} onChange={(e) => setSurfaceW(Number(e.target.value) || 300)} className="input-field w-28" />
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">1</span>
+            Размер помещения
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
+            <input aria-label="Ширина помещения в миллиметрах" type="number" inputMode="numeric" min={300} max={30000} value={surfaceW} onChange={(e) => { markStarted("surface_size"); setSurfaceW(Number(e.target.value) || 300); }} className="input-field min-w-0 w-full" />
             <span className="text-slate-400">×</span>
-            <input type="number" inputMode="numeric" min={300} max={30000} value={surfaceH} onChange={(e) => setSurfaceH(Number(e.target.value) || 300)} className="input-field w-28" />
+            <input aria-label="Длина помещения в миллиметрах" type="number" inputMode="numeric" min={300} max={30000} value={surfaceH} onChange={(e) => { markStarted("surface_size"); setSurfaceH(Number(e.target.value) || 300); }} className="input-field min-w-0 w-full" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {ROOM_SIZE_PRESETS.map((p) => (
               <button
+                type="button"
                 key={p.label}
-                onClick={() => { setSurfaceW(p.w); setSurfaceH(p.h); }}
+                aria-pressed={surfaceW === p.w && surfaceH === p.h}
+                onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-laminata", "surface", p.label); setSurfaceW(p.w); setSurfaceH(p.h); }}
                 className={`text-xs px-2.5 py-1 rounded border transition-colors ${
                   surfaceW === p.w && surfaceH === p.h
                     ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
@@ -190,20 +221,23 @@ export default function LaminateLayoutGenerator() {
 
         {/* Размер доски */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер доски (длина × ширина, мм)
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" inputMode="numeric" min={100} max={3000} value={boardW} onChange={(e) => setBoardW(Number(e.target.value) || 100)} className="input-field w-24" />
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">2</span>
+            Размер доски (длина × ширина)
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
+            <input aria-label="Длина доски в миллиметрах" type="number" inputMode="numeric" min={100} max={3000} value={boardW} onChange={(e) => { markStarted("material_size"); setBoardW(Number(e.target.value) || 100); }} className="input-field min-w-0 w-full" />
             <span className="text-slate-400">×</span>
-            <input type="number" inputMode="numeric" min={40} max={500} value={boardH} onChange={(e) => setBoardH(Number(e.target.value) || 40)} className="input-field w-24" />
+            <input aria-label="Ширина доски в миллиметрах" type="number" inputMode="numeric" min={40} max={500} value={boardH} onChange={(e) => { markStarted("material_size"); setBoardH(Number(e.target.value) || 40); }} className="input-field min-w-0 w-full" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {LAMINATE_SIZE_PRESETS.map((p) => (
               <button
+                type="button"
                 key={p.label}
-                onClick={() => { setBoardW(p.w); setBoardH(p.h); }}
+                aria-pressed={boardW === p.w && boardH === p.h}
+                onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-laminata", "material", p.label); setBoardW(p.w); setBoardH(p.h); }}
                 className={`text-xs px-2.5 py-1 rounded border transition-colors ${
                   boardW === p.w && boardH === p.h
                     ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
@@ -218,14 +252,17 @@ export default function LaminateLayoutGenerator() {
 
         {/* Способ укладки */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">3</span>
             Способ укладки
-          </label>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {LAMINATE_MODE_OPTIONS.map((m) => (
               <button
+                type="button"
                 key={m.value}
-                onClick={() => setMode(m.value)}
+                aria-pressed={mode === m.value}
+                onClick={() => { selectMode(m.value); setMode(m.value); }}
                 className={`text-left p-3 rounded-xl border transition-all ${
                   mode === m.value
                     ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 shadow-sm"
@@ -240,8 +277,15 @@ export default function LaminateLayoutGenerator() {
         </div>
       </div>
 
+      <ToolSectionNav
+        visible={hasStarted}
+        onParameters={() => scrollTo(parametersRef)}
+        onLayout={() => scrollTo(layoutRef)}
+        onResult={() => scrollTo(resultRef)}
+      />
+
       {/* Визуализация */}
-      <div className="card p-5 space-y-4">
+      <div ref={layoutRef} className="card scroll-mt-24 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Раскладка
@@ -250,6 +294,7 @@ export default function LaminateLayoutGenerator() {
             )}
           </h3>
           <button
+            type="button"
             onClick={handleExportPNG}
             className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-700 transition-colors"
           >
@@ -276,14 +321,23 @@ export default function LaminateLayoutGenerator() {
       </div>
 
       {/* Результат */}
-      <div className="card p-5">
+      <div ref={resultRef} className="card scroll-mt-24 p-5">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           Результат
         </h3>
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/60 dark:bg-amber-900/20">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">К закупке с запасом</p>
+          <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+            <p className="text-3xl font-bold text-slate-950 dark:text-white">{result.purchaseBoards} шт</p>
+            <p className="pb-1 text-xs text-slate-600 dark:text-slate-300">
+              {result.basePurchaseBoards} на схему + {result.purchaseReserveBoards} запас
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.purchaseBoards}</p>
-            <p className="text-xs text-slate-500">Досок к закупке</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.totalBoards}</p>
+            <p className="text-xs text-slate-500">Элементов по схеме</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-amber-700 dark:text-amber-500">{result.wholeBoards}</p>
@@ -312,7 +366,7 @@ export default function LaminateLayoutGenerator() {
             Перенесём в калькулятор: {surfaceAreaM2} м² пола — посчитаем упаковки ламината, подложку и плинтус с запасом.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link href={laminatCalcHref} className="btn-primary inline-flex text-sm no-underline">
+            <Link href={laminatCalcHref} onClick={() => trackToolRelatedClick("raskladka-laminata", "laminat-calculator")} className="btn-primary inline-flex text-sm no-underline">
               Упаковки, подложка, плинтус →
             </Link>
             <SaveToProjectButton

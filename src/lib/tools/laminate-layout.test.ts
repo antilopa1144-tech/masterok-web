@@ -11,6 +11,8 @@ describe("laminate-layout", () => {
       expect(r.rows).toBeDefined();
       // К закупке всегда не меньше уложенных по схеме (с запасом).
       expect(r.purchaseBoards).toBeGreaterThanOrEqual(Math.ceil(r.wholeBoards));
+      expect(r.purchaseBoards).toBe(r.basePurchaseBoards + r.purchaseReserveBoards);
+      expect(r.purchaseReserveBoards).toBeGreaterThan(0);
     });
 
     it("каждый ряд покрывает ширину помещения", () => {
@@ -50,6 +52,9 @@ describe("laminate-layout", () => {
       expect(herr.herringbone!.some((b) => b.angleDeg === -45)).toBe(true);
       // Ёлочка отходнее палубы.
       expect(herr.wastePercent).toBeGreaterThan(deck.wastePercent);
+      expect(herr.purchaseReserveBoards / herr.basePurchaseBoards).toBeGreaterThan(
+        deck.purchaseReserveBoards / deck.basePurchaseBoards,
+      );
     });
   });
 

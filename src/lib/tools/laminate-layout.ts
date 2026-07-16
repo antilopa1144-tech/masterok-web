@@ -39,7 +39,11 @@ export interface LaminateLayoutResult {
   cutBoards: number;
   /** Всего досок по схеме. */
   totalBoards: number;
-  /** Доски к закупке с учётом переиспользования отрезов + запас. */
+  /** Доски на схему после повторного использования подходящих отрезов, без запаса. */
+  basePurchaseBoards: number;
+  /** Дополнительные доски практического запаса. */
+  purchaseReserveBoards: number;
+  /** Доски к закупке с учётом повторного использования отрезов + запас. */
   purchaseBoards: number;
   /** Процент отхода. */
   wastePercent: number;
@@ -300,10 +304,32 @@ export function calculateLaminateLayout(
   if (mode === "herringbone") {
     const { boardsConsumed, ...base } = calculateHerringbone(surfaceW, surfaceH, boardW, boardH);
     const purchaseBoards = Math.ceil(boardsConsumed * (1 + HERRINGBONE_RESERVE));
-    return { mode, ...base, purchaseBoards, surfaceW, surfaceH, boardW, boardH, notes };
+    return {
+      mode,
+      ...base,
+      basePurchaseBoards: boardsConsumed,
+      purchaseReserveBoards: purchaseBoards - boardsConsumed,
+      purchaseBoards,
+      surfaceW,
+      surfaceH,
+      boardW,
+      boardH,
+      notes,
+    };
   }
 
   const { boardsConsumed, ...base } = calculateDeckLayout(surfaceW, surfaceH, boardW, boardH, mode);
   const purchaseBoards = Math.ceil(boardsConsumed * (1 + DECK_RESERVE));
-  return { mode, ...base, purchaseBoards, surfaceW, surfaceH, boardW, boardH, notes };
+  return {
+    mode,
+    ...base,
+    basePurchaseBoards: boardsConsumed,
+    purchaseReserveBoards: purchaseBoards - boardsConsumed,
+    purchaseBoards,
+    surfaceW,
+    surfaceH,
+    boardW,
+    boardH,
+    notes,
+  };
 }

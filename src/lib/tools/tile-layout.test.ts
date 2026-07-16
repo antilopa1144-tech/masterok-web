@@ -83,7 +83,23 @@ describe("tile-layout", () => {
       expect(diagonal.wastePercent).toBeGreaterThan(8);
       expect(diagonal.wastePercent).toBeLessThan(20);
       expect(diagonal.purchaseReserveTiles).toBeGreaterThan(0);
+      expect(diagonal.purchaseTiles).toBe(
+        diagonal.basePurchaseTiles + diagonal.purchaseReserveTiles,
+      );
       expect(diagonal.notes.length).toBeGreaterThan(0);
+    });
+
+    it("не считает каждый краевой добор отдельной целой плиткой к покупке", () => {
+      const r = calculateTileLayout(3000, 4000, 600, 600, 2, "diagonal");
+
+      // 24 целые плитки + 26 краевых половинок = 37 плиток на схему,
+      // затем 6 плиток запаса (+15%). UI раньше ошибочно показывал 50 + 6.
+      expect(r.wholeTiles).toBe(24);
+      expect(r.cutTiles).toBe(26);
+      expect(r.basePurchaseTiles).toBe(37);
+      expect(r.purchaseReserveTiles).toBe(6);
+      expect(r.purchaseTiles).toBe(43);
+      expect(r.purchaseTiles).toBeLessThan(r.totalTiles + r.purchaseReserveTiles);
     });
 
     it("есть и целые ромбы, и краевые доборы", () => {
@@ -102,6 +118,8 @@ describe("tile-layout", () => {
       expect(r.wholeTiles).toBe(7);
       expect(r.cutTiles).toBe(1);
       expect(r.cutBottom).toBe(0); // по высоте подрезки нет — плитка точно в размер
+      expect(r.purchaseTiles).toBe(r.basePurchaseTiles);
+      expect(r.purchaseTiles).toBeLessThanOrEqual(r.totalTiles);
     });
 
     it("крупные подрезы (>½ плитки) не схлопывают отход в ноль", () => {

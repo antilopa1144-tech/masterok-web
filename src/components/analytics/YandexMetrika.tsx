@@ -8,7 +8,7 @@ import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 
 declare global {
   interface Window {
-    ym?: (id: number, action: string, url?: string) => void;
+    ym?: (id: number, action: string, ...args: unknown[]) => void;
   }
 }
 
@@ -28,7 +28,15 @@ export default function YandexMetrika() {
       return;
     }
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
-    window.ym?.(YANDEX_METRIKA_COUNTER_ID, "hit", url);
+    // Next.js обновляет metadata асинхронно при клиентском переходе. Даём ему
+    // завершить текущий кадр и явно передаём title, иначе часть SPA-хитов
+    // попадает в Метрике в строку «Не определено».
+    const timeoutId = window.setTimeout(() => {
+      window.ym?.(YANDEX_METRIKA_COUNTER_ID, "hit", url, {
+        title: document.title,
+      });
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [pathname, searchParams]);
 
   return null;

@@ -89,3 +89,42 @@ export function trackRuStoreClick(placement: string): void {
   trackEvent("rustore_click", { placement });
 }
 
+export type ToolInteractionSource =
+  | "surface_size"
+  | "material_size"
+  | "layout_mode"
+  | "joint_width"
+  | "preset";
+
+export function trackToolStart(tool: string, source: ToolInteractionSource): void {
+  trackEvent("tool_start", { tool, source });
+}
+
+export function trackToolResultView(tool: string): void {
+  trackEvent("tool_result_view", { tool });
+}
+
+export function trackToolModeChange(tool: string, mode: string): void {
+  trackEvent("tool_mode_change", { tool, mode });
+}
+
+export function trackToolPresetSelect(
+  tool: string,
+  presetGroup: "surface" | "material",
+  preset: string,
+): void {
+  trackEvent("tool_preset_select", {
+    tool,
+    preset_group: presetGroup,
+    preset,
+  });
+}
+
+export function trackToolExport(tool: string, format: "png"): void {
+  trackEvent("tool_export", { tool, format });
+}
+
+export function trackToolRelatedClick(tool: string, target: string): void {
+  trackEvent("tool_related_click", { tool, target });
+}
+

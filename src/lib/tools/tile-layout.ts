@@ -33,7 +33,12 @@ export interface DiagonalLayout {
 export interface TileLayoutResult {
   wholeTiles: number;
   cutTiles: number;
+  /** Количество отдельных элементов на схеме: целые плитки + все доборы. */
   totalTiles: number;
+  /** Целые плитки, реально расходуемые на схему после повторного использования подрезки. */
+  basePurchaseTiles: number;
+  /** Итог к покупке: расход на схему + практический запас. */
+  purchaseTiles: number;
   wastePercent: number;
   rows: number;
   cols: number;
@@ -119,7 +124,16 @@ function summarizeGrid(
   grid: TileCell[][],
   tileW: number,
   tileH: number,
-): Pick<TileLayoutResult, "wholeTiles" | "cutTiles" | "totalTiles" | "wastePercent" | "cols"> {
+): Pick<
+  TileLayoutResult,
+  | "wholeTiles"
+  | "cutTiles"
+  | "totalTiles"
+  | "basePurchaseTiles"
+  | "purchaseTiles"
+  | "wastePercent"
+  | "cols"
+> {
   let wholeTiles = 0;
   let cutTiles = 0;
   let maxCols = 0;
@@ -152,12 +166,21 @@ function summarizeGrid(
   // Из мелких подрезов парами выходит по 2 куска из 1 плитки → ceil(smallCuts/2)
   // плиток. Крупные подрезы расходуют по целой плитке каждый.
   const cutTilesConsumed = Math.ceil(smallCuts / 2) + largeCuts;
+  const basePurchaseTiles = wholeTiles + cutTilesConsumed;
   const cutConsumedArea = cutTilesConsumed * wholeArea;
   const wasteArea = Math.max(0, cutConsumedArea - cutPlacedArea);
   const consumedArea = wholeTiles * wholeArea + cutConsumedArea;
   const wastePercent = consumedArea > 0 ? (wasteArea / consumedArea) * 100 : 0;
 
-  return { wholeTiles, cutTiles, totalTiles, wastePercent, cols: maxCols };
+  return {
+    wholeTiles,
+    cutTiles,
+    totalTiles,
+    basePurchaseTiles,
+    purchaseTiles: basePurchaseTiles,
+    wastePercent,
+    cols: maxCols,
+  };
 }
 
 export function countCellsInGrid(grid: TileCell[][]): number {
@@ -478,7 +501,9 @@ export function calculateTileLayout(
     // две краевые половины, поэтому к закупке: целые + ceil(краевые/2) + запас.
     const edgeTilesConsumed = Math.ceil(edgeTiles / 2);
     const totalTiles = wholeTiles + edgeTiles;
-    const reserve = Math.ceil((wholeTiles + edgeTilesConsumed) * DIAGONAL_PURCHASE_RESERVE);
+    const basePurchaseTiles = wholeTiles + edgeTilesConsumed;
+    const reserve = Math.ceil(basePurchaseTiles * DIAGONAL_PURCHASE_RESERVE);
+    const purchaseTiles = basePurchaseTiles + reserve;
     // Отход диагонали: целые ромбы укладываются без потерь, а каждый краевой
     // ромб режется под 45° с заметным остатком. Эмпирически отход диагонали
     // стабильно выше прямой раскладки (треугольные доборы по периметру,
@@ -497,6 +522,8 @@ export function calculateTileLayout(
       wholeTiles,
       cutTiles: edgeTiles,
       totalTiles,
+      basePurchaseTiles,
+      purchaseTiles,
       purchaseReserveTiles: reserve,
       wastePercent,
       diagonal,

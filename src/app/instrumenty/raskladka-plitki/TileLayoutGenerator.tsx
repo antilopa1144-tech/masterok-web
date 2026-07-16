@@ -5,6 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
+import ToolSectionNav from "@/components/tools/ToolSectionNav";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import {
+  trackToolExport,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 import {
   calculateTileLayout,
   computeLayoutSvgBoundsMm,
@@ -141,6 +148,17 @@ export default function TileLayoutGenerator() {
   const [groutMm, setGroutMm] = useState(2);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("straight");
   const svgContainerRef = useRef<HTMLDivElement>(null);
+  const parametersRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const { hasStarted, markStarted, selectMode } = useToolAnalytics(
+    "raskladka-plitki",
+    resultRef,
+  );
+
+  const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   useEffect(() => {
     const parsed = parseTileLayoutFromSearchParams(searchParams);
@@ -156,6 +174,7 @@ export default function TileLayoutGenerator() {
   const handleExportPNG = useCallback(() => {
     const svgEl = svgContainerRef.current?.querySelector("svg");
     if (!svgEl) return;
+    trackToolExport("raskladka-plitki", "png");
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -181,9 +200,6 @@ export default function TileLayoutGenerator() {
     [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode],
   );
 
-  const purchaseTotal =
-    result.totalTiles + (result.purchaseReserveTiles > 0 ? result.purchaseReserveTiles : 0);
-
   const plitkaCalcHref = useMemo(
     () =>
       buildPlitkaCalculatorHref(
@@ -195,9 +211,9 @@ export default function TileLayoutGenerator() {
           groutMm,
           layoutMode,
         },
-        { tilesTotal: purchaseTotal },
+        { tilesTotal: result.purchaseTiles },
       ),
-    [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode, purchaseTotal],
+    [surfaceW, surfaceH, tileW, tileH, groutMm, layoutMode, result.purchaseTiles],
   );
 
   const surfaceAreaM2 = useMemo(
@@ -209,7 +225,7 @@ export default function TileLayoutGenerator() {
     () => [
       {
         name: "Плитка к закупке (с запасом)",
-        quantity: purchaseTotal,
+        quantity: result.purchaseTiles,
         unit: "шт",
         category: "Плитка",
       },
@@ -220,29 +236,41 @@ export default function TileLayoutGenerator() {
         category: "Плитка",
       },
     ],
-    [purchaseTotal, surfaceAreaM2],
+    [result.purchaseTiles, surfaceAreaM2],
   );
 
   return (
     <div className="max-w-3xl space-y-6">
       <RenovationHubStrip scenarioId="bathroom" showTileLayout compact />
-      <div className="card p-6 space-y-5">
+      <div ref={parametersRef} className="card scroll-mt-24 p-5 sm:p-6 space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Параметры раскладки</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Схема и итог обновляются сразу после изменения значения.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {surfaceAreaM2} м²
+          </span>
+        </div>
         {/* Surface size */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер поверхности (мм)
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" inputMode="numeric" min={100} max={20000} value={surfaceW} onChange={(e) => setSurfaceW(Number(e.target.value) || 100)} className="input-field w-28" />
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">1</span>
+            Размер поверхности
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
+            <input aria-label="Ширина поверхности в миллиметрах" type="number" inputMode="numeric" min={100} max={20000} value={surfaceW} onChange={(e) => { markStarted("surface_size"); setSurfaceW(Number(e.target.value) || 100); }} className="input-field min-w-0 w-full" />
             <span className="text-slate-400">×</span>
-            <input type="number" inputMode="numeric" min={100} max={20000} value={surfaceH} onChange={(e) => setSurfaceH(Number(e.target.value) || 100)} className="input-field w-28" />
+            <input aria-label="Высота поверхности в миллиметрах" type="number" inputMode="numeric" min={100} max={20000} value={surfaceH} onChange={(e) => { markStarted("surface_size"); setSurfaceH(Number(e.target.value) || 100); }} className="input-field min-w-0 w-full" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {SURFACE_SIZE_PRESETS.map((p) => (
               <button
+                type="button"
                 key={p.label}
-                onClick={() => { setSurfaceW(p.w); setSurfaceH(p.h); }}
+                aria-pressed={surfaceW === p.w && surfaceH === p.h}
+                onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-plitki", "surface", p.label); setSurfaceW(p.w); setSurfaceH(p.h); }}
                 className={`text-xs px-2.5 py-1 rounded border transition-colors ${
                   surfaceW === p.w && surfaceH === p.h
                     ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
@@ -257,20 +285,23 @@ export default function TileLayoutGenerator() {
 
         {/* Tile size */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер плитки (мм)
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" inputMode="numeric" min={10} max={2000} value={tileW} onChange={(e) => setTileW(Number(e.target.value) || 10)} className="input-field w-24" />
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">2</span>
+            Размер плитки
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
+            <input aria-label="Ширина плитки в миллиметрах" type="number" inputMode="numeric" min={10} max={2000} value={tileW} onChange={(e) => { markStarted("material_size"); setTileW(Number(e.target.value) || 10); }} className="input-field min-w-0 w-full" />
             <span className="text-slate-400">×</span>
-            <input type="number" inputMode="numeric" min={10} max={2000} value={tileH} onChange={(e) => setTileH(Number(e.target.value) || 10)} className="input-field w-24" />
+            <input aria-label="Высота плитки в миллиметрах" type="number" inputMode="numeric" min={10} max={2000} value={tileH} onChange={(e) => { markStarted("material_size"); setTileH(Number(e.target.value) || 10); }} className="input-field min-w-0 w-full" />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {TILE_SIZE_PRESETS.map((p) => (
               <button
+                type="button"
                 key={p.label}
-                onClick={() => { setTileW(p.w); setTileH(p.h); }}
+                aria-pressed={tileW === p.w && tileH === p.h}
+                onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-plitki", "material", p.label); setTileW(p.w); setTileH(p.h); }}
                 className={`text-xs px-2.5 py-1 rounded border transition-colors ${
                   tileW === p.w && tileH === p.h
                     ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
@@ -285,14 +316,17 @@ export default function TileLayoutGenerator() {
 
         {/* Layout mode */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">3</span>
             Способ укладки
-          </label>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {LAYOUT_MODE_OPTIONS.map((m) => (
               <button
+                type="button"
                 key={m.value}
-                onClick={() => setLayoutMode(m.value)}
+                aria-pressed={layoutMode === m.value}
+                onClick={() => { selectMode(m.value); setLayoutMode(m.value); }}
                 className={`text-left p-3 rounded-xl border transition-all ${
                   layoutMode === m.value
                     ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 shadow-sm"
@@ -308,7 +342,8 @@ export default function TileLayoutGenerator() {
 
         {/* Grout */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <span className="flex size-5 items-center justify-center rounded-full bg-accent-100 text-[11px] font-bold text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">4</span>
             Ширина шва: {groutMm} мм
           </label>
           <input
@@ -317,7 +352,7 @@ export default function TileLayoutGenerator() {
             max={10}
             step={0.5}
             value={groutMm}
-            onChange={(e) => setGroutMm(Number(e.target.value))}
+            onChange={(e) => { markStarted("joint_width"); setGroutMm(Number(e.target.value)); }}
             className="w-full accent-accent-500"
           />
           <div className="flex justify-between text-xs text-slate-400 mt-1">
@@ -327,8 +362,15 @@ export default function TileLayoutGenerator() {
         </div>
       </div>
 
+      <ToolSectionNav
+        visible={hasStarted}
+        onParameters={() => scrollTo(parametersRef)}
+        onLayout={() => scrollTo(layoutRef)}
+        onResult={() => scrollTo(resultRef)}
+      />
+
       {/* Visual layout */}
-      <div className="card p-5 space-y-4">
+      <div ref={layoutRef} className="card scroll-mt-24 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Раскладка
@@ -339,6 +381,7 @@ export default function TileLayoutGenerator() {
             )}
           </h3>
           <button
+            type="button"
             onClick={handleExportPNG}
             className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-700 transition-colors"
           >
@@ -376,10 +419,23 @@ export default function TileLayoutGenerator() {
       </div>
 
       {/* Stats */}
-      <div className="card p-5">
+      <div ref={resultRef} className="card scroll-mt-24 p-5">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           Результат
         </h3>
+        <div className="mb-5 rounded-xl border border-accent-200 bg-accent-50 p-4 dark:border-accent-800/60 dark:bg-accent-900/20">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-300">
+            {result.purchaseReserveTiles > 0 ? "К закупке с запасом" : "Минимум для этой раскладки"}
+          </p>
+          <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+            <p className="text-3xl font-bold text-slate-950 dark:text-white">{result.purchaseTiles} шт</p>
+            <p className="pb-1 text-xs text-slate-600 dark:text-slate-300">
+              {result.purchaseReserveTiles > 0
+                ? `${result.basePurchaseTiles} на схему + ${result.purchaseReserveTiles} запас`
+                : "с повторным использованием подходящих подрезок"}
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.totalTiles}</p>
@@ -398,17 +454,6 @@ export default function TileLayoutGenerator() {
             <p className="text-xs text-slate-500">Отход материала</p>
           </div>
         </div>
-
-        {result.purchaseReserveTiles > 0 && (
-          <div className="rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 mt-4">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-              К закупке с запасом на диагональ: {purchaseTotal} шт
-            </p>
-            <p className="text-xs text-amber-700/90 dark:text-amber-300/90 mt-1">
-              По схеме {result.totalTiles} + {result.purchaseReserveTiles} на подрезку под 45° и бой
-            </p>
-          </div>
-        )}
 
         {result.notes.length > 0 && (
           <ul className="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-4 mt-3">
@@ -443,7 +488,7 @@ export default function TileLayoutGenerator() {
             сразу посчитаем клей, затирку и упаковки.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link href={plitkaCalcHref} className="btn-primary inline-flex text-sm no-underline">
+            <Link href={plitkaCalcHref} onClick={() => trackToolRelatedClick("raskladka-plitki", "plitka-calculator")} className="btn-primary inline-flex text-sm no-underline">
               Клей, затирка и упаковки →
             </Link>
             <SaveToProjectButton
