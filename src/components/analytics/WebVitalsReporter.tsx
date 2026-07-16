@@ -2,6 +2,7 @@
 
 import { useReportWebVitals } from "next/web-vitals";
 import { Suspense } from "react";
+import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 
 /**
  * Real User Monitoring — отправляет Web Vitals (LCP, INP, CLS, FCP, TTFB)
@@ -26,10 +27,9 @@ function reportMetric(metric: {
   const ym = getYm();
   if (!ym) return;
 
-  const counter = parseInt(process.env.NEXT_PUBLIC_YM_COUNTER ?? "", 10);
-  if (!counter) return;
+  if (!YANDEX_METRIKA_COUNTER_ID) return;
 
-  ym(counter, "params", {
+  ym(YANDEX_METRIKA_COUNTER_ID, "params", {
     [`web_vital_${metric.name.toLowerCase()}`]: Math.round(metric.value),
     [`web_vital_${metric.name.toLowerCase()}_rating`]: metric.rating,
     web_vital_navigation: metric.navigationType,

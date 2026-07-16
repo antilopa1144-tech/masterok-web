@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`;
   const description = fullDescription.length <= 160
     ? fullDescription
-    : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, нормами по ГОСТ и пошаговыми инструкциями.`;
+    : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, рекомендациями и пошаговыми инструкциями.`;
   // SEO-title по единой системе сайта; брендовый « — Мастерок» добавит template.
   return {
     ...buildPageMetadata({

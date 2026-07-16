@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MASTEROK_RUSTORE_URL, SITE_FOUNDING_DATE, SITE_NAME, SITE_URL } from "@/lib/site";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { buildPageMetadata } from "@/lib/metadata";
+import TrackedRuStoreLink from "@/components/analytics/TrackedRuStoreLink";
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
 
@@ -26,12 +27,12 @@ const UI_TEXT = {
     `${CALC_COUNT}+ бесплатных строительных калькуляторов в вашем кармане. Работает без интернета. Идеально для стройки.`,
   downloadRuStore: "📲 Скачать в RuStore",
   onlineVersion: "Онлайн-версия",
-  heroMeta: "Бесплатно · Android · Без рекламы в расчётах",
+  heroMeta: "Бесплатно · Android · работает без интернета",
   featuresTitle: "Что умеет приложение",
   ctaTitle: "Скачайте бесплатно",
   ctaDescription:
-    `Более 10 000 строителей и мастеров уже используют ${SITE_NAME} на стройке. Присоединяйтесь!`,
-  ctaMeta: "Android · Бесплатно · Без подписки",
+    `Установите ${SITE_NAME}, чтобы калькуляторы и сохранённые проекты были под рукой даже без интернета.`,
+  ctaMeta: "Android · Бесплатно · RuStore",
 } as const;
 
 const FEATURES = [
@@ -90,7 +91,6 @@ const appJsonLd = {
     price: "0",
     priceCurrency: "RUB",
   },
-  softwareVersion: "1.5.0",
   datePublished: SITE_FOUNDING_DATE,
   description: META.description,
   publisher: {
@@ -134,14 +134,13 @@ export default function PrilozheniePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href="https://www.rustore.ru/catalog/app/ru.masterok.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <TrackedRuStoreLink
+                  href={MASTEROK_RUSTORE_URL}
+                  placement="app_hero"
                   className="btn-primary text-base px-8 py-3.5"
                 >
                   {UI_TEXT.downloadRuStore}
-                </a>
+                </TrackedRuStoreLink>
                 <Link href="/" className="btn-secondary text-base">
                   {UI_TEXT.onlineVersion}
                 </Link>
@@ -187,39 +186,26 @@ export default function PrilozheniePage() {
         </div>
       </section>
 
-      {/* Статистика и отзывы */}
+      {/* Проверяемые свойства приложения без динамических рейтингов и версий. */}
       <section className="border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">1000+</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Скачиваний</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">4.9 ★</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Рейтинг в RuStore</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{CALC_COUNT}+</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-900">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">{CALC_COUNT}+</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Калькуляторов</div>
             </div>
-            <div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">v1.5</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Актуальная версия</div>
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-900">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Офлайн</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Без интернета</div>
             </div>
-          </div>
-
-          {/* Последнее обновление */}
-          <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-              Что нового в v1.5.0
-            </p>
-            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
-              <li>• Единый движок расчётов, синхронизация с сайтом</li>
-              <li>• Улучшенный ИИ-прораб Михалыч</li>
-              <li>• Исправлены краши в 8 калькуляторах</li>
-              <li>• Уменьшен размер приложения</li>
-            </ul>
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-900">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Проекты</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Сохранение расчётов</div>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-900">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">0 ₽</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Скачивание</div>
+            </div>
           </div>
         </div>
       </section>
@@ -245,14 +231,13 @@ export default function PrilozheniePage() {
           <p className="text-accent-100 mb-6 max-w-lg mx-auto">
             {UI_TEXT.ctaDescription}
           </p>
-          <a
-            href="https://www.rustore.ru/catalog/app/ru.masterok.app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <TrackedRuStoreLink
+            href={MASTEROK_RUSTORE_URL}
+            placement="app_bottom_cta"
             className="inline-flex items-center gap-2 bg-white text-accent-700 font-bold px-8 py-3.5 rounded-xl hover:bg-accent-50 transition-colors no-underline"
           >
             {UI_TEXT.downloadRuStore}
-          </a>
+          </TrackedRuStoreLink>
           <p className="text-accent-100 text-sm mt-3">
             {UI_TEXT.ctaMeta}
           </p>

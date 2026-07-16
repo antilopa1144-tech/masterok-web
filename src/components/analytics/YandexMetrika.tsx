@@ -4,8 +4,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-
-const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
+import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 
 declare global {
   interface Window {
@@ -23,13 +22,13 @@ export default function YandexMetrika() {
   const skipFirst = useRef(true);
 
   useEffect(() => {
-    if (!YM_COUNTER) return;
+    if (!YANDEX_METRIKA_COUNTER_ID) return;
     if (skipFirst.current) {
       skipFirst.current = false;
       return;
     }
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
-    window.ym?.(Number(YM_COUNTER), "hit", url);
+    window.ym?.(YANDEX_METRIKA_COUNTER_ID, "hit", url);
   }, [pathname, searchParams]);
 
   return null;

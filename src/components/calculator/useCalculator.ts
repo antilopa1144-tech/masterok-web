@@ -13,7 +13,7 @@ import { getCategoryById } from "@/lib/calculators/categories";
 import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { shareOrCopy } from "@/lib/clipboard";
-import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackComparisonOpen } from "@/lib/analytics";
+import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackCalculatorStart, trackComparisonOpen } from "@/lib/analytics";
 import {
   addCalculationHistory,
   getAccuracyModeSetting,
@@ -89,6 +89,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [showComparison, setShowComparison] = useState(false);
   const [customModifiers, setCustomModifiersState] = useState<Partial<AccuracyModifiers>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const hasTrackedStartRef = useRef(false);
 
   const category = getCategoryById(calculator.category);
 
@@ -160,6 +161,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   useEffect(() => () => clearTimeout(debounceRef.current), []);
 
   const handleChange = useCallback((key: string, value: number) => {
+    if (!hasTrackedStartRef.current) {
+      hasTrackedStartRef.current = true;
+      trackCalculatorStart(calculator.slug);
+    }
     setValues((prev) => {
       const next: Record<string, number> = { ...prev, [key]: value };
       // Доменные правила зависимых полей (каталог утеплителя, толщина по

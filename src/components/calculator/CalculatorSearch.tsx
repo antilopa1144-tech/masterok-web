@@ -7,6 +7,8 @@ import type { CalculatorMeta } from "@/lib/calculators/types";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CALCULATOR_UI_TEXT } from "./uiText";
+import { matchesSearchText, rankCalculatorSearch } from "@/lib/site-search";
+import { trackSearchNoResults, trackSearchSelection } from "@/lib/analytics";
 
 interface SearchResult {
   type: "calculator" | "blog" | "checklist" | "tool";
@@ -49,15 +51,15 @@ export default function CalculatorSearch({
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastEmptyQueryRef = useRef("");
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const results = useMemo((): SearchResult[] => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return [];
 
-    const calcResults: SearchResult[] = calculators
-      .filter((c) => [c.title, c.description, ...c.tags].join(" ").toLowerCase().includes(q))
+    const calcResults: SearchResult[] = rankCalculatorSearch(q, calculators)
       .slice(0, 5)
       .map((c) => {
         const cat = CATEGORIES.find((ct) => ct.id === c.category);
@@ -75,7 +77,7 @@ export default function CalculatorSearch({
       });
 
     const blogResults: SearchResult[] = (blogPosts ?? [])
-      .filter((p) => [p.title, p.description, p.category].join(" ").toLowerCase().includes(q))
+      .filter((p) => matchesSearchText(q, [p.title, p.description, p.category]))
       .slice(0, 2)
       .map((p) => ({
         type: "blog",
@@ -90,7 +92,7 @@ export default function CalculatorSearch({
       }));
 
     const checklistResults: SearchResult[] = (checklists ?? [])
-      .filter((cl) => [cl.title, cl.description, cl.category].join(" ").toLowerCase().includes(q))
+      .filter((cl) => matchesSearchText(q, [cl.title, cl.description, cl.category]))
       .slice(0, 1)
       .map((cl) => ({
         type: "checklist",
@@ -105,7 +107,7 @@ export default function CalculatorSearch({
       }));
 
     const toolResults: SearchResult[] = (tools ?? [])
-      .filter((t) => [t.title, t.description].join(" ").toLowerCase().includes(q))
+      .filter((t) => matchesSearchText(q, [t.title, t.description]))
       .slice(0, 2)
       .map((t) => ({
         type: "tool",
@@ -123,6 +125,17 @@ export default function CalculatorSearch({
   }, [query, calculators, blogPosts, checklists, tools]);
 
   const showDropdown = isOpen && query.trim().length > 0;
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    if (!isOpen || trimmedQuery.length < 3 || results.length > 0) return;
+    const timer = setTimeout(() => {
+      if (lastEmptyQueryRef.current === trimmedQuery) return;
+      lastEmptyQueryRef.current = trimmedQuery;
+      trackSearchNoResults(trimmedQuery);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [isOpen, query, results.length]);
 
   // SearchAction schema на главной указывает ?q= — подставляем запрос из URL.
   useEffect(() => {
@@ -173,13 +186,14 @@ export default function CalculatorSearch({
       } else if (e.key === "Enter" && activeIndex >= 0) {
         e.preventDefault();
         const item = results[activeIndex];
+        trackSearchSelection(query, item.type, item.id);
         close();
         router.push(item.href);
       } else if (e.key === "Escape") {
         setIsOpen(false);
       }
     },
-    [showDropdown, results, activeIndex, close, router],
+    [showDropdown, results, activeIndex, query, close, router],
   );
 
   return (
@@ -230,7 +244,10 @@ export default function CalculatorSearch({
                   >
                     <Link
                       href={item.href}
-                      onClick={close}
+                      onClick={() => {
+                        trackSearchSelection(query, item.type, item.id);
+                        close();
+                      }}
                       className={`flex items-center gap-3 px-4 py-3 no-underline transition-colors ${
                         i === activeIndex ? "bg-accent-50 dark:bg-accent-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-700"
                       }`}
@@ -255,6 +272,18 @@ export default function CalculatorSearch({
           ) : (
             <div className="px-4 py-6 text-center">
               <p className="text-slate-400 dark:text-slate-400 text-sm">{CALCULATOR_UI_TEXT.searchEmpty(query)}</p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2" aria-label="Примеры запросов">
+                {["стяжка", "газобетон", "утеплить лоджию"].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setQuery(suggestion)}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
               <Link
                 href="/mikhalych/"
                 className="text-sm text-accent-700 hover:text-accent-800 mt-2 inline-block no-underline"

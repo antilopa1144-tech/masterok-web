@@ -6,7 +6,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `Все калькуляторы — ${SITE_NAME}`,
-  description: `Полный список всех строительных калькуляторов ${SITE_NAME}: фундамент, стены, кровля, полы, отделка, фасад, потолки. Расчёт материалов по ГОСТ и СНиП.`,
+  description: `Полный список всех строительных калькуляторов ${SITE_NAME}: фундамент, стены, кровля, полы, отделка, фасад, потолки. Расход, запас и количество к покупке.`,
   alternates: { canonical: `${SITE_URL}/all/` },
   robots: { index: true, follow: true },
 };
@@ -107,7 +107,7 @@ export default function AllCalculatorsPage() {
             <strong className="text-slate-700 dark:text-slate-300">
               {ALL_CALCULATORS_META.length}
             </strong>{" "}
-            калькуляторов. Расчёты по ГОСТ и СНиП.{" "}
+            калькуляторов с нормами расхода, запасом и округлением до упаковок.{" "}
             <Link
               href="/metodologiya/"
               className="text-accent-700 dark:text-accent-400 hover:underline"

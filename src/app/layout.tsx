@@ -12,10 +12,9 @@ import YandexMetrikaLoader from "@/components/analytics/YandexMetrikaLoader";
 import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
 import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
+import { YANDEX_METRIKA_COUNTER } from "@/lib/analytics/config";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
-
-const YM_COUNTER = process.env.NEXT_PUBLIC_YM_COUNTER || "108155444";
 
 // Применяет тему до первой отрисовки (без мигания).
 // Карта тем дублирует src/lib/theme.ts: значение = тёмная ли тема.
@@ -38,7 +37,7 @@ const THEME_INIT_SCRIPT = `(() => {
   }
 })();`;
 
-const YM_INIT_SCRIPT = getYandexMetrikaDeferredInitScript(YM_COUNTER);
+const YM_INIT_SCRIPT = getYandexMetrikaDeferredInitScript(YANDEX_METRIKA_COUNTER);
 
 // Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
 // font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
@@ -135,7 +134,7 @@ export default async function RootLayout({
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`https://mc.yandex.ru/watch/${YM_COUNTER}`}
+              src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_COUNTER}`}
               style={{ position: "absolute", left: "-9999px" }}
               alt=""
               aria-hidden="true"

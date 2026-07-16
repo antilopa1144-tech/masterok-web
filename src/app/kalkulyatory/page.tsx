@@ -8,7 +8,7 @@ import { buildPageMetadata } from "@/lib/metadata";
 
 const META = {
   title: `Все строительные калькуляторы онлайн`,
-  description: "Полный каталог строительных калькуляторов: бетон, кирпич, кровля, полы, отделка. Расчёт материалов по ГОСТ и СНиП.",
+  description: "Полный каталог строительных калькуляторов: бетон, кирпич, кровля, полы, отделка. Расход материалов, запас и количество к покупке.",
 } as const;
 
 const PAGE_URL = `${SITE_URL}/kalkulyatory/`;
@@ -113,7 +113,6 @@ export default function KalkulyatoryPage() {
     </div>
   );
 }
-
 
 
 

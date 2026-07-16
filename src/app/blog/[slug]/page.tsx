@@ -15,7 +15,7 @@ const UI_TEXT = {
   breadcrumbBlog: "Блог",
   tagsLabel: "Теги:",
   articleCtaTitle: "Рассчитайте материалы онлайн",
-  articleCtaDescription: "Используйте наш калькулятор для точного расчёта по ГОСТ и СНиП",
+  articleCtaDescription: "Используйте калькулятор, чтобы оценить расход, запас и количество материалов к покупке",
   allArticles: "← Все статьи",
   allCalculators: "Все калькуляторы",
   calculatorCtaFallback: "Открыть калькулятор",

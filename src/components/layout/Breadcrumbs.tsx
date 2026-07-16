@@ -17,12 +17,14 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
   if (!items || items.length === 0) return null
 
   return (
-    <nav aria-label="breadcrumb" className="mb-6">
+    <nav
+      aria-label="breadcrumb"
+      className="mb-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       <ol
-        className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-300"
-        role="breadcrumb"
+        className="flex w-max min-w-full items-center gap-2 whitespace-nowrap pb-1 text-sm text-slate-600 dark:text-slate-300"
       >
-        <li>
+        <li className="shrink-0">
           <Link
             href="/"
             className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -33,8 +35,8 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
         {items.map((item, index) => (
           <React.Fragment key={item.href || item.label}>
-            <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-400" aria-hidden="true" />
-            <li>
+            <ChevronRight className="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-400" aria-hidden="true" />
+            <li className="shrink-0">
               {item.href ? (
                 <Link
                   href={item.href}

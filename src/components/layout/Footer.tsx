@@ -20,7 +20,7 @@ const UI_TEXT = {
   reportDescription: "Напишите напрямую — читаю каждый отзыв",
   leaveFeedback: "Оставить отзыв →",
   copyrightSuffix: `${SITE_NAME}. Все расчёты носят справочный характер.`,
-  standards: "Расчёты по ГОСТ и СНиП",
+  standards: "Методика и нормы расхода",
   popularCalculatorFallback: "Калькулятор",
 } as const;
 

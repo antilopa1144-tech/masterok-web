@@ -6,6 +6,7 @@ import { createProject, getProjects, saveEntryToProject } from "@/lib/storage/pr
 import type { ProjectWithEntries } from "@/lib/storage/types";
 import { calendarHref } from "@/lib/renovation-hub/context";
 import type { RenovationScenarioId } from "@/lib/renovation-calendar/scenarios";
+import { trackProjectSave } from "@/lib/analytics";
 
 interface Props {
   calcId: string;
@@ -57,7 +58,7 @@ export default function SaveToProjectButton({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const handleSave = async (projectId: string) => {
+  const handleSave = async (projectId: string, createdProject = false) => {
     await saveEntryToProject(projectId, {
       calcId, calcTitle, slug, categorySlug,
       materials: materials.map((m) => ({
@@ -68,6 +69,7 @@ export default function SaveToProjectButton({
       })),
       ts: Date.now(),
     });
+    trackProjectSave(calcId, createdProject);
     setSaved(projectId);
     setTimeout(() => { setSaved(null); setOpen(false); }, 1200);
   };
@@ -77,7 +79,7 @@ export default function SaveToProjectButton({
     if (!name) return;
     setCreating(true);
     const project = await createProject(name);
-    await handleSave(project.id);
+    await handleSave(project.id, true);
     setNewProjectName("");
     setCreating(false);
     void loadProjects();

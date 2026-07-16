@@ -22,7 +22,7 @@ const UI_TEXT = {
   titleLongTpl: ": расчёт материалов онлайн",
   titleShortTpl: " онлайн",
   descriptionPrefix: "Бесплатные калькуляторы:",
-  descriptionSuffix: "Точный расчёт по ГОСТ.",
+  descriptionSuffix: "Расход материалов, запас и итог к покупке.",
   itemListNameSuffix: "— строительные калькуляторы",
 } as const;
 

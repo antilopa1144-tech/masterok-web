@@ -12,13 +12,12 @@ import { formatSiteLastReviewedRu, SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
-import CalculatorNoscriptFields from "@/components/seo/CalculatorNoscriptFields";
 
 const UI_TEXT = {
   rootBreadcrumb: "Калькуляторы",
   defaultCategoryLabel: "Калькулятор",
   complexityLabels: ["Простой", "Стандартный", "Детальный"] as const,
-  standardsBadge: "По ГОСТ и СНиП",
+  methodologyBadge: "Как считаем",
   formulasTitle: "Формулы и нормы расчёта",
   howToUseTitle: "Как пользоваться калькулятором",
   faqTitle: "Частые вопросы",
@@ -191,9 +190,13 @@ export default async function CalculatorPage({ params }: PageProps) {
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.complexityLabels[calc.complexity - 1]}
                 </span>
-                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  {UI_TEXT.standardsBadge}
-                </span>
+                <Link
+                  href="/metodologiya/"
+                  title="Формулы, нормы расхода, запас и округление"
+                  className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 no-underline transition-colors hover:border-accent-300 hover:text-accent-700"
+                >
+                  {UI_TEXT.methodologyBadge} →
+                </Link>
                 <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   {UI_TEXT.updatedLabel} {LAST_REVIEWED_LABEL}
                 </span>
@@ -245,16 +248,6 @@ export default async function CalculatorPage({ params }: PageProps) {
               faq: calc.faq,
             }} />
             </Suspense>
-
-            {/* Серверный HTML калькулятора для поисковиков (Googlebot).
-                Обычные пользователи видят интерактивный React-калькулятор.
-                Googlebot читает поля ввода, их лейблы и подсказки из <noscript>. */}
-            <CalculatorNoscriptFields
-              title={calc.title}
-              h1={calc.h1}
-              description={calc.metaDescription}
-              fields={calc.fields}
-            />
 
             {/* SEO/GEO/AEO контент — объединённый блок */}
             {calc.seoContent && (
