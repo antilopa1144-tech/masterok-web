@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useNearViewport } from "@/hooks/useNearViewport";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
@@ -14,6 +16,7 @@ import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { pluralizeRu } from "@/lib/format/pluralize";
+import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
 
 const MOBILE_PRIMARY_FIELD_COUNT = 6;
 
@@ -51,6 +54,8 @@ export default function CalculatorWithMikhalych({
 }: {
   calculator: CalculatorWidgetProps;
 }) {
+  const searchParams = useSearchParams();
+  const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -127,6 +132,15 @@ export default function CalculatorWithMikhalych({
     <>
       <div className="space-y-6">
         <TileLayoutTransferBanner />
+        {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (
+          <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+            <span aria-hidden>🧻</span>
+            <p>
+              Размеры перенесены из раскладки обоев — по плану раскроя нужно <strong>{wallpaperRollsHint} рулонов</strong>.
+              {" "}Здесь рассчитайте клей, грунтовку и расходники; количество рулонов сверяйте с планом раскроя.
+            </p>
+          </div>
+        )}
 
         {hasCalculated && result && (
           <nav
@@ -229,6 +243,23 @@ export default function CalculatorWithMikhalych({
           >
             {hasCalculated ? "Показать обновлённый результат" : "Рассчитать и показать результат"}
           </button>
+
+          {calculator.slug === "oboi" && (
+            <Link
+              href={buildWallpaperLayoutHref({
+                perimeter: values.perimeter,
+                height: values.height,
+                rollLength: values.rollLength,
+                rollWidth: values.rollWidth,
+                rapport: values.rapport,
+                reserveRolls: values.reserveRolls,
+              })}
+              className="flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline transition-colors hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300 dark:hover:bg-orange-950/40"
+            >
+              <span>Разложить полосы и увидеть раскрой рулонов</span>
+              <span aria-hidden>→</span>
+            </Link>
+          )}
         </div>
 
         {result && (

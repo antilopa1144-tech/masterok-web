@@ -15,6 +15,7 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getCategoryById } from "@/lib/calculators/categories";
 import { trackRecentCalculator } from "./RecentCalculators";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
+import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
 
 // Three.js — тяжёлая библиотека (~500 KB), нужна только для 2 калькуляторов из 70+.
 // Ленивая загрузка исключает three из основного бандла — экономия ~150 KB gzip.
@@ -30,6 +31,7 @@ interface Props {
 export default function CalculatorWidget({ calculator }: Props) {
   const searchParams = useSearchParams();
   const fromCalc = searchParams.get("from");
+  const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const fromCalcDef = useMemo(() => {
     if (!fromCalc || fromCalc === "raskladka") return null;
     return getCalculatorMetaBySlug(fromCalc);
@@ -96,6 +98,15 @@ export default function CalculatorWidget({ calculator }: Props) {
     <div className="space-y-6" onKeyDown={handleFormKeyDown}>
       {/* Баннер: значения перенесены из другого калькулятора */}
       <TileLayoutTransferBanner />
+      {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+          <span aria-hidden>🧻</span>
+          <p>
+            Размеры перенесены из раскладки обоев — по плану раскроя нужно <strong>{wallpaperRollsHint} рулонов</strong>.
+            {" "}Здесь рассчитайте клей, грунтовку и расходники; количество рулонов сверяйте с планом раскроя.
+          </p>
+        </div>
+      )}
       {fromCalcDef && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
           <span>📐</span>
@@ -204,6 +215,23 @@ export default function CalculatorWidget({ calculator }: Props) {
         >
           {hasCalculated ? CALCULATOR_UI_TEXT.saveToHistory : CALCULATOR_UI_TEXT.calculate}
         </button>
+
+        {calculator.slug === "oboi" && (
+          <Link
+            href={buildWallpaperLayoutHref({
+              perimeter: values.perimeter,
+              height: values.height,
+              rollLength: values.rollLength,
+              rollWidth: values.rollWidth,
+              rapport: values.rapport,
+              reserveRolls: values.reserveRolls,
+            })}
+            className="flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline transition-colors hover:border-orange-300 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300 dark:hover:bg-orange-950/40"
+          >
+            <span>Разложить полосы и увидеть раскрой рулонов</span>
+            <span aria-hidden>→</span>
+          </Link>
+        )}
       </div>
 
       {/* Результат */}
