@@ -41,24 +41,136 @@ function NumberInput({ label, value, unit, min, max, step, onChange }: {
   );
 }
 
+const STOCK_ACCENTS = ["#0f766e", "#0369a1", "#7c3aed", "#b45309", "#be123c", "#047857", "#4338ca", "#a21caf"];
+const CUT_FILLS = ["#ccfbf1", "#bae6fd", "#ddd6fe", "#fde68a", "#fecdd3", "#d1fae5"];
+
+function materialLabel(material: SheetMaterial): string {
+  if (material === "drywall") return "ГКЛ";
+  if (material === "osb") return "ОСП";
+  return "Лист";
+}
+
 function SurfaceLayoutSvg({ result, layer }: { result: SheetLayoutResult; layer: number }) {
   const layout = result.layers[layer - 1] ?? result.layers[0];
   const width = result.input.surfaceWidthMm;
   const height = result.input.surfaceHeightMm;
-  const stroke = Math.max(width, height) / 700;
+  const unit = Math.min(width, height);
+  const padX = Math.max(width * 0.055, unit * 0.12);
+  const padTop = Math.max(height * 0.17, unit * 0.2);
+  const padBottom = result.input.surface === "wall" ? Math.max(height * 0.2, unit * 0.24) : padTop;
+  const stroke = Math.max(width, height) / 760;
+  const labelSize = Math.max(34, unit / 24);
+  const sourceSheetByPiece = new Map(
+    result.stock.flatMap((sheet) => sheet.cuts.map((cut) => [cut.pieceId, sheet.index] as const)),
+  );
+  const title = result.input.surface === "wall"
+    ? `Вид стены · слой ${layer}`
+    : result.input.surface === "floor"
+      ? `Вид пола сверху · слой ${layer}`
+      : `Вид потолка снизу · слой ${layer}`;
+  const surfaceFill = result.input.surface === "wall" ? "#e7e2d9" : "#d8d4ca";
+  const panelFill = result.input.material === "osb"
+    ? "url(#sheet-osb-pattern)"
+    : result.input.material === "drywall"
+      ? "url(#sheet-gkl-gradient)"
+      : "url(#sheet-custom-gradient)";
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full min-w-[560px]" role="img" aria-label={`Раскладка листов, слой ${layer}`}>
-      <rect width={width} height={height} fill="#f8fafc" />
-      {layout.placements.map((piece) => (
-        <g key={piece.id}>
-          <rect x={piece.x} y={piece.y} width={piece.widthMm} height={piece.heightMm} fill={piece.whole ? "#0f766e" : "#5eead4"} stroke="#134e4a" strokeWidth={stroke} />
-          {piece.widthMm > width * 0.1 && piece.heightMm > height * 0.08 && (
-            <text x={piece.x + piece.widthMm / 2} y={piece.y + piece.heightMm / 2} textAnchor="middle" dominantBaseline="middle" fill={piece.whole ? "#ffffff" : "#134e4a"} fontSize={Math.max(26, Math.min(width, height) / 24)} fontWeight={700}>
-              {Math.round(piece.widthMm)}×{Math.round(piece.heightMm)}
-            </text>
-          )}
-        </g>
-      ))}
+    <svg
+      viewBox={`${-padX} ${-padTop} ${width + padX * 2} ${height + padTop + padBottom}`}
+      className="h-auto w-full"
+      role="img"
+      aria-label={`${title}. Показаны монтажные швы и детали из покупных листов`}
+    >
+      <defs>
+        <linearGradient id="sheet-scene-background" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f8fafc" />
+          <stop offset="1" stopColor="#e7f3f1" />
+        </linearGradient>
+        <linearGradient id="sheet-gkl-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fffef9" />
+          <stop offset="0.52" stopColor="#f4f1e9" />
+          <stop offset="1" stopColor="#e8e3d8" />
+        </linearGradient>
+        <linearGradient id="sheet-custom-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ecfeff" />
+          <stop offset="1" stopColor="#cbd5e1" />
+        </linearGradient>
+        <pattern id="sheet-osb-pattern" width={unit / 8} height={unit / 10} patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+          <rect width="100%" height="100%" fill="#d9bd88" />
+          <path d={`M 0 ${unit / 30} L ${unit / 10} ${unit / 55} M ${unit / 30} ${unit / 14} L ${unit / 8} ${unit / 11}`} stroke="#9a6f3c" strokeWidth={unit / 95} strokeLinecap="round" opacity="0.55" />
+          <path d={`M ${unit / 70} ${unit / 9} L ${unit / 11} ${unit / 8}`} stroke="#f4dfae" strokeWidth={unit / 120} strokeLinecap="round" opacity="0.8" />
+        </pattern>
+        <pattern id="sheet-cut-hatch" width={unit / 22} height={unit / 22} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2={unit / 22} stroke="#0f766e" strokeWidth={unit / 180} opacity="0.2" />
+        </pattern>
+        <filter id="sheet-panel-shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy={unit / 180} stdDeviation={unit / 130} floodColor="#0f172a" floodOpacity="0.2" />
+        </filter>
+        <filter id="sheet-wall-shadow" x="-10%" y="-15%" width="120%" height="135%">
+          <feDropShadow dx="0" dy={unit / 50} stdDeviation={unit / 38} floodColor="#0f172a" floodOpacity="0.2" />
+        </filter>
+        <clipPath id="sheet-surface-clip"><rect width={width} height={height} /></clipPath>
+      </defs>
+
+      <rect x={-padX} y={-padTop} width={width + padX * 2} height={height + padTop + padBottom} rx={unit / 30} fill="url(#sheet-scene-background)" />
+      <text x="0" y={-padTop * 0.54} fill="#0f172a" fontSize={labelSize * 1.08} fontWeight="700">{title}</text>
+      <text x="0" y={-padTop * 0.23} fill="#64748b" fontSize={labelSize * 0.68}>{materialLabel(result.input.material)} · {orientationLabel(result.input.surface, result.orientation).toLowerCase()}</text>
+
+      <line x1="0" y1={-padTop * 0.13} x2={width} y2={-padTop * 0.13} stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <line x1="0" y1={-padTop * 0.2} x2="0" y2={-padTop * 0.06} stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <line x1={width} y1={-padTop * 0.2} x2={width} y2={-padTop * 0.06} stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <rect x={width * 0.41} y={-padTop * 0.22} width={width * 0.18} height={labelSize * 1.1} rx={labelSize * 0.4} fill="#f8fafc" />
+      <text x={width / 2} y={-padTop * 0.12} textAnchor="middle" dominantBaseline="middle" fill="#475569" fontSize={labelSize * 0.72} fontWeight="600">{width.toLocaleString("ru-RU")} мм</text>
+
+      {result.input.surface === "wall" ? (
+        <>
+          <polygon points={`${-padX},0 0,${unit * 0.04} 0,${height} ${-padX},${height + padBottom * 0.46}`} fill="#dbe4e3" />
+          <polygon points={`${width},${unit * 0.04} ${width + padX},0 ${width + padX},${height + padBottom * 0.46} ${width},${height}`} fill="#d2dddc" />
+          <polygon points={`${-padX},${height + padBottom * 0.46} 0,${height} ${width},${height} ${width + padX},${height + padBottom * 0.46}`} fill="#c9bda9" />
+          <path d={`M ${-padX} ${height + padBottom * 0.46} L ${width + padX} ${height + padBottom * 0.46}`} stroke="#a89b86" strokeWidth={stroke} />
+        </>
+      ) : (
+        <rect x={-padX * 0.45} y={-padX * 0.35} width={width + padX * 0.9} height={height + padX * 0.7} rx={unit / 28} fill="#cbd5d1" filter="url(#sheet-wall-shadow)" />
+      )}
+
+      <rect width={width} height={height} fill={surfaceFill} stroke="#64748b" strokeWidth={stroke * 1.8} filter="url(#sheet-wall-shadow)" />
+      <g clipPath="url(#sheet-surface-clip)">
+        <path d={`M 0 ${height * 0.18} C ${width * 0.24} ${height * 0.12}, ${width * 0.4} ${height * 0.27}, ${width * 0.64} ${height * 0.18} S ${width * 0.9} ${height * 0.13}, ${width} ${height * 0.22}`} fill="none" stroke="#b6aea2" strokeWidth={stroke * 2} opacity="0.42" />
+        {layout.placements.map((piece) => {
+          const sourceSheet = sourceSheetByPiece.get(piece.id) ?? 0;
+          const accent = STOCK_ACCENTS[(Math.max(1, sourceSheet) - 1) % STOCK_ACCENTS.length];
+          const canShowBadge = piece.widthMm > labelSize * 1.8 && piece.heightMm > labelSize * 1.5;
+          const canShowSize = piece.widthMm > width * 0.1 && piece.heightMm > height * 0.11;
+          return (
+            <g key={piece.id} filter="url(#sheet-panel-shadow)">
+              <rect x={piece.x} y={piece.y} width={piece.widthMm} height={piece.heightMm} fill={panelFill} stroke={accent} strokeWidth={stroke * 1.55} />
+              <rect x={piece.x} y={piece.y} width={piece.widthMm} height={piece.heightMm} fill={accent} opacity={piece.whole ? 0.035 : 0.075} />
+              {!piece.whole && <rect x={piece.x} y={piece.y} width={piece.widthMm} height={piece.heightMm} fill="url(#sheet-cut-hatch)" />}
+              {canShowBadge && (
+                <g>
+                  <rect x={piece.x + labelSize * 0.3} y={piece.y + labelSize * 0.3} width={labelSize * 1.34} height={labelSize * 0.86} rx={labelSize * 0.28} fill={accent} />
+                  <text x={piece.x + labelSize * 0.97} y={piece.y + labelSize * 0.75} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontSize={labelSize * 0.53} fontWeight="800">Л{sourceSheet}</text>
+                </g>
+              )}
+              {canShowSize && (
+                <text x={piece.x + piece.widthMm / 2} y={piece.y + piece.heightMm / 2} textAnchor="middle" dominantBaseline="middle" fill="#334155" fontSize={labelSize * 0.7} fontWeight="650">
+                  {Math.round(piece.widthMm)}×{Math.round(piece.heightMm)}
+                </text>
+              )}
+              {canShowSize && !piece.whole && (
+                <text x={piece.x + piece.widthMm / 2} y={piece.y + piece.heightMm / 2 + labelSize * 0.82} textAnchor="middle" dominantBaseline="middle" fill={accent} fontSize={labelSize * 0.5} fontWeight="700">подрезка</text>
+              )}
+            </g>
+          );
+        })}
+      </g>
+      {result.input.surface === "wall" && <rect y={height - unit * 0.035} width={width} height={unit * 0.035} fill="#d6cbbc" stroke="#a89b86" strokeWidth={stroke * 0.55} />}
+
+      <line x1={-padX * 0.27} y1="0" x2={-padX * 0.27} y2={height} stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <line x1={-padX * 0.36} y1="0" x2={-padX * 0.18} y2="0" stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <line x1={-padX * 0.36} y1={height} x2={-padX * 0.18} y2={height} stroke="#64748b" strokeWidth={stroke * 0.7} />
+      <text x={-padX * 0.46} y={height / 2} textAnchor="middle" dominantBaseline="middle" transform={`rotate(-90 ${-padX * 0.46} ${height / 2})`} fill="#475569" fontSize={labelSize * 0.68} fontWeight="600">{height.toLocaleString("ru-RU")} мм</text>
     </svg>
   );
 }
@@ -67,11 +179,22 @@ function StockSheetSvg({ result, sheetIndex }: { result: SheetLayoutResult; shee
   const sheet = result.stock[sheetIndex];
   const width = result.orientedSheetWidthMm;
   const height = result.orientedSheetHeightMm;
+  const stroke = Math.max(width, height) / 420;
+  const labelSize = Math.max(30, Math.min(width, height) / 13);
+  const baseFill = result.input.material === "osb" ? "#d9bd88" : result.input.material === "drywall" ? "#f3f0e8" : "#dbeafe";
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900" role="img" aria-label={`Карта раскроя листа ${sheet.index}`}>
-      {sheet.cuts.map((cut, index) => (
-        <rect key={cut.pieceId} x={cut.x} y={cut.y} width={cut.widthMm} height={cut.heightMm} fill={index % 2 === 0 ? "#14b8a6" : "#2dd4bf"} stroke="#134e4a" strokeWidth={Math.max(width, height) / 450} />
-      ))}
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 shadow-inner dark:border-slate-700 dark:bg-slate-900" role="img" aria-label={`Карта раскроя листа ${sheet.index}`}>
+      <rect width={width} height={height} fill={baseFill} />
+      {sheet.cuts.map((cut, index) => {
+        const canShowLabel = cut.widthMm > labelSize * 1.8 && cut.heightMm > labelSize * 1.4;
+        return (
+          <g key={cut.pieceId}>
+            <rect x={cut.x} y={cut.y} width={cut.widthMm} height={cut.heightMm} fill={CUT_FILLS[index % CUT_FILLS.length]} stroke={STOCK_ACCENTS[(sheet.index - 1) % STOCK_ACCENTS.length]} strokeWidth={stroke} />
+            {canShowLabel && <text x={cut.x + cut.widthMm / 2} y={cut.y + cut.heightMm / 2} textAnchor="middle" dominantBaseline="middle" fill="#334155" fontSize={labelSize} fontWeight="750">{Math.round(cut.widthMm)}×{Math.round(cut.heightMm)}</text>}
+          </g>
+        );
+      })}
+      <rect x={stroke / 2} y={stroke / 2} width={width - stroke} height={height - stroke} fill="none" stroke="#334155" strokeWidth={stroke} />
     </svg>
   );
 }
@@ -282,12 +405,12 @@ export default function SheetLayoutGenerator() {
       <ToolSectionNav visible={hasStarted} onParameters={() => scrollTo(parametersRef)} onLayout={() => scrollTo(layoutRef)} onResult={() => scrollTo(resultRef)} />
 
       <div ref={layoutRef} className="card scroll-mt-24 space-y-5 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Схема поверхности</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Размер внутри детали — ширина × высота куска в миллиметрах.</p></div><button type="button" onClick={exportPng} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400">Скачать PNG</button></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Листы показаны прямо на основании: видны швы, подрезки и размеры деталей.</p></div><button type="button" onClick={exportPng} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400">Скачать PNG</button></div>
         {layers === 2 && <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">{[1, 2].map((value) => <button type="button" key={value} onClick={() => setActiveLayer(value)} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${activeLayer === value ? "bg-white text-teal-700 shadow-sm dark:bg-slate-700 dark:text-teal-300" : "text-slate-500"}`}>Слой {value}</button>)}</div>}
-        <div ref={svgRef} className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500"><span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-teal-700" /> Целый лист на схеме</span><span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-teal-300" /> Деталь с подрезкой</span></div>
+        <div ref={svgRef} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
+        <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300"><span className="flex items-center gap-2"><i className="flex size-6 shrink-0 items-center justify-center rounded-md bg-teal-700 text-[9px] not-italic font-bold text-white">Л1</i> Номер покупного листа</span><span className="flex items-center gap-2"><i className="size-5 shrink-0 rounded border border-teal-700 bg-[repeating-linear-gradient(45deg,#ccfbf1,#ccfbf1_3px,#99f6e4_3px,#99f6e4_4px)]" /> Штриховка — подрезка</span><span className="flex items-center gap-2"><i className="h-0.5 w-5 shrink-0 bg-slate-600" /> Тёмные линии — монтажные швы</span></div>
 
-        <div className="border-t border-slate-100 pt-5 dark:border-slate-800"><h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Карты раскроя листов</h3><p className="mt-1 text-xs text-slate-500">Одинаковые цвета — только для читаемости; подпишите детали по слою и позиции перед монтажом.</p>
+        <div className="border-t border-slate-100 pt-5 dark:border-slate-800"><h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Из каких листов вырезать детали</h3><p className="mt-1 text-xs text-slate-500">Метка «Л1» на стене ведёт к карте «Лист 1» ниже. Так видно, где используется целый лист, а где — его остаток.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{visibleStock.map((sheet) => <div key={sheet.index} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><div className="mb-2 flex items-center justify-between gap-2 text-xs"><strong className="text-slate-700 dark:text-slate-200">Лист {sheet.index}</strong><span className="text-slate-500">{sheet.cuts.length} деталей</span></div><StockSheetSvg result={result} sheetIndex={sheet.index - 1} /><p className="mt-2 text-[11px] text-slate-500">Остаток {sheet.offcutAreaM2} м²{sheet.largestOffcut && sheet.largestOffcut.areaM2 >= 0.05 ? ` · крупнейший ${sheet.largestOffcut.widthMm}×${sheet.largestOffcut.heightMm}` : ""}</p></div>)}</div>
           {result.stock.length > 4 && <button type="button" onClick={() => setShowAllStock((value) => !value)} className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{showAllStock ? "Свернуть карты" : `Показать все листы (${result.stock.length})`}</button>}
         </div>
