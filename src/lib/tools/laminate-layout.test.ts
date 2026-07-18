@@ -56,6 +56,16 @@ describe("laminate-layout", () => {
         deck.purchaseReserveBoards / deck.basePurchaseBoards,
       );
     });
+
+    it("не занижает закупку из-за разреженной направляющей сетки", () => {
+      const r = calculateLaminateLayout(4000, 5000, 1200, 100, "herringbone");
+      const exactBoardsByArea = (4000 * 5000) / (1200 * 100);
+
+      expect(r.basePurchaseBoards).toBe(Math.ceil(exactBoardsByArea));
+      expect(r.purchaseBoards).toBe(Math.ceil(exactBoardsByArea * 1.12));
+      expect(r.purchaseBoards * 1200 * 100).toBeGreaterThanOrEqual(4000 * 5000 * 1.12);
+      expect(r.wastePercent).toBe(12);
+    });
   });
 
   describe("безопасность закупки", () => {

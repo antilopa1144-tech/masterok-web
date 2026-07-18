@@ -302,13 +302,19 @@ export function calculateLaminateLayout(
   const notes = buildLaminateNotes(surfaceW, surfaceH, boardW, boardH, mode);
 
   if (mode === "herringbone") {
-    const { boardsConsumed, ...base } = calculateHerringbone(surfaceW, surfaceH, boardW, boardH);
-    const purchaseBoards = Math.ceil(boardsConsumed * (1 + HERRINGBONE_RESERVE));
+    const { boardsConsumed: _guideBoards, ...base } = calculateHerringbone(surfaceW, surfaceH, boardW, boardH);
+    // Старая направляющая сетка ёлочки описывает рисунок, но не является
+    // сплошной картой раскроя. Закупку поэтому считаем от чистой площади пола:
+    // точная потребность → практический запас ёлочки → округление до целой доски.
+    const exactBoardsByArea = (surfaceW * surfaceH) / (boardW * boardH);
+    const basePurchaseBoards = Math.ceil(exactBoardsByArea);
+    const purchaseBoards = Math.ceil(exactBoardsByArea * (1 + HERRINGBONE_RESERVE));
     return {
       mode,
       ...base,
-      basePurchaseBoards: boardsConsumed,
-      purchaseReserveBoards: purchaseBoards - boardsConsumed,
+      wastePercent: HERRINGBONE_RESERVE * 100,
+      basePurchaseBoards,
+      purchaseReserveBoards: purchaseBoards - basePurchaseBoards,
       purchaseBoards,
       surfaceW,
       surfaceH,
