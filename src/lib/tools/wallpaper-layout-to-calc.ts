@@ -13,6 +13,13 @@ export interface WallpaperCalculatorTransferValues {
   reserveRolls: number;
 }
 
+export interface WallpaperLayoutShareValues {
+  geometryMode: "rectangle" | "walls";
+  roomWidth?: number;
+  roomLength?: number;
+  input: WallpaperLayoutInput;
+}
+
 function round(value: number, digits = 3): number {
   const factor = 10 ** digits;
   return Math.round((value + Number.EPSILON) * factor) / factor;
@@ -60,13 +67,42 @@ export function buildWallpaperLayoutHref(values: Partial<WallpaperCalculatorTran
   return query ? `${WALLPAPER_LAYOUT_PATH}?${query}` : WALLPAPER_LAYOUT_PATH;
 }
 
+/** Полная ссылка на текущую раскладку, включая отдельные стены и тип совмещения. */
+export function buildWallpaperLayoutShareHref(values: WallpaperLayoutShareValues): string {
+  const { input } = values;
+  const params = new URLSearchParams();
+  params.set("mode", values.geometryMode);
+  if (values.geometryMode === "rectangle") {
+    if (values.roomWidth != null) params.set("roomWidth", String(round(values.roomWidth)));
+    if (values.roomLength != null) params.set("roomLength", String(round(values.roomLength)));
+  } else {
+    params.set("walls", input.walls.map((wall) => `${wall.name}:${round(wall.lengthM)}`).join("|"));
+  }
+  params.set("height", String(round(input.wallHeightM)));
+  params.set("rollWidth", String(round(input.rollWidthM)));
+  params.set("rollLength", String(round(input.rollLengthM)));
+  params.set("match", input.matchType);
+  params.set("rapport", String(round(input.rapportCm, 1)));
+  params.set("offset", String(round(input.offsetCm, 1)));
+  params.set("trim", String(round(input.trimAllowanceCm, 1)));
+  params.set("reserveRolls", String(Math.round(input.reserveRolls)));
+  return `${WALLPAPER_LAYOUT_PATH}?${params.toString()}`;
+}
+
 export function parseWallpaperLayoutSearchParams(params: URLSearchParams): {
+  geometryMode?: "rectangle" | "walls";
+  roomWidth?: number;
+  roomLength?: number;
+  walls?: WallpaperLayoutInput["walls"];
   perimeter?: number;
   height?: number;
   rollLength?: number;
   rollWidthM?: number;
   rapport?: number;
   reserveRolls?: number;
+  matchType?: WallpaperLayoutInput["matchType"];
+  offset?: number;
+  trimAllowance?: number;
 } {
   const readPositive = (key: string): number | undefined => {
     const value = Number(params.get(key));
@@ -78,13 +114,30 @@ export function parseWallpaperLayoutSearchParams(params: URLSearchParams): {
     return Number.isFinite(value) && value >= 0 ? value : undefined;
   };
   const rollWidth = readPositive("rollWidth");
+  const mode = params.get("mode");
+  const walls = params.get("walls")?.split("|").flatMap((entry, index) => {
+    const separator = entry.lastIndexOf(":");
+    if (separator < 1) return [];
+    const name = entry.slice(0, separator).trim();
+    const lengthM = Number(entry.slice(separator + 1));
+    if (!name || !Number.isFinite(lengthM) || lengthM <= 0) return [];
+    return [{ id: `wall-${index + 1}`, name, lengthM }];
+  });
+  const match = params.get("match");
 
   return {
+    geometryMode: mode === "rectangle" || mode === "walls" ? mode : undefined,
+    roomWidth: readPositive("roomWidth"),
+    roomLength: readPositive("roomLength"),
+    walls: walls && walls.length > 0 ? walls : undefined,
     perimeter: readPositive("perimeter"),
     height: readPositive("height"),
     rollLength: readPositive("rollLength"),
     rollWidthM: rollWidth == null ? undefined : rollWidth > 10 ? rollWidth / 1000 : rollWidth,
     rapport: readNonNegative("rapport"),
     reserveRolls: readNonNegative("reserveRolls"),
+    matchType: match === "free" || match === "straight" || match === "offset" ? match : undefined,
+    offset: readNonNegative("offset"),
+    trimAllowance: readNonNegative("trim"),
   };
 }

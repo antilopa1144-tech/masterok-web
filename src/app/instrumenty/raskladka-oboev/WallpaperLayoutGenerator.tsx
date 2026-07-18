@@ -12,6 +12,7 @@ import {
   trackToolPresetSelect,
   trackToolRelatedClick,
 } from "@/lib/analytics";
+import { shareOrCopy } from "@/lib/clipboard";
 import {
   buildRectangleWalls,
   calculateWallpaperLayout,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/tools/wallpaper-layout";
 import {
   buildWallpaperCalculatorHref,
+  buildWallpaperLayoutShareHref,
   parseWallpaperLayoutSearchParams,
 } from "@/lib/tools/wallpaper-layout-to-calc";
 
@@ -157,7 +159,7 @@ function RollPlan({ result, limit }: { result: WallpaperLayoutResult; limit?: nu
             <span className="font-semibold text-slate-700 dark:text-slate-200">Рулон {roll.index}</span>
             <span className="text-slate-500 dark:text-slate-400">
               {roll.cuts.length} полос · остаток {roll.remainderM.toLocaleString("ru-RU")} м
-              {roll.reusableRemainder ? " — сохранить" : ""}
+              {roll.remainderUse === "full-strip" ? " — хватит на полосу" : roll.remainderUse === "patch" ? " — для участков" : ""}
             </span>
           </div>
           <div className="relative h-9 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800" aria-label={`Раскрой рулона ${roll.index}`}>
@@ -185,7 +187,7 @@ function RollPlan({ result, limit }: { result: WallpaperLayoutResult; limit?: nu
             ))}
             {roll.remainderM > 0.001 && (
               <span
-                className={`absolute inset-y-0 right-0 ${roll.reusableRemainder ? "bg-emerald-300 dark:bg-emerald-700" : "bg-slate-300 dark:bg-slate-600"}`}
+                className={`absolute inset-y-0 right-0 ${roll.remainderUse === "full-strip" ? "bg-emerald-400 dark:bg-emerald-700" : roll.remainderUse === "patch" ? "bg-lime-300 dark:bg-lime-700" : "bg-slate-300 dark:bg-slate-600"}`}
                 style={{ width: `${(roll.remainderM / result.input.rollLengthM) * 100}%` }}
                 title={`Остаток: ${roll.remainderM.toLocaleString("ru-RU")} м`}
               />
@@ -215,6 +217,7 @@ export default function WallpaperLayoutGenerator() {
   const [trimAllowance, setTrimAllowance] = useState(10);
   const [reserveRolls, setReserveRolls] = useState(1);
   const [showAllRolls, setShowAllRolls] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const hydratedFromUrl = useRef(false);
   const svgRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
@@ -226,7 +229,11 @@ export default function WallpaperLayoutGenerator() {
     if (hydratedFromUrl.current) return;
     hydratedFromUrl.current = true;
     const parsed = parseWallpaperLayoutSearchParams(new URLSearchParams(searchParams.toString()));
-    if (parsed.perimeter != null) {
+    if (parsed.geometryMode != null) setGeometryMode(parsed.geometryMode);
+    if (parsed.roomWidth != null) setRoomWidth(parsed.roomWidth);
+    if (parsed.roomLength != null) setRoomLength(parsed.roomLength);
+    if (parsed.walls != null) setCustomWalls(parsed.walls);
+    if (parsed.perimeter != null && parsed.walls == null) {
       setGeometryMode("walls");
       setCustomWalls([{ id: "wall-1", name: "Все стены", lengthM: parsed.perimeter }]);
     }
@@ -238,6 +245,9 @@ export default function WallpaperLayoutGenerator() {
       setOffset(parsed.rapport / 2);
       setMatchType("straight");
     }
+    if (parsed.matchType != null) setMatchType(parsed.matchType);
+    if (parsed.offset != null) setOffset(parsed.offset);
+    if (parsed.trimAllowance != null) setTrimAllowance(parsed.trimAllowance);
     if (parsed.reserveRolls != null) setReserveRolls(parsed.reserveRolls);
   }, [searchParams]);
 
@@ -308,6 +318,24 @@ export default function WallpaperLayoutGenerator() {
     };
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
   }, []);
+
+  const shareLayout = useCallback(async () => {
+    const href = buildWallpaperLayoutShareHref({
+      geometryMode,
+      roomWidth,
+      roomLength,
+      input: result.input,
+    });
+    const outcome = await shareOrCopy({
+      title: "Раскладка обоев",
+      text: `Раскладка: ${result.purchaseRolls} рулонов, ${result.stripCount} полос`,
+      url: `${window.location.origin}${href}`,
+    });
+    if (outcome === "copied") {
+      setShareState("copied");
+      window.setTimeout(() => setShareState("idle"), 2500);
+    }
+  }, [geometryMode, result, roomLength, roomWidth]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -465,7 +493,8 @@ export default function WallpaperLayoutGenerator() {
           <div className="my-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-orange-400" /> Полотно</span>
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-rose-300" /> Подгонка рисунка</span>
-            <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-emerald-300" /> Остаток от 1 м</span>
+            <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-emerald-400" /> На полную полосу</span>
+            <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-lime-300" /> Для участков от 1 м</span>
           </div>
           {result.baseRolls > 0 ? (
             <>
@@ -500,7 +529,7 @@ export default function WallpaperLayoutGenerator() {
           <div><p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.stripCount}</p><p className="text-xs text-slate-500">Полос на стенах</p></div>
           <div><p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{result.cutLengthM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">Длина полосы</p></div>
           <div><p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{result.patternWasteM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">На подгонку рисунка</p></div>
-          <div><p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{result.reusableRemainderM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">Полезные остатки</p></div>
+          <div><p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{result.fullStripRemainderM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">На полные полосы</p></div>
         </div>
 
         <div className="mt-5 grid gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:bg-slate-900">
@@ -508,6 +537,7 @@ export default function WallpaperLayoutGenerator() {
           <p className="flex justify-between gap-3"><span className="text-slate-500">Полос из рулона</span><strong>{result.stripsPerRollRange.min === result.stripsPerRollRange.max ? result.stripsPerRollRange.max : `${result.stripsPerRollRange.min}–${result.stripsPerRollRange.max}`}</strong></p>
           <p className="flex justify-between gap-3"><span className="text-slate-500">Припуск на подрезку</span><strong>{result.trimWasteM.toLocaleString("ru-RU")} м</strong></p>
           <p className="flex justify-between gap-3"><span className="text-slate-500">Остатки открытых рулонов</span><strong>{result.rollRemainderM.toLocaleString("ru-RU")} м</strong></p>
+          <p className="flex justify-between gap-3"><span className="text-slate-500">Куски от 1 м для участков</span><strong>{result.patchRemainderM.toLocaleString("ru-RU")} м</strong></p>
           <p className="flex justify-between gap-3 sm:col-span-2"><span className="text-slate-500">Вне полноразмерных полос</span><strong>{result.totalWasteM.toLocaleString("ru-RU")} м · {result.wastePercent.toLocaleString("ru-RU")}%</strong></p>
         </div>
 
@@ -524,6 +554,9 @@ export default function WallpaperLayoutGenerator() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Для рулонов ориентируйтесь на эту раскладку. В полном калькуляторе по тем же размерам можно дополнительно посчитать клей, грунтовку и инструмент.</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Link href={calculatorHref} onClick={() => trackToolRelatedClick("raskladka-oboev", "wallpaper-calculator")} className="btn-primary inline-flex text-sm no-underline">Клей и грунтовка →</Link>
+            <button type="button" onClick={shareLayout} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition-colors hover:border-orange-300 hover:text-orange-700 dark:border-slate-700 dark:text-slate-300">
+              {shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}
+            </button>
             <SaveToProjectButton calcId="instrument-raskladka-oboev" calcTitle="Раскладка обоев" slug="oboi" categorySlug="otdelka" materials={projectMaterials} calendarScenarioId="room" />
           </div>
         </div>

@@ -17,6 +17,7 @@ import Roof3DWrapper from "./Roof3DWrapper";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { pluralizeRu } from "@/lib/format/pluralize";
 import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
+import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
 
 const MOBILE_PRIMARY_FIELD_COUNT = 6;
 
@@ -56,6 +57,7 @@ export default function CalculatorWithMikhalych({
 }) {
   const searchParams = useSearchParams();
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
+  const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const mikhalychAnchorRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -139,6 +141,12 @@ export default function CalculatorWithMikhalych({
               Размеры перенесены из раскладки обоев — по плану раскроя нужно <strong>{wallpaperRollsHint} рулонов</strong>.
               {" "}Здесь рассчитайте клей, грунтовку и расходники; количество рулонов сверяйте с планом раскроя.
             </p>
+          </div>
+        )}
+        {Number.isFinite(sheetLayoutHint) && sheetLayoutHint > 0 && (
+          <div className="flex items-start gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+            <span aria-hidden>▦</span>
+            <p>Размеры перенесены из раскладки листов — по карте реза нужно <strong>{sheetLayoutHint} листов</strong>. Здесь уточните профиль, крепёж и расходники; листы сверяйте с раскроем.</p>
           </div>
         )}
 
@@ -258,6 +266,14 @@ export default function CalculatorWithMikhalych({
             >
               <span>Разложить полосы и увидеть раскрой рулонов</span>
               <span aria-hidden>→</span>
+            </Link>
+          )}
+          {calculator.slug === "gipsokarton" && (
+            <Link
+              href={buildSheetLayoutHrefFromDrywall({ length: values.length, height: values.height, layers: values.layers, sheetSize: values.sheetSize })}
+              className="flex items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline transition-colors hover:border-teal-300 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300 dark:hover:bg-teal-950/40"
+            >
+              <span>Разложить листы и увидеть карту раскроя</span><span aria-hidden>→</span>
             </Link>
           )}
         </div>

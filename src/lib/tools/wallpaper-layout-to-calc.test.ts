@@ -4,6 +4,7 @@ import {
   buildWallpaperCalculatorHref,
   buildWallpaperCalculatorTransferValues,
   buildWallpaperLayoutHref,
+  buildWallpaperLayoutShareHref,
   parseWallpaperLayoutSearchParams,
 } from "./wallpaper-layout-to-calc";
 
@@ -61,5 +62,16 @@ describe("wallpaper-layout-to-calc", () => {
     const href = buildWallpaperLayoutHref({ height: 2.7, rollWidth: 530, rapport: 0 });
     expect(href).toContain("/instrumenty/raskladka-oboev/?");
     expect(href).toContain("rollWidth=530");
+  });
+
+  it("сохраняет полную пользовательскую раскладку в ссылке", () => {
+    const href = buildWallpaperLayoutShareHref({ geometryMode: "walls", input });
+    const parsed = parseWallpaperLayoutSearchParams(new URL(href, "https://getmasterok.ru").searchParams);
+
+    expect(parsed.geometryMode).toBe("walls");
+    expect(parsed.walls).toHaveLength(4);
+    expect(parsed.matchType).toBe("offset");
+    expect(parsed.offset).toBe(32);
+    expect(parsed.trimAllowance).toBe(10);
   });
 });

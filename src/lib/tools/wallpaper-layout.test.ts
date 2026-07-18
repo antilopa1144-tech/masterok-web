@@ -72,6 +72,25 @@ describe("wallpaper-layout", () => {
     expect(new Set(ids).size).toBe(result.stripCount);
   });
 
+  it("отделяет полноценные полосы от коротких остатков для участков", () => {
+    const result = calculateWallpaperLayout(input());
+
+    expect(result.reusableRemainderM).toBe(result.fullStripRemainderM + result.patchRemainderM);
+    expect(result.rolls.every((roll) => (
+      roll.remainderUse === "full-strip"
+        ? roll.remainderM >= result.cutLengthM
+        : true
+    ))).toBe(true);
+  });
+
+  it("предупреждает, если перенесённый периметр не разделён на стены", () => {
+    const result = calculateWallpaperLayout(input({
+      walls: [{ id: "wall-1", name: "Все стены", lengthM: 18 }],
+    }));
+
+    expect(result.warnings.some((warning) => warning.includes("разделите его на отдельные стены"))).toBe(true);
+  });
+
   it("не маскирует невозможный раскрой при слишком коротком рулоне", () => {
     const result = calculateWallpaperLayout(input({ wallHeightM: 6, rollLengthM: 5 }));
 

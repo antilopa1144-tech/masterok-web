@@ -64,6 +64,7 @@ export interface WallpaperRollPlan {
   alignmentWasteM: number;
   remainderM: number;
   reusableRemainder: boolean;
+  remainderUse: "full-strip" | "patch" | "scrap";
 }
 
 export interface WallpaperLayoutResult {
@@ -83,6 +84,8 @@ export interface WallpaperLayoutResult {
   patternWasteM: number;
   rollRemainderM: number;
   reusableRemainderM: number;
+  fullStripRemainderM: number;
+  patchRemainderM: number;
   totalWasteM: number;
   wastePercent: number;
   warnings: string[];
@@ -298,13 +301,20 @@ function buildRollPlans(
 
   return rolls.map((roll, index) => {
     const remainderM = Math.max(0, rollLengthM - roll.usedM);
+    const cutLengthM = roll.cuts[0]?.cutLengthM ?? Number.POSITIVE_INFINITY;
+    const remainderUse = remainderM + EPSILON >= cutLengthM
+      ? "full-strip"
+      : remainderM >= REUSABLE_REMAINDER_M
+        ? "patch"
+        : "scrap";
     return {
       index: index + 1,
       cuts: roll.cuts,
       usedM: round(roll.usedM, 4),
       alignmentWasteM: round(roll.alignmentWasteM, 4),
       remainderM: round(remainderM, 4),
-      reusableRemainder: remainderM >= REUSABLE_REMAINDER_M,
+      reusableRemainder: remainderUse !== "scrap",
+      remainderUse,
     };
   });
 }
@@ -332,6 +342,9 @@ function buildWarnings(
   if (rolls.some((roll) => roll.cuts.length === 1) && rolls.length > 1) {
     warnings.push("В последнем рулоне получается только одна полоса. Особенно важно купить все рулоны одной партии.");
   }
+  if (input.walls.length === 1 && /^все стены$/i.test(input.walls[0].name)) {
+    warnings.push("Периметр перенесён одной линией. Для точной подрезки в углах разделите его на отдельные стены.");
+  }
   return warnings;
 }
 
@@ -358,6 +371,14 @@ export function calculateWallpaperLayout(rawInput: WallpaperLayoutInput): Wallpa
   const rollRemainderM = rolls.reduce((sum, roll) => sum + roll.remainderM, 0);
   const reusableRemainderM = rolls.reduce(
     (sum, roll) => sum + (roll.reusableRemainder ? roll.remainderM : 0),
+    0,
+  );
+  const fullStripRemainderM = rolls.reduce(
+    (sum, roll) => sum + (roll.remainderUse === "full-strip" ? roll.remainderM : 0),
+    0,
+  );
+  const patchRemainderM = rolls.reduce(
+    (sum, roll) => sum + (roll.remainderUse === "patch" ? roll.remainderM : 0),
     0,
   );
   const baseRolls = rolls.length;
@@ -388,6 +409,8 @@ export function calculateWallpaperLayout(rawInput: WallpaperLayoutInput): Wallpa
     patternWasteM: round(patternWasteM, 2),
     rollRemainderM: round(rollRemainderM, 2),
     reusableRemainderM: round(reusableRemainderM, 2),
+    fullStripRemainderM: round(fullStripRemainderM, 2),
+    patchRemainderM: round(patchRemainderM, 2),
     totalWasteM: round(totalWasteM, 2),
     wastePercent: round(wastePercent, 1),
     warnings: buildWarnings(input, walls, cutLengthM, rolls),
