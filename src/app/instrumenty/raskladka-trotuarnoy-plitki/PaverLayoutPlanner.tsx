@@ -1,0 +1,44 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
+import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
+import ToolSectionNav from "@/components/tools/ToolSectionNav";
+import { ToolMetric, ToolNotes, ToolNumberInput, ToolPresetButton } from "@/components/tools/VisualToolPrimitives";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import { calculatePaverLayout, type PaverPattern } from "@/lib/tools/paver-layout";
+
+const PAVER_PRESETS = [{ label: "Кирпич 200 × 100", length: 200, width: 100 }, { label: "Брусчатка 100 × 100", length: 100, width: 100 }, { label: "Плита 300 × 300", length: 300, width: 300 }, { label: "Плита 600 × 300", length: 600, width: 300 }] as const;
+const COLORS = ["#a84c3c", "#b85b48", "#914437", "#c46a55", "#9f5142"];
+
+function PavingSvg({ result }: { result: ReturnType<typeof calculatePaverLayout> }) {
+  const width = result.input.surfaceWidthMm; const height = result.input.surfaceLengthMm; const unit = Math.min(width, height); const pad = unit * .14; const joint = result.input.jointMm;
+  let y = 0;
+  return <svg viewBox={`${-pad} ${-pad} ${width + pad * 2} ${height + pad * 2}`} className="h-auto w-full" role="img" aria-label={`Площадка с раскладкой из ${result.purchasePavers} элементов к покупке`}>
+    <defs><pattern id="paver-grass" width={unit / 15} height={unit / 15} patternUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="#cfe3c2" /><path d={`M 0 ${unit / 25} Q ${unit / 40} 0 ${unit / 22} ${unit / 28}`} stroke="#6f9a65" strokeWidth={unit / 300} fill="none" opacity=".6" /></pattern><filter id="paver-shadow"><feDropShadow dx="0" dy={unit / 70} stdDeviation={unit / 75} floodColor="#0f172a" floodOpacity=".22" /></filter></defs>
+    <rect x={-pad} y={-pad} width={width + pad * 2} height={height + pad * 2} rx={unit / 26} fill="url(#paver-grass)" />
+    <g filter="url(#paver-shadow)"><rect x={-unit * .025} y={-unit * .025} width={width + unit * .05} height={height + unit * .05} fill="#8b8177" stroke="#57534e" strokeWidth={unit / 250} />
+      {result.grid.map((row, rowIndex) => { let x = 0; const rowHeight = row[0]?.heightMm ?? 0; const cells = row.map((cell, colIndex) => { const currentX = x; x += cell.widthMm + (colIndex < row.length - 1 ? joint : 0); return <g key={`${rowIndex}-${colIndex}`}><rect x={currentX} y={y} width={cell.widthMm} height={cell.heightMm} rx={Math.min(5, unit / 130)} fill={COLORS[(rowIndex * 3 + colIndex) % COLORS.length]} stroke="#f1d2c9" strokeWidth={Math.max(1, joint * .6)} />{cell.type !== "whole" && cell.widthMm > unit / 30 && cell.heightMm > unit / 30 && <path d={`M ${currentX} ${y} L ${currentX + cell.widthMm} ${y + cell.heightMm}`} stroke="#fff7ed" strokeOpacity=".55" strokeWidth={unit / 170} />}</g>; }); y += rowHeight + (rowIndex < result.grid.length - 1 ? joint : 0); return <g key={rowIndex}>{cells}</g>; })}
+    </g>
+    <text x={width / 2} y={-pad * .42} textAnchor="middle" fill="#334155" fontSize={Math.max(45, unit / 29)} fontWeight="650">{width.toLocaleString("ru-RU")} × {height.toLocaleString("ru-RU")} мм</text>
+  </svg>;
+}
+
+export default function PaverLayoutPlanner() {
+  const [surfaceWidth, setSurfaceWidth] = useState(3000); const [surfaceLength, setSurfaceLength] = useState(5000); const [paverWidth, setPaverWidth] = useState(100); const [paverLength, setPaverLength] = useState(200); const [joint, setJoint] = useState(3); const [pattern, setPattern] = useState<PaverPattern>("offset-half"); const [reserve, setReserve] = useState(7);
+  const parametersRef = useRef<HTMLDivElement>(null); const layoutRef = useRef<HTMLDivElement>(null); const resultRef = useRef<HTMLDivElement>(null);
+  const { hasStarted, markStarted, selectMode } = useToolAnalytics("raskladka-trotuarnoy-plitki", resultRef);
+  const result = useMemo(() => calculatePaverLayout({ surfaceWidthMm: surfaceWidth, surfaceLengthMm: surfaceLength, paverWidthMm: paverWidth, paverLengthMm: paverLength, jointMm: joint, pattern, reservePercent: reserve }), [joint, pattern, paverLength, paverWidth, reserve, surfaceLength, surfaceWidth]);
+  const materials = useMemo(() => [{ name: `Тротуарная плитка ${result.input.paverLengthMm} × ${result.input.paverWidthMm} мм`, quantity: result.purchasePavers, unit: "шт.", category: "Благоустройство" }], [result]);
+  const start = () => markStarted("material_size"); const scroll = (ref: { current: HTMLElement | null }) => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  return <div className="max-w-5xl space-y-6">
+    <div ref={parametersRef} className="card scroll-mt-24 space-y-5 p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900 dark:text-slate-100">Площадка и плитка</h2><p className="mt-1 text-xs text-slate-500">Размеры вводятся по готовому контуру внутри бордюров.</p></div><span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">{result.areaM2} м² · {result.rows} рядов</span></div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><ToolNumberInput label="Ширина площадки" value={surfaceWidth} unit="мм" min={300} max={20000} step={10} onChange={(v) => { start(); setSurfaceWidth(v); }} /><ToolNumberInput label="Длина площадки" value={surfaceLength} unit="мм" min={300} max={20000} step={10} onChange={(v) => { start(); setSurfaceLength(v); }} /><ToolNumberInput label="Ширина элемента" value={paverWidth} unit="мм" min={40} max={1000} onChange={(v) => { start(); setPaverWidth(v); }} /><ToolNumberInput label="Длина элемента" value={paverLength} unit="мм" min={40} max={1000} onChange={(v) => { start(); setPaverLength(v); }} /></div>
+      <div className="flex flex-wrap gap-2">{PAVER_PRESETS.map((preset) => <ToolPresetButton key={preset.label} active={paverLength === preset.length && paverWidth === preset.width} onClick={() => { markStarted("preset"); setPaverLength(preset.length); setPaverWidth(preset.width); }}>{preset.label}</ToolPresetButton>)}</div>
+      <div className="grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800"><ToolNumberInput label="Шов" value={joint} unit="мм" min={0} max={10} step={0.5} onChange={(v) => { start(); setJoint(v); }} /><ToolNumberInput label="Закрытый запас" value={reserve} unit="%" min={0} max={30} onChange={(v) => { start(); setReserve(v); }} /><label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Рисунок</span><select value={pattern} onChange={(e) => { selectMode(e.target.value); setPattern(e.target.value as PaverPattern); }} className="input-field w-full"><option value="straight">Прямые швы</option><option value="offset-half">Смещение ½</option><option value="offset-third">Смещение ⅓</option></select></label></div>
+    </div>
+    <ToolSectionNav visible={hasStarted} onParameters={() => scroll(parametersRef)} onLayout={() => scroll(layoutRef)} onResult={() => scroll(resultRef)} />
+    <div ref={layoutRef} className="card scroll-mt-24 p-4 sm:p-6"><div className="mb-4"><h2 className="font-semibold text-slate-900 dark:text-slate-100">Как плитка ляжет на площадку</h2><p className="mt-1 text-xs text-slate-500">Диагональная метка показывает подрезанный элемент; серый контур — бордюр.</p></div><div className="max-h-[680px] overflow-auto rounded-2xl border border-slate-200 dark:border-slate-700"><PavingSvg result={result} /></div></div>
+    <div ref={resultRef} className="card scroll-mt-24 p-5 sm:p-6"><div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-800/60 dark:bg-rose-900/20"><p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Купить элементов</p><p className="mt-1 text-4xl font-bold text-slate-950 dark:text-white">{result.purchasePavers}</p><p className="mt-1 text-xs text-slate-500">{result.basePavers} по раскладке + {result.reservePavers} закрытых в запас</p></div><div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4"><ToolMetric value={result.wholePavers} label="Целых на схеме" tone="emerald" /><ToolMetric value={result.cutPieces} label="Подрезанных деталей" tone="amber" /><ToolMetric value={`${result.geometricWastePercent}%`} label="Расчётный отход подрезки" /><ToolMetric value={`${result.input.jointMm} мм`} label="Шов" /></div><ToolNotes warnings={result.warnings} notes={result.notes} /><div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-5 dark:border-slate-800"><Link href="/kalkulyatory/fasad/trotuarnaya-plitka/" className="btn-primary text-sm no-underline">Основание и бордюр →</Link><SaveToProjectButton calcId="instrument-raskladka-trotuarnoy-plitki" calcTitle="Раскладка тротуарной плитки" slug="trotuarnaya-plitka" categorySlug="fasad" materials={materials} /></div></div>
+  </div>;
+}
