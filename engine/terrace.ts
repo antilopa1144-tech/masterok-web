@@ -134,6 +134,15 @@ export function computeCanonicalTerrace(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const hiddenFastener = boardType === 0
+    ? {
+        name: "Монтажные клипсы для ДПК",
+        subtitle: "Стартовые и рядовые клипсы должны соответствовать пазу выбранной доски",
+      }
+    : {
+        name: "Скрытый крепёж для террасной доски",
+        subtitle: "Тип крепления выбирают по профилю и толщине деревянной доски",
+      };
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
@@ -154,7 +163,8 @@ export function computeCanonicalTerrace(
       category: "Каркас",
     },
     {
-      name: "Кляймеры",
+      name: hiddenFastener.name,
+      subtitle: hiddenFastener.subtitle,
       quantity: klaymerCount,
       unit: "шт",
       withReserve: klaymerCount,
@@ -162,7 +172,8 @@ export function computeCanonicalTerrace(
       category: "Крепёж",
     },
     {
-      name: "Саморезы",
+      name: "Саморезы для скрытого крепежа 3,5×35 мм, нержавеющие A2",
+      subtitle: `Для фиксации клипс к деревянным лагам — около ${screwPcs} шт.; для алюминиевых лаг нужен крепёж системы`,
       quantity: screwKg,
       unit: "кг",
       withReserve: screwKg,

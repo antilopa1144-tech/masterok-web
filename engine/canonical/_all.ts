@@ -12,6 +12,8 @@ export interface CanonicalInputField {
 
 export interface CanonicalMaterialResult {
   name: string;
+  /** Уточнение для закупки: назначение, совместимость или условие выбора. */
+  subtitle?: string;
   quantity: number;
   unit: string;
   withReserve?: number;

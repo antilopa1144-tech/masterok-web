@@ -76,11 +76,11 @@ describe("Калькулятор каркасного дома", () => {
       expect(tape?.purchaseQty).toBe(8);
     });
 
-    it("саморезы в кг", () => {
-      // Engine: "Саморезы"
-      const screws = findMaterial(result, "Саморезы");
+    it("крепёж обшивки содержит спецификации для выбранных листов", () => {
+      const screws = findMaterial(result, "Крепёж обшивки — ОСП, саморезы 3,5×35 мм");
       expect(screws).toBeDefined();
       expect(screws!.unit).toBe("кг");
+      expect(screws?.subtitle).toContain("ОСП — саморезы по дереву 3,5×35 мм");
     });
 
     it("гвозди в кг", () => {

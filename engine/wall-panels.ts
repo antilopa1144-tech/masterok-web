@@ -158,6 +158,21 @@ export function computeCanonicalWallPanels(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const panelName = PANEL_TYPE_LABELS[panelType].replace(/\s*\([^)]*\)$/, "");
+  const mountingGlueNames: Record<number, string> = {
+    0: "Монтажный клей для ПВХ-панелей без растворителей",
+    1: "Монтажный клей для МДФ-панелей",
+    2: "Монтажный клей для 3D-панелей",
+    3: "Монтажный клей для деревянных панелей",
+    4: "Эластичный монтажный клей для каменного шпона",
+  };
+  const klaymerNames: Record<number, string> = {
+    0: "Монтажные клипсы для ПВХ-панелей",
+    1: "Кляймеры для МДФ-панелей",
+    2: "Скрытый крепёж для 3D-панелей",
+    3: "Кляймеры нержавеющие для деревянных панелей",
+    4: "Механический крепёж для каменного шпона",
+  };
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
@@ -174,7 +189,8 @@ export function computeCanonicalWallPanels(
   if (mountMethod === 0) {
     materials.push(
       {
-        name: "Монтажный клей (флаконы)",
+        name: mountingGlueNames[panelType],
+        subtitle: `Проверьте совместимость клея с основанием и материалом «${panelName}»`,
         quantity: glueBottles,
         unit: "шт",
         withReserve: glueBottles,
@@ -186,7 +202,8 @@ export function computeCanonicalWallPanels(
   } else {
     materials.push(
       {
-        name: `Обрешётка (бруски ${BATTEN_LENGTH} м)`,
+        name: `Обрешётка — брусок 20×40 мм (${BATTEN_LENGTH} м)`,
+        subtitle: "Во влажном помещении замените дерево на пластиковый или оцинкованный профиль",
         quantity: battenPcs,
         unit: "шт",
         withReserve: battenPcs,
@@ -194,7 +211,8 @@ export function computeCanonicalWallPanels(
         category: "Подсистема",
       },
       {
-        name: "Дюбели для обрешётки",
+        name: "Дюбель-гвозди 6×40/60 мм для обрешётки",
+        subtitle: "Длину выбирают по материалу стены и толщине бруска; для газобетона нужен специальный дюбель",
         quantity: dubels,
         unit: "шт",
         withReserve: dubels,
@@ -202,7 +220,8 @@ export function computeCanonicalWallPanels(
         category: "Крепёж",
       },
       {
-        name: "Кляймеры",
+        name: klaymerNames[panelType],
+        subtitle: "Размер крепежа должен соответствовать пазу выбранной панели",
         quantity: klaimers,
         unit: "шт",
         withReserve: klaimers,
@@ -222,7 +241,8 @@ export function computeCanonicalWallPanels(
       category: "Профиль",
     },
     {
-      name: "Герметик (тубы)",
+      name: "Герметик санитарный или интерьерный",
+      subtitle: "Тип выбирают по влажности помещения и материалу панелей",
       quantity: sealant,
       unit: "шт",
       withReserve: sealant,

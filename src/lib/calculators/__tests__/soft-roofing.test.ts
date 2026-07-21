@@ -45,12 +45,14 @@ describe("Калькулятор мягкой кровли", () => {
       expect(osb?.purchaseQty).toBe(27);
     });
 
-    it("гвозди кровельные", () => {
-      // Engine: "Гвозди кровельные"
-      const nails = findMaterial(result, "Гвозди кровельные");
+    it("гвозди ершёные 3,2×30 мм в коробках по 5 кг", () => {
+      const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
       expect(nails).toBeDefined();
       expect(nails!.unit).toBe("кг");
-      expect(nails!.purchaseQty).toBe(17);
+      expect(nails!.quantity).toBe(17);
+      expect(nails!.withReserve).toBe(17);
+      expect(nails!.purchaseQty).toBe(20);
+      expect(nails!.packageInfo).toEqual({ count: 4, size: 5, packageUnit: "коробок" });
     });
 
     it("карнизные планки = 11 шт", () => {

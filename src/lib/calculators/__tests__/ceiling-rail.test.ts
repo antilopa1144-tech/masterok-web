@@ -32,8 +32,10 @@ describe("Реечный потолок", () => {
       expect(findMaterial(r, "Рейка")).toBeDefined();
       expect(findMaterial(r, "Т-профиль")).toBeDefined();
       expect(findMaterial(r, "Подвес")).toBeDefined();
-      expect(findMaterial(r, "Саморезы")).toBeDefined();
-      expect(findMaterial(r, "Дюбели")).toBeDefined();
+      expect(findMaterial(r, "Саморезы по металлу 3,5×25 мм")).toBeDefined();
+      const anchors = findMaterial(r, "Анкер-клинья 6×40 мм");
+      expect(anchors).toBeDefined();
+      expect(anchors?.subtitle).toContain("пластиковые дюбели");
     });
   });
 

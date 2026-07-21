@@ -111,7 +111,10 @@ export function computeCanonicalFrameHouse(
   const tapeRolls = (vaporRolls + windRolls) * 2;
 
   /* ─── fasteners ─── */
+  const outerScrewsPcs = Math.ceil(outerSheets * SCREWS_PER_SHEET * STUD_RESERVE);
+  const innerScrewsPcs = Math.ceil(innerSheets * SCREWS_PER_SHEET * STUD_RESERVE);
   const screwsKg = Math.ceil((outerSheets + innerSheets) * SCREWS_PER_SHEET * STUD_RESERVE / SCREW_PER_KG * 10) / 10;
+  const nailsPcs = Math.ceil(studs * NAILS_PER_STUD * STUD_RESERVE);
   const nailsKg = Math.ceil(studs * NAILS_PER_STUD * STUD_RESERVE / NAIL_PER_KG * 10) / 10;
 
   /* ─── scenarios ─── */
@@ -154,11 +157,32 @@ export function computeCanonicalFrameHouse(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const outerFastenerLabels: Record<number, string> = {
+    0: "ОСП — саморезы по дереву 3,5×35 мм",
+    1: "фанера — саморезы по дереву 3,5×35 мм",
+    2: "ЦСП — специальные саморезы с потайной головкой по толщине листа",
+  };
+  const innerFastenerLabels: Record<number, string> = {
+    0: "ОСП — саморезы по дереву 3,5×35 мм",
+    1: "ГКЛ — саморезы TN 3,5×25 мм",
+    2: "вагонка — кляймеры или финишные гвозди по профилю доски",
+  };
+  const outerFastenerNames: Record<number, string> = {
+    0: "ОСП, саморезы 3,5×35 мм",
+    1: "фанера, саморезы 3,5×35 мм",
+    2: "ЦСП, специальные саморезы",
+  };
+  const innerFastenerNames: Record<number, string> = {
+    0: "ОСП, саморезы 3,5×35 мм",
+    1: "ГКЛ, саморезы TN 3,5×25 мм",
+    2: "вагонка, кляймеры или финишные гвозди",
+  };
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Стойки каркаса (шаг ${studStep} мм)`,
+      name: `Стойки каркаса — конструкционная доска (шаг ${studStep} мм)`,
+      subtitle: "Калькулятор определяет метраж; сечение доски выбирают по нагрузке и проекту дома",
       quantity: roundDisplay(studMeters, 2),
       unit: "п.м.",
       withReserve: studBoards * 6,
@@ -167,7 +191,8 @@ export function computeCanonicalFrameHouse(
       category: "Каркас",
     },
     {
-      name: "Обвязка (доски 6 м)",
+      name: "Обвязка — конструкционная доска (6 м)",
+      subtitle: "Сечение должно соответствовать стойкам и конструктивному расчёту каркаса",
       quantity: roundDisplay(strappingM, 2),
       unit: "м",
       withReserve: strappingBoards * 6,
@@ -193,6 +218,7 @@ export function computeCanonicalFrameHouse(
     },
     {
       name: `Утеплитель — ${INSULATION_TYPE_LABELS[insulationType]}`,
+      subtitle: `Расчётная толщина ${Math.round(thickness * 1000)} мм, плиты 0,72 м²`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "плит",
       withReserve: Math.ceil(recScenario.exact_need / PACK_SIZE) * PACK_SIZE,
@@ -209,7 +235,8 @@ export function computeCanonicalFrameHouse(
       category: "Утепление",
     },
     {
-      name: "Пароизоляция (рулон 75 м²)",
+      name: "Пароизоляция — мембрана (рулон 75 м²)",
+      subtitle: "Для монтажа со стороны тёплого помещения с герметизацией нахлёстов",
       quantity: vaporRolls,
       unit: "рулонов",
       withReserve: vaporRolls,
@@ -217,7 +244,8 @@ export function computeCanonicalFrameHouse(
       category: "Мембраны",
     },
     {
-      name: "Ветрозащита (рулон 75 м²)",
+      name: "Ветрозащита — диффузионная мембрана (рулон 75 м²)",
+      subtitle: "Для наружной стороны утеплителя; не заменяйте пароизоляционной плёнкой",
       quantity: windRolls,
       unit: "рулонов",
       withReserve: windRolls,
@@ -225,7 +253,8 @@ export function computeCanonicalFrameHouse(
       category: "Мембраны",
     },
     {
-      name: "Скотч для мембран",
+      name: "Скотч для мембран — системная соединительная лента",
+      subtitle: "Для проклейки нахлёстов и примыканий паро- и ветрозащиты",
       quantity: tapeRolls,
       unit: "рулонов",
       withReserve: tapeRolls,
@@ -233,7 +262,8 @@ export function computeCanonicalFrameHouse(
       category: "Мембраны",
     },
     {
-      name: "Саморезы",
+      name: `Крепёж обшивки — ${outerFastenerNames[outerSheathing]} + ${innerFastenerNames[innerSheathing]}`,
+      subtitle: `${outerFastenerLabels[outerSheathing]} — около ${outerScrewsPcs} шт.; ${innerFastenerLabels[innerSheathing]} — около ${innerScrewsPcs} шт.`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -241,7 +271,8 @@ export function computeCanonicalFrameHouse(
       category: "Крепёж",
     },
     {
-      name: "Гвозди",
+      name: "Гвозди ершёные оцинкованные для сборки каркаса",
+      subtitle: `Около ${nailsPcs} шт.; длину гвоздя выбирают по фактическому сечению соединяемых досок`,
       quantity: nailsKg,
       unit: "кг",
       withReserve: nailsKg,
@@ -295,7 +326,10 @@ export function computeCanonicalFrameHouse(
       windRolls,
       tapeRolls,
       screwsKg,
+      outerScrewsPcs,
+      innerScrewsPcs,
       nailsKg,
+      nailsPcs,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,

@@ -24,6 +24,8 @@ interface RoofingInputs {
 /* --- constants --- */
 
 const COMPLEXITY_COEFFS = [1.05, 1.15, 1.25];
+const ROOFING_SCREW_PACK_SIZE = 250;
+const SOFT_ROOFING_NAIL_BOX_KG = 5;
 
 const ROOFING_TYPE_LABELS: Record<number, string> = {
   0: "Металлочерепица",
@@ -83,6 +85,7 @@ export function computeCanonicalRoofing(
     const ridgePieces = Math.ceil(ridgeLength / 2 * 1.05);
     const snowGuards = Math.ceil(perimeterEst / 3);
     const screws = Math.ceil(realArea * 9);
+    const screwPacks = Math.ceil(screws / ROOFING_SCREW_PACK_SIZE);
     const waterproofingM2 = Math.ceil(realArea * 1.15);
     const waterproofingRolls = Math.ceil(waterproofingM2 / 75);
 
@@ -127,11 +130,13 @@ export function computeCanonicalRoofing(
       category: "Безопасность",
     });
     materials.push({
-      name: "Кровельные саморезы",
+      name: "Кровельные саморезы 4,8×35 мм с EPDM-шайбой",
+      subtitle: "Для крепления металлочерепицы к деревянной обрешётке в нижнюю волну",
       quantity: screws,
       unit: "шт",
       withReserve: screws,
-      purchaseQty: screws,
+      purchaseQty: screwPacks * ROOFING_SCREW_PACK_SIZE,
+      packageInfo: { count: screwPacks, size: ROOFING_SCREW_PACK_SIZE, packageUnit: "упаковок" },
       category: "Крепёж",
     });
     materials.push({
@@ -175,6 +180,7 @@ export function computeCanonicalRoofing(
     const masticKg = (perimeterEst + ridgeLength) * 0.1 + realArea * 0.1;
     const masticBuckets = Math.ceil(masticKg / 3);
     const nailsKg = Math.ceil(realArea * 80 / 400 * 1.05);
+    const nailBoxes = Math.ceil(nailsKg / SOFT_ROOFING_NAIL_BOX_KG);
     const ridgeShingles = Math.ceil(ridgeLength / 0.5 * 1.05);
     const osbSheets = Math.ceil(realArea / 3.125 * 1.05);
     const ventOutputs = Math.ceil(realArea / 25);
@@ -209,11 +215,13 @@ export function computeCanonicalRoofing(
       category: "Клей",
     });
     materials.push({
-      name: "Кровельные гвозди",
+      name: "Гвозди ершёные оцинкованные 3,2×30 мм",
+      subtitle: "С широкой шляпкой для крепления гибкой черепицы к сплошному основанию",
       quantity: nailsKg,
       unit: "кг",
       withReserve: nailsKg,
-      purchaseQty: nailsKg,
+      purchaseQty: nailBoxes * SOFT_ROOFING_NAIL_BOX_KG,
+      packageInfo: { count: nailBoxes, size: SOFT_ROOFING_NAIL_BOX_KG, packageUnit: "коробок" },
       category: "Крепёж",
     });
     materials.push({
@@ -299,12 +307,38 @@ export function computeCanonicalRoofing(
       purchaseQty: ridgePieces,
       category: "Доборные",
     });
+    const fastenerSpec: Record<number, { name: string; subtitle: string }> = {
+      2: {
+        name: "Кровельные саморезы 4,8×35 мм с EPDM-шайбой",
+        subtitle: "Для крепления профнастила к деревянной обрешётке в нижнюю волну",
+      },
+      3: {
+        name: "Гвозди для ондулина с герметизирующей шляпкой",
+        subtitle: "Используйте фирменный крепёж выбранной кровельной системы",
+      },
+      4: {
+        name: "Шиферные гвозди 4,5×120 мм",
+        subtitle: "С оцинкованной шляпкой и уплотнительной шайбой; длину проверьте по высоте волны",
+      },
+      5: {
+        name: "Противоветровые кляймеры для керамической черепицы",
+        subtitle: "Тип крепления выбирают по профилю черепицы и требованиям производителя",
+      },
+    };
+    const selectedFastener = fastenerSpec[roofingType];
+    const fastenerPackSize = roofingType === 2 ? ROOFING_SCREW_PACK_SIZE : 0;
+    const fastenerPacks = fastenerPackSize > 0 ? Math.ceil(fastenersNeeded / fastenerPackSize) : 0;
+
     materials.push({
-      name: roofingType === 3 ? "Гвозди кровельные" : "Крепёж кровельный",
+      name: selectedFastener.name,
+      subtitle: selectedFastener.subtitle,
       quantity: fastenersNeeded,
       unit: "шт",
       withReserve: fastenersNeeded,
-      purchaseQty: fastenersNeeded,
+      purchaseQty: fastenerPackSize > 0 ? fastenerPacks * fastenerPackSize : fastenersNeeded,
+      ...(fastenerPackSize > 0
+        ? { packageInfo: { count: fastenerPacks, size: fastenerPackSize, packageUnit: "упаковок" } }
+        : {}),
       category: "Крепёж",
     });
     materials.push({

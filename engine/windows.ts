@@ -100,6 +100,7 @@ export function computeCanonicalWindows(
   let cornerPcs = 0;
   let gklSheets = 0;
   let screwsGKL = 0;
+  let screwsGKLpcs = 0;
   let puttyBags = 0;
 
   if (slopeType === 0) {
@@ -111,7 +112,7 @@ export function computeCanonicalWindows(
     cornerPcs = Math.ceil(perimM * 0.75 * windowCount * PSUL_RESERVE / 3);
   } else {
     gklSheets = Math.ceil(totalSlopeArea * SLOPE_GKL_RESERVE / GKL_SHEET_M2);
-    const screwsGKLpcs = Math.ceil(gklSheets * 20 * SCREW_RESERVE);
+    screwsGKLpcs = Math.ceil(gklSheets * 20 * SCREW_RESERVE);
     screwsGKL = Math.ceil(screwsGKLpcs / SCREWS_PER_KG * 10) / 10;
     puttyBags = Math.ceil(totalSlopeArea * 1.2 / PLASTER_BAG);
   }
@@ -161,7 +162,8 @@ export function computeCanonicalWindows(
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `ПСУЛ (рулон ${PSUL_ROLL_M} м)`,
+      name: `ПСУЛ — предварительно сжатая уплотнительная лента (${PSUL_ROLL_M} м)`,
+      subtitle: "Для наружного паропроницаемого слоя монтажного шва; ширину подберите по зазору",
       quantity: psulRolls,
       unit: "рулонов",
       withReserve: psulRolls,
@@ -169,7 +171,8 @@ export function computeCanonicalWindows(
       category: "Лента",
     },
     {
-      name: `Внутренняя лента (рулон ${IFLUL_ROLL_M} м)`,
+      name: `Внутренняя лента — пароизоляционная оконная (${IFLUL_ROLL_M} м)`,
+      subtitle: "Для герметизации монтажного шва со стороны помещения",
       quantity: iflulRolls,
       unit: "рулонов",
       withReserve: iflulRolls,
@@ -177,7 +180,8 @@ export function computeCanonicalWindows(
       category: "Лента",
     },
     {
-      name: "Монтажная пена",
+      name: "Монтажная пена профессиональная с низким вторичным расширением",
+      subtitle: "Температурный режим пены должен соответствовать сезону монтажа",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "баллонов",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -185,7 +189,8 @@ export function computeCanonicalWindows(
       category: "Монтаж",
     },
     {
-      name: "Анкерные пластины",
+      name: "Анкерные пластины для оконного профиля",
+      subtitle: "Пластины должны подходить к пазу и системе выбранной оконной рамы",
       quantity: totalAnchors,
       unit: "шт",
       withReserve: totalAnchors,
@@ -193,7 +198,8 @@ export function computeCanonicalWindows(
       category: "Крепёж",
     },
     {
-      name: "Саморезы для анкеров",
+      name: "Саморезы по металлу для анкерных пластин",
+      subtitle: `Крепите пластину к армированию рамы; около ${screwsPcs} шт., типоразмер — по оконной системе`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -251,7 +257,8 @@ export function computeCanonicalWindows(
   } else {
     materials.push(
       {
-        name: "ГКЛ для откосов",
+        name: "ГКЛ для откосов, влагостойкий 12,5 мм",
+        subtitle: "Влагостойкий лист для внутренних откосов",
         quantity: gklSheets,
         unit: "листов",
         withReserve: gklSheets,
@@ -259,7 +266,8 @@ export function computeCanonicalWindows(
         category: "Откосы",
       },
       {
-        name: "Саморезы для ГКЛ",
+        name: "Саморезы TN 3,5×25 мм для ГКЛ",
+        subtitle: `Для крепления откосов из ГКЛВ к металлическому профилю — около ${screwsGKLpcs} шт.`,
         quantity: screwsGKL,
         unit: "кг",
         withReserve: screwsGKL,
@@ -310,6 +318,7 @@ export function computeCanonicalWindows(
       anchorsPerWindow,
       totalAnchors,
       screws: screwsKg,
+      screwsPcs,
       sillWidth: roundDisplay(sillWidth, 3),
       sillPcs,
       slopeSideArea: roundDisplay(slopeSideArea, 4),
@@ -321,6 +330,7 @@ export function computeCanonicalWindows(
       cornerPcs,
       gklSheets,
       screwsGKL,
+      screwsGKLpcs,
       puttyBags,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,

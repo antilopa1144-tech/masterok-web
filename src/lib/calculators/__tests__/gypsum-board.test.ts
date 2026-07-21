@@ -30,14 +30,16 @@ describe("Калькулятор гипсокартона", () => {
       expect(findMaterial(result, "ПН 27×28")).toBeDefined();
     });
 
-    it("саморезы для ГКЛ присутствуют", () => {
-      // Engine: "Саморезы для ГКЛ"
-      expect(findMaterial(result, "Саморезы для ГКЛ")).toBeDefined();
+    it("указан типоразмер саморезов для одного слоя ГКЛ", () => {
+      const screws = findMaterial(result, "Саморезы TN 3,5×25 мм");
+      expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("металлическому профилю");
     });
 
-    it("дюбели присутствуют", () => {
-      // Engine: "Дюбели"
-      expect(findMaterial(result, "Дюбели")).toBeDefined();
+    it("указаны дюбель-гвозди для направляющего профиля", () => {
+      const dowels = findMaterial(result, "Дюбель-гвозди 6×40 мм");
+      expect(dowels).toBeDefined();
+      expect(dowels?.subtitle).toContain("бетону");
     });
 
     it("серпянка присутствует", () => {
@@ -115,6 +117,13 @@ describe("Калькулятор гипсокартона", () => {
     it("предупреждение о смещении швов", () => {
       // Engine: "Второй слой ГКЛ монтируется со смещением швов"
       expect(result.warnings.some((w) => w.includes("смещением швов"))).toBe(true);
+    });
+
+    it("разделяет типоразмеры крепежа первого и второго слоя", () => {
+      const screws = findMaterial(result, "3,5×25 и 3,5×35 мм");
+      expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("первого слоя");
+      expect(screws?.subtitle).toContain("второго");
     });
   });
 

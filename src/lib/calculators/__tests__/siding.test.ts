@@ -41,10 +41,11 @@ describe("Сайдинг", () => {
       expect(findMaterial(r, "Финишная планка")).toBeDefined();
     });
 
-    it("саморезы присутствуют", () => {
+    it("указаны саморезы для винилового сайдинга", () => {
       const r = calc({ facadeArea: 100, openingsArea: 10, perimeter: 40, height: 5, sidingType: 0, exteriorCorners: 4 });
-      // Engine: "Саморезы"
-      expect(findMaterial(r, "Саморезы")).toBeDefined();
+      const screws = findMaterial(r, "Саморезы оцинкованные 4,2×19 мм с прессшайбой");
+      expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("температурный ход");
     });
 
     it("обрешётка присутствует", () => {
@@ -55,8 +56,7 @@ describe("Сайдинг", () => {
 
     it("мембрана присутствует", () => {
       const r = calc({ facadeArea: 100, openingsArea: 10, perimeter: 40, height: 5, sidingType: 0, exteriorCorners: 4 });
-      // Engine: "Мембрана (75 м²)"
-      expect(findMaterial(r, "Мембрана")).toBeDefined();
+      expect(findMaterial(r, "Ветрозащитная диффузионная мембрана")).toBeDefined();
     });
 
     it("герметик (тубы) присутствует", () => {
@@ -81,6 +81,8 @@ describe("Сайдинг", () => {
       checkInvariants(r);
       // Engine: "Фиброцементный сайдинг (0.63 м²)"
       expect(findMaterial(r, "Фиброцементный сайдинг")).toBeDefined();
+      const screws = findMaterial(r, "Саморезы для фиброцементного сайдинга");
+      expect(screws?.subtitle).toContain("толщине панели");
     });
   });
 

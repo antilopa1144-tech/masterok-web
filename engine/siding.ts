@@ -140,6 +140,17 @@ export function computeCanonicalSiding(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const sidingFastener = sidingType === 2
+    ? {
+        name: "Саморезы для фиброцементного сайдинга",
+        subtitle: "С антикоррозионным покрытием; диаметр и длину выбирают по толщине панели и обрешётке",
+      }
+    : {
+        name: "Саморезы оцинкованные 4,2×19 мм с прессшайбой",
+        subtitle: sidingType === 0
+          ? `Для винилового сайдинга — около ${screwsPcs} шт.; не затягивать вплотную, оставляя температурный ход`
+          : `Для металлического сайдинга по металлической подсистеме — около ${screwsPcs} шт.`,
+      };
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
@@ -184,7 +195,8 @@ export function computeCanonicalSiding(
       category: "Профиль",
     },
     {
-      name: "Саморезы",
+      name: sidingFastener.name,
+      subtitle: sidingFastener.subtitle,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -192,7 +204,8 @@ export function computeCanonicalSiding(
       category: "Крепёж",
     },
     {
-      name: "Обрешётка (м.п.)",
+      name: "Обрешётка — брусок 40×50 мм",
+      subtitle: "Для фасада используйте сухую древесину с антисептической обработкой",
       quantity: battens,
       unit: "м.п.",
       withReserve: battens,
@@ -200,7 +213,8 @@ export function computeCanonicalSiding(
       category: "Подсистема",
     },
     {
-      name: `Мембрана (${MEMBRANE_ROLL} м²)`,
+      name: `Ветрозащитная диффузионная мембрана (${MEMBRANE_ROLL} м²)`,
+      subtitle: "Укладывается под обрешётку с проклейкой нахлёстов",
       quantity: membrane,
       unit: "рулонов",
       withReserve: membrane,
@@ -208,7 +222,8 @@ export function computeCanonicalSiding(
       category: "Изоляция",
     },
     {
-      name: "Герметик (тубы)",
+      name: "Герметик фасадный атмосферостойкий",
+      subtitle: "Для примыканий; не заполняйте им температурные зазоры панелей",
       quantity: sealant,
       unit: "шт",
       withReserve: sealant,

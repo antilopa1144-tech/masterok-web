@@ -140,7 +140,8 @@ export function computeCanonicalCeilingRail(
       category: "Основное",
     },
     {
-      name: "Т-профиль (стрингер) 3м",
+      name: "Т-профиль — несущая шина (стрингер) 3 м",
+      subtitle: "Профиль должен соответствовать замку выбранной потолочной рейки",
       quantity: guidePcs,
       unit: "шт",
       withReserve: guidePcs,
@@ -148,7 +149,8 @@ export function computeCanonicalCeilingRail(
       category: "Каркас",
     },
     {
-      name: "Подвес",
+      name: "Подвесы регулируемые для реечного потолка",
+      subtitle: "Тип подвеса выбирают по требуемому опуску потолка",
       quantity: hangers,
       unit: "шт",
       withReserve: hangers,
@@ -156,7 +158,8 @@ export function computeCanonicalCeilingRail(
       category: "Крепёж",
     },
     {
-      name: "Саморезы",
+      name: "Саморезы по металлу 3,5×25 мм",
+      subtitle: `Для сборки стрингеров и элементов подвесной системы — около ${screwsPcs} шт.`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -164,7 +167,8 @@ export function computeCanonicalCeilingRail(
       category: "Крепёж",
     },
     {
-      name: "Дюбели",
+      name: "Анкер-клинья 6×40 мм для потолочных подвесов",
+      subtitle: "Для бетонного основания; пластиковые дюбели над головой не применяйте",
       quantity: dubels,
       unit: "шт",
       withReserve: dubels,
@@ -182,6 +186,7 @@ export function computeCanonicalCeilingRail(
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Рейки монтируйте перпендикулярно окну — так свет скроет стыки");
+  practicalNotes.push("Подвесы к бетонному потолку крепите металлическими анкер-клиньями, а не пластиковыми дюбелями");
 
   return {
     canonicalSpecId: spec.calculator_id,

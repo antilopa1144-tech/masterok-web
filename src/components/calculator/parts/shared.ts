@@ -138,7 +138,8 @@ export async function copyMaterialsAsText(materials: CalculatorResult["materials
     const pkgSuffix = m.packageInfo
       ? ` (${m.packageInfo.count} ${pluralizePackageUnit(m.packageInfo.count, m.packageInfo.packageUnit)} × ${m.packageInfo.size} ${m.unit})`
       : "";
-    return `• ${m.name}: ${val} ${unit}${pkgSuffix}`;
+    const detail = m.subtitle ? `\n  ${m.subtitle}` : "";
+    return `• ${m.name}: ${val} ${unit}${pkgSuffix}${detail}`;
   });
   const text = `${CALCULATOR_UI_TEXT.copyMaterialsHeading}\n\n${lines.join("\n")}`;
   const { copyText } = await import("@/lib/clipboard");

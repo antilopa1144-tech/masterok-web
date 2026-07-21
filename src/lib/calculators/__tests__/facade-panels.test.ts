@@ -31,8 +31,8 @@ describe("Фасадные панели", () => {
 
     it("без утеплителя → нет плит и мембраны", () => {
       const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
-      expect(findMaterial(r, "Утеплитель (плиты)")).toBeUndefined();
-      expect(findMaterial(r, "Ветрозащитная мембрана")).toBeUndefined();
+      expect(findMaterial(r, "Минераловатные плиты")).toBeUndefined();
+      expect(findMaterial(r, "Ветрозащитная диффузионная мембрана")).toBeUndefined();
     });
   });
 
@@ -59,26 +59,27 @@ describe("Фасадные панели", () => {
   describe("С утеплителем (insulationThickness > 0)", () => {
     it("утеплитель, дюбели и ветрозащита присутствуют", () => {
       const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 50 });
-      // Engine: "Утеплитель (плиты)", "Дюбели для утеплителя", "Ветрозащитная мембрана"
-      expect(findMaterial(r, "Утеплитель (плиты)")).toBeDefined();
-      expect(findMaterial(r, "Дюбели для утеплителя")).toBeDefined();
-      expect(findMaterial(r, "Ветрозащитная мембрана")).toBeDefined();
+      expect(findMaterial(r, "Минераловатные плиты для вентфасада 50 мм")).toBeDefined();
+      const dowels = findMaterial(r, "Дюбели тарельчатые 10×100 мм");
+      expect(dowels).toBeDefined();
+      expect(dowels?.subtitle).toContain("50 мм анкеровки");
+      expect(findMaterial(r, "Ветрозащитная диффузионная мембрана")).toBeDefined();
     });
   });
 
   describe("Крепёж и доп. материалы", () => {
-    it("крепёж панелей: panels*8*1.05", () => {
+    it("для фиброцемента указан крепёж фасадной системы", () => {
       const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
-      // Engine: "Крепёж панелей"
-      const screws = findMaterial(r, "Крепёж панелей");
+      const screws = findMaterial(r, "Фасадные заклёпки для фиброцементных панелей");
       expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("фасадной системе");
     });
 
     it("анкеры для кронштейнов: brackets*2*1.05", () => {
       const r = calc({ area: 100, panelType: 0, substructure: 0, insulationThickness: 0 });
-      // Engine: "Анкеры для кронштейнов"
-      const dubels = findMaterial(r, "Анкеры для кронштейнов");
+      const dubels = findMaterial(r, "Фасадные анкеры для кронштейнов");
       expect(dubels).toBeDefined();
+      expect(dubels?.subtitle).toContain("материалу стены");
     });
 
     it("грунтовка и герметик присутствуют", () => {

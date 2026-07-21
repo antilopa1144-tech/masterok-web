@@ -44,10 +44,11 @@ describe("Калькулятор кровли", () => {
     });
 
     it("кровельные саморезы в шт", () => {
-      // Engine: "Кровельные саморезы"
-      const screws = findMaterial(result, "Кровельные саморезы");
+      const screws = findMaterial(result, "4,8×35 мм с EPDM-шайбой");
       expect(screws).toBeDefined();
       expect(screws?.unit).toBe("шт");
+      expect(screws?.packageInfo?.size).toBe(250);
+      expect(screws?.purchaseQty).toBe(screws!.packageInfo!.count * 250);
     });
 
     it("гидроизоляция присутствует", () => {
@@ -107,11 +108,12 @@ describe("Калькулятор кровли", () => {
       expect(findMaterial(result, "ОСП")).toBeDefined();
     });
 
-    it("гвозди кровельные в кг", () => {
-      // Engine: "Кровельные гвозди"
-      const nails = findMaterial(result, "Кровельные гвозди");
+    it("ершёные оцинкованные гвозди в коробках по 5 кг", () => {
+      const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
       expect(nails).toBeDefined();
       expect(nails?.unit).toBe("кг");
+      expect(nails?.packageInfo?.size).toBe(5);
+      expect(nails?.purchaseQty).toBe(nails!.packageInfo!.count * 5);
     });
   });
 
@@ -130,10 +132,11 @@ describe("Калькулятор кровли", () => {
       expect(findMaterial(result, "Профнастил")).toBeDefined();
     });
 
-    it("крепеж присутствует", () => {
-      // Engine: "Крепёж кровельный"
-      const screws = findMaterial(result, "Крепёж кровельный");
+    it("указаны саморезы для профнастила", () => {
+      const screws = findMaterial(result, "4,8×35 мм с EPDM-шайбой");
       expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("профнастила");
+      expect(screws?.packageInfo?.size).toBe(250);
     });
   });
 
@@ -152,10 +155,10 @@ describe("Калькулятор кровли", () => {
       expect(findMaterial(result, "Шифер")).toBeDefined();
     });
 
-    it("крепеж присутствует", () => {
-      // Engine: "Крепёж кровельный"
-      const nails = findMaterial(result, "Крепёж кровельный");
+    it("указаны шиферные гвозди и условие выбора длины", () => {
+      const nails = findMaterial(result, "Шиферные гвозди 4,5×120 мм");
       expect(nails).toBeDefined();
+      expect(nails?.subtitle).toContain("высоте волны");
     });
   });
 

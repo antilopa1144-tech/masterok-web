@@ -26,6 +26,7 @@ const MASTIC_BUCKET = 3;        // kg
 const NAILS_PER_M2 = 80;
 const NAILS_PER_KG = 400;
 const NAIL_RESERVE = 1.05;
+const NAIL_BOX_KG = 5;
 const EAVE_STRIP_LENGTH = 2;    // m
 const EAVE_RESERVE = 1.05;
 const WIND_STRIP_RATIO = 0.4;
@@ -97,6 +98,7 @@ export function computeCanonicalSoftRoofing(
 
   // Nails
   const nailsKg = Math.ceil(roofArea * NAILS_PER_M2 / NAILS_PER_KG * NAIL_RESERVE);
+  const nailBoxes = Math.ceil(nailsKg / NAIL_BOX_KG);
 
   // Eave strips
   const eaveStrips = Math.ceil(eaveLength / EAVE_STRIP_LENGTH * EAVE_RESERVE);
@@ -192,11 +194,13 @@ export function computeCanonicalSoftRoofing(
       category: "Монтаж",
     },
     {
-      name: "Гвозди кровельные",
+      name: "Гвозди ершёные оцинкованные 3,2×30 мм",
+      subtitle: "С широкой шляпкой для крепления гибкой черепицы к ОСП",
       quantity: nailsKg,
       unit: "кг",
       withReserve: nailsKg,
-      purchaseQty: nailsKg,
+      purchaseQty: nailBoxes * NAIL_BOX_KG,
+      packageInfo: { count: nailBoxes, size: NAIL_BOX_KG, packageUnit: "коробок" },
       category: "Крепёж",
     },
     {

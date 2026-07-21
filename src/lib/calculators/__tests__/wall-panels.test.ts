@@ -20,9 +20,9 @@ describe("Калькулятор панелей для стен", () => {
     });
 
     it("монтажный клей (флаконы) присутствует", () => {
-      // Engine: "Монтажный клей (флаконы)"
-      const glue = findMaterial(result, "Монтажный клей");
+      const glue = findMaterial(result, "Монтажный клей для ПВХ-панелей без растворителей");
       expect(glue).toBeDefined();
+      expect(glue?.subtitle).toContain("совместимость");
     });
 
     it("грунтовка присутствует (монтаж на клей)", () => {
@@ -70,13 +70,15 @@ describe("Калькулятор панелей для стен", () => {
     });
 
     it("дюбели для обрешётки присутствуют", () => {
-      // Engine: "Дюбели для обрешётки"
-      expect(findMaterial(result, "Дюбели для обрешётки")).toBeDefined();
+      const dowels = findMaterial(result, "Дюбель-гвозди 6×40/60 мм");
+      expect(dowels).toBeDefined();
+      expect(dowels?.subtitle).toContain("газобетона");
     });
 
     it("кляймеры присутствуют", () => {
-      // Engine: "Кляймеры"
-      expect(findMaterial(result, "Кляймеры")).toBeDefined();
+      const fasteners = findMaterial(result, "Кляймеры для МДФ-панелей");
+      expect(fasteners).toBeDefined();
+      expect(fasteners?.subtitle).toContain("пазу");
     });
 
     it("нет грунтовки при монтаже на обрешётку", () => {

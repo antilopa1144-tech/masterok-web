@@ -106,6 +106,11 @@ function EstimatePrintSheet({
                   <tr key={`${groupName}__${i}`} className="border-b border-neutral-300">
                     <td className="ep-print-td-name py-1 pr-2 align-top text-black">
                       <span className="font-medium">{m.name}</span>
+                      {m.subtitle ? (
+                        <div className="mt-0.5 text-[8pt] leading-snug text-neutral-600">
+                          {m.subtitle}
+                        </div>
+                      ) : null}
                       {m.packageInfo ? (
                         <div className="mt-0.5 text-[8pt] text-neutral-600">
                           {m.packageInfo.count}{" "}

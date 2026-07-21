@@ -106,6 +106,8 @@ export function computeCanonicalGypsumBoard(
   /* Screws & dubels */
   const screwsPcs = totalSheets * SCREWS_GKL_PER_SHEET;
   const screwsKg = Math.ceil(screwsPcs / SCREWS_PER_KG * 10) / 10;
+  const firstLayerScrews = layers === 2 ? Math.ceil(screwsPcs / 2) : screwsPcs;
+  const secondLayerScrews = layers === 2 ? screwsPcs - firstLayerScrews : 0;
   const dubels = Math.ceil(guideM / DUBEL_STEP * 2 * DUBEL_RESERVE);
 
   /* Serpyanka */
@@ -192,7 +194,12 @@ export function computeCanonicalGypsumBoard(
       category: "Каркас",
     },
     {
-      name: "Саморезы для ГКЛ",
+      name: layers === 2
+        ? "Саморезы TN 3,5×25 и 3,5×35 мм"
+        : "Саморезы TN 3,5×25 мм",
+      subtitle: layers === 2
+        ? `25 мм — около ${firstLayerScrews} шт. для первого слоя; 35 мм — около ${secondLayerScrews} шт. для второго`
+        : `Для крепления одного слоя ГКЛ к металлическому профилю — около ${screwsPcs} шт.`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -200,7 +207,8 @@ export function computeCanonicalGypsumBoard(
       category: "Крепёж",
     },
     {
-      name: "Дюбели",
+      name: "Дюбель-гвозди 6×40 мм",
+      subtitle: "Для крепления направляющего профиля к бетону или полнотелому кирпичу",
       quantity: dubels,
       unit: "шт",
       withReserve: dubels,
@@ -264,6 +272,9 @@ export function computeCanonicalGypsumBoard(
       guidePcs,
       guideM: roundDisplay(guideM, 3),
       screws: screwsKg,
+      screwsPcs,
+      firstLayerScrews,
+      secondLayerScrews,
       dubels,
       jointsM,
       puttyBags,

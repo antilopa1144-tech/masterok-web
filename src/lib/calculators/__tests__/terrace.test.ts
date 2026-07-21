@@ -49,17 +49,18 @@ describe("Калькулятор террасной доски", () => {
       expect(result.totals.lagRowCount).toBe(14);
     });
 
-    it("кляймеры присутствуют", () => {
-      // Engine: "Кляймеры"
-      const klaymer = findMaterial(result, "Кляймеры");
+    it("указаны монтажные клипсы выбранной системы ДПК", () => {
+      const klaymer = findMaterial(result, "Монтажные клипсы для ДПК");
       expect(klaymer).toBeDefined();
+      expect(klaymer?.subtitle).toContain("пазу выбранной доски");
       // klaymerCount = lagRowCount * rowCount = 14 * 20 = 280
       expect(klaymer?.purchaseQty).toBe(280);
     });
 
     it("саморезы присутствуют", () => {
-      // Engine: "Саморезы"
-      expect(findMaterial(result, "Саморезы")).toBeDefined();
+      const screws = findMaterial(result, "Саморезы для скрытого крепежа 3,5×35 мм, нержавеющие A2");
+      expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("деревянным лагам");
     });
 
     it("геотекстиль присутствует", () => {

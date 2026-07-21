@@ -148,6 +148,36 @@ export function computeCanonicalFacadePanels(
 
   const recScenario = scenarios.REC;
 
+  const panelFastenerSpecs: Record<number, { name: string; subtitle: string }> = {
+    0: substructure === 2
+      ? {
+          name: "Саморезы для фиброцементных панелей",
+          subtitle: "С антикоррозионным покрытием; длину подбирают по толщине панели и деревянной обрешётки",
+        }
+      : {
+          name: "Фасадные заклёпки для фиброцементных панелей",
+          subtitle: "Диаметр, длина и цвет должны соответствовать выбранной фасадной системе",
+        },
+    1: {
+      name: "Заклёпки или саморезы для металлокассет",
+      subtitle: "Типоразмер зависит от замка кассеты и материала направляющей подсистемы",
+    },
+    2: {
+      name: "Фасадные заклёпки 4,8–5,0 мм для HPL-панелей",
+      subtitle: "Длину и цвет выбирают по толщине панели и каталогу фасадной системы",
+    },
+    3: substructure === 2
+      ? {
+          name: "Саморезы по дереву для металлического сайдинга",
+          subtitle: "С EPDM-шайбой; длину подбирают по толщине обрешётки",
+        }
+      : {
+          name: "Саморезы 4,2×19 мм с прессшайбой",
+          subtitle: "Для крепления металлического сайдинга к металлической подсистеме",
+        },
+  };
+  const panelFastenerSpec = panelFastenerSpecs[panelType];
+
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
@@ -183,7 +213,8 @@ export function computeCanonicalFacadePanels(
       category: "Подсистема",
     } satisfies CanonicalMaterialResult] : []),
     {
-      name: "Крепёж панелей",
+      name: panelFastenerSpec.name,
+      subtitle: panelFastenerSpec.subtitle,
       quantity: fasteners,
       unit: "шт",
       withReserve: fasteners,
@@ -191,7 +222,8 @@ export function computeCanonicalFacadePanels(
       category: "Крепёж",
     },
     {
-      name: "Анкеры для кронштейнов",
+      name: "Фасадные анкеры для кронштейнов",
+      subtitle: "Диаметр, длину и глубину анкеровки выбирают по материалу стены и расчётной нагрузке",
       quantity: anchors,
       unit: "шт",
       withReserve: anchors,
@@ -203,7 +235,8 @@ export function computeCanonicalFacadePanels(
   if (insPlates > 0) {
     materials.push(
       {
-        name: "Утеплитель (плиты)",
+        name: `Минераловатные плиты для вентфасада ${insulationThickness} мм`,
+        subtitle: "Негорючие фасадные плиты; плотность выбирают по проекту и требованиям системы",
         quantity: insPlates,
         unit: "шт",
         withReserve: insPlates,
@@ -211,7 +244,8 @@ export function computeCanonicalFacadePanels(
         category: "Утепление",
       },
       {
-        name: "Дюбели для утеплителя",
+        name: `Дюбели тарельчатые 10×${insulationThickness + 50} мм`,
+        subtitle: "Длина включает 50 мм анкеровки; для рыхлого основания требуется отдельная проверка",
         quantity: insDowels,
         unit: "шт",
         withReserve: insDowels,
@@ -219,7 +253,8 @@ export function computeCanonicalFacadePanels(
         category: "Крепёж",
       },
       {
-        name: `Ветрозащитная мембрана (${WIND_MEMBRANE_ROLL} м²)`,
+        name: `Ветрозащитная диффузионная мембрана (${WIND_MEMBRANE_ROLL} м²)`,
+        subtitle: "Паропроницаемая и негорючая — для системы вентилируемого фасада",
         quantity: membrane,
         unit: "рулонов",
         withReserve: membrane,
@@ -232,7 +267,8 @@ export function computeCanonicalFacadePanels(
   materials.push(
     buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
     {
-      name: "Герметик (тубы)",
+      name: "Герметик фасадный атмосферостойкий",
+      subtitle: "Совместимый с материалом панелей и защитным покрытием подсистемы",
       quantity: sealant,
       unit: "шт",
       withReserve: sealant,
