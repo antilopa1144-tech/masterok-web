@@ -1,101 +1,56 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { getCategoryById } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { Suspense } from "react";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { formatSiteLastReviewedRu, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
-
-const UI_TEXT = {
-  rootBreadcrumb: "Калькуляторы",
-  defaultCategoryLabel: "Калькулятор",
-  complexityLabels: ["Простой", "Стандартный", "Детальный"] as const,
-  methodologyBadge: "Как считаем",
-  formulasTitle: "Формулы и нормы расчёта",
-  howToUseTitle: "Как пользоваться калькулятором",
-  faqTitle: "Частые вопросы",
-  appPromoTitle: `📱 ${SITE_NAME} для Android`,
-  appPromoDescription: `${ALL_CALCULATORS_META.length}+ калькуляторов в одном приложении. Работает без интернета. Сохраняйте расчёты и создавайте проекты.`,
-  appPromoLink: "Узнать подробнее",
-  relatedTitle: "Похожие калькуляторы",
-  maybeUsefulTitle: "Может пригодиться",
-  crossCategoryTitle: "Другие популярные калькуляторы",
-  updatedLabel: "Обновлено",
-} as const;
-
-const LAST_REVIEWED_LABEL = formatSiteLastReviewedRu();
-const SITE_TITLE_SUFFIX = ` — ${SITE_NAME}`;
-
-function titleWithoutSiteSuffix(title: string): string {
-  return title.endsWith(SITE_TITLE_SUFFIX)
-    ? title.slice(0, -SITE_TITLE_SUFFIX.length)
-    : title;
-}
-
-/** Карточка калькулятора в блоках перелинковки (низ страницы). */
-function RelatedCalcCard({ meta }: { meta: (typeof ALL_CALCULATORS_META)[number] }) {
-  const cat = getCategoryById(meta.category);
-  return (
-    <Link
-      href={`/kalkulyatory/${meta.categorySlug}/${meta.slug}/`}
-      className="card-hover p-4 flex items-start gap-3 no-underline group"
-    >
-      <span
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: (cat?.color ?? "#64748b") + "18" }}
-      >
-        <CategoryIcon icon={cat?.icon ?? "wrench"} size={20} color={cat?.color ?? "#64748b"} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors leading-snug">
-          {meta.title}
-        </p>
-        <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 truncate">
-          {meta.description}
-        </p>
-      </div>
-    </Link>
-  );
-}
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
 }
 
-// dynamicParams: false → неизвестные [category]/[slug] комбинации возвращают 404
-// (Next.js не пытается рендерить компонент для них)
-export const dynamicParams = false;
+const SITE_TITLE_SUFFIX = ` — ${SITE_NAME}`;
 
-// ISR: ревалидация раз в сутки. После build страница раздаётся как статика;
-// при изменении формул/SEO-контента после деплоя страница автоматически
-// перерендерится при следующем запросе через сутки. Для бота это значит
-// готовый HTML за ~50ms вместо 700ms TTFB. Все 66 страниц одновременно при
-// build — heavy, но один раз; обновление по запросу — лёгкое.
-export const revalidate = 86400;
-
-// Генерация статических путей
-export async function generateStaticParams() {
-  return ALL_CALCULATORS_META.map((calc) => ({
-    category: calc.categorySlug,
-    slug: calc.slug,
-  }));
+function titleWithoutSiteSuffix(title: string): string {
+  return title.endsWith(SITE_TITLE_SUFFIX) ? title.slice(0, -SITE_TITLE_SUFFIX.length) : title;
 }
 
-// Метаданные
+function RelatedCalcCard({ meta }: { meta: (typeof ALL_CALCULATORS_META)[number] }) {
+  const category = getCategoryById(meta.category);
+  return (
+    <Link href={`/kalkulyatory/${meta.categorySlug}/${meta.slug}/`} className="group flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 no-underline transition-colors hover:border-accent-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-accent-700">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: category?.bgColor ?? "#f1f5f9" }}>
+        <CategoryIcon icon={category?.icon ?? "calculator"} size={20} color={category?.color ?? "#64748b"} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-bold text-slate-900 group-hover:text-accent-700 dark:text-white">{meta.title}</span>
+        <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">{category?.label}</span>
+      </span>
+      <span className="text-slate-400" aria-hidden>›</span>
+    </Link>
+  );
+}
+
+export const dynamicParams = false;
+export const revalidate = 86400;
+
+export async function generateStaticParams() {
+  return ALL_CALCULATORS_META.map((calc) => ({ category: calc.categorySlug, slug: calc.slug }));
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const calc = getCalculatorBySlug(slug);
   if (!calc) return {};
-
   const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
-
   return buildPageMetadata({
     title: titleWithoutSiteSuffix(calc.metaTitle),
     description: calc.metaDescription,
@@ -108,129 +63,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CalculatorPage({ params }: PageProps) {
   const { slug } = await params;
-
   const calc = getCalculatorBySlug(slug);
   if (!calc) notFound();
 
   const category = getCategoryById(calc.category);
-
-  // Похожие калькуляторы из той же категории
-  const related = ALL_CALCULATORS_META.filter(
-    (c) => c.category === calc.category && c.slug !== calc.slug
-  ).slice(0, 4);
-
-  // Cross-category popular calculators (for internal linking SEO)
-  const crossCategory = ALL_CALCULATORS_META
-    .filter((c) => c.category !== calc.category && c.slug !== calc.slug)
-    .sort((a, b) => b.popularity - a.popularity)
-    .slice(0, 4);
-
-  // На мобиле нет правой колонки, поэтому две отдельные секции перелинковки
-  // («Может пригодиться» + «Другие популярные») сливаются в одну компактную:
-  // похожие из категории + добор из популярных. Категории не пересекаются,
-  // дублей нет. На десктопе остаётся прежнее разделение (related — в колонке).
-  const mobileRelated = [...related, ...crossCategory].slice(0, 6);
-
+  const related = ALL_CALCULATORS_META
+    .filter((item) => item.slug !== calc.slug)
+    .sort((a, b) => {
+      const sameCategoryA = a.category === calc.category ? 1 : 0;
+      const sameCategoryB = b.category === calc.category ? 1 : 0;
+      return sameCategoryB - sameCategoryA || b.popularity - a.popularity;
+    })
+    .slice(0, 6);
   const accentColor = category?.color ?? "#f97316";
-  const accentBg = category?.bgColor ?? "#fff7ed";
-  const heroStyle = { "--accent-hero-bg": accentBg } as Record<string, string>;
-
-  const baseUrl = SITE_URL;
-  const canonicalUrl = `${baseUrl}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
+  const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
 
   return (
     <>
-      <CalculatorJsonLd
-        calc={calc}
-        categoryLabel={category?.label}
-        canonicalUrl={canonicalUrl}
-      />
+      <CalculatorJsonLd calc={calc} categoryLabel={category?.label} canonicalUrl={canonicalUrl} />
 
-      {/* Hero-шапка */}
-      <div
-        style={heroStyle}
-        className="border-b border-slate-200 dark:border-slate-800 bg-[var(--accent-hero-bg)] dark:bg-slate-900"
-        data-print-hide
-      >
-        <div className="page-container-wide py-6 md:py-8">
-          {/* Хлебные крошки */}
+      <main className="page-container-wide pb-14 pt-5 sm:pt-7">
+        <header className="mb-5 sm:mb-6" data-print-hide>
           <Breadcrumbs
             items={[
-              { href: "/", label: UI_TEXT.rootBreadcrumb },
+              { href: "/kalkulyatory/", label: "Калькуляторы" },
               ...(category ? [{ href: `/kalkulyatory/${category.slug}/`, label: category.label }] : []),
               { label: calc.title },
             ]}
           />
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">{calc.title}</h1>
+          <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-500 sm:text-lg dark:text-slate-400">{calc.description}</p>
+        </header>
 
-          <div className="flex items-start gap-4">
-            {category && (
-              <div
-                className="hidden sm:flex w-14 h-14 rounded-2xl items-center justify-center shrink-0"
-                style={{ backgroundColor: accentColor + "22" }}
-              >
-                <CategoryIcon icon={category.icon} size={28} color={accentColor} />
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2">
-                {calc.h1}
-              </h1>
-              <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed max-w-2xl">
-                {calc.description}
-              </p>
-
-              {/* Метки */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <span
-                  className="badge text-white"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {category?.label ?? UI_TEXT.defaultCategoryLabel}
-                </span>
-                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  {UI_TEXT.complexityLabels[calc.complexity - 1]}
-                </span>
-                <Link
-                  href="/metodologiya/"
-                  title="Формулы, нормы расхода, запас и округление"
-                  className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 no-underline transition-colors hover:border-accent-300 hover:text-accent-700"
-                >
-                  {UI_TEXT.methodologyBadge} →
-                </Link>
-                <span className="badge bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  {UI_TEXT.updatedLabel} {LAST_REVIEWED_LABEL}
-                </span>
-              </div>
+        <Suspense
+          fallback={
+            <div className="grid gap-4 xl:grid-cols-2" aria-hidden="true">
+              <div className="h-[36rem] animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" />
+              <div className="h-[36rem] animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Основной контент */}
-      <div className="page-container-wide py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_18rem] gap-8">
-          {/* Левая колонка — калькулятор */}
-          <div className="min-w-0 space-y-6">
-            <Suspense
-              fallback={
-                <div
-                  className="card p-6 animate-pulse space-y-4 min-h-[420px] md:min-h-[600px] lg:min-h-[1000px]"
-                  aria-hidden="true"
-                >
-                  {/* Резервируем место под виджет калькулятора, чтобы избежать CLS
-                      (виджет рендерится клиентским кодом после hydration). */}
-                  <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-700 rounded" />
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                    ))}
-                  </div>
-                  <div className="h-12 w-full bg-slate-200 dark:bg-slate-700 rounded-lg mt-6" />
-                  <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-lg mt-6" />
-                </div>
-              }
-            >
-            <CalculatorWithMikhalych calculator={{
+          }
+        >
+          <CalculatorWithMikhalych
+            calculator={{
               id: calc.id,
               slug: calc.slug,
               title: calc.title,
@@ -246,118 +120,34 @@ export default async function CalculatorPage({ params }: PageProps) {
               fields: calc.fields,
               expertTips: calc.expertTips,
               faq: calc.faq,
-            }} />
-            </Suspense>
+            }}
+          />
+        </Suspense>
 
-            {/* SEO/GEO/AEO контент — объединённый блок */}
-            {calc.seoContent && (
-              <div data-print-hide>
-                <SeoContentBlock
-                  calculatorId={calc.id}
-                  descriptionHtml={calc.seoContent.descriptionHtml}
-                  faq={calc.seoContent.faq}
-                  formulaDescription={calc.formulaDescription}
-                  howToUse={calc.howToUse}
-                  inlineFaq={calc.faq}
-                  accentColor={accentColor}
-                />
-              </div>
-            )}
-
-            {/* Fallback: если нет seoContent, показать формулы + howToUse + FAQ отдельно */}
-            {!calc.seoContent && (calc.formulaDescription || (calc.howToUse && calc.howToUse.length > 0) || (calc.faq && calc.faq.length > 0)) && (
-              <div data-print-hide>
-                <SeoContentBlock
-                  calculatorId={calc.id}
-                  descriptionHtml=""
-                  faq={calc.faq ?? []}
-                  formulaDescription={calc.formulaDescription}
-                  howToUse={calc.howToUse}
-                  accentColor={accentColor}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Правая колонка */}
-          <div className="hidden xl:block space-y-4" data-print-hide>
-            {/* Скачать приложение */}
-            <div className="card p-5">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2">{UI_TEXT.appPromoTitle}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
-                {UI_TEXT.appPromoDescription}
-              </p>
-              <Link href="/prilozhenie/" className="btn-secondary text-sm w-full text-center">
-                {UI_TEXT.appPromoLink}
-              </Link>
-            </div>
-
-            {/* Похожие калькуляторы */}
-            {related.length > 0 && (
-              <div className="card p-5">
-                <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                  {UI_TEXT.relatedTitle}
-                </h3>
-                <div className="space-y-2">
-                  {related.map((r) => (
-                    <Link
-                      key={r.id}
-                      href={`/kalkulyatory/${r.categorySlug}/${r.slug}/`}
-                      className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-accent-700 dark:hover:text-accent-400 no-underline transition-colors py-1.5 group"
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                      <span className="group-hover:underline">{r.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="mt-4" data-print-hide>
+          <SeoContentBlock
+            calculatorId={calc.id}
+            descriptionHtml={calc.seoContent?.descriptionHtml ?? ""}
+            faq={calc.seoContent?.faq ?? calc.faq ?? []}
+            formulaDescription={calc.formulaDescription}
+            howToUse={calc.howToUse}
+            inlineFaq={calc.faq}
+            accentColor={accentColor}
+          />
         </div>
 
-        {/* МОБИЛА/ПЛАНШЕТ: одна компактная секция перелинковки в 2 колонки
-            (на десктопе скрыта — там related живёт в правой колонке). */}
-        {mobileRelated.length > 0 && (
-          <div className="mt-10 xl:hidden" data-print-hide>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-              {UI_TEXT.maybeUsefulTitle}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {mobileRelated.map((r) => (
-                <RelatedCalcCard key={r.id} meta={r} />
-              ))}
+        {related.length > 0 && (
+          <details className="group mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" data-print-hide>
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-50 dark:text-white dark:hover:bg-slate-800/70">
+              <span className="flex items-center gap-2"><CategoryIcon icon="calculator" size={18} color="currentColor" />Похожие калькуляторы</span>
+              <span className="text-xl font-normal text-slate-400 transition-transform group-open:rotate-45" aria-hidden>+</span>
+            </summary>
+            <div className="grid gap-3 border-t border-slate-200 p-4 sm:grid-cols-2 lg:grid-cols-3 dark:border-slate-700">
+              {related.map((item) => <RelatedCalcCard key={item.id} meta={item} />)}
             </div>
-          </div>
+          </details>
         )}
-
-        {/* ДЕСКТОП: популярные из других категорий (related уже в правой колонке).
-            Скрыто на мобиле — там их роль выполняет слитая секция выше. */}
-        {crossCategory.length > 0 && (
-          <div className="mt-10 hidden xl:block">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
-              {UI_TEXT.crossCategoryTitle}
-            </h2>
-            <div className="grid grid-cols-4 gap-3">
-              {crossCategory.map((r) => (
-                <RelatedCalcCard key={r.id} meta={r} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      </main>
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-

@@ -8,7 +8,6 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import { TOOL_CARDS } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import HeaderSearch from "@/components/layout/HeaderSearch";
 import { SITE_NAME } from "@/lib/site";
 import {
   HEADER_FEATURE_LINKS,
@@ -35,11 +34,11 @@ function navLinkClass(active: boolean, highlight?: boolean): string {
   if (highlight) {
     return active
       ? "text-white bg-accent-600 dark:bg-accent-500 shadow-sm"
-      : "text-accent-800 bg-accent-50 hover:bg-accent-100 dark:text-accent-200 dark:bg-accent-900/30 dark:hover:bg-accent-900/50";
+      : "border border-slate-200 text-slate-700 bg-white hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:text-slate-200 dark:bg-slate-900 dark:hover:border-accent-700";
   }
   return active
-    ? "text-accent-700 bg-accent-50 dark:bg-accent-900/20 dark:text-accent-400"
-    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100";
+    ? "text-accent-700 dark:text-accent-400"
+    : "text-slate-700 hover:text-accent-700 dark:text-slate-300 dark:hover:text-accent-400";
 }
 
 function HeaderNavItem({
@@ -213,15 +212,14 @@ export default function Header() {
             )}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-1 shrink-0">
-            <HeaderSearch />
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
             <HeaderNavItem link={HEADER_PROJECTS_LINK} pathname={pathname} showBadge />
             <ThemeToggle />
             <Link
               href="/prilozhenie/"
               className="btn-primary text-sm py-2 px-4 ml-1 inline-flex items-center gap-1.5"
             >
-              <CategoryIcon icon="phone" size={15} color="#fff" />
+              <CategoryIcon icon="download" size={15} color="#fff" />
               <span className="hidden xl:inline">{UI_TEXT.download}</span>
               <span className="xl:hidden">App</span>
             </Link>

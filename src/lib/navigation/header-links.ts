@@ -30,7 +30,7 @@ export const HEADER_FEATURE_LINKS: HeaderNavLink[] = [
     href: "/proekty/",
     label: "Проекты",
     match: ["/proekty"],
-    icon: "checklist",
+    icon: "folder",
     highlight: true,
   },
   {

@@ -38,6 +38,8 @@ interface Props {
   tools?: ToolSearchItem[];
   /** Синхронизация с ?q= в URL (главная + schema.org SearchAction). */
   syncUrlQuery?: boolean;
+  /** Крупный вариант для hero главной: поле и явная кнопка поиска. */
+  hero?: boolean;
 }
 
 export default function CalculatorSearch({
@@ -46,11 +48,13 @@ export default function CalculatorSearch({
   checklists,
   tools,
   syncUrlQuery = false,
+  hero = false,
 }: Props) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const lastEmptyQueryRef = useRef("");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -183,9 +187,9 @@ export default function CalculatorSearch({
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
-      } else if (e.key === "Enter" && activeIndex >= 0) {
+      } else if (e.key === "Enter" && results.length > 0) {
         e.preventDefault();
-        const item = results[activeIndex];
+        const item = results[activeIndex >= 0 ? activeIndex : 0];
         trackSearchSelection(query, item.type, item.id);
         close();
         router.push(item.href);
@@ -196,13 +200,27 @@ export default function CalculatorSearch({
     [showDropdown, results, activeIndex, query, close, router],
   );
 
+  const handleSubmit = useCallback(() => {
+    const item = results[activeIndex >= 0 ? activeIndex : 0];
+    if (!item) {
+      inputRef.current?.focus();
+      setIsOpen(true);
+      return;
+    }
+    trackSearchSelection(query, item.type, item.id);
+    close();
+    router.push(item.href);
+  }, [activeIndex, close, query, results, router]);
+
   return (
-    <div className="relative max-w-xl mx-auto" ref={containerRef}>
-      <div className="relative">
+    <div className={`relative mx-auto ${hero ? "max-w-4xl" : "max-w-xl"}`} ref={containerRef}>
+      <div className={hero ? "flex flex-col gap-3 sm:flex-row" : undefined}>
+      <div className="relative flex-1">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
           <CategoryIcon icon="search" size={18} color="#94a3b8" />
         </span>
         <input
+          ref={inputRef}
           type="search"
           value={query}
           onChange={(e) => {
@@ -212,7 +230,7 @@ export default function CalculatorSearch({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={CALCULATOR_UI_TEXT.searchPlaceholder}
-          className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm text-base md:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all"
+          className={`w-full pl-11 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm text-base text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 transition-all ${hero ? "min-h-14 py-4 sm:min-h-16 sm:py-4" : "py-3.5 md:text-sm"}`}
           role="combobox"
           aria-controls="search-results"
           aria-expanded={showDropdown}
@@ -227,7 +245,6 @@ export default function CalculatorSearch({
             <CategoryIcon icon="close" size={16} />
           </button>
         )}
-      </div>
 
       {/* Результаты */}
       {showDropdown && (
@@ -294,6 +311,17 @@ export default function CalculatorSearch({
           )}
         </div>
       )}
+      </div>
+      {hero && (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="btn-primary min-h-14 shrink-0 rounded-xl px-7 text-base sm:min-h-16 sm:min-w-52"
+        >
+          Найти калькулятор
+        </button>
+      )}
+      </div>
     </div>
   );
 }

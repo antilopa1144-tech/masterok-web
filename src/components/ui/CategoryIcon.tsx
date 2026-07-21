@@ -30,6 +30,8 @@ import {
   Grid3X3,
   DollarSign,
   Droplets,
+  Download,
+  FolderClosed,
   type LucideIcon,
 } from "lucide-react";
 
@@ -55,6 +57,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   tile: Grid3X3,
   cost: DollarSign,
   primer: Droplets,
+  download: Download,
+  folder: FolderClosed,
   // UI
   trophy: Trophy,
   bot: Bot,
