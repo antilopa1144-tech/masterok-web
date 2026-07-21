@@ -30,7 +30,7 @@ export const TOTAL_LABELS: Record<string, string> = {
   openingCount: "Проёмов", platesNeeded: "Плит", plateArea: "Площадь плиты",
   funnels: "Воронок", pipePcs: "Труб", gutterPcs: "Желобов",
   rollsNeeded: "Рулонов", stripsPerRoll: "Полос в рулоне", stripsNeeded: "Полос",
-  fixtures: "Светильников", ppQuantity: "Профилей ПП",
+  fixtures: "Светильников", ppQuantity: "Потолочных профилей",
   totalFoamCans: "Баллонов пены", breakersCount: "Автоматов",
   // Масса
   totalKg: "Общий вес", kgPerSqm: "Расход", cementKg: "Цемент",
@@ -61,7 +61,7 @@ export const TOTAL_LABELS: Record<string, string> = {
   fiberKg: "Фиброволокно",
   // Плитка
   averageTileSizeCm: "Средний размер плитки", jointWidth: "Ширина шва",
-  groutDepth: "Глубина затирки", crossesNeeded: "Крестиков/СВП",
+  groutDepth: "Глубина затирки", crossesNeeded: "Крестиков / элементов системы выравнивания плитки",
   glueNeededKg: "Клей", groutNeededKg: "Затирка",
   // Кладка
   bricksWithReserve: "Кирпичей с запасом", mortarBags: "Мешков раствора",
@@ -69,8 +69,8 @@ export const TOTAL_LABELS: Record<string, string> = {
   // Газобетон / пеноблоки
   blocksWithReserve: "Блоков с запасом", glueBags: "Мешков клея",
   // Гипсокартон
-  totalSheetArea: "Площадь обшивки", ppPieces: "Профилей ПП",
-  pnPieces: "Профилей ПН", serpyankaRolls: "Рулонов серпянки",
+  totalSheetArea: "Площадь обшивки", ppPieces: "Потолочных профилей",
+  pnPieces: "Направляющих профилей", serpyankaRolls: "Рулонов серпянки",
   primerCans: "Канистр грунтовки",
   // Кровля
   slopeFactor: "Коэфф. уклона", ridgeLength: "Конёк",
@@ -80,7 +80,7 @@ export const TOTAL_LABELS: Record<string, string> = {
   circuits: "Контуров", totalPipe: "Длина трубы",
   // Электрика
   outletsCount: "Розеток", switchesCount: "Выключателей",
-  uzoCount: "Кол-во УЗО",
+  uzoCount: "Устройств защитного отключения (УЗО)",
   // Отопление
   radiatorSections: "Секций радиаторов", totalUnits: "Радиаторов",
   // Канализация
@@ -255,8 +255,8 @@ export const TOTAL_LABEL_FORMS: Record<string, [string, string, string]> = {
   masticBuckets: ["Ведро мастики", "Ведра мастики", "Вёдер мастики"],
   primerCans: ["Канистра грунтовки", "Канистры грунтовки", "Канистр грунтовки"],
   // Профили
-  ppPieces: ["Профиль ПП", "Профиля ПП", "Профилей ПП"],
-  pnPieces: ["Профиль ПН", "Профиля ПН", "Профилей ПН"],
+  ppPieces: ["Потолочный профиль", "Потолочных профиля", "Потолочных профилей"],
+  pnPieces: ["Направляющий профиль", "Направляющих профиля", "Направляющих профилей"],
   // Штуки
   panelCount: ["Панель", "Панели", "Панелей"],
   panelsNeeded: ["Панель", "Панели", "Панелей"],
@@ -289,7 +289,7 @@ export const TOTAL_LABEL_FORMS: Record<string, [string, string, string]> = {
   doorThresholds: ["Порожек", "Порожка", "Порожков"],
   plinthPieces: ["Плинтус", "Плинтуса", "Плинтусов"],
   wedgesNeeded: ["Клин", "Клина", "Клиньев"],
-  crossesNeeded: ["Крестик/СВП", "Крестика/СВП", "Крестиков/СВП"],
+  crossesNeeded: ["Крестик / элемент СВП", "Крестика / элемента СВП", "Крестиков / элементов СВП"],
   outletsCount: ["Розетка", "Розетки", "Розеток"],
   switchesCount: ["Выключатель", "Выключателя", "Выключателей"],
   insulationLayers: ["Слой утеплителя", "Слоя утеплителя", "Слоёв утеплителя"],

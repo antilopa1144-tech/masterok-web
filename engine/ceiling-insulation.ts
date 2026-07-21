@@ -111,7 +111,7 @@ export function computeCanonicalCeilingInsulation(
     primaryUnit = "шт";
     primaryLabel = "epps-plate";
     materials.push({
-      name: "ЭППС плиты",
+      name: "Плиты экструдированного пенополистирола (ЭППС)",
       quantity: plates,
       unit: "шт",
       withReserve: plates,

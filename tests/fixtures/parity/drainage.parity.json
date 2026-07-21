@@ -1,7 +1,7 @@
 {
   "calculator_id": "drainage",
   "formula_version": "drainage-canonical-v1",
-  "generated_at": "2026-05-16T08:06:51.411Z",
+  "generated_at": "2026-07-21T07:37:54.554Z",
   "cases": [
     {
       "id": "defaults",

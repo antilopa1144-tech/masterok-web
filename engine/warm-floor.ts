@@ -143,7 +143,7 @@ function buildMaterialsCable(
       category: "Монтаж",
     },
     {
-      name: "Утеплитель ЕПС (листы 1200×600)",
+      name: "Плиты пенополистирола для теплоизоляции, 1200×600 мм",
       quantity: epsSheets,
       unit: "листов",
       withReserve: epsSheets,
@@ -151,7 +151,7 @@ function buildMaterialsCable(
       category: "Утепление",
     },
     {
-      name: "Стяжка ЦПС (мешки 50 кг)",
+      name: "Цементно-песчаная смесь для стяжки (мешки 50 кг)",
       quantity: roundDisplay(heatingArea * SCREED_THICKNESS_M * SCREED_DENSITY, 3),
       unit: "кг",
       withReserve: screedBags * SCREED_BAG_KG,

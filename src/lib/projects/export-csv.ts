@@ -17,7 +17,7 @@ export function buildProcurementCsv(
     ["Смета", projectName].map(escapeCsv).join(sep),
     ["Дата", new Date().toLocaleDateString("ru-RU")].map(escapeCsv).join(sep),
     "",
-    ["Категория", "Материал", "Количество", "Ед.", "Цена", "Сумма"].map(escapeCsv).join(sep),
+    ["Категория", "Материал", "Спецификация", "Количество", "Ед.", "Цена", "Сумма"].map(escapeCsv).join(sep),
   ];
 
   for (const line of lines) {
@@ -27,6 +27,7 @@ export function buildProcurementCsv(
       [
         line.category,
         line.name,
+        (line.subtitles ?? []).join(" | "),
         String(line.quantity).replace(".", ","),
         line.unit,
         price > 0 ? String(price).replace(".", ",") : "",
@@ -38,14 +39,14 @@ export function buildProcurementCsv(
   }
 
   rows.push("");
-  rows.push(["", "", "", "", "Материалы", String(totals.materialsSubtotal)].map(escapeCsv).join(sep));
+  rows.push(["", "", "", "", "", "Материалы", String(totals.materialsSubtotal)].map(escapeCsv).join(sep));
   if (totals.reserveAmount > 0) {
-    rows.push(["", "", "", "", `Запас ${totals.reservePercent}%`, String(totals.reserveAmount)].map(escapeCsv).join(sep));
+    rows.push(["", "", "", "", "", `Запас ${totals.reservePercent}%`, String(totals.reserveAmount)].map(escapeCsv).join(sep));
   }
   if (totals.deliveryRub > 0) {
-    rows.push(["", "", "", "", "Доставка", String(totals.deliveryRub)].map(escapeCsv).join(sep));
+    rows.push(["", "", "", "", "", "Доставка", String(totals.deliveryRub)].map(escapeCsv).join(sep));
   }
-  rows.push(["", "", "", "", "ИТОГО", String(totals.grandTotal)].map(escapeCsv).join(sep));
+  rows.push(["", "", "", "", "", "ИТОГО", String(totals.grandTotal)].map(escapeCsv).join(sep));
 
   return `\uFEFF${rows.join("\n")}`;
 }

@@ -56,7 +56,7 @@ export const partitionsDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Газобетон D500 (Ytong, БЗТК)" },
+        { value: 0, label: "Газобетон плотностью D500" },
         { value: 1, label: "Пенобетон D600" },
         { value: 2, label: "Гипсовые пазогребневые плиты" },
       ],
@@ -82,7 +82,7 @@ export const partitionsDef: CalculatorDefinition = {
   formulaDescription: `
 **Расчёт перегородки из блоков:**
 - Газоблок 625×250: ~6.4 шт/м²
-- ПГП 667×500: ~3.0 шт/м²
+- Гипсовые пазогребневые плиты (ПГП) 667×500: ~3.0 шт/м²
 - Клей: 1.5 кг/м² (мешок 25 кг)
 - Армирование: каждые 3 ряда (~75 см)
   `,

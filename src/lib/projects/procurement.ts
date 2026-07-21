@@ -6,6 +6,7 @@ export interface MaterialSource {
   slug: string;
   categorySlug: string;
   quantity: number;
+  subtitle?: string;
 }
 
 export interface ProcurementLine {
@@ -14,6 +15,8 @@ export interface ProcurementLine {
   unit: string;
   quantity: number;
   category: string;
+  /** Уникальные закупочные уточнения из исходных расчётов. */
+  subtitles?: string[];
   sources: MaterialSource[];
 }
 
@@ -36,6 +39,7 @@ export function aggregateProcurementLines(projectEntries: StoredProjectEntry[]):
       const key = materialKey(material.name, material.unit);
       const qty = Number.isFinite(material.quantity) ? material.quantity : 0;
       const category = normalizeCategory(material.category);
+      const subtitle = material.subtitle?.trim() || undefined;
 
       const existing = map.get(key);
       if (existing) {
@@ -46,7 +50,11 @@ export function aggregateProcurementLines(projectEntries: StoredProjectEntry[]):
           slug: entry.slug,
           categorySlug: entry.categorySlug,
           quantity: qty,
+          subtitle,
         });
+        if (subtitle && !existing.subtitles?.includes(subtitle)) {
+          existing.subtitles = [...(existing.subtitles ?? []), subtitle];
+        }
         if (category !== DEFAULT_CATEGORY && existing.category === DEFAULT_CATEGORY) {
           existing.category = category;
         }
@@ -57,6 +65,7 @@ export function aggregateProcurementLines(projectEntries: StoredProjectEntry[]):
           unit: material.unit,
           quantity: qty,
           category,
+          subtitles: subtitle ? [subtitle] : [],
           sources: [
             {
               entryId: entry.id,
@@ -64,6 +73,7 @@ export function aggregateProcurementLines(projectEntries: StoredProjectEntry[]):
               slug: entry.slug,
               categorySlug: entry.categorySlug,
               quantity: qty,
+              subtitle,
             },
           ],
         });

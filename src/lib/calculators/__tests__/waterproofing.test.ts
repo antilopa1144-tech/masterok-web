@@ -14,16 +14,16 @@ describe("Гидроизоляция", () => {
       // wallArea=10*0.2=2, totalArea=8
       // masticKg=8*1.0*2=16, buckets=ceil(16/15)=2
       expect(r.totals.totalArea).toBeCloseTo(8, 1);
-      // Engine: "Ceresit CL 51 (15 кг)"
-      const mastic = findMaterial(r, "Ceresit");
+      const mastic = findMaterial(r, "Готовая полимерная гидроизоляция");
       expect(mastic).toBeDefined();
+      expect(mastic?.subtitle).toContain("внутренних мокрых зон");
     });
 
     it("грунтовка Ceresit для цементной мастики", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      // Engine: "Грунтовка Ceresit (2 кг)"
-      const primer = findMaterial(r, "Грунтовка Ceresit");
+      const primer = findMaterial(r, "Грунтовка под полимерную гидроизоляцию");
       expect(primer).toBeDefined();
+      expect(primer?.subtitle).toContain("той же системы");
     });
   });
 
@@ -31,16 +31,15 @@ describe("Гидроизоляция", () => {
     it("расход 1.2 кг/м², ведро 20 кг", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 1, layers: 2 });
       // totalArea=8, masticKg=8*1.2*2=19.2, buckets=ceil(19.2/20)=1
-      // Engine: "Жидкая резина (20 кг)"
-      const mastic = findMaterial(r, "Жидкая резина");
+      const mastic = findMaterial(r, "Двухкомпонентная жидкая гидроизоляция");
       expect(mastic).toBeDefined();
     });
 
     it("битумный праймер для жидкой резины", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 1, layers: 2 });
-      // Engine: "Битумный праймер (20 л)"
-      const primer = findMaterial(r, "Битумный праймер");
+      const primer = findMaterial(r, "Праймер для выбранной гидроизоляции");
       expect(primer).toBeDefined();
+      expect(primer?.subtitle).toContain("производителем");
     });
   });
 
@@ -49,7 +48,7 @@ describe("Гидроизоляция", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 2, layers: 2 });
       // totalArea=8, masticKg=8*0.8*2=12.8, buckets=ceil(12.8/15)=1
       // Engine: "Полимерная мастика (15 кг)"
-      const mastic = findMaterial(r, "Полимерная мастика");
+      const mastic = findMaterial(r, "Полимерная обмазочная гидроизоляция");
       expect(mastic).toBeDefined();
     });
   });
@@ -75,22 +74,22 @@ describe("Гидроизоляция", () => {
   describe("Сопутствующие материалы", () => {
     it("лента гидроизоляционная", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      // Engine: "Лента гидроизоляционная (10 м)"
-      const tape = findMaterial(r, "Лента гидроизоляционная");
-      expect(tape).toBeDefined();
+      const systemTape = findMaterial(r, "Системная эластичная гидроизоляционная лента");
+      expect(systemTape?.subtitle).toContain("совместим");
     });
 
     it("силиконовый герметик", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
       // Engine: "Силиконовый герметик"
-      const sealant = findMaterial(r, "Силиконовый герметик");
+      const sealant = findMaterial(r, "Санитарный нейтральный силиконовый герметик");
       expect(sealant).toBeDefined();
+      expect(sealant?.name).toContain("280–310 мл");
     });
 
     it("герметик для стыков", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
       // Engine: "Герметик для стыков"
-      const joint = findMaterial(r, "Герметик для стыков");
+      const joint = findMaterial(r, "Эластичный герметик для примыканий");
       expect(joint).toBeDefined();
     });
   });

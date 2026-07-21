@@ -41,14 +41,15 @@ describe("Подвесной потолок из ГКЛ", () => {
 
     it("Крабы: 35 шт", () => {
       // mainRows=7 × crossRows=5 = 35
-      const crab = findMaterial(r, "Краб")!;
+      const crab = findMaterial(r, "Одноуровневый соединитель")!;
       expect(crab.purchaseQty).toBe(35);
     });
 
     it("Саморезы ГКЛ: 0.2 кг", () => {
       // 8×23=184, ceil(184×1.05/1000×10)/10 = ceil(1.932)/10 = 0.2
-      const screws = findMaterial(r, "Саморезы 3.5×25")!;
+      const screws = findMaterial(r, "Чёрные саморезы для гипсокартона по металлу 3,5×25")!;
       expect(screws.withReserve).toBe(0.2);
+      expect(screws.subtitle).toContain("184 шт");
     });
 
     it("Саморезы-клопы: 252 шт", () => {
@@ -59,19 +60,22 @@ describe("Подвесной потолок из ГКЛ", () => {
 
     it("Дюбели: 150 шт", () => {
       // 56×2 + ceil(18.9/0.5) = 112+38 = 150
-      const dowels = findMaterial(r, "Дюбели")!;
-      expect(dowels.purchaseQty).toBe(150);
+      const baseFasteners = findMaterial(r, "анкер-клин 6×40 + дюбель-гвоздь 6×40")!;
+      expect(baseFasteners.purchaseQty).toBe(150);
+      expect(baseFasteners.subtitle).toContain("112 металлических анкеров-клиньев");
+      expect(baseFasteners.subtitle).toContain("38 дюбель-гвоздей");
+      expect(baseFasteners.subtitle).toContain("пластиковые дюбели");
     });
 
     it("Серпянка: 1 рулон (45 м)", () => {
       // ceil(20×1.2×1.1)=27 м → ceil(27/45)=1
-      const serp = findMaterial(r, "Серпянка")!;
+      const serp = findMaterial(r, "Армирующая лента")!;
       expect(serp.purchaseQty).toBe(1);
     });
 
     it("Шпаклёвка Knauf Fugen: 1 мешок (25 кг)", () => {
       // ceil(27×0.25)=7 кг → ceil(7/25)=1
-      const putty = findMaterial(r, "Fugen")!;
+      const putty = findMaterial(r, "Шпаклёвка для стыков гипсокартона")!;
       expect(putty.purchaseQty).toBe(1);
     });
 
@@ -131,6 +135,9 @@ describe("Подвесной потолок из ГКЛ", () => {
       // 2 слоя: sheets=15, ×1.06=15.9→ceil=16
       expect(gkl1.purchaseQty).toBe(9);
       expect(gkl2.purchaseQty).toBe(16);
+      const screws = findMaterial(r2, "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35")!;
+      expect(screws.subtitle).toContain("первого слоя");
+      expect(screws.subtitle).toContain("второго");
     });
   });
 
@@ -188,7 +195,7 @@ describe("Подвесной потолок из ГКЛ", () => {
         layers: 1,
         profileStep: 400,
       });
-      const crab = findMaterial(r400, "Краб")!;
+      const crab = findMaterial(r400, "Одноуровневый соединитель")!;
       // mainRows=10, crossRows=5 → 50
       expect(crab.purchaseQty).toBe(50);
     });

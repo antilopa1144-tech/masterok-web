@@ -81,7 +81,7 @@ describe("Утепление фасада", () => {
     it("ЭППС + не тонкослойная → предупреждение об адгезии", () => {
       const r = calc({ area: 100, thickness: 100, insulationType: 1, finishType: 0 });
       // Engine: "ЭППС — обязательна обработка поверхности для адгезии штукатурки"
-      expect(r.warnings.some(w => w.includes("адгезии"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("сцепления со штукатуркой"))).toBe(true);
     });
   });
 

@@ -130,7 +130,7 @@ export function computeCanonicalRoofing(
       category: "Безопасность",
     });
     materials.push({
-      name: "Кровельные саморезы 4,8×35 мм с EPDM-шайбой",
+      name: "Кровельные саморезы 4,8×35 мм с уплотнительной шайбой из EPDM-резины",
       subtitle: "Для крепления металлочерепицы к деревянной обрешётке в нижнюю волну",
       quantity: screws,
       unit: "шт",
@@ -233,7 +233,7 @@ export function computeCanonicalRoofing(
       category: "Доборные",
     });
     materials.push({
-      name: "Плиты ОСП (1250×2500=3.125 м²)",
+      name: "Ориентированно-стружечные плиты (ОСП, 1250×2500 мм = 3,125 м²)",
       quantity: osbSheets,
       unit: "листов",
       withReserve: osbSheets,
@@ -309,7 +309,7 @@ export function computeCanonicalRoofing(
     });
     const fastenerSpec: Record<number, { name: string; subtitle: string }> = {
       2: {
-        name: "Кровельные саморезы 4,8×35 мм с EPDM-шайбой",
+        name: "Кровельные саморезы 4,8×35 мм с уплотнительной шайбой из EPDM-резины",
         subtitle: "Для крепления профнастила к деревянной обрешётке в нижнюю волну",
       },
       3: {

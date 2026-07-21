@@ -19,9 +19,9 @@ export const drywallDef: CalculatorDefinition = {
   slug: "gipsokarton",
   title: "Калькулятор гипсокартона",
   h1: "Калькулятор гипсокартона онлайн — расчёт листов и профиля",
-  description: "Рассчитайте количество листов ГКЛ, профилей ПП и ПН, крепежа для перегородок и обшивки стен.",
+  description: "Рассчитайте количество листов гипсокартона, потолочных и направляющих профилей, крепежа для перегородок и обшивки стен.",
   metaTitle: withSiteMetaTitle("Калькулятор гипсокартона: материалы онлайн"),
-  metaDescription: "Бесплатный калькулятор гипсокартона: рассчитайте листы ГКЛ Knauf, профиль ПП/ПН, дюбели и саморезы для перегородок, обшивки стен и каркасных конструкций.",
+  metaDescription: "Бесплатный калькулятор гипсокартона: рассчитайте листы, потолочные и направляющие профили, дюбели и саморезы для перегородок и обшивки стен.",
   category: "walls",
   categorySlug: "steny",
   tags: ["гипсокартон", "ГКЛ", "перегородка", "Knauf", "профиль", "ПП", "ПН", "обшивка"],
@@ -61,7 +61,7 @@ export const drywallDef: CalculatorDefinition = {
     },
     {
       key: "layers",
-      label: "Слои ГКЛ с каждой стороны",
+      label: "Слои гипсокартона с каждой стороны",
       type: "select",
       defaultValue: 1,
       options: [
@@ -71,7 +71,7 @@ export const drywallDef: CalculatorDefinition = {
     },
     {
       key: "sheetSize",
-      label: "Размер листа ГКЛ",
+      label: "Размер листа гипсокартона",
       type: "select",
       defaultValue: 0,
       options: [
@@ -135,7 +135,7 @@ export const drywallDef: CalculatorDefinition = {
 **Каркас:**
 - ПН 27×28 направляющий: по периметру конструкции
 - ПП 60×27 стоечный: каждые 400–600 мм
-- Саморезы TN 25 мм: ~30 шт/м²
+- Чёрные саморезы для ГКЛ по металлу 3,5×25 мм: ~30 шт/м²
 
 По ГОСТ 6266-97 и ТТК Knauf.
   `,
@@ -181,7 +181,7 @@ export const drywallDef: CalculatorDefinition = {
     <tr><td>Лист ГКЛ 1200&times;3000</td><td>3.6 м&sup2;</td><td>0.31 листа</td></tr>
     <tr><td>ПН 27&times;28 (направляющий)</td><td>3 м</td><td>По периметру</td></tr>
     <tr><td>ПП 60&times;27 (стоечный)</td><td>3&ndash;4 м</td><td>Шаг 400&ndash;600 мм</td></tr>
-    <tr><td>Саморезы TN 25 мм</td><td>&mdash;</td><td>~30 шт/м&sup2;</td></tr>
+    <tr><td>Чёрные саморезы для ГКЛ по металлу 3,5×25 мм</td><td>&mdash;</td><td>~30 шт/м&sup2;</td></tr>
     <tr><td>Дюбель-гвозди 6&times;40</td><td>&mdash;</td><td>~2 шт/м.п. направляющей</td></tr>
   </tbody>
 </table>
@@ -210,4 +210,3 @@ export const drywallDef: CalculatorDefinition = {
     ],
   },
 };
-

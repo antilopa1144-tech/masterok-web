@@ -1,7 +1,7 @@
 {
   "calculator_id": "facade-insulation",
   "formula_version": "facade-insulation-canonical-v1",
-  "generated_at": "2026-05-16T08:06:51.443Z",
+  "generated_at": "2026-07-21T07:37:54.577Z",
   "cases": [
     {
       "id": "defaults",

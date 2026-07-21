@@ -34,9 +34,9 @@ const F_PROFILE_LENGTH = 3;
 /* ─── labels ─── */
 
 const SLOPE_TYPE_LABELS: Record<number, string> = {
-  0: "Сэндвич-панели ПВХ",
+  0: "Пластиковые сэндвич-панели (ПВХ)",
   1: "Штукатурка",
-  2: "ГКЛ",
+  2: "Гипсокартон (ГКЛ)",
 };
 
 /* ─── inputs ─── */
@@ -162,7 +162,7 @@ export function computeCanonicalWindows(
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `ПСУЛ — предварительно сжатая уплотнительная лента (${PSUL_ROLL_M} м)`,
+      name: `Предварительно сжатая уплотнительная лента (ПСУЛ), рулон ${PSUL_ROLL_M} м`,
       subtitle: "Для наружного паропроницаемого слоя монтажного шва; ширину подберите по зазору",
       quantity: psulRolls,
       unit: "рулонов",
@@ -227,7 +227,7 @@ export function computeCanonicalWindows(
         category: "Откосы",
       },
       {
-        name: `F-профиль (${F_PROFILE_LENGTH} м)`,
+        name: `F-образный финишный профиль (${F_PROFILE_LENGTH} м)`,
         quantity: fProfilePcs,
         unit: "шт",
         withReserve: fProfilePcs,
@@ -257,7 +257,7 @@ export function computeCanonicalWindows(
   } else {
     materials.push(
       {
-        name: "ГКЛ для откосов, влагостойкий 12,5 мм",
+        name: "Влагостойкий гипсокартон (ГКЛВ) для откосов, 12,5 мм",
         subtitle: "Влагостойкий лист для внутренних откосов",
         quantity: gklSheets,
         unit: "листов",
@@ -266,8 +266,8 @@ export function computeCanonicalWindows(
         category: "Откосы",
       },
       {
-        name: "Саморезы TN 3,5×25 мм для ГКЛ",
-        subtitle: `Для крепления откосов из ГКЛВ к металлическому профилю — около ${screwsGKLpcs} шт.`,
+        name: "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм",
+        subtitle: `Для крепления откосов из влагостойкого гипсокартона к металлическому профилю — около ${screwsGKLpcs} шт.`,
         quantity: screwsGKL,
         unit: "кг",
         withReserve: screwsGKL,
@@ -296,7 +296,7 @@ export function computeCanonicalWindows(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("ПСУЛ ленту клейте на раму до установки в проём — потом будет неудобно");
+  practicalNotes.push("Предварительно сжатую уплотнительную ленту клейте на раму до установки в проём — потом будет неудобно");
   if (wallThickness > 400) {
     practicalNotes.push(`Толстые стены ${wallThickness} мм — окно сажайте на 1/3 от наружного края для лучшей теплоизоляции`);
   }

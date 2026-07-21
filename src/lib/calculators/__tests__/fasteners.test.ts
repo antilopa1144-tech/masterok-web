@@ -16,22 +16,24 @@ describe("Калькулятор крепежа", () => {
 
     it("саморезы 3.5x25 присутствуют", () => {
       // Engine: "Саморезы 3.5×25"
-      const screws = findMaterial(result, "Саморезы 3.5×25");
+      const screws = findMaterial(result, "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм");
       expect(screws).toBeDefined();
+      expect(screws?.subtitle).toContain("Фосфатированные");
+      expect(screws?.subtitle).toContain("шт.");
     });
 
     it("саморезы каркасные присутствуют (withFrameScrews=1)", () => {
       // Engine: "Саморезы каркасные"
-      expect(findMaterial(result, "Саморезы каркасные")).toBeDefined();
+      expect(findMaterial(result, "Саморезы-клопы по металлу 3,5×9,5")).toBeDefined();
     });
 
     it("биты для шуруповёрта присутствуют", () => {
       // Engine: "Биты для шуруповёрта"
-      expect(findMaterial(result, "Биты")).toBeDefined();
+      expect(findMaterial(result, "Крестовая бита PH2")).toBeDefined();
     });
 
     it("дюбели отсутствуют (withDubels=0)", () => {
-      expect(findMaterial(result, "Дюбели")).toBeUndefined();
+      expect(findMaterial(result, "Дюбель-гвозди")).toBeUndefined();
     });
 
     it("totals содержат screwsPerUnit, totalScrews", () => {
@@ -55,13 +57,15 @@ describe("Калькулятор крепежа", () => {
 
     it("саморезы 3.5x35 присутствуют", () => {
       // Engine: "Саморезы 3.5×35"
-      const screws = findMaterial(result, "Саморезы 3.5×35");
+      const screws = findMaterial(result, "Саморезы по дереву 3,5×35");
       expect(screws).toBeDefined();
     });
 
     it("дюбели присутствуют (withDubels=1)", () => {
       // Engine: "Дюбели"
-      expect(findMaterial(result, "Дюбели")).toBeDefined();
+      const dowels = findMaterial(result, "Дюбель-гвозди 6×40");
+      expect(dowels).toBeDefined();
+      expect(dowels?.subtitle).toContain("газобетона");
     });
 
     it("инварианты", () => {
@@ -80,12 +84,14 @@ describe("Калькулятор крепежа", () => {
 
     it("саморезы 4.8x35 присутствуют", () => {
       // Engine: "Саморезы 4.8×35"
-      const screws = findMaterial(result, "Саморезы 4.8×35");
+      const screws = findMaterial(result, "Кровельные саморезы 4,8×35");
       expect(screws).toBeDefined();
+      expect(screws?.name).toContain("EPDM");
+      expect(findMaterial(result, "Магнитная торцевая насадка 8 мм")).toBeDefined();
     });
 
     it("каркасные саморезы отсутствуют", () => {
-      expect(findMaterial(result, "Саморезы каркасные")).toBeUndefined();
+      expect(findMaterial(result, "Саморезы-клопы")).toBeUndefined();
     });
 
     it("инварианты", () => {
@@ -105,6 +111,7 @@ describe("Калькулятор крепежа", () => {
     it("кляймеры вместо саморезов", () => {
       // Engine: "Кляймеры"
       expect(findMaterial(result, "Кляймеры")).toBeDefined();
+      expect(findMaterial(result, "Кляймеры")?.subtitle).toContain("паза");
     });
 
     it("предупреждение о кляймерах", () => {
@@ -138,12 +145,12 @@ describe("Калькулятор крепежа", () => {
 
     it("withFrameScrews=1 генерирует каркасные саморезы", () => {
       const r = calc({ materialType: 0, sheetCount: 10, withFrameScrews: 1 });
-      expect(findMaterial(r, "Саморезы каркасные")).toBeDefined();
+      expect(findMaterial(r, "Саморезы-клопы")).toBeDefined();
     });
 
     it("withDubels=1 генерирует дюбели", () => {
       const r = calc({ materialType: 0, sheetCount: 10, withDubels: 1 });
-      expect(findMaterial(r, "Дюбели")).toBeDefined();
+      expect(findMaterial(r, "Дюбель-гвозди")).toBeDefined();
     });
 
     it("поле калькулятора использует withFrameScrews, а не hasFrameScrews", () => {

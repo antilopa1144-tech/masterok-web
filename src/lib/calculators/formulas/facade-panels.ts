@@ -9,7 +9,7 @@ export const facadePanelsDef: CalculatorDefinition = {
   slug: "fasadnye-paneli",
   title: "Калькулятор фасадных панелей",
   h1: "Калькулятор фасадных панелей — расчёт обшивки фасада",
-  description: "Рассчитайте количество фасадных панелей (фиброцемент, металл, HPL), подсистемы и крепежа для вентилируемого фасада.",
+  description: "Рассчитайте количество фасадных панелей из фиброцемента, металла или слоистого пластика (HPL), а также подсистему и крепёж.",
   metaTitle: withSiteMetaTitle("Калькулятор фасадных панелей: материалы онлайн"),
   metaDescription: "Бесплатный калькулятор фасадных панелей: рассчитайте фиброцементные, металлические или HPL панели, подсистему и крепёж для вентилируемого фасада.",
   category: "facade",
@@ -36,7 +36,7 @@ export const facadePanelsDef: CalculatorDefinition = {
       options: [
         { value: 0, label: "Фиброцементные (1200×3000 мм)" },
         { value: 1, label: "Металлокассеты (600×1200 мм)" },
-        { value: 2, label: "HPL компакт (1200×2440 мм)" },
+        { value: 2, label: "Панель из слоистого пластика (HPL Compact), 1200×2440 мм" },
         { value: 3, label: "Сайдинг металлический (0.23 м²/полоса)" },
       ],
     },
@@ -126,7 +126,7 @@ export const facadePanelsDef: CalculatorDefinition = {
   <tbody>
     <tr><td>Фиброцементная</td><td>1200&times;3000</td><td>3.60</td></tr>
     <tr><td>Металлокассета</td><td>600&times;1200</td><td>0.72</td></tr>
-    <tr><td>HPL компакт</td><td>1200&times;2440</td><td>2.93</td></tr>
+    <tr><td>Слоистый пластик (HPL Compact)</td><td>1200&times;2440</td><td>2.93</td></tr>
     <tr><td>Металлосайдинг</td><td>230&times;3000</td><td>0.69</td></tr>
   </tbody>
 </table>
@@ -159,7 +159,4 @@ export const facadePanelsDef: CalculatorDefinition = {
     ],
   },
 };
-
-
-
 

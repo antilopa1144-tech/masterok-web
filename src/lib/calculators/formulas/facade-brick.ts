@@ -58,7 +58,7 @@ export const facadeBrickDef: CalculatorDefinition = {
       defaultValue: 1,
       options: [
         { value: 0, label: "Не требуется (вентфасад без связей)" },
-        { value: 1, label: "Гибкие связи стеклопластиковые ТПА" },
+        { value: 1, label: "Гибкие связи из стеклопластика" },
         { value: 2, label: "Гибкие связи нержавеющая сталь" },
       ],
     },
@@ -155,8 +155,8 @@ export const facadeBrickDef: CalculatorDefinition = {
 <h2>Гибкие связи для облицовочной кладки</h2>
 <p>Гибкие связи (анкеры) соединяют облицовочный слой с несущей стеной. Расход: <strong>5 шт/м&sup2;</strong> (шаг 500&times;400 мм). В зонах проёмов и углов &mdash; <strong>8&ndash;10 шт/м&sup2;</strong>.</p>
 <ul>
-  <li><strong>Базальтопластиковые (БПА)</strong> &mdash; не образуют мостиков холода</li>
-  <li><strong>Стеклопластиковые (ТПА)</strong> &mdash; лёгкие, не корродируют</li>
+  <li><strong>Базальтопластиковые</strong> &mdash; не образуют мостиков холода</li>
+  <li><strong>Стеклопластиковые</strong> &mdash; лёгкие, не корродируют</li>
   <li><strong>Нержавеющая сталь</strong> &mdash; максимальная прочность</li>
 </ul>
 
@@ -184,4 +184,3 @@ export const facadeBrickDef: CalculatorDefinition = {
     ],
   },
 };
-

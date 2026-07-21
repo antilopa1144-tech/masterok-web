@@ -70,13 +70,12 @@ describe("Калькулятор установки окон", () => {
 
     it("сэндвич-панели ПВХ для откосов = 4", () => {
       // Engine: "Сэндвич-панели ПВХ"
-      const panels = findMaterial(result, "Сэндвич-панели ПВХ");
+      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
       expect(panels?.purchaseQty).toBe(4);
     });
 
-    it("F-профиль = 8 шт", () => {
-      // Engine: "F-профиль (3 м)"
-      const fProfile = findMaterial(result, "F-профиль");
+    it("F-образный профиль = 8 шт", () => {
+      const fProfile = findMaterial(result, "F-образный");
       expect(fProfile?.purchaseQty).toBe(8);
     });
 
@@ -117,7 +116,7 @@ describe("Калькулятор установки окон", () => {
     });
 
     it("сэндвич-панели отсутствуют", () => {
-      const panels = findMaterial(result, "Сэндвич-панели ПВХ");
+      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
       expect(panels).toBeUndefined();
     });
   });
@@ -133,11 +132,11 @@ describe("Калькулятор установки окон", () => {
 
     it("ГКЛ для откосов присутствует", () => {
       // Engine: "ГКЛ для откосов"
-      expect(findMaterial(result, "ГКЛ для откосов")).toBeDefined();
+      expect(findMaterial(result, "Влагостойкий гипсокартон (ГКЛВ) для откосов")).toBeDefined();
     });
 
     it("саморезы для ГКЛ присутствуют", () => {
-      expect(findMaterial(result, "Саморезы TN 3,5×25 мм для ГКЛ")).toBeDefined();
+      expect(findMaterial(result, "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм")).toBeDefined();
     });
 
     it("шпаклёвка присутствует", () => {

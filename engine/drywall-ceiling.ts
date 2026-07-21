@@ -94,12 +94,16 @@ export function computeCanonicalDrywallCeiling(
   /* ─── screws ─── */
   const screwsGKL = sheets * SCREWS_PER_SHEET;
   const screwsKg = Math.ceil(screwsGKL * SCREW_RESERVE / SCREWS_PER_KG * 10) / 10;
+  const firstLayerScrews = Math.ceil(screwsGKL / layers);
+  const secondLayerScrews = layers === 2 ? Math.max(0, Math.ceil(screwsGKL) - firstLayerScrews) : 0;
 
   /* ─── clop screws ─── */
   const clopCount = suspCount * CLOP_PER_SUSP + crabCount * CLOP_PER_CRAB;
 
   /* ─── dowels ─── */
-  const dowelCount = suspCount * 2 + Math.ceil(pnM / DOWEL_STEP);
+  const ceilingAnchors = suspCount * 2;
+  const perimeterDowels = Math.ceil(pnM / DOWEL_STEP);
+  const dowelCount = ceilingAnchors + perimeterDowels;
 
   /* ─── serpyanka ─── */
   const serpM = Math.ceil(area * SERPYANKA_COEFF * SERPYANKA_RESERVE);
@@ -156,7 +160,7 @@ export function computeCanonicalDrywallCeiling(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (layers === 2) {
-    warnings.push("Второй слой ГКЛ монтируется со смещением 400 мм");
+    warnings.push("Второй слой гипсокартона монтируется со смещением 400 мм");
   }
   if (area > 50) {
     warnings.push("Площадь более 50 м² — предусмотрите деформационные швы");
@@ -165,7 +169,8 @@ export function computeCanonicalDrywallCeiling(
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "ГКЛ листы",
+      name: "Гипсокартонные листы (ГКЛ) 1200×2500 мм для потолка",
+      subtitle: "Для сухого помещения — обычный гипсокартон; для влажного выбирайте влагостойкий (ГКЛВ). Толщину и число слоёв сверяйте с системой потолка",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -173,7 +178,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Основное",
     },
     {
-      name: "Профиль ПП 60×27 3м",
+      name: "Потолочный профиль ПП 60×27×3000 мм",
+      subtitle: "Толщина металла и несущая способность должны соответствовать выбранной комплектной системе",
       quantity: ppPcs,
       unit: "шт",
       withReserve: ppPcs,
@@ -181,7 +187,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Каркас",
     },
     {
-      name: "Профиль ПН 27×28 3м",
+      name: "Направляющий профиль ПН 27×28×3000 мм",
+      subtitle: "Монтируется по периметру через уплотнительную ленту",
       quantity: pnPcs,
       unit: "шт",
       withReserve: pnPcs,
@@ -189,7 +196,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Каркас",
     },
     {
-      name: "Подвесы прямые",
+      name: "Подвес прямой для профиля 60×27 мм",
+      subtitle: "Длину подвеса выбирают по требуемому опуску потолка; при большом опуске нужна другая подвесная система",
       quantity: suspCount,
       unit: "шт",
       withReserve: suspCount,
@@ -197,7 +205,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Каркас",
     },
     {
-      name: "Крабы (соединители)",
+      name: "Одноуровневый соединитель («краб») для потолочного профиля 60×27 мм",
+      subtitle: "Используйте соединитель, совместимый с толщиной и геометрией выбранного профиля",
       quantity: crabCount,
       unit: "шт",
       withReserve: crabCount,
@@ -205,7 +214,12 @@ export function computeCanonicalDrywallCeiling(
       category: "Каркас",
     },
     {
-      name: "Саморезы 3.5×25 (кг)",
+      name: layers === 2
+        ? "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35 мм"
+        : "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм",
+      subtitle: layers === 2
+        ? `Около ${firstLayerScrews} шт. 3,5×25 мм для первого слоя и ${secondLayerScrews} шт. 3,5×35 мм для второго; итог по массе округлён до закупки`
+        : `Около ${firstLayerScrews} шт. для крепления гипсокартона к металлическому профилю; итог по массе округлён до закупки`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -213,7 +227,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Крепёж",
     },
     {
-      name: "Саморезы-клопы",
+      name: "Саморезы-клопы по металлу 3,5×9,5 мм",
+      subtitle: "Для соединения металлических профилей и крепления соединителей, не для лицевой стороны гипсокартона",
       quantity: clopCount,
       unit: "шт",
       withReserve: clopCount,
@@ -221,7 +236,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Крепёж",
     },
     {
-      name: "Дюбели",
+      name: "Крепёж к основанию: анкер-клин 6×40 + дюбель-гвоздь 6×40 мм",
+      subtitle: `${ceilingAnchors} металлических анкеров-клиньев для подвесов к бетонному потолку и ${perimeterDowels} дюбель-гвоздей для направляющего профиля; пластиковые дюбели над головой не применяйте`,
       quantity: dowelCount,
       unit: "шт",
       withReserve: dowelCount,
@@ -229,7 +245,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Крепёж",
     },
     {
-      name: "Серпянка 45м",
+      name: "Армирующая лента для швов гипсокартона (45 м)",
+      subtitle: "Тип ленты должен соответствовать шпаклёвочной системе; на потолке предпочтительна системная бумажная лента",
       quantity: serpRolls,
       unit: "рулонов",
       withReserve: serpRolls,
@@ -237,7 +254,8 @@ export function computeCanonicalDrywallCeiling(
       category: "Отделка",
     },
     {
-      name: "Шпаклёвка Knauf Fugen 25кг",
+      name: "Шпаклёвка для стыков гипсокартона (25 кг)",
+      subtitle: "Выбирайте состав, предназначенный для заделки стыков с армирующей лентой",
       quantity: puttyBags,
       unit: "мешков",
       withReserve: puttyBags,
@@ -246,6 +264,7 @@ export function computeCanonicalDrywallCeiling(
     },
     {
       ...buildPrimerMaterial(primerL, { reserveFactor: PRIMER_RESERVE }),
+      subtitle: "Для подготовки гипсокартона перед сплошной отделкой; совместимость проверяйте по финишному покрытию",
       category: "Отделка",
     },
   ];
@@ -280,9 +299,13 @@ export function computeCanonicalDrywallCeiling(
       suspCount,
       crabCount,
       screwsGKL,
+      firstLayerScrews,
+      secondLayerScrews,
       screwsKg,
       clopCount,
       dowelCount,
+      ceilingAnchors,
+      perimeterDowels,
       serpM,
       serpRolls,
       puttyKg,

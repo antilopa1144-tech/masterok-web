@@ -275,7 +275,7 @@ export function computeCanonicalSepticRings(
 
   materials.push(
     {
-      name: `Труба ПВХ Ø${rules.pipe_diameter_mm} (секции ${rules.pipe_section_m} м)`,
+      name: `Пластиковая канализационная труба (ПВХ) Ø${rules.pipe_diameter_mm} мм, отрезки ${rules.pipe_section_m} м`,
       quantity: pipeSections,
       unit: "шт",
       withReserve: pipeSections,

@@ -39,4 +39,12 @@ describe("filterProcurementLines", () => {
     expect(filterProcurementLines(lines, checked, "purchased", "").map((l) => l.key)).toEqual(["a"]);
     expect(filterProcurementLines(lines, checked, "all", "клей").map((l) => l.key)).toEqual(["b"]);
   });
+
+  it("ищет не только по названию, но и по спецификации", () => {
+    const checked = new Set<string>();
+    const withSpecification = lines.map((line) =>
+      line.key === "a" ? { ...line, subtitles: ["Саморез для ГКЛ по металлу 3,5×25 мм"] } : line,
+    );
+    expect(filterProcurementLines(withSpecification, checked, "all", "3,5×25").map((line) => line.key)).toEqual(["a"]);
+  });
 });

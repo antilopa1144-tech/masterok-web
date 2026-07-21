@@ -83,19 +83,22 @@ export function computeCanonicalSoundInsulation(
     const ppPcs = Math.ceil((area / PP_SPACING) * PP_LENGTH * ROCKWOOL_RESERVE / PP_LENGTH);
     const vibro = Math.ceil(area * VIBRO_PER_M2 * VIBRO_RESERVE);
     const vibroTape = Math.ceil((area / PP_SPACING) * PP_LENGTH * ROCKWOOL_RESERVE / VIBRO_TAPE_ROLL);
-    const screws = Math.ceil(gklSheets * 25 / 200);
+    const firstLayerSheets = Math.ceil(area * ROCKWOOL_RESERVE / GKL_SHEET);
+    const secondLayerSheets = Math.max(0, gklSheets - firstLayerSheets);
+    const firstLayerScrewPacks = Math.ceil(firstLayerSheets * 25 / 200);
+    const secondLayerScrewPacks = Math.ceil(secondLayerSheets * 25 / 200);
 
     primaryQty = rockwoolPlates;
     primaryUnit = "шт";
     primaryLabel = "rockwool-plate";
 
     materials.push(
-      { name: "Минераловатные плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
-      { name: "ГКЛ листы", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
-      { name: "Профиль ПП 3м", quantity: ppPcs, unit: "шт", withReserve: ppPcs, purchaseQty: ppPcs, category: "Каркас" },
-      { name: "Виброподвесы", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
-      { name: "Вибролента", quantity: vibroTape, unit: "рулонов", withReserve: vibroTape, purchaseQty: vibroTape, category: "Изоляция" },
-      { name: "Саморезы (упаковки по 200)", quantity: screws, unit: "упаковок", withReserve: screws, purchaseQty: screws, category: "Крепёж" },
+      { name: "Акустическая минеральная плита 600×1000×50 мм", subtitle: "Выбирайте специализированную акустическую плиту; плотность и допустимую нагрузку сверяйте с системой облицовки", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
+      { name: "Гипсокартонные листы (ГКЛ) 1200×2500×12,5 мм, два слоя", subtitle: "Для влажного помещения замените на влагостойкий гипсокартон (ГКЛВ); листы разных слоёв монтируют со смещением стыков", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
+      { name: "Потолочный профиль ПП 60×27×3000 мм", subtitle: "Для звукоизоляционной облицовки применяйте совместимую каркасную систему с виброразвязкой", quantity: ppPcs, unit: "шт", withReserve: ppPcs, purchaseQty: ppPcs, category: "Каркас" },
+      { name: "Виброподвес для профиля 60×27 мм", subtitle: "Рабочая нагрузка и число точек крепления должны соответствовать паспорту выбранного виброподвеса", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
+      { name: `Вибролента 50 мм (${VIBRO_TAPE_ROLL} м)`, subtitle: "Для отделения направляющих профилей от пола, стен и потолка", quantity: vibroTape, unit: "рулонов", withReserve: vibroTape, purchaseQty: vibroTape, category: "Изоляция" },
+      { name: "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35 мм (по 200 шт)", subtitle: `Купить отдельно: ${firstLayerScrewPacks} уп. 3,5×25 мм — около ${firstLayerSheets * 25} шт. для первого слоя; ${secondLayerScrewPacks} уп. 3,5×35 мм — около ${secondLayerSheets * 25} шт. для второго`, quantity: firstLayerScrewPacks + secondLayerScrewPacks, unit: "упаковок", withReserve: firstLayerScrewPacks + secondLayerScrewPacks, purchaseQty: firstLayerScrewPacks + secondLayerScrewPacks, category: "Крепёж" },
     );
   }
 
@@ -110,9 +113,9 @@ export function computeCanonicalSoundInsulation(
     primaryLabel = "zips-panel";
 
     materials.push(
-      { name: "ЗИПС панели", quantity: zipsPanels, unit: "шт", withReserve: zipsPanels, purchaseQty: zipsPanels, category: "Основное" },
-      { name: "Дюбели для ЗИПС", quantity: dubels, unit: "шт", withReserve: dubels, purchaseQty: dubels, category: "Крепёж" },
-      { name: "ГКЛ облицовка", quantity: gklOverlay, unit: "шт", withReserve: gklOverlay, purchaseQty: gklOverlay, category: "Основное" },
+      { name: "Звукоизоляционные сэндвич-панели (ЗИПС) 1200×600 мм", subtitle: "Толщину и модель выбирайте по требуемой прибавке звукоизоляции и допустимой потере площади помещения", quantity: zipsPanels, unit: "шт", withReserve: zipsPanels, purchaseQty: zipsPanels, category: "Основное" },
+      { name: "Фирменный крепёжный комплект для звукоизоляционных панелей ЗИПС", subtitle: "Не заменяйте штатные виброузлы обычными дюбелями; длина крепежа зависит от модели панели и основания", quantity: dubels, unit: "шт", withReserve: dubels, purchaseQty: dubels, category: "Крепёж" },
+      { name: "Гипсокартонные листы (ГКЛ) 1200×2500×12,5 мм для облицовки", subtitle: "Финишный лист должен соответствовать выбранной системе звукоизоляционных панелей", quantity: gklOverlay, unit: "шт", withReserve: gklOverlay, purchaseQty: gklOverlay, category: "Основное" },
     );
   }
 
@@ -127,9 +130,9 @@ export function computeCanonicalSoundInsulation(
     primaryLabel = "float-mat";
 
     materials.push(
-      { name: "Звукоизоляционные маты", quantity: mats, unit: "рулонов", withReserve: mats, purchaseQty: mats, category: "Основное" },
-      { name: "Демпферная лента", quantity: dampTape, unit: "рулонов", withReserve: dampTape, purchaseQty: dampTape, category: "Изоляция" },
-      { name: "Стяжка 50 кг", quantity: screedBags, unit: "мешков", withReserve: screedBags, purchaseQty: screedBags, category: "Основное" },
+      { name: `Рулонный звукоизоляционный материал под плавающую стяжку (${FLOAT_MAT_ROLL} м²)`, subtitle: "Материал должен быть рассчитан на нагрузку от цементной стяжки; стыки выполняйте по паспорту системы", quantity: mats, unit: "рулонов", withReserve: mats, purchaseQty: mats, category: "Основное" },
+      { name: `Кромочная демпферная лента (${DAMP_TAPE_ROLL} м)`, subtitle: "Ширина ленты должна быть не меньше полной высоты плавающей стяжки и финишного покрытия", quantity: dampTape, unit: "рулонов", withReserve: dampTape, purchaseQty: dampTape, category: "Изоляция" },
+      { name: `Сухая смесь для стяжки М150 (${SCREED_BAG} кг)`, subtitle: `Расчёт выполнен для слоя ${SCREED_THICKNESS * 1000} мм; допустимую толщину и армирование проверьте по выбранной системе пола`, quantity: screedBags, unit: "мешков", withReserve: screedBags, purchaseQty: screedBags, category: "Основное" },
     );
   }
 
@@ -138,15 +141,20 @@ export function computeCanonicalSoundInsulation(
     const rockwoolPlates = Math.ceil(area * ROCKWOOL_RESERVE / ROCKWOOL_PLATE);
     const gklSheets = Math.ceil(area * ROCKWOOL_RESERVE * GKL_RESERVE_2LAYERS / GKL_SHEET);
     const vibro = Math.ceil(area * VIBRO_PER_M2 * VIBRO_RESERVE);
+    const firstLayerSheets = Math.ceil(area * ROCKWOOL_RESERVE / GKL_SHEET);
+    const secondLayerSheets = Math.max(0, gklSheets - firstLayerSheets);
+    const firstLayerScrewPacks = Math.ceil(firstLayerSheets * 25 / 200);
+    const secondLayerScrewPacks = Math.ceil(secondLayerSheets * 25 / 200);
 
     primaryQty = rockwoolPlates;
     primaryUnit = "шт";
     primaryLabel = "acoustic-ceiling";
 
     materials.push(
-      { name: "Минераловатные плиты", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
-      { name: "ГКЛ листы", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
-      { name: "Виброподвесы", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
+      { name: "Акустическая минеральная плита 600×1000×50 мм", subtitle: "Плиты укладывают без зазоров и без сжатия; характеристики выбирают по комплектной потолочной системе", quantity: rockwoolPlates, unit: "шт", withReserve: rockwoolPlates, purchaseQty: rockwoolPlates, category: "Основное" },
+      { name: "Гипсокартонные листы (ГКЛ) 1200×2500×12,5 мм, два слоя", subtitle: "Для потолка применяйте листы и схему крепления, допускаемые выбранной подвесной системой", quantity: gklSheets, unit: "шт", withReserve: gklSheets, purchaseQty: gklSheets, category: "Основное" },
+      { name: "Виброподвес для акустического потолка", subtitle: "Рабочую нагрузку, крепёж к перекрытию и шаг подвесов выбирают по паспорту системы", quantity: vibro, unit: "шт", withReserve: vibro, purchaseQty: vibro, category: "Крепёж" },
+      { name: "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35 мм (по 200 шт)", subtitle: `Купить отдельно: ${firstLayerScrewPacks} уп. 3,5×25 мм — около ${firstLayerSheets * 25} шт.; ${secondLayerScrewPacks} уп. 3,5×35 мм — около ${secondLayerSheets * 25} шт.`, quantity: firstLayerScrewPacks + secondLayerScrewPacks, unit: "упаковок", withReserve: firstLayerScrewPacks + secondLayerScrewPacks, purchaseQty: firstLayerScrewPacks + secondLayerScrewPacks, category: "Крепёж" },
     );
   }
 
@@ -155,8 +163,8 @@ export function computeCanonicalSoundInsulation(
   const sealTape = Math.ceil(perim * 2 * SEAL_TAPE_RESERVE / SEAL_TAPE_ROLL);
 
   materials.push(
-    { name: "Герметик", quantity: sealant, unit: "тюбиков", withReserve: sealant, purchaseQty: sealant, category: "Герметизация" },
-    { name: "Уплотнительная лента 30м", quantity: sealTape, unit: "рулонов", withReserve: sealTape, purchaseQty: sealTape, category: "Герметизация" },
+    { name: "Невысыхающий акустический герметик, 280–310 мл", subtitle: "Для герметизации периметра и швов; обычный санитарный силикон не является равноценной заменой", quantity: sealant, unit: "тюбиков", withReserve: sealant, purchaseQty: sealant, category: "Герметизация" },
+    { name: `Уплотнительная виброизоляционная лента (${SEAL_TAPE_ROLL} м)`, subtitle: "Ширину подберите под направляющий профиль или примыкание без жёстких мостиков", quantity: sealTape, unit: "рулонов", withReserve: sealTape, purchaseQty: sealTape, category: "Герметизация" },
   );
 
   /* ─── scenarios ─── */
@@ -207,7 +215,7 @@ export function computeCanonicalSoundInsulation(
     warnings.push("Большая площадь — рекомендуется профессиональный монтаж");
   }
   if (system === 1) {
-    warnings.push("Система ЗИПС требует ровного основания");
+    warnings.push("Система звукоизоляционных панелей ЗИПС требует ровного основания");
   }
 
 

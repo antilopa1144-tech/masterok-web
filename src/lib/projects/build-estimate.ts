@@ -18,6 +18,7 @@ export interface ProjectEstimateLine {
   missingPriceItems: number;
   materials: {
     name: string;
+    subtitle?: string;
     unit: string;
     quantity: number;
     category?: string;
@@ -71,6 +72,7 @@ async function estimateEntry(
     }
     return {
       name: material.name,
+      subtitle: material.subtitle,
       unit: material.unit,
       quantity,
       category: material.category,

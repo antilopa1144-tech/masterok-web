@@ -23,10 +23,9 @@ describe("Сайдинг", () => {
       expect(findMaterial(r, "Стартовая планка")).toBeDefined();
     });
 
-    it("J-профиль присутствует", () => {
+    it("J-образный профиль присутствует", () => {
       const r = calc({ facadeArea: 100, openingsArea: 10, perimeter: 40, height: 5, sidingType: 0, exteriorCorners: 4 });
-      // Engine: "J-профиль (3.66 м)"
-      expect(findMaterial(r, "J-профиль")).toBeDefined();
+      expect(findMaterial(r, "J-образный профиль")).toBeDefined();
     });
 
     it("наружный угол присутствует", () => {

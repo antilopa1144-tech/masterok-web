@@ -65,14 +65,12 @@ describe("Калькулятор тёплого пола", () => {
       expect(result.totals.cableLength).toBeGreaterThan(0);
     });
 
-    it("стяжка ЦПС присутствует", () => {
-      // Engine: "Стяжка ЦПС (мешки 50 кг)"
-      expect(findMaterial(result, "Стяжка ЦПС")).toBeDefined();
+    it("цементно-песчаная смесь для стяжки присутствует", () => {
+      expect(findMaterial(result, "Цементно-песчаная смесь для стяжки")).toBeDefined();
     });
 
-    it("утеплитель ЕПС присутствует", () => {
-      // Engine: "Утеплитель ЕПС (листы 1200×600)"
-      expect(findMaterial(result, "ЕПС")).toBeDefined();
+    it("плиты пенополистирола присутствуют", () => {
+      expect(findMaterial(result, "Плиты пенополистирола")).toBeDefined();
     });
 
     it("монтажная лента присутствует", () => {

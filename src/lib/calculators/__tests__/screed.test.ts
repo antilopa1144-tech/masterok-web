@@ -88,16 +88,16 @@ describe("Калькулятор стяжки пола", () => {
       screedType: 2,
     });
 
-    it("ЦПС полусухая присутствует", () => {
-      expect(findMaterial(result, "ЦПС полусухая")).toBeDefined();
+    it("цементно-песчаная смесь для полусухой стяжки присутствует", () => {
+      expect(findMaterial(result, "Цементно-песчаная смесь для полусухой")).toBeDefined();
     });
 
     it("объём с усадкой 7% = 1.07 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.07, 3);
     });
 
-    it("ЦПС 39 мешков × 50 кг = 1950 кг", () => {
-      const cps = findMaterial(result, "ЦПС полусухая");
+    it("цементно-песчаная смесь: 39 мешков × 50 кг = 1950 кг", () => {
+      const cps = findMaterial(result, "Цементно-песчаная смесь для полусухой");
       expect(cps?.purchaseQty).toBe(1950);
     });
 
@@ -154,7 +154,7 @@ describe("Калькулятор стяжки пола", () => {
 
     it("вариант М200 — другое название позиции", () => {
       const result = calc({ ...base, readyMix: 1 });
-      expect(findMaterial(result, "ЦПС М200")).toBeDefined();
+      expect(findMaterial(result, "цементно-песчаная смесь М200")).toBeDefined();
     });
   });
 
@@ -164,9 +164,9 @@ describe("Калькулятор стяжки пола", () => {
       expect(result.warnings.some((w) => w.includes("слои"))).toBe(true);
     });
 
-    it("площадь > 50 м² с ЦПС → рекомендация готовой ЦПС", () => {
+    it("площадь > 50 м² → рекомендация готовой цементно-песчаной смеси", () => {
       const result = calc({ inputMode: 1, area: 60, thickness: 50, screedType: 0 });
-      expect(result.warnings.some((w) => w.includes("готовую ЦПС"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("готовую цементно-песчаную смесь"))).toBe(true);
     });
   });
 });

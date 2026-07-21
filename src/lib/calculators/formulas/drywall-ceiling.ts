@@ -8,7 +8,7 @@ export const drywallCeilingDef: CalculatorDefinition = {
   id: "drywall_ceiling",
   slug: "podvesnoy-potolok-gkl",
   title: "Калькулятор подвесного потолка из ГКЛ",
-  h1: "Калькулятор подвесного потолка из ГКЛ онлайн — расчёт профилей и листов",
+  h1: "Калькулятор подвесного потолка из гипсокартона — расчёт профилей и листов",
   description:
     "Рассчитайте количество ГКЛ, профилей ПП и ПН, подвесов и крабов для подвесного потолка.",
   metaTitle: withSiteMetaTitle("Калькулятор потолка из гипсокартона"),
@@ -74,7 +74,7 @@ export const drywallCeilingDef: CalculatorDefinition = {
     },
     {
       key: "layers",
-      label: "Количество слоёв ГКЛ",
+      label: "Количество слоёв гипсокартона",
       type: "select",
       defaultValue: 1,
       options: [
@@ -195,4 +195,3 @@ faq: [
     ],
   },
 };
-

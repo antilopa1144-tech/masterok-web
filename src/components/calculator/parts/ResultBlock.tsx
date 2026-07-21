@@ -396,6 +396,7 @@ export function ResultBlock({
                 calendarScenarioId={getScenarioForCalculator(calculatorSlug)}
                 materials={result.materials.map((m) => ({
                   name: m.name,
+                  subtitle: m.subtitle,
                   quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
                   unit: m.unit,
                   category: m.category,

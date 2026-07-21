@@ -57,7 +57,7 @@ export const waterproofingDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Цементная мастика (Ceresit CL 51, Knauf)" },
+        { value: 0, label: "Готовая полимерная (например, Ceresit CL 51)" },
         { value: 1, label: "Жидкая резина (2-компонентная)" },
         { value: 2, label: "Полимерная обмазочная" },
       ],
@@ -124,7 +124,7 @@ export const waterproofingDef: CalculatorDefinition = {
   formulaDescription: `
 **Расчёт гидроизоляции:**
 - Площадь обработки = площадь пола + периметр × высота стен
-- Мастика: ~1.0 кг/м² × слоёв (Ceresit CL 51)
+- Готовая полимерная гидроизоляция: ~1.0 кг/м² × слоёв
 - Лента: периметр + примыкания к стенам
   `,
   howToUse: [
@@ -201,4 +201,3 @@ export const waterproofingDef: CalculatorDefinition = {
     ],
   },
 };
-

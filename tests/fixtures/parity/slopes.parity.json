@@ -1,7 +1,7 @@
 {
   "calculator_id": "slopes",
   "formula_version": "slopes-canonical-v1",
-  "generated_at": "2026-05-16T08:06:51.628Z",
+  "generated_at": "2026-07-21T07:37:54.727Z",
   "cases": [
     {
       "id": "defaults",
@@ -44,8 +44,8 @@
       },
       "expected_materials_count": 5,
       "expected_material_names": [
-        "Сэндвич-панели ПВХ",
-        "F-профиль (3 м)",
+        "Пластиковые сэндвич-панели (ПВХ)",
+        "F-образный финишный профиль (3 м)",
         "Монтажная пена",
         "Герметик (тубы)",
         "Грунтовка глубокого проникновения (5 л)"

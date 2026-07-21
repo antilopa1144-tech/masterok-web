@@ -59,9 +59,9 @@ const WARM_FLOOR_PIPES_FACTOR_TABLE: FactorTable = {
 /* ─── pipe type labels ─── */
 
 const PIPE_TYPE_LABELS: Record<number, string> = {
-  0: "PEX-a",
-  1: "PEX-b",
-  2: "PE-RT",
+  0: "сшитый полиэтилен PEX-a",
+  1: "сшитый полиэтилен PEX-b",
+  2: "термостойкий полиэтилен PE-RT",
   3: "Металлопластик",
 };
 
@@ -198,7 +198,7 @@ export function computeCanonicalWarmFloorPipes(
   /* ─── materials list ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Труба ${PIPE_TYPE_LABELS[pipeType] ?? "PEX-a"} (бухты ${PIPE_COIL_M} м)`,
+      name: `Труба из ${PIPE_TYPE_LABELS[pipeType] ?? "сшитого полиэтилена PEX-a"} (бухты ${PIPE_COIL_M} м)`,
       quantity: roundDisplay(totalPipe, 3),
       unit: "м",
       withReserve: coils * PIPE_COIL_M,
@@ -207,7 +207,7 @@ export function computeCanonicalWarmFloorPipes(
       category: "Основное",
     },
     {
-      name: "Утеплитель ЭППС (листы 1200×600)",
+      name: "Экструдированный пенополистирол (ЭППС), листы 1200×600 мм",
       quantity: eppsSheets,
       unit: "листов",
       withReserve: eppsSheets,

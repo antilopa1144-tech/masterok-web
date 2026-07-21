@@ -126,8 +126,8 @@ export function computeCanonicalCeilingStretch(
   const recScenario = scenarios.REC;
 
   const typeLabels: Record<number, string> = {
-    0: "ПВХ глянец",
-    1: "ПВХ матовый",
+    0: "Глянцевая пластиковая плёнка (ПВХ)",
+    1: "Матовая пластиковая плёнка (ПВХ)",
     2: "Полиэстер",
   };
 

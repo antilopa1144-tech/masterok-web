@@ -41,7 +41,7 @@ export const primerDef: CalculatorDefinition = {
         { value: 0, label: "Бетон, пеноблок (впитывающая)" },
         { value: 1, label: "Гипсокартон, штукатурка" },
         { value: 2, label: "Кафель, стекло (непористая)" },
-        { value: 3, label: "Дерево, OSB" },
+        { value: 3, label: "Дерево, ОСП-плита" },
       ],
     },
     {
@@ -52,7 +52,7 @@ export const primerDef: CalculatorDefinition = {
       options: [
         { value: 0, label: "Глубокого проникновения (Ceresit CT 17)" },
         { value: 1, label: "Контакт-грунт (бетонконтакт)" },
-        { value: 2, label: "Специальная для ГКЛ" },
+        { value: 2, label: "Специальная для гипсокартона" },
       ],
     },
     {
@@ -177,4 +177,3 @@ export const primerDef: CalculatorDefinition = {
     ],
   },
 };
-

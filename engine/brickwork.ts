@@ -196,7 +196,7 @@ export function computeCanonicalBrickwork(
       category: "Армирование",
     },
     {
-      name: "Перемычки (ЖБ)",
+      name: "Железобетонные перемычки",
       quantity: totalLintels,
       unit: "шт",
       withReserve: totalLintels,

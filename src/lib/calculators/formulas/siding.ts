@@ -159,7 +159,7 @@ export const sidingDef: CalculatorDefinition = {
     <tr><td>Стартовая планка</td><td>Периметр / 3.66 м</td></tr>
     <tr><td>Финишная планка</td><td>Периметр / 3.66 м</td></tr>
     <tr><td>Наружный угол</td><td>Количество_углов &times; Высота / 3.05 м</td></tr>
-    <tr><td>J-профиль</td><td>Периметр_проёмов / 3.66 м</td></tr>
+    <tr><td>J-образный профиль для проёмов</td><td>Периметр_проёмов / 3.66 м</td></tr>
     <tr><td>H-профиль (соединительный)</td><td>При длине стены &gt; 3.66 м</td></tr>
   </tbody>
 </table>
@@ -191,5 +191,4 @@ export const sidingDef: CalculatorDefinition = {
     ],
   },
 };
-
 

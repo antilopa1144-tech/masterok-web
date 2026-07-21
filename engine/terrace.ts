@@ -25,7 +25,7 @@ const SCREWS_PER_KG = 600;  // 3.5×35 мм (террасные)
 /* ─── labels ─── */
 
 const BOARD_TYPE_LABELS: Record<number, string> = {
-  0: "ДПК 150 мм",
+  0: "Древесно-полимерный композит (ДПК), 150 мм",
   1: "Лиственница 120 мм",
   2: "Сосна 90 мм",
   3: "Планкен 120 мм",
@@ -136,7 +136,7 @@ export function computeCanonicalTerrace(
   const recScenario = scenarios.REC;
   const hiddenFastener = boardType === 0
     ? {
-        name: "Монтажные клипсы для ДПК",
+        name: "Монтажные клипсы для доски из древесно-полимерного композита (ДПК)",
         subtitle: "Стартовые и рядовые клипсы должны соответствовать пазу выбранной доски",
       }
     : {

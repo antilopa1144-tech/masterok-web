@@ -63,13 +63,17 @@ export function filterProcurementLines(
   return lines.filter((line) => {
     if (filter === "pending" && checked.has(line.key)) return false;
     if (filter === "purchased" && !checked.has(line.key)) return false;
-    if (q && !line.name.toLowerCase().includes(q)) return false;
+    if (
+      q
+      && !line.name.toLowerCase().includes(q)
+      && !(line.subtitles ?? []).some((subtitle) => subtitle.toLowerCase().includes(q))
+    ) return false;
     return true;
   });
 }
 
 export function groupMaterialsForEntry(
-  materials: { name: string; unit: string; quantity: number; category?: string; unitPrice: number; lineTotal: number }[],
+  materials: { name: string; subtitle?: string; unit: string; quantity: number; category?: string; unitPrice: number; lineTotal: number }[],
 ): { category: string; items: typeof materials }[] {
   const map = new Map<string, typeof materials>();
   for (const m of materials) {

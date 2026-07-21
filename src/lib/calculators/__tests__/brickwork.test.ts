@@ -43,7 +43,7 @@ describe("Калькулятор кладки кирпича", () => {
     });
 
     it("перемычки", () => {
-      expect(findMaterial(result, "Перемычки")).toBeDefined();
+      expect(findMaterial(result, "Железобетонные перемычки")).toBeDefined();
     });
 
     it("totals", () => {
@@ -116,7 +116,7 @@ describe("Калькулятор кладки кирпича", () => {
     });
 
     it("перемычек 0 шт", () => {
-      const lintels = findMaterial(result, "Перемычки");
+      const lintels = findMaterial(result, "Железобетонные перемычки");
       expect(lintels).toBeDefined();
       expect(lintels!.purchaseQty).toBe(0);
     });

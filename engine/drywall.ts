@@ -99,7 +99,7 @@ function buildMaterials(
 ): CanonicalMaterialResult[] {
   return [
     {
-      name: "ГКЛ листы",
+      name: "Гипсокартонные листы (ГКЛ)",
       quantity: sheetsNeeded,
       unit: "шт",
       withReserve: sheetsNeeded,
@@ -107,7 +107,7 @@ function buildMaterials(
       category: "Основное",
     },
     {
-      name: "Профиль ПН 27\u00d728 3м",
+      name: "Направляющий профиль ПН 27×28 мм, 3 м",
       quantity: pnPieces,
       unit: "шт",
       withReserve: pnPieces,
@@ -115,7 +115,7 @@ function buildMaterials(
       category: "Каркас",
     },
     {
-      name: "Профиль ПП 60\u00d727 3м",
+      name: "Потолочный профиль ПП 60×27 мм, 3 м",
       quantity: ppPieces,
       unit: "шт",
       withReserve: ppPieces,
@@ -317,17 +317,17 @@ export function computeCanonicalDrywall(
     warnings.push("Высота более 3.5 м — требуются профили шириной 100 мм");
   }
   if (layers === 2) {
-    warnings.push("Второй слой ГКЛ монтируется со смещением 600 мм");
+    warnings.push("Второй слой гипсокартона монтируется со смещением 600 мм");
   }
 
   const practicalNotes: string[] = [];
   if (layers === 2) {
-    practicalNotes.push("Два слоя ГКЛ — смещайте стыки минимум на 400 мм, иначе трещина по шву гарантирована");
+    practicalNotes.push("Два слоя гипсокартона — смещайте стыки минимум на 400 мм, иначе по шву появится трещина");
   }
   if (height > 3.5) {
     practicalNotes.push(`Высота ${roundDisplay(height, 1)} м — ставьте профили CW-100, стандартные CW-75 будут гулять`);
   }
-  practicalNotes.push("Между ГКЛ и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
+  practicalNotes.push("Между гипсокартоном и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
 
   return {
     canonicalSpecId: spec.calculator_id,

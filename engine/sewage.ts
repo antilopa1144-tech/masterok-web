@@ -95,7 +95,7 @@ export function computeCanonicalSewage(
 
     materials.push(
       {
-        name: "Кольца ЖБ КС 10-9",
+        name: "Железобетонные колодезные кольца, типоразмер КС 10-9",
         quantity: totalRings,
         unit: "шт",
         withReserve: totalRings,
@@ -103,7 +103,7 @@ export function computeCanonicalSewage(
         category: "Ёмкость",
       },
       {
-        name: "Днища ПН-10",
+        name: "Плиты днища колодца, заводская маркировка ПН-10",
         quantity: bottomPlates,
         unit: "шт",
         withReserve: bottomPlates,
@@ -111,7 +111,7 @@ export function computeCanonicalSewage(
         category: "Ёмкость",
       },
       {
-        name: "Плиты перекрытия ПП-10",
+        name: "Плиты перекрытия колодца, заводская маркировка ПП-10",
         quantity: topPlates,
         unit: "шт",
         withReserve: topPlates,
@@ -183,7 +183,7 @@ export function computeCanonicalSewage(
 
   materials.push(
     {
-      name: "Труба ПВХ ø110 (секции 3 м)",
+      name: "Пластиковая канализационная труба (ПВХ) Ø110 мм, отрезки по 3 м",
       quantity: pipeSections,
       unit: "шт",
       withReserve: pipeSections,

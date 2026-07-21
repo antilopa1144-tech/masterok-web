@@ -34,12 +34,12 @@ const PUTTY_BAG = 25;
 const INSULATION_TYPE_LABELS: Record<number, string> = {
   0: "Минвата плиты",
   1: "Минвата рулоны",
-  2: "ЭППС",
+  2: "Экструдированный пенополистирол (ЭППС)",
 };
 
 const FINISH_TYPE_LABELS: Record<number, string> = {
   0: "Деревянная вагонка",
-  1: "ГКЛ",
+  1: "Гипсокартон (ГКЛ)",
   2: "Без отделки",
 };
 
@@ -218,7 +218,7 @@ export function computeCanonicalAttic(
   } else if (finishType === 1) {
     materials.push(
       {
-        name: "ГКЛ (3 м²)",
+        name: "Гипсокартонные листы (ГКЛ, 3 м²)",
         quantity: gklSheets,
         unit: "листов",
         withReserve: gklSheets,

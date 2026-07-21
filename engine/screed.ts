@@ -148,7 +148,7 @@ function buildMaterialsType0(
       category: 'Основное',
     },
     {
-      name: 'Плёнка ПЭ',
+      name: 'Полиэтиленовая плёнка',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -205,7 +205,7 @@ function buildMaterialsType1(
 ): CanonicalMaterialResult[] {
   const materials: CanonicalMaterialResult[] = [
     {
-      name: 'Готовая ЦПС М150 (мешки 50 кг)',
+      name: 'Готовая цементно-песчаная смесь М150 (мешки 50 кг)',
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
@@ -214,7 +214,7 @@ function buildMaterialsType1(
       category: 'Основное',
     },
     {
-      name: 'Плёнка ПЭ',
+      name: 'Полиэтиленовая плёнка',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -269,7 +269,7 @@ function buildMaterialsType2(
 ): CanonicalMaterialResult[] {
   return [
     {
-      name: 'ЦПС полусухая (мешки 50 кг)',
+      name: 'Цементно-песчаная смесь для полусухой стяжки (мешки 50 кг)',
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
@@ -278,7 +278,7 @@ function buildMaterialsType2(
       category: 'Основное',
     },
     {
-      name: 'Фиброволокно ПП',
+      name: 'Фиброволокно полипропиленовое',
       quantity: roundDisplay(fiberKg, 3),
       unit: 'кг',
       withReserve: roundDisplay(fiberKg, 3),
@@ -286,7 +286,7 @@ function buildMaterialsType2(
       category: 'Армирование',
     },
     {
-      name: 'Плёнка ПЭ',
+      name: 'Полиэтиленовая плёнка',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -414,12 +414,12 @@ export function computeCanonicalScreed(
     warnings.push('При толщине более 100 мм рекомендуется разделить заливку на слои');
   }
   if (screedType.id === 0 && area > spec.warnings_rules.large_area_cps_threshold_m2) {
-    warnings.push('При площади более 50 м² рекомендуется использовать готовую ЦПС');
+    warnings.push('При площади более 50 м² рекомендуется использовать готовую цементно-песчаную смесь');
   }
 
   const practicalNotes: string[] = [];
   if (thickness >= 80) {
-    practicalNotes.push(`Стяжка ${roundDisplay(thickness, 0)} мм — обязательно армирование сеткой ВР-1, иначе потрескается`);
+    practicalNotes.push(`Стяжка ${roundDisplay(thickness, 0)} мм — обязательно армирование сварной проволочной сеткой, иначе покрытие может потрескаться`);
   }
   if (area > 30) {
     practicalNotes.push(`На ${roundDisplay(area, 0)} м² ставьте маяки через 1.2-1.5 м — ровнее не будет, а переделывать дороже`);

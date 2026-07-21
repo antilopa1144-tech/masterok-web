@@ -210,7 +210,7 @@ export function computeCanonicalLawn(
   }
 
   materials.push({
-    name: `Удобрение стартовое NPK (${rules.fertilizer_pack_kg} кг)`,
+    name: `Удобрение стартовое комплексное: азот–фосфор–калий (NPK, ${rules.fertilizer_pack_kg} кг)`,
     quantity: fertilizerPacks,
     unit: "пачек",
     withReserve: fertilizerPacks,

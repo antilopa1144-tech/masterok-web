@@ -10,6 +10,8 @@ export interface StoredProject {
 
 export interface StoredProjectMaterial {
   name: string;
+  /** Что именно выбрать в магазине: тип, назначение и ограничения совместимости. */
+  subtitle?: string;
   quantity: number;
   unit: string;
   /** Группа в смете (как в калькуляторе): «Арматура», «Бетон»… */

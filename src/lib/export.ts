@@ -13,6 +13,8 @@ import { formatWeightParts } from '@/lib/format/weight';
 
 export interface Material {
   name: string;
+  /** Спецификация для закупки: тип, размер, назначение и условия выбора. */
+  subtitle?: string;
   quantity: number;
   unit: string;
   waste?: number;
@@ -188,7 +190,7 @@ export async function exportToPDF(data: EstimateData): Promise<void> {
     for (const m of items) {
       const wasteLabel = m.waste ? `+${Math.round(m.waste * 100)} %` : '—';
       tableBody.push([
-        m.name,
+        m.subtitle ? `${m.name}\n${m.subtitle}` : m.name,
         `${formatNumberPdf(m.quantity)} ${m.unit}`.trim(),
         wasteLabel,
       ]);
@@ -308,13 +310,14 @@ export async function exportToExcel(data: EstimateData): Promise<void> {
     ['Материалы:'],
   ];
 
-  rows.push(['Раздел', 'Материал', 'Количество', 'Ед. изм.', 'Запас (%)']);
+  rows.push(['Раздел', 'Материал', 'Спецификация', 'Количество', 'Ед. изм.', 'Запас (%)']);
 
   for (const [cat, items] of groupMaterialsByCategory(data.materials)) {
     for (const m of items) {
       rows.push([
         cat,
         m.name,
+        m.subtitle ?? '',
         String(m.quantity),
         m.unit,
         m.waste ? String(Math.round(m.waste * 100)) : '0',

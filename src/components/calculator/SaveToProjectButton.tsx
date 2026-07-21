@@ -13,7 +13,7 @@ interface Props {
   calcTitle: string;
   slug: string;
   categorySlug: string;
-  materials: { name: string; quantity: number; unit: string; category?: string }[];
+  materials: { name: string; subtitle?: string; quantity: number; unit: string; category?: string }[];
   /** Ссылка на календарь после сохранения. */
   calendarScenarioId?: RenovationScenarioId | null;
 }
@@ -63,6 +63,7 @@ export default function SaveToProjectButton({
       calcId, calcTitle, slug, categorySlug,
       materials: materials.map((m) => ({
         name: m.name,
+        ...(m.subtitle ? { subtitle: m.subtitle } : {}),
         quantity: m.quantity,
         unit: m.unit,
         ...(m.category ? { category: m.category } : {}),

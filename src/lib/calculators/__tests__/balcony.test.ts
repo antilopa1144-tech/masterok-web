@@ -68,7 +68,7 @@ describe("Калькулятор отделки балкона", () => {
 
     it("ПВХ-панели присутствуют", () => {
       // Engine: FINISH_LABELS[1] = "ПВХ-панели"
-      expect(findMaterial(result, "ПВХ-панели")).toBeDefined();
+      expect(findMaterial(result, "Пластиковые панели (ПВХ)")).toBeDefined();
     });
 
     it("пенофол присутствует (insulationType=2)", () => {
@@ -96,7 +96,7 @@ describe("Калькулятор отделки балкона", () => {
 
     it("ПСБ + пенофол присутствует (insulationType=3)", () => {
       // Engine: INSULATION_LABELS[3] = "ПСБ + пенофол"
-      expect(findMaterial(result, "ПСБ + пенофол")).toBeDefined();
+      expect(findMaterial(result, "Пенопласт (ПСБ) + пенофол")).toBeDefined();
     });
   });
 
@@ -149,7 +149,7 @@ describe("Калькулятор отделки балкона", () => {
 
     it("МДФ-панели присутствуют", () => {
       // Engine: FINISH_LABELS[3] = "МДФ-панели"
-      expect(findMaterial(result, "МДФ-панели")).toBeDefined();
+      expect(findMaterial(result, "Древесноволокнистые панели (МДФ)")).toBeDefined();
     });
 
     it("инварианты", () => {

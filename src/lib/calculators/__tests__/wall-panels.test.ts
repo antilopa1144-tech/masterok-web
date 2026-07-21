@@ -15,12 +15,12 @@ describe("Калькулятор панелей для стен", () => {
 
     it("ПВХ-панели присутствуют", () => {
       // Engine: "ПВХ-панели (0.75 м²)"
-      const panels = findMaterial(result, "ПВХ-панели");
+      const panels = findMaterial(result, "Пластиковые панели (ПВХ");
       expect(panels).toBeDefined();
     });
 
     it("монтажный клей (флаконы) присутствует", () => {
-      const glue = findMaterial(result, "Монтажный клей для ПВХ-панелей без растворителей");
+      const glue = findMaterial(result, "Монтажный клей без растворителей для пластиковых панелей");
       expect(glue).toBeDefined();
       expect(glue?.subtitle).toContain("совместимость");
     });
@@ -60,7 +60,7 @@ describe("Калькулятор панелей для стен", () => {
 
     it("МДФ-панели присутствуют", () => {
       // Engine: "МДФ-панели (0.494 м²)"
-      const panels = findMaterial(result, "МДФ-панели");
+      const panels = findMaterial(result, "Древесноволокнистые панели (МДФ");
       expect(panels).toBeDefined();
     });
 
@@ -76,7 +76,7 @@ describe("Калькулятор панелей для стен", () => {
     });
 
     it("кляймеры присутствуют", () => {
-      const fasteners = findMaterial(result, "Кляймеры для МДФ-панелей");
+      const fasteners = findMaterial(result, "Кляймеры для древесноволокнистых панелей");
       expect(fasteners).toBeDefined();
       expect(fasteners?.subtitle).toContain("пазу");
     });

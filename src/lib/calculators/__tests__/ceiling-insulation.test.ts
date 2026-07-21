@@ -55,7 +55,7 @@ describe("Утепление потолка", () => {
     it("40 м², 100 мм", () => {
       const r = calc({ area: 40, thickness: 100, insulationType: 2, layers: 1 });
       // Engine: "ЭППС плиты", plates=ceil(40*1.05*1/0.72)=ceil(58.33)=59
-      expect(findMaterial(r, "ЭППС плиты")!.quantity).toBe(59);
+      expect(findMaterial(r, "Плиты экструдированного пенополистирола")!.quantity).toBe(59);
     });
 
     it("нет пароизоляции для ЭППС", () => {

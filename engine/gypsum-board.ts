@@ -163,14 +163,14 @@ export function computeCanonicalGypsumBoard(
 
   /* ─── materials ─── */
   const gklTypeLabels: Record<number, string> = {
-    0: "ГКЛ стандартный",
-    1: "ГКЛВ влагостойкий",
+    0: "Стандартный гипсокартон (ГКЛ)",
+    1: "Влагостойкий гипсокартон (ГКЛВ)",
     2: "ГКЛО огнестойкий",
   };
 
   const materials: CanonicalMaterialResult[] = [
     {
-      name: gklTypeLabels[gklType] ?? "ГКЛ",
+      name: gklTypeLabels[gklType] ?? "Гипсокартон (ГКЛ)",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -178,7 +178,7 @@ export function computeCanonicalGypsumBoard(
       category: "Основное",
     },
     {
-      name: "Профиль ПП 60×27 3м",
+      name: "Потолочный профиль ПП 60×27 мм, 3 м",
       quantity: ppPcs,
       unit: "шт",
       withReserve: ppPcs,
@@ -186,7 +186,7 @@ export function computeCanonicalGypsumBoard(
       category: "Каркас",
     },
     {
-      name: "Профиль ПН 27×28 3м",
+      name: "Направляющий профиль ПН 27×28 мм, 3 м",
       quantity: guidePcs,
       unit: "шт",
       withReserve: guidePcs,
@@ -195,11 +195,11 @@ export function computeCanonicalGypsumBoard(
     },
     {
       name: layers === 2
-        ? "Саморезы TN 3,5×25 и 3,5×35 мм"
-        : "Саморезы TN 3,5×25 мм",
+        ? "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35 мм"
+        : "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм",
       subtitle: layers === 2
         ? `25 мм — около ${firstLayerScrews} шт. для первого слоя; 35 мм — около ${secondLayerScrews} шт. для второго`
-        : `Для крепления одного слоя ГКЛ к металлическому профилю — около ${screwsPcs} шт.`,
+        : `Для крепления одного слоя гипсокартона к металлическому профилю — около ${screwsPcs} шт.`,
       quantity: screwsKg,
       unit: "кг",
       withReserve: screwsKg,
@@ -243,11 +243,11 @@ export function computeCanonicalGypsumBoard(
     warnings.push("Большая площадь — рекомендуется профессиональный монтаж");
   }
   if (layers === 2) {
-    warnings.push("Второй слой ГКЛ монтируется со смещением швов");
+    warnings.push("Второй слой гипсокартона монтируется со смещением швов");
   }
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Между ГКЛ и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
+  practicalNotes.push("Между гипсокартоном и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
   if (layers === 2) {
     practicalNotes.push("При двух слоях второй крепите саморезами 35 мм, не 25 мм — иначе не дотянете до профиля");
   }

@@ -151,7 +151,8 @@ export function computeCanonicalBlindArea(
   if (materialType === 0) {
     materials.push(
       {
-        name: `Бетон (${thickness} мм)`,
+        name: `Бетон В15 (М200), слой ${thickness} мм`,
+        subtitle: "Для готовой смеси укажите поставщику класс В15 и требуемую подвижность по способу укладки",
         quantity: roundDisplay(recScenario.exact_need, 6),
         unit: "м³",
         withReserve: Math.ceil(concreteM3),
@@ -161,16 +162,18 @@ export function computeCanonicalBlindArea(
     );
     if (meshPcs > 0) {
       materials.push({
-        name: "Армосетка",
+        name: "Арматурная сетка 100×100×4 мм",
+        subtitle: "Количество дано по площади сетки; число карт пересчитайте по фактическому формату поставщика и нахлёстам",
         quantity: meshPcs,
-        unit: "шт",
+        unit: "м²",
         withReserve: meshPcs,
         purchaseQty: meshPcs,
         category: "Армирование",
       });
     }
     materials.push({
-      name: "Демпферная лента",
+      name: "Демпферная разделительная лента для примыкания к цоколю",
+      subtitle: "Толщину выбирают по проектной ширине деформационного шва; лента не должна создавать жёсткую связь с цоколем",
       quantity: damperM,
       unit: "м",
       withReserve: damperM,
@@ -180,7 +183,8 @@ export function computeCanonicalBlindArea(
   } else if (materialType === 1) {
     materials.push(
       {
-        name: "Тротуарная плитка",
+        name: "Тротуарная плитка для наружных работ",
+        subtitle: "Толщину и класс нагрузки выбирают по назначению: только пешеходная зона или возможный заезд автомобиля",
         quantity: roundDisplay(recScenario.exact_need, 6),
         unit: "м²",
         withReserve: tileM2,
@@ -188,7 +192,8 @@ export function computeCanonicalBlindArea(
         category: "Покрытие",
       },
       {
-        name: "Смесь для укладки (50 кг)",
+        name: "Сухая смесь для укладки тротуарной плитки (50 кг)",
+        subtitle: "Расход рассчитан по принятой схеме; проверьте допустимую толщину слоя в паспорте выбранной смеси",
         quantity: mixBags,
         unit: "мешков",
         withReserve: mixBags,
@@ -196,7 +201,8 @@ export function computeCanonicalBlindArea(
         category: "Смеси",
       },
       {
-        name: "Бордюр (0.5 м)",
+        name: "Бордюр тротуарный, длина 0,5 м",
+        subtitle: "Высоту и сечение подберите под толщину покрытия и основания",
         quantity: borderPcs,
         unit: "шт",
         withReserve: borderPcs,
@@ -207,7 +213,8 @@ export function computeCanonicalBlindArea(
   } else {
     materials.push(
       {
-        name: "Профилированная мембрана",
+        name: "Профилированная дренажная мембрана",
+        subtitle: "Для мягкой отмостки выбирайте систему, рассчитанную на грунтовое применение; нахлёсты входят в запас",
         quantity: roundDisplay(recScenario.exact_need, 6),
         unit: "м²",
         withReserve: membraneM2,
@@ -215,7 +222,8 @@ export function computeCanonicalBlindArea(
         category: "Покрытие",
       },
       {
-        name: "Декоративный щебень",
+        name: "Декоративный щебень фракции 20–40 мм",
+        subtitle: "Промытый морозостойкий материал для верхнего водопроницаемого слоя",
         quantity: decorGravelM3,
         unit: "м³",
         withReserve: decorGravelM3,
@@ -228,7 +236,8 @@ export function computeCanonicalBlindArea(
   /* ─── common materials ─── */
   materials.push(
     {
-      name: "Щебень (подушка)",
+      name: "Щебень фракции 20–40 мм для подушки",
+      subtitle: "Укладывать послойно с уплотнением; объём рассчитан для слоя 150 мм без отдельного коэффициента уплотнения",
       quantity: gravel,
       unit: "м³",
       withReserve: gravel,
@@ -236,7 +245,8 @@ export function computeCanonicalBlindArea(
       category: "Подготовка",
     },
     {
-      name: "Песок (подушка)",
+      name: "Песок строительный средней крупности для подушки",
+      subtitle: "Без органических включений; укладывать послойно с проливкой и уплотнением",
       quantity: sand,
       unit: "м³",
       withReserve: sand,
@@ -244,7 +254,8 @@ export function computeCanonicalBlindArea(
       category: "Подготовка",
     },
     {
-      name: `Геотекстиль (${GEOTEXTILE_ROLL} м²)`,
+      name: `Геотекстиль 200 г/м², рулон ${GEOTEXTILE_ROLL} м²`,
+      subtitle: "Типовой ориентир для разделительного слоя; на слабых грунтах плотность выбирают по проекту основания",
       quantity: geotextileRolls,
       unit: "рулонов",
       withReserve: geotextileRolls,
@@ -255,7 +266,8 @@ export function computeCanonicalBlindArea(
 
   if (eppsPlates > 0) {
     materials.push({
-      name: `ЭППС утеплитель (${withInsulation} мм)`,
+      name: `Экструдированный пенополистирол (ЭППС) для фундамента, ${withInsulation} мм`,
+      subtitle: "Для грунтового применения выбирайте плиты с подходящей прочностью на сжатие и минимальным водопоглощением",
       quantity: eppsPlates,
       unit: "шт",
       withReserve: eppsPlates,

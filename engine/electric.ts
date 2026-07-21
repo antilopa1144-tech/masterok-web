@@ -96,7 +96,7 @@ export function computeCanonicalElectric(
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Кабель ВВГнг 3×1.5",
+      name: "Медный кабель ВВГнг 3×1,5 мм², не распространяющий горение",
       quantity: roundDisplay(cable15length, 1),
       unit: "м",
       withReserve: roundDisplay(cable15length, 1),
@@ -104,7 +104,7 @@ export function computeCanonicalElectric(
       category: "Кабель",
     },
     {
-      name: "Кабель ВВГнг 3×2.5",
+      name: "Медный кабель ВВГнг 3×2,5 мм², не распространяющий горение",
       quantity: roundDisplay(cable25length, 1),
       unit: "м",
       withReserve: roundDisplay(cable25length, 1),
@@ -115,7 +115,7 @@ export function computeCanonicalElectric(
 
   if (hasKitchen && cable6length > 0) {
     materials.push({
-      name: "Кабель ВВГнг 3×6",
+      name: "Медный кабель ВВГнг 3×6 мм², не распространяющий горение",
       quantity: roundDisplay(cable6length, 1),
       unit: "м",
       withReserve: roundDisplay(cable6length, 1),
@@ -143,7 +143,7 @@ export function computeCanonicalElectric(
       category: "Защита",
     },
     {
-      name: "УЗО/дифавтоматы",
+      name: "Устройства защитного отключения (УЗО) / дифференциальные автоматы",
       quantity: uzoCount,
       unit: "шт",
       withReserve: uzoCount,
@@ -235,16 +235,16 @@ export function computeCanonicalElectric(
     warnings.push("Площадь более 100 м² — рекомендуется ввод 380В (3 фазы)");
   }
   if (hasKitchen) {
-    warnings.push("Кухня: кабель 3×6 мм², автомат 32А, УЗО 40А/30мА");
+    warnings.push("Кухня: кабель 3×6 мм², автомат 32 А, устройство защитного отключения (УЗО) 40 А / 30 мА");
   }
-  warnings.push("Все розетки в ванной и кухне — через УЗО 10-30 мА");
+  warnings.push("Все розетки в ванной и кухне — через устройство защитного отключения (УЗО) на 10–30 мА");
 
 
   const practicalNotes: string[] = [];
   if (apartmentArea > 100) {
     practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод (380В), на однофазном будете постоянно выбивать автоматы`);
   }
-  practicalNotes.push("Каждая розеточная группа — через своё УЗО на 30 мА. Ванная — отдельное УЗО на 10 мА");
+  practicalNotes.push("Каждая розеточная группа — через своё устройство защитного отключения (УЗО) на 30 мА. Ванная — отдельное УЗО на 10 мА");
 
   return {
     canonicalSpecId: spec.calculator_id,

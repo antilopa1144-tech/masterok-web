@@ -55,7 +55,7 @@ describe("Отопление и радиаторы", () => {
     it("трубы ПП, фитинги, кронштейны, термоголовки, краны Маевского", () => {
       const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 4 });
       // Engine material names
-      expect(findMaterial(r, "Труба ПП")).toBeDefined();
+      expect(findMaterial(r, "Полипропиленовая труба")).toBeDefined();
       expect(findMaterial(r, "Фитинги")).toBeDefined();
       expect(findMaterial(r, "Кронштейны")).toBeDefined();
       expect(findMaterial(r, "Термоголовки")).toBeDefined();

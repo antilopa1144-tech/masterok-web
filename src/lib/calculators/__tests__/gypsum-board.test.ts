@@ -16,7 +16,7 @@ describe("Калькулятор гипсокартона", () => {
 
     it("ГКЛ стандартный присутствует", () => {
       // Engine: "ГКЛ стандартный"
-      const gkl = findMaterial(result, "ГКЛ стандартный");
+      const gkl = findMaterial(result, "Стандартный гипсокартон (ГКЛ)");
       expect(gkl).toBeDefined();
     });
 
@@ -31,7 +31,7 @@ describe("Калькулятор гипсокартона", () => {
     });
 
     it("указан типоразмер саморезов для одного слоя ГКЛ", () => {
-      const screws = findMaterial(result, "Саморезы TN 3,5×25 мм");
+      const screws = findMaterial(result, "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм");
       expect(screws).toBeDefined();
       expect(screws?.subtitle).toContain("металлическому профилю");
     });

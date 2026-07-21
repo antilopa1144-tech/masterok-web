@@ -11,9 +11,9 @@ describe("Электропроводка", () => {
       checkInvariants(r);
       // Engine: lightingGroups=4, outletGroups=5, acGroups=2, breakersCount=4+5+2+1=12
       expect(r.totals.breakersCount).toBe(12);
-      // Engine material names: "Кабель ВВГнг 3×1.5", "Кабель ВВГнг 3×2.5", "Кабель ВВГнг 3×6"
-      expect(findMaterial(r, "3×1.5")).toBeDefined();
-      expect(findMaterial(r, "3×2.5")).toBeDefined();
+      // Engine material names contain the cable marking, section and plain-language purpose.
+      expect(findMaterial(r, "3×1,5")).toBeDefined();
+      expect(findMaterial(r, "3×2,5")).toBeDefined();
       expect(findMaterial(r, "3×6")).toBeDefined();
     });
 

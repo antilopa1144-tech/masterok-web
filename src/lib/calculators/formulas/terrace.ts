@@ -44,7 +44,7 @@ export const terraceDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Террасная доска (ДПК) 150×25 мм" },
+        { value: 0, label: "Террасная доска из древесно-полимерного композита (ДПК), 150×25 мм" },
         { value: 1, label: "Террасная доска лиственница 120×28 мм" },
         { value: 2, label: "Террасная доска сосна 90×28 мм" },
         { value: 3, label: "Планкен 120×20 мм (без зазора)" },
@@ -71,7 +71,7 @@ export const terraceDef: CalculatorDefinition = {
         { value: 300, label: "300 мм (нагруженные террасы)" },
         { value: 400, label: "400 мм (стандарт)" },
         { value: 500, label: "500 мм (лёгкие конструкции)" },
-        { value: 600, label: "600 мм (ДПК усиленный)" },
+        { value: 600, label: "600 мм (усиленная композитная доска)" },
       ],
     },
     {
@@ -80,7 +80,7 @@ export const terraceDef: CalculatorDefinition = {
       type: "select",
       defaultValue: 1,
       options: [
-        { value: 0, label: "Не требуется (ДПК)" },
+        { value: 0, label: "Не требуется для композитной доски" },
         { value: 1, label: "Масло для террасной доски" },
         { value: 2, label: "Антисептик + масло (2 слоя)" },
       ],
@@ -185,5 +185,4 @@ export const terraceDef: CalculatorDefinition = {
     ],
   },
 };
-
 

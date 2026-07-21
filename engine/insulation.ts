@@ -322,7 +322,7 @@ export function computeCanonicalInsulation(
         unit: "шт",
         withReserve: dowelsNeeded,
         purchaseQty: dowelsNeeded,
-        category: "Крепёж (СФТК)",
+        category: "Крепёж для фасадной штукатурной системы (СФТК)",
       });
     }
   }

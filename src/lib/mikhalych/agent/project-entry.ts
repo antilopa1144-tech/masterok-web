@@ -13,6 +13,7 @@ export function calculatorResultToProjectEntry(
     categorySlug: def.categorySlug,
     materials: result.materials.map((m) => ({
       name: m.name,
+      subtitle: m.subtitle,
       quantity: materialQty(m),
       unit: m.unit,
       category: m.category,

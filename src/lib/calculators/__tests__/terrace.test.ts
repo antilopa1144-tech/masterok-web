@@ -31,7 +31,7 @@ describe("Калькулятор террасной доски", () => {
 
     it("ДПК 150 мм (3000 мм): purchaseQty from recScenario", () => {
       // Engine: "ДПК 150 мм (3000 мм)" — quantity = recScenario.exact_need
-      const board = findMaterial(result, "ДПК 150 мм");
+      const board = findMaterial(result, "Древесно-полимерный композит (ДПК), 150 мм");
       expect(board).toBeDefined();
       // purchaseQty = ceil(recScenario.exact_need) which includes scenario multiplier
       expect(board!.purchaseQty).toBeGreaterThanOrEqual(44);
@@ -50,7 +50,7 @@ describe("Калькулятор террасной доски", () => {
     });
 
     it("указаны монтажные клипсы выбранной системы ДПК", () => {
-      const klaymer = findMaterial(result, "Монтажные клипсы для ДПК");
+      const klaymer = findMaterial(result, "Монтажные клипсы для доски из древесно-полимерного композита");
       expect(klaymer).toBeDefined();
       expect(klaymer?.subtitle).toContain("пазу выбранной доски");
       // klaymerCount = lagRowCount * rowCount = 14 * 20 = 280

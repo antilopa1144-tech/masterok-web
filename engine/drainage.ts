@@ -248,7 +248,7 @@ export function computeCanonicalDrainage(
   if (groundwaterRisk >= spec.warnings_rules.high_groundwater_threshold) {
     warnings.push(
       "Высокий уровень грунтовых вод — увеличена обмотка геотекстилем и слой щебня. " +
-        "Глубина траншеи должна быть ниже отметки УГВ минимум на 0.30 м (СП 104.13330.2016).",
+        "Глубина траншеи должна быть ниже уровня грунтовых вод минимум на 0,30 м (СП 104.13330.2016).",
     );
   }
   if (withCollector === 1 && length < spec.warnings_rules.min_length_for_collector) {

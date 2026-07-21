@@ -123,13 +123,13 @@ export function computeCanonicalMdfPanels(
     warnings.push("Большая площадь — рассмотрите оптовую закупку панелей");
   }
   if (panelType === 0) {
-    warnings.push("Стандартные МДФ-панели не рекомендуются для влажных помещений");
+    warnings.push("Стандартные древесноволокнистые панели (МДФ) не рекомендуются для влажных помещений");
   }
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "МДФ-панели",
+      name: "Древесноволокнистые панели средней плотности (МДФ)",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -170,7 +170,7 @@ export function computeCanonicalMdfPanels(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("МДФ панели боятся влаги — не ставьте в ванной и кухне возле мойки");
+  practicalNotes.push("Обычные МДФ-панели боятся влаги — не устанавливайте их в ванной и возле кухонной мойки");
 
   return {
     canonicalSpecId: spec.calculator_id,

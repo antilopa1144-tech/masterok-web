@@ -141,7 +141,7 @@ export function computeCanonicalFacadeInsulation(
   const recScenario = scenarios.REC;
 
   /* ─── materials ─── */
-  const insulationLabel = insulationType === 0 ? "Минеральная вата" : "ЭППС";
+  const insulationLabel = insulationType === 0 ? "Минеральная вата" : "Экструдированный пенополистирол (ЭППС)";
   const finishLabels: Record<number, string> = {
     0: "Декоративная штукатурка «короед»",
     1: "Декоративная штукатурка «шуба»",
@@ -214,14 +214,14 @@ export function computeCanonicalFacadeInsulation(
     warnings.push("Толстый утеплитель — рекомендуется двухслойная укладка");
   }
   if (insulationType === 1 && finishType !== 2) {
-    warnings.push("ЭППС — обязательна обработка поверхности для адгезии штукатурки");
+    warnings.push("Экструдированный пенополистирол (ЭППС): поверхность обязательно подготовить для сцепления со штукатуркой");
   }
 
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Дюбели — не менее 6 штук на 1 м². На углах и у окон — 8 штук");
   if (insulationType === 1) {
-    practicalNotes.push("ЭППС на фасаде — обязательно царапайте поверхность ножовкой, иначе штукатурка не ляжет");
+    practicalNotes.push("Экструдированный пенополистирол на фасаде обязательно зашершавьте ножовкой, иначе штукатурка не удержится");
   }
 
   return {

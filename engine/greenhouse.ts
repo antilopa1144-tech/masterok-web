@@ -278,7 +278,7 @@ export function computeCanonicalGreenhouse(
   }
 
   materials.push({
-    name: `UP-профиль торцевой (${rules.up_profile_length_m} м)`,
+    name: `Торцевой U-образный профиль для поликарбоната (${rules.up_profile_length_m} м)`,
     quantity: upProfilePieces,
     unit: "шт",
     withReserve: upProfilePieces,

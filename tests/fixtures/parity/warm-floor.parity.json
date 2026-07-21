@@ -1,7 +1,7 @@
 {
   "calculator_id": "warm-floor",
   "formula_version": "warm-floor-canonical-v1",
-  "generated_at": "2026-05-16T08:06:51.684Z",
+  "generated_at": "2026-07-21T07:37:54.781Z",
   "cases": [
     {
       "id": "defaults",

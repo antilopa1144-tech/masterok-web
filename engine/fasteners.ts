@@ -32,11 +32,23 @@ const BASE_STEP: Record<number, number> = {
   3: 200,
 };
 
-const SCREW_SIZES: Record<number, string> = {
-  0: "3.5×25",
-  1: "3.5×35",
-  2: "4.8×35",
-  3: "klaimers",
+const FASTENER_SPECS: Record<number, { name: string; subtitle: string }> = {
+  0: {
+    name: "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм, под крестовую биту PH2",
+    subtitle: "Фосфатированные, с мелкой резьбой — для крепления одного слоя гипсокартона к металлическому профилю",
+  },
+  1: {
+    name: "Саморезы по дереву 3,5×35 мм, под крестовую биту PH2",
+    subtitle: "Для крепления ориентированно-стружечной плиты (ОСП) или фанеры к деревянному каркасу; для металла нужен другой саморез",
+  },
+  2: {
+    name: "Кровельные саморезы 4,8×35 мм с уплотнительной шайбой из EPDM-резины",
+    subtitle: "Для крепления профлиста к деревянной обрешётке; цвет покрытия подберите по листу",
+  },
+  3: {
+    name: "Кляймеры для вагонки №3–№5",
+    subtitle: "Точный номер выбирают по толщине задней стенки паза конкретной вагонки",
+  },
 };
 
 const PER_KG: Record<number, number> = {
@@ -159,15 +171,14 @@ export function computeCanonicalFasteners(
   /* ─── materials ─── */
   const perKg = PER_KG[materialType] ?? 0;
   const useKg = perKg > 0;
-  const screwLabel = materialType === 3
-    ? "Кляймеры"
-    : `Саморезы ${SCREW_SIZES[materialType]}`;
+  const fastenerSpec = FASTENER_SPECS[materialType] ?? FASTENER_SPECS[0]!;
 
   const screwQtyKg = useKg ? Math.ceil(recScenario.exact_need / perKg * 10) / 10 : 0;
 
   const materials: CanonicalMaterialResult[] = [
     {
-      name: screwLabel,
+      name: fastenerSpec.name,
+      subtitle: `${fastenerSpec.subtitle}; расчётная потребность — около ${Math.ceil(recScenario.exact_need)} шт.`,
       quantity: useKg ? screwQtyKg : roundDisplay(recScenario.exact_need, 6),
       unit: useKg ? "кг" : "шт",
       withReserve: useKg ? screwQtyKg : Math.ceil(recScenario.exact_need),
@@ -179,7 +190,8 @@ export function computeCanonicalFasteners(
   if (frameScrews > 0) {
     const frameScrewsKg = Math.ceil(frameScrews / (PER_KG[0] ?? 1000) * 10) / 10;
     materials.push({
-      name: "Саморезы каркасные",
+      name: "Саморезы-клопы по металлу 3,5×9,5 мм, под крестовую биту PH2",
+      subtitle: `Для соединения металлических профилей — около ${frameScrews} шт.; не использовать для крепления лицевого листа`,
       quantity: frameScrewsKg,
       unit: "кг",
       withReserve: frameScrewsKg,
@@ -190,7 +202,8 @@ export function computeCanonicalFasteners(
 
   if (dubels > 0) {
     materials.push({
-      name: "Дюбели",
+      name: "Дюбель-гвозди 6×40 мм",
+      subtitle: `Для направляющего профиля по бетону или полнотелому кирпичу — около ${dubels} шт.; для газобетона и пустотелого кирпича нужен специальный крепёж`,
       quantity: dubels,
       unit: "шт",
       withReserve: dubels,
@@ -199,8 +212,16 @@ export function computeCanonicalFasteners(
     });
   }
 
+  const driverName = materialType === 2
+    ? "Магнитная торцевая насадка 8 мм"
+    : materialType === 3
+      ? "Крестовая бита PH2 для крепежа кляймеров"
+      : "Крестовая бита PH2 для шуруповёрта";
   materials.push({
-    name: "Биты для шуруповёрта",
+    name: driverName,
+    subtitle: materialType === 3
+      ? "Нужна только при фиксации кляймеров саморезами; при монтаже гвоздями используйте рекомендованный производителем крепёж"
+      : `Ориентир — одна рабочая насадка примерно на ${BITS_PER_SCREWS} точек крепления`,
     quantity: bits,
     unit: "шт",
     withReserve: bits,
@@ -219,7 +240,7 @@ export function computeCanonicalFasteners(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Саморезы для ГКЛ — фосфатированные (чёрные). Оцинкованные для дерева, не путайте");
+  practicalNotes.push("Саморезы для гипсокартона — фосфатированные (чёрные). Оцинкованные предназначены для дерева, не путайте");
 
   return {
     canonicalSpecId: spec.calculator_id,

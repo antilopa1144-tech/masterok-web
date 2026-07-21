@@ -203,7 +203,7 @@ export function computeCanonicalPartitions(
     warnings.push("Высота перегородки более 3.5 м — рекомендуется усиленное армирование");
   }
   if (blockType === 2 && thickness > 100) {
-    warnings.push("Гипсовые ПГП толще 100 мм — проверьте наличие нужного размера");
+    warnings.push("Гипсовые пазогребневые плиты (ПГП) толще 100 мм — проверьте наличие нужного размера");
   }
 
   const practicalNotes: string[] = [];

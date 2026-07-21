@@ -28,14 +28,13 @@ describe("Калькулятор откосов окон и дверей", () =>
 
     it("сэндвич-панели ПВХ = 3 шт (base), purchaseQty with REC multiplier", () => {
       // Engine: "Сэндвич-панели ПВХ" — quantity = recScenario.exact_need
-      const panels = findMaterial(result, "Сэндвич-панели ПВХ");
+      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
       expect(panels).toBeDefined();
       expect(panels!.purchaseQty).toBeGreaterThanOrEqual(3);
     });
 
-    it("F-профиль = 8 шт", () => {
-      // Engine: "F-профиль (3 м)"
-      const fProfile = findMaterial(result, "F-профиль");
+    it("F-образный профиль = 8 шт", () => {
+      const fProfile = findMaterial(result, "F-образный");
       expect(fProfile?.purchaseQty).toBe(8);
     });
 
@@ -79,12 +78,12 @@ describe("Калькулятор откосов окон и дверей", () =>
 
     it("ПВХ-панели присутствуют", () => {
       // Engine: "ПВХ-панели"
-      const panel = findMaterial(result, "ПВХ-панели");
+      const panel = findMaterial(result, "Пластиковые панели (ПВХ)");
       expect(panel).toBeDefined();
     });
 
-    it("F-профиль присутствует", () => {
-      expect(findMaterial(result, "F-профиль")).toBeDefined();
+    it("F-образный профиль присутствует", () => {
+      expect(findMaterial(result, "F-образный")).toBeDefined();
     });
 
     it("инварианты", () => {
@@ -127,7 +126,7 @@ describe("Калькулятор откосов окон и дверей", () =>
     });
 
     it("нет сэндвич-панелей", () => {
-      expect(findMaterial(result, "Сэндвич-панели ПВХ")).toBeUndefined();
+      expect(findMaterial(result, "Пластиковые сэндвич-панели")).toBeUndefined();
     });
   });
 
@@ -148,7 +147,7 @@ describe("Калькулятор откосов окон и дверей", () =>
 
     it("ГКЛ для откосов присутствует", () => {
       // Engine: "ГКЛ для откосов"
-      const gkl = findMaterial(result, "ГКЛ для откосов");
+      const gkl = findMaterial(result, "Гипсокартонные листы (ГКЛ) для откосов");
       expect(gkl).toBeDefined();
       // purchaseQty = ceil(recScenario.exact_need) with REC multiplier
       expect(gkl!.purchaseQty).toBeGreaterThanOrEqual(2);
@@ -156,7 +155,7 @@ describe("Калькулятор откосов окон и дверей", () =>
 
     it("саморезы для ГКЛ присутствуют", () => {
       // Engine: "Саморезы для ГКЛ"
-      const screws = findMaterial(result, "Саморезы для ГКЛ");
+      const screws = findMaterial(result, "Саморезы для гипсокартона");
       expect(screws).toBeDefined();
       expect(screws!.unit).toBe("кг");
       expect(screws!.purchaseQty).toBe(1);

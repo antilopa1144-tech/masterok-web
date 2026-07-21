@@ -49,6 +49,23 @@ describe("aggregateProcurementLines", () => {
     ]);
     expect(lines[0]!.category).toBe("Материалы");
   });
+
+  it("сохраняет уникальные спецификации и привязывает их к исходным расчётам", () => {
+    const lines = aggregateProcurementLines([
+      entry("e1", [{ name: "Саморезы", subtitle: "Для ГКЛ по металлу 3,5×25 мм", quantity: 200, unit: "шт" }]),
+      entry("e2", [{ name: "Саморезы", subtitle: "Для ГКЛ по металлу 3,5×35 мм", quantity: 300, unit: "шт" }]),
+      entry("e3", [{ name: "Саморезы", subtitle: "Для ГКЛ по металлу 3,5×25 мм", quantity: 100, unit: "шт" }]),
+    ]);
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.quantity).toBe(600);
+    expect(lines[0]!.subtitles).toEqual(["Для ГКЛ по металлу 3,5×25 мм", "Для ГКЛ по металлу 3,5×35 мм"]);
+    expect(lines[0]!.sources.map((source) => source.subtitle)).toEqual([
+      "Для ГКЛ по металлу 3,5×25 мм",
+      "Для ГКЛ по металлу 3,5×35 мм",
+      "Для ГКЛ по металлу 3,5×25 мм",
+    ]);
+  });
 });
 
 describe("groupProcurementByCategory", () => {

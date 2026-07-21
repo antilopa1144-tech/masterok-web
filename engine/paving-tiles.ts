@@ -174,7 +174,7 @@ export function computeCanonicalPavingTiles(
   if (foundationType === 1 && cementSandMixM3 > 0) {
     materials.push(
       {
-        name: "ЦПС (цементно-песчаная смесь)",
+        name: "Цементно-песчаная смесь (ЦПС)",
         quantity: cementSandMixM3,
         unit: "м³",
         withReserve: cementSandMixM3,
@@ -215,7 +215,7 @@ export function computeCanonicalPavingTiles(
   if (borderEnabled === 1 && borderPcs > 0) {
     materials.push(
       {
-        name: "Бордюрный камень БР100.30.18 (1.0 м)",
+        name: "Бордюрный камень 1000×300×180 мм, маркировка БР100.30.18",
         quantity: borderPcs,
         unit: "шт",
         withReserve: borderPcs,
@@ -252,7 +252,7 @@ export function computeCanonicalPavingTiles(
   }
   if (foundationType === 0 && tileThickness > 40) {
     warnings.push(
-      "Плитка ≥ 60 мм обычно укладывается на ЦПС или бетонное основание — песчаная подушка не выдержит точечную нагрузку.",
+      "Плитка ≥ 60 мм обычно укладывается на цементно-песчаную смесь или бетонное основание — песчаная подушка не выдержит точечную нагрузку.",
     );
   }
   if (perimeter / area < spec.warnings_rules.min_perimeter_to_area_ratio) {
@@ -268,10 +268,10 @@ export function computeCanonicalPavingTiles(
   practicalNotes.push(`Тип основания: ${foundationLabel}`);
   practicalNotes.push("Поперечный уклон покрытия 1.5-2% обязателен для отвода воды (СП 82.13330.2016)");
   if (foundationType === 1) {
-    practicalNotes.push("ЦПС после укладки плитки проливать водой не нужно — затвердеет от естественной влаги");
+    practicalNotes.push("Цементно-песчаную смесь после укладки плитки проливать водой не нужно — она затвердеет от естественной влаги");
   }
   if (foundationType === 2) {
-    practicalNotes.push("Между бетонной плитой основания и плиткой — слой ЦПС 30 мм для нивелировки");
+    practicalNotes.push("Между бетонным основанием и плиткой нужен слой цементно-песчаной смеси 30 мм для выравнивания");
   }
   practicalNotes.push("Швы между плиткой 3-5 мм заполнять только сухим кварцевым песком (не цементом)");
 

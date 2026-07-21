@@ -8,7 +8,7 @@ import { ToolMetric, ToolNotes, ToolNumberInput, ToolPresetButton } from "@/comp
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { calculateDeckLayout, type DeckOrientation, type DeckStagger } from "@/lib/tools/deck-layout";
 
-const BOARD_PRESETS = [{ label: "ДПК 150 × 3000", width: 150, length: 3000, gap: 5 }, { label: "Лиственница 120 × 3000", width: 120, length: 3000, gap: 6 }, { label: "Доска 140 × 4000", width: 140, length: 4000, gap: 6 }] as const;
+const BOARD_PRESETS = [{ label: "Древесно-полимерный композит (ДПК) 150 × 3000", width: 150, length: 3000, gap: 5 }, { label: "Лиственница 120 × 3000", width: 120, length: 3000, gap: 6 }, { label: "Доска 140 × 4000", width: 140, length: 4000, gap: 6 }] as const;
 const WOOD = ["#9a5b24", "#a9672d", "#8c4f20", "#b77735", "#7b431c", "#a35f27"];
 
 function DeckSvg({ result }: { result: ReturnType<typeof calculateDeckLayout> }) {

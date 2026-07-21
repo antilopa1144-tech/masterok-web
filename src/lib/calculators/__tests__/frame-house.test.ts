@@ -42,14 +42,14 @@ describe("Калькулятор каркасного дома", () => {
       // Engine: "Наружная обшивка — ОСП-9 мм"
       const outer = findMaterial(result, "Наружная обшивка");
       expect(outer?.purchaseQty).toBe(25);
-      expect(outer!.name).toContain("ОСП-9 мм");
+      expect(outer!.name).toContain("ОСП), 9 мм");
     });
 
     it("внутренняя обшивка ОСП-9 мм = 25 листов", () => {
       // Engine: "Внутренняя обшивка — ОСП-9 мм"
       const inner = findMaterial(result, "Внутренняя обшивка");
       expect(inner?.purchaseQty).toBe(25);
-      expect(inner!.name).toContain("ОСП-9 мм");
+      expect(inner!.name).toContain("ОСП), 9 мм");
     });
 
     it("утеплитель минвата = 39 упаковок", () => {
@@ -77,10 +77,10 @@ describe("Калькулятор каркасного дома", () => {
     });
 
     it("крепёж обшивки содержит спецификации для выбранных листов", () => {
-      const screws = findMaterial(result, "Крепёж обшивки — ОСП, саморезы 3,5×35 мм");
+      const screws = findMaterial(result, "Крепёж обшивки — Ориентированно-стружечная плита (ОСП), саморезы 3,5×35 мм");
       expect(screws).toBeDefined();
       expect(screws!.unit).toBe("кг");
-      expect(screws?.subtitle).toContain("ОСП — саморезы по дереву 3,5×35 мм");
+      expect(screws?.subtitle).toContain("ориентированно-стружечная плита) — саморезы по дереву 3,5×35 мм");
     });
 
     it("гвозди в кг", () => {
@@ -229,7 +229,7 @@ describe("Калькулятор каркасного дома", () => {
       // Engine: "Наружная обшивка — ЦСП-12 мм"
       const outer = findMaterial(result, "Наружная обшивка");
       expect(outer?.purchaseQty).toBe(20);
-      expect(outer!.name).toContain("ЦСП-12 мм");
+      expect(outer!.name).toContain("ЦСП), 12 мм");
     });
   });
 });

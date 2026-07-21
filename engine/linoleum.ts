@@ -168,7 +168,7 @@ export function computeCanonicalLinoleum(
   }
   if (needPlinth) {
     materials.push({
-      name: `Плинтус ПВХ (${spec.packaging_rules.plinth_piece_length_m} м)`,
+      name: `Плинтус пластиковый (ПВХ, ${spec.packaging_rules.plinth_piece_length_m} м)`,
       quantity: roundDisplay(plinthLength / spec.packaging_rules.plinth_piece_length_m, 6),
       unit: "шт",
       withReserve: plinthPieces,

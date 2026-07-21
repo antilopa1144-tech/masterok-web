@@ -67,5 +67,22 @@ describe("Калькулятор плитки", () => {
     });
 
     expect(result.warnings.some((warning) => warning.includes("Крупный формат"))).toBe(true);
+    const glue = findMaterial(result, "Плиточный клей усиленный для крупного формата");
+    expect(glue?.subtitle).toContain("800×800 мм");
+    expect(findMaterial(result, "Система выравнивания плитки (СВП), клипса 3 мм")).toBeDefined();
+  });
+
+  it("конкретизирует затирку, крестики и герметик по введённому шву", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 12,
+      tileWidthCm: 30,
+      tileHeightCm: 30,
+      jointWidth: 2,
+    });
+
+    expect(findMaterial(result, "Затирка цементная для шва 2 мм")?.subtitle).toContain("влажных зон");
+    expect(findMaterial(result, "Крестики для плитки 2 мм")?.subtitle).toContain("ширине шва");
+    expect(findMaterial(result, "силиконовый герметик")?.name).toContain("280–310 мл");
   });
 });

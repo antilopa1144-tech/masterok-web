@@ -55,7 +55,7 @@ describe("Калькулятор септика", () => {
 
     it("трубы ПВХ ø110 присутствуют", () => {
       // Engine: "Труба ПВХ ø110 (секции 3 м)"
-      const pipes = findMaterial(result, "ø110");
+      const pipes = findMaterial(result, "Ø110 мм");
       expect(pipes).toBeDefined();
       // 10 * 1.05 / 3 = 3.5 → ceil = 4
       expect(pipes!.quantity).toBe(4);

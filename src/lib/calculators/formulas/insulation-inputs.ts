@@ -106,7 +106,7 @@ export function checkMineralWoolDensity(
 
   if (isWetFacadeContext && effectiveDensity < WET_FACADE_MIN_DENSITY) {
     warnings.push(
-      `Плотность ${effectiveDensity} кг/м³ слишком низкая для мокрого штукатурного фасада (СФТК). ` +
+      `Плотность ${effectiveDensity} кг/м³ слишком низкая для мокрого штукатурного фасада. ` +
         `Под штукатуркой плита просядет — нужна фасадная минвата минимум ${WET_FACADE_MIN_DENSITY} кг/м³ ` +
         `(Rockwool Фасад Баттс, Технониколь Технофас 80, Knauf Insulation FKD-S Thermal).`,
     );

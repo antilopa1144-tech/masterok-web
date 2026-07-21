@@ -43,10 +43,10 @@ const OPENING_TYPE_LABELS: Record<number, string> = {
 };
 
 const FINISH_TYPE_LABELS: Record<number, string> = {
-  0: "Сэндвич-панели ПВХ",
-  1: "ПВХ-панели",
+  0: "Пластиковые сэндвич-панели (ПВХ)",
+  1: "Пластиковые панели (ПВХ)",
   2: "Штукатурка",
-  3: "ГКЛ",
+  3: "Гипсокартон (ГКЛ)",
 };
 
 /* ─── inputs ─── */
@@ -198,7 +198,7 @@ export function computeCanonicalSlopes(
         category: "Отделка",
       },
       {
-        name: `F-профиль (${F_PROFILE_M} м)`,
+        name: `F-образный финишный профиль (${F_PROFILE_M} м)`,
         quantity: fProfilePcs,
         unit: "шт",
         withReserve: fProfilePcs,
@@ -244,7 +244,7 @@ export function computeCanonicalSlopes(
   } else {
     materials.push(
       {
-        name: "ГКЛ для откосов",
+        name: "Гипсокартонные листы (ГКЛ) для откосов",
         quantity: roundDisplay(recScenario.exact_need, 6),
         unit: "листов",
         withReserve: Math.ceil(recScenario.exact_need),
@@ -252,7 +252,7 @@ export function computeCanonicalSlopes(
         category: "Отделка",
       },
       {
-        name: "Саморезы для ГКЛ",
+        name: "Саморезы для гипсокартона",
         quantity: screwsGKL,
         unit: "кг",
         withReserve: screwsGKL,

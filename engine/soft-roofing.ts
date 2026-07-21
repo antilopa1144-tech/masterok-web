@@ -195,7 +195,7 @@ export function computeCanonicalSoftRoofing(
     },
     {
       name: "Гвозди ершёные оцинкованные 3,2×30 мм",
-      subtitle: "С широкой шляпкой для крепления гибкой черепицы к ОСП",
+      subtitle: "С широкой шляпкой для крепления гибкой черепицы к ориентированно-стружечной плите",
       quantity: nailsKg,
       unit: "кг",
       withReserve: nailsKg,
@@ -228,7 +228,7 @@ export function computeCanonicalSoftRoofing(
       category: "Доборные",
     },
     {
-      name: `ОСП (${OSB_SHEET} м²)`,
+      name: `Ориентированно-стружечная плита (ОСП, ${OSB_SHEET} м²)`,
       quantity: osbSheets,
       unit: "листов",
       withReserve: osbSheets,

@@ -93,7 +93,7 @@ export function computeCanonicalHeating(
       category: "Отопление",
     },
     {
-      name: "Труба ПП ø25 (палки по 4 м)",
+      name: "Полипропиленовая труба Ø25 мм (отрезки по 4 м)",
       quantity: pipeSticks,
       unit: "шт",
       withReserve: pipeSticks,

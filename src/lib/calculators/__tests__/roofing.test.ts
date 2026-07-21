@@ -44,7 +44,7 @@ describe("Калькулятор кровли", () => {
     });
 
     it("кровельные саморезы в шт", () => {
-      const screws = findMaterial(result, "4,8×35 мм с EPDM-шайбой");
+      const screws = findMaterial(result, "4,8×35 мм с уплотнительной шайбой из EPDM-резины");
       expect(screws).toBeDefined();
       expect(screws?.unit).toBe("шт");
       expect(screws?.packageInfo?.size).toBe(250);
@@ -133,7 +133,7 @@ describe("Калькулятор кровли", () => {
     });
 
     it("указаны саморезы для профнастила", () => {
-      const screws = findMaterial(result, "4,8×35 мм с EPDM-шайбой");
+      const screws = findMaterial(result, "4,8×35 мм с уплотнительной шайбой из EPDM-резины");
       expect(screws).toBeDefined();
       expect(screws?.subtitle).toContain("профнастила");
       expect(screws?.packageInfo?.size).toBe(250);

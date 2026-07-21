@@ -21,7 +21,7 @@
     "insulation_types": [
       { "id": 0, "key": "mineral_wool", "label": "Минеральная вата", "dowels_per_sqm": 7, "pack_height_mm": 600, "cost_estimate_per_m2_at_100mm_rub": 400 },
       { "id": 1, "key": "epps", "label": "ЭППС / пеноплекс", "dowels_per_sqm": 5, "pack_height_mm": 400, "cost_estimate_per_m2_at_100mm_rub": 850 },
-      { "id": 2, "key": "eps", "label": "ЕПС / пенопласт", "dowels_per_sqm": 6, "pack_height_mm": 500, "cost_estimate_per_m2_at_100mm_rub": 220 },
+      { "id": 2, "key": "eps", "label": "Пенопласт (пенополистирол, ППС)", "dowels_per_sqm": 6, "pack_height_mm": 500, "cost_estimate_per_m2_at_100mm_rub": 220 },
       { "id": 3, "key": "ecowool", "label": "Эковата", "dowels_per_sqm": 0, "pack_height_mm": 0, "cost_estimate_per_m2_at_100mm_rub": 350 }
     ],
     "plate_sizes": [

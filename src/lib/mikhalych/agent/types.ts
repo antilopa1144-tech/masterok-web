@@ -42,6 +42,7 @@ export interface AgentProjectEntryPayload {
   categorySlug: string;
   materials: Array<{
     name: string;
+    subtitle?: string;
     quantity: number;
     unit: string;
     category?: string;

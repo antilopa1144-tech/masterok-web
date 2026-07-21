@@ -26,16 +26,18 @@ describe("Калькулятор отмостки", () => {
     });
 
     it("армосетка при толщине ≥ 100 мм", () => {
-      // Engine: "Армосетка"
-      const mesh = findMaterial(result, "Армосетка");
+      const mesh = findMaterial(result, "Арматурная сетка 100×100×4 мм");
       expect(mesh).toBeDefined();
       // meshPcs = ceil(40 * 1.1) = ceil(44) = 44
       expect(mesh?.purchaseQty).toBe(44);
+      expect(mesh?.unit).toBe("м²");
+      expect(mesh?.subtitle).toContain("формату поставщика");
     });
 
     it("демпферная лента присутствует для бетонной", () => {
       // Engine: "Демпферная лента"
-      expect(findMaterial(result, "Демпферная лента")).toBeDefined();
+      const tape = findMaterial(result, "Демпферная разделительная лента");
+      expect(tape?.subtitle).toContain("деформационного шва");
     });
 
     it("щебень подготовка = 40 * 0.15 = 6 м³", () => {
@@ -74,7 +76,7 @@ describe("Калькулятор отмостки", () => {
     });
 
     it("нет армосетки при толщине < 100", () => {
-      expect(findMaterial(result, "Армосетка")).toBeUndefined();
+      expect(findMaterial(result, "Арматурная сетка")).toBeUndefined();
     });
   });
 
@@ -100,7 +102,7 @@ describe("Калькулятор отмостки", () => {
     it("смесь для укладки присутствует", () => {
       // Engine: "Смесь для укладки (50 кг)"
       // mixBags = ceil(24 * 6 / 50) = ceil(2.88) = 3
-      const mix = findMaterial(result, "Смесь для укладки");
+      const mix = findMaterial(result, "Сухая смесь для укладки");
       expect(mix).toBeDefined();
       expect(mix?.purchaseQty).toBe(3);
     });
@@ -133,7 +135,7 @@ describe("Калькулятор отмостки", () => {
 
     it("профилированная мембрана присутствует", () => {
       // Engine: "Профилированная мембрана"
-      const membrane = findMaterial(result, "Профилированная мембрана");
+      const membrane = findMaterial(result, "Профилированная дренажная мембрана");
       expect(membrane).toBeDefined();
       // membraneM2 = ceil(40 * 1.15) = 46
       expect(result.totals.membraneM2).toBe(46);
@@ -168,6 +170,7 @@ describe("Калькулятор отмостки", () => {
       // Engine: "ЭППС утеплитель (50 мм)"
       const epps = findMaterial(result, "ЭППС");
       expect(epps).toBeDefined();
+      expect(epps?.subtitle).toContain("прочностью на сжатие");
     });
 
     it("ЭППС плит = ceil(40 * 1.05 / 0.72) = ceil(58.33) = 59", () => {

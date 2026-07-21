@@ -19,6 +19,7 @@ export function ExportButtons({ calculatorName, result }: ExportButtonsProps) {
 
   const materials: Material[] = result.materials.map((m) => ({
     name: m.name,
+    subtitle: m.subtitle,
     quantity: m.purchaseQty ?? m.withReserve ?? m.quantity,
     unit: m.unit,
     category: m.category,

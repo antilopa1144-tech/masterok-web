@@ -68,7 +68,14 @@ export default function ProjectEstimatePrint({
               const sum = line.quantity * price;
               return (
                 <tr key={line.key} className="border-b border-neutral-300">
-                  <td className="py-1 pr-2 align-top font-medium">{line.name}</td>
+                  <td className="py-1 pr-2 align-top">
+                    <span className="font-medium">{line.name}</span>
+                    {(line.subtitles ?? []).map((specification) => (
+                      <span key={specification} className="mt-0.5 block text-[8pt] leading-snug text-neutral-600">
+                        {specification}
+                      </span>
+                    ))}
+                  </td>
                   <td className="py-1 text-right tabular-nums whitespace-nowrap">
                     {formatQuantity(line.quantity, line.unit)}
                   </td>

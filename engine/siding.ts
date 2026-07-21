@@ -171,7 +171,7 @@ export function computeCanonicalSiding(
       category: "Профиль",
     },
     {
-      name: `J-профиль (${J_PROFILE_LENGTH} м)`,
+      name: `J-образный профиль для проёмов (${J_PROFILE_LENGTH} м)`,
       quantity: jProfile,
       unit: "шт",
       withReserve: jProfile,

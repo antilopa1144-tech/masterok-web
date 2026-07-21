@@ -32,9 +32,15 @@ function getMaterialRule<T>(spec: WaterproofingCanonicalSpec, key: string, fallb
 /* ─── labels ─── */
 
 const MASTIC_TYPE_LABELS: Record<number, string> = {
-  0: "Ceresit CL 51",
-  1: "Жидкая резина",
-  2: "Полимерная мастика",
+  0: "Готовая полимерная гидроизоляция типа CL 51",
+  1: "Двухкомпонентная жидкая гидроизоляция",
+  2: "Полимерная обмазочная гидроизоляция",
+};
+
+const MASTIC_TYPE_SUBTITLES: Record<number, string> = {
+  0: "Для внутренних мокрых зон под плитку; грунтовка, лента и манжеты должны быть совместимы с выбранной системой",
+  1: "Проверьте пригодность для минерального основания и внутренних работ, а также пропорцию компонентов по паспорту продукта",
+  2: "Выбирайте состав с прямым допуском для ванной или душевой и для последующей облицовки плиткой",
 };
 
 /* ─── inputs ─── */
@@ -192,6 +198,7 @@ export function computeCanonicalWaterproofing(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `${MASTIC_TYPE_LABELS[masticType] ?? "Мастика"} (${bucketKg} кг)`,
+      subtitle: MASTIC_TYPE_SUBTITLES[masticType] ?? "Применение и подготовку основания проверьте по паспорту выбранного состава",
       quantity: roundDisplay(masticKg, 3),
       unit: "кг",
       withReserve: masticBuckets * bucketKg,
@@ -200,7 +207,8 @@ export function computeCanonicalWaterproofing(
       packageInfo: { count: masticBuckets, size: bucketKg, packageUnit: "вёдер" },
     },
     {
-      name: "Лента гидроизоляционная (10 м)",
+      name: "Системная эластичная гидроизоляционная лента (10 м)",
+      subtitle: "Для углов и примыканий; материал ленты должен быть совместим с выбранной обмазочной гидроизоляцией",
       quantity: roundDisplay(tapeM, 3),
       unit: "м",
       withReserve: tapeRolls * 10,
@@ -209,7 +217,8 @@ export function computeCanonicalWaterproofing(
       packageInfo: { count: tapeRolls, size: 10, packageUnit: "рулонов" },
     },
     {
-      name: "Силиконовый герметик",
+      name: "Санитарный нейтральный силиконовый герметик, 280–310 мл",
+      subtitle: "Для финишных примыканий во влажной зоне; не заменяет гидроизоляционную ленту под плиткой",
       quantity: siliconeTubes,
       unit: "туб",
       withReserve: siliconeTubes,
@@ -220,7 +229,8 @@ export function computeCanonicalWaterproofing(
 
   if (masticType === 0) {
     materials.push({
-      name: `Грунтовка Ceresit (${PRIMER_CAN_KG} кг)`,
+      name: `Грунтовка под полимерную гидроизоляцию (${PRIMER_CAN_KG} кг)`,
+      subtitle: "Выбирайте совместимую грунтовку той же системы с учётом впитываемости основания",
       quantity: roundDisplay(primerKg, 3),
       unit: "кг",
       withReserve: primerCans * PRIMER_CAN_KG,
@@ -230,7 +240,8 @@ export function computeCanonicalWaterproofing(
     });
   } else {
     materials.push({
-      name: `Битумный праймер (${BITUMEN_CAN_L} л)`,
+      name: `Праймер для выбранной гидроизоляции (${BITUMEN_CAN_L} л)`,
+      subtitle: "Битумный праймер применяйте только если он прямо предусмотрен производителем выбранного состава",
       quantity: roundDisplay(bitumenL, 3),
       unit: "л",
       withReserve: bitumenCans * BITUMEN_CAN_L,
@@ -241,7 +252,8 @@ export function computeCanonicalWaterproofing(
   }
 
   materials.push({
-    name: "Герметик для стыков",
+    name: "Эластичный герметик для примыканий, 280–310 мл",
+    subtitle: "Для деформационных и конструкционных примыканий; тип герметика выбирают по основанию и системе гидроизоляции",
     quantity: jointTubes,
     unit: "туб",
     withReserve: jointTubes,

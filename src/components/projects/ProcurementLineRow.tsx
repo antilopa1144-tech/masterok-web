@@ -69,6 +69,7 @@ function MobileRow({
 }: ProcurementLineRowProps) {
   const sourceLabel =
     line.sources.length === 1 ? line.sources[0]!.calcTitle : `${line.sources.length} расчёта`;
+  const specifications = line.subtitles ?? [];
 
   return (
     <div
@@ -96,6 +97,11 @@ function MobileRow({
           >
             {line.name}
           </p>
+          {specifications.map((specification) => (
+            <p key={specification} className="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+              {specification}
+            </p>
+          ))}
           <p className="text-[11px] text-slate-400 mt-0.5 truncate">{sourceLabel}</p>
         </div>
       </div>
@@ -143,6 +149,7 @@ function DesktopRow({
   // он показан в заголовке группы. В строке оставляем его только когда позиция
   // собрана из нескольких расчётов (это реально полезная пометка).
   const multiSource = line.sources.length > 1;
+  const specifications = line.subtitles ?? [];
 
   return (
     <div
@@ -171,6 +178,11 @@ function DesktopRow({
         >
           {line.name}
         </p>
+        {specifications.map((specification) => (
+          <p key={specification} className="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+            {specification}
+          </p>
+        ))}
         {purchased && (
           <span className="inline-flex mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
             Куплено

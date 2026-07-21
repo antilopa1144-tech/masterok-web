@@ -88,7 +88,7 @@ export function computeCanonicalFoamBlocks(
     const cpsM3 = roundDisplay(volume * spec.material_rules.cps_volume_per_m3, 6);
     const cpsKg = roundDisplay(cpsM3 * spec.material_rules.cps_kg_per_m3, 3);
     mortarBags = Math.ceil(cpsKg / spec.material_rules.cps_bag_kg);
-    mortarLabel = `ЦПС (${spec.material_rules.cps_bag_kg} кг)`;
+    mortarLabel = `Цементно-песчаная смесь (ЦПС), ${spec.material_rules.cps_bag_kg} кг`;
     mortarUnit = "мешков";
   }
 
@@ -175,7 +175,7 @@ export function computeCanonicalFoamBlocks(
     warnings.push("Керамзитоблок при наружной кладке — требуется утепление от 100 мм");
   }
   if (mortarType === 1 && !isKeramzit) {
-    warnings.push("Для пеноблоков рекомендуется клеевой раствор вместо ЦПС — более тонкий шов, лучшая теплоизоляция");
+    warnings.push("Для пеноблоков рекомендуется клеевой раствор вместо цементно-песчаной смеси — более тонкий шов, лучшая теплоизоляция");
   }
 
   const materials: CanonicalMaterialResult[] = [

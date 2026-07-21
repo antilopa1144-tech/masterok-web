@@ -51,7 +51,7 @@ describe("Фасадные панели", () => {
       const r = calc({ area: 100, panelType: 2, substructure: 0, insulationThickness: 0 });
       checkInvariants(r);
       // Engine: "HPL-панели (2.928 м²)"
-      const panels = findMaterial(r, "HPL-панели");
+      const panels = findMaterial(r, "панели из слоистого пластика (HPL");
       expect(panels).toBeDefined();
     });
   });

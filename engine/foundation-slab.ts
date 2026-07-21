@@ -97,7 +97,7 @@ function buildMaterials(
 
   if (insulationThickness > 0) {
     materials.push({
-      name: "ЭППС утеплитель",
+      name: "Экструдированный пенополистирол (ЭППС)",
       quantity: eppsPlates,
       unit: "шт",
       withReserve: eppsPlates,

@@ -182,7 +182,7 @@ export const aeratedConcreteDef: CalculatorDefinition = {
   <tbody>
     <tr><td>2&ndash;3 мм (тонкошовный клей)</td><td>25&ndash;28 кг/м&sup3;</td><td>1.0&ndash;1.1</td></tr>
     <tr><td>1&ndash;2 мм (клей-пена)</td><td>1 баллон на 8&ndash;10 м&sup2;</td><td>&mdash;</td></tr>
-    <tr><td>10 мм (ЦПС, первый ряд)</td><td>~0.25 м&sup3;/м&sup3;</td><td>&mdash;</td></tr>
+    <tr><td>10 мм (цементно-песчаная смесь, первый ряд)</td><td>~0.25 м&sup3;/м&sup3;</td><td>&mdash;</td></tr>
   </tbody>
 </table>
 
@@ -219,4 +219,3 @@ export const aeratedConcreteDef: CalculatorDefinition = {
     ],
   },
 };
-

@@ -92,13 +92,22 @@ function buildMaterials(
   primerLiters: number,
   primerCans: number,
   averageTileSizeCm: number,
+  jointWidthMm: number,
   crossesNeeded: number,
   svpPackages: number,
   siliconeTubes: number,
 ): CanonicalMaterialResult[] {
+  const tileSizeLabel = `${Math.round(tileWidthCm * 10)}×${Math.round(tileHeightCm * 10)} мм`;
+  const glueName = averageTileSizeCm > 60
+    ? `Плиточный клей усиленный для крупного формата (${spec.packaging_rules.glue_bag_kg} кг)`
+    : averageTileSizeCm >= 40
+      ? `Плиточный клей усиленный (${spec.packaging_rules.glue_bag_kg} кг)`
+      : `Плиточный клей для керамической плитки (${spec.packaging_rules.glue_bag_kg} кг)`;
+  const primer = buildPrimerMaterial(primerLiters);
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Плитка ${Math.round(tileWidthCm * 10)}×${Math.round(tileHeightCm * 10)} мм`,
+      name: `Плитка ${tileSizeLabel}`,
+      subtitle: "Покупайте одной партии и одного калибра; фактическое число плиток в коробке проверьте у выбранной коллекции",
       quantity: roundDisplay(recExactNeed, 6),
       unit: spec.packaging_rules.tile_unit,
       withReserve: roundDisplay(recPurchaseQuantity, 6),
@@ -106,7 +115,8 @@ function buildMaterials(
       category: "Основное",
     },
     {
-      name: `Плиточный клей (${spec.packaging_rules.glue_bag_kg} кг)`,
+      name: glueName,
+      subtitle: `Выбранный клей должен прямо допускать формат ${tileSizeLabel}, основание и условия эксплуатации`,
       quantity: roundDisplay(glueKg, 6),
       unit: "кг",
       withReserve: glueBags * spec.packaging_rules.glue_bag_kg,
@@ -115,7 +125,8 @@ function buildMaterials(
       category: "Клей",
     },
     {
-      name: `Затирка цементная (${spec.packaging_rules.grout_bag_kg} кг)`,
+      name: `Затирка цементная для шва ${roundDisplay(jointWidthMm, 1)} мм (${spec.packaging_rules.grout_bag_kg} кг)`,
+      subtitle: "Для влажных зон выбирайте водо- и грязеотталкивающий состав; цвет проверяйте на пробном участке",
       quantity: roundDisplay(groutKg, 6),
       unit: "кг",
       withReserve: groutBags * spec.packaging_rules.grout_bag_kg,
@@ -123,12 +134,16 @@ function buildMaterials(
       packageInfo: { count: groutBags, size: spec.packaging_rules.grout_bag_kg, packageUnit: "мешков" },
       category: "Затирка",
     },
-    buildPrimerMaterial(primerLiters),
+    {
+      ...primer,
+      subtitle: "Тип грунтовки выбирают по впитываемости основания и требованиям производителя плиточного клея",
+    },
   ];
 
   if (averageTileSizeCm >= spec.material_rules.svp_threshold_cm) {
     materials.push({
-      name: `СВП (${spec.packaging_rules.svp_pack_size} шт)`,
+      name: `Система выравнивания плитки (СВП), клипса ${roundDisplay(jointWidthMm, 1)} мм (${spec.packaging_rules.svp_pack_size} шт)`,
+      subtitle: "Высота клипсы должна соответствовать толщине плитки; клинья обычно многоразовые и считаются отдельно",
       quantity: roundDisplay(crossesNeeded / spec.packaging_rules.svp_pack_size, 6),
       unit: "уп",
       withReserve: svpPackages,
@@ -137,7 +152,8 @@ function buildMaterials(
     });
   } else {
     materials.push({
-      name: "Крестики для плитки",
+      name: `Крестики для плитки ${roundDisplay(jointWidthMm, 1)} мм`,
+      subtitle: "Размер соответствует указанной ширине шва",
       quantity: crossesNeeded,
       unit: "шт",
       withReserve: crossesNeeded,
@@ -147,7 +163,8 @@ function buildMaterials(
   }
 
   materials.push({
-    name: "Герметик силиконовый",
+    name: "Эластичный силиконовый герметик, 280–310 мл",
+    subtitle: "Для периметральных и деформационных швов; во влажной зоне используйте санитарный состав",
     quantity: siliconeTubes,
     unit: "шт",
     withReserve: siliconeTubes,
@@ -293,6 +310,7 @@ export function computeCanonicalTile(
       primerLiters,
       primerCans,
       averageTileSizeCm,
+      jointWidthMm,
       crossesNeeded,
       svpPackages,
       siliconeTubes,

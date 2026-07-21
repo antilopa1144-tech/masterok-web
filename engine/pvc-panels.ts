@@ -125,13 +125,13 @@ export function computeCanonicalPvcPanels(
     warnings.push("Большая площадь — рассмотрите оптовую закупку панелей");
   }
   if (panelType === 2) {
-    warnings.push("Для ванной комнаты используйте влагостойкие ПВХ-панели");
+    warnings.push("Для ванной комнаты используйте влагостойкие пластиковые панели (ПВХ)");
   }
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "ПВХ-панели",
+      name: "Пластиковые панели (ПВХ)",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -183,7 +183,7 @@ export function computeCanonicalPvcPanels(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("ПВХ панели — оставляйте зазор 5 мм по периметру для температурного расширения");
+  practicalNotes.push("Для пластиковых панелей оставляйте зазор 5 мм по периметру на температурное расширение");
 
   return {
     canonicalSpecId: spec.calculator_id,
