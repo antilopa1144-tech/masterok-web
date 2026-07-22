@@ -204,8 +204,9 @@ function transformPost(post: GhostPost): BlogPost {
 
 export async function fetchAllPosts(): Promise<BlogPost[]> {
   if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) {
-    console.warn("[Ghost] GHOST_API_URL или GHOST_CONTENT_API_KEY не заданы — блог будет пустым.");
-    return [];
+    throw new Error(
+      "[Ghost] GHOST_API_URL или GHOST_CONTENT_API_KEY не заданы. Сборка с пустым блогом остановлена.",
+    );
   }
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>("/posts/", {
@@ -213,15 +214,23 @@ export async function fetchAllPosts(): Promise<BlogPost[]> {
       limit: "all",
       order: "published_at desc",
     });
-    return (res.posts ?? []).map(transformPost);
+    const posts = (res.posts ?? []).map(transformPost);
+    if (posts.length === 0) {
+      throw new Error("Ghost Content API вернул 0 опубликованных статей.");
+    }
+    return posts;
   } catch (err) {
     console.error("[Ghost] Failed to fetch posts:", err);
-    return [];
+    throw err;
   }
 }
 
 export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefined> {
-  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) return undefined;
+  if (!GHOST_API_URL || !GHOST_CONTENT_API_KEY) {
+    throw new Error(
+      "[Ghost] GHOST_API_URL или GHOST_CONTENT_API_KEY не заданы. Статья не может быть загружена.",
+    );
+  }
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>(`/posts/slug/${slug}/`, {
       include: "tags",
@@ -229,8 +238,9 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
 
     if (!res.posts || res.posts.length === 0) return undefined;
     return transformPost(res.posts[0]);
-  } catch {
-    return undefined;
+  } catch (err) {
+    console.error(`[Ghost] Failed to fetch post "${slug}":`, err);
+    throw err;
   }
 }
 
