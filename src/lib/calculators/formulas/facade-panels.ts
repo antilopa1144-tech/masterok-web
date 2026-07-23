@@ -37,7 +37,7 @@ export const facadePanelsDef: CalculatorDefinition = {
         { value: 0, label: "Фиброцементные (1200×3000 мм)" },
         { value: 1, label: "Металлокассеты (600×1200 мм)" },
         { value: 2, label: "Панель из слоистого пластика (HPL Compact), 1200×2440 мм" },
-        { value: 3, label: "Сайдинг металлический (0.23 м²/полоса)" },
+        { value: 3, label: "Сайдинг металлический 230×3000 мм (0,69 м²/полоса)" },
       ],
     },
     {
@@ -66,7 +66,19 @@ export const facadePanelsDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = facadepanelsSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalFacadePanels(spec, inputs, factorTable);
+    const insulationThicknessByOption: Record<number, number> = { 0: 0, 1: 50, 2: 100 };
+    const canonical = computeCanonicalFacadePanels(
+      spec,
+      {
+        ...inputs,
+        substructure: inputs.substructure ?? inputs.substructureType,
+        insulationThickness:
+          inputs.insulationThickness
+          ?? insulationThicknessByOption[Math.round(inputs.insulationIncluded ?? 0)]
+          ?? 0,
+      },
+      factorTable,
+    );
 
     return {
       materials: canonical.materials,
@@ -83,7 +95,7 @@ export const facadePanelsDef: CalculatorDefinition = {
   formulaDescription: `
 **Расчёт фасадных панелей:**
 - Панели: площадь × 1.10 / площадь одной панели
-- Кронштейны: ~4 шт/м² (шаг 600×600 мм)
+- Кронштейны: ~3,1 шт/м² с запасом (базовая сетка 600×600 мм)
 - Направляющие: площадь / 0.6 м.п. (шаг 600 мм)
   `,
   howToUse: [
@@ -159,4 +171,3 @@ export const facadePanelsDef: CalculatorDefinition = {
     ],
   },
 };
-

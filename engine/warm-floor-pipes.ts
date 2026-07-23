@@ -277,7 +277,7 @@ export function computeCanonicalWarmFloorPipes(
         `в центре ${centralZoneStepMm} мм. Это даёт тепловую завесу — пол у окна не холодный.`,
     );
   }
-  practicalNotes.push("Тёплый пол — не основное отопление, а дополнительный комфорт. Радиаторы всё равно нужны");
+  practicalNotes.push("Водяной тёплый пол может быть основным отоплением только после расчёта теплопотерь и проверки теплоотдачи контуров");
 
   return {
     canonicalSpecId: spec.calculator_id,

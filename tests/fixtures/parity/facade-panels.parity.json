@@ -1,7 +1,7 @@
 {
   "calculator_id": "facade-panels",
-  "formula_version": "facade-panels-canonical-v1",
-  "generated_at": "2026-07-21T07:37:54.581Z",
+  "formula_version": "facade-panels-canonical-v2",
+  "generated_at": "2026-07-23T09:02:40.192Z",
   "cases": [
     {
       "id": "defaults",
@@ -40,7 +40,7 @@
       },
       "expected_materials_count": 7,
       "expected_material_names": [
-        "Фиброцементные панели (3.6 м²)",
+        "Фиброцементные панели 1200×3000 мм (3,6 м²)",
         "Кронштейны (Алюминиевая)",
         "Направляющие вертикальные (3 м)",
         "Фасадные заклёпки для фиброцементных панелей",

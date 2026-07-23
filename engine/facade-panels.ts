@@ -13,40 +13,13 @@ import { getInputDefault } from "./spec-helpers";
 
 /* ─── constants ─── */
 
-const PANEL_AREAS: Record<number, number> = {
-  0: 3.6,   // fibrocement
-  1: 0.72,  // metal cassettes
-  2: 2.928, // HPL
-  3: 0.23,  // metal siding
-};
-
-const PANEL_RESERVE = 1.10;
-const BRACKET_SPACING_M2 = 0.36; // 600×600
-const BRACKET_RESERVE = 1.1;
-const GUIDE_SPACING = 0.6;
-const GUIDE_LENGTH = 3;
-const GUIDE_RESERVE = 1.1;
-const FASTENERS_PER_PANEL = 8;
-const FASTENER_RESERVE = 1.05;
-const ANCHOR_PER_BRACKET = 2;
-const ANCHOR_RESERVE = 1.05;
-const INSULATION_PLATE = 0.72;
-const INSULATION_RESERVE = 1.05;
-const INSULATION_DOWELS_PER_M2 = 6;
-const WIND_MEMBRANE_ROLL = 50;
-const MEMBRANE_RESERVE = 1.15;
-const PRIMER_L_PER_M2 = 0.15;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN = 10;
-const SEALANT_PER_PERIM = 10;
-
 /* ─── labels ─── */
 
 const PANEL_TYPE_LABELS: Record<number, string> = {
-  0: "Фиброцементные панели (3.6 м²)",
-  1: "Металлокассеты (0.72 м²)",
-  2: "Фасадные панели из слоистого пластика (HPL, 2.928 м²)",
-  3: "Металлический сайдинг (0.23 м²)",
+  0: "Фиброцементные панели 1200×3000 мм (3,6 м²)",
+  1: "Металлокассеты 600×1200 мм (0,72 м²)",
+  2: "Фасадные панели из слоистого пластика (HPL) 1200×2440 мм (2,928 м²)",
+  3: "Металлический сайдинг 230×3000 мм (0,69 м²)",
 };
 
 const SUBSTRUCTURE_LABELS: Record<number, string> = {
@@ -85,28 +58,29 @@ export function computeCanonicalFacadePanels(
   const substructure = Math.max(0, Math.min(2, Math.round(inputs.substructure ?? getInputDefault(spec, "substructure", 0))));
   const insulationThickness = Math.max(0, Math.min(100, Math.round(inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 0))));
   const withHorizontalRails = Math.max(0, Math.min(1, Math.round(inputs.withHorizontalRails ?? getInputDefault(spec, "withHorizontalRails", 0))));
+  const rules = spec.material_rules;
 
   /* ─── panel area ─── */
-  const panelArea = PANEL_AREAS[panelType] ?? PANEL_AREAS[0];
+  const panelArea = rules.panel_areas[String(panelType)] ?? rules.panel_areas["0"];
 
   /* ─── formulas ─── */
-  const panelsRaw = Math.ceil(area * PANEL_RESERVE / panelArea);
+  const panelsRaw = Math.ceil(area * rules.panel_reserve / panelArea);
   const panels = Math.ceil(panelsRaw * accuracyMult);
-  const brackets = Math.ceil(area / BRACKET_SPACING_M2 * BRACKET_RESERVE);
-  const guides = Math.ceil(area / GUIDE_SPACING * GUIDE_RESERVE / GUIDE_LENGTH);
+  const brackets = Math.ceil(area / rules.bracket_spacing_m2 * rules.bracket_reserve);
+  const guides = Math.ceil(area / rules.guide_spacing * rules.guide_reserve / rules.guide_length);
   // Горизонтальные направляющие: при withHorizontalRails=1 формула симметрична вертикальным
   // (площадь / шаг_горизонтального / длина_секции × запас). Шаг по умолчанию 0.6 м (СП 70.13330).
   const horizontalRailStepM = spec.material_rules.horizontal_rail_step_m ?? 0.6;
   const horizontalGuides = withHorizontalRails === 1
-    ? Math.ceil((area / horizontalRailStepM) * GUIDE_RESERVE / GUIDE_LENGTH)
+    ? Math.ceil((area / horizontalRailStepM) * rules.guide_reserve / rules.guide_length)
     : 0;
-  const fasteners = Math.ceil(panels * FASTENERS_PER_PANEL * FASTENER_RESERVE);
-  const anchors = Math.ceil(brackets * ANCHOR_PER_BRACKET * ANCHOR_RESERVE);
-  const insPlates = insulationThickness > 0 ? Math.ceil(area * INSULATION_RESERVE / INSULATION_PLATE) : 0;
-  const insDowels = insPlates > 0 ? Math.ceil(area * INSULATION_DOWELS_PER_M2 * INSULATION_RESERVE) : 0;
-  const membrane = insPlates > 0 ? Math.ceil(area * MEMBRANE_RESERVE / WIND_MEMBRANE_ROLL) : 0;
-  const primer = Math.ceil(area * PRIMER_L_PER_M2 * PRIMER_RESERVE / PRIMER_CAN);
-  const sealant = Math.ceil(Math.sqrt(area) * 4 / SEALANT_PER_PERIM);
+  const fasteners = Math.ceil(panels * rules.fasteners_per_panel * rules.fastener_reserve);
+  const anchors = Math.ceil(brackets * rules.anchor_per_bracket * rules.anchor_reserve);
+  const insPlates = insulationThickness > 0 ? Math.ceil(area * rules.insulation_reserve / rules.insulation_plate) : 0;
+  const insDowels = insPlates > 0 ? Math.ceil(area * rules.insulation_dowels_per_m2 * rules.insulation_reserve) : 0;
+  const membrane = insPlates > 0 ? Math.ceil(area * rules.membrane_reserve / rules.wind_membrane_roll) : 0;
+  const primer = Math.ceil(area * rules.primer_l_per_m2 * rules.primer_reserve / rules.primer_can);
+  const sealant = Math.ceil(Math.sqrt(area) * 4 / rules.sealant_per_perim);
 
   /* ─── scenarios ─── */
   const packageOptions = [{
@@ -197,7 +171,7 @@ export function computeCanonicalFacadePanels(
       category: "Подсистема",
     },
     {
-      name: `Направляющие вертикальные (${GUIDE_LENGTH} м)`,
+      name: `Направляющие вертикальные (${rules.guide_length} м)`,
       quantity: guides,
       unit: "шт",
       withReserve: guides,
@@ -205,7 +179,7 @@ export function computeCanonicalFacadePanels(
       category: "Подсистема",
     },
     ...(horizontalGuides > 0 ? [{
-      name: `Направляющие горизонтальные (${GUIDE_LENGTH} м, шаг ${horizontalRailStepM} м)`,
+      name: `Направляющие горизонтальные (${rules.guide_length} м, шаг ${horizontalRailStepM} м)`,
       quantity: horizontalGuides,
       unit: "шт",
       withReserve: horizontalGuides,
@@ -253,8 +227,8 @@ export function computeCanonicalFacadePanels(
         category: "Крепёж",
       },
       {
-        name: `Ветрозащитная диффузионная мембрана (${WIND_MEMBRANE_ROLL} м²)`,
-        subtitle: "Паропроницаемая и негорючая — для системы вентилируемого фасада",
+        name: `Ветрозащитная диффузионная мембрана (${rules.wind_membrane_roll} м²)`,
+        subtitle: "Паропроницаемость и класс пожарной опасности сверяют с техническим свидетельством фасадной системы",
         quantity: membrane,
         unit: "рулонов",
         withReserve: membrane,
@@ -265,7 +239,7 @@ export function computeCanonicalFacadePanels(
   }
 
   materials.push(
-    buildPrimerMaterial(area * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
+    buildPrimerMaterial(area * rules.primer_l_per_m2, { reserveFactor: rules.primer_reserve, category: "Грунтовка" }),
     {
       name: "Герметик фасадный атмосферостойкий",
       subtitle: "Совместимый с материалом панелей и защитным покрытием подсистемы",
@@ -279,16 +253,17 @@ export function computeCanonicalFacadePanels(
 
   /* ─── warnings ─── */
   const warnings: string[] = [];
-  if (area > 500) {
+  if (area > spec.warnings_rules.large_area_threshold_m2) {
     warnings.push("Большая площадь фасада — рассмотрите оптовую закупку");
   }
-  if (insulationThickness >= 100) {
+  if (insulationThickness >= spec.warnings_rules.thick_insulation_threshold_mm) {
     warnings.push("Толстый утеплитель — проверьте длину кронштейнов");
   }
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Панели крепите с зазором 2-3 мм для температурного расширения — иначе покоробит");
+  practicalNotes.push("Шаг кронштейнов, направляющих, анкеры и зазоры уточняют по ветровому и статическому расчёту выбранной фасадной системы");
+  practicalNotes.push("Монтажные зазоры между панелями берут из альбома технических решений производителя, а не назначают одинаковыми для всех материалов");
 
   return {
     canonicalSpecId: spec.calculator_id,

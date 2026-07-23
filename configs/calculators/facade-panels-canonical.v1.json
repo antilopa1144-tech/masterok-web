@@ -1,6 +1,6 @@
 {
   "calculator_id": "facade-panels",
-  "formula_version": "facade-panels-canonical-v1",
+  "formula_version": "facade-panels-canonical-v2",
   "input_schema": [
     { "key": "area", "unit": "m2", "default_value": 100, "min": 10, "max": 2000 },
     { "key": "panelType", "default_value": 0, "min": 0, "max": 3 },
@@ -25,7 +25,7 @@
     "package_size": 1
   },
   "material_rules": {
-    "panel_areas": { "0": 3.6, "1": 0.72, "2": 2.928, "3": 0.23 },
+    "panel_areas": { "0": 3.6, "1": 0.72, "2": 2.928, "3": 0.69 },
     "panel_reserve": 1.10,
     "bracket_spacing_m2": 0.36,
     "bracket_reserve": 1.1,

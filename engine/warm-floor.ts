@@ -18,28 +18,6 @@ interface WarmFloorInputs {
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── constants ─── */
-
-const MAT_AREA = 2.0;                    // m²
-const CABLE_STEP_M = 0.15;
-const CABLE_RESERVE = 1.05;
-const PIPE_STEP_M = 0.15;
-const PIPE_RESERVE = 1.05;
-const SUBSTRATE_RESERVE = 1.1;
-const SUBSTRATE_ROLL_M2 = 25;
-const CORRUGATED_TUBE_M = 1;
-const TILE_ADHESIVE_KG_PER_M2 = 5;
-const TILE_ADHESIVE_BAG_KG = 25;
-const EPS_SHEET_M2 = 0.72;               // 1200×600
-const EPS_RESERVE = 1.1;
-const SCREED_THICKNESS_M = 0.04;
-const SCREED_DENSITY = 2000;              // kg/m³
-const SCREED_BAG_KG = 50;
-const MESH_RESERVE = 1.05;
-const MOUNTING_TAPE_ROLL_M = 25;
-const PIPE_INSULATION_RESERVE = 1.0;      // 1:1 with pipe
-const MAX_CIRCUIT_M = 80;
-
 /* ─── factor defaults ─── */
 
 const WARM_FLOOR_FACTOR_TABLE: FactorTable = {
@@ -58,14 +36,20 @@ const WARM_FLOOR_FACTOR_TABLE: FactorTable = {
 
 function buildMaterialsMats(
   heatingArea: number,
+  powerDensity: number,
+  matArea: number,
   mats: number,
   corrugatedTube: number,
   substrateRolls: number,
   adhesiveBags: number,
+  tileAdhesiveKgPerM2: number,
+  tileAdhesiveBagKg: number,
+  substrateRollM2: number,
 ): CanonicalMaterialResult[] {
   return [
     {
-      name: "Нагревательный мат",
+      name: `Нагревательный мат ${powerDensity} Вт/м², комплект на ${matArea} м²`,
+      subtitle: "Греющий кабель мата нельзя укорачивать; фактический набор комплектов подбирают по каталогу производителя",
       quantity: mats,
       unit: "шт",
       withReserve: mats,
@@ -73,7 +57,8 @@ function buildMaterialsMats(
       category: "Основное",
     },
     {
-      name: "Терморегулятор",
+      name: "Терморегулятор с выносным датчиком температуры пола",
+      subtitle: "Допустимый ток регулятора должен быть не ниже расчётной нагрузки системы",
       quantity: 1,
       unit: "шт",
       withReserve: 1,
@@ -81,7 +66,8 @@ function buildMaterialsMats(
       category: "Управление",
     },
     {
-      name: "Гофротрубка для датчика",
+      name: "Гофротрубка Ø16 мм с заглушкой для датчика пола",
+      subtitle: "Датчик устанавливают в трубке между соседними витками нагревательного кабеля",
       quantity: corrugatedTube,
       unit: "м",
       withReserve: corrugatedTube,
@@ -89,7 +75,8 @@ function buildMaterialsMats(
       category: "Монтаж",
     },
     {
-      name: "Подложка (рулоны)",
+      name: `Теплоизоляционная подложка, рулон ${substrateRollM2} м²`,
+      subtitle: "Применять только если такая подложка разрешена конструкцией пола и производителем нагревательной системы",
       quantity: substrateRolls,
       unit: "рулонов",
       withReserve: substrateRolls,
@@ -97,12 +84,13 @@ function buildMaterialsMats(
       category: "Подготовка",
     },
     {
-      name: "Плиточный клей (мешки 25 кг)",
-      quantity: roundDisplay(heatingArea * TILE_ADHESIVE_KG_PER_M2, 3),
+      name: `Эластичный плиточный клей для тёплого пола, мешок ${tileAdhesiveBagKg} кг`,
+      subtitle: "Клей должен быть разрешён производителем для полов с подогревом",
+      quantity: roundDisplay(heatingArea * tileAdhesiveKgPerM2, 3),
       unit: "кг",
-      withReserve: adhesiveBags * TILE_ADHESIVE_BAG_KG,
-      purchaseQty: adhesiveBags * TILE_ADHESIVE_BAG_KG,
-      packageInfo: { count: adhesiveBags, size: TILE_ADHESIVE_BAG_KG, packageUnit: "мешков" },
+      withReserve: adhesiveBags * tileAdhesiveBagKg,
+      purchaseQty: adhesiveBags * tileAdhesiveBagKg,
+      packageInfo: { count: adhesiveBags, size: tileAdhesiveBagKg, packageUnit: "мешков" },
       category: "Основное",
     },
   ];
@@ -112,14 +100,21 @@ function buildMaterialsMats(
 
 function buildMaterialsCable(
   heatingArea: number,
+  cableLinearPower: number,
   cableLength: number,
   mountingTapeRolls: number,
   epsSheets: number,
   screedBags: number,
+  screedThicknessM: number,
+  screedDensity: number,
+  screedBagKg: number,
+  epsSheetM2: number,
+  mountingTapeRollM: number,
 ): CanonicalMaterialResult[] {
   return [
     {
-      name: "Нагревательный кабель",
+      name: `Двухжильный нагревательный кабель ${cableLinearPower} Вт/м`,
+      subtitle: "Кабель нельзя укорачивать: выбирайте ближайший заводской комплект по длине и мощности",
       quantity: cableLength,
       unit: "м",
       withReserve: cableLength,
@@ -127,7 +122,8 @@ function buildMaterialsCable(
       category: "Основное",
     },
     {
-      name: "Терморегулятор",
+      name: "Терморегулятор с выносным датчиком температуры пола",
+      subtitle: "Допустимый ток регулятора должен быть не ниже расчётной нагрузки системы",
       quantity: 1,
       unit: "шт",
       withReserve: 1,
@@ -135,7 +131,7 @@ function buildMaterialsCable(
       category: "Управление",
     },
     {
-      name: "Монтажная лента (рулоны)",
+      name: `Металлическая монтажная лента для греющего кабеля, рулон ${mountingTapeRollM} м`,
       quantity: mountingTapeRolls,
       unit: "рулонов",
       withReserve: mountingTapeRolls,
@@ -143,7 +139,8 @@ function buildMaterialsCable(
       category: "Монтаж",
     },
     {
-      name: "Плиты пенополистирола для теплоизоляции, 1200×600 мм",
+      name: `Теплоизоляционные плиты для пола 1200×600 мм (${epsSheetM2} м²)`,
+      subtitle: "Толщину и прочность на сжатие выбирают по конструкции перекрытия и теплотехническому расчёту",
       quantity: epsSheets,
       unit: "листов",
       withReserve: epsSheets,
@@ -151,12 +148,13 @@ function buildMaterialsCable(
       category: "Утепление",
     },
     {
-      name: "Цементно-песчаная смесь для стяжки (мешки 50 кг)",
-      quantity: roundDisplay(heatingArea * SCREED_THICKNESS_M * SCREED_DENSITY, 3),
+      name: `Сухая смесь для стяжки тёплого пола, мешок ${screedBagKg} кг`,
+      subtitle: `Расчёт выполнен для слоя ${Math.round(screedThicknessM * 1000)} мм; допустимую толщину над кабелем сверяют с системой`,
+      quantity: roundDisplay(heatingArea * screedThicknessM * screedDensity, 3),
       unit: "кг",
-      withReserve: screedBags * SCREED_BAG_KG,
-      purchaseQty: screedBags * SCREED_BAG_KG,
-      packageInfo: { count: screedBags, size: SCREED_BAG_KG, packageUnit: "мешков" },
+      withReserve: screedBags * screedBagKg,
+      purchaseQty: screedBags * screedBagKg,
+      packageInfo: { count: screedBags, size: screedBagKg, packageUnit: "мешков" },
       category: "Основное",
     },
   ];
@@ -165,15 +163,14 @@ function buildMaterialsCable(
 /* ─── type 2: Water pipes ─── */
 
 function buildMaterialsWaterPipes(
-  heatingArea: number,
   pipeLength: number,
   circuits: number,
-  pipeInsulation: number,
   meshArea: number,
 ): CanonicalMaterialResult[] {
   return [
     {
-      name: "Труба для тёплого пола",
+      name: "Труба PE-Xa или PE-RT 16×2 мм для тёплого пола",
+      subtitle: "Каждый контур укладывают одним отрезком без соединений в стяжке; тип трубы выбирают по проекту",
       quantity: pipeLength,
       unit: "м",
       withReserve: pipeLength,
@@ -181,7 +178,8 @@ function buildMaterialsWaterPipes(
       category: "Основное",
     },
     {
-      name: "Коллектор",
+      name: `Коллекторная группа для тёплого пола на ${circuits} ${circuits === 1 ? "контур" : "контура"}`,
+      subtitle: "С расходомерами, регулирующими клапанами, воздухоотводчиком и сливными кранами",
       quantity: 1,
       unit: "шт",
       withReserve: 1,
@@ -189,15 +187,17 @@ function buildMaterialsWaterPipes(
       category: "Управление",
     },
     {
-      name: "Теплоизоляция трубы",
-      quantity: pipeInsulation,
-      unit: "м",
-      withReserve: pipeInsulation,
-      purchaseQty: pipeInsulation,
-      category: "Утепление",
+      name: "Евроконусы 3/4″×16 мм для подключения трубы к коллектору",
+      subtitle: "По два соединения на каждый контур: подача и обратная линия",
+      quantity: circuits * 2,
+      unit: "шт",
+      withReserve: circuits * 2,
+      purchaseQty: circuits * 2,
+      category: "Подключение",
     },
     {
-      name: "Армирующая сетка",
+      name: "Стальная армирующая сетка для стяжки",
+      subtitle: "Размер ячейки и диаметр проволоки назначают по конструкции пола, а не только по площади",
       quantity: roundDisplay(meshArea, 3),
       unit: "м²",
       withReserve: Math.ceil(meshArea),
@@ -216,9 +216,10 @@ export function computeCanonicalWarmFloor(
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+  const rules = spec.material_rules;
 
   const roomArea = Math.max(1, Math.min(100, inputs.roomArea ?? getInputDefault(spec, "roomArea", 10)));
-  const furnitureArea = Math.max(0, Math.min(50, inputs.furnitureArea ?? getInputDefault(spec, "furnitureArea", 2)));
+  const furnitureArea = Math.max(0, Math.min(roomArea, inputs.furnitureArea ?? getInputDefault(spec, "furnitureArea", 2)));
   const heatingType = Math.max(0, Math.min(2, Math.round(inputs.heatingType ?? getInputDefault(spec, "heatingType", 0))));
   const powerDensity = Math.max(100, Math.min(200, inputs.powerDensity ?? getInputDefault(spec, "powerDensity", 150)));
 
@@ -229,37 +230,61 @@ export function computeCanonicalWarmFloor(
   /* ─── per-type calculations ─── */
   let basePrimary: number;
   let materials: CanonicalMaterialResult[];
+  let mats = 0, cableLength = 0, mountingTapeRolls = 0, epsSheets = 0, screedBags = 0;
+  let pipeLength = 0, circuits = 0, meshArea = 0;
+  let substrateRolls = 0, adhesiveBags = 0;
+  let cableStepMm = 0;
 
   if (heatingType === 0) {
     // Mats
-    const mats = Math.ceil(heatingArea / MAT_AREA);
-    const thermostat = 1;
-    const corrugatedTube = CORRUGATED_TUBE_M;
-    const substrateRolls = Math.ceil(heatingArea * SUBSTRATE_RESERVE / SUBSTRATE_ROLL_M2);
-    const adhesiveBags = Math.ceil(heatingArea * TILE_ADHESIVE_KG_PER_M2 / TILE_ADHESIVE_BAG_KG);
+    mats = Math.ceil(heatingArea / rules.mat_area);
+    const corrugatedTube = rules.corrugated_tube_m;
+    substrateRolls = Math.ceil(heatingArea * rules.substrate_reserve / rules.substrate_roll_m2);
+    adhesiveBags = Math.ceil(heatingArea * rules.tile_adhesive_kg_per_m2 / rules.tile_adhesive_bag_kg);
 
     basePrimary = mats;
-    materials = buildMaterialsMats(heatingArea, mats, corrugatedTube, substrateRolls, adhesiveBags);
+    materials = buildMaterialsMats(
+      heatingArea,
+      powerDensity,
+      rules.mat_area,
+      mats,
+      corrugatedTube,
+      substrateRolls,
+      adhesiveBags,
+      rules.tile_adhesive_kg_per_m2,
+      rules.tile_adhesive_bag_kg,
+      rules.substrate_roll_m2,
+    );
   } else if (heatingType === 1) {
     // Cable in screed
-    const cableLength = Math.ceil(heatingArea / CABLE_STEP_M * CABLE_RESERVE);
-    const mountingTapeRolls = Math.ceil(cableLength / MOUNTING_TAPE_ROLL_M);
-    const thermostat = 1;
-    const epsSheets = Math.ceil(heatingArea * EPS_RESERVE / EPS_SHEET_M2);
-    const screedBags = Math.ceil(heatingArea * SCREED_THICKNESS_M * SCREED_DENSITY / SCREED_BAG_KG);
+    cableLength = Math.ceil(totalPowerW / rules.cable_linear_power_w_per_m * rules.cable_reserve);
+    cableStepMm = cableLength > 0 ? roundDisplay(heatingArea / cableLength * 1000, 1) : 0;
+    mountingTapeRolls = Math.ceil(cableLength / rules.mounting_tape_roll_m);
+    epsSheets = Math.ceil(heatingArea * rules.eps_reserve / rules.eps_sheet_m2);
+    screedBags = Math.ceil(heatingArea * rules.screed_thickness_m * rules.screed_density / rules.screed_bag_kg);
 
     basePrimary = cableLength;
-    materials = buildMaterialsCable(heatingArea, cableLength, mountingTapeRolls, epsSheets, screedBags);
+    materials = buildMaterialsCable(
+      heatingArea,
+      rules.cable_linear_power_w_per_m,
+      cableLength,
+      mountingTapeRolls,
+      epsSheets,
+      screedBags,
+      rules.screed_thickness_m,
+      rules.screed_density,
+      rules.screed_bag_kg,
+      rules.eps_sheet_m2,
+      rules.mounting_tape_roll_m,
+    );
   } else {
     // Water pipes
-    const pipeLength = Math.ceil(heatingArea / PIPE_STEP_M * PIPE_RESERVE);
-    const circuits = Math.max(1, Math.ceil(pipeLength / MAX_CIRCUIT_M));
-    const collector = 1;
-    const pipeInsulation = pipeLength * PIPE_INSULATION_RESERVE;
-    const meshArea = heatingArea * MESH_RESERVE;
+    pipeLength = Math.ceil(heatingArea / rules.pipe_step_m * rules.pipe_reserve);
+    circuits = pipeLength > 0 ? Math.ceil(pipeLength / rules.max_circuit_m) : 0;
+    meshArea = heatingArea * rules.mesh_reserve;
 
     basePrimary = pipeLength;
-    materials = buildMaterialsWaterPipes(heatingArea, pipeLength, circuits, pipeInsulation, meshArea);
+    materials = buildMaterialsWaterPipes(pipeLength, circuits, meshArea);
   }
 
   /* ─── scenarios ─── */
@@ -304,31 +329,10 @@ export function computeCanonicalWarmFloor(
   /* ─── totals ─── */
   const recScenario = scenarios.REC;
 
-  // Type-specific totals
-  let mats = 0, cableLength = 0, mountingTapeRolls = 0, epsSheets = 0, screedBags = 0;
-  let pipeLength = 0, circuits = 0, pipeInsulation = 0, meshArea = 0;
-  let substrateRolls = 0, adhesiveBags = 0;
-
-  if (heatingType === 0) {
-    mats = Math.ceil(heatingArea / MAT_AREA);
-    substrateRolls = Math.ceil(heatingArea * SUBSTRATE_RESERVE / SUBSTRATE_ROLL_M2);
-    adhesiveBags = Math.ceil(heatingArea * TILE_ADHESIVE_KG_PER_M2 / TILE_ADHESIVE_BAG_KG);
-  } else if (heatingType === 1) {
-    cableLength = Math.ceil(heatingArea / CABLE_STEP_M * CABLE_RESERVE);
-    mountingTapeRolls = Math.ceil(cableLength / MOUNTING_TAPE_ROLL_M);
-    epsSheets = Math.ceil(heatingArea * EPS_RESERVE / EPS_SHEET_M2);
-    screedBags = Math.ceil(heatingArea * SCREED_THICKNESS_M * SCREED_DENSITY / SCREED_BAG_KG);
-  } else {
-    pipeLength = Math.ceil(heatingArea / PIPE_STEP_M * PIPE_RESERVE);
-    circuits = Math.max(1, Math.ceil(pipeLength / MAX_CIRCUIT_M));
-    pipeInsulation = pipeLength * PIPE_INSULATION_RESERVE;
-    meshArea = heatingArea * MESH_RESERVE;
-  }
-
   /* ─── warnings ─── */
   const warnings: string[] = [];
-  if (totalPowerKW > spec.warnings_rules.separate_breaker_kw_threshold) {
-    warnings.push("Мощность более 3.5 кВт — требуется отдельный автомат");
+  if (heatingType !== 2 && totalPowerKW > spec.warnings_rules.separate_breaker_kw_threshold) {
+    warnings.push("Электрическая мощность выше допустимой для типового терморегулятора — нужна отдельная линия и проверка схемы электриком");
   }
   if (roomArea > 0 && heatingArea / roomArea < spec.warnings_rules.ineffective_coverage_ratio) {
     warnings.push("Обогреваемая площадь менее 50% — неэффективное покрытие");
@@ -336,7 +340,10 @@ export function computeCanonicalWarmFloor(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Тёплый пол — не основное отопление, а дополнительный комфорт. Радиаторы всё равно нужны");
+  practicalNotes.push("Тёплый пол может быть основным отоплением только после расчёта теплопотерь и проверки, что установленной мощности достаточно");
+  if (heatingType !== 2) {
+    practicalNotes.push("Электрическую систему подключают через устройство защитного отключения и автоматический выключатель по проекту электроснабжения");
+  }
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -350,7 +357,7 @@ export function computeCanonicalWarmFloor(
       powerDensity,
       totalPowerW: roundDisplay(totalPowerW, 3),
       totalPowerKW,
-      thermostat: 1,
+      thermostat: heatingType === 2 ? 0 : 1,
       mats,
       cableLength,
       mountingTapeRolls,
@@ -358,7 +365,7 @@ export function computeCanonicalWarmFloor(
       screedBags,
       pipeLength,
       circuits,
-      pipeInsulation,
+      cableStepMm,
       meshArea: roundDisplay(meshArea, 3),
       substrateRolls,
       adhesiveBags,

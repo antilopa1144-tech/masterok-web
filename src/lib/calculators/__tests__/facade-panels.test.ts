@@ -46,6 +46,15 @@ describe("Фасадные панели", () => {
     });
   });
 
+  describe("Металлический сайдинг (panelType=3)", () => {
+    it("полоса 230×3000 мм имеет площадь 0,69 м², а не 0,23 м²", () => {
+      const r = calc({ area: 100, panelType: 3, substructureType: 0, insulationIncluded: 0 });
+      expect(r.totals.panelArea).toBe(0.69);
+      expect(r.totals.panels).toBe(Math.ceil(100 * 1.10 / 0.69));
+      expect(findMaterial(r, "230×3000 мм")).toBeDefined();
+    });
+  });
+
   describe("HPL-панели (panelType=2)", () => {
     it("panelArea = 2.928 м²", () => {
       const r = calc({ area: 100, panelType: 2, substructure: 0, insulationThickness: 0 });
@@ -64,6 +73,22 @@ describe("Фасадные панели", () => {
       expect(dowels).toBeDefined();
       expect(dowels?.subtitle).toContain("50 мм анкеровки");
       expect(findMaterial(r, "Ветрозащитная диффузионная мембрана")).toBeDefined();
+    });
+  });
+
+  describe("Поля формы передаются в canonical-движок", () => {
+    it("деревянная подсистема и утеплитель 100 мм не теряются", () => {
+      const r = calc({
+        area: 100,
+        panelType: 3,
+        substructureType: 2,
+        insulationIncluded: 2,
+      });
+      expect(r.totals.substructure).toBe(2);
+      expect(r.totals.insulationThickness).toBe(100);
+      expect(findMaterial(r, "Кронштейны (Деревянная)")).toBeDefined();
+      expect(findMaterial(r, "Минераловатные плиты для вентфасада 100 мм")).toBeDefined();
+      expect(findMaterial(r, "Саморезы по дереву")).toBeDefined();
     });
   });
 

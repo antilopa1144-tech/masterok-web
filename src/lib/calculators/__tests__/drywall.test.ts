@@ -10,7 +10,7 @@ describe("Калькулятор гипсокартона", () => {
     // GKL_AREA = 3.0
     // sheetsNeeded = ceil(27/3.0 * 1.10) = ceil(9.9) = 10
     // cdCount = ceil(5/0.6)+1 = 9+1 = 10
-    // udPerimeter = 2*(5+2.7) = 15.4
+    // Направляющий профиль для перегородки идёт только по полу и потолку: 2*5 = 10 м.
     const result = calc({
       workType: 0,
       length: 5,
@@ -32,20 +32,28 @@ describe("Калькулятор гипсокартона", () => {
       expect(findMaterial(result, "ПН")).toBeDefined();
     });
 
-    it("профиль ПП присутствует", () => {
-      expect(findMaterial(result, "ПП")).toBeDefined();
+    it("перегородка комплектуется стоечным профилем ПС 50×50", () => {
+      expect(findMaterial(result, "ПС 50×50")).toBeDefined();
     });
 
-    it("саморезы 3.5×25 мм в кг", () => {
-      const screws = findMaterial(result, "Саморезы 3.5×25");
+    it("саморезы 3,5×25 мм считаются поштучно и упаковками", () => {
+      const screws = findMaterial(result, "3,5×25");
       expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("кг");
+      expect(screws?.unit).toBe("шт");
+      expect(screws?.purchaseQty).toBeGreaterThanOrEqual(screws?.quantity ?? 0);
+      expect((screws?.purchaseQty ?? 0) % 200).toBe(0);
     });
 
-    it("саморезы-клопы 3.5×9.5 мм в кг", () => {
-      const screws = findMaterial(result, "клопы");
+    it("саморезы для сборки каркаса считаются поштучно", () => {
+      const screws = findMaterial(result, "3,5×9,5");
       expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("кг");
+      expect(screws?.unit).toBe("шт");
+      expect((screws?.purchaseQty ?? 0) % 100).toBe(0);
+    });
+
+    it("направляющего профиля ПН нужно 4 хлыста по 3 м", () => {
+      expect(result.totals.pnPerimeter).toBe(10);
+      expect(result.totals.pnPieces).toBe(4);
     });
 
     it("шпаклёвка финишная Knauf присутствует", () => {
@@ -104,6 +112,13 @@ describe("Калькулятор гипсокартона", () => {
 
     it("предупреждение о смещении стыков", () => {
       expect(result.warnings.some((w) => w.includes("смещением"))).toBe(true);
+    });
+
+    it("для второго слоя отдельно указан саморез 3,5×35 мм", () => {
+      const secondLayerScrews = findMaterial(result, "3,5×35");
+      expect(secondLayerScrews).toBeDefined();
+      expect(secondLayerScrews?.subtitle).toContain("второго слоя");
+      expect(result.totals.screws35Pcs).toBeGreaterThan(0);
     });
   });
 

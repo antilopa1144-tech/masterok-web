@@ -1,6 +1,6 @@
 {
   "calculator_id": "warm-floor",
-  "formula_version": "warm-floor-canonical-v1",
+  "formula_version": "warm-floor-canonical-v2",
   "input_schema": [
     { "key": "roomArea", "unit": "m2", "default_value": 10, "min": 1, "max": 100 },
     { "key": "furnitureArea", "unit": "m2", "default_value": 2, "min": 0, "max": 50 },
@@ -24,7 +24,7 @@
   },
   "material_rules": {
     "mat_area": 2.0,
-    "cable_step_m": 0.15,
+    "cable_linear_power_w_per_m": 18,
     "cable_reserve": 1.05,
     "pipe_step_m": 0.15,
     "pipe_reserve": 1.05,

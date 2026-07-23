@@ -13,27 +13,23 @@ describe("Калькулятор перегородок из блоков", () =
       blockType: 0,
     });
 
-    it("блоки перегородочные присутствуют", () => {
-      // Engine: "Блоки перегородочные"
-      const blocks = findMaterial(result, "Блоки перегородочные");
+    it("указаны тип, плотность и размер газобетонного блока", () => {
+      const blocks = findMaterial(result, "Газобетонные перегородочные блоки D500 625×250×100 мм");
       expect(blocks).toBeDefined();
     });
 
-    it("клей для блоков 25кг присутствует", () => {
-      // Engine: "Клей для блоков 25кг"
-      const glue = findMaterial(result, "Клей для блоков");
+    it("указан клей для тонкошовной кладки в мешках 25 кг", () => {
+      const glue = findMaterial(result, "Клей для тонкошовной кладки");
       expect(glue).toBeDefined();
     });
 
-    it("армирующая сетка (рулон 50 м) присутствует", () => {
-      // Engine: "Армирующая сетка (рулон 50 м)"
-      const arm = findMaterial(result, "Армирующая сетка");
+    it("армирующая лента для ячеистых блоков присутствует", () => {
+      const arm = findMaterial(result, "Армирующая лента");
       expect(arm).toBeDefined();
     });
 
-    it("монтажная пена 750мл присутствует", () => {
-      // Engine: "Монтажная пена 750мл"
-      const foam = findMaterial(result, "Монтажная пена");
+    it("профессиональная монтажная пена 750 мл присутствует", () => {
+      const foam = findMaterial(result, "монтажная пена");
       expect(foam).toBeDefined();
     });
 
@@ -42,9 +38,8 @@ describe("Калькулятор перегородок из блоков", () =
       expect(findMaterial(result, "Грунтовка")).toBeDefined();
     });
 
-    it("уплотнительная лента присутствует", () => {
-      // Engine: "Уплотнительная лента"
-      expect(findMaterial(result, "Уплотнительная лента")).toBeDefined();
+    it("упругая лента для примыкания присутствует", () => {
+      expect(findMaterial(result, "Упругая лента")).toBeDefined();
     });
 
     it("totals содержат wallArea, blocks, length, height", () => {
@@ -67,15 +62,15 @@ describe("Калькулятор перегородок из блоков", () =
     });
 
     it("блоки перегородочные присутствуют", () => {
-      expect(findMaterial(result, "Блоки перегородочные")).toBeDefined();
+      expect(findMaterial(result, "Пенобетонные перегородочные блоки D600")).toBeDefined();
     });
 
     it("клей для блоков присутствует", () => {
-      expect(findMaterial(result, "Клей для блоков")).toBeDefined();
+      expect(findMaterial(result, "Клей для тонкошовной кладки")).toBeDefined();
     });
 
-    it("нет гипсового молочка (не ПГП)", () => {
-      expect(findMaterial(result, "Гипсовое молочко")).toBeUndefined();
+    it("нет гипсового монтажного клея (не ПГП)", () => {
+      expect(findMaterial(result, "Гипсовый монтажный клей")).toBeUndefined();
     });
   });
 
@@ -88,23 +83,34 @@ describe("Калькулятор перегородок из блоков", () =
     });
 
     it("блоки перегородочные присутствуют", () => {
-      expect(findMaterial(result, "Блоки перегородочные")).toBeDefined();
+      expect(findMaterial(result, "Гипсовые пазогребневые плиты 667×500×100 мм")).toBeDefined();
     });
 
-    it("гипсовое молочко 20кг присутствует (вместо клея)", () => {
-      // Engine: "Гипсовое молочко 20кг"
-      const gypsum = findMaterial(result, "Гипсовое молочко");
+    it("гипсовый монтажный клей присутствует (вместо клея для блоков)", () => {
+      const gypsum = findMaterial(result, "Гипсовый монтажный клей");
       expect(gypsum).toBeDefined();
     });
 
     it("клей для блоков отсутствует", () => {
-      expect(findMaterial(result, "Клей для блоков")).toBeUndefined();
+      expect(findMaterial(result, "Клей для тонкошовной кладки")).toBeUndefined();
     });
 
-    it("ПГП толще 100 мм → предупреждение", () => {
+    it("универсальная армирующая сетка для ПГП не добавляется", () => {
+      expect(findMaterial(result, "Армирующая лента")).toBeUndefined();
+    });
+
+    it("для нетипичной толщины ПГП показывается предупреждение", () => {
       const r2 = calc({ length: 4, height: 2.7, thickness: 150, blockType: 2 });
-      // Engine: "Гипсовые ПГП толще 100 мм — проверьте наличие нужного размера"
-      expect(r2.warnings.some((w) => w.includes("ПГП"))).toBe(true);
+      expect(r2.warnings.some((w) => w.includes("типовые толщины"))).toBe(true);
+    });
+  });
+
+  describe("ПГП 75 мм из общей формы нормализуется к реальному формату 80 мм", () => {
+    it("в ведомости и totals указана толщина 80 мм", () => {
+      const result = calc({ length: 4, height: 2.7, thickness: 75, blockType: 2 });
+      expect(result.totals.requestedThickness).toBe(75);
+      expect(result.totals.thickness).toBe(80);
+      expect(findMaterial(result, "667×500×80 мм")).toBeDefined();
     });
   });
 
@@ -116,9 +122,8 @@ describe("Калькулятор перегородок из блоков", () =
       blockType: 0,
     });
 
-    it("предупреждение об усиленном армировании", () => {
-      // Engine: "Высота перегородки более 3.5 м — рекомендуется усиленное армирование"
-      expect(result.warnings.some((w) => w.includes("3.5 м"))).toBe(true);
+    it("предупреждение о проверке конструктором", () => {
+      expect(result.warnings.some((w) => w.includes("конструктор"))).toBe(true);
     });
   });
 

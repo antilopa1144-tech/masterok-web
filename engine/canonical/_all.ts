@@ -798,6 +798,8 @@ export interface DrywallMaterialRules {
   sandpaper_pack: number;
   profile_length_m: number;
   sealing_tape_roll_m: number;
+  screws_tf_package_pcs: number;
+  screws_lb_package_pcs: number;
 }
 
 export interface DrywallWarningRules {
@@ -1420,7 +1422,7 @@ export interface WarmFloorPackagingRules {
 
 export interface WarmFloorMaterialRules {
   mat_area: number;
-  cable_step_m: number;
+  cable_linear_power_w_per_m: number;
   cable_reserve: number;
   pipe_step_m: number;
   pipe_reserve: number;

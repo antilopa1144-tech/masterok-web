@@ -48,8 +48,8 @@ const DW_DEFAULTS = {
   sandpaper_pack: 10,
   profile_length_m: 3,
   sealing_tape_roll_m: 30,
-  screws_tf_per_kg: 1000,
-  screws_lb_per_kg: 4000,
+  screws_tf_package_pcs: 200,
+  screws_lb_package_pcs: 100,
 };
 
 function dwMr<T>(spec: DrywallCanonicalSpec, key: string, fallback: T): T {
@@ -84,11 +84,16 @@ function resolveProfileStep(spec: DrywallCanonicalSpec, inputs: DrywallInputs): 
 }
 
 function buildMaterials(
+  workType: number,
+  sheet: { w: number; h: number },
   sheetsNeeded: number,
   pnPieces: number,
   ppPieces: number,
-  screwsTFkg: number,
-  screwsLBkg: number,
+  screws25Pcs: number,
+  screws35Pcs: number,
+  screwsLbPcs: number,
+  screwsTfPackagePcs: number,
+  screwsLbPackagePcs: number,
   dowels: number,
   sealingTapeRolls: number,
   puttyStartBags: number,
@@ -97,9 +102,40 @@ function buildMaterials(
   primerMat: CanonicalMaterialResult,
   sandpaperPacks: number,
 ): CanonicalMaterialResult[] {
+  const isPartition = workType === 0;
+  const isCeiling = workType === 2;
+  const mainProfileName = isPartition
+    ? "Стоечный профиль ПС 50×50 мм, длина 3 м"
+    : "Потолочный профиль ПП 60×27 мм, длина 3 м";
+  const guideProfileName = isPartition
+    ? "Направляющий профиль ПН 50×40 мм, длина 3 м"
+    : "Направляющий профиль ПН 27×28 мм, длина 3 м";
+  const sheetName = `Гипсокартонный лист (ГКЛ) 12,5×${Math.round(sheet.w * 1000)}×${Math.round(sheet.h * 1000)} мм`;
+  const screwMaterial = (
+    name: string,
+    quantity: number,
+    packageSize: number,
+    subtitle: string,
+  ): CanonicalMaterialResult => {
+    const packages = Math.ceil(quantity / packageSize);
+    return {
+      name,
+      subtitle,
+      quantity,
+      unit: "шт",
+      withReserve: quantity,
+      purchaseQty: packages * packageSize,
+      packageInfo: { count: packages, size: packageSize, packageUnit: "упаковок" },
+      category: "Крепёж",
+    };
+  };
+
   return [
     {
-      name: "Гипсокартонные листы (ГКЛ)",
+      name: sheetName,
+      subtitle: isCeiling
+        ? "Тип листа и допустимое число слоёв сверяйте с выбранной потолочной системой"
+        : "Для влажных помещений выбирайте влагостойкое исполнение",
       quantity: sheetsNeeded,
       unit: "шт",
       withReserve: sheetsNeeded,
@@ -107,7 +143,10 @@ function buildMaterials(
       category: "Основное",
     },
     {
-      name: "Направляющий профиль ПН 27×28 мм, 3 м",
+      name: guideProfileName,
+      subtitle: isPartition
+        ? "Для перегородки шириной 50 мм; требуемую ширину каркаса проверяют по высоте и нагрузкам"
+        : "Для каркаса облицовки стены или потолка",
       quantity: pnPieces,
       unit: "шт",
       withReserve: pnPieces,
@@ -115,31 +154,39 @@ function buildMaterials(
       category: "Каркас",
     },
     {
-      name: "Потолочный профиль ПП 60×27 мм, 3 м",
+      name: mainProfileName,
+      subtitle: isPartition
+        ? "Стоечный профиль выбран в паре с направляющим ПН 50×40 мм"
+        : "Для облицовки стены потребуются прямые подвесы; их число зависит от основания и схемы крепления",
       quantity: ppPieces,
       unit: "шт",
       withReserve: ppPieces,
       purchaseQty: ppPieces,
       category: "Каркас",
     },
+    screwMaterial(
+      "Саморезы по металлу для гипсокартона 3,5×25 мм",
+      screws25Pcs,
+      screwsTfPackagePcs,
+      screws35Pcs > 0 ? "Для крепления первого слоя листов к металлическому каркасу" : "Для крепления листов к металлическому каркасу",
+    ),
+    ...(screws35Pcs > 0
+      ? [screwMaterial(
+          "Саморезы по металлу для гипсокартона 3,5×35 мм",
+          screws35Pcs,
+          screwsTfPackagePcs,
+          "Для крепления второго слоя листов через первый слой",
+        )]
+      : []),
+    screwMaterial(
+      "Саморезы с прессшайбой 3,5×9,5 мм для сборки каркаса",
+      screwsLbPcs,
+      screwsLbPackagePcs,
+      "Для соединения металлических профилей между собой",
+    ),
     {
-      name: "Саморезы 3.5\u00d725 мм",
-      quantity: screwsTFkg,
-      unit: "кг",
-      withReserve: screwsTFkg,
-      purchaseQty: Math.ceil(screwsTFkg),
-      category: "Крепёж",
-    },
-    {
-      name: "Саморезы-клопы 3.5\u00d79.5 мм",
-      quantity: screwsLBkg,
-      unit: "кг",
-      withReserve: screwsLBkg,
-      purchaseQty: Math.ceil(screwsLBkg),
-      category: "Крепёж",
-    },
-    {
-      name: "Дюбели 6\u00d740",
+      name: "Дюбель-гвозди 6×40 мм",
+      subtitle: "Для плотного бетонного или полнотелого основания; крепёж к пустотелым стенам подбирают отдельно",
       quantity: dowels,
       unit: "шт",
       withReserve: dowels,
@@ -217,8 +264,8 @@ export function computeCanonicalDrywall(
   const SANDPAPER_PACK = dwMr(spec, "sandpaper_pack", DW_DEFAULTS.sandpaper_pack);
   const PROFILE_LENGTH_M = dwMr(spec, "profile_length_m", DW_DEFAULTS.profile_length_m);
   const SEALING_TAPE_ROLL_M = dwMr(spec, "sealing_tape_roll_m", DW_DEFAULTS.sealing_tape_roll_m);
-  const SCREWS_TF_PER_KG = dwMr(spec, "screws_tf_per_kg", DW_DEFAULTS.screws_tf_per_kg);
-  const SCREWS_LB_PER_KG = dwMr(spec, "screws_lb_per_kg", DW_DEFAULTS.screws_lb_per_kg);
+  const SCREWS_TF_PACKAGE_PCS = dwMr(spec, "screws_tf_package_pcs", DW_DEFAULTS.screws_tf_package_pcs);
+  const SCREWS_LB_PACKAGE_PCS = dwMr(spec, "screws_lb_package_pcs", DW_DEFAULTS.screws_lb_package_pcs);
 
   const workType = resolveWorkType(spec, inputs);
   const length = resolveLength(spec, inputs);
@@ -231,13 +278,15 @@ export function computeCanonicalDrywall(
   const sides = workType === 0 ? 2 : 1;
   const totalSheetArea = area * sides * layers;
 
-  const gklArea = SHEET_SIZES[sheetSize]?.area ?? SHEET_SIZES[0].area;
+  const sheet = SHEET_SIZES[sheetSize] ?? SHEET_SIZES[0];
+  const gklArea = sheet.area;
   const accuracyMult = getPrimaryMultiplier("drywall", accuracyMode);
   const baseSheetsNeededRaw = Math.ceil(totalSheetArea / gklArea * SHEET_RESERVE);
   const baseSheetsNeeded = Math.ceil(baseSheetsNeededRaw * accuracyMult);
 
-  // Profile PN (perimeter)
-  const pnPerimeter = 2 * (length + height);
+  // Для перегородки направляющий профиль идёт по полу и потолку.
+  // У облицовки/потолка направляющий профиль замыкает периметр.
+  const pnPerimeter = workType === 0 ? 2 * length : 2 * (length + height);
   const pnLength = Math.ceil(pnPerimeter * PROFILE_RESERVE / PROFILE_LENGTH_M) * PROFILE_LENGTH_M;
   const pnPieces = pnLength / PROFILE_LENGTH_M;
 
@@ -246,11 +295,14 @@ export function computeCanonicalDrywall(
   const ppLength = ppCount * height * PROFILE_RESERVE;
   const ppPieces = Math.ceil(ppLength / PROFILE_LENGTH_M);
 
-  // Screws (in kg)
-  const screwsTFpcs = Math.ceil(totalSheetArea * SCREWS_TF_PER_M2 * PROFILE_RESERVE);
-  const screwsTFkg = Math.ceil(screwsTFpcs / SCREWS_TF_PER_KG * 10) / 10;
+  // Саморезы считаются поштучно: для второго слоя нужен более длинный крепёж.
+  const layerSheetArea = area * sides;
+  const screws25Pcs = Math.ceil(layerSheetArea * SCREWS_TF_PER_M2 * PROFILE_RESERVE);
+  const screws35Pcs = layers === 2
+    ? Math.ceil(layerSheetArea * SCREWS_TF_PER_M2 * PROFILE_RESERVE)
+    : 0;
+  const screwsTFpcs = screws25Pcs + screws35Pcs;
   const screwsLBpcs = Math.ceil(ppCount * SCREWS_LB_PER_PROFILE * PROFILE_RESERVE);
-  const screwsLBkg = Math.ceil(screwsLBpcs / SCREWS_LB_PER_KG * 10) / 10;
 
   // Dowels
   const dowels = Math.ceil(pnPerimeter / DOWELS_STEP_M);
@@ -325,7 +377,7 @@ export function computeCanonicalDrywall(
     practicalNotes.push("Два слоя гипсокартона — смещайте стыки минимум на 400 мм, иначе по шву появится трещина");
   }
   if (height > 3.5) {
-    practicalNotes.push(`Высота ${roundDisplay(height, 1)} м — ставьте профили CW-100, стандартные CW-75 будут гулять`);
+    practicalNotes.push(`Высота ${roundDisplay(height, 1)} м выходит за типовой диапазон — ширину и шаг стоечных профилей должен проверить конструктор`);
   }
   practicalNotes.push("Между гипсокартоном и полом оставляйте зазор 10 мм — при усадке дома лист не лопнет");
 
@@ -333,11 +385,16 @@ export function computeCanonicalDrywall(
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials: buildMaterials(
+      workType,
+      sheet,
       recScenario.exact_need,
       pnPieces,
       ppPieces,
-      screwsTFkg,
-      screwsLBkg,
+      screws25Pcs,
+      screws35Pcs,
+      screwsLBpcs,
+      SCREWS_TF_PACKAGE_PCS,
+      SCREWS_LB_PACKAGE_PCS,
       dowels,
       sealingTapeRolls,
       puttyStartBags,
@@ -362,8 +419,10 @@ export function computeCanonicalDrywall(
       pnPieces: pnPieces,
       ppCount: ppCount,
       ppPieces: ppPieces,
-      screwsTF: screwsTFkg,
-      screwsLB: screwsLBkg,
+      screwsTF: screwsTFpcs,
+      screwsLB: screwsLBpcs,
+      screws25Pcs,
+      screws35Pcs,
       dowels: dowels,
       sealingTapeRolls: sealingTapeRolls,
       puttyStartBags: puttyStartBags,

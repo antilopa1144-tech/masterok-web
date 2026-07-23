@@ -11,34 +11,6 @@ import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
-/* ─── constants ─── */
-
-const BLOCK_DIMS: Record<number, [number, number]> = {
-  0: [625, 250],  // gasocrete D500
-  1: [625, 250],  // foam D600
-  2: [667, 500],  // gypsum PGP
-};
-
-const GLUE_RATE: Record<number, number> = {
-  0: 1.5,  // kg/m²
-  1: 1.5,
-  2: 0,
-};
-
-const GYPSUM_MILK_RATE = 0.8; // kg/m²
-const GYPSUM_BAG = 20;        // kg
-const GLUE_BAG = 25;          // kg
-const BLOCK_RESERVE = 1.05;
-const MESH_INTERVAL = 0.75;   // m (every 3 rows)
-const MESH_RESERVE = 1.05;
-const MESH_ROLL = 50;         // m
-const FOAM_PER_PERIM = 5;     // m per bottle
-const FOAM_CAN = 750;         // ml
-const PRIMER_L_PER_M2 = 0.15;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN = 10;        // L
-const SEAL_TAPE_RESERVE = 1.1;
-
 /* ─── inputs ─── */
 
 interface PartitionsInputs {
@@ -60,39 +32,42 @@ export function computeCanonicalPartitions(
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+  const rules = spec.material_rules;
 
   const length = Math.max(1, Math.min(50, inputs.length ?? getInputDefault(spec, "length", 5)));
   const height = Math.max(2, Math.min(4, inputs.height ?? getInputDefault(spec, "height", 2.7)));
-  const thickness = Math.max(75, Math.min(200, Math.round(inputs.thickness ?? getInputDefault(spec, "thickness", 100))));
   const blockType = Math.max(0, Math.min(2, Math.round(inputs.blockType ?? getInputDefault(spec, "blockType", 0))));
+  const requestedThickness = Math.max(75, Math.min(200, Math.round(inputs.thickness ?? getInputDefault(spec, "thickness", 100))));
+  const thickness = blockType === 2 && requestedThickness === 75 ? 80 : requestedThickness;
 
   /* ─── formulas ─── */
   const wallArea = length * height;
-  const dims = BLOCK_DIMS[blockType] ?? BLOCK_DIMS[0];
+  const dims = rules.block_dims[String(blockType)] ?? rules.block_dims["0"];
   const blockArea = (dims[0] / 1000) * (dims[1] / 1000);
-  const blocks = Math.ceil(wallArea / blockArea * BLOCK_RESERVE);
+  const blocks = Math.ceil(wallArea / blockArea * rules.block_reserve);
 
-  // Glue / gypsum adhesive
+  // Клей для ячеистых блоков / гипсовый монтажный клей для ПГП.
   const glueBags = blockType !== 2
-    ? Math.ceil(wallArea * GLUE_RATE[blockType] / GLUE_BAG)
+    ? Math.ceil(wallArea * (rules.glue_rate[String(blockType)] ?? 0) / rules.glue_bag)
     : 0;
   const gypsumBags = blockType === 2
-    ? Math.ceil(wallArea * GYPSUM_MILK_RATE / GYPSUM_BAG)
+    ? Math.ceil(wallArea * rules.gypsum_milk_rate / rules.gypsum_bag)
     : 0;
 
-  // Reinforcing mesh
-  const armRows = Math.ceil(height / MESH_INTERVAL);
-  const meshLen = length * armRows * MESH_RESERVE;
-  const meshRolls = Math.ceil(meshLen / MESH_ROLL);
+  // Линейное армирование относится к кладке из ячеистых блоков.
+  // ПГП связывают с основанием по системе производителя; универсальной сетки в каждом ряду нет.
+  const armRows = blockType === 2 ? 0 : Math.ceil(height / rules.mesh_interval);
+  const meshLen = blockType === 2 ? 0 : length * armRows * rules.mesh_reserve;
+  const meshRolls = blockType === 2 ? 0 : Math.ceil(meshLen / rules.mesh_roll);
 
   // Foam
-  const foamBottles = Math.ceil((length + height * 2) / FOAM_PER_PERIM);
+  const foamBottles = Math.ceil((length + height * 2) / rules.foam_per_perim);
 
   // Primer (both sides)
-  const primer = Math.ceil(wallArea * 2 * PRIMER_L_PER_M2 * PRIMER_RESERVE / PRIMER_CAN);
+  const primer = Math.ceil(wallArea * 2 * rules.primer_l_per_m2 * rules.primer_reserve / rules.primer_can);
 
   // Sealing tape
-  const sealTape = Math.ceil((length * 2 + height * 2) * SEAL_TAPE_RESERVE);
+  const sealTape = Math.ceil((length * 2 + height * 2) * rules.seal_tape_reserve);
 
   /* ─── scenarios ─── */
   const blocksRaw = blocks;
@@ -134,11 +109,19 @@ export function computeCanonicalPartitions(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const blockNames: Record<number, string> = {
+    0: `Газобетонные перегородочные блоки D500 ${dims[0]}×${dims[1]}×${thickness} мм`,
+    1: `Пенобетонные перегородочные блоки D600 ${dims[0]}×${dims[1]}×${thickness} мм`,
+    2: `Гипсовые пазогребневые плиты ${dims[0]}×${dims[1]}×${thickness} мм`,
+  };
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Блоки перегородочные",
+      name: blockNames[blockType],
+      subtitle: blockType === 2
+        ? "Для влажных помещений выбирайте гидрофобизированные плиты"
+        : "Расчёт выполнен по указанному формату лицевой грани; для другого размера количество нужно пересчитать",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -149,7 +132,8 @@ export function computeCanonicalPartitions(
 
   if (glueBags > 0) {
     materials.push({
-      name: "Клей для блоков 25кг",
+      name: `Клей для тонкошовной кладки ячеистых блоков, мешок ${rules.glue_bag} кг`,
+      subtitle: "Фактический расход уточняют по толщине шва и инструкции выбранной сухой смеси",
       quantity: glueBags,
       unit: "мешков",
       withReserve: glueBags,
@@ -160,7 +144,8 @@ export function computeCanonicalPartitions(
 
   if (gypsumBags > 0) {
     materials.push({
-      name: "Гипсовое молочко 20кг",
+      name: `Гипсовый монтажный клей для пазогребневых плит, мешок ${rules.gypsum_bag} кг`,
+      subtitle: "Клей должен быть предназначен производителем для монтажа гипсовых пазогребневых плит",
       quantity: gypsumBags,
       unit: "мешков",
       withReserve: gypsumBags,
@@ -169,26 +154,32 @@ export function computeCanonicalPartitions(
     });
   }
 
-  materials.push(
-    {
-      name: `Армирующая сетка (рулон ${MESH_ROLL} м)`,
+  if (meshRolls > 0) {
+    materials.push({
+      name: `Армирующая лента для кладки ячеистых блоков, рулон ${rules.mesh_roll} м`,
+      subtitle: "Тип ленты и схему армирования выбирают по проекту и техническим решениям производителя блоков",
       quantity: meshRolls,
       unit: "рулонов",
       withReserve: meshRolls,
       purchaseQty: meshRolls,
       category: "Армирование",
-    },
+    });
+  }
+
+  materials.push(
     {
-      name: "Монтажная пена 750мл",
+      name: `Профессиональная полиуретановая монтажная пена, баллон ${rules.foam_can} мл`,
+      subtitle: "Для заполнения верхнего деформационного зазора; размер зазора задаёт проект",
       quantity: foamBottles,
       unit: "шт",
       withReserve: foamBottles,
       purchaseQty: foamBottles,
       category: "Монтаж",
     },
-    buildPrimerMaterial(wallArea * 2 * PRIMER_L_PER_M2, { reserveFactor: PRIMER_RESERVE, category: "Грунтовка" }),
+    buildPrimerMaterial(wallArea * 2 * rules.primer_l_per_m2, { reserveFactor: rules.primer_reserve, category: "Грунтовка" }),
     {
-      name: "Уплотнительная лента",
+      name: "Упругая лента для примыкания перегородки",
+      subtitle: "Материал и необходимость ленты зависят от узла примыкания и требований по звукоизоляции",
       quantity: sealTape,
       unit: "м",
       withReserve: sealTape,
@@ -199,15 +190,16 @@ export function computeCanonicalPartitions(
 
   /* ─── warnings ─── */
   const warnings: string[] = [];
-  if (height > 3.5) {
-    warnings.push("Высота перегородки более 3.5 м — рекомендуется усиленное армирование");
+  if (height > spec.warnings_rules.high_wall_threshold_m) {
+    warnings.push("Высота перегородки превышает типовой диапазон — размеры, связи и армирование должен проверить конструктор");
   }
-  if (blockType === 2 && thickness > 100) {
-    warnings.push("Гипсовые пазогребневые плиты (ПГП) толще 100 мм — проверьте наличие нужного размера");
+  if (blockType === 2 && ![80, 100].includes(thickness)) {
+    warnings.push("Для гипсовых пазогребневых плит типовые толщины — 80 и 100 мм; выберите фактически доступный формат");
   }
+  warnings.push("Калькулятор предназначен только для ненесущих межкомнатных перегородок");
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Звукоизоляция перегородки — заполните каркас минватой, без неё перегородка будет как барабан");
+  practicalNotes.push("Связи со стенами, армирование зон проёмов и верхний деформационный зазор выполняют по проекту и альбому решений производителя");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -217,6 +209,7 @@ export function computeCanonicalPartitions(
       length: roundDisplay(length, 3),
       height: roundDisplay(height, 3),
       thickness,
+      requestedThickness,
       blockType,
       wallArea: roundDisplay(wallArea, 3),
       blockArea: roundDisplay(blockArea, 6),

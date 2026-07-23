@@ -1,6 +1,6 @@
 {
   "calculator_id": "drywall",
-  "formula_version": "drywall-canonical-v1",
+  "formula_version": "drywall-canonical-v2",
   "input_schema": [
     {
       "key": "workType",
@@ -95,8 +95,8 @@
     "sandpaper_pack": 10,
     "profile_length_m": 3,
     "sealing_tape_roll_m": 30,
-    "screws_tf_per_kg": 1000,
-    "screws_lb_per_kg": 4000
+    "screws_tf_package_pcs": 200,
+    "screws_lb_package_pcs": 100
   },
   "warnings_rules": {
     "wide_profile_height_threshold": 3.5
