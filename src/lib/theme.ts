@@ -15,10 +15,7 @@ export type ThemeId =
   | "light"
   | "dark"
   | "bronze"
-  | "emerald"
-  | "lavender"
-  | "ocean"
-  | "graphite";
+  | "ocean";
 
 export type ThemeChoice = ThemeId | "system";
 
@@ -36,11 +33,8 @@ export interface ThemeDefinition {
 export const THEMES: ThemeDefinition[] = [
   { id: "light", label: "Светлая", isDark: false, swatch: { bg: "#f8fafc", accent: "#f97316" } },
   { id: "dark", label: "Тёмная", isDark: true, swatch: { bg: "#0f172a", accent: "#f97316" } },
-  { id: "bronze", label: "Бронза", isDark: false, swatch: { bg: "#faf9f5", accent: "#c96442" } },
-  { id: "emerald", label: "Изумруд", isDark: false, swatch: { bg: "#f8fafc", accent: "#059669" } },
-  { id: "lavender", label: "Лаванда", isDark: false, swatch: { bg: "#f8fafc", accent: "#7c3aed" } },
+  { id: "bronze", label: "Тёплая", isDark: false, swatch: { bg: "#f4efe5", accent: "#c96442" } },
   { id: "ocean", label: "Океан", isDark: true, swatch: { bg: "#101c2e", accent: "#0ea5e9" } },
-  { id: "graphite", label: "Графит", isDark: true, swatch: { bg: "#171717", accent: "#14b8a6" } },
 ];
 
 const THEME_BY_ID = new Map(THEMES.map((t) => [t.id, t]));

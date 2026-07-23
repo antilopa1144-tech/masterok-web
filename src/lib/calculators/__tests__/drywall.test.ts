@@ -92,6 +92,53 @@ describe("Калькулятор гипсокартона", () => {
     });
   });
 
+  describe("Обшивка всех четырёх стен комнаты", () => {
+    const result = calc({
+      workType: 1,
+      inputMode: 0,
+      wallScope: 1,
+      roomLength: 5,
+      roomWidth: 4,
+      height: 2.7,
+      openingsArea: 3.6,
+      layers: 1,
+      profileStep: 0.6,
+    });
+
+    it("вычитает окна и двери из площади четырёх стен", () => {
+      expect(result.totals.grossArea).toBeCloseTo(48.6, 3);
+      expect(result.totals.openingsArea).toBeCloseTo(3.6, 3);
+      expect(result.totals.area).toBeCloseTo(45, 3);
+      expect(result.totals.wallRun).toBe(18);
+    });
+
+    it("считает стойки отдельно на каждой стене", () => {
+      expect(result.totals.ppCount).toBe(36);
+      expect(result.totals.pnPerimeter).toBeCloseTo(57.6, 3);
+    });
+
+    it("возвращает целое количество листов к покупке", () => {
+      const sheets = findMaterial(result, "ГКЛ");
+      expect(sheets?.purchaseQty).toBe(19);
+    });
+  });
+
+  describe("Ввод по готовой площади", () => {
+    const result = calc({
+      workType: 1,
+      inputMode: 1,
+      area: 30,
+      height: 2.7,
+      layers: 1,
+      profileStep: 0.6,
+    });
+
+    it("площадь листов точная, каркас помечен как ориентировочный", () => {
+      expect(result.totals.area).toBe(30);
+      expect(result.warnings.some((w) => w.includes("профили — ориентировочно"))).toBe(true);
+    });
+  });
+
   describe("2 слоя с каждой стороны", () => {
     // totalSheetArea = 13.5 * 2 * 2 = 54
     // sheetsNeeded = ceil(54/3.0 * 1.10) = ceil(19.8) = 20

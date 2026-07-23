@@ -65,13 +65,32 @@
 }
 
 /* ── 2.5 Темы оформления ───────────────────────────────────── */
-/* Каждая тема переопределяет токены --color-accent-* / --color-slate-*.
+/* Каждая тема переопределяет токены --color-accent-* / --color-slate-*,
+   а также фон страницы и рабочих поверхностей.
    Реестр тем и логика применения: src/lib/theme.ts (data-theme на <html>).
-   Тёмные темы (ocean, graphite) дополнительно включают класс .dark,
+   Тёмная тема и «Океан» дополнительно включают класс .dark,
    поэтому все dark:-утилиты работают без правок компонентов. */
+
+:root {
+  --theme-page: #f8fafc;
+  --theme-surface: #ffffff;
+  --theme-surface-muted: #f8fafc;
+  --theme-header: rgba(255, 255, 255, 0.95);
+}
+
+html.dark:not([data-theme]) {
+  --theme-page: #0f172a;
+  --theme-surface: #1e293b;
+  --theme-surface-muted: #0f172a;
+  --theme-header: rgba(15, 23, 42, 0.95);
+}
 
 /* Бронза — тёплая светлая тема в духе Anthropic: слоновая кость + терракота */
 html[data-theme="bronze"] {
+  --theme-page: #f4efe5;
+  --theme-surface: #fffdf8;
+  --theme-surface-muted: #f8f2e8;
+  --theme-header: rgba(255, 253, 248, 0.95);
   --color-accent-50: #fdf4ef;
   --color-accent-100: #f9e4d9;
   --color-accent-200: #f2cab6;
@@ -96,38 +115,12 @@ html[data-theme="bronze"] {
   --shadow-result: 0 4px 24px rgba(201, 100, 66, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Изумруд — светлая, зелёный акцент */
-html[data-theme="emerald"] {
-  --color-accent-50: #ecfdf5;
-  --color-accent-100: #d1fae5;
-  --color-accent-200: #a7f3d0;
-  --color-accent-300: #6ee7b7;
-  --color-accent-400: #34d399;
-  --color-accent-500: #10b981;
-  --color-accent-600: #059669;
-  --color-accent-700: #047857;
-  --color-accent-800: #065f46;
-  --color-accent-900: #064e3b;
-  --shadow-result: 0 4px 24px rgba(5, 150, 105, 0.13), 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-/* Лаванда — светлая, фиолетовый акцент */
-html[data-theme="lavender"] {
-  --color-accent-50: #f5f3ff;
-  --color-accent-100: #ede9fe;
-  --color-accent-200: #ddd6fe;
-  --color-accent-300: #c4b5fd;
-  --color-accent-400: #a78bfa;
-  --color-accent-500: #8b5cf6;
-  --color-accent-600: #7c3aed;
-  --color-accent-700: #6d28d9;
-  --color-accent-800: #5b21b6;
-  --color-accent-900: #4c1d95;
-  --shadow-result: 0 4px 24px rgba(124, 58, 237, 0.13), 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
 /* Океан — тёмная, глубокий синий + небесный акцент */
 html[data-theme="ocean"] {
+  --theme-page: #0b1420;
+  --theme-surface: #15202f;
+  --theme-surface-muted: #101b29;
+  --theme-header: rgba(11, 20, 32, 0.95);
   --color-accent-50: #f0f9ff;
   --color-accent-100: #e0f2fe;
   --color-accent-200: #bae6fd;
@@ -152,32 +145,6 @@ html[data-theme="ocean"] {
   --shadow-result: 0 4px 24px rgba(14, 165, 233, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Графит — тёмная, нейтральный серый + бирюзовый акцент */
-html[data-theme="graphite"] {
-  --color-accent-50: #f0fdfa;
-  --color-accent-100: #ccfbf1;
-  --color-accent-200: #99f6e4;
-  --color-accent-300: #5eead4;
-  --color-accent-400: #2dd4bf;
-  --color-accent-500: #14b8a6;
-  --color-accent-600: #0d9488;
-  --color-accent-700: #0f766e;
-  --color-accent-800: #115e59;
-  --color-accent-900: #134e4a;
-  --color-slate-50: #fafafa;
-  --color-slate-100: #f5f5f5;
-  --color-slate-200: #e5e5e5;
-  --color-slate-300: #d4d4d4;
-  --color-slate-400: #a3a3a3;
-  --color-slate-500: #737373;
-  --color-slate-600: #525252;
-  --color-slate-700: #404040;
-  --color-slate-800: #262626;
-  --color-slate-900: #171717;
-  --color-slate-950: #0a0a0a;
-  --shadow-result: 0 4px 24px rgba(20, 184, 166, 0.13), 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
 /* ── 3. Базовые стили ──────────────────────────────────────── */
 @layer base {
   *,
@@ -196,7 +163,7 @@ html[data-theme="graphite"] {
   body {
     font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
-    background-color: var(--color-slate-50);
+    background-color: var(--theme-page);
     color: var(--color-slate-800);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -205,7 +172,7 @@ html[data-theme="graphite"] {
 
   /* Dark mode стили */
   .dark body {
-    background-color: var(--color-slate-900);
+    background-color: var(--theme-page);
     color: var(--color-slate-200);
   }
 
@@ -335,7 +302,7 @@ html[data-theme="graphite"] {
 @utility btn-secondary {
   @apply inline-flex items-center justify-center gap-2
     px-5 py-2.5
-    bg-white text-slate-700 font-medium
+    text-slate-700 font-medium
     rounded-xl
     border border-slate-200
     transition-all duration-150
@@ -345,11 +312,13 @@ html[data-theme="graphite"] {
     dark:bg-slate-800 dark:text-slate-200
     dark:border-slate-700
     dark:hover:bg-slate-700 dark:hover:border-slate-600;
+  background-color: var(--theme-surface);
 }
 
 @utility card {
-  @apply bg-white rounded-2xl border border-slate-200 shadow-card
-    dark:bg-slate-800 dark:border-slate-700;
+  @apply rounded-2xl border border-slate-200 shadow-card
+    dark:border-slate-700;
+  background-color: var(--theme-surface);
 }
 
 @utility card-hover {
@@ -364,12 +333,13 @@ html[data-theme="graphite"] {
 
 @utility input-field {
   @apply w-full px-4 py-2.5
-    bg-white border border-slate-200 rounded-xl
+    border border-slate-200 rounded-xl
     text-base md:text-sm text-slate-800 placeholder:text-slate-400
     transition-all duration-150
     focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500
     dark:bg-slate-900 dark:border-slate-700
     dark:text-slate-100 dark:placeholder:text-slate-500;
+  background-color: var(--theme-surface);
 }
 
 @utility input-label {
@@ -382,7 +352,8 @@ html[data-theme="graphite"] {
 }
 
 @utility result-card {
-  @apply bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-accent-200 dark:border-slate-700 shadow-result;
+  @apply rounded-2xl p-5 border-2 border-accent-200 dark:border-slate-700 shadow-result;
+  background-color: var(--theme-surface);
 }
 
 @utility range-slider {
@@ -395,11 +366,11 @@ html[data-theme="graphite"] {
 }
 
 @utility theme-surface {
-  @apply bg-white dark:bg-slate-800;
+  background-color: var(--theme-surface);
 }
 
 @utility theme-surface-muted {
-  @apply bg-slate-50 dark:bg-slate-900;
+  background-color: var(--theme-surface-muted);
 }
 
 @utility theme-border {
@@ -416,6 +387,10 @@ html[data-theme="graphite"] {
 
 @utility theme-muted {
   @apply text-slate-500 dark:text-slate-400;
+}
+
+.theme-header {
+  background-color: var(--theme-header);
 }
 
 /* Типографика для контента блога (Ghost HTML) */

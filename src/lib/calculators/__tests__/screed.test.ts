@@ -79,7 +79,8 @@ describe("Калькулятор стяжки пола", () => {
     // area=20, thicknessM=0.05, volume_multiplier=1.07 (полусухая, минимум воды)
     // volume = 20 * 0.05 * 1.07 = 1.07 м³
     // cpsKg = 1.07 * 1800 = 1926
-    // bags50 = ceil(1926/50) = 39, purchaseQty = 1950
+    // Для механизированной полусухой стяжки мешки не являются единицей
+    // закупки: показываем ориентировочную массу компонентов.
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -88,17 +89,19 @@ describe("Калькулятор стяжки пола", () => {
       screedType: 2,
     });
 
-    it("цементно-песчаная смесь для полусухой стяжки присутствует", () => {
-      expect(findMaterial(result, "Цементно-песчаная смесь для полусухой")).toBeDefined();
+    it("ориентировочная масса сухих компонентов присутствует", () => {
+      expect(findMaterial(result, "Сухие компоненты для полусухой")).toBeDefined();
     });
 
     it("объём с усадкой 7% = 1.07 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.07, 3);
     });
 
-    it("цементно-песчаная смесь: 39 мешков × 50 кг = 1950 кг", () => {
-      const cps = findMaterial(result, "Цементно-песчаная смесь для полусухой");
-      expect(cps?.purchaseQty).toBe(1950);
+    it("не выдумывает фасовку 50 кг для механизированной работы", () => {
+      const cps = findMaterial(result, "Сухие компоненты для полусухой");
+      expect(cps?.quantity).toBe(1926);
+      expect(cps?.purchaseQty).toBe(1930);
+      expect(cps?.packageInfo).toBeUndefined();
     });
 
     it("фиброволокно ПП присутствует", () => {
@@ -151,6 +154,21 @@ describe("Калькулятор стяжки пола", () => {
       expect(cement.purchaseQty! % 50).toBe(0);
       expect(cement.purchaseQty).toBeGreaterThanOrEqual(cement.quantity);
     });
+
+    it("учитывает выбранную фасовку цемента 25 кг", () => {
+      const result = calc({ ...base, cementBagWeight: 25 });
+      const cement = findMaterial(result, "Цемент")!;
+      expect(cement.packageInfo?.size).toBe(25);
+      expect(cement.packageInfo?.count).toBe(15);
+      expect(cement.purchaseQty).toBe(375);
+    });
+
+    it("не округляет песок до лишней целой тонны", () => {
+      const result = calc({ ...base });
+      const sand = findMaterial(result, "Песок")!;
+      expect(sand.quantity).toBe(1.4);
+      expect(sand.purchaseQty).toBe(1.4);
+    });
   });
 
   describe("Готовая смесь — пескобетон", () => {
@@ -167,6 +185,15 @@ describe("Калькулятор стяжки пола", () => {
     it("вариант М200 — другое название позиции", () => {
       const result = calc({ ...base, readyMix: 1 });
       expect(findMaterial(result, "цементно-песчаная смесь М200")).toBeDefined();
+    });
+
+    it("пересчитывает покупку для мешков 30 кг", () => {
+      const result = calc({ ...base, readyBagWeight: 30 });
+      const mix = findMaterial(result, "Пескобетон")!;
+      expect(mix.packageInfo?.size).toBe(30);
+      expect(mix.packageInfo?.count).toBe(74);
+      expect(mix.purchaseQty).toBe(2220);
+      expect(result.scenarios?.REC.buy_plan.package_size).toBe(30);
     });
   });
 

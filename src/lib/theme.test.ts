@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { THEMES, resolveTheme, isThemeId } from "./theme";
 
 describe("темы оформления — реестр", () => {
-  it("7 тем, id уникальны", () => {
-    expect(THEMES).toHaveLength(7);
-    expect(new Set(THEMES.map((t) => t.id)).size).toBe(7);
+  it("4 визуально различимые темы, id уникальны", () => {
+    expect(THEMES).toHaveLength(4);
+    expect(new Set(THEMES.map((t) => t.id)).size).toBe(4);
   });
 
   it("состав совпадает с THEME_INIT_SCRIPT в layout.tsx (light/dark-флаги)", () => {
@@ -13,10 +13,7 @@ describe("темы оформления — реестр", () => {
       light: false,
       dark: true,
       bronze: false,
-      emerald: false,
-      lavender: false,
       ocean: true,
-      graphite: true,
     };
     expect(Object.fromEntries(THEMES.map((t) => [t.id, t.isDark]))).toEqual(expected);
   });

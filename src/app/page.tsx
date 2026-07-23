@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ALL_CALCULATORS_META, getPopularCalculatorsMeta } from "@/lib/calculators/meta.generated";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { getAllPosts } from "@/lib/blog";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
@@ -43,6 +43,11 @@ const HOME_TASK_LINKS = [
   { label: "Рассчитать кровлю", href: "/kalkulyatory/krovlya/krovlya/", category: "roofing" },
 ] as const;
 
+// На главной показываем не просто четыре максимальных popularity: старый
+// калькулятор потолка пересекался по названию с общим ГКЛ и уводил людей в
+// режим «только площадь». Этот набор отражает четыре понятные базовые задачи.
+const HOME_POPULAR_CALCULATOR_IDS = ["concrete_universal", "brick", "drywall", "tile"] as const;
+
 const TRUST_ITEMS = [
   { icon: "trophy", title: "Бесплатно", text: "Все расчёты без оплаты" },
   { icon: "target", title: "Без регистрации", text: "Можно начинать сразу" },
@@ -61,7 +66,9 @@ function getCalculatorCountLabel(count: number) {
 
 export default async function HomePage() {
   const blogPosts = await getAllPosts();
-  const popular = getPopularCalculatorsMeta(4);
+  const popular = HOME_POPULAR_CALCULATOR_IDS
+    .map((id) => ALL_CALCULATORS_META.find((calculator) => calculator.id === id))
+    .filter((calculator): calculator is (typeof ALL_CALCULATORS_META)[number] => Boolean(calculator));
   const tools = getHomeToolCards(ALL_CHECKLISTS.length).slice(0, 4);
 
   const jsonLd = {
@@ -112,16 +119,16 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
 
-      <main className="page-container-wide pb-14 pt-8 sm:pt-11 lg:pt-12">
-        <section className="text-center" aria-labelledby="home-title">
-          <h1 id="home-title" className="mx-auto max-w-5xl text-3xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
+      <main className="page-container-wide pb-14 pt-9 sm:pt-12 lg:pt-16">
+        <section className="text-center lg:text-left" aria-labelledby="home-title">
+          <h1 id="home-title" className="max-w-5xl text-3xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
             Рассчитайте материалы без лишних закупок
           </h1>
           <p className="mt-3 text-base text-slate-500 sm:text-lg dark:text-slate-400">
             {CALC_COUNT} строительных калькуляторов с практическим запасом и итогом к покупке
           </p>
 
-          <div className="mx-auto mt-6 max-w-5xl">
+          <div className="mt-7 max-w-6xl">
             <Suspense fallback={<div className="h-16 rounded-xl border border-slate-200 bg-white animate-pulse dark:border-slate-700 dark:bg-slate-800" />}>
               <CalculatorSearch
                 hero
@@ -134,7 +141,7 @@ export default async function HomePage() {
             </Suspense>
           </div>
 
-          <nav className="mx-auto mt-4 flex max-w-4xl flex-wrap justify-center gap-2" aria-label="Популярные задачи">
+          <nav className="mt-4 flex max-w-5xl flex-wrap justify-center gap-2 lg:justify-start" aria-label="Популярные задачи">
             {HOME_TASK_LINKS.map((task) => {
               const category = CATEGORIES.find((item) => item.id === task.category);
               return (
@@ -147,7 +154,7 @@ export default async function HomePage() {
           </nav>
         </section>
 
-        <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" aria-labelledby="popular-title">
+        <section className="theme-surface mt-10 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700" aria-labelledby="popular-title">
           <div className="border-b border-slate-200 px-5 py-3.5 dark:border-slate-700 sm:hidden">
             <h2 id="popular-title" className="text-base font-bold text-slate-900 dark:text-white">Популярные расчёты</h2>
           </div>
@@ -178,8 +185,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.02fr_.98fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900" aria-labelledby="categories-title">
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1.3fr_.7fr]">
+          <section className="theme-surface rounded-2xl border border-slate-200 p-5 dark:border-slate-700" aria-labelledby="categories-title">
             <div className="mb-3 flex items-center justify-between gap-4">
               <h2 id="categories-title" className="text-xl font-bold text-slate-950 dark:text-white">Все категории</h2>
               <Link href="/kalkulyatory/" className="text-sm font-semibold text-accent-700 no-underline hover:text-accent-800 dark:text-accent-400">Все калькуляторы →</Link>
@@ -199,28 +206,30 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-2xl bg-slate-950 p-5 text-white shadow-lg shadow-slate-950/10 sm:p-6 dark:bg-black" aria-labelledby="mikhalych-title">
-            <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl" aria-hidden />
-            <div className="relative flex h-full flex-col">
+          <section className="theme-surface relative overflow-hidden rounded-2xl border border-slate-200 p-5 sm:p-6 dark:border-slate-700" aria-labelledby="mikhalych-title">
+            <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-accent-200/45 blur-3xl dark:bg-accent-700/15" aria-hidden />
+            <div className="relative">
               <div className="flex items-start gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10">
-                  <CategoryIcon icon="bot" size={23} color="#fff" />
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-100 text-accent-700 ring-1 ring-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:ring-accent-800">
+                  <CategoryIcon icon="bot" size={23} color="currentColor" />
                 </span>
                 <div>
-                  <h2 id="mikhalych-title" className="text-xl font-bold text-white">Михалыч — ИИ-прораб</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-300">Считает через калькуляторы, сравнивает материалы и помогает собрать смету.</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-400">Помощник по расчётам</p>
+                  <h2 id="mikhalych-title" className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Михалыч</h2>
                 </div>
               </div>
-              <div className="my-5 space-y-3 text-sm">
-                <p className="max-w-[85%] rounded-2xl rounded-tl-md bg-white px-4 py-3 leading-relaxed text-slate-800">Опишите задачу обычными словами — я уточню размеры и соберу расчёт.</p>
-                <p className="ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-white/10 px-4 py-3 text-slate-200 ring-1 ring-white/10">Посчитай ремонт ванной 5 м² и кухни 10 м² под ключ</p>
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Опишите ремонт обычными словами. Он уточнит размеры, запустит нужные калькуляторы и соберёт материалы в одну смету.
+              </p>
+              <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/70 dark:text-slate-300 dark:ring-slate-700">
+                Например: «Посчитай ванную 5 м² под плитку»
               </div>
-              <Link href="/mikhalych/" className="btn-primary relative mt-auto min-h-12 w-full text-base">Поручить задачу</Link>
+              <Link href="/mikhalych/" className="btn-primary relative mt-5 min-h-11 w-full">Открыть Михалыча</Link>
             </div>
           </section>
         </div>
 
-        <section className="mt-4 grid overflow-hidden rounded-2xl border border-slate-200 bg-white sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-700 dark:bg-slate-900" aria-label="Преимущества Мастерка">
+        <section className="theme-surface mt-6 grid overflow-hidden rounded-2xl border border-slate-200 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-700" aria-label="Преимущества Мастерка">
           {TRUST_ITEMS.map((item, index) => (
             <div key={item.title} className={`flex items-center gap-3 px-5 py-4 ${index > 0 ? "border-t border-slate-100 sm:border-l sm:border-t-0 dark:border-slate-800" : ""} ${index === 2 ? "sm:border-t lg:border-t-0" : ""}`}>
               <CategoryIcon icon={item.icon} size={25} color="currentColor" className="shrink-0 text-slate-800 dark:text-slate-200" />
@@ -232,7 +241,7 @@ export default async function HomePage() {
           ))}
         </section>
 
-        <section className="mt-10" aria-labelledby="tools-title">
+        <section className="mt-14" aria-labelledby="tools-title">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h2 id="tools-title" className="text-xl font-bold text-slate-950 dark:text-white">Полезные инструменты</h2>

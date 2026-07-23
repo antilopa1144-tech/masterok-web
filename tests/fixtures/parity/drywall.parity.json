@@ -1,23 +1,36 @@
 {
   "calculator_id": "drywall",
-  "formula_version": "drywall-canonical-v2",
-  "generated_at": "2026-07-23T09:02:40.166Z",
+  "formula_version": "drywall-canonical-v3",
+  "generated_at": "2026-07-23T20:53:49.021Z",
   "cases": [
     {
       "id": "defaults",
       "description": "Default inputs for drywall",
       "inputs": {
         "workType": 0,
+        "inputMode": 0,
+        "wallScope": 0,
         "length": 5,
+        "roomLength": 5,
+        "roomWidth": 4,
         "height": 2.7,
+        "area": 20,
+        "openingsArea": 0,
         "layers": 1,
         "sheetSize": 0,
         "profileStep": 0.6
       },
       "expected_totals": {
         "area": 13.5,
+        "grossArea": 13.5,
+        "openingsArea": 0,
+        "inputMode": 0,
+        "wallScope": 0,
         "workType": 0,
         "length": 5,
+        "roomLength": 5,
+        "roomWidth": 4,
+        "wallRun": 5,
         "height": 2.7,
         "layers": 1,
         "sheetSize": 0,

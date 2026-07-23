@@ -70,16 +70,26 @@ interface ReadyMixVariant {
 
 const READY_MIX: Record<number, ReadyMixVariant> = {
   [READY_MIX_PESKOBETON_M300]: {
-    name: "Пескобетон М300 для стяжки (мешки 40 кг)",
+    name: "Пескобетон М300 для стяжки",
     massFactor: 1.0,
   },
   [READY_MIX_UNIVERSAL_M200]: {
-    name: "Готовая цементно-песчаная смесь М200 для стяжки (мешки 40 кг)",
+    name: "Готовая цементно-песчаная смесь М200 для стяжки",
     massFactor: 1.0,
   },
 };
 
-const BAG_40 = 40;
+const CEMENT_BAG_WEIGHTS = [25, 40, 50] as const;
+const READY_MIX_BAG_WEIGHTS = [20, 25, 30, 40, 50] as const;
+
+function resolvePackageWeight(
+  value: number | undefined,
+  allowed: readonly number[],
+  fallback: number,
+): number {
+  const rounded = Math.round(value ?? fallback);
+  return allowed.includes(rounded) ? rounded : fallback;
+}
 
 /**
  * Применяет выбор марки цемента/пропорции (ручной замес) или номенклатуры
@@ -87,7 +97,14 @@ const BAG_40 = 40;
  */
 export function applyScreedMix(
   result: CalculatorResult,
-  inputs: { screedType?: number; cementGrade?: number; mixProportion?: number; readyMix?: number },
+  inputs: {
+    screedType?: number;
+    cementGrade?: number;
+    mixProportion?: number;
+    readyMix?: number;
+    cementBagWeight?: number;
+    readyBagWeight?: number;
+  },
 ): CalculatorResult {
   const screedType = Math.round(inputs.screedType ?? 0);
 
@@ -97,30 +114,31 @@ export function applyScreedMix(
   if (screedType === 1) {
     return applyReadyMix(result, inputs);
   }
-  return result; // полусухая — без доп. параметров
+  return applySemiDry(result);
 }
 
 function applyManualMix(
   result: CalculatorResult,
-  inputs: { cementGrade?: number; mixProportion?: number },
+  inputs: { cementGrade?: number; mixProportion?: number; cementBagWeight?: number },
 ): CalculatorResult {
   const variant = getManualMixVariant(
     Math.round(inputs.cementGrade ?? CEMENT_GRADE_M400),
     Math.round(inputs.mixProportion ?? PROPORTION_1_3),
   );
 
+  const bagWeight = resolvePackageWeight(inputs.cementBagWeight, CEMENT_BAG_WEIGHTS, 50);
   const materials = result.materials.map((m): MaterialResult => {
     if (m.name.startsWith("Цемент")) {
       const baseKg = m.quantity;
       const adjustedKg = baseKg * variant.cementFactor;
-      const bags = Math.ceil(adjustedKg / 50);
+      const bags = Math.ceil(adjustedKg / bagWeight);
       return {
         ...m,
-        name: `Цемент ${variant.cementLabel} (мешки 50 кг)`,
+        name: `Цемент ${variant.cementLabel} (мешки ${bagWeight} кг)`,
         quantity: round3(adjustedKg),
-        withReserve: bags * 50,
-        purchaseQty: bags * 50,
-        packageInfo: { count: bags, size: 50, packageUnit: "мешков" },
+        withReserve: bags * bagWeight,
+        purchaseQty: bags * bagWeight,
+        packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
         subtitle: `Раствор ${variant.mortarGrade} · пропорция ${inputs.mixProportion === PROPORTION_1_4 ? "1:4" : "1:3"}`,
       };
     }
@@ -130,7 +148,7 @@ function applyManualMix(
         ...m,
         quantity: round3(Math.ceil(adjustedTons * 10) / 10),
         withReserve: round3(Math.ceil(adjustedTons * 10) / 10),
-        purchaseQty: Math.ceil(adjustedTons),
+        purchaseQty: round3(Math.ceil(adjustedTons * 10) / 10),
       };
     }
     return m;
@@ -139,34 +157,37 @@ function applyManualMix(
   return {
     ...result,
     materials,
+    scenarios: repackageScenarios(result, bagWeight, variant.cementFactor, "cement"),
     totals: {
       ...result.totals,
       cementGrade: inputs.cementGrade ?? CEMENT_GRADE_M400,
       mixProportion: inputs.mixProportion ?? PROPORTION_1_3,
+      cementBagWeight: bagWeight,
     },
   };
 }
 
 function applyReadyMix(
   result: CalculatorResult,
-  inputs: { readyMix?: number },
+  inputs: { readyMix?: number; readyBagWeight?: number },
 ): CalculatorResult {
   const choice = Math.round(inputs.readyMix ?? READY_MIX_PESKOBETON_M300);
   const variant = READY_MIX[choice] ?? READY_MIX[READY_MIX_PESKOBETON_M300];
+  const bagWeight = resolvePackageWeight(inputs.readyBagWeight, READY_MIX_BAG_WEIGHTS, 40);
 
   const materials = result.materials.map((m): MaterialResult => {
     if (m.name.startsWith("Готовая цементно-песчаная смесь") || m.name.startsWith("Пескобетон")) {
       const baseKg = m.quantity * variant.massFactor;
-      const bags = Math.ceil(baseKg / BAG_40);
+      const bags = Math.ceil(baseKg / bagWeight);
       return {
         ...m,
-        name: variant.name,
+        name: `${variant.name} (мешки ${bagWeight} кг)`,
         subtitle:
           "Перед покупкой сверьте расход на 10 мм слоя и допустимую толщину нанесения на этикетке выбранной смеси",
         quantity: round3(baseKg),
-        withReserve: bags * BAG_40,
-        purchaseQty: bags * BAG_40,
-        packageInfo: { count: bags, size: BAG_40, packageUnit: "мешков" },
+        withReserve: bags * bagWeight,
+        purchaseQty: bags * bagWeight,
+        packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
       };
     }
     return m;
@@ -175,8 +196,71 @@ function applyReadyMix(
   return {
     ...result,
     materials,
-    totals: { ...result.totals, readyMix: choice },
+    scenarios: repackageScenarios(result, bagWeight, variant.massFactor, "ready-mix"),
+    totals: { ...result.totals, readyMix: choice, readyBagWeight: bagWeight },
   };
+}
+
+function applySemiDry(result: CalculatorResult): CalculatorResult {
+  const materials = result.materials.map((m): MaterialResult => {
+    if (!m.name.includes("полусухой стяжки")) return m;
+    const purchaseKg = Math.ceil(m.quantity / 10) * 10;
+    const withoutPackage = { ...m };
+    delete withoutPackage.packageInfo;
+    return {
+      ...withoutPackage,
+      name: "Сухие компоненты для полусухой стяжки — ориентировочная масса",
+      subtitle: "Обычно цемент, песок и фибру привозит и дозирует бригада; перед заказом согласуйте её рецептуру и подачу смеси",
+      withReserve: purchaseKg,
+      purchaseQty: purchaseKg,
+    };
+  });
+
+  return {
+    ...result,
+    materials,
+    scenarios: repackageScenarios(result, 1, 1, "semidry-estimate"),
+    totals: {
+      ...result.totals,
+      semidryEstimatedKg: result.totals.cpsKg ?? 0,
+    },
+    practicalNotes: [
+      ...(result.practicalNotes ?? []),
+      "Для механизированной полусухой стяжки не покупайте условные мешки по расчёту: сначала получите от бригады состав смеси и условия поставки",
+    ],
+  };
+}
+
+function repackageScenarios(
+  result: CalculatorResult,
+  packageSize: number,
+  exactFactor: number,
+  label: string,
+): CalculatorResult["scenarios"] {
+  if (!result.scenarios) return undefined;
+  return Object.fromEntries(
+    Object.entries(result.scenarios).map(([scenario, value]) => {
+      const exactNeed = round3(value.exact_need * exactFactor);
+      const packages = Math.ceil(exactNeed / packageSize);
+      const purchase = round3(packages * packageSize);
+      return [scenario, {
+        ...value,
+        exact_need: exactNeed,
+        purchase_quantity: purchase,
+        leftover: round3(purchase - exactNeed),
+        assumptions: [
+          ...value.assumptions.filter((item) => !item.startsWith("packaging:")),
+          `packaging:${label}-${packageSize}kg`,
+        ],
+        buy_plan: {
+          package_label: `${label}-${packageSize}kg`,
+          package_size: packageSize,
+          packages_count: packages,
+          unit: "кг",
+        },
+      }];
+    }),
+  ) as CalculatorResult["scenarios"];
 }
 
 function round3(n: number): number {

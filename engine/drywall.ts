@@ -13,8 +13,14 @@ import { getInputDefault } from "./spec-helpers";
 
 interface DrywallInputs {
   workType?: number;
+  inputMode?: number;
+  wallScope?: number;
   length?: number;
+  roomLength?: number;
+  roomWidth?: number;
   height?: number;
+  area?: number;
+  openingsArea?: number;
   layers?: number;
   sheetSize?: number;
   profileStep?: number;
@@ -81,6 +87,74 @@ function resolveSheetSize(spec: DrywallCanonicalSpec, inputs: DrywallInputs): nu
 function resolveProfileStep(spec: DrywallCanonicalSpec, inputs: DrywallInputs): number {
   const raw = inputs.profileStep ?? getInputDefault(spec, "profileStep", 0.6);
   return raw <= 0.4 ? 0.4 : 0.6;
+}
+
+interface DrywallGeometry {
+  inputMode: number;
+  wallScope: number;
+  area: number;
+  grossArea: number;
+  openingsArea: number;
+  length: number;
+  roomLength: number;
+  roomWidth: number;
+  segments: number[];
+}
+
+/**
+ * Геометрия хранится в движке, а не в форме. Четыре стены считаются
+ * отдельными отрезками: у каждой есть крайние стойки, поэтому сводить весь
+ * периметр в одну длинную стену нельзя.
+ */
+function resolveGeometry(
+  spec: DrywallCanonicalSpec,
+  inputs: DrywallInputs,
+  workType: number,
+  height: number,
+): DrywallGeometry {
+  const inputMode = Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0)) === 1 ? 1 : 0;
+  const wallScope = workType === 1
+    && Math.round(inputs.wallScope ?? getInputDefault(spec, "wallScope", 0)) === 1
+    ? 1
+    : 0;
+  const length = resolveLength(spec, inputs);
+  const roomLength = Math.max(0.5, Math.min(30, inputs.roomLength ?? getInputDefault(spec, "roomLength", 5)));
+  const roomWidth = Math.max(0.5, Math.min(30, inputs.roomWidth ?? getInputDefault(spec, "roomWidth", 4)));
+
+  if (inputMode === 1) {
+    const area = Math.max(0.1, Math.min(1000, inputs.area ?? getInputDefault(spec, "area", 20)));
+    const estimatedRun = area / height;
+    return {
+      inputMode,
+      wallScope: 0,
+      area: roundDisplay(area, 3),
+      grossArea: roundDisplay(area, 3),
+      openingsArea: 0,
+      length: roundDisplay(estimatedRun, 3),
+      roomLength,
+      roomWidth,
+      segments: [estimatedRun],
+    };
+  }
+
+  const segments = wallScope === 1
+    ? [roomLength, roomWidth, roomLength, roomWidth]
+    : [length];
+  const grossArea = segments.reduce((sum, segment) => sum + segment * height, 0);
+  const requestedOpenings = Math.max(0, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 0));
+  const openingsArea = Math.min(requestedOpenings, Math.max(0, grossArea - 0.1));
+
+  return {
+    inputMode,
+    wallScope,
+    area: roundDisplay(Math.max(0.1, grossArea - openingsArea), 3),
+    grossArea: roundDisplay(grossArea, 3),
+    openingsArea: roundDisplay(openingsArea, 3),
+    length,
+    roomLength,
+    roomWidth,
+    segments,
+  };
 }
 
 function buildMaterials(
@@ -268,13 +342,14 @@ export function computeCanonicalDrywall(
   const SCREWS_LB_PACKAGE_PCS = dwMr(spec, "screws_lb_package_pcs", DW_DEFAULTS.screws_lb_package_pcs);
 
   const workType = resolveWorkType(spec, inputs);
-  const length = resolveLength(spec, inputs);
   const height = resolveHeight(spec, inputs);
   const layers = resolveLayers(spec, inputs);
   const sheetSize = resolveSheetSize(spec, inputs);
   const profileStep = resolveProfileStep(spec, inputs);
+  const geometry = resolveGeometry(spec, inputs, workType, height);
+  const length = geometry.length;
 
-  const area = roundDisplay(length * height, 3);
+  const area = geometry.area;
   const sides = workType === 0 ? 2 : 1;
   const totalSheetArea = area * sides * layers;
 
@@ -285,13 +360,19 @@ export function computeCanonicalDrywall(
   const baseSheetsNeeded = Math.ceil(baseSheetsNeededRaw * accuracyMult);
 
   // Для перегородки направляющий профиль идёт по полу и потолку.
-  // У облицовки/потолка направляющий профиль замыкает периметр.
-  const pnPerimeter = workType === 0 ? 2 * length : 2 * (length + height);
+  // У облицовки каждая выбранная стена считается отдельной рамой.
+  const wallRun = geometry.segments.reduce((sum, segment) => sum + segment, 0);
+  const pnPerimeter = workType === 0
+    ? 2 * wallRun
+    : geometry.segments.reduce((sum, segment) => sum + 2 * (segment + height), 0);
   const pnLength = Math.ceil(pnPerimeter * PROFILE_RESERVE / PROFILE_LENGTH_M) * PROFILE_LENGTH_M;
   const pnPieces = pnLength / PROFILE_LENGTH_M;
 
-  // Profile PP (studs)
-  const ppCount = Math.ceil(length / profileStep) + 1;
+  // На каждом отрезке есть начальная и конечная стойка.
+  const ppCount = geometry.segments.reduce(
+    (sum, segment) => sum + Math.ceil(segment / profileStep) + 1,
+    0,
+  );
   const ppLength = ppCount * height * PROFILE_RESERVE;
   const ppPieces = Math.ceil(ppLength / PROFILE_LENGTH_M);
 
@@ -342,6 +423,8 @@ export function computeCanonicalDrywall(
       assumptions: [
         `formula_version:${spec.formula_version}`,
         `workType:${workType}`,
+        `inputMode:${geometry.inputMode}`,
+        `wallScope:${geometry.wallScope}`,
         `sheetSize:${sheetSize}`,
         `layers:${layers}`,
         `profileStep:${profileStep}`,
@@ -370,6 +453,12 @@ export function computeCanonicalDrywall(
   }
   if (layers === 2) {
     warnings.push("Второй слой гипсокартона монтируется со смещением 600 мм");
+  }
+  if (geometry.inputMode === 1) {
+    warnings.push("По готовой площади листы рассчитаны точно, а профили — ориентировочно: для точного каркаса выберите ввод по размерам");
+  }
+  if ((inputs.openingsArea ?? 0) > geometry.openingsArea) {
+    warnings.push("Площадь проёмов не может быть равна площади стен или превышать её — значение ограничено");
   }
 
   const practicalNotes: string[] = [];
@@ -405,8 +494,15 @@ export function computeCanonicalDrywall(
     ),
     totals: {
       area: area,
+      grossArea: geometry.grossArea,
+      openingsArea: geometry.openingsArea,
+      inputMode: geometry.inputMode,
+      wallScope: geometry.wallScope,
       workType: workType,
       length: roundDisplay(length, 3),
+      roomLength: roundDisplay(geometry.roomLength, 3),
+      roomWidth: roundDisplay(geometry.roomWidth, 3),
+      wallRun: roundDisplay(wallRun, 3),
       height: roundDisplay(height, 3),
       layers: layers,
       sheetSize: sheetSize,

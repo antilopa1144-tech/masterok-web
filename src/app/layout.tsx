@@ -20,7 +20,7 @@ import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCR
 // Карта тем дублирует src/lib/theme.ts: значение = тёмная ли тема.
 const THEME_INIT_SCRIPT = `(() => {
   try {
-    const themes = { light: 0, dark: 1, bronze: 0, emerald: 0, lavender: 0, ocean: 1, graphite: 1 };
+    const themes = { light: 0, dark: 1, bronze: 0, ocean: 1 };
     const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = Object.prototype.hasOwnProperty.call(themes, stored)

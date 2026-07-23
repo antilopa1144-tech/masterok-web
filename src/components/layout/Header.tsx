@@ -119,7 +119,7 @@ function ToolsDropdown({ link, pathname }: { link: HeaderNavLink; pathname: stri
       </Link>
 
       {open && (
-        <div className="absolute left-1/2 z-50 mt-1 w-[34rem] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+        <div className="theme-surface absolute left-1/2 z-50 mt-1 w-[34rem] -translate-x-1/2 rounded-2xl border border-slate-200 p-3 shadow-lg dark:border-slate-700">
           <div className="grid grid-cols-2 gap-1">
             {TOOL_CARDS.map((tool) => (
               <Link
@@ -175,7 +175,7 @@ export default function Header() {
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 dark:bg-slate-900/95 dark:border-slate-800">
+    <header className="theme-header sticky top-0 z-50 border-b border-slate-200 backdrop-blur-lg dark:border-slate-800">
       <div className="page-container-wide">
         <div className="flex items-center justify-between h-16 gap-2">
           <Link
@@ -271,7 +271,7 @@ export default function Header() {
 
       {menuOpen && (
         <nav
-          className="lg:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 max-h-[min(85vh,640px)] overflow-y-auto"
+          className="theme-surface lg:hidden max-h-[min(85vh,640px)] overflow-y-auto border-t border-slate-200 dark:border-slate-800"
           aria-label={UI_TEXT.mobileNavigation}
         >
           <div className="page-container py-3 space-y-1">

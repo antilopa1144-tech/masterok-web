@@ -125,7 +125,7 @@ export function ThemeToggle() {
         <div
           role="menu"
           aria-label="Тема оформления"
-          className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+          className="theme-surface absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 py-1.5 shadow-lg dark:border-slate-700"
         >
           <button
             role="menuitemradio"

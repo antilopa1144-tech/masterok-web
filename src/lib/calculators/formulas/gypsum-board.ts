@@ -11,10 +11,10 @@ export const gypsumBoardDef: CalculatorDefinition = {
   h1: "Калькулятор гипсокартона на потолок — расчёт листов, профилей и крепежа",
   description: "Рассчитайте листы гипсокартона, потолочные профили 60×27, направляющие профили 27×28, подвесы, дюбели и саморезы.",
   metaTitle: withSiteMetaTitle("Калькулятор гипсокартона на потолок"),
-  metaDescription: "Бесплатный калькулятор гипсокартона: рассчитайте листы, потолочные и направляющие профили, подвесы и саморезы для потолка или перегородки.",
+  metaDescription: "Бесплатный калькулятор потолка из гипсокартона: рассчитайте листы, потолочные и направляющие профили, подвесы и саморезы.",
   category: "walls",
   categorySlug: "steny",
-  tags: ["гипсокартон", "ГКЛ", "Knauf", "профиль ПП 60", "перегородка", "обшивка стен"],
+  tags: ["гипсокартон", "ГКЛ", "Knauf", "профиль ПП 60", "потолок"],
   popularity: 88,
   complexity: 2,
   fields: [
@@ -27,17 +27,6 @@ export const gypsumBoardDef: CalculatorDefinition = {
       max: 1000,
       step: 1,
       defaultValue: 20,
-    },
-    {
-      key: "constructionType",
-      label: "Тип конструкции",
-      type: "select",
-      defaultValue: 0,
-      options: [
-        { value: 0, label: "Обшивка стены (на профилях)" },
-        { value: 1, label: "Перегородка (двусторонняя)" },
-        { value: 2, label: "Потолок из гипсокартона" },
-      ],
     },
     {
       key: "layers",
@@ -74,7 +63,13 @@ export const gypsumBoardDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = gypsumboardSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalGypsumBoard(spec, inputs, factorTable);
+    // Этот URL и SEO-страница посвящены потолку. Явное значение сохраняем
+    // для тестов/старых ссылок, а обычный ввод формы всегда идёт как потолок.
+    const canonical = computeCanonicalGypsumBoard(
+      spec,
+      { ...inputs, constructionType: inputs.constructionType ?? 2 },
+      factorTable,
+    );
 
     return {
       materials: canonical.materials,
@@ -98,8 +93,7 @@ export const gypsumBoardDef: CalculatorDefinition = {
 Стандарт Knauf: саморезы с шагом 250 мм по краям, 300 мм в середине.
   `,
   howToUse: [
-    "Введите площадь поверхности",
-    "Выберите тип конструкции",
+    "Введите площадь потолка",
     "Укажите количество слоёв и тип гипсокартона",
     "Задайте шаг профилей",
     "Нажмите «Рассчитать»",
