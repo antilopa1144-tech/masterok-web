@@ -33,15 +33,25 @@ describe("Калькулятор ленточного фундамента", () 
       expect(concrete!.purchaseQty).toBeGreaterThan(16);
     });
 
+    it("бетон к покупке округляется до 0,1 м³, а не до целого куба", () => {
+      const concrete = findMaterial(result, "Бетон М300");
+      expect((concrete?.purchaseQty ?? 0) * 10).toBeCloseTo(
+        Math.round((concrete?.purchaseQty ?? 0) * 10),
+        8,
+      );
+      expect(concrete?.purchaseQty).toBeLessThan(Math.ceil(concrete!.quantity));
+    });
+
     it("арматура продольная присутствует", () => {
       // Engine: "Арматура продольная ∅XX мм"
       const rebar = findMaterial(result, "продольная");
       expect(rebar).toBeDefined();
+      expect(rebar?.subtitle).toContain("прутков по 11,7 м");
     });
 
     it("арматура поперечная (хомуты) присутствует", () => {
       // Engine: "Арматура поперечная (хомуты)"
-      expect(findMaterial(result, "хомуты")).toBeDefined();
+      expect(findMaterial(result, "Хомуты")).toBeDefined();
     });
 
     it("вязальная проволока присутствует", () => {

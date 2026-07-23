@@ -104,6 +104,18 @@ describe("Калькулятор стяжки пола", () => {
     it("фиброволокно ПП присутствует", () => {
       expect(findMaterial(result, "Фиброволокно")).toBeDefined();
     });
+
+    it("фиброволокно считается по объёму, а не по площади", () => {
+      const fiber = findMaterial(result, "Фиброволокно");
+      // 1,07 м³ × 0,9 кг/м³ = 0,963 кг → 2 пакета по 0,6 кг.
+      expect(fiber?.quantity).toBeCloseTo(0.963, 3);
+      expect(fiber?.purchaseQty).toBe(1.2);
+      expect(fiber?.packageInfo).toEqual({
+        count: 2,
+        size: 0.6,
+        packageUnit: "пакетов",
+      });
+    });
   });
 
   describe("Ручной замес — марка цемента и пропорция", () => {

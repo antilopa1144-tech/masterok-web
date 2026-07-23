@@ -69,8 +69,14 @@ interface ReadyMixVariant {
 }
 
 const READY_MIX: Record<number, ReadyMixVariant> = {
-  [READY_MIX_PESKOBETON_M300]: { name: "Пескобетон М300 (мешки 40 кг)", massFactor: 1.0 },
-  [READY_MIX_UNIVERSAL_M200]: { name: "Готовая цементно-песчаная смесь М200 (мешки 40 кг)", massFactor: 1.0 },
+  [READY_MIX_PESKOBETON_M300]: {
+    name: "Пескобетон М300 для стяжки (мешки 40 кг)",
+    massFactor: 1.0,
+  },
+  [READY_MIX_UNIVERSAL_M200]: {
+    name: "Готовая цементно-песчаная смесь М200 для стяжки (мешки 40 кг)",
+    massFactor: 1.0,
+  },
 };
 
 const BAG_40 = 40;
@@ -155,6 +161,8 @@ function applyReadyMix(
       return {
         ...m,
         name: variant.name,
+        subtitle:
+          "Перед покупкой сверьте расход на 10 мм слоя и допустимую толщину нанесения на этикетке выбранной смеси",
         quantity: round3(baseKg),
         withReserve: bags * BAG_40,
         purchaseQty: bags * BAG_40,

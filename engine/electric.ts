@@ -31,8 +31,12 @@ const OUTLETS_PER_M2 = 0.6;
 const OUTLETS_PER_ROOM = 2;           // additional
 const SWITCHES_BASE = 2;              // additional beyond rooms
 const CABLE_SPOOL_M = 50;
+const CABLE_CHANNEL_PIECE_M = 2;
 const SOCKET_BOX_RESERVE = 1.1;
 const AC_GROUPS_DIVISOR = 2;
+const RCD_MODULES = 2;
+const PANEL_SPARE_MODULES = 2;
+const GYPSUM_BAG_KG = 5;
 
 /* ─── factor defaults ─── */
 
@@ -71,6 +75,7 @@ export function computeCanonicalElectric(
   const acGroups = Math.ceil(roomsCount / AC_GROUPS_DIVISOR);
   const breakersCount = lightingGroups + outletGroups + acGroups + (hasKitchen ? 1 : 0);
   const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0) + 1;
+  const panelModules = breakersCount + uzoCount * RCD_MODULES + PANEL_SPARE_MODULES;
 
   /* ─── cable lengths ─── */
   // Множитель типа проводки: открытая требует на ~50% больше кабеля из-за обхода углов и крепления
@@ -89,33 +94,40 @@ export function computeCanonicalElectric(
   /* ─── packaging ─── */
   const cable15spools = Math.ceil(cable15length / CABLE_SPOOL_M);
   const cable25spools = Math.ceil(cable25length / CABLE_SPOOL_M);
-  const conduitPacks = Math.ceil(conduitLength / CABLE_SPOOL_M);
+  const conduitPackageSize = wiringType === 1 ? CABLE_CHANNEL_PIECE_M : CABLE_SPOOL_M;
+  const conduitPacks = Math.ceil(conduitLength / conduitPackageSize);
   const socketBoxes = Math.ceil((outletsCount + switchesCount) * SOCKET_BOX_RESERVE);
   const gypsumKg = Math.ceil((outletsCount + switchesCount) / 5);
+  const gypsumBags = Math.ceil(gypsumKg / GYPSUM_BAG_KG);
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Медный кабель ВВГнг 3×1,5 мм², не распространяющий горение",
+      name: "Медный кабель ВВГнг(А)-LS 3×1,5 мм²",
+      subtitle: "Для линий освещения; три жилы: фаза, рабочий ноль и защитное заземление",
       quantity: roundDisplay(cable15length, 1),
       unit: "м",
       withReserve: roundDisplay(cable15length, 1),
       purchaseQty: cable15spools * CABLE_SPOOL_M,
+      packageInfo: { count: cable15spools, size: CABLE_SPOOL_M, packageUnit: "бухт" },
       category: "Кабель",
     },
     {
-      name: "Медный кабель ВВГнг 3×2,5 мм², не распространяющий горение",
+      name: "Медный кабель ВВГнг(А)-LS 3×2,5 мм²",
+      subtitle: "Для розеточных групп; три жилы: фаза, рабочий ноль и защитное заземление",
       quantity: roundDisplay(cable25length, 1),
       unit: "м",
       withReserve: roundDisplay(cable25length, 1),
       purchaseQty: cable25spools * CABLE_SPOOL_M,
+      packageInfo: { count: cable25spools, size: CABLE_SPOOL_M, packageUnit: "бухт" },
       category: "Кабель",
     },
   ];
 
   if (hasKitchen && cable6length > 0) {
     materials.push({
-      name: "Медный кабель ВВГнг 3×6 мм², не распространяющий горение",
+      name: "Медный кабель ВВГнг(А)-LS 3×6 мм²",
+      subtitle: "Ориентир для отдельной линии однофазной электроплиты; сечение проверяют по мощности и длине линии",
       quantity: roundDisplay(cable6length, 1),
       unit: "м",
       withReserve: roundDisplay(cable6length, 1),
@@ -126,24 +138,61 @@ export function computeCanonicalElectric(
 
   materials.push(
     {
-      name: "Щиток (модулей)",
-      quantity: breakersCount + uzoCount + 2,
-      unit: "модулей",
-      withReserve: breakersCount + uzoCount + 2,
-      purchaseQty: breakersCount + uzoCount + 2,
-      packageInfo: { count: 1, size: breakersCount + uzoCount + 2, packageUnit: "щитков" },
+      name: `Распределительный щит не менее чем на ${panelModules} модулей`,
+      subtitle:
+        `Учтено: ${breakersCount} однополюсных автоматов, ${uzoCount} двухмодульных устройств защиты и ${PANEL_SPARE_MODULES} свободных модуля`,
+      quantity: 1,
+      unit: "шт",
+      withReserve: 1,
+      purchaseQty: 1,
       category: "Щиток",
     },
     {
-      name: "Автоматы",
-      quantity: breakersCount,
+      name: "Автоматический выключатель 1P, характеристика C, 10 А — освещение",
+      subtitle: "Один автомат на расчётную группу освещения; окончательный номинал проверяют по кабелю и нагрузке",
+      quantity: lightingGroups,
       unit: "шт",
-      withReserve: breakersCount,
-      purchaseQty: breakersCount,
+      withReserve: lightingGroups,
+      purchaseQty: lightingGroups,
       category: "Защита",
     },
     {
-      name: "Устройства защитного отключения (УЗО) / дифференциальные автоматы",
+      name: "Автоматический выключатель 1P, характеристика C, 16 А — розетки",
+      subtitle: "Один автомат на расчётную розеточную группу; номинал должен соответствовать сечению кабеля",
+      quantity: outletGroups,
+      unit: "шт",
+      withReserve: outletGroups,
+      purchaseQty: outletGroups,
+      category: "Защита",
+    },
+    {
+      name: "Автоматические выключатели для кондиционеров и отдельных потребителей",
+      subtitle: "Номинал и характеристику выбирают по паспорту оборудования, мощности и длине линии",
+      quantity: acGroups,
+      unit: "шт",
+      withReserve: acGroups,
+      purchaseQty: acGroups,
+      category: "Защита",
+    },
+  );
+
+  if (hasKitchen) {
+    materials.push({
+      name: "Автоматический выключатель 1P, характеристика C, 32 А — электроплита",
+      subtitle: "Ориентир для однофазной линии 220 В; для трёхфазной плиты схема и аппарат защиты будут другими",
+      quantity: 1,
+      unit: "шт",
+      withReserve: 1,
+      purchaseQty: 1,
+      category: "Защита",
+    });
+  }
+
+  materials.push(
+    {
+      name: "Устройство защитного отключения (УЗО), 2P, тип A, 30 мА",
+      subtitle:
+        "Номинальный ток выбирают не ниже тока вышестоящего автомата; для отдельных влажных зон проектом может предусматриваться 10 мА",
       quantity: uzoCount,
       unit: "шт",
       withReserve: uzoCount,
@@ -151,7 +200,8 @@ export function computeCanonicalElectric(
       category: "Защита",
     },
     {
-      name: "Розетки",
+      name: "Розетки с заземляющим контактом, 16 А",
+      subtitle: "Исполнение и степень защиты выбирают по помещению; для влажных зон требуется защищённое исполнение",
       quantity: outletsCount,
       unit: "шт",
       withReserve: outletsCount,
@@ -159,7 +209,8 @@ export function computeCanonicalElectric(
       category: "Установка",
     },
     {
-      name: "Выключатели",
+      name: "Выключатели освещения, 10 А",
+      subtitle: "Количество клавиш и схема проходного управления выбираются по плану освещения",
       quantity: switchesCount,
       unit: "шт",
       withReserve: switchesCount,
@@ -167,7 +218,8 @@ export function computeCanonicalElectric(
       category: "Установка",
     },
     {
-      name: "Подрозетники",
+      name: "Подрозетники ∅68 мм, глубина 45–60 мм",
+      subtitle: "Выберите исполнение под материал стены: бетон/кирпич или полые перегородки",
       quantity: socketBoxes,
       unit: "шт",
       withReserve: socketBoxes,
@@ -175,19 +227,33 @@ export function computeCanonicalElectric(
       category: "Установка",
     },
     {
-      name: "Гофра/кабель-канал",
+      name:
+        wiringType === 1
+          ? "Кабель-канал ПВХ с крышкой"
+          : "Гофрированная ПВХ-труба для кабеля с протяжкой, ∅16–20 мм",
+      subtitle:
+        wiringType === 1
+          ? "Сечение канала выбирают по числу кабелей и допустимому заполнению; расчёт выполнен отрезками по 2 м"
+          : "Для одиночных линий обычно используют 16 мм, для толстого кабеля и нескольких линий — 20 мм; расчёт выполнен бухтами по 50 м",
       quantity: conduitLength,
       unit: "м",
       withReserve: conduitLength,
-      purchaseQty: conduitPacks * CABLE_SPOOL_M,
+      purchaseQty: conduitPacks * conduitPackageSize,
+      packageInfo: {
+        count: conduitPacks,
+        size: conduitPackageSize,
+        packageUnit: wiringType === 1 ? "отрезков" : "бухт",
+      },
       category: "Монтаж",
     },
     {
-      name: "Гипс/алебастр",
+      name: `Гипс монтажный (алебастр), мешок ${GYPSUM_BAG_KG} кг`,
+      subtitle: "Для фиксации подрозетников и локальной заделки штроб; не использовать как основную штукатурную смесь",
       quantity: gypsumKg,
       unit: "кг",
       withReserve: gypsumKg,
-      purchaseQty: gypsumKg,
+      purchaseQty: gypsumBags * GYPSUM_BAG_KG,
+      packageInfo: { count: gypsumBags, size: GYPSUM_BAG_KG, packageUnit: "мешков" },
       category: "Монтаж",
     },
   );
@@ -232,17 +298,18 @@ export function computeCanonicalElectric(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (apartmentArea > spec.warnings_rules.three_phase_area_threshold) {
-    warnings.push("Площадь более 100 м² — рекомендуется ввод 380В (3 фазы)");
+    warnings.push("Площадь более 100 м² — рассмотрите трёхфазный ввод 380 В; решение принимает проектировщик по выделенной мощности");
   }
   if (hasKitchen) {
-    warnings.push("Кухня: кабель 3×6 мм², автомат 32 А, устройство защитного отключения (УЗО) 40 А / 30 мА");
+    warnings.push("Электроплита: кабель 3×6 мм² и автомат 32 А — ориентир для однофазной линии; проверьте мощность по паспорту плиты");
   }
   warnings.push("Все розетки в ванной и кухне — через устройство защитного отключения (УЗО) на 10–30 мА");
+  warnings.push("Это предварительная ведомость. Сечения кабелей, номиналы защиты и схему щита должен проверить электропроектировщик");
 
 
   const practicalNotes: string[] = [];
   if (apartmentArea > 100) {
-    practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод (380В), на однофазном будете постоянно выбивать автоматы`);
+    practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод 380 В, если выделенной однофазной мощности недостаточно`);
   }
   practicalNotes.push("Каждая розеточная группа — через своё устройство защитного отключения (УЗО) на 30 мА. Ванная — отдельное УЗО на 10 мА");
 
@@ -262,6 +329,7 @@ export function computeCanonicalElectric(
       acGroups,
       breakersCount,
       uzoCount,
+      panelModules,
       cable15length: roundDisplay(cable15length, 1),
       cable25length: roundDisplay(cable25length, 1),
       cable6length: roundDisplay(cable6length, 1),
@@ -273,6 +341,7 @@ export function computeCanonicalElectric(
       conduitPacks,
       socketBoxes,
       gypsumKg,
+      gypsumBags,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,

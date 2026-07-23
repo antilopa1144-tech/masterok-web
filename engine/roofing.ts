@@ -107,6 +107,8 @@ export function computeCanonicalRoofing(
 
     materials.push({
       name: `${ROOFING_TYPE_LABELS[0]} (${sheetWidth}×${sheetLength} м)`,
+      subtitle:
+        `Указан полный размер листа; расчётная полезная ширина после бокового нахлёста — ${roundDisplay(effectiveWidth, 2)} м`,
       quantity: sheetsNeeded,
       unit: "листов",
       withReserve: sheetsNeeded,
@@ -114,7 +116,8 @@ export function computeCanonicalRoofing(
       category: "Основное",
     });
     materials.push({
-      name: "Коньковые элементы (2 м)",
+      name: "Коньковая планка для металлочерепицы, длина 2 м",
+      subtitle: "Профиль, цвет и уплотнитель подбирают в системе выбранного производителя",
       quantity: ridgePieces,
       unit: "шт",
       withReserve: ridgePieces,
@@ -122,7 +125,8 @@ export function computeCanonicalRoofing(
       category: "Доборные",
     });
     materials.push({
-      name: "Снегозадержатели",
+      name: "Снегозадержатели трубчатые, секции 3 м",
+      subtitle: "Количество рядов и расположение определяют по снеговому району, длине ската и проекту кровли",
       quantity: snowGuards,
       unit: "шт",
       withReserve: snowGuards,
@@ -140,7 +144,8 @@ export function computeCanonicalRoofing(
       category: "Крепёж",
     });
     materials.push({
-      name: "Гидроизоляция (рулон 75 м²)",
+      name: "Гидроизоляция кровельная — гидроветрозащитная мембрана, рулон 75 м²",
+      subtitle: "Для монтажа над утеплителем с вентиляционным зазором; тип мембраны выбирают по конструкции кровельного пирога",
       quantity: waterproofingM2,
       unit: "м²",
       withReserve: waterproofingRolls * 75,
@@ -149,17 +154,19 @@ export function computeCanonicalRoofing(
       category: "Изоляция",
     });
     materials.push({
-      name: "Обрешётка (доска 25×100, шаг ~350 мм)",
+      name: `Обрешётка — доска 25×100 мм, шаг ${roundDisplay(effectiveBattenStep * 1000, 0)} мм`,
+      subtitle: "Количество указано в погонных метрах, а не в досках; длину пиломатериала выберите у поставщика",
       quantity: battens,
-      unit: "шт",
+      unit: "пог. м",
       withReserve: battens,
       purchaseQty: battens,
       category: "Каркас",
     });
     materials.push({
-      name: "Контробрешётка (брусок 50×50)",
+      name: "Контробрешётка — брусок 50×50 мм",
+      subtitle: "Количество указано в погонных метрах; брусок формирует вентиляционный зазор над мембраной",
       quantity: counterBattens,
-      unit: "шт",
+      unit: "пог. м",
       withReserve: counterBattens,
       purchaseQty: counterBattens,
       category: "Каркас",
@@ -191,6 +198,7 @@ export function computeCanonicalRoofing(
 
     materials.push({
       name: `${ROOFING_TYPE_LABELS[1]} (упаковка 3 м²)`,
+      subtitle: "Площадь покрытия одной упаковки проверьте на этикетке выбранной коллекции",
       quantity: packs,
       unit: "упаковок",
       withReserve: packs,
@@ -199,6 +207,10 @@ export function computeCanonicalRoofing(
     });
     materials.push({
       name: "Подкладочный ковёр (рулон 15 м²)",
+      subtitle:
+        slope < 18
+          ? "Для сплошной укладки по всей площади скатов"
+          : "Для карнизов, конька, ендов и других критических зон",
       quantity: underlaymentRolls,
       unit: "рулонов",
       withReserve: underlaymentRolls,
@@ -206,7 +218,8 @@ export function computeCanonicalRoofing(
       category: "Изоляция",
     });
     materials.push({
-      name: "Мастика битумная (ведро 3 кг)",
+      name: "Мастика битумно-полимерная для гибкой черепицы (ведро 3 кг)",
+      subtitle: "Для ендов, примыканий и локальной приклейки; не наносить сплошным толстым слоем",
       quantity: roundDisplay(masticKg, 3),
       unit: "кг",
       withReserve: masticBuckets * 3,
@@ -225,7 +238,8 @@ export function computeCanonicalRoofing(
       category: "Крепёж",
     });
     materials.push({
-      name: "Коньково-карнизная черепица",
+      name: "Коньково-карнизная черепица — гонты",
+      subtitle: "Фактическое число гонтов в упаковке зависит от коллекции; сверьте с этикеткой производителя",
       quantity: ridgeShingles,
       unit: "шт",
       withReserve: ridgeShingles,
@@ -233,7 +247,9 @@ export function computeCanonicalRoofing(
       category: "Доборные",
     });
     materials.push({
-      name: "Ориентированно-стружечные плиты (ОСП, 1250×2500 мм = 3,125 м²)",
+      name: "Влагостойкая ориентированно-стружечная плита ОСП-3, 1250×2500×12 мм",
+      subtitle:
+        "Для сплошного основания; оставляйте зазор 3–5 мм, а допустимую толщину проверяйте по шагу опор и инструкции к черепице",
       quantity: osbSheets,
       unit: "листов",
       withReserve: osbSheets,
@@ -241,7 +257,8 @@ export function computeCanonicalRoofing(
       category: "Каркас",
     });
     materials.push({
-      name: "Вентиляционные выходы",
+      name: "Вентиляционные выходы — точечные кровельные аэраторы",
+      subtitle: "Производительность и количество уточняют по инструкции выбранной кровельной системы",
       quantity: ventOutputs,
       unit: "шт",
       withReserve: ventOutputs,
@@ -279,7 +296,30 @@ export function computeCanonicalRoofing(
     }
 
     const sheetsOrTiles = Math.ceil(realArea / unitSheetArea * complexityCoeff);
-    const ridgePieces = Math.ceil(ridgeLength / 0.33 * 1.05);
+    const ridgeSpec: Record<number, { name: string; usefulLengthM: number; subtitle: string }> = {
+      2: {
+        name: "Коньковая планка для профнастила, длина 2 м",
+        usefulLengthM: 2,
+        subtitle: "Профиль и цвет подбирают к выбранному профнастилу; учтён запас на стыки",
+      },
+      3: {
+        name: "Коньковый элемент для ондулина, полезная длина около 0,85 м",
+        usefulLengthM: 0.85,
+        subtitle: "Точную полезную длину и фирменный крепёж проверьте по выбранной системе",
+      },
+      4: {
+        name: "Оцинкованная коньковая планка для шифера, длина 2 м",
+        usefulLengthM: 2,
+        subtitle: "Форму планки и нахлёст уточняют по профилю волны",
+      },
+      5: {
+        name: "Коньковая керамическая черепица",
+        usefulLengthM: 0.4,
+        subtitle: "Ориентир 2,5 шт. на погонный метр; точный расход зависит от модели черепицы",
+      },
+    };
+    const selectedRidge = ridgeSpec[roofingType];
+    const ridgePieces = Math.ceil(ridgeLength / selectedRidge.usefulLengthM * 1.05);
 
     const fastenerRates = [10, 20, 4, 4];
     const fastenersNeeded = Math.ceil(realArea * fastenerRates[typeIdx]);
@@ -300,7 +340,8 @@ export function computeCanonicalRoofing(
       category: "Основное",
     });
     materials.push({
-      name: "Коньковые элементы (0.33 м)",
+      name: selectedRidge.name,
+      subtitle: selectedRidge.subtitle,
       quantity: ridgePieces,
       unit: "шт",
       withReserve: ridgePieces,
@@ -342,7 +383,8 @@ export function computeCanonicalRoofing(
       category: "Крепёж",
     });
     materials.push({
-      name: "Гидроизоляция (рулон 75 м²)",
+      name: "Гидроизоляция кровельная — гидроветрозащитная мембрана, рулон 75 м²",
+      subtitle: "Тип и паропроницаемость мембраны выбирают по конструкции кровельного пирога",
       quantity: Math.ceil(realArea * 1.15),
       unit: "м²",
       withReserve: waterproofingRolls * 75,

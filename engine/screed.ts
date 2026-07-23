@@ -39,7 +39,8 @@ const DEFAULTS = {
   water_per_m3: 200,
   cps_density_ready: 2000,
   cps_density_semidry: 1800,
-  fiber_kg_per_m2: 0.6,
+  fiber_kg_per_m3: 0.9,
+  fiber_package_kg: 0.6,
   mesh_margin: 1.15,
   film_margin: 1.1,
   damper_tape_reserve: 1.05,
@@ -124,6 +125,7 @@ function buildMaterialsType0(
   const materials: CanonicalMaterialResult[] = [
     {
       name: 'Цемент М400 (мешки 50 кг)',
+      subtitle: 'Портландцемент для раствора; итоговая марка и пропорция указаны в выбранном варианте расчёта',
       quantity: roundDisplay(cementKg, 3),
       unit: 'кг',
       withReserve: bags50Cement * 50,
@@ -132,7 +134,8 @@ function buildMaterialsType0(
       category: 'Основное',
     },
     {
-      name: 'Песок строительный',
+      name: 'Песок строительный мытый, средней или крупной фракции',
+      subtitle: 'Без глины, мусора и органических примесей; влажность влияет на количество воды при замесе',
       quantity: sandTons,
       unit: 'т',
       withReserve: sandTons,
@@ -140,7 +143,8 @@ function buildMaterialsType0(
       category: 'Основное',
     },
     {
-      name: 'Вода',
+      name: 'Чистая вода для затворения раствора',
+      subtitle: 'Фактическое количество корректируют по влажности песка и подвижности смеси',
       quantity: roundDisplay(waterL, 3),
       unit: 'л',
       withReserve: roundDisplay(waterL, 3),
@@ -148,7 +152,8 @@ function buildMaterialsType0(
       category: 'Основное',
     },
     {
-      name: 'Полиэтиленовая плёнка',
+      name: 'Полиэтиленовая плёнка толщиной 200 мкм',
+      subtitle: 'Разделительный слой с нахлёстом полотен; площадь уже включает запас',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -159,7 +164,8 @@ function buildMaterialsType0(
 
   if (meshArea > 0) {
     materials.push({
-      name: 'Сетка армирующая',
+      name: 'Сетка армирующая сварная 100×100×4 мм',
+      subtitle: 'Для распределения усадочных напряжений; не заменяет конструктивное армирование по проекту',
       quantity: meshArea,
       unit: 'м²',
       withReserve: meshArea,
@@ -170,7 +176,8 @@ function buildMaterialsType0(
 
   materials.push(
     {
-      name: 'Маячковый профиль',
+      name: 'Маячковый профиль 10 мм, длина 3 м',
+      subtitle: 'Количество ориентировочное; окончательный шаг выбирают под длину правила и геометрию помещения',
       quantity: beacons,
       unit: 'шт',
       withReserve: beacons,
@@ -178,7 +185,8 @@ function buildMaterialsType0(
       category: 'Разметка',
     },
     {
-      name: 'Демпферная лента',
+      name: 'Демпферная лента 8–10×100 мм',
+      subtitle: 'По периметру стен и колонн; ширина ленты должна быть выше готовой стяжки',
       quantity: damperTapeM,
       unit: 'м',
       withReserve: damperTapeM,
@@ -206,6 +214,7 @@ function buildMaterialsType1(
   const materials: CanonicalMaterialResult[] = [
     {
       name: 'Готовая цементно-песчаная смесь М150 (мешки 50 кг)',
+      subtitle: 'Проверьте допустимую толщину слоя и фактический расход на этикетке выбранной смеси',
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
@@ -214,7 +223,8 @@ function buildMaterialsType1(
       category: 'Основное',
     },
     {
-      name: 'Полиэтиленовая плёнка',
+      name: 'Полиэтиленовая плёнка толщиной 200 мкм',
+      subtitle: 'Разделительный слой с нахлёстом полотен; площадь уже включает запас',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -225,7 +235,8 @@ function buildMaterialsType1(
 
   if (meshArea > 0) {
     materials.push({
-      name: 'Сетка армирующая',
+      name: 'Сетка армирующая сварная 100×100×4 мм',
+      subtitle: 'Для распределения усадочных напряжений; не заменяет конструктивное армирование по проекту',
       quantity: meshArea,
       unit: 'м²',
       withReserve: meshArea,
@@ -236,7 +247,8 @@ function buildMaterialsType1(
 
   materials.push(
     {
-      name: 'Маячковый профиль',
+      name: 'Маячковый профиль 10 мм, длина 3 м',
+      subtitle: 'Количество ориентировочное; окончательный шаг выбирают под длину правила и геометрию помещения',
       quantity: beacons,
       unit: 'шт',
       withReserve: beacons,
@@ -244,7 +256,8 @@ function buildMaterialsType1(
       category: 'Разметка',
     },
     {
-      name: 'Демпферная лента',
+      name: 'Демпферная лента 8–10×100 мм',
+      subtitle: 'По периметру стен и колонн; ширина ленты должна быть выше готовой стяжки',
       quantity: damperTapeM,
       unit: 'м',
       withReserve: damperTapeM,
@@ -264,12 +277,14 @@ function buildMaterialsType2(
   cpsKg: number,
   bags50: number,
   fiberKg: number,
+  fiberPackageKg: number,
   filmArea: number,
   damperTapeM: number,
 ): CanonicalMaterialResult[] {
   return [
     {
       name: 'Цементно-песчаная смесь для полусухой стяжки (мешки 50 кг)',
+      subtitle: 'Ориентир для готовой сухой смеси; если бригада смешивает цемент и песок отдельно, используйте её рабочую рецептуру',
       quantity: roundDisplay(cpsKg, 3),
       unit: 'кг',
       withReserve: bags50 * 50,
@@ -278,15 +293,22 @@ function buildMaterialsType2(
       category: 'Основное',
     },
     {
-      name: 'Фиброволокно полипропиленовое',
+      name: `Фиброволокно полипропиленовое, 12 мм (пакеты ${fiberPackageKg} кг)`,
+      subtitle: 'Дозировка 0,9 кг на 1 м³ раствора; микрофибра уменьшает усадочные трещины, но не заменяет несущую арматуру',
       quantity: roundDisplay(fiberKg, 3),
       unit: 'кг',
-      withReserve: roundDisplay(fiberKg, 3),
-      purchaseQty: Math.ceil(fiberKg),
+      withReserve: roundDisplay(Math.ceil(fiberKg / fiberPackageKg) * fiberPackageKg, 3),
+      purchaseQty: roundDisplay(Math.ceil(fiberKg / fiberPackageKg) * fiberPackageKg, 3),
+      packageInfo: {
+        count: Math.ceil(fiberKg / fiberPackageKg),
+        size: fiberPackageKg,
+        packageUnit: "пакетов",
+      },
       category: 'Армирование',
     },
     {
-      name: 'Полиэтиленовая плёнка',
+      name: 'Полиэтиленовая плёнка толщиной 200 мкм',
+      subtitle: 'Разделительный слой с нахлёстом полотен; площадь уже включает запас',
       quantity: filmArea,
       unit: 'м²',
       withReserve: filmArea,
@@ -294,7 +316,8 @@ function buildMaterialsType2(
       category: 'Подготовка',
     },
     {
-      name: 'Демпферная лента',
+      name: 'Демпферная лента 8–10×100 мм',
+      subtitle: 'По периметру стен и колонн; ширина ленты должна быть выше готовой стяжки',
       quantity: damperTapeM,
       unit: 'м',
       withReserve: damperTapeM,
@@ -320,7 +343,8 @@ export function computeCanonicalScreed(
   const WATER_PER_M3 = mr(spec, "water_per_m3", DEFAULTS.water_per_m3);
   const CPS_DENSITY_READY = mr(spec, "cps_density_ready", DEFAULTS.cps_density_ready);
   const CPS_DENSITY_SEMIDRY = mr(spec, "cps_density_semidry", DEFAULTS.cps_density_semidry);
-  const FIBER_KG_PER_M2 = mr(spec, "fiber_kg_per_m2", DEFAULTS.fiber_kg_per_m2);
+  const FIBER_KG_PER_M3 = mr(spec, "fiber_kg_per_m3", DEFAULTS.fiber_kg_per_m3);
+  const FIBER_PACKAGE_KG = mr(spec, "fiber_package_kg", DEFAULTS.fiber_package_kg);
   const MESH_MARGIN = mr(spec, "mesh_margin", DEFAULTS.mesh_margin);
   const FILM_MARGIN = mr(spec, "film_margin", DEFAULTS.film_margin);
   const DAMPER_TAPE_RESERVE = mr(spec, "damper_tape_reserve", DEFAULTS.damper_tape_reserve);
@@ -386,7 +410,7 @@ export function computeCanonicalScreed(
 
   const cpsKgSemidry = roundDisplay(volume * CPS_DENSITY_SEMIDRY, 3);
   const bags50Semidry = Math.ceil(cpsKgSemidry / 50);
-  const fiberKg = roundDisplay(area * FIBER_KG_PER_M2, 3);
+  const fiberKg = roundDisplay(volume * FIBER_KG_PER_M3, 3);
 
   const meshArea = thickness >= spec.material_rules.mesh_thickness_threshold_mm
     ? Math.ceil(area * MESH_MARGIN)
@@ -402,7 +426,18 @@ export function computeCanonicalScreed(
   } else if (screedType.id === 1) {
     materials = buildMaterialsType1(volume, area, thickness, perimeter, cpsKgReady, bags50Ready, bags40Ready, meshArea, filmArea, beacons, damperTapeM);
   } else {
-    materials = buildMaterialsType2(volume, area, thickness, perimeter, cpsKgSemidry, bags50Semidry, fiberKg, filmArea, damperTapeM);
+    materials = buildMaterialsType2(
+      volume,
+      area,
+      thickness,
+      perimeter,
+      cpsKgSemidry,
+      bags50Semidry,
+      fiberKg,
+      FIBER_PACKAGE_KG,
+      filmArea,
+      damperTapeM,
+    );
   }
 
   // Warnings

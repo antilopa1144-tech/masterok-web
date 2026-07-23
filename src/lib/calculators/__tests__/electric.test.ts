@@ -44,12 +44,13 @@ describe("Электропроводка", () => {
   });
 
   describe("Щиток", () => {
-    it("автоматы: breakersCount = 12", () => {
+    it("автоматы разделены по назначению и в сумме дают breakersCount = 12", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      // Engine: "Автоматы"
-      const breakers = findMaterial(r, "Автоматы");
-      expect(breakers).toBeDefined();
-      expect(breakers!.quantity).toBe(12);
+      const breakers = r.materials.filter((m) => m.name.startsWith("Автомат"));
+      expect(breakers.reduce((sum, m) => sum + m.quantity, 0)).toBe(12);
+      expect(findMaterial(r, "10 А — освещение")?.quantity).toBe(4);
+      expect(findMaterial(r, "16 А — розетки")?.quantity).toBe(5);
+      expect(findMaterial(r, "32 А — электроплита")?.quantity).toBe(1);
     });
 
     it("УЗО: ceil(outletGroups/2) + kitchen + 1 = 5", () => {
@@ -57,13 +58,21 @@ describe("Электропроводка", () => {
       // Engine: "УЗО/дифавтоматы"
       expect(findMaterial(r, "УЗО")!.quantity).toBe(5);
     });
+
+    it("щит учитывает двухмодульные УЗО: 12 + 5×2 + 2 = 24 модуля", () => {
+      const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
+      expect(r.totals.panelModules).toBe(24);
+      const panel = findMaterial(r, "Распределительный щит");
+      expect(panel?.name).toContain("24 модулей");
+      expect(panel?.purchaseQty).toBe(1);
+    });
   });
 
   describe("Предупреждения", () => {
     it("> 100 м² → 380В (3 фазы)", () => {
       const r = calc({ apartmentArea: 120, roomsCount: 5, ceilingHeight: 2.7, hasKitchen: 1 });
       // Engine: "Площадь более 100 м² — рекомендуется ввод 380В (3 фазы)"
-      expect(r.warnings.some(w => w.includes("380В"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("380 В"))).toBe(true);
     });
 
     it("электроплита → предупреждение о кабеле 3×6", () => {
@@ -80,10 +89,19 @@ describe("Электропроводка", () => {
   });
 
   describe("Гофра и крепёж", () => {
-    it("гофра/кабель-канал включена", () => {
+    it("для скрытой проводки показана гофрированная труба в бухтах 50 м", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      // Engine: "Гофра/кабель-канал"
-      expect(findMaterial(r, "Гофра")).toBeDefined();
+      const conduit = findMaterial(r, "Гофрированная");
+      expect(conduit?.packageInfo?.size).toBe(50);
+      expect(conduit?.packageInfo?.packageUnit).toBe("бухт");
+    });
+
+    it("для открытой проводки показан кабель-канал отрезками по 2 м", () => {
+      const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 1, hasKitchen: 1 });
+      const conduit = findMaterial(r, "Кабель-канал");
+      expect(conduit?.packageInfo?.size).toBe(2);
+      expect(conduit?.packageInfo?.packageUnit).toBe("отрезков");
+      expect(conduit?.purchaseQty! % 2).toBe(0);
     });
 
     it("подрозетники присутствуют", () => {
@@ -100,6 +118,7 @@ describe("Электропроводка", () => {
       const gypsum = findMaterial(r, "Гипс");
       expect(gypsum).toBeDefined();
       expect(gypsum!.quantity).toBe(10);
+      expect(gypsum!.packageInfo).toEqual({ count: 2, size: 5, packageUnit: "мешков" });
     });
 
     it("инварианты", () => {

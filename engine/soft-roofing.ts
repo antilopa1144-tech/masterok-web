@@ -157,6 +157,7 @@ export function computeCanonicalSoftRoofing(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Гибкая черепица (${PACK_AREA} м²/уп)`,
+      subtitle: "Площадь покрытия одной упаковки проверьте на этикетке выбранной коллекции",
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "упаковок",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -165,6 +166,10 @@ export function computeCanonicalSoftRoofing(
     },
     {
       name: `Подкладочный ковёр (${UNDERLAYMENT_ROLL} м²)`,
+      subtitle:
+        slope < SLOPE_THRESHOLD
+          ? "Для сплошной укладки по всей площади скатов"
+          : "Для карнизов, конька, ендов и других критических зон",
       quantity: underlaymentRolls,
       unit: "рулонов",
       withReserve: underlaymentRolls,
@@ -176,6 +181,7 @@ export function computeCanonicalSoftRoofing(
   if (valleyRolls > 0) {
     materials.push({
       name: `Ендовный ковёр (${VALLEY_ROLL} м)`,
+      subtitle: "Специальный битумно-полимерный ковёр для внутренних стыков скатов",
       quantity: valleyRolls,
       unit: "рулонов",
       withReserve: valleyRolls,
@@ -186,7 +192,8 @@ export function computeCanonicalSoftRoofing(
 
   materials.push(
     {
-      name: `Мастика (ведро ${MASTIC_BUCKET} кг)`,
+      name: `Мастика битумно-полимерная для гибкой черепицы (ведро ${MASTIC_BUCKET} кг)`,
+      subtitle: "Для ендов, примыканий и локальной приклейки; не наносить сплошным толстым слоем",
       quantity: masticBuckets,
       unit: "вёдер",
       withReserve: masticBuckets,
@@ -205,6 +212,7 @@ export function computeCanonicalSoftRoofing(
     },
     {
       name: `Карнизные планки (${EAVE_STRIP_LENGTH} м)`,
+      subtitle: "Капельник из металла с полимерным покрытием; цвет подбирают к кровле",
       quantity: eaveStrips,
       unit: "шт",
       withReserve: eaveStrips,
@@ -213,6 +221,7 @@ export function computeCanonicalSoftRoofing(
     },
     {
       name: `Ветровые планки (${EAVE_STRIP_LENGTH} м)`,
+      subtitle: "Торцевая планка из металла с полимерным покрытием",
       quantity: windStrips,
       unit: "шт",
       withReserve: windStrips,
@@ -220,7 +229,8 @@ export function computeCanonicalSoftRoofing(
       category: "Доборные",
     },
     {
-      name: "Коньково-карнизная черепица",
+      name: "Коньково-карнизная черепица — гонты",
+      subtitle: "Фактическое число гонтов в упаковке зависит от коллекции; сверьте с этикеткой производителя",
       quantity: ridgeShingles,
       unit: "шт",
       withReserve: ridgeShingles,
@@ -228,7 +238,9 @@ export function computeCanonicalSoftRoofing(
       category: "Доборные",
     },
     {
-      name: `Ориентированно-стружечная плита (ОСП, ${OSB_SHEET} м²)`,
+      name: "Влагостойкая ориентированно-стружечная плита ОСП-3, 1250×2500×12 мм",
+      subtitle:
+        "Для сплошного основания; оставляйте зазор 3–5 мм, а допустимую толщину проверяйте по шагу опор и инструкции к черепице",
       quantity: osbSheets,
       unit: "листов",
       withReserve: osbSheets,
@@ -236,7 +248,8 @@ export function computeCanonicalSoftRoofing(
       category: "Основание",
     },
     {
-      name: "Вентиляционные выходы",
+      name: "Вентиляционные выходы — точечные кровельные аэраторы",
+      subtitle: "Производительность и количество уточняют по инструкции выбранной кровельной системы",
       quantity: ventOutputs,
       unit: "шт",
       withReserve: ventOutputs,

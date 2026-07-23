@@ -212,6 +212,7 @@ export function evaluateCompanionMaterials(
 
     result.push({
       name: spec.label,
+      subtitle: spec.rationale,
       quantity: roundDisplay(exactNeed, 3),
       unit: spec.unit,
       withReserve: roundDisplay(packaging.withReserve, 3),

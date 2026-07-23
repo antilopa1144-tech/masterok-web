@@ -35,8 +35,7 @@ describe("Калькулятор кровли", () => {
     });
 
     it("коньковые элементы присутствуют", () => {
-      // Engine: "Коньковые элементы (2 м)"
-      expect(findMaterial(result, "Коньковые элементы")).toBeDefined();
+      expect(findMaterial(result, "Коньковая планка")).toBeDefined();
     });
 
     it("снегозадержатели присутствуют", () => {
@@ -59,11 +58,13 @@ describe("Калькулятор кровли", () => {
     it("обрешётка присутствует", () => {
       // Engine: "Обрешётка (доска 25×100, шаг ~350 мм)"
       expect(findMaterial(result, "Обрешётка")).toBeDefined();
+      expect(findMaterial(result, "Обрешётка")?.unit).toBe("пог. м");
     });
 
     it("контробрешётка присутствует", () => {
       // Engine: "Контробрешётка (брусок 50×50)"
       expect(findMaterial(result, "Контробрешётка")).toBeDefined();
+      expect(findMaterial(result, "Контробрешётка")?.unit).toBe("пог. м");
     });
 
     it("инварианты", () => {
@@ -137,6 +138,12 @@ describe("Калькулятор кровли", () => {
       expect(screws).toBeDefined();
       expect(screws?.subtitle).toContain("профнастила");
       expect(screws?.packageInfo?.size).toBe(250);
+    });
+
+    it("конёк считается двухметровыми планками, а не условными элементами по 0,33 м", () => {
+      const ridge = findMaterial(result, "Коньковая планка");
+      expect(ridge?.purchaseQty).toBe(5);
+      expect(ridge?.name).toContain("2 м");
     });
   });
 

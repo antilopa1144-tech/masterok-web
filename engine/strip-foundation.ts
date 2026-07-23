@@ -69,17 +69,25 @@ function buildMaterials(
   boards: number,
   rebarDiam: number,
 ): CanonicalMaterialResult[] {
+  const concretePurchaseM3 = roundDisplay(Math.ceil(volReserve * 10) / 10, 1);
+  const longBars117 = Math.ceil(longLen / 11.7);
+  const clampBars117 = Math.ceil(clampLen / 11.7);
+
   return [
     {
-      name: "Бетон М300",
+      name: "Бетон М300 (товарный, класс В22,5)",
+      subtitle:
+        "Заказывайте с шагом 0,1 м³; подвижность, морозостойкость и водонепроницаемость уточняются по проекту и способу подачи",
       quantity: roundDisplay(volReserve, 3),
       unit: "м³",
       withReserve: roundDisplay(volReserve, 3),
-      purchaseQty: Math.ceil(volReserve),
+      purchaseQty: concretePurchaseM3,
       category: "Основное",
     },
     {
-      name: `Арматура продольная ∅${rebarDiam} мм`,
+      name: `Рифлёная продольная арматура ∅${rebarDiam} мм`,
+      subtitle:
+        `Нужно ${roundDisplay(longLen, 1)} пог. м — примерно ${longBars117} прутков по 11,7 м; класс стали выбирают по проекту, обычно А500С`,
       quantity: roundDisplay(longWeightKg, 3),
       unit: "кг",
       withReserve: Math.ceil(longWeightKg),
@@ -87,7 +95,9 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Арматура поперечная (хомуты)",
+      name: "Хомуты из гладкой арматуры ∅8 мм",
+      subtitle:
+        `Нужно ${roundDisplay(clampLen, 1)} пог. м — примерно ${clampBars117} прутков по 11,7 м; расчёт выполнен для шага хомутов из спецификации`,
       quantity: roundDisplay(clampWeightKg, 3),
       unit: "кг",
       withReserve: Math.ceil(clampWeightKg),
@@ -95,7 +105,8 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Проволока вязальная",
+      name: "Проволока вязальная отожжённая ∅1,2 мм",
+      subtitle: "Для ручной вязки продольных стержней и поперечных хомутов",
       quantity: roundDisplay(wireKg, 3),
       unit: "кг",
       withReserve: roundDisplay(wireKg, 3),
@@ -103,7 +114,8 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Опалубка (доска обрезная)",
+      name: "Опалубка — щиты из обрезной доски",
+      subtitle: "Расчётная площадь щитов; количество досок приведено отдельной строкой",
       quantity: roundDisplay(formwork, 3),
       unit: "м²",
       withReserve: Math.ceil(formwork),
@@ -111,7 +123,9 @@ function buildMaterials(
       category: "Опалубка",
     },
     {
-      name: "Доска обрезная 150×6000 мм",
+      name: "Доска обрезная не менее 25×150×6000 мм",
+      subtitle:
+        "Для щитов опалубки; толщину доски, шаг стоек и раскосов проверяют по высоте ленты и давлению бетонной смеси",
       quantity: boards,
       unit: "шт",
       withReserve: boards,

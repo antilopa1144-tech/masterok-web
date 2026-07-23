@@ -667,7 +667,10 @@ export interface ScreedMaterialRules {
   water_per_m3: number;
   cps_density_ready: number;
   cps_density_semidry: number;
-  fiber_kg_per_m2: number;
+  /** Расход полипропиленовой микрофибры на 1 м³ раствора. */
+  fiber_kg_per_m3: number;
+  /** Масса одной покупаемой упаковки микрофибры. */
+  fiber_package_kg: number;
   mesh_margin: number;
   film_margin: number;
   damper_tape_reserve: number;

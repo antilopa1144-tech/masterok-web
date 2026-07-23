@@ -68,14 +68,14 @@ export const roofingDef: CalculatorDefinition = {
     },
     {
       key: "sheetWidth",
-      label: "Ширина листа (полезная)",
+      label: "Полная ширина листа",
       type: "slider",
       unit: "м",
       min: 0.8,
       max: 1.5,
       step: 0.01,
       defaultValue: 1.18,
-      hint: "Для металлочерепицы стандарт 1.18 м, полезная ширина ~1.10 м",
+      hint: "Введите размер по этикетке. Например, при полной ширине 1,18 м полезная после бокового нахлёста обычно около 1,10 м.",
     },
     {
       key: "sheetLength",
@@ -220,5 +220,4 @@ export const roofingDef: CalculatorDefinition = {
     ],
   },
 };
-
 

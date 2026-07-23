@@ -257,6 +257,23 @@ describe("computeFormula", () => {
 /* ─── Упаковки и сборка результата ──────────────────────────────────────── */
 
 describe("evaluateCompanionMaterials — упаковки", () => {
+  it("передаёт rationale в понятное пояснение к закупочной позиции", () => {
+    const spec: CompanionMaterialSpec = {
+      key: "membrane",
+      label: "Пароизоляционная мембрана",
+      category: "Изоляция",
+      unit: "м²",
+      rationale: "Защищает утеплитель от водяного пара со стороны помещения.",
+      formula: { type: "fixed", value: 30 },
+    };
+
+    const [material] = evaluateCompanionMaterials([spec], ctx());
+
+    expect(material.subtitle).toBe(
+      "Защищает утеплитель от водяного пара со стороны помещения.",
+    );
+  });
+
   it("без упаковки: ceil до штуки", () => {
     const spec: CompanionMaterialSpec = {
       key: "wedges",

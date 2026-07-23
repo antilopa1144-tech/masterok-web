@@ -34,19 +34,27 @@ function buildMaterials(
   sand: number,
   eppsPlates: number,
   rebarDiam: number,
+  totalBarLen: number,
   insulationThickness: number,
 ): CanonicalMaterialResult[] {
+  const concretePurchaseM3 = roundDisplay(Math.ceil(concreteM3 * 10) / 10, 1);
+  const rebarBars117 = Math.ceil(totalBarLen / 11.7);
+
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Бетон М300",
+      name: "Бетон М300 (товарный, класс В22,5)",
+      subtitle:
+        "Заказывайте с шагом 0,1 м³; подвижность, морозостойкость и водонепроницаемость уточняются по проекту и способу подачи",
       quantity: roundDisplay(concreteM3, 3),
       unit: "м³",
       withReserve: roundDisplay(concreteM3, 3),
-      purchaseQty: Math.ceil(concreteM3),
+      purchaseQty: concretePurchaseM3,
       category: "Основное",
     },
     {
-      name: `Арматура ∅${rebarDiam} мм`,
+      name: `Арматура рифлёная ∅${rebarDiam} мм для двух сеток`,
+      subtitle:
+        `Нужно ${roundDisplay(totalBarLen, 1)} пог. м — примерно ${rebarBars117} прутков по 11,7 м; класс стали выбирают по проекту, обычно А500С`,
       quantity: roundDisplay(rebarKg, 3),
       unit: "кг",
       withReserve: Math.ceil(rebarKg),
@@ -54,7 +62,8 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Проволока вязальная",
+      name: "Проволока вязальная отожжённая ∅1,2 мм",
+      subtitle: "Для вязки пересечений верхней и нижней арматурных сеток",
       quantity: roundDisplay(wireKg, 3),
       unit: "кг",
       withReserve: Math.ceil(wireKg),
@@ -62,7 +71,9 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Опалубка (доска)",
+      name: "Опалубка — материал для щитов",
+      subtitle:
+        "Указана площадь щитов; толщину доски или ламинированной фанеры и шаг стоек рассчитывают по высоте плиты",
       quantity: roundDisplay(formworkArea, 3),
       unit: "м²",
       withReserve: Math.ceil(formworkArea),
@@ -70,7 +81,8 @@ function buildMaterials(
       category: "Опалубка",
     },
     {
-      name: "Геотекстиль",
+      name: "Геотекстиль нетканый иглопробивной, 200–300 г/м²",
+      subtitle: "Для разделения грунта и песчано-щебёночной подушки; плотность уточняют по грунту и проекту",
       quantity: roundDisplay(geotextile, 3),
       unit: "м²",
       withReserve: Math.ceil(geotextile),
@@ -78,7 +90,8 @@ function buildMaterials(
       category: "Подготовка",
     },
     {
-      name: "Щебень (подушка)",
+      name: "Щебень для подушки, фракция 20–40 мм",
+      subtitle: "Гранитный или гравийный; объём указан после уплотнения слоя",
       quantity: roundDisplay(gravel, 3),
       unit: "м³",
       withReserve: roundDisplay(gravel, 3),
@@ -86,7 +99,8 @@ function buildMaterials(
       category: "Подготовка",
     },
     {
-      name: "Песок (подушка)",
+      name: "Песок для подушки, средней или крупной фракции",
+      subtitle: "Без глины и органических примесей; объём указан после уплотнения слоя",
       quantity: roundDisplay(sand, 3),
       unit: "м³",
       withReserve: roundDisplay(sand, 3),
@@ -97,7 +111,9 @@ function buildMaterials(
 
   if (insulationThickness > 0) {
     materials.push({
-      name: "Экструдированный пенополистирол (ЭППС)",
+      name: `Экструдированный пенополистирол (ЭППС) для фундамента 1200×600×${insulationThickness} мм`,
+      subtitle:
+        "Плиты с подходящей прочностью на сжатие; требуемую марку по нагрузке определяет проектировщик",
       quantity: eppsPlates,
       unit: "шт",
       withReserve: eppsPlates,
@@ -230,6 +246,7 @@ export function computeCanonicalFoundationSlab(
       sand,
       eppsPlates,
       rebarDiam,
+      totalBarLen,
       insulationThickness,
     ),
     totals: {

@@ -318,6 +318,8 @@ export function computeCanonicalInsulation(
       const dowelLen = insulationDowelLengthMm(thickness);
       materials.push({
         name: `Дюбели тарельчатые 10×${dowelLen} мм`,
+        subtitle:
+          `Длина рассчитана как слой ${thickness} мм + 50 мм анкеровки; тип распорной зоны подбирают под бетон, кирпич или блок`,
         quantity: dowelsNeeded,
         unit: "шт",
         withReserve: dowelsNeeded,
@@ -333,6 +335,8 @@ export function computeCanonicalInsulation(
       : `Эковата (${ecowoolBagKg} кг)`;
     materials.push({
       name: baseName,
+      subtitle:
+        `Мешки по ${ecowoolBagKg} кг; фактическую плотность задувки и расход проверьте по инструкции выбранного производителя`,
       quantity: roundDisplay(ecowoolKgPhysical, 3),
       unit: "кг",
       withReserve: ecowoolKg,
