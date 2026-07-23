@@ -1,7 +1,7 @@
 {
   "calculator_id": "brick",
-  "formula_version": "brick-canonical-v1",
-  "generated_at": "2026-07-21T07:37:54.511Z",
+  "formula_version": "brick-canonical-v2",
+  "generated_at": "2026-07-23T10:04:23.208Z",
   "cases": [
     {
       "id": "defaults",
@@ -39,6 +39,7 @@
         "totalRows": 40,
         "meshInterval": 5,
         "meshLayers": 8,
+        "meshLengthM": 44,
         "meshArea": 44,
         "plasticizerL": 0.2,
         "mortarAdditive": 0,
@@ -54,10 +55,10 @@
       },
       "expected_materials_count": 12,
       "expected_material_names": [
-        "Кирпич одинарный (65 мм)",
-        "Цемент М400 (50 кг)",
-        "Песок строительный",
-        "Кладочная сетка",
+        "Кирпич одинарный 250×120×65 мм",
+        "Цемент ЦЕМ I/II 32,5 (М400), мешок 50 кг",
+        "Песок для кладочного раствора, фракция 0–2 мм",
+        "Кладочная сетка Ø3–4 мм, ячейка 50×50 мм",
         "Известь гашёная (тесто)",
         "Кельма каменщика",
         "Молоток-кирочка для подколки",

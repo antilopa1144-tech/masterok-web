@@ -47,10 +47,11 @@ describe("computeCanonicalBrick — golden snapshot (basic mode)", () => {
     expect(r.warnings.some((w) => w.includes("ненесущ"))).toBe(true);
   });
 
-  it("толстая стена (wallThickness>=threshold) добавляет гибкие связи", () => {
+  it("не добавляет гибкие связи только из-за толщины кладки", () => {
     const r = calc({ accuracyMode: "basic", wallThickness: 3 });
-    expect(r.totals.flexibleTies).toBeGreaterThan(0);
-    expect(r.materials.some((m) => m.name.includes("Гибкие связи"))).toBe(true);
+    expect(r.totals.flexibleTies).toBe(0);
+    expect(r.materials.some((m) => m.name.includes("Гибкие связи"))).toBe(false);
+    expect(r.warnings.some((w) => w.includes("многослойной стены"))).toBe(true);
   });
 
   it("раствор содержит цемент и песок; добавка по умолчанию — известь (mortarAdditive=0)", () => {

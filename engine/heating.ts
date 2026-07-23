@@ -20,18 +20,12 @@ interface HeatingInputs {
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── constants ─── */
-
-const POWER_PER_M2_BASE = [80, 100, 130, 150];       // by climate zone, W/m²
-const BUILDING_COEFF = [1.3, 1.0, 1.1, 1.4];          // by building type
-const RADIATOR_POWER = [180, 200, 700, 700];           // W per section/unit by type
-const PP_PIPE_STICK_M = 4;
-const PIPE_RATE = 10;                                  // m per room
-const PIPE_RESERVE = 1.15;
-const FITTINGS_PER_ROOM = 6;
-const FITTINGS_RESERVE = 1.1;
-const BRACKETS_PER_ROOM = 3;
-const BRACKETS_RESERVE = 1.05;
+const RADIATOR_NAMES: Record<number, string> = {
+  0: "Биметаллический радиатор, секция 180 Вт",
+  1: "Алюминиевый радиатор, секция 200 Вт",
+  2: "Чугунный радиатор, 7 секций, 700 Вт",
+  3: "Стальной панельный радиатор тип 22, 700 Вт",
+};
 
 /* ─── factor defaults ─── */
 
@@ -58,7 +52,11 @@ export function computeCanonicalHeating(
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
   const totalArea = Math.max(10, Math.min(500, inputs.totalArea ?? getInputDefault(spec, "totalArea", 80)));
-  const ceilingHeight = Math.max(2.5, Math.min(3.5, inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7)));
+  const ceilingHeightInput = inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7);
+  // Старые URL и форма до v2 передавали высоту в сантиметрах (270), хотя
+  // canonical-спека всегда описывала метры (2.7). Поддерживаем оба формата.
+  const ceilingHeightM = ceilingHeightInput > 10 ? ceilingHeightInput / 100 : ceilingHeightInput;
+  const ceilingHeight = Math.max(2.5, Math.min(3.5, ceilingHeightM));
   const climateZone = Math.max(0, Math.min(3, Math.round(inputs.climateZone ?? getInputDefault(spec, "climateZone", 1))));
   const buildingType = Math.max(0, Math.min(3, Math.round(inputs.buildingType ?? getInputDefault(spec, "buildingType", 1))));
   const radiatorType = Math.max(0, Math.min(3, Math.round(inputs.radiatorType ?? getInputDefault(spec, "radiatorType", 0))));
@@ -67,33 +65,48 @@ export function computeCanonicalHeating(
   /* ─── power calculation ─── */
   const heightM = ceilingHeight;
   const heightCoeff = heightM / 2.7;
-  const totalPowerW = totalArea * POWER_PER_M2_BASE[climateZone] * BUILDING_COEFF[buildingType] * heightCoeff;
+  const totalPowerW = totalArea
+    * spec.material_rules.power_per_m2_base[climateZone]
+    * spec.material_rules.building_coeff[buildingType]
+    * heightCoeff;
   const totalPowerKW = Math.round(totalPowerW / 100) / 10;
 
   /* ─── radiator calculation ─── */
-  const wattPerUnit = RADIATOR_POWER[radiatorType];
+  const wattPerUnit = spec.material_rules.radiator_power[radiatorType];
   const totalUnits = Math.ceil(totalPowerW / wattPerUnit);
+  const radiatorCount = radiatorType <= 1 ? roomCount : totalUnits;
 
   /* ─── piping ─── */
-  const pipeSticks = Math.ceil(roomCount * PIPE_RATE * PIPE_RESERVE / PP_PIPE_STICK_M);
-  const fittings = Math.ceil(roomCount * FITTINGS_PER_ROOM * FITTINGS_RESERVE);
-  const brackets = Math.ceil(roomCount * BRACKETS_PER_ROOM * BRACKETS_RESERVE);
-  const thermoHeads = Math.ceil(roomCount * 1.05);
-  const mayevskyValves = Math.ceil(roomCount * 1.1);
+  const pipeSticks = Math.ceil(
+    roomCount
+      * spec.material_rules.pipe_rate
+      * spec.material_rules.pipe_reserve
+      / spec.material_rules.pp_pipe_stick_m,
+  );
+  const fittings = Math.ceil(
+    radiatorCount * spec.material_rules.fittings_per_room * spec.material_rules.fittings_reserve,
+  );
+  const brackets = Math.ceil(
+    radiatorCount * spec.material_rules.brackets_per_room * spec.material_rules.brackets_reserve,
+  );
+  const thermoHeads = radiatorCount;
+  const mayevskyValves = radiatorCount;
 
   /* ─── materials ─── */
-  const radiatorLabel = radiatorType <= 1 ? "Радиаторы (секции)" : "Радиаторы (панели/приборы)";
+  const radiatorLabel = RADIATOR_NAMES[radiatorType] ?? "Отопительный прибор";
   const materials: CanonicalMaterialResult[] = [
     {
       name: radiatorLabel,
+      subtitle: "Расчёт по номинальной мощности. Перед покупкой подставьте паспортную теплоотдачу выбранной модели при температурном режиме вашей системы.",
       quantity: totalUnits,
-      unit: "шт",
+      unit: radiatorType <= 1 ? "секций" : "шт",
       withReserve: totalUnits,
       purchaseQty: totalUnits,
       category: "Отопление",
     },
     {
-      name: "Полипропиленовая труба Ø25 мм (отрезки по 4 м)",
+      name: `Армированная труба PP-R Ø25 мм, отрезок ${spec.material_rules.pp_pipe_stick_m} м`,
+      subtitle: `Предварительно по ${spec.material_rules.pipe_rate} м на помещение с запасом ${Math.round((spec.material_rules.pipe_reserve - 1) * 100)}%. Диаметр и фактическую длину уточняют по схеме разводки и гидравлическому расчёту.`,
       quantity: pipeSticks,
       unit: "шт",
       withReserve: pipeSticks,
@@ -101,7 +114,8 @@ export function computeCanonicalHeating(
       category: "Трубопровод",
     },
     {
-      name: "Фитинги",
+      name: "Фитинги PP-R Ø25 мм для обвязки радиаторов",
+      subtitle: "Предварительный комплект: муфты, углы и переходы. Точный состав зависит от трассы и типа подключения.",
       quantity: fittings,
       unit: "шт",
       withReserve: fittings,
@@ -109,7 +123,8 @@ export function computeCanonicalHeating(
       category: "Трубопровод",
     },
     {
-      name: "Кронштейны",
+      name: radiatorType <= 1 ? "Кронштейны для секционного радиатора" : "Кронштейны для выбранного отопительного прибора",
+      subtitle: "Проверьте комплектацию радиатора: у некоторых моделей крепления уже входят в поставку.",
       quantity: brackets,
       unit: "шт",
       withReserve: brackets,
@@ -117,7 +132,8 @@ export function computeCanonicalHeating(
       category: "Монтаж",
     },
     {
-      name: "Термоголовки",
+      name: "Термостатический радиаторный клапан с термоголовкой",
+      subtitle: "По одному комплекту на каждый рассчитанный отопительный прибор.",
       quantity: thermoHeads,
       unit: "шт",
       withReserve: thermoHeads,
@@ -125,7 +141,8 @@ export function computeCanonicalHeating(
       category: "Регулировка",
     },
     {
-      name: "Краны Маевского",
+      name: "Ручной воздухоотводчик (кран Маевского) 1/2″",
+      subtitle: "Резьбу и наличие в комплекте сверяйте с паспортом радиатора.",
       quantity: mayevskyValves,
       unit: "шт",
       withReserve: mayevskyValves,
@@ -175,18 +192,18 @@ export function computeCanonicalHeating(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (totalPowerKW > spec.warnings_rules.gas_boiler_power_threshold_kw) {
-    warnings.push("Мощность более 20 кВт — газовый котёл с запасом 15-20%");
+    warnings.push("Расчётная мощность выше 20 кВт. Тип и мощность источника тепла подбирают по расчёту теплопотерь и нагрузке горячего водоснабжения");
   }
-  if (buildingType >= 2 && climateZone >= 2) {
+  if (buildingType === 3 && climateZone >= 2) {
     warnings.push("Слабая изоляция + холодная зона — рекомендуется профессиональный теплотехнический расчёт");
   }
 
 
   const practicalNotes: string[] = [];
   if (totalPowerKW > 20) {
-    practicalNotes.push(`Мощность ${totalPowerKW} кВт — газовый котёл с запасом 15-20%, не впритык`);
+    practicalNotes.push(`Мощность ${totalPowerKW} кВт — предварительная оценка. Не выбирайте котёл только по этой цифре без расчёта теплопотерь`);
   }
-  practicalNotes.push("Радиаторы ставьте под каждым окном — это отсекает холодный воздух от стекла");
+  practicalNotes.push("Распределите мощность по комнатам и окнам: общий итог калькулятора не заменяет подбор каждого радиатора по помещению");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -204,6 +221,7 @@ export function computeCanonicalHeating(
       totalPowerKW,
       wattPerUnit,
       totalUnits,
+      radiatorCount,
       pipeSticks,
       fittings,
       brackets,

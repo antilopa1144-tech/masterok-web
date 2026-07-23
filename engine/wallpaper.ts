@@ -143,6 +143,9 @@ function resolveRapportMeters(spec: WallpaperCanonicalSpec, inputs: WallpaperInp
 function buildMaterials(
   spec: WallpaperCanonicalSpec,
   wallpaperType: WallpaperTypeSpec,
+  rollWidth: number,
+  rollLength: number,
+  rapport: number,
   netArea: number,
   recExactNeed: number,
   recPurchaseQuantity: number,
@@ -152,9 +155,12 @@ function buildMaterials(
   primerNeeded: number,
   primerCans: number,
 ): CanonicalMaterialResult[] {
+  const rollLabel = `${roundDisplay(rollWidth, 3)}×${roundDisplay(rollLength, 3)} м`;
+  const rapportLabel = rapport > 0 ? `, раппорт ${roundDisplay(rapport * 100, 1)} см` : ", без подгонки рисунка";
   return [
     {
-      name: "Обои",
+      name: `Обои — ${wallpaperType.label.toLowerCase()}, рулон ${rollLabel}${rapportLabel}`,
+      subtitle: "Проверьте на этикетке рулона ширину, длину, раппорт, смещение рисунка и номер партии.",
       quantity: roundDisplay(recExactNeed, 6),
       unit: spec.packaging_rules.roll_unit,
       withReserve: roundDisplay(recPurchaseQuantity, 6),
@@ -235,9 +241,10 @@ export function computeCanonicalWallpaper(
   const rapport = resolveRapportMeters(spec, inputs);
   const reservePercent = Math.max(0, inputs.reservePercent ?? getInputDefault(spec, "reservePercent", 0));
   const reserveRolls = Math.max(0, Math.round(inputs.reserveRolls ?? getInputDefault(spec, "reserveRolls", 0)));
+  const stripLengthWithTrim = geometry.wallHeight + spec.material_rules.trim_allowance_m;
   const stripLength = rapport > 0
-    ? Math.ceil(geometry.wallHeight / rapport) * rapport + spec.material_rules.trim_allowance_m
-    : geometry.wallHeight;
+    ? Math.ceil(stripLengthWithTrim / rapport) * rapport
+    : stripLengthWithTrim;
   const stripsPerRoll = stripLength > 0 ? Math.max(0, Math.floor(rollLength / stripLength)) : 0;
   const stripsNeeded = geometry.wallHeight > 0 && rollWidth > 0
     ? Math.ceil(geometry.netArea / (rollWidth * geometry.wallHeight))
@@ -307,7 +314,7 @@ export function computeCanonicalWallpaper(
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Начинайте от окна и идите в глубину комнаты — стыки будут менее заметны при боковом свете");
+  practicalNotes.push("Первую полосу выравнивайте по вертикальной линии, отмеченной уровнем или отвесом; направление оклейки сверяйте с инструкцией производителя");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -315,6 +322,9 @@ export function computeCanonicalWallpaper(
     materials: buildMaterials(
       spec,
       wallpaperType,
+      rollWidth,
+      rollLength,
+      rapport,
       geometry.netArea,
       recScenario.exact_need,
       recScenario.purchase_quantity,

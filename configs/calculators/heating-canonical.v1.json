@@ -1,6 +1,6 @@
 {
   "calculator_id": "heating",
-  "formula_version": "heating-canonical-v1",
+  "formula_version": "heating-canonical-v2",
   "input_schema": [
     { "key": "totalArea", "unit": "m2", "default_value": 80, "min": 10, "max": 500 },
     { "key": "ceilingHeight", "unit": "m", "default_value": 2.7, "min": 2.5, "max": 3.5 },

@@ -92,8 +92,8 @@ describe("Калькулятор кирпича", () => {
     });
   });
 
-  describe("Толщина 1.5+ кирпича — гибкие связи", () => {
-    it("содержит гибкие связи при 1.5 кирпича", () => {
+  describe("Армирование и многослойные стены", () => {
+    it("не добавляет гибкие связи только из-за толщины кладки", () => {
       const result = calc({
         inputMode: 1,
         area: 10,
@@ -101,7 +101,22 @@ describe("Калькулятор кирпича", () => {
         wallThickness: 2,
         workingConditions: 1,
       });
-      expect(findMaterial(result, "Гибкие связи")).toBeDefined();
+      expect(findMaterial(result, "Гибкие связи")).toBeUndefined();
+      expect(result.warnings.some((w) => w.includes("многослойной стены"))).toBe(true);
+    });
+
+    it("выдаёт кладочную сетку в погонных метрах, а не в квадратных", () => {
+      const result = calc({
+        inputMode: 0,
+        wallWidth: 6,
+        wallHeight: 2.7,
+        brickType: 0,
+        wallThickness: 1,
+        workingConditions: 1,
+      });
+      const mesh = findMaterial(result, "Кладочная сетка");
+      expect(mesh?.unit).toBe("п.м.");
+      expect(result.totals.meshLengthM).toBeGreaterThan(0);
     });
   });
 });

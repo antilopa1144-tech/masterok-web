@@ -7,7 +7,7 @@ const calc = withBasicAccuracy(wallpaperDef.calculate.bind(wallpaperDef));
 
 describe("Калькулятор обоев", () => {
   it("декларирует formulaVersion для canonical wallpaper", () => {
-    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v1");
+    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v2");
   });
 
   describe("Canonical wallpaper fixture parity", () => {
@@ -64,5 +64,33 @@ describe("Калькулятор обоев", () => {
     });
 
     expect(result.warnings.some((warning) => warning.includes("Широкие") || warning.includes("метровых"))).toBe(true);
+  });
+
+  it("добавляет припуск 10 см к однотонной полосе", () => {
+    const result = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 0,
+      reserveRolls: 0,
+    });
+
+    expect(result.totals.stripLength).toBeCloseTo(2.8, 3);
+    expect(result.totals.stripsPerRoll).toBe(3);
+  });
+
+  it("округляет высоту с припуском вверх до целого раппорта", () => {
+    const result = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 64,
+      reserveRolls: 0,
+    });
+
+    expect(result.totals.stripLength).toBeCloseTo(3.2, 3);
+    expect((result.totals.stripLength * 100) % 64).toBeCloseTo(0, 6);
   });
 });

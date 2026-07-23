@@ -1,6 +1,6 @@
 {
   "calculator_id": "brick",
-  "formula_version": "brick-canonical-v1",
+  "formula_version": "brick-canonical-v2",
   "input_schema": [
     { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
     { "key": "wallWidth", "unit": "m", "default_value": 5, "min": 0.5, "max": 50 },

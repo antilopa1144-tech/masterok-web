@@ -1,6 +1,6 @@
 {
   "calculator_id": "wallpaper",
-  "formula_version": "wallpaper-canonical-v1",
+  "formula_version": "wallpaper-canonical-v2",
   "input_schema": [
     { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
     { "key": "perimeter", "unit": "m", "default_value": 14, "min": 1, "max": 200 },
@@ -48,7 +48,7 @@
     "primer_can_l": 5
   },
   "material_rules": {
-    "trim_allowance_m": 0.05,
+    "trim_allowance_m": 0.1,
     "primer_l_per_m2": 0.15,
     "primer_reserve_factor": 1.1,
     "paste_reserve_factor": 1.1,

@@ -12,8 +12,7 @@ describe("Отопление и радиаторы", () => {
       // Engine: powerPerM2=100, buildingCoeff=1.3, heightCoeff=2.7/2.7=1
       // totalPowerW=80*100*1.3*1=10400
       expect(r.totals.totalPowerW).toBeCloseTo(10400, 0);
-      // Engine: "Радиаторы (секции)", totalUnits=ceil(10400/180)=58
-      const rad = findMaterial(r, "Радиаторы (секции)");
+      const rad = findMaterial(r, "Биметаллический радиатор");
       expect(rad).toBeDefined();
       expect(rad!.quantity).toBe(58);
     });
@@ -21,7 +20,7 @@ describe("Отопление и радиаторы", () => {
     it("radiatorType=1 — 200 Вт/секция", () => {
       const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 1, roomCount: 4 });
       // totalPower=10400, sections=ceil(10400/200)=52
-      const rad = findMaterial(r, "Радиаторы (секции)");
+      const rad = findMaterial(r, "Алюминиевый радиатор");
       expect(rad).toBeDefined();
       expect(rad!.quantity).toBe(52);
     });
@@ -30,10 +29,11 @@ describe("Отопление и радиаторы", () => {
   describe("Панельные радиаторы (radiatorType>=2)", () => {
     it("radiatorType=2 — 700 Вт/панель", () => {
       const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType: 2, roomCount: 4 });
-      // Engine: "Радиаторы (панели/приборы)", totalPowerW=80*100*1.0*1=8000, units=ceil(8000/700)=12
-      const rad = findMaterial(r, "панели");
+      const rad = findMaterial(r, "Чугунный радиатор");
       expect(rad).toBeDefined();
       expect(rad!.quantity).toBe(12);
+      expect(r.totals.radiatorCount).toBe(12);
+      expect(findMaterial(r, "термоголовкой")?.purchaseQty).toBe(12);
     });
   });
 
@@ -52,28 +52,36 @@ describe("Отопление и радиаторы", () => {
   });
 
   describe("Сопутствующие материалы", () => {
-    it("трубы ПП, фитинги, кронштейны, термоголовки, краны Маевского", () => {
+    it("трубы PP-R, фитинги, кронштейны, термостатические клапаны и краны Маевского", () => {
       const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 4 });
-      // Engine material names
-      expect(findMaterial(r, "Полипропиленовая труба")).toBeDefined();
+      expect(findMaterial(r, "труба PP-R")).toBeDefined();
       expect(findMaterial(r, "Фитинги")).toBeDefined();
       expect(findMaterial(r, "Кронштейны")).toBeDefined();
-      expect(findMaterial(r, "Термоголовки")).toBeDefined();
+      expect(findMaterial(r, "термоголовкой")).toBeDefined();
       expect(findMaterial(r, "Маевского")).toBeDefined();
     });
   });
 
+  it("понимает старое значение высоты 270 см и не зажимает его до 3,5 м", () => {
+    const r = calc({ totalArea: 80, ceilingHeight: 270, climateZone: 1, buildingType: 1, radiatorType: 0, roomCount: 4 });
+    expect(r.totals.ceilingHeight).toBe(2.7);
+    expect(r.totals.totalPowerW).toBeCloseTo(8000, 0);
+  });
+
   describe("Предупреждения", () => {
-    it("> 20 кВт → газовый котёл", () => {
+    it("> 20 кВт → требуется расчёт теплопотерь и подбор источника тепла", () => {
       const r = calc({ totalArea: 200, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 8 });
-      // Engine: "Мощность более 20 кВт — газовый котёл с запасом 15-20%"
-      expect(r.warnings.some(w => w.includes("котёл"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("источника тепла"))).toBe(true);
     });
 
     it("слабая изоляция + холодная зона → теплотехнический расчёт", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 2, radiatorType: 0, roomCount: 4 });
-      // Engine: "Слабая изоляция + холодная зона — рекомендуется профессиональный теплотехнический расчёт"
+      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 3, radiatorType: 0, roomCount: 4 });
       expect(r.warnings.some(w => w.includes("теплотехнический"))).toBe(true);
+    });
+
+    it("хорошее утепление не называется слабым", () => {
+      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 2, radiatorType: 0, roomCount: 4 });
+      expect(r.warnings.some(w => w.includes("Слабая изоляция"))).toBe(false);
     });
   });
 });

@@ -30,13 +30,13 @@ describe("Калькулятор газобетона", () => {
     });
 
     it("блоков газобетонных = 205 шт (REC ×1.06)", () => {
-      const blocks = findMaterial(result, "Газоблок");
+      const blocks = findMaterial(result, "газобетонный блок");
       // blocksWithReserve=193, REC multiplier=1.06 → 204.58 → ceil=205
       expect(blocks?.purchaseQty).toBe(205);
     });
 
     it("клей для газобетона 5 мешков", () => {
-      const glue = findMaterial(result, "Клей для газобетона");
+      const glue = findMaterial(result, "Клей для тонкошовной кладки");
       expect(glue?.purchaseQty).toBe(5);
     });
 
@@ -44,12 +44,14 @@ describe("Калькулятор газобетона", () => {
       expect(findMaterial(result, "Ø8")).toBeDefined();
     });
 
-    it("грунтовка присутствует", () => {
-      expect(findMaterial(result, "Грунтовка")).toBeDefined();
+    it("не добавляет отделочную грунтовку без выбора отделки", () => {
+      expect(findMaterial(result, "Грунтовка")).toBeUndefined();
     });
 
-    it("У-блоки для перемычек присутствуют", () => {
-      expect(findMaterial(result, "У-блок")).toBeDefined();
+    it("не выдумывает У-блоки по одной площади проёмов", () => {
+      expect(findMaterial(result, "У-блок")).toBeUndefined();
+      expect(result.totals.lintelsCalculated).toBe(0);
+      expect(result.warnings.some((w) => w.includes("перемычки"))).toBe(true);
     });
 
     it("инварианты", () => {
@@ -81,7 +83,7 @@ describe("Калькулятор газобетона", () => {
         blockHeight: 200,
         blockLength: 600,
       });
-      expect(result.warnings.some((w) => w.includes("теплоизоляцию"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("теплопередаче"))).toBe(true);
     });
   });
 
@@ -97,6 +99,10 @@ describe("Калькулятор газобетона", () => {
 
     it("netArea = 22, blocksNet ≈ 183.33", () => {
       expect(result.totals.blocksNet).toBeCloseTo(183.33, 1);
+    });
+
+    it("оценивает длину стены как площадь / высота, а не как квадрат", () => {
+      expect(result.totals.estimatedWallLength).toBeCloseTo(22 / 2.7, 3);
     });
   });
 });

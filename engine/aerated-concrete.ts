@@ -1,7 +1,6 @@
 import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   AeratedConcreteCanonicalSpec,
   CanonicalCalculatorResult,
@@ -97,17 +96,10 @@ export function computeCanonicalAeratedConcrete(
   const rows = Math.ceil(areaInfo.wallHeight / (blockHeight / 1000));
   const rebarRows = Math.ceil(rows / spec.material_rules.rebar_armoring_interval);
 
-  const perimeter = areaInfo.inputMode === 0
+  const estimatedWallLength = areaInfo.inputMode === 0
     ? areaInfo.wallWidth
-    : Math.sqrt(netArea) * 2;
-  const rebarLength = Math.ceil(perimeter * rebarRows * spec.material_rules.rebar_reserve);
-
-  const primerCans = Math.ceil(
-    netArea * spec.material_rules.primer_l_per_m2 * spec.material_rules.primer_reserve / spec.material_rules.primer_can_l,
-  );
-
-  const openingsCount = Math.ceil(openingsArea / 2);
-  const uBlocks = Math.ceil(openingsCount * 2 * spec.material_rules.rebar_reserve);
+    : netArea / areaInfo.wallHeight;
+  const rebarLength = Math.ceil(estimatedWallLength * rebarRows * spec.material_rules.rebar_reserve);
 
   const packageOptions = [{
     size: spec.packaging_rules.package_size,
@@ -150,17 +142,19 @@ export function computeCanonicalAeratedConcrete(
 
   const warnings: string[] = [];
   if (blockThickness <= spec.warnings_rules.non_load_bearing_thickness_mm) {
-    warnings.push("Толщина блока ≤150 мм — только для ненесущих перегородок");
+    warnings.push("Блоки толщиной до 150 мм обычно применяют для ненесущих перегородок. Назначение стены подтверждают проектом");
   }
   if (blockThickness >= spec.warnings_rules.thermal_check_thickness_mm) {
-    warnings.push("Толщина блока ≥300 мм — проверьте теплоизоляцию по СП 50.13330");
+    warnings.push("Для наружной стены проверьте сопротивление теплопередаче всей конструкции по СП 50.13330 — одной толщины блока недостаточно");
   }
-
-  const cornerProfiles = Math.ceil(areaInfo.wallHeight / spec.material_rules.corner_profile_length_m) * spec.material_rules.corner_profile_count;
+  if (openingsArea > 0) {
+    warnings.push("Площадь проёмов вычтена из блоков, но перемычки и U-блоки не посчитаны: нужны количество и ширина каждого проёма, опирание и проектная схема");
+  }
 
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Газоблок ${blockLength}×${blockHeight}×${blockThickness} мм`,
+      name: `Автоклавный газобетонный блок ${blockLength}×${blockHeight}×${blockThickness} мм`,
+      subtitle: "Плотность, класс прочности и морозостойкость выбирайте по проекту и назначению стены.",
       quantity: roundDisplay(blocksNet, 3),
       unit: "шт",
       withReserve: blocksWithReserve,
@@ -168,7 +162,8 @@ export function computeCanonicalAeratedConcrete(
       category: "Основное",
     },
     {
-      name: `Клей для газобетона (${spec.material_rules.glue_bag_kg} кг)`,
+      name: `Клей для тонкошовной кладки газобетона, мешок ${spec.material_rules.glue_bag_kg} кг`,
+      subtitle: "Расчёт для минерального клея и шва 2–3 мм. Первый ряд на выравнивающем растворе сюда не входит.",
       quantity: glueBags,
       unit: "мешков",
       withReserve: glueBags,
@@ -176,36 +171,21 @@ export function computeCanonicalAeratedConcrete(
       category: "Кладка",
     },
     {
-      name: "Арматура Ø8",
+      name: "Арматура класса А500С Ø8 мм для штроб",
+      subtitle: `Предварительный расход одной продольной линии через каждые ${spec.material_rules.rebar_armoring_interval} ряда. Число стержней, зоны усиления и диаметр задаёт проект или альбом решений производителя блоков.`,
       quantity: rebarLength,
       unit: "п.м",
       withReserve: rebarLength,
       purchaseQty: rebarLength,
       category: "Армирование",
     },
-    buildPrimerMaterial(netArea * spec.material_rules.primer_l_per_m2, { reserveFactor: spec.material_rules.primer_reserve, category: "Отделка" }),
-    {
-      name: "У-блоки (перемычки)",
-      quantity: uBlocks,
-      unit: "шт",
-      withReserve: uBlocks,
-      purchaseQty: uBlocks,
-      category: "Проёмы",
-    },
-    {
-      name: "Угловые профили",
-      quantity: cornerProfiles,
-      unit: "шт",
-      withReserve: cornerProfiles,
-      purchaseQty: cornerProfiles,
-      category: "Проёмы",
-    },
   ];
 
   const practicalNotes: string[] = [];
   if (blockThickness <= 150) {
-    practicalNotes.push(`Блок ${blockThickness} мм — только ненесущие перегородки, для наружных стен минимум 300 мм`);
+    practicalNotes.push(`Блок ${blockThickness} мм обычно используют для перегородок; несущую способность нельзя определять только по толщине`);
   }
+  practicalNotes.push("Перемычки, армопояс и усиление под окнами заказывайте только после проверки проекта или технического решения производителя");
   practicalNotes.push("Газобетон любит влагу — защитите кладку плёнкой в дождь и зимой");
 
   return {
@@ -231,12 +211,10 @@ export function computeCanonicalAeratedConcrete(
       glueBags: glueBags,
       rows: rows,
       rebarRows: rebarRows,
-      perimeter: roundDisplay(perimeter, 3),
+      perimeter: roundDisplay(estimatedWallLength, 3),
+      estimatedWallLength: roundDisplay(estimatedWallLength, 3),
       rebarLength: rebarLength,
-      primerCans: primerCans,
-      openingsCount: openingsCount,
-      uBlocks: uBlocks,
-      cornerProfiles: cornerProfiles,
+      lintelsCalculated: 0,
       minExactNeedBlocks: scenarios.MIN.exact_need,
       recExactNeedBlocks: recScenario.exact_need,
       maxExactNeedBlocks: scenarios.MAX.exact_need,

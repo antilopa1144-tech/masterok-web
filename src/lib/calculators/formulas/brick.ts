@@ -82,9 +82,9 @@ export const brickDef: CalculatorDefinition = {
       defaultValue: 1,
       options: [
         { value: 0, label: "0.5 кирпича (120 мм) — перегородка" },
-        { value: 1, label: "1 кирпич (250 мм) — стена" },
-        { value: 2, label: "1.5 кирпича (380 мм) — несущая" },
-        { value: 3, label: "2 кирпича (510 мм) — несущая усил." },
+        { value: 1, label: "1 кирпич (250 мм) — по проекту" },
+        { value: 2, label: "1,5 кирпича (380 мм) — по проекту" },
+        { value: 3, label: "2 кирпича (510 мм) — по проекту" },
       ],
     },
     {
@@ -249,4 +249,3 @@ export const brickDef: CalculatorDefinition = {
     ],
   },
 };
-

@@ -208,12 +208,15 @@ describe("Все калькуляторы — все нули → MIN <= REC <= 
 });
 
 // ─── Стандартные входные данные (defaults) → purchaseQty целые ───
-// Примечание: drywall engine передаёт scenario exact_need как purchaseQty для ГКЛ листов,
-// что может быть нецелым числом. Это проверяется отдельно для каждого калькулятора, кроме drywall.
+// Примечание: некоторые калькуляторы закупают сыпучие и жидкие материалы дробными
+// объёмами (например, бетон или песок в м³). Для них проверяем конечность и знак.
 
 describe("Все калькуляторы — defaults → все purchaseQty целые числа (кроме scenario-derived)", () => {
-  // concrete and drywall may have non-integer purchaseQty (e.g., м³ concrete, ГКЛ листы)
-  const nonIntegerPurchaseQtyCalcs = ["drywall (гипсокартон)", "concrete (бетон)"];
+  const nonIntegerPurchaseQtyCalcs = [
+    "drywall (гипсокартон)",
+    "concrete (бетон)",
+    "brick (кирпич)",
+  ];
   const calcsMostlyIntegerPurchaseQty = calculators.filter((c) => !nonIntegerPurchaseQtyCalcs.includes(c.name));
 
   for (const calc of calcsMostlyIntegerPurchaseQty) {
