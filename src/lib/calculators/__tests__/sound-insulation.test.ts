@@ -20,7 +20,28 @@ describe("Звукоизоляция", () => {
     it("вата: area*1.1/0.6 плит", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 0 });
       // areaWithReserve=33, plates=ceil(33/0.6)=55
-      expect(findMaterial(r, "Акустическая минеральная")!.quantity).toBe(55);
+      expect(r.totals.primaryQty).toBe(55);
+    });
+
+    it("округляет акустические плиты до полных упаковок", () => {
+      const r = calc({
+        area: 30,
+        surfaceType: 0,
+        system: 0,
+        acousticPlatesPerPack: 6,
+      });
+      const insulation = findMaterial(r, "Акустическая минеральная")!;
+
+      expect(r.scenarios?.REC.exact_need).toBeCloseTo(58.3, 5);
+      expect(r.scenarios?.REC.buy_plan.package_size).toBe(6);
+      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(10);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(60);
+      expect(insulation.packageInfo).toEqual({
+        count: 10,
+        size: 6,
+        packageUnit: "упаковок",
+      });
+      expect(insulation.purchaseQty).toBe(60);
     });
 
     it("ГКЛ 2 слоя: area*1.1*2/3 листов", () => {
@@ -52,6 +73,14 @@ describe("Звукоизоляция", () => {
       // Engine: "Дюбели для ЗИПС"
       const fastener = findMaterial(r, "Фирменный крепёжный комплект");
       expect(fastener?.subtitle).toContain("штатные виброузлы");
+    });
+
+    it("оставляет ЗИПС поштучным товаром", () => {
+      const r = calc({ area: 30, surfaceType: 0, system: 1, acousticPlatesPerPack: 6 });
+      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
+
+      expect(r.scenarios?.REC.buy_plan.package_size).toBe(1);
+      expect(panels.packageInfo).toBeUndefined();
     });
 
     it("предупреждение о ровном основании", () => {
@@ -106,5 +135,19 @@ describe("Звукоизоляция", () => {
       // Engine: "Большая площадь — рекомендуется профессиональный монтаж"
       expect(r.warnings.some(w => w.includes("профессиональный монтаж"))).toBe(true);
     });
+  });
+
+  it("передаёт web-поля surface и systemType в canonical engine", () => {
+    const r = soundInsulationDef.calculate({
+      area: 30,
+      surface: 2,
+      systemType: 3,
+      acousticPlatesPerPack: 6,
+      accuracyMode: "basic",
+    });
+
+    expect(r.totals.surfaceType).toBe(2);
+    expect(r.totals.system).toBe(3);
+    expect(findMaterial(r, "Виброподвес для акустического потолка")).toBeDefined();
   });
 });

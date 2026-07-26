@@ -51,11 +51,31 @@ export const soundInsulationDef: CalculatorDefinition = {
         { value: 3, label: "Акустический подвесной потолок" },
       ],
     },
+    {
+      key: "acousticPlatesPerPack",
+      label: "Акустических плит в упаковке",
+      type: "number",
+      unit: "шт",
+      min: 1,
+      max: 50,
+      step: 1,
+      defaultValue: 6,
+      hint: "Используется для каркасной системы и акустического потолка. Возьмите число с пачки; 6 плит — стартовый пример.",
+    },
   ],
   calculate(inputs) {
     const spec = soundinsulationSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalSoundInsulation(spec, inputs, factorTable);
+    const canonical = computeCanonicalSoundInsulation(
+      spec,
+      {
+        ...inputs,
+        surfaceType: inputs.surfaceType ?? inputs.surface,
+        system: inputs.system ?? inputs.systemType,
+        acousticPlatesPerPack: inputs.acousticPlatesPerPack,
+      },
+      factorTable,
+    );
 
     return {
       materials: canonical.materials,
@@ -71,14 +91,15 @@ export const soundInsulationDef: CalculatorDefinition = {
   },
   formulaDescription: `
 **Расчёт звукоизоляции (базовая система):**
-- Акустическая вата: площадь × 1.10 / 0.6 м² (плита)
+- Акустическая вата: площадь × 1.10 / 0.6 м² (плита), затем округление до полных упаковок
 - ГКЛ 2 слоя: площадь × 2 × 1.10 / 3 м² (лист)
 - Виброподвесы: ~2 шт/м²
   `,
   howToUse: [
     "Введите площадь поверхности",
     "Выберите тип поверхности и систему изоляции",
-    "Нажмите «Рассчитать»",
+    "Для системы с акустической ватой укажите число плит в упаковке",
+    "Нажмите «Рассчитать» — получите материалы и полные упаковки к покупке",
   ],
 faq: [
     {
@@ -142,5 +163,4 @@ faq: [
     ],
   },
 };
-
 

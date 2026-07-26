@@ -58,6 +58,7 @@ interface FacadeInsulationInputs {
   thickness?: number;
   insulationType?: number;
   finishType?: number;
+  platesPerPack?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -77,6 +78,16 @@ export function computeCanonicalFacadeInsulation(
   const thickness = Math.max(50, Math.min(200, Math.round(inputs.thickness ?? getInputDefault(spec, "thickness", 100))));
   const insulationType = Math.max(0, Math.min(1, Math.round(inputs.insulationType ?? getInputDefault(spec, "insulationType", 0))));
   const finishType = Math.max(0, Math.min(2, Math.round(inputs.finishType ?? getInputDefault(spec, "finishType", 0))));
+  const platesPerPack = Math.max(
+    1,
+    Math.min(
+      50,
+      Math.round(
+        inputs.platesPerPack
+          ?? getInputDefault(spec, "platesPerPack", spec.packaging_rules.package_size),
+      ),
+    ),
+  );
 
   /* ─── formulas ─── */
   const platesRaw = Math.ceil(area * PLATE_RESERVE / PLATE_M2);
@@ -102,9 +113,9 @@ export function computeCanonicalFacadeInsulation(
 
   /* ─── scenarios ─── */
   const packageOptions = [{
-    size: 1,
-    label: "insulation-plate",
-    unit: "шт",
+    size: platesPerPack,
+    label: `insulation-pack-${platesPerPack}`,
+    unit: spec.packaging_rules.unit,
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
@@ -151,10 +162,16 @@ export function computeCanonicalFacadeInsulation(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `${insulationLabel} (плиты ${PLATE_M2} м²)`,
+      subtitle: `${platesPerPack} шт. в упаковке — сверьте фасовку выбранной марки и толщины`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: roundDisplay(recScenario.purchase_quantity, 6),
+      purchaseQty: roundDisplay(recScenario.purchase_quantity, 6),
+      packageInfo: {
+        count: recScenario.buy_plan.packages_count,
+        size: platesPerPack,
+        packageUnit: "упаковок",
+      },
       category: "Утепление",
     },
     {
@@ -234,6 +251,8 @@ export function computeCanonicalFacadeInsulation(
       insulationType,
       finishType,
       plates,
+      platesPerPack,
+      packagesNeeded: recScenario.buy_plan.packages_count,
       glueBags,
       dowels,
       meshRolls,

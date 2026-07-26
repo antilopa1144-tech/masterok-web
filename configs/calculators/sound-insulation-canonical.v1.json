@@ -1,10 +1,11 @@
 {
   "calculator_id": "sound-insulation",
-  "formula_version": "sound-insulation-canonical-v1",
+  "formula_version": "sound-insulation-canonical-v2",
   "input_schema": [
     { "key": "area", "unit": "m²", "default_value": 30, "min": 1, "max": 500 },
     { "key": "surfaceType", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "system", "default_value": 0, "min": 0, "max": 3 }
+    { "key": "system", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "acousticPlatesPerPack", "unit": "шт", "default_value": 6, "min": 1, "max": 50 }
   ],
   "field_factors": {
     "enabled": [
@@ -19,7 +20,7 @@
   },
   "packaging_rules": {
     "unit": "шт",
-    "package_size": 1
+    "package_size": 6
   },
   "material_rules": {
     "rockwool_plate": 0.6,

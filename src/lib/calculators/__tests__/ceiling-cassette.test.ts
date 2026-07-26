@@ -15,6 +15,27 @@ describe("Кассетный потолок", () => {
       expect(findMaterial(r, "Кассета 595")).toBeDefined();
       expect(r.totals.totalCass).toBeGreaterThan(0);
     });
+
+    it("округляет кассеты до полных коробок", () => {
+      const r = calc({
+        area: 30,
+        cassetteSize: 0,
+        roomLength: 6,
+        cassettesPerPack: 12,
+      });
+      const cassettes = findMaterial(r, "Кассета 595")!;
+
+      expect(r.scenarios?.REC.exact_need).toBeCloseTo(115.54, 5);
+      expect(r.scenarios?.REC.buy_plan.package_size).toBe(12);
+      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(10);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(120);
+      expect(cassettes.packageInfo).toEqual({
+        count: 10,
+        size: 12,
+        packageUnit: "упаковок",
+      });
+      expect(cassettes.purchaseQty).toBe(120);
+    });
   });
 
   describe("600×600 мм (cassetteSize=1)", () => {
@@ -24,6 +45,19 @@ describe("Кассетный потолок", () => {
       // Engine: "Кассета 600×600 мм"
       expect(findMaterial(r, "Кассета 600")).toBeDefined();
     });
+  });
+
+  it("значения web-селектора соответствуют canonical размерам", () => {
+    const r = ceilingCassetteDef.calculate({
+      area: 30,
+      cassetteSize: 1,
+      roomLength: 6,
+      cassettesPerPack: 12,
+      accuracyMode: "basic",
+    });
+
+    expect(r.totals.cassetteSize).toBe(1);
+    expect(findMaterial(r, "Кассета 600×600")).toBeDefined();
   });
 
   describe("300×300 мм (cassetteSize=2)", () => {

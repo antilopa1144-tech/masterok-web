@@ -14,6 +14,7 @@ interface CeilingCassetteInputs {
   area?: number;
   cassetteSize?: number;
   roomLength?: number;
+  cassettesPerPack?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -55,6 +56,16 @@ export function computeCanonicalCeilingCassette(
   const area = resolveArea(spec, inputs);
   const cassetteSize = resolveCassetteSize(spec, inputs);
   const roomLength = resolveRoomLength(spec, inputs);
+  const cassettesPerPack = Math.max(
+    1,
+    Math.min(
+      100,
+      Math.round(
+        inputs.cassettesPerPack
+          ?? getInputDefault(spec, "cassettesPerPack", spec.packaging_rules.package_size),
+      ),
+    ),
+  );
 
   const roomWidth = area / roomLength;
   const cassetteDim = CASSETTE_SIZES[cassetteSize] ?? 0.595;
@@ -81,7 +92,7 @@ export function computeCanonicalCeilingCassette(
 
   /* ─── scenarios ─── */
   const packageOptions = [{
-    size: spec.packaging_rules.package_size,
+    size: cassettesPerPack,
     label: `cassette-${cassetteSize}`,
     unit: spec.packaging_rules.unit,
   }];
@@ -127,10 +138,16 @@ export function computeCanonicalCeilingCassette(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Кассета ${cassetteLabels[cassetteSize] ?? "595×595 мм"}`,
+      subtitle: `${cassettesPerPack} шт. в коробке — сверьте фасовку выбранной коллекции; металлические кассеты могут отпускаться поштучно`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: roundDisplay(recScenario.purchase_quantity, 6),
+      purchaseQty: roundDisplay(recScenario.purchase_quantity, 6),
+      packageInfo: {
+        count: recScenario.buy_plan.packages_count,
+        size: cassettesPerPack,
+        packageUnit: "упаковок",
+      },
       category: "Основное",
     },
     {
@@ -189,6 +206,8 @@ export function computeCanonicalCeilingCassette(
       cassPerRow,
       rows,
       totalCass,
+      cassettesPerPack,
+      packagesNeeded: recScenario.buy_plan.packages_count,
       mainRows,
       mainProfiles,
       crossPerRow,

@@ -32,11 +32,11 @@ export const ceilingCassetteDef: CalculatorDefinition = {
       key: "cassetteSize",
       label: "Размер кассеты",
       type: "select",
-      defaultValue: 600,
+      defaultValue: 0,
       options: [
-        { value: 595, label: "595×595 мм (Т-24)" },
-        { value: 600, label: "600×600 мм (открытый)" },
-        { value: 300, label: "300×300 мм (декоративные)" },
+        { value: 0, label: "595×595 мм (Т-24)" },
+        { value: 1, label: "600×600 мм (открытый)" },
+        { value: 2, label: "300×300 мм (декоративные)" },
       ],
     },
     {
@@ -48,6 +48,17 @@ export const ceilingCassetteDef: CalculatorDefinition = {
       max: 50,
       step: 0.5,
       defaultValue: 5,
+    },
+    {
+      key: "cassettesPerPack",
+      label: "Кассет в коробке",
+      type: "number",
+      unit: "шт",
+      min: 1,
+      max: 100,
+      step: 1,
+      defaultValue: 12,
+      hint: "Сверьте с карточкой товара. 12 шт. — стартовый пример для потолочных плит; если продавец отпускает поштучно, укажите 1.",
     },
   ],
   calculate(inputs) {
@@ -69,15 +80,15 @@ export const ceilingCassetteDef: CalculatorDefinition = {
   },
   formulaDescription: `
 **Расчёт кассетного потолка:**
-- Кассет = Рядов × Кассет/ряд × 1.1
+- Кассет = Рядов × Кассет/ряд × 1.1, затем округление до полных коробок
 - Несущий профиль 1200 мм: через каждые 1.2 м
 - Поперечный профиль 600 мм: заполняет ячейки решётки
   `,
   howToUse: [
     "Введите площадь потолка",
     "Выберите размер кассеты",
-    "Укажите длину помещения",
-    "Нажмите «Рассчитать»",
+    "Укажите длину помещения и количество кассет в коробке",
+    "Нажмите «Рассчитать» — получите точную потребность и полные коробки к покупке",
   ],
 faq: [
     {
@@ -145,5 +156,4 @@ faq: [
     ],
   },
 };
-
 

@@ -45,7 +45,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           expect(result.materials.length).toBe(testCase.expected_materials_count);
         });
 
-        it(`${testCase.id}: scenario REC exact_need matches`, async () => {
+        it(`${testCase.id}: scenario REC exact need and purchase match`, async () => {
           const configFile = `${calcId}-canonical.v1.json`;
           const config = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8"));
           const enginePath = path.join(ENGINE_DIR, `${calcId}.ts`);
@@ -56,6 +56,10 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
 
           expect(result.scenarios.REC.exact_need).toBeCloseTo(
             testCase.expected_scenarios.REC.exact_need,
+            4,
+          );
+          expect(result.scenarios.REC.purchase_quantity).toBeCloseTo(
+            testCase.expected_scenarios.REC.purchase_quantity,
             4,
           );
         });

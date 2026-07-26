@@ -1,10 +1,11 @@
 {
   "calculator_id": "ceiling-cassette",
-  "formula_version": "ceiling-cassette-canonical-v1",
+  "formula_version": "ceiling-cassette-canonical-v2",
   "input_schema": [
     { "key": "area", "unit": "m²", "default_value": 30, "min": 1, "max": 500 },
     { "key": "cassetteSize", "default_value": 0, "min": 0, "max": 2 },
-    { "key": "roomLength", "unit": "m", "default_value": 6, "min": 2, "max": 50 }
+    { "key": "roomLength", "unit": "m", "default_value": 6, "min": 2, "max": 50 },
+    { "key": "cassettesPerPack", "unit": "шт", "default_value": 12, "min": 1, "max": 100 }
   ],
   "field_factors": {
     "enabled": [
@@ -18,7 +19,7 @@
   },
   "packaging_rules": {
     "unit": "шт",
-    "package_size": 1
+    "package_size": 12
   },
   "material_rules": {
     "cassette_areas": { "0": 0.354, "1": 0.36, "2": 0.09 },

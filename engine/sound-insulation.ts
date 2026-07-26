@@ -14,6 +14,7 @@ interface SoundInsulationInputs {
   area?: number;
   surfaceType?: number;
   system?: number;
+  acousticPlatesPerPack?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -69,6 +70,20 @@ export function computeCanonicalSoundInsulation(
   const area = resolveArea(spec, inputs);
   const surfaceType = resolveSurfaceType(spec, inputs);
   const system = resolveSystem(spec, inputs);
+  const acousticPlatesPerPack = Math.max(
+    1,
+    Math.min(
+      50,
+      Math.round(
+        inputs.acousticPlatesPerPack
+          ?? getInputDefault(
+            spec,
+            "acousticPlatesPerPack",
+            spec.packaging_rules.package_size,
+          ),
+      ),
+    ),
+  );
 
   const perim = Math.sqrt(area) * 4;
   const materials: CanonicalMaterialResult[] = [];
@@ -171,8 +186,10 @@ export function computeCanonicalSoundInsulation(
   const primaryQtyRaw = primaryQty;
   primaryQty = Math.ceil(primaryQty * accuracyMult);
 
+  const isAcousticPlateSystem = system === 0 || system === 3;
+  const packageSize = isAcousticPlateSystem ? acousticPlatesPerPack : 1;
   const packageOptions = [{
-    size: spec.packaging_rules.package_size,
+    size: packageSize,
     label: primaryLabel,
     unit: primaryUnit,
   }];
@@ -209,6 +226,23 @@ export function computeCanonicalSoundInsulation(
 
   const recScenario = scenarios.REC;
 
+  if (isAcousticPlateSystem) {
+    const insulationMaterial = materials.find((material) =>
+      material.name.startsWith("Акустическая минеральная плита"),
+    );
+    if (insulationMaterial) {
+      insulationMaterial.subtitle = `${insulationMaterial.subtitle}. ${acousticPlatesPerPack} шт. в упаковке — сверьте фасовку выбранного продукта`;
+      insulationMaterial.quantity = roundDisplay(recScenario.exact_need, 6);
+      insulationMaterial.withReserve = roundDisplay(recScenario.purchase_quantity, 6);
+      insulationMaterial.purchaseQty = roundDisplay(recScenario.purchase_quantity, 6);
+      insulationMaterial.packageInfo = {
+        count: recScenario.buy_plan.packages_count,
+        size: acousticPlatesPerPack,
+        packageUnit: "упаковок",
+      };
+    }
+  }
+
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (area > spec.warnings_rules.large_area_threshold_m2) {
@@ -232,6 +266,8 @@ export function computeCanonicalSoundInsulation(
       system,
       perim: roundDisplay(perim, 3),
       primaryQty,
+      acousticPlatesPerPack: isAcousticPlateSystem ? acousticPlatesPerPack : 0,
+      packagesNeeded: isAcousticPlateSystem ? recScenario.buy_plan.packages_count : 0,
       sealant,
       sealTape,
       minExactNeed: scenarios.MIN.exact_need,

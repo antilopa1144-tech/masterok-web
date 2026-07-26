@@ -22,9 +22,9 @@
         "minExactNeed": 51.216,
         "recExactNeed": 58.3,
         "maxExactNeed": 75.7988,
-        "minPurchase": 52,
-        "recPurchase": 59,
-        "maxPurchase": 76
+        "minPurchase": 54,
+        "recPurchase": 60,
+        "maxPurchase": 78
       },
       "expected_materials_count": 8,
       "expected_material_names": [
@@ -42,15 +42,15 @@
       "expected_scenarios": {
         "MIN": {
           "exact_need": 51.216,
-          "purchase_quantity": 52
+          "purchase_quantity": 54
         },
         "REC": {
           "exact_need": 58.3,
-          "purchase_quantity": 59
+          "purchase_quantity": 60
         },
         "MAX": {
           "exact_need": 75.7988,
-          "purchase_quantity": 76
+          "purchase_quantity": 78
         }
       }
     }

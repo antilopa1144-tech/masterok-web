@@ -61,6 +61,28 @@ describe("Утепление фасада", () => {
       // Engine: "Стартовый профиль (2 м)"
       expect(findMaterial(r, "Стартовый профиль")).toBeDefined();
     });
+
+    it("округляет плиты до полных упаковок", () => {
+      const r = calc({
+        area: 100,
+        thickness: 100,
+        insulationType: 0,
+        finishType: 0,
+        platesPerPack: 4,
+      });
+      const insulation = findMaterial(r, "Минеральная вата")!;
+
+      expect(r.scenarios?.REC.exact_need).toBeCloseTo(154.76, 5);
+      expect(r.scenarios?.REC.buy_plan.package_size).toBe(4);
+      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(39);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(156);
+      expect(insulation.packageInfo).toEqual({
+        count: 39,
+        size: 4,
+        packageUnit: "упаковок",
+      });
+      expect(insulation.purchaseQty).toBe(156);
+    });
   });
 
   describe("ЭППС (insulationType=1)", () => {
