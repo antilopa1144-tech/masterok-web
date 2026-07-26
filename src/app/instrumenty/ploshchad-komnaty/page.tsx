@@ -14,9 +14,9 @@ const UI_TEXT = {
   breadcrumbTools: "Инструменты",
   breadcrumbCurrent: "Площадь комнаты",
   pageTitle: "Калькулятор площади комнаты",
-  pageDescription: "Рассчитайте площадь пола, периметр и площадь стен для помещений любой формы.",
+  pageDescription: "Рассчитайте площадь пола, периметр и площадь стен для помещений типовых форм.",
   defaultLengthUnit: "м",
-  onlyFloorHint: "Оставьте 0, если нужна только площадь пола",
+  onlyFloorHint: "Без вычета окон и дверей. Оставьте 0, если нужна только площадь пола",
   shapeTitle: "Форма помещения",
   dimensionsTitle: "Размеры",
   calculate: "Рассчитать",
@@ -35,10 +35,10 @@ interface ShapeOption {
 
 const SHAPES: ShapeOption[] = [
   { id: "rect", label: "Прямоугольник", icon: "▭", desc: "Стандартная прямоугольная комната" },
-  { id: "lshape", label: "Г-образная", icon: "⌐", desc: "Два прямоугольника (Г-форма)" },
-  { id: "tshape", label: "Т-образная", icon: "⊤", desc: "Три секции (Т-форма)" },
-  { id: "trapezoid", label: "Трапеция", icon: "⏢", desc: "Одна пара параллельных сторон" },
-  { id: "triangle", label: "Треугольник", icon: "△", desc: "Любой треугольник по основанию и высоте" },
+  { id: "lshape", label: "Г-образная", icon: "⌐", desc: "Прямоугольник с угловым вырезом" },
+  { id: "tshape", label: "Т-образная", icon: "⊤", desc: "Перекладина и центральная стойка" },
+  { id: "trapezoid", label: "Трапеция", icon: "⏢", desc: "Равнобедренная трапеция" },
+  { id: "triangle", label: "Треугольник", icon: "△", desc: "Равнобедренный треугольник" },
   { id: "circle", label: "Круг / сектор", icon: "○", desc: "Круглая комната или сектор" },
 ];
 
@@ -91,8 +91,6 @@ export default function PloshadKomnatyPage() {
   const [b, setB] = useState("4");
   const [c, setC] = useState("2");
   const [d, setD] = useState("2");
-  const [e, setE] = useState("2");
-  const [f, setF] = useState("1.5");
 
   const calculate = () => {
     setResult(calculateRoomArea({
@@ -101,8 +99,6 @@ export default function PloshadKomnatyPage() {
       b: parseRoomDimension(b),
       c: parseRoomDimension(c),
       d: parseRoomDimension(d),
-      e: parseRoomDimension(e),
-      f: parseRoomDimension(f),
       wallHeight: parseRoomDimension(wallHeight),
     }));
   };
@@ -179,18 +175,16 @@ export default function PloshadKomnatyPage() {
           )}
           {shape === "tshape" && (
             <>
-              <NumInput label="Длина центральной части (A)" value={a} onChange={setA} />
-              <NumInput label="Ширина центральной части (B)" value={b} onChange={setB} />
-              <NumInput label="Длина левого крыла (C)" value={c} onChange={setC} />
-              <NumInput label="Ширина левого крыла (D)" value={d} onChange={setD} />
-              <NumInput label="Длина правого крыла (E)" value={e} onChange={setE} />
-              <NumInput label="Ширина правого крыла (F)" value={f} onChange={setF} />
+              <NumInput label="Длина перекладины (A)" value={a} onChange={setA} />
+              <NumInput label="Глубина перекладины (B)" value={b} onChange={setB} />
+              <NumInput label="Ширина стойки (C)" value={c} onChange={setC} />
+              <NumInput label="Длина стойки (D)" value={d} onChange={setD} />
             </>
           )}
           {shape === "trapezoid" && (
             <>
-              <NumInput label="Основание a (длинная сторона)" value={a} onChange={setA} />
-              <NumInput label="Основание b (короткая сторона)" value={b} onChange={setB} />
+              <NumInput label="Основание A" value={a} onChange={setA} />
+              <NumInput label="Основание B" value={b} onChange={setB} />
               <NumInput label="Высота трапеции" value={c} onChange={setC} />
             </>
           )}
@@ -221,19 +215,25 @@ export default function PloshadKomnatyPage() {
 
       {/* Результат */}
       {result && (
-        <div className="result-card">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{UI_TEXT.resultTitle}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <ResultItem label={UI_TEXT.floorAreaLabel} value={fmtM(result.floorArea)} unit="м²" />
-            <ResultItem label={UI_TEXT.perimeterLabel} value={fmtM(result.perimeter)} unit="м" />
-            {result.wallArea !== undefined && result.wallArea > 0 && (
-              <ResultItem label={UI_TEXT.wallAreaLabel} value={fmtM(result.wallArea)} unit="м²" />
+        result.error ? (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+            {result.error}
+          </div>
+        ) : (
+          <div className="result-card">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{UI_TEXT.resultTitle}</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <ResultItem label={UI_TEXT.floorAreaLabel} value={fmtM(result.floorArea)} unit="м²" />
+              <ResultItem label={UI_TEXT.perimeterLabel} value={fmtM(result.perimeter)} unit="м" />
+              {result.wallArea !== undefined && result.wallArea > 0 && (
+                <ResultItem label={UI_TEXT.wallAreaLabel} value={fmtM(result.wallArea)} unit="м²" />
+              )}
+            </div>
+            {result.notes && (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{result.notes}</p>
             )}
           </div>
-          {result.notes && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{result.notes}</p>
-          )}
-        </div>
+        )
       )}
     </div>
   );
@@ -281,15 +281,17 @@ function ShapeSVG({ shape }: { shape: RoomShape }) {
         <svg width={W} height={H} viewBox="0 0 200 120">
           <polygon points="10,10 190,10 190,50 130,50 130,110 70,110 70,50 10,50" fill={fill} stroke={stroke} strokeWidth={2} />
           <text x={100} y={8} textAnchor="middle" style={textStyle}>A</text>
-          <text x={100} y={85} textAnchor="middle" style={textStyle}>B</text>
+          <text x={194} y={33} textAnchor="middle" style={textStyle}>B</text>
+          <text x={100} y={118} textAnchor="middle" style={textStyle}>C</text>
+          <text x={136} y={82} textAnchor="middle" style={textStyle}>D</text>
         </svg>
       );
     case "trapezoid":
       return (
         <svg width={W} height={H} viewBox="0 0 200 120">
           <polygon points="20,100 180,100 150,20 50,20" fill={fill} stroke={stroke} strokeWidth={2} />
-          <text x={100} y={115} textAnchor="middle" style={textStyle}>a</text>
-          <text x={100} y={16} textAnchor="middle" style={textStyle}>b</text>
+          <text x={100} y={115} textAnchor="middle" style={textStyle}>A</text>
+          <text x={100} y={16} textAnchor="middle" style={textStyle}>B</text>
           <text x={185} y={65} style={textStyle}>h</text>
         </svg>
       );
