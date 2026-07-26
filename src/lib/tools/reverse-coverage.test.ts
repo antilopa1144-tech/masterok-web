@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  COVERAGE_MATERIALS,
   calculateReverseCoverage,
   formatCoverageArea,
   getCoverageMaterial,
   normalizeCoverageAdjustment,
 } from "./reverse-coverage";
+import {
+  getConsumptionNorm,
+  getConsumptionPerAdjustment,
+} from "./consumption-norms";
 
 describe("инструмент обратного расчёта остатка", () => {
   it("считает площадь по остатку и количеству слоёв", () => {
@@ -66,6 +71,17 @@ describe("инструмент обратного расчёта остатка"
 
   it("использует безопасный материал по умолчанию", () => {
     expect(getCoverageMaterial("unknown").id).toBe("paint-acrylic");
+  });
+
+  it("получает пересекающиеся нормы из общего каталога", () => {
+    for (const material of COVERAGE_MATERIALS) {
+      if (!material.normId) continue;
+
+      const norm = getConsumptionNorm(material.normId);
+      expect(material.consumptionPerM2).toBe(getConsumptionPerAdjustment(norm));
+      expect(material.description).toContain(norm.range);
+      expect(material.description).toContain(norm.conditions);
+    }
   });
 
   it("форматирует малую площадь в квадратных сантиметрах", () => {

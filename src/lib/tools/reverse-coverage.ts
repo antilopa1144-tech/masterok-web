@@ -1,3 +1,10 @@
+import {
+  formatConsumptionNormSummary,
+  getConsumptionNorm,
+  getConsumptionPerAdjustment,
+  type ConsumptionNormId,
+} from "@/lib/tools/consumption-norms";
+
 export type CoverageAdjustment =
   | {
       kind: "layers";
@@ -28,6 +35,7 @@ export type CoverageAdjustment =
 
 export interface CoverageMaterial {
   id: string;
+  normId?: ConsumptionNormId;
   name: string;
   icon: string;
   unit: "л" | "кг";
@@ -46,9 +54,20 @@ export interface ReverseCoverageResult {
   amountInLiters?: number;
 }
 
-const LAYERS_1 = { kind: "layers", label: "Количество слоёв", resultLabel: "Слоёв", defaultValue: 1, min: 1, max: 5, step: 1, quickValues: [1, 2, 3] } as const;
-const LAYERS_2 = { ...LAYERS_1, defaultValue: 2 } as const;
 const FIXED = { kind: "fixed", defaultValue: 1 } as const;
+
+function layers(defaultValue: number): CoverageAdjustment {
+  return {
+    kind: "layers",
+    label: "Количество слоёв",
+    resultLabel: "Слоёв",
+    defaultValue,
+    min: 1,
+    max: 5,
+    step: 1,
+    quickValues: [1, 2, 3],
+  };
+}
 
 function thickness(
   defaultValue: number,
@@ -70,26 +89,68 @@ function thickness(
   };
 }
 
+function materialFromNorm({
+  normId,
+  name,
+  icon,
+  defaultAdjustment,
+  quickValues,
+  max,
+  density,
+}: {
+  normId: ConsumptionNormId;
+  name: string;
+  icon: string;
+  defaultAdjustment?: number;
+  quickValues?: readonly number[];
+  max?: number;
+  density?: number;
+}): CoverageMaterial {
+  const norm = getConsumptionNorm(normId);
+  const adjustment = norm.basis.kind === "layers"
+    ? layers(defaultAdjustment ?? norm.basis.referenceLayers)
+    : norm.basis.kind === "thickness"
+      ? thickness(
+          defaultAdjustment ?? norm.basis.referenceThicknessMm,
+          norm.basis.referenceThicknessMm,
+          quickValues ?? [norm.basis.referenceThicknessMm],
+          max ?? 100,
+        )
+      : FIXED;
+
+  return {
+    id: normId,
+    normId,
+    name,
+    icon,
+    unit: norm.unit.startsWith("л") ? "л" : "кг",
+    consumptionPerM2: getConsumptionPerAdjustment(norm),
+    description: formatConsumptionNormSummary(norm),
+    adjustment,
+    density,
+  };
+}
+
 export const COVERAGE_MATERIALS: CoverageMaterial[] = [
-  { id: "paint-acrylic", name: "Краска акриловая", icon: "🎨", unit: "л", consumptionPerM2: 0.15, description: "0.12–0.18 л/м² на слой", adjustment: LAYERS_2, density: 1.3 },
-  { id: "paint-latex", name: "Краска латексная", icon: "🎨", unit: "л", consumptionPerM2: 0.12, description: "0.10–0.14 л/м² на слой", adjustment: LAYERS_2, density: 1.35 },
-  { id: "paint-facade", name: "Краска фасадная", icon: "🎨", unit: "л", consumptionPerM2: 0.2, description: "0.15–0.25 л/м² на слой", adjustment: LAYERS_2, density: 1.4 },
-  { id: "primer-deep", name: "Грунтовка глубокого проникновения", icon: "💧", unit: "л", consumptionPerM2: 0.15, description: "0.10–0.20 л/м² на слой", adjustment: LAYERS_1, density: 1.05 },
-  { id: "primer-contact", name: "Бетоноконтакт", icon: "💧", unit: "кг", consumptionPerM2: 0.3, description: "0.25–0.35 кг/м² на слой", adjustment: LAYERS_1 },
-  { id: "primer-wood", name: "Грунтовка для дерева", icon: "💧", unit: "л", consumptionPerM2: 0.1, description: "0.08–0.12 л/м² на слой", adjustment: LAYERS_1, density: 1 },
-  { id: "putty-start", name: "Шпаклёвка стартовая", icon: "🪣", unit: "кг", consumptionPerM2: 1.5, description: "1.0–2.0 кг/м² при толщине 1 мм", adjustment: thickness(1, 1, [0.5, 1, 2, 3], 10) },
-  { id: "putty-finish", name: "Шпаклёвка финишная", icon: "🪣", unit: "кг", consumptionPerM2: 0.8, description: "0.5–1.0 кг/м² при толщине 0.5 мм", adjustment: thickness(0.5, 0.5, [0.5, 1, 1.5, 2], 5) },
-  { id: "plaster-gypsum", name: "Штукатурка гипсовая (Ротбанд)", icon: "🧱", unit: "кг", consumptionPerM2: 8.5, description: "8–9 кг/м² при толщине 10 мм", adjustment: thickness(10, 10, [5, 10, 15, 20], 50) },
-  { id: "plaster-cement", name: "Штукатурка цементная", icon: "🧱", unit: "кг", consumptionPerM2: 16, description: "14–18 кг/м² при толщине 10 мм", adjustment: thickness(10, 10, [5, 10, 15, 20], 50) },
-  { id: "decor-plaster", name: "Декоративная штукатурка (короед)", icon: "🧱", unit: "кг", consumptionPerM2: 3, description: "2.5–4.0 кг/м², зерно 2 мм", adjustment: FIXED },
-  { id: "tile-adhesive-cm11", name: "Плиточный клей Ceresit CM 11", icon: "⬜", unit: "кг", consumptionPerM2: 3.5, description: "3–4 кг/м², шпатель 8 мм", adjustment: FIXED },
-  { id: "tile-adhesive-cm14", name: "Плиточный клей Ceresit CM 14", icon: "⬜", unit: "кг", consumptionPerM2: 4.5, description: "3.5–5 кг/м², шпатель 10 мм", adjustment: FIXED },
-  { id: "gasblock-glue", name: "Клей для газоблоков", icon: "🧱", unit: "кг", consumptionPerM2: 1.8, description: "1.5–2.0 кг/м² кладки, шов 2–3 мм", adjustment: FIXED },
-  { id: "grout", name: "Затирка для плитки", icon: "🔲", unit: "кг", consumptionPerM2: 0.4, description: "0.3–0.5 кг/м² для типовой плитки и шва", adjustment: FIXED },
+  materialFromNorm({ normId: "paint-acrylic", name: "Краска акриловая", icon: "🎨", defaultAdjustment: 2, density: 1.3 }),
+  materialFromNorm({ normId: "paint-latex", name: "Краска латексная", icon: "🎨", defaultAdjustment: 2, density: 1.35 }),
+  materialFromNorm({ normId: "paint-facade", name: "Краска фасадная", icon: "🎨", defaultAdjustment: 2, density: 1.4 }),
+  materialFromNorm({ normId: "primer-deep", name: "Грунтовка глубокого проникновения", icon: "💧", density: 1.05 }),
+  materialFromNorm({ normId: "primer-contact", name: "Бетоноконтакт", icon: "💧" }),
+  { id: "primer-wood", name: "Грунтовка для дерева", icon: "💧", unit: "л", consumptionPerM2: 0.1, description: "0.08–0.12 л/м² на слой", adjustment: layers(1), density: 1 },
+  materialFromNorm({ normId: "putty-start", name: "Шпаклёвка стартовая", icon: "🪣", defaultAdjustment: 1, quickValues: [0.5, 1, 2, 3], max: 10 }),
+  materialFromNorm({ normId: "putty-finish", name: "Шпаклёвка финишная", icon: "🪣", defaultAdjustment: 0.5, quickValues: [0.5, 1, 1.5, 2], max: 5 }),
+  materialFromNorm({ normId: "plaster-gypsum", name: "Штукатурка гипсовая (Ротбанд)", icon: "🧱", defaultAdjustment: 10, quickValues: [5, 10, 15, 20], max: 50 }),
+  materialFromNorm({ normId: "plaster-cement", name: "Штукатурка цементная", icon: "🧱", defaultAdjustment: 10, quickValues: [5, 10, 15, 20], max: 50 }),
+  materialFromNorm({ normId: "decor-plaster", name: "Декоративная штукатурка (короед)", icon: "🧱" }),
+  materialFromNorm({ normId: "tile-adhesive-cm11", name: "Плиточный клей Ceresit CM 11", icon: "⬜" }),
+  materialFromNorm({ normId: "tile-adhesive-cm14", name: "Плиточный клей Ceresit CM 14", icon: "⬜" }),
+  materialFromNorm({ normId: "gasblock-glue", name: "Клей для газоблоков", icon: "🧱" }),
+  materialFromNorm({ normId: "grout", name: "Затирка для плитки", icon: "🔲" }),
   { id: "wallpaper-glue", name: "Клей обойный (разведённый)", icon: "📜", unit: "л", consumptionPerM2: 0.2, description: "0.15–0.25 л/м² при нанесении на стену", adjustment: FIXED, density: 1 },
-  { id: "self-leveling", name: "Наливной пол", icon: "🏗️", unit: "кг", consumptionPerM2: 1.6, description: "1.5–1.8 кг/м² на 1 мм толщины", adjustment: thickness(10, 1, [3, 5, 10, 20], 100) },
+  materialFromNorm({ normId: "self-leveling", name: "Наливной пол", icon: "🏗️", defaultAdjustment: 10, quickValues: [3, 5, 10, 20], max: 100 }),
   { id: "screed-m300", name: "Пескобетон М300 (стяжка)", icon: "🏗️", unit: "кг", consumptionPerM2: 20, description: "Около 20 кг/м² при толщине 10 мм", adjustment: thickness(10, 10, [10, 30, 50, 70], 150) },
-  { id: "waterproof", name: "Гидроизоляция обмазочная", icon: "🛡️", unit: "кг", consumptionPerM2: 1.5, description: "Около 1.5 кг/м² на слой; обычно наносят 2 слоя", adjustment: LAYERS_2 },
+  materialFromNorm({ normId: "waterproof", name: "Гидроизоляция обмазочная", icon: "🛡️", defaultAdjustment: 2 }),
   { id: "cement", name: "Цемент М500", icon: "🏗️", unit: "кг", consumptionPerM2: 5, description: "Около 5 кг/м² в составе раствора толщиной 10 мм", adjustment: thickness(10, 10, [10, 20, 30, 50], 100) },
   { id: "sand", name: "Песок строительный", icon: "🏗️", unit: "кг", consumptionPerM2: 15, description: "Около 15 кг/м² в составе раствора толщиной 10 мм", adjustment: thickness(10, 10, [10, 20, 30, 50], 100) },
 ];
