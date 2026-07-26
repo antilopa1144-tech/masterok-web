@@ -26,6 +26,7 @@ interface TileInputs {
   area?: number;
   tileWidthCm?: number;
   tileHeightCm?: number;
+  packArea?: number;
   jointWidth?: number;
   groutDepth?: number;
   layoutPattern?: number;
@@ -85,6 +86,9 @@ function buildMaterials(
   tileHeightCm: number,
   recExactNeed: number,
   recPurchaseQuantity: number,
+  packagesCount: number,
+  tilesPerPackage: number,
+  packAreaM2: number,
   glueKg: number,
   glueBags: number,
   groutKg: number,
@@ -107,11 +111,16 @@ function buildMaterials(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Плитка ${tileSizeLabel}`,
-      subtitle: "Покупайте одной партии и одного калибра; фактическое число плиток в коробке проверьте у выбранной коллекции",
+      subtitle: `Коробка ${roundDisplay(packAreaM2, 3)} м² — ${tilesPerPackage} шт.; сверьте площадь упаковки у выбранной коллекции и покупайте одной партии и одного калибра`,
       quantity: roundDisplay(recExactNeed, 6),
       unit: spec.packaging_rules.tile_unit,
       withReserve: roundDisplay(recPurchaseQuantity, 6),
-      purchaseQty: Math.ceil(recPurchaseQuantity),
+      purchaseQty: roundDisplay(recPurchaseQuantity, 6),
+      packageInfo: {
+        count: packagesCount,
+        size: tilesPerPackage,
+        packageUnit: "упаковок",
+      },
       category: "Основное",
     },
     {
@@ -191,6 +200,16 @@ export function computeCanonicalTile(
   const sizeAdjustment = resolveTileSizeAdjustment(spec, averageTileSizeCm);
   const wastePercent = roundDisplay(layout.waste_percent + roomComplexity.waste_bonus_percent + sizeAdjustment, 3);
   const tileAreaM2 = roundDisplay((tileWidthCm / 100) * (tileHeightCm / 100), 6);
+  const requestedPackAreaM2 = Math.max(
+    0.1,
+    Math.min(
+      20,
+      inputs.packArea
+        ?? getInputDefault(spec, "packArea", spec.packaging_rules.tile_package_area_m2),
+    ),
+  );
+  const tilesPerPackage = Math.max(1, Math.round(requestedPackAreaM2 / tileAreaM2));
+  const packAreaM2 = roundDisplay(tilesPerPackage * tileAreaM2, 6);
 
   // Apply accuracy mode to tile quantity (tile-specific modifiers)
   const tilePrimaryMult = getPrimaryMultiplier("tile", accuracyMode);
@@ -215,8 +234,8 @@ export function computeCanonicalTile(
   const primerLiters = roundDisplay(area.area * spec.material_rules.primer_l_per_m2 * primerPrimaryMult, 6);
 
   const packageOptions = [{
-    size: spec.packaging_rules.tile_package_size,
-    label: `tile-piece-${spec.packaging_rules.tile_package_size}`,
+    size: tilesPerPackage,
+    label: `tile-box-${tilesPerPackage}`,
     unit: spec.packaging_rules.tile_unit,
   }];
 
@@ -234,6 +253,7 @@ export function computeCanonicalTile(
         `layout:${layout.key}`,
         `room:${roomComplexity.key}`,
         `accuracy_mode:${accuracyMode}`,
+        `pack_area_m2:${packAreaM2}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
@@ -303,6 +323,9 @@ export function computeCanonicalTile(
       tileHeightCm,
       recScenario.exact_need,
       recScenario.purchase_quantity,
+      recScenario.buy_plan.packages_count,
+      tilesPerPackage,
+      packAreaM2,
       glueKg,
       glueBags,
       groutKg,
@@ -326,6 +349,9 @@ export function computeCanonicalTile(
       layoutPattern: layout.id,
       roomComplexity: roomComplexity.id,
       tileArea: tileAreaM2,
+      packArea: packAreaM2,
+      tilesPerPackage,
+      packagesNeeded: recScenario.buy_plan.packages_count,
       wastePercent: wastePercent,
       sizeAdjustment: roundDisplay(sizeAdjustment, 3),
       baseExactNeedTiles: baseExactNeed,

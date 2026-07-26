@@ -1,7 +1,7 @@
 {
   "calculator_id": "tile",
-  "formula_version": "tile-canonical-v1",
-  "generated_at": "2026-07-21T07:37:54.759Z",
+  "formula_version": "tile-canonical-v2",
+  "generated_at": "2026-07-26T21:39:34.491Z",
   "cases": [
     {
       "id": "defaults",
@@ -13,6 +13,7 @@
         "area": 12,
         "tileWidthCm": 30,
         "tileHeightCm": 30,
+        "packArea": 1.44,
         "jointWidth": 3,
         "groutDepth": 0,
         "layoutPattern": 1,
@@ -29,23 +30,26 @@
         "layoutPattern": 1,
         "roomComplexity": 1,
         "tileArea": 0.09,
+        "packArea": 1.44,
+        "tilesPerPackage": 16,
+        "packagesNeeded": 10,
         "wastePercent": 10,
         "sizeAdjustment": 0,
         "baseExactNeedTiles": 146.666667,
-        "tilesNeeded": 147,
+        "tilesNeeded": 160,
         "glueRateKgPerM2": 4,
         "glueNeededKg": 48,
         "groutNeededKg": 2.5344,
         "primerNeededL": 1.8,
-        "crossesNeeded": 177,
+        "crossesNeeded": 192,
         "svpPackages": 0,
         "siliconeTubes": 1,
         "minExactNeedTiles": 133.84448,
         "recExactNeedTiles": 146.666667,
         "maxExactNeedTiles": 193.341867,
-        "minPurchaseTiles": 134,
-        "recPurchaseTiles": 147,
-        "maxPurchaseTiles": 194
+        "minPurchaseTiles": 144,
+        "recPurchaseTiles": 160,
+        "maxPurchaseTiles": 208
       },
       "expected_materials_count": 6,
       "expected_material_names": [
@@ -61,15 +65,15 @@
       "expected_scenarios": {
         "MIN": {
           "exact_need": 133.84448,
-          "purchase_quantity": 134
+          "purchase_quantity": 144
         },
         "REC": {
           "exact_need": 146.666667,
-          "purchase_quantity": 147
+          "purchase_quantity": 160
         },
         "MAX": {
           "exact_need": 193.341867,
-          "purchase_quantity": 194
+          "purchase_quantity": 208
         }
       }
     }

@@ -1,5 +1,5 @@
 {
-  "formulaVersion": "tile-canonical-v1",
+  "formulaVersion": "tile-canonical-v2",
   "cases": [
     {
       "id": "room_straight_30x30",
@@ -9,6 +9,7 @@
         "width": 3,
         "tileWidth": 300,
         "tileHeight": 300,
+        "packArea": 1.44,
         "layingMethod": 0,
         "jointWidth": 3,
         "jointDepth": 6,
@@ -17,19 +18,20 @@
       "expected": {
         "area": 12,
         "wastePercent": 10,
-        "formulaVersion": "tile-canonical-v1",
+        "formulaVersion": "tile-canonical-v2",
         "materials": {
-          "tiles": 147,
+          "tiles": 160,
+          "tilePackages": 10,
           "glueBags": 50,
           "groutBags": 4,
           "primerCans": 5,
-          "crosses": 177
+          "crosses": 192
         },
         "warningsCount": 0,
         "recScenario": {
-          "packageSize": 1,
+          "packageSize": 16,
           "exactNeed": 146.666667,
-          "purchaseQuantity": 147
+          "purchaseQuantity": 160
         }
       }
     },
@@ -40,6 +42,7 @@
         "area": 20,
         "tileWidth": 800,
         "tileHeight": 800,
+        "packArea": 1.28,
         "layingMethod": 1,
         "jointWidth": 3,
         "roomComplexity": 1
@@ -47,9 +50,10 @@
       "expected": {
         "area": 20,
         "wastePercent": 25,
-        "formulaVersion": "tile-canonical-v1",
+        "formulaVersion": "tile-canonical-v2",
         "materials": {
           "tiles": 40,
+          "tilePackages": 20,
           "glueBags": 150,
           "groutBags": 4,
           "primerCans": 5,
@@ -57,7 +61,7 @@
         },
         "warningsCount": 2,
         "recScenario": {
-          "packageSize": 1,
+          "packageSize": 2,
           "exactNeed": 39.0625,
           "purchaseQuantity": 40
         }
@@ -70,6 +74,7 @@
         "area": 35,
         "tileWidth": 200,
         "tileHeight": 100,
+        "packArea": 1,
         "layoutPattern": 4,
         "jointWidth": 3,
         "roomComplexity": 3
@@ -77,19 +82,20 @@
       "expected": {
         "area": 35,
         "wastePercent": 30,
-        "formulaVersion": "tile-canonical-v1",
+        "formulaVersion": "tile-canonical-v2",
         "materials": {
-          "tiles": 2275,
+          "tiles": 2300,
+          "tilePackages": 46,
           "glueBags": 125,
           "groutBags": 18,
           "primerCans": 10,
-          "crosses": 2730
+          "crosses": 2760
         },
         "warningsCount": 1,
         "recScenario": {
-          "packageSize": 1,
+          "packageSize": 50,
           "exactNeed": 2275,
-          "purchaseQuantity": 2275
+          "purchaseQuantity": 2300
         }
       }
     }

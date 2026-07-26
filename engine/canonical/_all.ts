@@ -470,7 +470,7 @@ export interface TileRoomComplexitySpec {
 
 export interface TilePackagingRules {
   tile_unit: string;
-  tile_package_size: number;
+  tile_package_area_m2: number;
   glue_bag_kg: number;
   grout_bag_kg: number;
   primer_can_l: number;
