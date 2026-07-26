@@ -123,6 +123,50 @@ describe("Калькулятор гипсокартона", () => {
     });
   });
 
+  describe("Понятные режимы формы", () => {
+    it("по умолчанию сразу предлагает все четыре стены комнаты", () => {
+      const firstField = drywallDef.fields[0];
+      expect(firstField.key).toBe("surfaceMode");
+      expect(firstField.defaultValue).toBe(0);
+      expect(firstField.options?.map((option) => option.label)).toEqual([
+        "Все 4 стены комнаты",
+        "Одну стену",
+        "Перегородку",
+      ]);
+    });
+
+    it("режим «все стены» передаёт движку одностороннюю обшивку четырёх стен", () => {
+      const result = calc({
+        surfaceMode: 0,
+        inputMode: 0,
+        roomLength: 5,
+        roomWidth: 4,
+        height: 2.7,
+        openingsArea: 3.6,
+        layers: 1,
+        profileStep: 0.6,
+      });
+
+      expect(result.totals.workType).toBe(1);
+      expect(result.totals.wallScope).toBe(1);
+      expect(result.totals.area).toBeCloseTo(45, 3);
+    });
+
+    it("режим «перегородка» сохраняет двухсторонний расчёт", () => {
+      const result = calc({
+        surfaceMode: 2,
+        inputMode: 0,
+        length: 5,
+        height: 2.7,
+        layers: 1,
+        profileStep: 0.6,
+      });
+
+      expect(result.totals.workType).toBe(0);
+      expect(result.totals.sides).toBe(2);
+    });
+  });
+
   describe("Ввод по готовой площади", () => {
     const result = calc({
       workType: 1,

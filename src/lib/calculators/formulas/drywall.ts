@@ -29,15 +29,17 @@ export const drywallDef: CalculatorDefinition = {
   complexity: 2,
   fields: [
     {
-      key: "workType",
-      label: "Тип работы",
-      type: "select",
+      key: "surfaceMode",
+      label: "Что рассчитываем",
+      type: "radio",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Перегородка (двухсторонняя обшивка)" },
-        { value: 1, label: "Обшивка стены (одна сторона)" },
+        { value: 0, label: "Все 4 стены комнаты" },
+        { value: 1, label: "Одну стену" },
+        { value: 2, label: "Перегородку" },
       ],
       hint: "Для потолка используйте отдельный калькулятор гипсокартонного потолка — там учитывается потолочная схема каркаса.",
+      fullWidth: true,
     },
     {
       key: "inputMode",
@@ -51,21 +53,6 @@ export const drywallDef: CalculatorDefinition = {
       fullWidth: true,
     },
     {
-      key: "wallScope",
-      label: "Сколько стен обшить",
-      type: "radio",
-      defaultValue: 0,
-      options: [
-        { value: 0, label: "Одну стену" },
-        { value: 1, label: "Все 4 стены комнаты" },
-      ],
-      hideIf: [
-        { key: "workType", op: "ne", value: 1 },
-        { key: "inputMode", op: "ne", value: 0 },
-      ],
-      fullWidth: true,
-    },
-    {
       key: "length",
       label: "Длина стены / перегородки",
       type: "slider",
@@ -75,10 +62,7 @@ export const drywallDef: CalculatorDefinition = {
       step: 0.5,
       defaultValue: 5,
       group: "bySize",
-      hideIfAll: [
-        { key: "workType", op: "eq", value: 1 },
-        { key: "wallScope", op: "eq", value: 1 },
-      ],
+      hideIf: { key: "surfaceMode", op: "eq", value: 0 },
     },
     {
       key: "roomLength",
@@ -90,10 +74,7 @@ export const drywallDef: CalculatorDefinition = {
       step: 0.5,
       defaultValue: 5,
       group: "bySize",
-      hideIf: [
-        { key: "workType", op: "ne", value: 1 },
-        { key: "wallScope", op: "ne", value: 1 },
-      ],
+      hideIf: { key: "surfaceMode", op: "ne", value: 0 },
     },
     {
       key: "roomWidth",
@@ -105,10 +86,7 @@ export const drywallDef: CalculatorDefinition = {
       step: 0.5,
       defaultValue: 4,
       group: "bySize",
-      hideIf: [
-        { key: "workType", op: "ne", value: 1 },
-        { key: "wallScope", op: "ne", value: 1 },
-      ],
+      hideIf: { key: "surfaceMode", op: "ne", value: 0 },
     },
     {
       key: "height",
@@ -181,7 +159,23 @@ export const drywallDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = drywallSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalDrywall(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
+    // В интерфейсе три понятных пользовательских сценария. Канонический
+    // движок по-прежнему получает независимые workType и wallScope, поэтому
+    // расчётная логика и web/mobile parity не дублируются в компоненте формы.
+    const hasSurfaceMode = Number.isFinite(inputs.surfaceMode);
+    const surfaceMode = Math.round(inputs.surfaceMode ?? 0);
+    const canonicalInputs = hasSurfaceMode
+      ? {
+          ...inputs,
+          workType: surfaceMode === 2 ? 0 : 1,
+          wallScope: surfaceMode === 0 ? 1 : 0,
+        }
+      : inputs;
+    const canonical = computeCanonicalDrywall(
+      spec,
+      { ...canonicalInputs, accuracyMode: inputs.accuracyMode as any },
+      factorTable,
+    );
 
     const manufacturer = getManufacturerByIndex("drywall", inputs.manufacturer);
     const materials = canonical.materials.map((m) => {
@@ -227,8 +221,7 @@ export const drywallDef: CalculatorDefinition = {
 По ГОСТ 6266-97 и ТТК Knauf.
   `,
   howToUse: [
-    "Выберите тип конструкции: перегородка или обшивка стены",
-    "Для обшивки укажите одну стену или размеры комнаты для расчёта всех четырёх стен",
+    "Сразу выберите, что считаете: все четыре стены комнаты, одну стену или отдельную перегородку",
     "Введите размеры и площадь проёмов либо готовую чистую площадь",
     "Укажите количество слоёв ГКЛ (стандарт — 1)",
     "Выберите шаг профилей (стандарт 600 мм, усиленный — 400 мм)",
