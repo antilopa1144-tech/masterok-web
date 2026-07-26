@@ -9,7 +9,6 @@ import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { RecentCalculators } from "@/components/home/HomeLazyWidgets";
-import { ConstructionBlueprint } from "@/components/home/ConstructionBlueprint";
 import {
   MASTEROK_RUSTORE_URL,
   SITE_DEFAULT_TITLE,
@@ -121,42 +120,38 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
 
       <main className="page-container-wide pb-14 pt-9 sm:pt-12 lg:pt-16">
-        <section className="text-center lg:text-left xl:grid xl:grid-cols-[minmax(0,1fr)_23rem] xl:items-center xl:gap-12" aria-labelledby="home-title">
-          <div>
-            <h1 id="home-title" className="max-w-5xl text-3xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
-              Рассчитайте материалы без лишних закупок
-            </h1>
-            <p className="mt-3 text-base text-slate-500 sm:text-lg dark:text-slate-400">
-              {CALC_COUNT} строительных калькуляторов с практическим запасом и итогом к покупке
-            </p>
+        <section className="text-center lg:text-left" aria-labelledby="home-title">
+          <h1 id="home-title" className="max-w-5xl text-3xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
+            Рассчитайте материалы без лишних закупок
+          </h1>
+          <p className="mt-3 text-base text-slate-500 sm:text-lg dark:text-slate-400">
+            {CALC_COUNT} строительных калькуляторов с практическим запасом и итогом к покупке
+          </p>
 
-            <div className="mt-7">
-              <Suspense fallback={<div className="h-16 rounded-xl border border-slate-200 bg-white animate-pulse dark:border-slate-700 dark:bg-slate-800" />}>
-                <CalculatorSearch
-                  hero
-                  syncUrlQuery
-                  calculators={ALL_CALCULATORS_META}
-                  blogPosts={blogPosts.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
-                  checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
-                  tools={TOOLS_FOR_SEARCH}
-                />
-              </Suspense>
-            </div>
-
-            <nav className="mt-4 flex flex-wrap justify-center gap-2 lg:justify-start" aria-label="Популярные задачи">
-              {HOME_TASK_LINKS.map((task) => {
-                const category = CATEGORIES.find((item) => item.id === task.category);
-                return (
-                  <Link key={task.href} href={task.href} prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 no-underline transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-accent-700">
-                    <CategoryIcon icon={category?.icon ?? "calculator"} size={17} color="currentColor" />
-                    {task.label}
-                  </Link>
-                );
-              })}
-            </nav>
+          <div className="mt-7 max-w-6xl">
+            <Suspense fallback={<div className="h-16 rounded-xl border border-slate-200 bg-white animate-pulse dark:border-slate-700 dark:bg-slate-800" />}>
+              <CalculatorSearch
+                hero
+                syncUrlQuery
+                calculators={ALL_CALCULATORS_META}
+                blogPosts={blogPosts.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
+                checklists={ALL_CHECKLISTS.map(({ slug, title, description, category }) => ({ slug, title, description, category }))}
+                tools={TOOLS_FOR_SEARCH}
+              />
+            </Suspense>
           </div>
 
-          <ConstructionBlueprint />
+          <nav className="mt-4 flex max-w-5xl flex-wrap justify-center gap-2 lg:justify-start" aria-label="Популярные задачи">
+            {HOME_TASK_LINKS.map((task) => {
+              const category = CATEGORIES.find((item) => item.id === task.category);
+              return (
+                <Link key={task.href} href={task.href} prefetch={false} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 no-underline transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-accent-700">
+                  <CategoryIcon icon={category?.icon ?? "calculator"} size={17} color="currentColor" />
+                  {task.label}
+                </Link>
+              );
+            })}
+          </nav>
         </section>
 
         <section className="theme-surface mt-10 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700" aria-labelledby="popular-title">

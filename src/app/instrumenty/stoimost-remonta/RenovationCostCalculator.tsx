@@ -2,140 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { getPrices as getUserPrices, setPrices as setUserPrices, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
-
-// ── Структура нормативов (расходы на м²). Цены пользователь вводит сам. ──────
-
-interface MaterialPrice {
-  name: string;
-  unit: string;
-  consumptionPerM2: number; // units per m² of floor area
-}
-
-interface WorkPrice {
-  name: string;
-  unit: string;
-  consumptionPerM2: number;
-}
-
-interface RenovationType {
-  id: string;
-  label: string;
-  description: string;
-  icon: string;
-  materials: MaterialPrice[];
-  works: WorkPrice[];
-  durationDaysPerM2: number;
-}
-
-const RENOVATION_TYPES: RenovationType[] = [
-  {
-    id: "cosmetic",
-    label: "Косметический",
-    description: "Обои, покраска потолка, замена плинтусов. Без демонтажа и замены коммуникаций.",
-    icon: "🎨",
-    durationDaysPerM2: 0.3,
-    materials: [
-      { name: "Обои виниловые", unit: "рулон", consumptionPerM2: 0.18 },
-      { name: "Клей обойный", unit: "уп", consumptionPerM2: 0.02 },
-      { name: "Краска потолочная", unit: "л", consumptionPerM2: 0.3 },
-      { name: "Грунтовка", unit: "л", consumptionPerM2: 0.2 },
-      { name: "Плинтус напольный", unit: "м.п.", consumptionPerM2: 0.5 },
-      { name: "Расходники (скотч, валики, кисти)", unit: "компл", consumptionPerM2: 0.015 },
-    ],
-    works: [
-      { name: "Поклейка обоев", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Покраска потолка", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Монтаж плинтуса", unit: "м.п.", consumptionPerM2: 0.5 },
-      { name: "Грунтовка стен", unit: "м²", consumptionPerM2: 2.5 },
-    ],
-  },
-  {
-    id: "standard",
-    label: "Стандартный",
-    description: "Выравнивание стен, стяжка, плитка в ванной, ламинат, электрика. Основной вариант для жилья.",
-    icon: "🏠",
-    durationDaysPerM2: 0.7,
-    materials: [
-      { name: "Штукатурка гипсовая", unit: "мешок 30кг", consumptionPerM2: 0.35 },
-      { name: "Шпаклёвка финишная", unit: "мешок 25кг", consumptionPerM2: 0.08 },
-      { name: "Грунтовка глубокого проникновения", unit: "л", consumptionPerM2: 0.4 },
-      { name: "Ламинат", unit: "м²", consumptionPerM2: 0.7 },
-      { name: "Подложка", unit: "м²", consumptionPerM2: 0.7 },
-      { name: "Обои / краска стен", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Плитка (ванная, кухня)", unit: "м²", consumptionPerM2: 0.3 },
-      { name: "Плиточный клей", unit: "мешок 25кг", consumptionPerM2: 0.05 },
-      { name: "Стяжка из цементно-песчаной смеси", unit: "мешок 25 кг", consumptionPerM2: 0.4 },
-      { name: "Электрика (кабель, автоматы)", unit: "компл", consumptionPerM2: 0.06 },
-      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Двери межкомнатные", unit: "шт", consumptionPerM2: 0.04 },
-      { name: "Расходники", unit: "компл", consumptionPerM2: 0.02 },
-    ],
-    works: [
-      { name: "Штукатурка стен", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Шпаклёвка", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Укладка ламината", unit: "м²", consumptionPerM2: 0.7 },
-      { name: "Укладка плитки", unit: "м²", consumptionPerM2: 0.3 },
-      { name: "Стяжка пола", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Электромонтаж", unit: "точка", consumptionPerM2: 0.3 },
-      { name: "Натяжной потолок (монтаж)", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Установка дверей", unit: "шт", consumptionPerM2: 0.04 },
-    ],
-  },
-  {
-    id: "capital",
-    label: "Капитальный",
-    description: "Полный демонтаж, замена всех коммуникаций, перепланировка, тёплые полы, дизайнерская отделка.",
-    icon: "🏗️",
-    durationDaysPerM2: 1.2,
-    materials: [
-      { name: "Штукатурка гипсовая", unit: "мешок 30кг", consumptionPerM2: 0.5 },
-      { name: "Шпаклёвка финишная", unit: "мешок 25кг", consumptionPerM2: 0.12 },
-      { name: "Грунтовка", unit: "л", consumptionPerM2: 0.6 },
-      { name: "Керамогранит / плитка", unit: "м²", consumptionPerM2: 0.5 },
-      { name: "Плиточный клей", unit: "мешок 25кг", consumptionPerM2: 0.1 },
-      { name: "Ламинат / паркетная доска", unit: "м²", consumptionPerM2: 0.5 },
-      { name: "Подложка", unit: "м²", consumptionPerM2: 0.5 },
-      { name: "Стяжка с тёплым полом", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Гипсокартон (перегородки)", unit: "лист", consumptionPerM2: 0.15 },
-      { name: "Электрика полная замена", unit: "компл", consumptionPerM2: 0.08 },
-      { name: "Сантехника (трубы, фитинги)", unit: "компл", consumptionPerM2: 0.05 },
-      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Двери", unit: "шт", consumptionPerM2: 0.04 },
-      { name: "Краска / декоративная штукатурка", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Демонтажные работы (вывоз)", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Расходники", unit: "компл", consumptionPerM2: 0.025 },
-    ],
-    works: [
-      { name: "Демонтаж старой отделки", unit: "м²", consumptionPerM2: 3.5 },
-      { name: "Штукатурка стен", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Шпаклёвка + покраска", unit: "м²", consumptionPerM2: 2.5 },
-      { name: "Стяжка с тёплым полом", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Укладка напольного покрытия", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Укладка плитки", unit: "м²", consumptionPerM2: 0.5 },
-      { name: "Электромонтаж", unit: "точка", consumptionPerM2: 0.4 },
-      { name: "Сантехмонтаж", unit: "точка", consumptionPerM2: 0.08 },
-      { name: "Монтаж перегородок из гипсокартона", unit: "м²", consumptionPerM2: 0.15 },
-      { name: "Натяжной потолок", unit: "м²", consumptionPerM2: 1.0 },
-      { name: "Установка дверей", unit: "шт", consumptionPerM2: 0.04 },
-    ],
-  },
-];
-
-const ROOM_PRESETS = [
-  { label: "Студия 25 м²", area: 25 },
-  { label: "1-комнатная 35 м²", area: 35 },
-  { label: "2-комнатная 55 м²", area: 55 },
-  { label: "3-комнатная 75 м²", area: 75 },
-  { label: "Дом 120 м²", area: 120 },
-];
-
-function formatPrice(n: number): string {
-  return Math.round(n).toLocaleString("ru-RU");
-}
-
-function formatPriceRange(n: number): [string, string] {
-  return [formatPrice(n * 0.85), formatPrice(n * 1.15)];
-}
+import {
+  calculateRenovationCost,
+  formatRenovationPrice,
+  formatRenovationPriceRange,
+  getRenovationType,
+  RENOVATION_TYPES,
+  ROOM_PRESETS,
+} from "@/lib/tools/renovation-cost";
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -156,7 +30,7 @@ export default function RenovationCostCalculator() {
     };
   }, [scopeKey]);
 
-  const type = RENOVATION_TYPES.find((t) => t.id === typeId)!;
+  const type = getRenovationType(typeId);
 
   // Persist custom prices
   useEffect(() => {
@@ -165,40 +39,15 @@ export default function RenovationCostCalculator() {
     }
   }, [customPrices, scopeKey]);
 
-  const priceFor = (key: string): number => customPrices[key] ?? 0;
-
   const handleResetPrices = () => {
     void resetScope(scopeKey);
     setCustomPrices({});
   };
 
-  const result = useMemo(() => {
-    const materialLines = type.materials.map((m) => {
-      const qty = Math.ceil(area * m.consumptionPerM2 * 10) / 10;
-      const price = priceFor(m.name);
-      const cost = Math.round(qty * price);
-      return { ...m, qty, cost, price };
-    });
-
-    const workLines = withWork
-      ? type.works.map((w) => {
-          const qty = Math.ceil(area * w.consumptionPerM2 * 10) / 10;
-          const price = priceFor(`work:${w.name}`);
-          const cost = Math.round(qty * price);
-          return { ...w, qty, cost, price };
-        })
-      : [];
-
-    const materialTotal = materialLines.reduce((s, l) => s + l.cost, 0);
-    const workTotal = workLines.reduce((s, l) => s + l.cost, 0);
-    const total = materialTotal + workTotal;
-    const perM2 = total > 0 ? Math.round(total / area) : 0;
-    const durationDays = Math.ceil(area * type.durationDaysPerM2);
-    const hasAnyPrice = total > 0;
-
-    return { materialLines, workLines, materialTotal, workTotal, total, perM2, durationDays, hasAnyPrice };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area, type, withWork, customPrices]);
+  const result = useMemo(
+    () => calculateRenovationCost({ area, typeId, withWork, prices: customPrices }),
+    [area, typeId, withWork, customPrices],
+  );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -284,7 +133,7 @@ export default function RenovationCostCalculator() {
               </p>
               {result.hasAnyPrice ? (
                 <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  {formatPriceRange(result.total)[0]} — {formatPriceRange(result.total)[1]} ₽
+                  {formatRenovationPriceRange(result.total)[0]} — {formatRenovationPriceRange(result.total)[1]} ₽
                 </p>
               ) : (
                 <p className="text-base text-slate-500 dark:text-slate-400">
@@ -295,7 +144,7 @@ export default function RenovationCostCalculator() {
             <div className="text-right space-y-0.5">
               {result.hasAnyPrice && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {formatPrice(result.perM2)} ₽/м²
+                  {formatRenovationPrice(result.perM2)} ₽/м²
                 </p>
               )}
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -311,22 +160,22 @@ export default function RenovationCostCalculator() {
                 <div
                   className="bg-blue-400 dark:bg-blue-500"
                   style={{ width: `${(result.materialTotal / result.total) * 100}%` }}
-                  title={`Материалы: ${formatPrice(result.materialTotal)} ₽`}
+                  title={`Материалы: ${formatRenovationPrice(result.materialTotal)} ₽`}
                 />
                 <div
                   className="bg-emerald-400 dark:bg-emerald-500"
                   style={{ width: `${(result.workTotal / result.total) * 100}%` }}
-                  title={`Работы: ${formatPrice(result.workTotal)} ₽`}
+                  title={`Работы: ${formatRenovationPrice(result.workTotal)} ₽`}
                 />
               </div>
               <div className="flex justify-between mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-blue-400" />
-                  Материалы: {formatPrice(result.materialTotal)} ₽
+                  Материалы: {formatRenovationPrice(result.materialTotal)} ₽
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  Работы: {formatPrice(result.workTotal)} ₽
+                  Работы: {formatRenovationPrice(result.workTotal)} ₽
                 </span>
               </div>
             </div>
@@ -373,14 +222,14 @@ export default function RenovationCostCalculator() {
                   title="Ваша цена за единицу"
                 />
                 <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                  {line.cost > 0 ? `${formatPrice(line.cost)} ₽` : "—"}
+                  {line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}
                 </span>
               </div>
             ))}
             {result.materialTotal > 0 && (
               <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
                 <span>Итого материалы</span>
-                <span>{formatPrice(result.materialTotal)} ₽</span>
+                <span>{formatRenovationPrice(result.materialTotal)} ₽</span>
               </div>
             )}
           </div>
@@ -414,14 +263,14 @@ export default function RenovationCostCalculator() {
                     title="Ваша цена за единицу"
                   />
                   <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                    {line.cost > 0 ? `${formatPrice(line.cost)} ₽` : "—"}
+                    {line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}
                   </span>
                 </div>
               ))}
               {result.workTotal > 0 && (
                 <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
                   <span>Итого работы</span>
-                  <span>{formatPrice(result.workTotal)} ₽</span>
+                  <span>{formatRenovationPrice(result.workTotal)} ₽</span>
                 </div>
               )}
             </div>

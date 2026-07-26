@@ -1,71 +1,25 @@
 "use client";
 
 import { useState, useMemo } from "react";
-
-interface MaterialType {
-  id: string;
-  name: string;
-  icon: string;
-  unit: string;
-  consumptionPerM2: number;
-  description: string;
-  layers: number;
-  density?: number; // кг/л — для конвертации л↔кг
-}
-
-const MATERIALS: MaterialType[] = [
-  // Краски
-  { id: "paint-acrylic", name: "Краска акриловая", icon: "🎨", unit: "л", consumptionPerM2: 0.15, description: "0.12-0.18 л/м² на слой", layers: 2, density: 1.3 },
-  { id: "paint-latex", name: "Краска латексная", icon: "🎨", unit: "л", consumptionPerM2: 0.12, description: "0.10-0.14 л/м² на слой", layers: 2, density: 1.35 },
-  { id: "paint-facade", name: "Краска фасадная", icon: "🎨", unit: "л", consumptionPerM2: 0.20, description: "0.15-0.25 л/м² на слой", layers: 2, density: 1.4 },
-  // Грунтовки
-  { id: "primer-deep", name: "Грунтовка глубокого проникновения", icon: "💧", unit: "л", consumptionPerM2: 0.15, description: "0.10-0.20 л/м²", layers: 1, density: 1.05 },
-  { id: "primer-contact", name: "Бетоноконтакт", icon: "💧", unit: "кг", consumptionPerM2: 0.30, description: "0.25-0.35 кг/м²", layers: 1 },
-  { id: "primer-wood", name: "Грунтовка для дерева", icon: "💧", unit: "л", consumptionPerM2: 0.10, description: "0.08-0.12 л/м²", layers: 1, density: 1.0 },
-  // Шпаклёвки
-  { id: "putty-start", name: "Шпаклёвка стартовая", icon: "🪣", unit: "кг", consumptionPerM2: 1.5, description: "1.0-2.0 кг/м² слой 1мм", layers: 1 },
-  { id: "putty-finish", name: "Шпаклёвка финишная", icon: "🪣", unit: "кг", consumptionPerM2: 0.8, description: "0.5-1.0 кг/м² слой 0.5мм", layers: 1 },
-  // Штукатурки
-  { id: "plaster-gypsum", name: "Штукатурка гипсовая (Ротбанд)", icon: "🧱", unit: "кг", consumptionPerM2: 8.5, description: "8-9 кг/м² слой 10мм", layers: 1 },
-  { id: "plaster-cement", name: "Штукатурка цементная", icon: "🧱", unit: "кг", consumptionPerM2: 16, description: "14-18 кг/м² слой 10мм", layers: 1 },
-  { id: "decor-plaster", name: "Декоративная штукатурка (короед)", icon: "🧱", unit: "кг", consumptionPerM2: 3.0, description: "2.5-4.0 кг/м², зерно 2мм", layers: 1 },
-  // Клеи
-  { id: "tile-adhesive-cm11", name: "Плиточный клей Ceresit CM 11", icon: "⬜", unit: "кг", consumptionPerM2: 3.5, description: "3-4 кг/м² шпатель 8мм", layers: 1 },
-  { id: "tile-adhesive-cm14", name: "Плиточный клей Ceresit CM 14", icon: "⬜", unit: "кг", consumptionPerM2: 4.5, description: "3.5-5 кг/м² шпатель 10мм", layers: 1 },
-  { id: "gasblock-glue", name: "Клей для газоблоков", icon: "🧱", unit: "кг", consumptionPerM2: 1.8, description: "1.5-2.0 кг/м² кладки, шов 2-3мм", layers: 1 },
-  { id: "grout", name: "Затирка для плитки", icon: "🔲", unit: "кг", consumptionPerM2: 0.4, description: "0.3-0.5 кг/м²", layers: 1 },
-  // Обои
-  { id: "wallpaper-glue", name: "Клей обойный (разведённый)", icon: "📜", unit: "л", consumptionPerM2: 0.20, description: "0.15-0.25 л/м²", layers: 1, density: 1.0 },
-  // Стяжка и полы
-  { id: "self-leveling", name: "Наливной пол", icon: "🏗️", unit: "кг", consumptionPerM2: 16, description: "1.5-1.8 кг/м² на 1мм (слой 10мм)", layers: 1 },
-  { id: "screed-m300", name: "Пескобетон М300 (стяжка)", icon: "🏗️", unit: "кг", consumptionPerM2: 20, description: "~20 кг/м² на 10мм толщины", layers: 1 },
-  // Гидроизоляция
-  { id: "waterproof", name: "Гидроизоляция обмазочная", icon: "🛡️", unit: "кг", consumptionPerM2: 1.5, description: "1.0-2.0 кг/м² за 2 слоя", layers: 2 },
-  // Сыпучие
-  { id: "cement", name: "Цемент М500", icon: "🏗️", unit: "кг", consumptionPerM2: 5.0, description: "~5 кг/м² при замесе раствора слоем 10мм", layers: 1 },
-  { id: "sand", name: "Песок строительный", icon: "🏗️", unit: "кг", consumptionPerM2: 15, description: "~15 кг/м² при замесе раствора слоем 10мм", layers: 1 },
-];
-
-function formatArea(m2: number): string {
-  if (m2 < 1) return `${(m2 * 10000).toFixed(0)} см²`;
-  return `${m2.toFixed(1)} м²`;
-}
+import {
+  calculateReverseCoverage,
+  COVERAGE_MATERIALS,
+  formatCoverageArea,
+  getCoverageMaterial,
+} from "@/lib/tools/reverse-coverage";
 
 export default function ReverseCalculator() {
   const [materialId, setMaterialId] = useState("paint-acrylic");
   const [amount, setAmount] = useState(5);
   const [layers, setLayers] = useState<number | null>(null);
 
-  const material = MATERIALS.find((m) => m.id === materialId)!;
+  const material = getCoverageMaterial(materialId);
   const effectiveLayers = layers ?? material.layers;
 
-  const result = useMemo(() => {
-    const totalConsumption = material.consumptionPerM2 * effectiveLayers;
-    const area = totalConsumption > 0 ? amount / totalConsumption : 0;
-    // Convert to room equivalent
-    const roomSide = Math.sqrt(area);
-    return { area, roomSide, consumptionPerM2: totalConsumption };
-  }, [material, amount, effectiveLayers]);
+  const result = useMemo(
+    () => calculateReverseCoverage({ material, amount, layers: effectiveLayers }),
+    [material, amount, effectiveLayers],
+  );
 
   return (
     <div className="max-w-xl space-y-6">
@@ -80,7 +34,7 @@ export default function ReverseCalculator() {
             onChange={(e) => { setMaterialId(e.target.value); setLayers(null); }}
             className="input-field w-full"
           >
-            {MATERIALS.map((m) => (
+            {COVERAGE_MATERIALS.map((m) => (
               <option key={m.id} value={m.id}>{m.icon} {m.name}</option>
             ))}
           </select>
@@ -149,7 +103,7 @@ export default function ReverseCalculator() {
             Хватит на
           </p>
           <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {formatArea(result.area)}
+            {formatCoverageArea(result.area)}
           </p>
           {result.area >= 1 && (
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -177,19 +131,19 @@ export default function ReverseCalculator() {
               {effectiveLayers}
             </span>
           </div>
-          {material.density && material.unit === "л" && (
+          {result.amountInKilograms !== undefined && (
             <div className="flex justify-between text-sm pt-2 border-t border-slate-100 dark:border-slate-800">
               <span className="text-slate-500">В наличии (в кг)</span>
               <span className="font-medium text-slate-900 dark:text-slate-100">
-                {(amount * material.density).toFixed(1)} кг
+                {result.amountInKilograms.toFixed(1)} кг
               </span>
             </div>
           )}
-          {material.density && material.unit === "кг" && (
+          {result.amountInLiters !== undefined && (
             <div className="flex justify-between text-sm pt-2 border-t border-slate-100 dark:border-slate-800">
               <span className="text-slate-500">В наличии (в литрах)</span>
               <span className="font-medium text-slate-900 dark:text-slate-100">
-                {(amount / material.density).toFixed(1)} л
+                {result.amountInLiters.toFixed(1)} л
               </span>
             </div>
           )}

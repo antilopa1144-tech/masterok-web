@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import {
+  calculateRoomArea,
+  parseRoomDimension,
+  type RoomAreaResult,
+  type RoomShape,
+} from "@/lib/tools/room-area";
 
 const UI_TEXT = {
   breadcrumbHome: "Главная",
@@ -18,15 +24,10 @@ const UI_TEXT = {
   floorAreaLabel: "Площадь пола",
   perimeterLabel: "Периметр",
   wallAreaLabel: "Площадь стен",
-  lshapeNotes: "Периметр — приближённый. Уточните по чертежу.",
-  tshapeNotes: "Площадь трёх секций. Периметр — приближённый.",
-  triangleNotes: "Периметр — для равнобедренного треугольника.",
 } as const;
 
-type ShapeType = "rect" | "lshape" | "tshape" | "trapezoid" | "triangle" | "circle";
-
 interface ShapeOption {
-  id: ShapeType;
+  id: RoomShape;
   label: string;
   icon: string;
   desc: string;
@@ -80,17 +81,10 @@ function NumInput({
   );
 }
 
-interface Result {
-  floorArea: number;
-  perimeter: number;
-  wallArea?: number;
-  notes?: string;
-}
-
 export default function PloshadKomnatyPage() {
-  const [shape, setShape] = useState<ShapeType>("rect");
+  const [shape, setShape] = useState<RoomShape>("rect");
   const [wallHeight, setWallHeight] = useState("2.7");
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<RoomAreaResult | null>(null);
 
   // Поля по форме
   const [a, setA] = useState("5");
@@ -100,70 +94,20 @@ export default function PloshadKomnatyPage() {
   const [e, setE] = useState("2");
   const [f, setF] = useState("1.5");
 
-  const n = useCallback((v: string) => parseFloat(v.replace(",", ".")) || 0, []);
+  const calculate = () => {
+    setResult(calculateRoomArea({
+      shape,
+      a: parseRoomDimension(a),
+      b: parseRoomDimension(b),
+      c: parseRoomDimension(c),
+      d: parseRoomDimension(d),
+      e: parseRoomDimension(e),
+      f: parseRoomDimension(f),
+      wallHeight: parseRoomDimension(wallHeight),
+    }));
+  };
 
-  const calculate = useCallback(() => {
-    const h = n(wallHeight);
-    let floor = 0;
-    let perim = 0;
-    let notes: string | undefined;
-
-    switch (shape) {
-      case "rect": {
-        const A = n(a), B = n(b);
-        floor = A * B;
-        perim = 2 * (A + B);
-        break;
-      }
-      case "lshape": {
-        // Г-образная: большой прямоугольник A×B минус вырез C×D
-        const A = n(a), B = n(b), C = n(c), D = n(d);
-        floor = A * B - C * D;
-        perim = 2 * (A + B); // приближение
-        notes = UI_TEXT.lshapeNotes;
-        break;
-      }
-      case "tshape": {
-        // Т-образная: центральная часть A×B + два боковых крыла C×D и E×F
-        const A = n(a), B = n(b), C = n(c), D = n(d), E = n(e), F = n(f);
-        floor = A * B + C * D + E * F;
-        perim = 2 * (A + B + C + D); // приближение
-        notes = UI_TEXT.tshapeNotes;
-        break;
-      }
-      case "trapezoid": {
-        // Трапеция: (a+b)/2 * h, где a,b — параллельные стороны, h — высота
-        const A = n(a), B = n(b), H = n(c);
-        floor = ((A + B) / 2) * H;
-        perim = A + B + 2 * Math.sqrt(((A - B) / 2) ** 2 + H ** 2);
-        break;
-      }
-      case "triangle": {
-        // Треугольник: 0.5 * основание * высота
-        const base = n(a), height = n(b);
-        floor = 0.5 * base * height;
-        perim = base + 2 * Math.sqrt((base / 2) ** 2 + height ** 2); // равнобедренный
-        notes = UI_TEXT.triangleNotes;
-        break;
-      }
-      case "circle": {
-        // Круг: π*r², или сектор: π*r²*angle/360
-        const r = n(a), angle = n(b);
-        const isFullCircle = angle >= 360 || n(b) === 0;
-        const theta = isFullCircle ? 360 : angle;
-        floor = Math.PI * r * r * (theta / 360);
-        perim = isFullCircle
-          ? 2 * Math.PI * r
-          : 2 * r + (2 * Math.PI * r * theta / 360);
-        break;
-      }
-    }
-
-    const wallArea = h > 0 ? perim * h : undefined;
-    setResult({ floorArea: floor, perimeter: perim, wallArea, notes });
-  }, [shape, a, b, c, d, e, f, wallHeight, n]);
-
-  const shapeChange = (s: ShapeType) => {
+  const shapeChange = (s: RoomShape) => {
     setShape(s);
     setResult(null);
   };
@@ -307,7 +251,7 @@ function ResultItem({ label, value, unit }: { label: string; value: string; unit
 }
 
 // SVG-схема выбранной формы
-function ShapeSVG({ shape }: { shape: ShapeType }) {
+function ShapeSVG({ shape }: { shape: RoomShape }) {
   const W = 200, H = 120;
   const stroke = "#475569";
   const fill = "#f1f5f9";
