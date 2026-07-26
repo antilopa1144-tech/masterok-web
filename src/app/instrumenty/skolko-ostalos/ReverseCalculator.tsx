@@ -11,14 +11,15 @@ import {
 export default function ReverseCalculator() {
   const [materialId, setMaterialId] = useState("paint-acrylic");
   const [amount, setAmount] = useState(5);
-  const [layers, setLayers] = useState<number | null>(null);
+  const [adjustmentValue, setAdjustmentValue] = useState<number | null>(null);
 
   const material = getCoverageMaterial(materialId);
-  const effectiveLayers = layers ?? material.layers;
+  const adjustment = material.adjustment;
+  const effectiveAdjustment = adjustmentValue ?? adjustment.defaultValue;
 
   const result = useMemo(
-    () => calculateReverseCoverage({ material, amount, layers: effectiveLayers }),
-    [material, amount, effectiveLayers],
+    () => calculateReverseCoverage({ material, amount, adjustmentValue: effectiveAdjustment }),
+    [material, amount, effectiveAdjustment],
   );
 
   return (
@@ -31,7 +32,7 @@ export default function ReverseCalculator() {
           </label>
           <select
             value={materialId}
-            onChange={(e) => { setMaterialId(e.target.value); setLayers(null); }}
+            onChange={(e) => { setMaterialId(e.target.value); setAdjustmentValue(null); }}
             className="input-field w-full"
           >
             {COVERAGE_MATERIALS.map((m) => (
@@ -73,27 +74,45 @@ export default function ReverseCalculator() {
           </div>
         </div>
 
-        {/* Layers */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Количество слоёв
-          </label>
-          <div className="flex gap-2">
-            {[1, 2, 3].map((l) => (
-              <button
-                key={l}
-                onClick={() => setLayers(l)}
-                className={`text-sm px-4 py-2 rounded-lg border transition-colors ${
-                  effectiveLayers === l
-                    ? "border-accent-400 bg-accent-50 text-accent-700 font-medium"
-                    : "border-slate-200 text-slate-500 hover:border-slate-300"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
+        {adjustment.kind !== "fixed" && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              {adjustment.label}
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              {adjustment.kind === "thickness" && (
+                <div className="relative">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={adjustment.min}
+                    max={adjustment.max}
+                    step={adjustment.step}
+                    value={effectiveAdjustment}
+                    onChange={(e) => setAdjustmentValue(Number(e.target.value) || adjustment.min)}
+                    className="input-field w-28 pr-10"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                    {adjustment.unit}
+                  </span>
+                </div>
+              )}
+              {adjustment.quickValues.map((value) => (
+                <button
+                  key={value}
+                  onClick={() => setAdjustmentValue(value)}
+                  className={`text-sm px-4 py-2 rounded-lg border transition-colors ${
+                    effectiveAdjustment === value
+                      ? "border-accent-400 bg-accent-50 text-accent-700 font-medium"
+                      : "border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  {value}{adjustment.kind === "thickness" ? ` ${adjustment.unit}` : ""}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Result */}
@@ -125,12 +144,15 @@ export default function ReverseCalculator() {
               {amount} {material.unit}
             </span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Слоёв</span>
-            <span className="font-medium text-slate-900 dark:text-slate-100">
-              {effectiveLayers}
-            </span>
-          </div>
+          {adjustment.kind !== "fixed" && (
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">{adjustment.resultLabel}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">
+                {result.adjustmentValue}
+                {adjustment.kind === "thickness" ? ` ${adjustment.unit}` : ""}
+              </span>
+            </div>
+          )}
           {result.amountInKilograms !== undefined && (
             <div className="flex justify-between text-sm pt-2 border-t border-slate-100 dark:border-slate-800">
               <span className="text-slate-500">В наличии (в кг)</span>
