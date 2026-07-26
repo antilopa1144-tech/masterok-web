@@ -14,7 +14,7 @@ export function getYandexMetrikaDeferredInitScript(counterId: string): string {
 
   w.ym = w.ym || function(){(w.ym.a = w.ym.a || []).push(arguments)};
   w.ym.l = 1 * new Date();
-  w.ym(id, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true});
+  w.ym(id, "init", {defer:true, clickmap:true, trackLinks:true, accurateTrackBounce:true});
 
   let loaded = false;
   const load = () => {

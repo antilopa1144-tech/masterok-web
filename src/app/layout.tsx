@@ -128,6 +128,9 @@ export default async function RootLayout({
       <head>
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Очередь ym должна существовать до гидрации и первого SPA-перехода.
+            Сам tag.js по-прежнему загружается отложенно внутри скрипта. */}
+        <script id="ym-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
@@ -159,7 +162,6 @@ export default async function RootLayout({
           <ScrollToTop />
           <FeedbackWidget />
         </IdleMount>
-        <Script id="ym-init" strategy="lazyOnload" nonce={nonce}>{YM_INIT_SCRIPT}</Script>
         <Script id="sw-unregister" strategy="lazyOnload" nonce={nonce}>{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
       </body>
     </html>

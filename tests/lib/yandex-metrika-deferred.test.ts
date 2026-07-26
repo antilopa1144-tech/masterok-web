@@ -8,4 +8,9 @@ describe("yandex-metrika-deferred", () => {
     expect(script).toContain("pointerdown");
     expect(script).toContain("requestIdleCallback");
   });
+
+  it("отключает автоматический hit — страницы SPA считает клиентский трекер", () => {
+    const script = getYandexMetrikaDeferredInitScript("108155444");
+    expect(script).toContain("defer:true");
+  });
 });

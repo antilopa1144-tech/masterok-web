@@ -5,6 +5,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import { scheduleMetrikaPageview } from "@/lib/analytics/yandex-metrika-pageview";
 
 declare global {
   interface Window {
@@ -16,27 +17,26 @@ declare global {
 export default function YandexMetrika() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // Первый хит (лендинг) уже отправляет сам ym("init") — без defer:true он шлёт
-  // автоматический pageview. Поэтому здесь пропускаем самый первый рендер, иначе
-  // первая страница считается дважды (завышает просмотры, ломает отказы).
-  const skipFirst = useRef(true);
+  const previousUrl = useRef("");
 
   useEffect(() => {
     if (!YANDEX_METRIKA_COUNTER_ID) return;
-    if (skipFirst.current) {
-      skipFirst.current = false;
-      return;
-    }
+
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
-    // Next.js обновляет metadata асинхронно при клиентском переходе. Даём ему
-    // завершить текущий кадр и явно передаём title, иначе часть SPA-хитов
-    // попадает в Метрике в строку «Не определено».
-    const timeoutId = window.setTimeout(() => {
-      window.ym?.(YANDEX_METRIKA_COUNTER_ID, "hit", url, {
-        title: document.title,
-      });
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
+    const referer = previousUrl.current || document.referrer;
+    previousUrl.current = url;
+
+    return scheduleMetrikaPageview({
+      readTitle: () => document.title,
+      send: (title) => {
+        window.ym?.(YANDEX_METRIKA_COUNTER_ID, "hit", url, {
+          title,
+          referer,
+        });
+      },
+      schedule: (callback, delayMs) => window.setTimeout(callback, delayMs),
+      cancel: (timerId) => window.clearTimeout(timerId),
+    });
   }, [pathname, searchParams]);
 
   return null;
