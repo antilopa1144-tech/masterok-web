@@ -3,7 +3,7 @@ import { ALL_CALCULATORS_META as ALL_CALCULATORS } from "@/lib/calculators/meta.
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
-import { ALL_TOOLS } from "@/lib/tools";
+import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
 import {
   generateSitemapIds,
   parseSitemapChunkId,
@@ -180,10 +180,10 @@ function buildCalculatorsSitemap(): MetadataRoute.Sitemap {
 }
 
 function buildToolsSitemap(): MetadataRoute.Sitemap {
-  const toolPages = ALL_TOOLS
-    .filter((tool) => tool.slug)
+  const toolPages = TOOL_CONFIGS
+    .filter((tool) => !tool.noindex)
     .map((tool) => ({
-      url: `${BASE_URL}/instrumenty/${tool.slug}/`,
+      url: `${BASE_URL}${toolHref(tool.slug)}`,
       lastModified: TOOLS_LAST_MODIFIED,
       changeFrequency: "monthly" as const,
       priority: tool.priority,

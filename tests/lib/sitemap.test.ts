@@ -6,6 +6,9 @@ import {
   getSitemapChunkUrl,
   parseSitemapChunkId,
 } from "@/lib/sitemap/chunks";
+import sitemap from "@/app/sitemap";
+import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
+import { SITE_URL } from "@/lib/site";
 
 describe("sitemap chunks", () => {
   it("parseSitemapChunkId принимает число и строку из Next.js", () => {
@@ -42,5 +45,16 @@ describe("sitemap chunks", () => {
 
     const locCount = (xml.match(/<loc>/g) ?? []).length;
     expect(locCount).toBe(SITEMAP_CHUNKS.length);
+  });
+
+  it("sitemap инструментов не включает страницы с noindex", async () => {
+    const entries = await sitemap({ id: 3 });
+    const urls = new Set(entries.map((entry) => entry.url));
+    const noindexTools = TOOL_CONFIGS.filter((tool) => tool.noindex);
+
+    expect(noindexTools.length).toBeGreaterThan(0);
+    for (const tool of noindexTools) {
+      expect(urls).not.toContain(`${SITE_URL}${toolHref(tool.slug)}`);
+    }
   });
 });
