@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { LEGACY_CALCULATOR_REDIRECTS } from "./src/lib/seo/legacy-redirects";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -103,29 +104,10 @@ const nextConfig: NextConfig = {
         destination: "/apple-icon.png",
         permanent: true,
       },
-      // Категория сменила slug: interior → otdelka. Старые URL калькуляторов
-      // (напр. /kalkulyatory/interior/otkosy-okon-i-dverej/) Google знает из
-      // истории и долбит в 403/404 (см. GSC «Blocked 403» / «Not found 404»).
-      // 301 на актуальный путь возвращает SEO-вес и убирает ошибки индексации.
-      {
-        source: "/kalkulyatory/interior/:slug*",
-        destination: "/kalkulyatory/otdelka/:slug*",
-        permanent: true,
-      },
-      // Калькулятор шпаклёвки сменил slug: putty → shpaklevka. Google знает
-      // старый URL из истории и получает noindex-404 (dynamicParams:false), из-за
-      // чего реальная страница калькулятора висит в GSC «Excluded by noindex».
-      // 301 на актуальный slug возвращает SEO-вес и убирает ошибку индексации.
-      {
-        source: "/kalkulyatory/otdelka/putty",
-        destination: "/kalkulyatory/otdelka/shpaklevka/",
-        permanent: true,
-      },
-      {
-        source: "/kalkulyatory/otdelka/putty/",
-        destination: "/kalkulyatory/otdelka/shpaklevka/",
-        permanent: true,
-      },
+      // Старые category/slug калькуляторов из GSC → актуальные страницы.
+      // Карта вынесена отдельно и покрыта тестом, чтобы миграции URL не
+      // превращались в noindex-404.
+      ...LEGACY_CALCULATOR_REDIRECTS,
     ];
   },
 
