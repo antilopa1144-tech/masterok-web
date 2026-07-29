@@ -8,7 +8,7 @@ import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
   description:
-    "Визуализатор раскладки ламината: палубой со смещением 1/3 и 1/2 или ёлочкой под 45°. Введите размеры комнаты и доски — увидите схему, отход и количество досок к закупке.",
+    "Бесплатная программа раскладки ламината онлайн: схема 1/3, 1/2 или ёлочкой. Введите размеры комнаты и доски — увидите подрезки, отход и количество к закупке.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-laminata", {
@@ -52,7 +52,7 @@ export default function Page() {
             { label: "Раскладка ламината" },
           ]} />
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
-            Генератор раскладки ламината
+            Раскладка ламината онлайн со схемой
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
             Введите размеры комнаты и доски — увидите схему укладки палубой или ёлочкой, отход и количество досок к закупке.

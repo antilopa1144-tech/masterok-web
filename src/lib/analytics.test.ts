@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 import {
+  trackCalculatorRelatedClick,
   trackToolExport,
   trackToolModeChange,
   trackToolPresetSelect,
@@ -53,5 +54,16 @@ describe("tool analytics", () => {
       "tool_export",
       "tool_related_click",
     ]);
+  });
+
+  it("фиксирует переход из калькулятора в связанный инструмент", () => {
+    trackCalculatorRelatedClick("laminat", "raskladka-laminata");
+
+    expect(ym).toHaveBeenCalledWith(
+      YANDEX_METRIKA_COUNTER_ID,
+      "reachGoal",
+      "calculator_related_click",
+      { calculator: "laminat", target: "raskladka-laminata" },
+    );
   });
 });

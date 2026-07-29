@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import ToolSectionNav from "@/components/tools/ToolSectionNav";
@@ -19,7 +19,10 @@ import {
   type LaminateMode,
   type LaminateLayoutResult,
 } from "@/lib/tools/laminate-layout";
-import { calcHref } from "@/lib/tools/config";
+import {
+  buildLaminateCalculatorHref,
+  parseLaminateLayoutSearchParams,
+} from "@/lib/tools/laminate-layout-to-calc";
 
 // ── SVG scene ────────────────────────────────────────────────────────────────
 
@@ -163,6 +166,7 @@ export default function LaminateLayoutGenerator() {
   const [boardW, setBoardW] = useState(1285);
   const [boardH, setBoardH] = useState(192);
   const [mode, setMode] = useState<LaminateMode>("deck-third");
+  const hydratedFromUrl = useRef(false);
   const svgRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
@@ -171,6 +175,15 @@ export default function LaminateLayoutGenerator() {
     "raskladka-laminata",
     resultRef,
   );
+
+  useEffect(() => {
+    if (hydratedFromUrl.current) return;
+    hydratedFromUrl.current = true;
+    const parsed = parseLaminateLayoutSearchParams(new URLSearchParams(window.location.search));
+    if (parsed.surfaceW != null) setSurfaceW(parsed.surfaceW);
+    if (parsed.surfaceH != null) setSurfaceH(parsed.surfaceH);
+    if (parsed.mode != null) setMode(parsed.mode);
+  }, []);
 
   const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -218,7 +231,11 @@ export default function LaminateLayoutGenerator() {
     [result.purchaseBoards, surfaceAreaM2],
   );
 
-  const laminatCalcHref = calcHref({ slug: "laminat", categorySlug: "poly" });
+  const laminatCalcHref = buildLaminateCalculatorHref({
+    surfaceW,
+    surfaceH,
+    mode,
+  });
 
   return (
     <div className="max-w-3xl space-y-6">

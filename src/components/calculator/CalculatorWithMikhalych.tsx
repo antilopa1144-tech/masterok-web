@@ -16,6 +16,11 @@ import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { pluralizeRu } from "@/lib/format/pluralize";
 import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
+import {
+  buildLaminateLayoutHref,
+  LAMINATE_LAYOUT_TRANSFER_FROM,
+} from "@/lib/tools/laminate-layout-to-calc";
+import { trackCalculatorRelatedClick } from "@/lib/analytics";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
 const MOBILE_PRIMARY_FIELD_COUNT = 6;
@@ -43,6 +48,7 @@ function getCompanionSlugs(slug: string): string[] {
 
 export default function CalculatorWithMikhalych({ calculator }: { calculator: CalculatorWidgetProps }) {
   const searchParams = useSearchParams();
+  const fromLayout = searchParams.get("from");
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const formRef = useRef<HTMLDivElement>(null);
@@ -111,6 +117,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     <div className="space-y-4">
       <div className="space-y-3" data-print-hide>
         <TileLayoutTransferBanner />
+        {calculator.slug === "laminat" && fromLayout === LAMINATE_LAYOUT_TRANSFER_FROM && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
+            Из схемы перенесены размеры комнаты и способ укладки. Здесь уточните площадь упаковки, подложку, плинтус и запас.
+          </div>
+        )}
         {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (
           <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
             Из раскладки перенесено: <strong>{wallpaperRollsHint} {pluralizeRu(wallpaperRollsHint, ["рулон", "рулона", "рулонов"])}</strong>. Здесь уточняются клей, грунтовка и расходники.
@@ -170,6 +181,21 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
 
           <button type="button" onClick={handleCalculate} className="btn-primary mt-5 min-h-12 w-full text-base">Рассчитать</button>
 
+          {calculator.slug === "laminat" && (
+            <Link
+              href={buildLaminateLayoutHref({
+                inputMode: values.inputMode,
+                length: values.length,
+                width: values.width,
+                layingMethod: values.layingMethod,
+                offsetMode: values.offsetMode,
+              })}
+              onClick={() => trackCalculatorRelatedClick("laminat", "raskladka-laminata")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 no-underline dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300"
+            >
+              Увидеть раскладку 1/3, 1/2 или ёлочкой <span aria-hidden>→</span>
+            </Link>
+          )}
           {calculator.slug === "oboi" && (
             <Link href={buildWallpaperLayoutHref({ perimeter: values.perimeter, height: values.height, rollLength: values.rollLength, rollWidth: values.rollWidth, rapport: values.rapport, reserveRolls: values.reserveRolls })} className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
               Разложить полосы и увидеть раскрой рулонов <span aria-hidden>→</span>

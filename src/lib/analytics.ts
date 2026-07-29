@@ -128,3 +128,7 @@ export function trackToolRelatedClick(tool: string, target: string): void {
   trackEvent("tool_related_click", { tool, target });
 }
 
+export function trackCalculatorRelatedClick(calculator: string, target: string): void {
+  trackEvent("calculator_related_click", { calculator, target });
+}
+
