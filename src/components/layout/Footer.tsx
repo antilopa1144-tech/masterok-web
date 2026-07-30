@@ -150,7 +150,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/all/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                <Link href="/kalkulyatory/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="tile" size={14} color="currentColor" />
                   Все калькуляторы
                 </Link>

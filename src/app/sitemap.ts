@@ -152,12 +152,6 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.6,
     },
-    {
-      url: `${BASE_URL}/all/`,
-      lastModified: CALCULATORS_LAST_MODIFIED,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    },
   ];
 }
 

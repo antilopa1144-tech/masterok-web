@@ -57,3 +57,22 @@ export const LEGACY_CALCULATOR_REDIRECTS: LegacyRedirect[] = [
     permanent: true,
   },
 ];
+
+/**
+ * Устаревшие служебные страницы каталога.
+ *
+ * `/all/` дублировала полный список `/kalkulyatory/`, но не собирала
+ * самостоятельный поисковый или пользовательский спрос.
+ */
+export const LEGACY_CATALOG_REDIRECTS: LegacyRedirect[] = [
+  {
+    source: "/all",
+    destination: "/kalkulyatory/",
+    permanent: true,
+  },
+  {
+    source: "/all/",
+    destination: "/kalkulyatory/",
+    permanent: true,
+  },
+];

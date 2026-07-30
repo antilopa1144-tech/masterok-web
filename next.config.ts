@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
-import { LEGACY_CALCULATOR_REDIRECTS } from "./src/lib/seo/legacy-redirects";
+import {
+  LEGACY_CALCULATOR_REDIRECTS,
+  LEGACY_CATALOG_REDIRECTS,
+} from "./src/lib/seo/legacy-redirects";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -108,6 +111,8 @@ const nextConfig: NextConfig = {
       // Карта вынесена отдельно и покрыта тестом, чтобы миграции URL не
       // превращались в noindex-404.
       ...LEGACY_CALCULATOR_REDIRECTS,
+      // Дублирующая служебная страница каталога → основной индексируемый каталог.
+      ...LEGACY_CATALOG_REDIRECTS,
     ];
   },
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { LEGACY_CALCULATOR_REDIRECTS } from "./legacy-redirects";
+import {
+  LEGACY_CALCULATOR_REDIRECTS,
+  LEGACY_CATALOG_REDIRECTS,
+} from "./legacy-redirects";
 
 const redirectBySource = new Map(
   LEGACY_CALCULATOR_REDIRECTS.map((redirect) => [redirect.source, redirect])
@@ -29,5 +32,25 @@ describe("legacy calculator redirects", () => {
 
   it("не содержит конфликтующих source", () => {
     expect(redirectBySource.size).toBe(LEGACY_CALCULATOR_REDIRECTS.length);
+  });
+});
+
+describe("legacy catalog redirects", () => {
+  const catalogRedirectBySource = new Map(
+    LEGACY_CATALOG_REDIRECTS.map((redirect) => [redirect.source, redirect])
+  );
+
+  it("объединяет дублирующую страницу /all/ с основным каталогом", () => {
+    for (const source of ["/all", "/all/"]) {
+      expect(catalogRedirectBySource.get(source)).toEqual({
+        source,
+        destination: "/kalkulyatory/",
+        permanent: true,
+      });
+    }
+  });
+
+  it("не содержит конфликтующих source", () => {
+    expect(catalogRedirectBySource.size).toBe(LEGACY_CATALOG_REDIRECTS.length);
   });
 });
