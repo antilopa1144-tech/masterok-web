@@ -5,6 +5,13 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(plasterDef.calculate.bind(plasterDef));
 
 describe("Калькулятор штукатурки", () => {
+  it("направляет брендовые запросы Ротбанд и Волма Слой на профильную страницу", () => {
+    expect(plasterDef.metaTitle).toContain("Ротбанд и Волма Слой");
+    expect(plasterDef.metaDescription).toContain("Knauf Ротбанд и Волма Слой");
+    expect(plasterDef.fields.find((field) => field.key === "plasterType")?.options?.[0]?.label).toContain("Knauf Ротбанд");
+    expect(plasterDef.seoContent?.faq?.some((item) => item.question.includes("Волма Слой"))).toBe(true);
+  });
+
   describe("По размерам: 5×4 м, h=2.7 м, проёмы 5 м², гипсовая 15 мм, мешок 30 кг", () => {
     // wallArea = 2*(5+4)*2.7 = 48.6
     // netArea = 48.6 - 5 = 43.6
