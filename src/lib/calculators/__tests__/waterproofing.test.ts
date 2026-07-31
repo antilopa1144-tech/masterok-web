@@ -7,6 +7,19 @@ const calc = withBasicAccuracy(waterproofingDef.calculate.bind(waterproofingDef)
 ) => ReturnType<typeof waterproofingDef.calculate>;
 
 describe("Гидроизоляция", () => {
+  it("описывает поисковый интент и типовой пример так же, как canonical-расчёт", () => {
+    expect(waterproofingDef.metaTitle).toContain("расход мастики на м²");
+    expect(waterproofingDef.metaDescription).toContain("количество вёдер к покупке");
+
+    const consumptionFaq = waterproofingDef.seoContent?.faq?.find((item) =>
+      item.question.includes("расход обмазочной гидроизоляции"),
+    );
+    expect(consumptionFaq?.answer).toContain("= 16 кг");
+    expect(consumptionFaq?.answer).toContain("2 ведра, или 30 кг");
+    expect(waterproofingDef.seoContent?.descriptionHtml).not.toContain("Цементная мастика (Ceresit CL 51)");
+    expect(waterproofingDef.seoContent?.descriptionHtml).not.toContain("Пункт 4.11");
+  });
+
   describe("Ceresit CL 51 (masticType=0, стандарт)", () => {
     it("6 м² пол, 200 мм стены, периметр 10 м, 2 слоя", () => {
       const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
