@@ -7,7 +7,7 @@
  *
  * Зачем: страницы которые показывают только списки/ссылки (главная, категории,
  * поиск, Footer, related links) импортируют meta.generated.ts и НЕ тащат в
- * client-bundle весь SEO-контент 66 калькуляторов (~250-300 KB First Load JS).
+ * client-bundle весь SEO-контент 65 калькуляторов (~250-300 KB First Load JS).
  *
  * Источник истины — ALL_CALCULATORS из src/lib/calculators/index.ts.
  *

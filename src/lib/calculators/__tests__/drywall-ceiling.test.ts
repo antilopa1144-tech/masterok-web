@@ -5,6 +5,34 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(drywallCeilingDef.calculate.bind(drywallCeilingDef));
 
 describe("Подвесной потолок из ГКЛ", () => {
+  it("позиционируется как единая страница расчёта гипсокартона на потолок", () => {
+    expect(drywallCeilingDef.metaTitle).toContain("гипсокартона на потолок");
+    expect(drywallCeilingDef.metaTitle).toContain("ГКЛ и профиль");
+    expect(drywallCeilingDef.metaDescription).toContain("по размерам или площади");
+  });
+
+  it("SEO-пример совпадает с результатом формы по умолчанию", () => {
+    const result = calc({
+      inputMode: 0,
+      length: 5,
+      width: 4,
+      layers: 1,
+      profileStep: 600,
+    });
+    const example = drywallCeilingDef.seoContent?.faq?.find((item) =>
+      item.question.includes("20 м²"),
+    );
+
+    expect(findMaterial(result, "ГКЛ")?.purchaseQty).toBe(9);
+    expect(findMaterial(result, "ПП 60×27")?.purchaseQty).toBe(20);
+    expect(findMaterial(result, "Подвес")?.purchaseQty).toBe(56);
+    expect(example?.answer).toContain("9 листов");
+    expect(example?.answer).toContain("56 подвесов");
+    expect(drywallCeilingDef.seoContent?.descriptionHtml).toContain(
+      "не заменяет проект",
+    );
+  });
+
   describe("Потолок 5×4 м, 1 слой, шаг 600", () => {
     const r = calc({
       inputMode: 0,

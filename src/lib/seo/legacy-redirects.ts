@@ -56,6 +56,16 @@ export const LEGACY_CALCULATOR_REDIRECTS: LegacyRedirect[] = [
     destination: "/kalkulyatory/otdelka/gidroizolyaciya-vlagozaschita/",
     permanent: true,
   },
+  {
+    source: "/kalkulyatory/steny/gipsokarton-potolok",
+    destination: "/kalkulyatory/potolki/podvesnoy-potolok-gkl/",
+    permanent: true,
+  },
+  {
+    source: "/kalkulyatory/steny/gipsokarton-potolok/",
+    destination: "/kalkulyatory/potolki/podvesnoy-potolok-gkl/",
+    permanent: true,
+  },
 ];
 
 /**

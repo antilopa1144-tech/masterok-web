@@ -11,10 +11,10 @@ export const SITE_TITLE_SUFFIX = "строительные калькулято�
 export const SITE_DEFAULT_TITLE = `Строительные калькуляторы онлайн: расчёт материалов — ${SITE_NAME}`;
 // NB: Обновляйте число при добавлении калькуляторов (ALL_CALCULATORS.length в calculators/index.ts)
 export const SITE_METADATA_DESCRIPTION =
-  "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и 66+ строительных расчётов. Нормы расхода, запас и упаковки.";
+  "Бесплатные строительные калькуляторы онлайн: бетон, кирпич, кровля, ламинат, плитка, гипсокартон и 65+ строительных расчётов. Нормы расхода, запас и упаковки.";
 export const SITE_TWITTER_TITLE = `${SITE_NAME} — строительные калькуляторы`;
-export const SITE_TWITTER_DESCRIPTION = "66+ бесплатных строительных калькуляторов онлайн";
-export const SITE_OG_DESCRIPTION = "66+ бесплатных строительных калькуляторов. Расчёт материалов с запасом и округлением до упаковок.";
+export const SITE_TWITTER_DESCRIPTION = "65+ бесплатных строительных калькуляторов онлайн";
+export const SITE_OG_DESCRIPTION = "65+ бесплатных строительных калькуляторов. Расчёт материалов с запасом и округлением до упаковок.";
 export const SITE_OG_IMAGE_PATH = "/og-image.png";
 export const SITE_OG_IMAGE_URL = `${SITE_URL}${SITE_OG_IMAGE_PATH}`;
 export const SITE_OG_IMAGE_WIDTH = 1200;

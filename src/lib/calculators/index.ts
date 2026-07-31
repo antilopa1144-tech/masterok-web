@@ -31,7 +31,6 @@ import { ceilingRailDef } from "./formulas/ceiling-rail";
 import { ceilingCassetteDef } from "./formulas/ceiling-cassette";
 import { ceilingInsulationDef } from "./formulas/ceiling-insulation";
 // Стены (новые)
-import { gypsumBoardDef } from "./formulas/gypsum-board";
 import { wallPanelsDef } from "./formulas/wall-panels";
 import { partitionsDef } from "./formulas/partitions";
 // Фундамент (новые)
@@ -84,7 +83,6 @@ export const ALL_CALCULATORS: CalculatorDefinition[] = [
   // Стены
   brickDef,
   drywallDef,
-  gypsumBoardDef,
   aeratedConcreteDef,
   foamBlocksDef,
   brickworkDef,

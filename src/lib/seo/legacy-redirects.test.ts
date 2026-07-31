@@ -17,6 +17,10 @@ describe("legacy calculator redirects", () => {
       "/kalkulyatory/fundament/gidroizolyaciya/",
       "/kalkulyatory/otdelka/gidroizolyaciya-vlagozaschita/",
     ],
+    [
+      "/kalkulyatory/steny/gipsokarton-potolok/",
+      "/kalkulyatory/potolki/podvesnoy-potolok-gkl/",
+    ],
   ])("перенаправляет %s на актуальный калькулятор", (source, destination) => {
     expect(redirectBySource.get(source)).toEqual({
       source,

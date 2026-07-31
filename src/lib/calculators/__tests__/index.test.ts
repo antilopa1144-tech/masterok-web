@@ -10,8 +10,8 @@ import { SITE_NAME } from "@/lib/site";
 
 describe("Индекс калькуляторов", () => {
   describe("ALL_CALCULATORS", () => {
-    it("содержит 66 калькуляторов", () => {
-      expect(ALL_CALCULATORS).toHaveLength(66);
+    it("содержит 65 уникальных калькуляторов после объединения дубля ГКЛ-потолка", () => {
+      expect(ALL_CALCULATORS).toHaveLength(65);
     });
 
     it("все id уникальны", () => {
@@ -75,6 +75,11 @@ describe("Индекс калькуляторов", () => {
     it("возвращает undefined для несуществующего slug", () => {
       expect(getCalculatorBySlug("nonexistent")).toBeUndefined();
       expect(getCalculatorBySlug("")).toBeUndefined();
+    });
+
+    it("не публикует дублирующий slug потолка из гипсокартона", () => {
+      expect(getCalculatorBySlug("gipsokarton-potolok")).toBeUndefined();
+      expect(getCalculatorBySlug("podvesnoy-potolok-gkl")?.id).toBe("drywall_ceiling");
     });
   });
 

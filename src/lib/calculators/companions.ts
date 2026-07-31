@@ -196,12 +196,6 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
   ],
 
   // ── Потолки ────────────────────────────────────────────────────────────
-  "gipsokarton-potolok": [
-    { slug: "krepezh", reason: "Саморезы и подвесы для каркаса" },
-    { slug: "shpaklevka", reason: "Шпаклёвка швов" },
-    { slug: "gruntovka", reason: "Грунтовка перед покраской" },
-    { slug: "kraska", reason: "Покраска потолка" },
-  ],
   "podvesnoy-potolok-gkl": [
     { slug: "krepezh", reason: "Подвесы и саморезы" },
     { slug: "shpaklevka", reason: "Шпаклёвка швов" },

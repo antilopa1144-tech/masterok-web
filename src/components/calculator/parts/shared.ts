@@ -209,7 +209,6 @@ const WORK_PRICE_HINTS_BY_CALCULATOR: Record<string, string[]> = {
   "teplyy-pol": ["electric-floor"],
   "vodyanoy-teplyy-pol": ["water-floor", "screed"],
   gipsokarton: ["drywall"],
-  "gipsokarton-potolok": ["drywall"],
   "podvesnoy-potolok-gkl": ["drywall", "suspended-ceiling"],
   shtukaturka: ["plaster"],
   "dekorativnaya-shtukaturka": ["decor-plaster", "plaster"],
