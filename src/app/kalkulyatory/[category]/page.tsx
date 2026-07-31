@@ -188,6 +188,19 @@ export default async function CategoryPage({ params }: PageProps) {
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                 {intro.lead}
               </p>
+              {intro.quickLinks && intro.quickLinks.length > 0 && (
+                <nav aria-label="Быстрый выбор расчёта" className="mt-5 flex flex-wrap gap-2">
+                  {intro.quickLinks.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 no-underline transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-accent-700"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              )}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">

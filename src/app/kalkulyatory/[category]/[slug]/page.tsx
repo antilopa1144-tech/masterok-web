@@ -91,7 +91,7 @@ export default async function CalculatorPage({ params }: PageProps) {
               { label: calc.title },
             ]}
           />
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">{calc.title}</h1>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white">{calc.h1}</h1>
           <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-500 sm:text-lg dark:text-slate-400">{calc.description}</p>
         </header>
 

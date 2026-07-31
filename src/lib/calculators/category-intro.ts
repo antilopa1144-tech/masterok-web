@@ -14,6 +14,11 @@ export interface CategoryIntroContent {
   standards: string[];
   /** Что именно тут можно посчитать — 3–6 буллетов. */
   bullets: string[];
+  /** Быстрые ссылки на расчёты, соответствующие частым поисковым задачам. */
+  quickLinks?: Array<{
+    label: string;
+    href: string;
+  }>;
   /** Типичные ошибки или предостережения. */
   pitfalls?: string[];
 }
@@ -25,8 +30,26 @@ export const CATEGORY_INTRO: Record<string, CategoryIntroContent> = {
     bullets: [
       "Объём бетона для ленточного, плитного или столбчатого фундамента",
       "Количество арматуры по диаметру и шагу сетки",
-      "Опалубка — доска или ламинированная фанера",
+      "Площадь опалубки и количество досок для ленточного фундамента",
       "Песок и щебень для подушки, гидроизоляция",
+    ],
+    quickLinks: [
+      {
+        label: "Рассчитать опалубку для фундамента",
+        href: "/kalkulyatory/fundament/lentochnyy-fundament/",
+      },
+      {
+        label: "Рассчитать количество арматуры",
+        href: "/kalkulyatory/fundament/armatura/",
+      },
+      {
+        label: "Рассчитать объём и состав бетона",
+        href: "/kalkulyatory/fundament/beton/",
+      },
+      {
+        label: "Рассчитать отмостку вокруг дома",
+        href: "/kalkulyatory/fundament/otmostka/",
+      },
     ],
     pitfalls: [
       "Калькулятор даёт ориентировочные объёмы — несущая способность для многоэтажного дома считается конструктором индивидуально",
