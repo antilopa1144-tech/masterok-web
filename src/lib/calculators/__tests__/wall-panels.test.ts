@@ -5,6 +5,25 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(wallPanelsDef.calculate.bind(wallPanelsDef));
 
 describe("Калькулятор панелей для стен", () => {
+  it("позиционируется под подтверждённый спрос ПВХ-панелей", () => {
+    expect(wallPanelsDef.metaTitle).toContain("Калькулятор ПВХ-панелей");
+    expect(wallPanelsDef.metaDescription).toContain("количество с запасом");
+    expect(wallPanelsDef.h1).toContain("ПВХ");
+  });
+
+  it("пример на 10 м² совпадает с canonical-результатом", () => {
+    const result = calc({ area: 10, panelType: 0, mountMethod: 0, height: 2.7 });
+    const panels = findMaterial(result, "Пластиковые панели (ПВХ");
+    const example = wallPanelsDef.seoContent?.faq?.find((item) =>
+      item.question.includes("10 м²"),
+    );
+
+    expect(panels?.quantity).toBe(15.9);
+    expect(panels?.purchaseQty).toBe(16);
+    expect(example?.answer).toContain("15 панелей");
+    expect(example?.answer).toContain("16 панелей");
+  });
+
   describe("ПВХ панели (panelType=0), 20 м², на клей (mountMethod=0)", () => {
     const result = calc({
       area: 20,
