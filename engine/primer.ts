@@ -166,7 +166,7 @@ export function computeCanonicalPrimer(
   }
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Грунтовка — не опция, а обязательный этап. Без неё шпаклёвка и краска отвалятся");
+  practicalNotes.push("Подбирайте грунтовку под основание и следующий материал; необходимость обработки и число слоёв уточняйте по инструкции производителя");
   if (layerRec.note) {
     practicalNotes.push(layerRec.note);
   }

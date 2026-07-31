@@ -6,6 +6,26 @@ import parityFixture from "../../../../tests/fixtures/primer-canonical-parity.js
 const calc = withBasicAccuracy(primerDef.calculate.bind(primerDef));
 
 describe("Грунтовка", () => {
+  it("позиционируется под расход грунтовки для стен", () => {
+    expect(primerDef.metaTitle).toContain("грунтовки для стен");
+    expect(primerDef.metaTitle).toContain("1 м²");
+    expect(primerDef.metaDescription).toContain("канистры к покупке");
+  });
+
+  it("SEO-пример показывает точную потребность и упаковку canonical", () => {
+    const result = calc({ area: 20, surfaceType: 0, primerType: 0, coats: 2, canSize: 5 });
+    const material = findMaterial(result, "Грунтовка глубокого проникновения");
+    const example = primerDef.seoContent?.faq?.find((item) =>
+      item.question.includes("на 1 м²"),
+    );
+
+    expect(result.scenarios?.REC.exact_need).toBe(6.552);
+    expect(material?.purchaseQty).toBe(10);
+    expect(example?.answer).toContain("6,552 л");
+    expect(example?.answer).toContain("две канистры");
+    expect(result.practicalNotes?.join(" ")).not.toContain("отвалятся");
+  });
+
   it("декларирует formulaVersion для canonical primer", () => {
     expect(primerDef.formulaVersion).toBe("primer-canonical-v1");
   });
@@ -74,4 +94,3 @@ describe("Canonical primer fixture parity", () => {
     });
   }
 });
-
