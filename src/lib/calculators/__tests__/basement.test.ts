@@ -1,10 +1,64 @@
 import { describe, it, expect } from "vitest";
 import { basementDef } from "../formulas/basement";
+import { CALCULATOR_COMPANIONS } from "../companions";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(basementDef.calculate.bind(basementDef));
 
 describe("Калькулятор подвала и цоколя", () => {
+  it("закрывает подтверждённый интент расчёта цокольного этажа", () => {
+    expect(basementDef.metaTitle).toContain("Калькулятор цокольного этажа");
+    expect(basementDef.metaDescription).toContain("объём бетона");
+    expect(basementDef.description).not.toContain("утепление");
+  });
+
+  it("SEO-пример совпадает с canonical-результатом", () => {
+    const result = calc({
+      length: 8,
+      width: 6,
+      depth: 2.5,
+      wallThickness: 200,
+      floorThickness: 150,
+      waterproofType: 0,
+    });
+    const content = basementDef.seoContent?.descriptionHtml ?? "";
+
+    expect(findMaterial(result, "Бетон на пол")?.purchaseQty).toBe(7.6);
+    expect(findMaterial(result, "Бетон на стены")?.purchaseQty).toBe(14.5);
+    expect(findMaterial(result, "Арматура на пол")?.purchaseQty).toBe(1056);
+    expect(findMaterial(result, "Арматура на стены")?.purchaseQty).toBe(1260);
+    expect(findMaterial(result, "Опалубка")?.purchaseQty).toBe(56);
+    expect(content).toContain("7,6 м&sup3;");
+    expect(content).toContain("14,5 м&sup3;");
+    expect(content).toContain("1 056 кг");
+    expect(content).toContain("не заменяет геологию");
+  });
+
+  it("связан с соседними расчётами фундаментного кластера", () => {
+    const slugs = CALCULATOR_COMPANIONS["podval-fundamenta"].map((item) => item.slug);
+
+    expect(slugs).toEqual(expect.arrayContaining([
+      "beton",
+      "armatura",
+      "gidroizolyaciya-vlagozaschita",
+      "drenazh-uchastka",
+      "otmostka",
+    ]));
+    for (const slug of [
+      "beton",
+      "armatura",
+      "gidroizolyaciya-vlagozaschita",
+      "drenazh-uchastka",
+      "otmostka",
+    ]) {
+      expect(CALCULATOR_COMPANIONS[slug]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ slug: "podval-fundamenta" }),
+        ]),
+      );
+    }
+  });
+
   describe("Стандарт: 8×6 м, глубина 2.5 м, стены 200 мм, пол 150 мм, обмазочная гидро", () => {
     // floorArea = 8 * 6 = 48
     // wallPerim = 2 * (8 + 6) = 28

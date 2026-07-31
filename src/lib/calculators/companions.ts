@@ -26,6 +26,7 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "lentochnyy-fundament", reason: "Ленточный фундамент — полный расчёт" },
     { slug: "plitnyj-fundament", reason: "Плитный фундамент" },
     { slug: "otmostka", reason: "Отмостка вокруг дома" },
+    { slug: "podval-fundamenta", reason: "Бетон стен и пола подвала" },
   ],
   "lentochnyy-fundament": [
     { slug: "beton", reason: "Сколько бетона заказать" },
@@ -37,11 +38,19 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "beton", reason: "Объём бетона для заливки" },
     { slug: "lentochnyy-fundament", reason: "Полный расчёт фундамента" },
     { slug: "plitnyj-fundament", reason: "Армирование плиты" },
+    { slug: "podval-fundamenta", reason: "Арматура стен и пола подвала" },
   ],
   "plitnyj-fundament": [
     { slug: "beton", reason: "Объём бетона для плиты" },
     { slug: "armatura", reason: "Расчёт арматуры" },
     { slug: "lentochnyy-fundament", reason: "Альтернатива — ленточный" },
+  ],
+  "podval-fundamenta": [
+    { slug: "beton", reason: "Проверить объём и состав бетона" },
+    { slug: "armatura", reason: "Пересчитать арматуру по схеме" },
+    { slug: "gidroizolyaciya-vlagozaschita", reason: "Материалы для гидроизоляции" },
+    { slug: "drenazh-uchastka", reason: "Пристенный дренаж подвала" },
+    { slug: "otmostka", reason: "Отвод воды от цоколя" },
   ],
 
   // ── Стены и кладка ─────────────────────────────────────────────────────
@@ -185,6 +194,7 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "plitka", reason: "Плитка поверх гидроизоляции" },
     { slug: "styazhka", reason: "Стяжка с гидроизоляцией" },
     { slug: "vannaya-komnata", reason: "Расчёт ванной комнаты" },
+    { slug: "podval-fundamenta", reason: "Гидроизоляция стен и пола подвала" },
   ],
   krepezh: [
     { slug: "gipsokarton", reason: "Каркас под ГКЛ" },
@@ -265,6 +275,7 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "gazon", reason: "Газон поверх дренируемой площадки" },
     { slug: "septik", reason: "Поля фильтрации септика" },
     { slug: "otmostka", reason: "Отмостка с отводом воды" },
+    { slug: "podval-fundamenta", reason: "Защита подвала от грунтовой воды" },
     { slug: "trotuarnaya-plitka", reason: "Дорожки на сухом основании" },
   ],
   septik: [
@@ -294,6 +305,7 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "armatura", reason: "Армирование отмостки" },
     { slug: "drenazh-uchastka", reason: "Дренаж по контуру отмостки" },
     { slug: "gidroizolyaciya-vlagozaschita", reason: "Гидроизоляция стыка с цоколем" },
+    { slug: "podval-fundamenta", reason: "Цокольный этаж и подвал" },
     { slug: "trotuarnaya-plitka", reason: "Отмостка из плитки" },
   ],
 };
