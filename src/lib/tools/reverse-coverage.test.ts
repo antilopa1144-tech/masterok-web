@@ -16,11 +16,11 @@ describe("инструмент обратного расчёта остатка"
     const material = getCoverageMaterial("paint-acrylic");
     const result = calculateReverseCoverage({ material, amount: 5, adjustmentValue: 2 });
 
-    expect(result.consumptionPerM2).toBeCloseTo(0.3, 8);
-    expect(result.area).toBeCloseTo(16.667, 3);
-    expect(result.roomSide).toBeCloseTo(4.082, 3);
+    expect(result.consumptionPerM2).toBeCloseTo(0.18, 8);
+    expect(result.area).toBeCloseTo(27.778, 3);
+    expect(result.roomSide).toBeCloseTo(5.27, 3);
     expect(result.adjustmentValue).toBe(2);
-    expect(result.amountInKilograms).toBe(6.5);
+    expect(result.amountInKilograms).toBeUndefined();
   });
 
   it("учитывает пользовательское число слоёв", () => {
@@ -28,8 +28,8 @@ describe("инструмент обратного расчёта остатка"
     const oneLayer = calculateReverseCoverage({ material, amount: 6, adjustmentValue: 1 });
     const threeLayers = calculateReverseCoverage({ material, amount: 6, adjustmentValue: 3 });
 
-    expect(oneLayer.area).toBe(4);
-    expect(threeLayers.area).toBeCloseTo(1.333, 3);
+    expect(oneLayer.area).toBeCloseTo(8.571, 3);
+    expect(threeLayers.area).toBeCloseTo(2.857, 3);
   });
 
   it("пересчитывает расход смесей по толщине, а не по условным слоям", () => {
@@ -37,10 +37,10 @@ describe("инструмент обратного расчёта остатка"
     const thin = calculateReverseCoverage({ material, amount: 6, adjustmentValue: 0.5 });
     const thick = calculateReverseCoverage({ material, amount: 6, adjustmentValue: 2 });
 
-    expect(thin.consumptionPerM2).toBe(0.75);
-    expect(thin.area).toBe(8);
-    expect(thick.consumptionPerM2).toBe(3);
-    expect(thick.area).toBe(2);
+    expect(thin.consumptionPerM2).toBe(0.45);
+    expect(thin.area).toBeCloseTo(13.333, 3);
+    expect(thick.consumptionPerM2).toBe(1.8);
+    expect(thick.area).toBeCloseTo(3.333, 3);
   });
 
   it("сохраняет типовой результат наливного пола при толщине 10 мм", () => {
@@ -48,8 +48,8 @@ describe("инструмент обратного расчёта остатка"
     const result = calculateReverseCoverage({ material, amount: 16 });
 
     expect(result.adjustmentValue).toBe(10);
-    expect(result.consumptionPerM2).toBe(16);
-    expect(result.area).toBe(1);
+    expect(result.consumptionPerM2).toBe(15);
+    expect(result.area).toBeCloseTo(1.067, 3);
   });
 
   it("не применяет слои к расходу по шпателю или шву", () => {
@@ -57,8 +57,8 @@ describe("инструмент обратного расчёта остатка"
     const result = calculateReverseCoverage({ material, amount: 7, adjustmentValue: 3 });
 
     expect(result.adjustmentValue).toBe(1);
-    expect(result.consumptionPerM2).toBe(3.5);
-    expect(result.area).toBe(2);
+    expect(result.consumptionPerM2).toBe(3.6);
+    expect(result.area).toBeCloseTo(1.944, 3);
   });
 
   it("возвращает безопасный результат для нулевого и отрицательного остатка", () => {
@@ -74,10 +74,11 @@ describe("инструмент обратного расчёта остатка"
   });
 
   it("получает пересекающиеся нормы из общего каталога", () => {
+    expect(COVERAGE_MATERIALS).toHaveLength(16);
     for (const material of COVERAGE_MATERIALS) {
-      if (!material.normId) continue;
+      expect(material.normId).toBeDefined();
 
-      const norm = getConsumptionNorm(material.normId);
+      const norm = getConsumptionNorm(material.normId!);
       expect(material.consumptionPerM2).toBe(getConsumptionPerAdjustment(norm));
       expect(material.description).toContain(norm.range);
       expect(material.description).toContain(norm.conditions);

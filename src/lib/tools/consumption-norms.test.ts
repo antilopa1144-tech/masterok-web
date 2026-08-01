@@ -18,14 +18,16 @@ describe("общий каталог норм расхода", () => {
       expect(norm.recommended).toBeGreaterThan(0);
       expect(norm.conditions).not.toBe("");
       expect(norm.source).not.toBe("");
+      expect(norm.sourceUrl).toMatch(/^https:\/\/(www\.)?(ceresit\.ru|knauf\.ru|vetonit\.com)\//);
+      expect(norm.verifiedAt).toBe("2026-08-01");
     }
   });
 
   it("возвращает расход на один слой для многослойной системы", () => {
     const waterproof = getConsumptionNorm("waterproof");
 
-    expect(waterproof.recommended).toBe(3);
-    expect(getConsumptionPerAdjustment(waterproof)).toBe(1.5);
+    expect(waterproof.recommended).toBe(1.4);
+    expect(getConsumptionPerAdjustment(waterproof)).toBe(0.7);
   });
 
   it("формирует согласованные данные для справочника и подсказки", () => {
@@ -33,12 +35,12 @@ describe("общий каталог норм расхода", () => {
     const norm = getConsumptionNorm("self-leveling");
 
     expect(row).toMatchObject({
-      consumption: "1.5–1.8",
+      consumption: "1.5",
       unit: "кг/м²",
       conditions: "Толщина 1 мм",
     });
     expect(formatConsumptionNormSummary(norm)).toBe(
-      "1.5–1.8 кг/м²; Толщина 1 мм",
+      "1.5 кг/м²; Толщина 1 мм",
     );
   });
 
@@ -53,17 +55,36 @@ describe("общий каталог норм расхода", () => {
     );
   });
 
-  it("считает площадь упаковки минваты по количеству и размеру плит", () => {
-    const insulation = CONSUMPTION_NORMS.find((category) => category.id === "utepliteli");
-    const mineralWool = insulation?.rows.find((row) => row.material === "Минвата 600×800 мм (50 мм)");
+  it("не публикует строк без проверенного официального первоисточника", () => {
+    const rows = CONSUMPTION_NORMS.flatMap((category) => category.rows);
 
-    expect(mineralWool).toMatchObject({
-      consumption: "2.88",
-      unit: "м²/уп",
-      conditions: "Упаковка 6 плит 600×800 мм",
-      source: "Расчёт по упаковке",
+    expect(rows).toHaveLength(19);
+    for (const row of rows) {
+      expect(row.sourceUrl).toMatch(/^https:\/\/(www\.)?(ceresit\.ru|knauf\.ru|vetonit\.com)\//);
+      expect(row.verifiedAt).toBe("2026-08-01");
+      expect(row.source).not.toMatch(/ГОСТ|СП |СНиП|производител/i);
+    }
+  });
+
+  it("фиксирует исправленные нормы, которые влияют на обратный расчёт", () => {
+    expect(getConsumptionNorm("primer-contact")).toMatchObject({
+      range: "0.20",
+      recommended: 0.2,
     });
-    expect(6 * 0.6 * 0.8).toBeCloseTo(Number(mineralWool?.consumption), 6);
+    expect(getConsumptionNorm("putty-finish")).toMatchObject({
+      range: "1.2",
+      recommended: 1.2,
+      basis: { kind: "thickness", referenceThicknessMm: 1 },
+    });
+    expect(getConsumptionNorm("gasblock-glue")).toMatchObject({
+      range: "2.0",
+      conditions: "Перегородка 100 мм, блок 600×200 мм, шов 2 мм",
+    });
+    expect(getConsumptionNorm("waterproof")).toMatchObject({
+      material: "Полимерная гидроизоляция Ceresit CL 51",
+      range: "1.4",
+      basis: { kind: "layers", referenceLayers: 2 },
+    });
   });
 
   it("фиксирует поисковый интент справочника как таблицу на 1 м²", () => {

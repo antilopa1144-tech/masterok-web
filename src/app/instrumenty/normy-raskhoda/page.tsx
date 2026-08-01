@@ -48,12 +48,32 @@ function NormTable({ category }: { category: NormCategory }) {
           <tbody>
             {category.rows.map((row, i) => (
               <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="px-4 py-2.5 text-slate-700 dark:text-slate-200">{row.material}</td>
+                <td className="px-4 py-2.5 text-slate-700 dark:text-slate-200">
+                  {row.material}
+                  <a
+                    href={row.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block text-[11px] text-accent-700 hover:underline md:hidden"
+                  >
+                    Официальный источник ↗
+                  </a>
+                </td>
                 <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
                   {row.consumption} <span className="text-slate-400 font-normal">{row.unit}</span>
                 </td>
                 <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs hidden sm:table-cell">{row.conditions}</td>
-                <td className="px-4 py-2.5 text-slate-400 dark:text-slate-400 text-xs hidden md:table-cell">{row.source}</td>
+                <td className="px-4 py-2.5 text-xs hidden md:table-cell">
+                  <a
+                    href={row.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent-700 hover:underline"
+                    title={`Проверено ${row.verifiedAt}`}
+                  >
+                    {row.source} ↗
+                  </a>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -100,10 +120,10 @@ export default function Page() {
             Таблица норм расхода строительных материалов на 1 м²
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-            Справочные диапазоны расхода на 1 м² с условиями применения и основанием данных. Для брендовых материалов приоритет имеет техническая карта выбранного продукта.
+            Расход на 1 м² из актуальных технических карт производителей. У каждой строки указаны конкретный материал, условия применения и ссылка на первоисточник.
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-400 mt-2">
-            Редакция: август 2026 г. ГОСТ и СП задают требования к материалам и технологии работ, но не заменяют расход на упаковке.
+            Все строки построчно проверены 1 августа 2026 г. по официальным страницам и техническим картам производителей.
           </p>
         </div>
       </div>
@@ -146,10 +166,10 @@ export default function Page() {
           <NormTable key={cat.id} category={cat} />
         ))}
         <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
-          * Диапазоны приведены для указанных в таблице условий. Фактический расход зависит от основания,
-          способа нанесения, толщины слоя и квалификации мастера. Если в графе указан ГОСТ или СП, документ
-          задаёт общие требования к материалу или технологии; конкретный расход проверяйте по технической
-          документации производителя. Для закупки используйте калькуляторы по ссылкам выше.
+          * Значения относятся только к указанным материалам и условиям. Фактический расход зависит от
+          основания, способа нанесения, толщины слоя и квалификации мастера. Перед закупкой повторно
+          проверьте техкарту выбранной партии: производитель может изменить рецептуру или инструкцию.
+          Для перевода нормы в упаковки используйте калькуляторы по ссылкам выше.
         </p>
       </div>
 

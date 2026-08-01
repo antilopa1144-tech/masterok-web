@@ -132,12 +132,11 @@ function materialFromNorm({
 }
 
 export const COVERAGE_MATERIALS: CoverageMaterial[] = [
-  materialFromNorm({ normId: "paint-acrylic", name: "Краска акриловая", icon: "🎨", defaultAdjustment: 2, density: 1.3 }),
-  materialFromNorm({ normId: "paint-latex", name: "Краска латексная", icon: "🎨", defaultAdjustment: 2, density: 1.35 }),
-  materialFromNorm({ normId: "paint-facade", name: "Краска фасадная", icon: "🎨", defaultAdjustment: 2, density: 1.4 }),
-  materialFromNorm({ normId: "primer-deep", name: "Грунтовка глубокого проникновения", icon: "💧", density: 1.05 }),
+  materialFromNorm({ normId: "paint-acrylic", name: "Краска интерьерная КНАУФ-Вайсванд", icon: "🎨", defaultAdjustment: 2 }),
+  materialFromNorm({ normId: "paint-latex", name: "Краска для потолков КНАУФ-Вайсдэкке", icon: "🎨", defaultAdjustment: 2 }),
+  materialFromNorm({ normId: "paint-facade", name: "Краска фасадная КНАУФ-Фассаденфарбе", icon: "🎨", defaultAdjustment: 2 }),
+  materialFromNorm({ normId: "primer-deep", name: "Грунтовка Ceresit CT 17", icon: "💧" }),
   materialFromNorm({ normId: "primer-contact", name: "Бетоноконтакт", icon: "💧" }),
-  { id: "primer-wood", name: "Грунтовка для дерева", icon: "💧", unit: "л", consumptionPerM2: 0.1, description: "0.08–0.12 л/м² на слой", adjustment: layers(1), density: 1 },
   materialFromNorm({ normId: "putty-start", name: "Шпаклёвка стартовая", icon: "🪣", defaultAdjustment: 1, quickValues: [0.5, 1, 2, 3], max: 10 }),
   materialFromNorm({ normId: "putty-finish", name: "Шпаклёвка финишная", icon: "🪣", defaultAdjustment: 0.5, quickValues: [0.5, 1, 1.5, 2], max: 5 }),
   materialFromNorm({ normId: "plaster-gypsum", name: "Штукатурка гипсовая (Ротбанд)", icon: "🧱", defaultAdjustment: 10, quickValues: [5, 10, 15, 20], max: 50 }),
@@ -147,12 +146,8 @@ export const COVERAGE_MATERIALS: CoverageMaterial[] = [
   materialFromNorm({ normId: "tile-adhesive-cm14", name: "Плиточный клей Ceresit CM 14", icon: "⬜" }),
   materialFromNorm({ normId: "gasblock-glue", name: "Клей для газоблоков", icon: "🧱" }),
   materialFromNorm({ normId: "grout", name: "Затирка для плитки", icon: "🔲" }),
-  { id: "wallpaper-glue", name: "Клей обойный (разведённый)", icon: "📜", unit: "л", consumptionPerM2: 0.2, description: "0.15–0.25 л/м² при нанесении на стену", adjustment: FIXED, density: 1 },
   materialFromNorm({ normId: "self-leveling", name: "Наливной пол", icon: "🏗️", defaultAdjustment: 10, quickValues: [3, 5, 10, 20], max: 100 }),
-  { id: "screed-m300", name: "Пескобетон М300 (стяжка)", icon: "🏗️", unit: "кг", consumptionPerM2: 20, description: "Около 20 кг/м² при толщине 10 мм", adjustment: thickness(10, 10, [10, 30, 50, 70], 150) },
   materialFromNorm({ normId: "waterproof", name: "Гидроизоляция обмазочная", icon: "🛡️", defaultAdjustment: 2 }),
-  { id: "cement", name: "Цемент М500", icon: "🏗️", unit: "кг", consumptionPerM2: 5, description: "Около 5 кг/м² в составе раствора толщиной 10 мм", adjustment: thickness(10, 10, [10, 20, 30, 50], 100) },
-  { id: "sand", name: "Песок строительный", icon: "🏗️", unit: "кг", consumptionPerM2: 15, description: "Около 15 кг/м² в составе раствора толщиной 10 мм", adjustment: thickness(10, 10, [10, 20, 30, 50], 100) },
 ];
 
 export function getCoverageMaterial(id: string): CoverageMaterial {
