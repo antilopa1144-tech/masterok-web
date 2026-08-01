@@ -7,6 +7,51 @@ const calc = withBasicAccuracy(warmFloorPipesDef.calculate.bind(warmFloorPipesDe
 ) => ReturnType<typeof warmFloorPipesDef.calculate>;
 
 describe("Калькулятор водяного тёплого пола", () => {
+  describe("SEO-обещание совпадает с расчётом", () => {
+    const result = calc({
+      inputMode: 0,
+      length: 5,
+      width: 4,
+      pipeStep: 200,
+      pipeType: 0,
+    });
+    const pipe = findMaterial(result, "PEX-a");
+    const screed = findMaterial(result, "Стяжка полусухая");
+    const content = warmFloorPipesDef.seoContent?.descriptionHtml ?? "";
+    const thicknessFaq = warmFloorPipesDef.seoContent?.faq?.find((item) =>
+      item.question.includes("толщину стяжки"),
+    );
+
+    it("позиционирует расчёт как трубы, контуры и предварительную стяжку", () => {
+      expect(warmFloorPipesDef.metaTitle).toContain("трубы и контуры");
+      expect(warmFloorPipesDef.metaDescription).toContain("слоем 50 мм");
+    });
+
+    it("пример 20 м² совпадает с движком и упаковкой", () => {
+      expect(result.totals.pipeLength).toBe(88);
+      expect(pipe?.quantity).toBe(92.4);
+      expect(pipe?.purchaseQty).toBe(200);
+      expect(result.totals.circuits).toBe(2);
+      expect(screed?.purchaseQty).toBe(1500);
+      expect(screed?.packageInfo).toEqual({
+        count: 60,
+        size: 25,
+        packageUnit: "мешков",
+      });
+      expect(content).toContain("88 м");
+      expect(content).toContain("92,4 м");
+      expect(content).toContain("1 500 кг");
+      expect(content).toContain("60 мешков по 25 кг");
+    });
+
+    it("не выдаёт фиксированный слой за нормативный минимум", () => {
+      expect(content).toContain("1 500 кг/м&sup3;");
+      expect(content).not.toContain("2 000 кг/м");
+      expect(content).not.toContain("Минимальная толщина стяжки над трубой");
+      expect(thicknessFaq?.answer).toContain("не назначает толщину");
+    });
+  });
+
   describe("20 м², шаг 200, PEX-a", () => {
     const result = calc({
       inputMode: 0,

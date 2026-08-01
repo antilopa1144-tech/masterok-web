@@ -5,6 +5,39 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(screedDef.calculate.bind(screedDef));
 
 describe("Калькулятор стяжки пола", () => {
+  describe("SEO-обещание совпадает с расчётом", () => {
+    const result = calc({
+      inputMode: 0,
+      length: 5,
+      width: 4,
+      thickness: 70,
+      screedType: 1,
+      readyMix: 0,
+      readyBagWeight: 40,
+    });
+
+    it("описывает полную толщину стяжки, в том числе над тёплым полом", () => {
+      expect(screedDef.metaDescription).toContain("полной толщине");
+      expect(screedDef.metaDescription).toContain("тёплым полом");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("весь слой от основания");
+    });
+
+    it("пример 20 м² и 70 мм совпадает с движком и фасовкой", () => {
+      const mix = findMaterial(result, "Пескобетон М300");
+
+      expect(result.totals.volume).toBeCloseTo(1.54, 3);
+      expect(mix?.purchaseQty).toBe(3080);
+      expect(mix?.packageInfo).toEqual({
+        count: 77,
+        size: 40,
+        packageUnit: "мешков",
+      });
+      expect(screedDef.seoContent?.descriptionHtml).toContain("1,54 м&sup3;");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("3 080 кг");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("77 мешков по 40 кг");
+    });
+  });
+
   describe("ЦПС 1:3, 5×4 м, толщина 50 мм", () => {
     // area = 20, thicknessM = 0.05
     // volume = 20 * 0.05 * 1.15 = 1.15 (усадочный множитель 1.15 для ручного замеса ЦПС 1:3)
