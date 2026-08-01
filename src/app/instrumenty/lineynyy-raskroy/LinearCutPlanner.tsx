@@ -10,6 +10,7 @@ const COLORS = ["#7c3aed", "#0284c7", "#059669", "#d97706", "#e11d48", "#4f46e5"
 const EXAMPLES: Array<{ label: string; stock: number; kerf: number; parts: LinearCutPartInput[] }> = [
   { label: "Плинтус комнаты", stock: 2400, kerf: 2, parts: [{ id: "long", label: "Длинный участок", lengthMm: 1900, quantity: 2 }, { id: "short", label: "Короткий участок", lengthMm: 1350, quantity: 2 }, { id: "door", label: "Добор у двери", lengthMm: 420, quantity: 2 }] },
   { label: "Профиль каркаса", stock: 3000, kerf: 3, parts: [{ id: "post", label: "Стойка", lengthMm: 2600, quantity: 8 }, { id: "bridge", label: "Перемычка", lengthMm: 580, quantity: 10 }] },
+  { label: "Профильная труба", stock: 6000, kerf: 3, parts: [{ id: "frame-long", label: "Стойка рамы", lengthMm: 1900, quantity: 4 }, { id: "frame-short", label: "Поперечина", lengthMm: 900, quantity: 4 }] },
   { label: "Рейки для рамок", stock: 2800, kerf: 3, parts: [{ id: "vertical", label: "Вертикаль", lengthMm: 900, quantity: 8 }, { id: "horizontal", label: "Горизонталь", lengthMm: 600, quantity: 8 }] },
 ];
 

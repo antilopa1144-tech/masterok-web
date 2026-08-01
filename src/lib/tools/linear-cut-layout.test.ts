@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { getToolConfig } from "./config";
 import { calculateLinearCutLayout } from "./linear-cut-layout";
 
 describe("linear-cut-layout", () => {
+  it("описывает страницу как онлайн-калькулятор линейного раскроя", () => {
+    const config = getToolConfig("lineynyy-raskroy");
+
+    expect(config?.seoTitle).toBe("Калькулятор линейного раскроя онлайн");
+    expect(config?.description).toContain("профильной трубы");
+    expect(config?.seoIntro).toContain("8 заготовок");
+  });
+
   it("укладывает детали в заготовки с учётом пропила", () => {
     const result = calculateLinearCutLayout({ stockLengthMm: 3000, sawKerfMm: 3, reusableOffcutMm: 300, parts: [
       { id: "a", label: "Стойка", lengthMm: 1400, quantity: 2 },
