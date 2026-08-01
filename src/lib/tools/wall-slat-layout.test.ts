@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { getToolConfig } from "./config";
 import { calculateWallSlatLayout } from "./wall-slat-layout";
 
 const base = { wallWidthMm: 3000, wallHeightMm: 2700, slatWidthMm: 30, desiredGapMm: 20, desiredCount: 20, mode: "by-gap" as const, stockLengthMm: 3000, reservePercent: 5 };
 
 describe("wall-slat-layout", () => {
+  it("описывает страницу как калькулятор реек со схемой раскладки", () => {
+    const config = getToolConfig("raskladka-reek");
+
+    expect(config?.seoTitle).toBe("Калькулятор реек на стену онлайн: расчёт и схема");
+    expect(config?.description).toContain("погонные метры");
+    expect(config?.seoIntro).toContain("рассчитать и разложить");
+    expect(config?.faq.some((item) => item.question.includes("рассчитать количество реек"))).toBe(true);
+  });
+
   it("центрирует набор реек и сохраняет заданный зазор", () => {
     const result = calculateWallSlatLayout(base);
     const last = result.placements.at(-1)!;
