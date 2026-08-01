@@ -39,7 +39,7 @@ describe("SEO-страницы калькуляторов", () => {
     const html = renderToStaticMarkup(page);
 
     expect(html).toContain(
-      "<h1 class=\"text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white\">Калькулятор арматуры онлайн — расчёт арматуры для фундамента</h1>",
+      "<h1 class=\"text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white\">Калькулятор арматуры — вес, метраж и вязальная проволока</h1>",
     );
   });
 });

@@ -5,6 +5,42 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(rebarDef.calculate.bind(rebarDef));
 
 describe("Калькулятор арматуры", () => {
+  it("закрывает подтверждённый интент веса и вязальной проволоки", () => {
+    expect(rebarDef.h1).toContain("вес, метраж и вязальная проволока");
+    expect(rebarDef.metaTitle).toContain("вес и вязальная проволока");
+    expect(rebarDef.metaDescription).toContain("стержней 11,7 м");
+  });
+
+  it("SEO-пример совпадает с canonical-результатом для плиты 10×8 м", () => {
+    const result = calc({
+      structureType: 0,
+      length: 10,
+      width: 8,
+      height: 0.3,
+      mainDiameter: 12,
+      gridStep: 200,
+    });
+    const content = rebarDef.seoContent?.descriptionHtml ?? "";
+    const wireFaq = rebarDef.seoContent?.faq?.find((item) =>
+      item.question.includes("вязальную проволоку"),
+    );
+    const wire = findMaterial(result, "Проволока вязальная");
+
+    expect(result.totals.mainRebarLength).toBe(1717.8);
+    expect(result.totals.mainRebarKg).toBe(1525.4);
+    expect(result.totals.mainRods).toBe(147);
+    expect(result.totals.wireLength).toBe(1397.4);
+    expect(result.totals.wireKg).toBe(8.38);
+    expect(wire?.purchaseQty).toBe(9);
+    expect(content).toContain("1 717,8 м");
+    expect(content).toContain("1 525,4 кг");
+    expect(content).toContain("147 стержней");
+    expect(content).toContain("8,38 кг");
+    expect(content).toContain("9 кг к покупке");
+    expect(content).toContain("товарная длина стержня");
+    expect(wireFaq?.answer).toContain("не универсальная норма на тонну");
+  });
+
   describe("Плита 10×8, h=0.3, Ø12, шаг 200", () => {
     // gridStepM = 0.2
     // barsAlongLength = ceil(8 / 0.2) + 1 = 41
