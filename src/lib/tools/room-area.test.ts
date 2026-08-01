@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { calculateRoomArea, parseRoomDimension } from "./room-area";
+import { getToolConfig } from "./config";
 
 describe("инструмент площади комнаты", () => {
+  it("SEO-обещание соответствует доступным результатам", () => {
+    const config = getToolConfig("ploshchad-komnaty");
+
+    expect(config?.seoTitle).toBe("Калькулятор площади комнаты в м² онлайн");
+    expect(config?.description).toContain("площадь пола, периметр и площадь стен");
+    expect(config?.seoIntro).toContain("5 × 4 м занимает 20 м²");
+    expect(config?.seoIntro).toContain("48,6 м² без вычета окон и дверей");
+    expect(config?.faq.some((item) => item.question.includes("квадратуру стен"))).toBe(true);
+    expect(config?.faq.some((item) => item.question.includes("неправильной формы"))).toBe(true);
+  });
+
   it("считает прямоугольную комнату и площадь стен", () => {
     expect(calculateRoomArea({
       shape: "rect",
