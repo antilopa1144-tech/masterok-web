@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { getToolConfig } from "./config";
 import { calculateDeckLayout, type DeckLayoutInput } from "./deck-layout";
 
 const base: DeckLayoutInput = { deckLengthMm: 5000, deckWidthMm: 3000, boardLengthMm: 3000, boardWidthMm: 150, gapMm: 5, orientation: "along-length", stagger: "half", sawKerfMm: 3, reservePercent: 10 };
 
 describe("deck-layout", () => {
+  it("описывает страницу как онлайн-схему настила и карту раскроя", () => {
+    const config = getToolConfig("raskladka-terrasnoy-doski");
+
+    expect(config?.seoTitle).toBe("Раскладка террасной доски онлайн: схема настила");
+    expect(config?.description).toContain("карта раскроя");
+    expect(config?.seoIntro).toContain("схему раскладки террасной доски");
+    expect(config?.faq.some((item) => item.question.includes("получить схему"))).toBe(true);
+  });
+
   it("покрывает каждый ряд ровно по длине настила", () => {
     const result = calculateDeckLayout(base);
     for (let row = 1; row <= result.rows; row += 1) {
