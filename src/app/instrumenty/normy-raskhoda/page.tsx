@@ -8,18 +8,19 @@ import { calcHref } from "@/lib/tools/config";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
-  title: `Нормы расхода строительных материалов — таблица на 1 м²`,
+  title: "Таблица норм расхода строительных материалов на 1 м²",
   description:
-    "Справочник норм расхода строительных материалов на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, плиточный клей, затирка, стяжка. По ГОСТ, СП и паспортам.",
+    "Справочная таблица расхода строительных материалов на 1 м²: штукатурка, шпаклёвка, грунтовка, краска, плиточный клей, стяжка и другие работы.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("normy-raskhoda", {
+  title: META.title,
   description: META.description,
 });
 
 function NormTable({ category }: { category: NormCategory }) {
   return (
-    <div className="card overflow-hidden">
+    <section id={category.id} className="card scroll-mt-24 overflow-hidden">
       <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <h2 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <span>{category.icon}</span>
@@ -41,7 +42,7 @@ function NormTable({ category }: { category: NormCategory }) {
               <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400">Материал</th>
               <th className="text-right px-4 py-2 font-medium text-slate-500 dark:text-slate-400">Расход</th>
               <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Условия</th>
-              <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">Источник</th>
+              <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">Основание данных</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +59,7 @@ function NormTable({ category }: { category: NormCategory }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -96,24 +97,59 @@ export default function Page() {
             ]}
           />
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
-            Нормы расхода строительных материалов
+            Таблица норм расхода строительных материалов на 1 м²
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-            Справочник расхода на 1 м² по ГОСТ, СП и паспортам производителей. Используется в калькуляторах {SITE_NAME}.
+            Справочные диапазоны расхода на 1 м² с условиями применения и основанием данных. Для брендовых материалов приоритет имеет техническая карта выбранного продукта.
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-400 mt-2">
-            Последнее обновление: март 2026 г. Источники: паспорта Ceresit, Knauf, Vetonit, Litokol; ГОСТ, СНиП, СП.
+            Редакция: август 2026 г. ГОСТ и СП задают требования к материалам и технологии работ, но не заменяют расход на упаковке.
           </p>
         </div>
       </div>
 
       <div className="page-container py-8 space-y-6">
+        <section className="card p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            Как рассчитать расход материала
+          </h2>
+          <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p>
+              Базовая потребность считается по формуле: площадь × расход на 1 м². Если норма дана для
+              определённой толщины или одного слоя, сначала приведите её к фактической толщине и числу
+              слоёв. Запас и округление до мешков, вёдер или рулонов добавляются после базового расчёта.
+            </p>
+            <p>
+              Пример: для 20 м² стены и гипсовой штукатурки с расходом 8,5 кг/м² при слое 10 мм базовая
+              потребность равна 20 × 8,5 = 170 кг. Количество мешков и практический запас уточняйте в
+              профильном калькуляторе — там учитываются толщина слоя, неровность основания и фасовка.
+            </p>
+          </div>
+        </section>
+
+        <nav aria-label="Разделы таблицы норм расхода" className="card p-4 sm:p-5">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Перейти к материалу</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CONSUMPTION_NORMS.map((category) => (
+              <a
+                key={category.id}
+                href={`#${category.id}`}
+                className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-800 hover:border-cyan-300 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-300"
+              >
+                {category.title}
+              </a>
+            ))}
+          </div>
+        </nav>
+
         {CONSUMPTION_NORMS.map((cat) => (
-          <NormTable key={cat.title} category={cat} />
+          <NormTable key={cat.id} category={cat} />
         ))}
         <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
-          * Нормы расхода приведены для типовых условий. Фактический расход зависит от основания, способа нанесения,
-          толщины слоя и квалификации мастера. Для точного расчёта используйте калькуляторы по ссылкам выше.
+          * Диапазоны приведены для указанных в таблице условий. Фактический расход зависит от основания,
+          способа нанесения, толщины слоя и квалификации мастера. Если в графе указан ГОСТ или СП, документ
+          задаёт общие требования к материалу или технологии; конкретный расход проверяйте по технической
+          документации производителя. Для закупки используйте калькуляторы по ссылкам выше.
         </p>
       </div>
 

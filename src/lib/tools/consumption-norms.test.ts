@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getToolConfig } from "./config";
 import {
   CONSUMPTION_NORM_IDS,
   consumptionNormRow,
@@ -47,5 +48,28 @@ describe("общий каталог норм расхода", () => {
       .flatMap((row) => row.normId ? [row.normId] : []);
 
     expect(sharedIds.sort()).toEqual([...CONSUMPTION_NORM_IDS].sort());
+    expect(new Set(CONSUMPTION_NORMS.map((category) => category.id)).size).toBe(
+      CONSUMPTION_NORMS.length,
+    );
+  });
+
+  it("считает площадь упаковки минваты по количеству и размеру плит", () => {
+    const insulation = CONSUMPTION_NORMS.find((category) => category.id === "utepliteli");
+    const mineralWool = insulation?.rows.find((row) => row.material === "Минвата 600×800 мм (50 мм)");
+
+    expect(mineralWool).toMatchObject({
+      consumption: "2.88",
+      unit: "м²/уп",
+      conditions: "Упаковка 6 плит 600×800 мм",
+      source: "Расчёт по упаковке",
+    });
+    expect(6 * 0.6 * 0.8).toBeCloseTo(Number(mineralWool?.consumption), 6);
+  });
+
+  it("фиксирует поисковый интент справочника как таблицу на 1 м²", () => {
+    const config = getToolConfig("normy-raskhoda");
+
+    expect(config?.seoTitle).toBe("Таблица норм расхода строительных материалов на 1 м²");
+    expect(config?.seoIntro).toContain("техническая карта");
   });
 });

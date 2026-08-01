@@ -14,6 +14,7 @@ export interface NormRow {
 }
 
 export interface NormCategory {
+  id: string;
   title: string;
   icon: string;
   calculator?: CalcRef;
@@ -22,6 +23,7 @@ export interface NormCategory {
 
 export const CONSUMPTION_NORMS: NormCategory[] = [
   {
+    id: "gruntovka",
     title: "Грунтовка",
     icon: "💧",
     calculator: { slug: "gruntovka", categorySlug: "otdelka" },
@@ -32,6 +34,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "shtukaturka",
     title: "Штукатурка",
     icon: "🧱",
     calculator: { slug: "shtukaturka", categorySlug: "steny" },
@@ -42,6 +45,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "shpaklevka",
     title: "Шпаклёвка",
     icon: "🪣",
     calculator: { slug: "shpaklevka", categorySlug: "otdelka" },
@@ -52,6 +56,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "kraska",
     title: "Краска",
     icon: "🎨",
     calculator: { slug: "kraska", categorySlug: "otdelka" },
@@ -62,6 +67,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "plitochnyy-kley",
     title: "Плиточный клей",
     icon: "⬜",
     calculator: { slug: "klej-dlya-plitki", categorySlug: "poly" },
@@ -72,6 +78,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "zatirka",
     title: "Затирка",
     icon: "🔲",
     calculator: { slug: "zatirka", categorySlug: "poly" },
@@ -82,6 +89,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "styazhka",
     title: "Стяжка и наливной пол",
     icon: "🏗️",
     calculator: { slug: "styazhka", categorySlug: "poly" },
@@ -92,6 +100,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "gidroizolyatsiya",
     title: "Гидроизоляция",
     icon: "🛡️",
     calculator: { slug: "gidroizolyaciya-vlagozaschita", categorySlug: "otdelka" },
@@ -102,6 +111,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "oboynyy-kley",
     title: "Обойный клей",
     icon: "📜",
     calculator: { slug: "oboi", categorySlug: "otdelka" },
@@ -113,18 +123,20 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "utepliteli",
     title: "Утеплители",
     icon: "🧊",
     calculator: { slug: "uteplenie", categorySlug: "fasad" },
     rows: [
-      { material: "Минвата Rockwool Лайт Баттс (50 мм)", consumption: "2.0", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Паспорт Rockwool" },
-      { material: "Минвата Rockwool Лайт Баттс (100 мм)", consumption: "2.88", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Паспорт Rockwool" },
+      { material: "Минвата 600×800 мм (50 мм)", consumption: "2.88", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Расчёт по упаковке" },
+      { material: "Минвата 600×800 мм (100 мм)", consumption: "2.88", unit: "м²/уп", conditions: "Упаковка 6 плит 600×800 мм", source: "Расчёт по упаковке" },
       { material: "ЭППС Пеноплэкс Комфорт (50 мм)", consumption: "5.04", unit: "м²/уп", conditions: "Упаковка 7 листов 600×1200 мм", source: "Паспорт Пеноплэкс" },
       { material: "Пенопласт ПСБ-С 25 (50 мм)", consumption: "1.0", unit: "м²/лист", conditions: "Лист 1000×1000 мм", source: "ГОСТ 15588-2014" },
       { material: "Тарельчатый дюбель", consumption: "5–6", unit: "шт/м²", conditions: "Для крепления утеплителя к фасаду", source: "СТО 58239148-001-2006" },
     ],
   },
   {
+    id: "kladochnye-rastvory",
     title: "Кладочные растворы",
     icon: "🧱",
     calculator: { slug: "kirpich", categorySlug: "steny" },
@@ -136,6 +148,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     ],
   },
   {
+    id: "montazh-gkl",
     title: "Монтаж ГКЛ",
     icon: "📐",
     calculator: { slug: "gipsokarton", categorySlug: "steny" },
