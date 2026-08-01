@@ -2746,9 +2746,13 @@ export interface SoftRoofingMaterialRules {
   mastic_linear_rate: number;
   mastic_area_rate: number;
   mastic_bucket: number;
-  nails_per_m2: number;
-  nails_per_kg: number;
+  /** Расход кровельных гвоздей для уклона до порогового включительно, кг/м². */
+  nails_kg_per_m2_low_slope: number;
+  /** Расход кровельных гвоздей для уклона выше порогового, кг/м². */
+  nails_kg_per_m2_high_slope: number;
+  nails_high_slope_threshold: number;
   nail_reserve: number;
+  nail_box_kg: number;
   eave_strip_length: number;
   eave_reserve: number;
   wind_strip_ratio: number;

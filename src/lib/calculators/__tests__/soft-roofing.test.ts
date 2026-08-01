@@ -12,7 +12,7 @@ describe("Калькулятор мягкой кровли", () => {
     //   underlaymentRolls = ceil(32.2/15) = 3
     // valleyRolls = 0 (нет ендов)
     // masticKg = (8+20+0)*0.1 + 80*0.1 = 2.8 + 8 = 10.8 → masticBuckets = ceil(10.8/3) = 4
-    // nailsKg = ceil(80*80/400*1.05) = ceil(16.8) = 17
+    // nails: 80*0.10 = 8 кг точно; 8*1.05 = 8.4 кг с запасом; к покупке 2 коробки = 10 кг
     // eaveStrips = ceil(20/2 * 1.05) = ceil(10.5) = 11
     // windStrips = ceil(20*0.4/2 * 1.05) = ceil(4.2) = 5
     // ridgeShingles = ceil(8/0.5 * 1.05) = ceil(16.8) = 17
@@ -49,10 +49,10 @@ describe("Калькулятор мягкой кровли", () => {
       const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
       expect(nails).toBeDefined();
       expect(nails!.unit).toBe("кг");
-      expect(nails!.quantity).toBe(17);
-      expect(nails!.withReserve).toBe(17);
-      expect(nails!.purchaseQty).toBe(20);
-      expect(nails!.packageInfo).toEqual({ count: 4, size: 5, packageUnit: "коробок" });
+      expect(nails!.quantity).toBe(8);
+      expect(nails!.withReserve).toBe(8.4);
+      expect(nails!.purchaseQty).toBe(10);
+      expect(nails!.packageInfo).toEqual({ count: 2, size: 5, packageUnit: "коробок" });
     });
 
     it("карнизные планки = 11 шт", () => {
@@ -109,6 +109,27 @@ describe("Калькулятор мягкой кровли", () => {
 
     it("инварианты", () => {
       checkInvariants(result);
+    });
+  });
+
+  describe("Расход гвоздей зависит от уклона", () => {
+    it("при уклоне 45° использует 0,10 кг/м²", () => {
+      const result = calc({ roofArea: 80, slope: 45, ridgeLength: 8, eaveLength: 20, valleyLength: 0 });
+      const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
+
+      expect(nails?.quantity).toBe(8);
+      expect(nails?.withReserve).toBe(8.4);
+      expect(nails?.purchaseQty).toBe(10);
+    });
+
+    it("выше 45° использует 0,15 кг/м²", () => {
+      const result = calc({ roofArea: 80, slope: 50, ridgeLength: 8, eaveLength: 20, valleyLength: 0 });
+      const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
+
+      expect(nails?.quantity).toBe(12);
+      expect(nails?.withReserve).toBe(12.6);
+      expect(nails?.purchaseQty).toBe(15);
+      expect(nails?.packageInfo).toEqual({ count: 3, size: 5, packageUnit: "коробок" });
     });
   });
 

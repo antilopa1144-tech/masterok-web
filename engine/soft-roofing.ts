@@ -23,10 +23,6 @@ const VALLEY_RESERVE = 1.15;
 const MASTIC_LINEAR_RATE = 0.1; // kg/m
 const MASTIC_AREA_RATE = 0.1;   // kg/m²
 const MASTIC_BUCKET = 3;        // kg
-const NAILS_PER_M2 = 80;
-const NAILS_PER_KG = 400;
-const NAIL_RESERVE = 1.05;
-const NAIL_BOX_KG = 5;
 const EAVE_STRIP_LENGTH = 2;    // m
 const EAVE_RESERVE = 1.05;
 const WIND_STRIP_RATIO = 0.4;
@@ -97,8 +93,13 @@ export function computeCanonicalSoftRoofing(
   const masticBuckets = Math.ceil(masticKg / MASTIC_BUCKET);
 
   // Nails
-  const nailsKg = Math.ceil(roofArea * NAILS_PER_M2 / NAILS_PER_KG * NAIL_RESERVE);
-  const nailBoxes = Math.ceil(nailsKg / NAIL_BOX_KG);
+  const nailRateKgPerM2 =
+    slope <= spec.material_rules.nails_high_slope_threshold
+      ? spec.material_rules.nails_kg_per_m2_low_slope
+      : spec.material_rules.nails_kg_per_m2_high_slope;
+  const nailsExactKg = roofArea * nailRateKgPerM2;
+  const nailsWithReserveKg = nailsExactKg * spec.material_rules.nail_reserve;
+  const nailBoxes = Math.ceil(nailsWithReserveKg / spec.material_rules.nail_box_kg);
 
   // Eave strips
   const eaveStrips = Math.ceil(eaveLength / EAVE_STRIP_LENGTH * EAVE_RESERVE);
@@ -202,12 +203,12 @@ export function computeCanonicalSoftRoofing(
     },
     {
       name: "Гвозди ершёные оцинкованные 3,2×30 мм",
-      subtitle: "С широкой шляпкой для крепления гибкой черепицы к ориентированно-стружечной плите",
-      quantity: nailsKg,
+      subtitle: `Расход ${nailRateKgPerM2} кг/м² при уклоне ${roundDisplay(slope, 0)}°; для другой нарезки проверьте инструкцию производителя`,
+      quantity: roundDisplay(nailsExactKg, 3),
       unit: "кг",
-      withReserve: nailsKg,
-      purchaseQty: nailBoxes * NAIL_BOX_KG,
-      packageInfo: { count: nailBoxes, size: NAIL_BOX_KG, packageUnit: "коробок" },
+      withReserve: roundDisplay(nailsWithReserveKg, 3),
+      purchaseQty: nailBoxes * spec.material_rules.nail_box_kg,
+      packageInfo: { count: nailBoxes, size: spec.material_rules.nail_box_kg, packageUnit: "коробок" },
       category: "Крепёж",
     },
     {
@@ -289,7 +290,7 @@ export function computeCanonicalSoftRoofing(
       valleyRolls,
       masticKg: roundDisplay(masticKg, 3),
       masticBuckets,
-      nailsKg,
+      nailsKg: roundDisplay(nailsWithReserveKg, 3),
       eaveStrips,
       windStrips,
       ridgeShingles,

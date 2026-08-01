@@ -1,7 +1,7 @@
 {
   "calculator_id": "soft-roofing",
-  "formula_version": "soft-roofing-canonical-v1",
-  "generated_at": "2026-07-23T08:18:20.664Z",
+  "formula_version": "soft-roofing-canonical-v2",
+  "generated_at": "2026-08-01T22:33:36.312Z",
   "cases": [
     {
       "id": "defaults",
@@ -24,7 +24,7 @@
         "valleyRolls": 0,
         "masticKg": 10.8,
         "masticBuckets": 4,
-        "nailsKg": 17,
+        "nailsKg": 8.4,
         "eaveStrips": 11,
         "windStrips": 5,
         "ridgeShingles": 17,
