@@ -1947,22 +1947,21 @@ export interface TerraceCanonicalSpec extends CanonicalCalculatorSpecBase {
 /* ─── Blind Area / Отмостка ─── */
 
 export interface BlindAreaPackagingRules {
-  unit: string;
-  package_size: number;
+  concrete_step_m3: number;
+  surface_step_m2: number;
 }
 
 export interface BlindAreaMaterialRules {
-  concrete_reserve: number;
   mesh_reserve: number;
   damper_reserve: number;
-  gravel_layer: number;
-  sand_layer: number;
-  tile_reserve: number;
-  tile_mix_kg_per_m2: number;
-  border_length: number;
-  membrane_reserve: number;
-  geotextile_roll: number;
-  epps_plate: number;
+  gravel_layer_by_type: Record<string, number>;
+  sand_layer_by_type: Record<string, number>;
+  border_piece_length_m: number;
+  membrane_overlap_factor: number;
+  decorative_gravel_layer_m: number;
+  geotextile_reserve: number;
+  geotextile_roll_m2: number;
+  epps_plate_m2: number;
   epps_reserve: number;
 }
 

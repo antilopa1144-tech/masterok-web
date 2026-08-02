@@ -7,23 +7,14 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import {
+  type AccuracyMode,
+  type MaterialCategory,
+  DEFAULT_ACCURACY_MODE,
+  applyAccuracyMode,
+  getPrimaryMultiplier,
+} from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-
-/* ─── constants ─── */
-
-const CONCRETE_RESERVE = 1.05;
-const MESH_RESERVE = 1.1;
-const DAMPER_RESERVE = 1.05;
-const GRAVEL_LAYER = 0.15;
-const SAND_LAYER = 0.1;
-const TILE_RESERVE = 1.08;
-const TILE_MIX_KG_PER_M2 = 6;
-const BORDER_LENGTH = 0.5;
-const MEMBRANE_RESERVE = 1.15;
-const GEOTEXTILE_ROLL = 50;
-const EPPS_PLATE = 0.72;
-const EPPS_RESERVE = 1.05;
 
 /* ─── labels ─── */
 
@@ -54,7 +45,7 @@ export function computeCanonicalBlindArea(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+  const rules = spec.material_rules;
 
   const perimeter = Math.max(10, Math.min(200, inputs.perimeter ?? getInputDefault(spec, "perimeter", 40)));
   const width = Math.max(0.6, Math.min(1.5, inputs.width ?? getInputDefault(spec, "width", 1.0)));
@@ -62,44 +53,69 @@ export function computeCanonicalBlindArea(
   const materialType = Math.max(0, Math.min(2, Math.round(inputs.materialType ?? getInputDefault(spec, "materialType", 0))));
   const withInsulation = Math.max(0, Math.min(100, inputs.withInsulation ?? getInputDefault(spec, "withInsulation", 0)));
 
-  /* ─── base geometry ─── */
-  const area = perimeter * width;
+  /* ─── base geometry ───
+   * For a closed rectilinear contour, the outer strip consists of straight
+   * runs P×W plus the net contribution of four square outside corners 4×W².
+   * This remains true for an orthogonal outline with recesses while the offset
+   * does not self-intersect: convex and concave corner contributions cancel.
+   */
+  const straightStripArea = perimeter * width;
+  const cornerAllowanceArea = 4 * width * width;
+  const area = straightStripArea + cornerAllowanceArea;
+  const outerEdgeLength = perimeter + 8 * width;
 
   /* ─── type-specific ─── */
   let concreteM3 = 0;
-  let meshPcs = 0;
+  let meshAreaM2 = 0;
   let damperM = 0;
   let tileM2 = 0;
-  let mixBags = 0;
   let borderPcs = 0;
   let membraneM2 = 0;
+  let membraneWithOverlapM2 = 0;
   let decorGravelM3 = 0;
 
   if (materialType === 0) {
     /* concrete */
-    concreteM3 = Math.ceil(area * (thickness / 1000) * CONCRETE_RESERVE * 10) / 10;
-    meshPcs = thickness >= 100 ? Math.ceil(area * MESH_RESERVE) : 0;
-    damperM = roundDisplay(perimeter * DAMPER_RESERVE, 2);
+    concreteM3 = roundDisplay(area * (thickness / 1000), 6);
+    meshAreaM2 = thickness >= 100 ? roundDisplay(area, 6) : 0;
+    damperM = roundDisplay(perimeter, 6);
   } else if (materialType === 1) {
     /* tile */
-    tileM2 = Math.ceil(area * TILE_RESERVE);
-    mixBags = Math.ceil(area * TILE_MIX_KG_PER_M2 / 50);
-    borderPcs = Math.ceil(perimeter / BORDER_LENGTH);
+    tileM2 = roundDisplay(area, 6);
+    borderPcs = Math.ceil(outerEdgeLength / rules.border_piece_length_m);
   } else {
     /* soft membrane */
-    membraneM2 = Math.ceil(area * MEMBRANE_RESERVE);
-    decorGravelM3 = roundDisplay(area * 0.1, 3);
+    membraneM2 = roundDisplay(area, 6);
+    membraneWithOverlapM2 = roundDisplay(area * rules.membrane_overlap_factor, 6);
+    decorGravelM3 = roundDisplay(area * rules.decorative_gravel_layer_m, 3);
   }
 
   /* ─── common layers ─── */
-  const gravel = roundDisplay(area * GRAVEL_LAYER, 3);
-  const sand = roundDisplay(area * SAND_LAYER, 3);
-  const geotextileRolls = Math.ceil(area * 1.15 / GEOTEXTILE_ROLL);
-  const eppsPlates = withInsulation > 0 ? Math.ceil(area * EPPS_RESERVE / EPPS_PLATE) : 0;
+  const gravelLayer = rules.gravel_layer_by_type[String(materialType)] ?? 0;
+  const sandLayer = rules.sand_layer_by_type[String(materialType)] ?? 0;
+  const gravel = roundDisplay(area * gravelLayer, 3);
+  const sand = roundDisplay(area * sandLayer, 3);
+  const geotextileRolls = materialType === 2
+    ? 0
+    : Math.ceil(area * rules.geotextile_reserve / rules.geotextile_roll_m2);
+  const eppsPlates = withInsulation > 0
+    ? Math.ceil(area * rules.epps_reserve / rules.epps_plate_m2)
+    : 0;
 
   /* ─── scenarios ─── */
-  const basePrimaryRaw = materialType === 0 ? concreteM3 : materialType === 1 ? tileM2 : membraneM2;
-  const basePrimary = roundDisplay(basePrimaryRaw * accuracyMult, 6);
+  const basePrimaryRaw = materialType === 0
+    ? concreteM3
+    : materialType === 1
+      ? tileM2
+      : membraneWithOverlapM2;
+  const accuracyBaseRaw = materialType === 2 ? membraneM2 : basePrimaryRaw;
+  const materialCategory: MaterialCategory = materialType === 0
+    ? "concrete"
+    : materialType === 1
+      ? "tile"
+      : "waterproofing";
+  const accuracyMult = getPrimaryMultiplier(materialCategory, accuracyMode);
+  const basePrimary = roundDisplay(accuracyBaseRaw * accuracyMult, 6);
   const packageUnit = materialType === 0 ? "м³" : "м²";
   const packageLabel = materialType === 0
     ? "concrete-m3"
@@ -108,14 +124,17 @@ export function computeCanonicalBlindArea(
       : "membrane-m2";
 
   const packageOptions = [{
-    size: 1,
+    size: materialType === 0
+      ? spec.packaging_rules.concrete_step_m3
+      : spec.packaging_rules.surface_step_m2,
     label: packageLabel,
     unit: packageUnit,
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
+    // A scenario must never recommend less than the deterministic geometry.
+    const exactNeed = roundDisplay(Math.max(basePrimaryRaw, basePrimary * multiplier), 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -126,6 +145,8 @@ export function computeCanonicalBlindArea(
         `formula_version:${spec.formula_version}`,
         `materialType:${materialType}`,
         `thickness:${thickness}`,
+        `geometry:closed-orthogonal-contour`,
+        ...(materialType === 2 ? [`membrane_overlap_factor:${rules.membrane_overlap_factor}`] : []),
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
@@ -149,25 +170,32 @@ export function computeCanonicalBlindArea(
   const materials: CanonicalMaterialResult[] = [];
 
   if (materialType === 0) {
+    const meshWithOverlap = roundDisplay(meshAreaM2 * rules.mesh_reserve, 6);
+    const damperWithReserve = roundDisplay(damperM * rules.damper_reserve, 6);
     materials.push(
       {
         name: `Бетон В15 (М200), слой ${thickness} мм`,
         subtitle: "Для готовой смеси укажите поставщику класс В15 и требуемую подвижность по способу укладки",
-        quantity: roundDisplay(recScenario.exact_need, 6),
+        quantity: concreteM3,
         unit: "м³",
-        withReserve: Math.ceil(concreteM3),
-        purchaseQty: Math.ceil(concreteM3),
+        withReserve: recScenario.exact_need,
+        purchaseQty: recScenario.purchase_quantity,
+        packageInfo: {
+          count: recScenario.buy_plan.packages_count,
+          size: recScenario.buy_plan.package_size,
+          packageUnit: "шагов заказа",
+        },
         category: "Бетон",
       },
     );
-    if (meshPcs > 0) {
+    if (meshAreaM2 > 0) {
       materials.push({
         name: "Арматурная сетка 100×100×4 мм",
         subtitle: "Количество дано по площади сетки; число карт пересчитайте по фактическому формату поставщика и нахлёстам",
-        quantity: meshPcs,
+        quantity: meshAreaM2,
         unit: "м²",
-        withReserve: meshPcs,
-        purchaseQty: meshPcs,
+        withReserve: meshWithOverlap,
+        purchaseQty: Math.ceil(meshWithOverlap),
         category: "Армирование",
       });
     }
@@ -176,8 +204,8 @@ export function computeCanonicalBlindArea(
       subtitle: "Толщину выбирают по проектной ширине деформационного шва; лента не должна создавать жёсткую связь с цоколем",
       quantity: damperM,
       unit: "м",
-      withReserve: damperM,
-      purchaseQty: Math.ceil(damperM),
+      withReserve: damperWithReserve,
+      purchaseQty: Math.ceil(damperWithReserve),
       category: "Расходные",
     });
   } else if (materialType === 1) {
@@ -185,25 +213,16 @@ export function computeCanonicalBlindArea(
       {
         name: "Тротуарная плитка для наружных работ",
         subtitle: "Толщину и класс нагрузки выбирают по назначению: только пешеходная зона или возможный заезд автомобиля",
-        quantity: roundDisplay(recScenario.exact_need, 6),
+        quantity: tileM2,
         unit: "м²",
-        withReserve: tileM2,
-        purchaseQty: tileM2,
+        withReserve: recScenario.exact_need,
+        purchaseQty: recScenario.purchase_quantity,
         category: "Покрытие",
       },
       {
-        name: "Сухая смесь для укладки тротуарной плитки (50 кг)",
-        subtitle: "Расход рассчитан по принятой схеме; проверьте допустимую толщину слоя в паспорте выбранной смеси",
-        quantity: mixBags,
-        unit: "мешков",
-        withReserve: mixBags,
-        purchaseQty: mixBags,
-        category: "Смеси",
-      },
-      {
-        name: "Бордюр тротуарный, длина 0,5 м",
-        subtitle: "Высоту и сечение подберите под толщину покрытия и основания",
-        quantity: borderPcs,
+        name: `Бордюр тротуарный, длина ${rules.border_piece_length_m} м`,
+        subtitle: "Посчитан по наружной кромке отмостки; высоту и сечение подберите под покрытие и основание",
+        quantity: roundDisplay(outerEdgeLength / rules.border_piece_length_m, 6),
         unit: "шт",
         withReserve: borderPcs,
         purchaseQty: borderPcs,
@@ -215,10 +234,10 @@ export function computeCanonicalBlindArea(
       {
         name: "Профилированная дренажная мембрана",
         subtitle: "Для мягкой отмостки выбирайте систему, рассчитанную на грунтовое применение; нахлёсты входят в запас",
-        quantity: roundDisplay(recScenario.exact_need, 6),
+        quantity: membraneM2,
         unit: "м²",
-        withReserve: membraneM2,
-        purchaseQty: membraneM2,
+        withReserve: recScenario.exact_need,
+        purchaseQty: recScenario.purchase_quantity,
         category: "Покрытие",
       },
       {
@@ -234,8 +253,8 @@ export function computeCanonicalBlindArea(
   }
 
   /* ─── common materials ─── */
-  materials.push(
-    {
+  if (gravel > 0) {
+    materials.push({
       name: "Щебень фракции 20–40 мм для подушки",
       subtitle: "Укладывать послойно с уплотнением; объём рассчитан для слоя 150 мм без отдельного коэффициента уплотнения",
       quantity: gravel,
@@ -243,31 +262,35 @@ export function computeCanonicalBlindArea(
       withReserve: gravel,
       purchaseQty: Math.ceil(gravel * 10) / 10,
       category: "Подготовка",
-    },
-    {
+    });
+  }
+  if (sand > 0) {
+    materials.push({
       name: "Песок строительный средней крупности для подушки",
-      subtitle: "Без органических включений; укладывать послойно с проливкой и уплотнением",
+      subtitle: "Показан геометрический объём уплотнённого слоя; коэффициент поставки рыхлого песка уточните у поставщика",
       quantity: sand,
       unit: "м³",
       withReserve: sand,
       purchaseQty: Math.ceil(sand * 10) / 10,
       category: "Подготовка",
-    },
-    {
-      name: `Геотекстиль 200 г/м², рулон ${GEOTEXTILE_ROLL} м²`,
+    });
+  }
+  if (geotextileRolls > 0) {
+    materials.push({
+      name: `Геотекстиль 200 г/м², рулон ${rules.geotextile_roll_m2} м²`,
       subtitle: "Типовой ориентир для разделительного слоя; на слабых грунтах плотность выбирают по проекту основания",
       quantity: geotextileRolls,
       unit: "рулонов",
       withReserve: geotextileRolls,
       purchaseQty: geotextileRolls,
       category: "Подготовка",
-    },
-  );
+    });
+  }
 
   if (eppsPlates > 0) {
     materials.push({
-      name: `Экструдированный пенополистирол (ЭППС) для фундамента, ${withInsulation} мм`,
-      subtitle: "Для грунтового применения выбирайте плиты с подходящей прочностью на сжатие и минимальным водопоглощением",
+      name: `Экструдированный пенополистирол (ЭППС) ${withInsulation} мм, плита 1200×600 мм`,
+      subtitle: "Расчёт выполнен для площади плиты 0,72 м²; другой формат пересчитайте по площади упаковки",
       quantity: eppsPlates,
       unit: "шт",
       withReserve: eppsPlates,
@@ -284,6 +307,12 @@ export function computeCanonicalBlindArea(
   if (materialType === 0 && thickness < 100) {
     warnings.push("Слой бетона 70 мм требует проверки основания, класса бетона и армирования по проекту; сетка автоматически не добавлена");
   }
+  if (materialType === 1) {
+    warnings.push("Укладочный слой и швы плитки не рассчитаны: их расход зависит от выбранной системы, толщины слоя и паспорта смеси");
+  }
+  if (materialType === 2) {
+    warnings.push("Для мягкой системы рассчитана профилированная мембрана с прикреплённым геотекстилем; отдельный рулон геотекстиля не добавлен");
+  }
 
   const practicalNotes: string[] = [];
   if (width < 0.8) {
@@ -299,16 +328,21 @@ export function computeCanonicalBlindArea(
       perimeter: roundDisplay(perimeter, 3),
       width: roundDisplay(width, 3),
       area: roundDisplay(area, 3),
+      straightStripArea: roundDisplay(straightStripArea, 3),
+      cornerAllowanceArea: roundDisplay(cornerAllowanceArea, 3),
+      outerEdgeLength: roundDisplay(outerEdgeLength, 3),
       thickness,
       materialType,
       withInsulation,
       concreteM3,
-      meshPcs,
+      meshPcs: meshAreaM2,
+      meshAreaM2,
       damperM,
       tileM2,
-      mixBags,
+      mixBags: 0,
       borderPcs,
       membraneM2,
+      membraneWithOverlapM2,
       decorGravelM3,
       gravel,
       sand,
@@ -325,6 +359,6 @@ export function computeCanonicalBlindArea(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
+    accuracyExplanation: applyAccuracyMode(accuracyBaseRaw, materialCategory, accuracyMode).explanation,
   };
 }

@@ -21,8 +21,8 @@ describe("Калькулятор отмостки", () => {
   });
 
   describe("Бетонная отмостка: периметр 40 м, ширина 1.0 м, толщина 100 мм", () => {
-    // area = 40 * 1.0 = 40
-    // concreteM3 = ceil(40 * 0.1 * 1.05 * 10) / 10 = ceil(42) / 10 = 4.2
+    // Замкнутый прямоугольный контур: 40 * 1 + 4 * 1² = 44 м².
+    // Чистый объём бетона: 44 * 0.1 = 4.4 м³.
     const result = calc({
       perimeter: 40,
       width: 1.0,
@@ -31,20 +31,29 @@ describe("Калькулятор отмостки", () => {
       withInsulation: 0,
     });
 
-    it("площадь = 40 м²", () => {
-      expect(result.totals.area).toBeCloseTo(40, 2);
+    it("учитывает четыре угловых участка", () => {
+      expect(result.totals.straightStripArea).toBeCloseTo(40, 2);
+      expect(result.totals.cornerAllowanceArea).toBeCloseTo(4, 2);
+      expect(result.totals.area).toBeCloseTo(44, 2);
+      expect(result.totals.outerEdgeLength).toBeCloseTo(48, 2);
     });
 
-    it("бетон присутствует", () => {
-      // Engine: "Бетон (100 мм)"
-      expect(findMaterial(result, "Бетон")).toBeDefined();
+    it("разделяет чистый объём, потребность с поправками и заказ", () => {
+      const concrete = findMaterial(result, "Бетон");
+      expect(result.totals.concreteM3).toBeCloseTo(4.4, 6);
+      expect(concrete?.quantity).toBeCloseTo(4.4, 6);
+      expect(concrete?.withReserve).toBeCloseTo(4.4, 6);
+      expect(concrete?.purchaseQty).toBeCloseTo(4.4, 6);
+      expect(concrete?.packageInfo).toMatchObject({ size: 0.1, count: 44 });
     });
 
     it("армосетка при толщине ≥ 100 мм", () => {
       const mesh = findMaterial(result, "Арматурная сетка 100×100×4 мм");
       expect(mesh).toBeDefined();
-      // meshPcs = ceil(40 * 1.1) = ceil(44) = 44
-      expect(mesh?.purchaseQty).toBe(44);
+      // 44 м² × 1,10 на нахлёсты = 48,4 м² → 49 м² к покупке.
+      expect(mesh?.quantity).toBeCloseTo(44, 6);
+      expect(mesh?.withReserve).toBeCloseTo(48.4, 6);
+      expect(mesh?.purchaseQty).toBe(49);
       expect(mesh?.unit).toBe("м²");
       expect(mesh?.subtitle).toContain("формату поставщика");
     });
@@ -55,16 +64,15 @@ describe("Калькулятор отмостки", () => {
       expect(tape?.subtitle).toContain("деформационного шва");
     });
 
-    it("щебень подготовка = 40 * 0.15 = 6 м³", () => {
-      // Engine: "Щебень (подушка)"
+    it("щебень подготовка = 44 × 0,15 = 6,6 м³", () => {
       const gravel = findMaterial(result, "Щебень");
-      expect(gravel?.quantity).toBeCloseTo(6, 2);
+      expect(gravel?.quantity).toBeCloseTo(6.6, 2);
     });
 
-    it("песок подсыпка = 40 * 0.1 = 4 м³", () => {
-      // Engine: "Песок (подушка)"
+    it("песок подсыпка = 44 × 0,1 = 4,4 м³", () => {
       const sand = findMaterial(result, "Песок");
-      expect(sand?.quantity).toBeCloseTo(4, 2);
+      expect(sand?.quantity).toBeCloseTo(4.4, 2);
+      expect(sand?.subtitle).toContain("уплотнённого слоя");
     });
 
     it("геотекстиль присутствует", () => {
@@ -78,6 +86,9 @@ describe("Калькулятор отмостки", () => {
 
     it("инварианты", () => {
       checkInvariants(result);
+      for (const material of result.materials) {
+        expect(material.purchaseQty).toBeGreaterThanOrEqual(material.withReserve ?? material.quantity);
+      }
     });
   });
 
@@ -96,7 +107,7 @@ describe("Калькулятор отмостки", () => {
   });
 
   describe("Тротуарная плитка: периметр 30 м, ширина 0.8 м", () => {
-    // area = 30 * 0.8 = 24
+    // area = 30 * 0.8 + 4 * 0.8² = 26.56
     const result = calc({
       perimeter: 30,
       width: 0.8,
@@ -110,22 +121,23 @@ describe("Калькулятор отмостки", () => {
       expect(findMaterial(result, "Тротуарная плитка")).toBeDefined();
     });
 
-    it("плитка tileM2 = ceil(24 * 1.08) = 26", () => {
-      expect(result.totals.tileM2).toBe(26);
+    it("чистая площадь плитки = 26,56 м²", () => {
+      expect(result.totals.tileM2).toBeCloseTo(26.56, 6);
+      const tile = findMaterial(result, "Тротуарная плитка");
+      expect(tile?.quantity).toBeCloseTo(26.56, 6);
+      expect(tile?.purchaseQty).toBe(27);
     });
 
-    it("смесь для укладки присутствует", () => {
-      // Engine: "Смесь для укладки (50 кг)"
-      // mixBags = ceil(24 * 6 / 50) = ceil(2.88) = 3
-      const mix = findMaterial(result, "Сухая смесь для укладки");
-      expect(mix).toBeDefined();
-      expect(mix?.purchaseQty).toBe(3);
+    it("не выдаёт ложную точность расхода укладочной смеси", () => {
+      expect(findMaterial(result, "Смесь для укладки")).toBeUndefined();
+      expect(result.totals.mixBags).toBe(0);
+      expect(result.warnings.some((warning) => warning.includes("Укладочный слой"))).toBe(true);
     });
 
-    it("бордюр = ceil(30 / 0.5) = 60 шт", () => {
-      // Engine: "Бордюр (0.5 м)"
+    it("бордюр считает по наружной кромке: ceil((30 + 8 × 0,8) / 0,5) = 73", () => {
       const border = findMaterial(result, "Бордюр");
-      expect(border?.purchaseQty).toBe(60);
+      expect(result.totals.outerEdgeLength).toBeCloseTo(36.4, 6);
+      expect(border?.purchaseQty).toBe(73);
     });
 
     it("нет бетона для плиточной отмостки", () => {
@@ -139,7 +151,7 @@ describe("Калькулятор отмостки", () => {
   });
 
   describe("Мягкая отмостка: периметр 40 м, ширина 1.0 м", () => {
-    // area = 40
+    // area = 44
     const result = calc({
       perimeter: 40,
       width: 1.0,
@@ -152,14 +164,24 @@ describe("Калькулятор отмостки", () => {
       // Engine: "Профилированная мембрана"
       const membrane = findMaterial(result, "Профилированная дренажная мембрана");
       expect(membrane).toBeDefined();
-      // membraneM2 = ceil(40 * 1.15) = 46
-      expect(result.totals.membraneM2).toBe(46);
+      expect(result.totals.membraneM2).toBeCloseTo(44, 6);
+      expect(result.totals.membraneWithOverlapM2).toBeCloseTo(50.6, 6);
+      expect(membrane?.quantity).toBeCloseTo(44, 6);
+      expect(membrane?.withReserve).toBeCloseTo(50.6, 6);
+      expect(membrane?.purchaseQty).toBe(51);
     });
 
-    it("декоративный щебень = 40 * 0.1 = 4 м³", () => {
-      // Engine: "Декоративный щебень"
+    it("декоративный щебень = 44 × 0,1 = 4,4 м³", () => {
       const pebble = findMaterial(result, "Декоративный щебень");
-      expect(pebble?.quantity).toBeCloseTo(4, 2);
+      expect(pebble?.quantity).toBeCloseTo(4.4, 2);
+    });
+
+    it("не дублирует щебёночную подушку и отдельный геотекстиль", () => {
+      expect(findMaterial(result, "Щебень фракции 20–40 мм для подушки")).toBeUndefined();
+      expect(findMaterial(result, "Геотекстиль 200 г/м²")).toBeUndefined();
+      expect(result.totals.gravel).toBe(0);
+      expect(result.totals.geotextileRolls).toBe(0);
+      expect(result.warnings.some((warning) => warning.includes("прикреплённым геотекстилем"))).toBe(true);
     });
 
     it("нет бетона и плитки", () => {
@@ -185,12 +207,38 @@ describe("Калькулятор отмостки", () => {
       // Engine: "ЭППС утеплитель (50 мм)"
       const epps = findMaterial(result, "ЭППС");
       expect(epps).toBeDefined();
-      expect(epps?.subtitle).toContain("прочностью на сжатие");
+      expect(epps?.subtitle).toContain("0,72 м²");
     });
 
-    it("ЭППС плит = ceil(40 * 1.05 / 0.72) = ceil(58.33) = 59", () => {
+    it("ЭППС плит = ceil(44 × 1,05 / 0,72) = 65", () => {
       const epps = findMaterial(result, "ЭППС");
-      expect(epps?.purchaseQty).toBe(Math.ceil(40 * 1.05 / 0.72));
+      expect(epps?.purchaseQty).toBe(Math.ceil(44 * 1.05 / 0.72));
+    });
+  });
+
+  describe("Режимы точности и сценарии", () => {
+    it("ни один сценарий не опускается ниже чистой геометрии", () => {
+      const result = calc({ perimeter: 40, width: 1, thickness: 100, materialType: 0, withInsulation: 0 });
+      expect(result.scenarios?.MIN.exact_need).toBeGreaterThanOrEqual(4.4);
+      expect(result.scenarios?.REC.exact_need).toBeGreaterThanOrEqual(4.4);
+      expect(result.scenarios?.MAX.exact_need).toBeGreaterThanOrEqual(4.4);
+    });
+
+    it("в реалистичном и профессиональном режимах заказ не меньше потребности", () => {
+      for (const accuracyMode of ["realistic", "professional"] as const) {
+        const result = blindAreaDef.calculate({
+          perimeter: 40,
+          width: 1,
+          thickness: 100,
+          materialType: 0,
+          withInsulation: 0,
+          accuracyMode: accuracyMode as unknown as number,
+        });
+        const concrete = findMaterial(result, "Бетон");
+        expect(concrete?.purchaseQty).toBeGreaterThanOrEqual(concrete?.withReserve ?? Infinity);
+        const purchaseQty = concrete?.purchaseQty ?? 0;
+        expect(purchaseQty * 10).toBeCloseTo(Math.round(purchaseQty * 10), 6);
+      }
     });
   });
 
