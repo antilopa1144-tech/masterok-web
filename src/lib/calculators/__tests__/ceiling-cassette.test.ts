@@ -53,7 +53,6 @@ describe("Кассетный потолок", () => {
       cassetteSize: 1,
       roomLength: 6,
       cassettesPerPack: 12,
-      accuracyMode: "basic",
     });
 
     expect(r.totals.cassetteSize).toBe(1);

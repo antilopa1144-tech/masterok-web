@@ -143,7 +143,6 @@ describe("Звукоизоляция", () => {
       surface: 2,
       systemType: 3,
       acousticPlatesPerPack: 6,
-      accuracyMode: "basic",
     });
 
     expect(r.totals.surfaceType).toBe(2);

@@ -8,6 +8,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { BlogPost } from "./blog";
+import { applyBlogContentOverrides } from "./blog-content-overrides";
 
 // GHOST_API_URL: задайте в .env.local или CI secrets.
 // Fallback для локальных билдов (внутренний сервер Ghost).
@@ -183,7 +184,7 @@ function transformPost(post: GhostPost): BlogPost {
 
   const metaTitleRaw = post.meta_title?.trim();
 
-  return {
+  return applyBlogContentOverrides({
     slug: post.slug,
     title: post.title,
     metaTitle: metaTitleRaw && metaTitleRaw !== post.title ? metaTitleRaw : undefined,
@@ -199,7 +200,7 @@ function transformPost(post: GhostPost): BlogPost {
     heroImage: applyBlogImageManifest(post.feature_image ?? ""),
     heroImageAlt: post.feature_image_alt ?? "",
     content: applyBlogImageManifest(post.html ?? ""),
-  };
+  });
 }
 
 export async function fetchAllPosts(): Promise<BlogPost[]> {

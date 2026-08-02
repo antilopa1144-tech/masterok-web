@@ -126,5 +126,10 @@ describe("Забор", () => {
       expect(caps).toBeDefined();
       expect(caps!.quantity).toBe(expectedCaps);
     });
+
+    it("объясняет, что глубина 0.9 м является ориентиром", () => {
+      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
+      expect(r.practicalNotes?.some(note => note.includes("0.9 м") && note.includes("ориентир"))).toBe(true);
+    });
   });
 });
