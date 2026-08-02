@@ -5,6 +5,21 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(blindAreaDef.calculate.bind(blindAreaDef));
 
 describe("Калькулятор отмостки", () => {
+  describe("SEO и пользовательские допущения", () => {
+    it("объясняет расчёт вокруг дома и не выдаёт практическую ширину за норму", () => {
+      expect(blindAreaDef.h1).toContain("вокруг дома");
+      expect(blindAreaDef.metaDescription).toContain("площадь");
+      expect(blindAreaDef.seoContent?.descriptionHtml).toContain("от 1% до 10%");
+      expect(blindAreaDef.seoContent?.descriptionHtml).toContain("не задаёт");
+      expect(blindAreaDef.seoContent?.descriptionHtml).not.toContain("не менее <strong>600 мм</strong>");
+    });
+
+    it("скрывает толщину бетона для плиточной и мягкой отмостки", () => {
+      const thickness = blindAreaDef.fields.find((field) => field.key === "thickness");
+      expect(thickness?.hideIf).toEqual({ key: "materialType", op: "ne", value: 0 });
+    });
+  });
+
   describe("Бетонная отмостка: периметр 40 м, ширина 1.0 м, толщина 100 мм", () => {
     // area = 40 * 1.0 = 40
     // concreteM3 = ceil(40 * 0.1 * 1.05 * 10) / 10 = ceil(42) / 10 = 4.2
@@ -182,14 +197,20 @@ describe("Калькулятор отмостки", () => {
   describe("Предупреждения", () => {
     it("ширина < 0.8 м → предупреждение", () => {
       const result = calc({ perimeter: 40, width: 0.6, thickness: 100, materialType: 0, withInsulation: 0 });
-      // Engine: "Ширина отмостки менее 0.8 м — может не обеспечить достаточной защиты фундамента"
-      expect(result.warnings.some((w) => w.includes("0.8 м"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("менее 0,8 м"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("не универсальный нормативный минимум"))).toBe(true);
     });
 
     it("бетон < 100 мм → предупреждение", () => {
       const result = calc({ perimeter: 40, width: 1.0, thickness: 70, materialType: 0, withInsulation: 0 });
-      // Engine: "Толщина бетона менее 100 мм — рекомендуется армосетка при увеличении толщины"
-      expect(result.warnings.some((w) => w.includes("менее 100 мм"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("Слой бетона 70 мм"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("сетка автоматически не добавлена"))).toBe(true);
+    });
+
+    it("показывает нормативный диапазон уклона без назначения проектного значения", () => {
+      const result = calc({ perimeter: 40, width: 1.0, thickness: 100, materialType: 0, withInsulation: 0 });
+      expect(result.practicalNotes?.some((note) => note.includes("от 1% до 10%"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("по покрытию и схеме водоотвода"))).toBe(true);
     });
   });
 });

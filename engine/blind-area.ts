@@ -279,17 +279,17 @@ export function computeCanonicalBlindArea(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (width < 0.8) {
-    warnings.push("Ширина отмостки менее 0.8 м — может не обеспечить достаточной защиты фундамента");
+    warnings.push("Ширина менее 0,8 м — узкий вариант: проверьте свес кровли, грунт и схему водоотвода по проекту");
   }
   if (materialType === 0 && thickness < 100) {
-    warnings.push("Толщина бетона менее 100 мм — рекомендуется армосетка при увеличении толщины");
+    warnings.push("Слой бетона 70 мм требует проверки основания, класса бетона и армирования по проекту; сетка автоматически не добавлена");
   }
 
   const practicalNotes: string[] = [];
   if (width < 0.8) {
-    practicalNotes.push(`Отмостка ${roundDisplay(width, 1)} м — маловато, минимум по СП 0.8 м, а лучше 1 м`);
+    practicalNotes.push(`Отмостка ${roundDisplay(width, 1)} м — узкая для большинства частных домов; это не универсальный нормативный минимум`);
   }
-  practicalNotes.push("Обязательно уклон 2-3% от стены — иначе вода пойдёт к фундаменту");
+  practicalNotes.push("СП 82.13330.2016 требует уклон от здания от 1% до 10%; конкретное значение выбирают по покрытию и схеме водоотвода");
 
   return {
     canonicalSpecId: spec.calculator_id,
