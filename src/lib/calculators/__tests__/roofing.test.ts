@@ -109,12 +109,30 @@ describe("Калькулятор кровли", () => {
       expect(findMaterial(result, "ОСП")).toBeDefined();
     });
 
-    it("ершёные оцинкованные гвозди в коробках по 5 кг", () => {
+    it("считает гвозди напрямую в кг по расходу производителя", () => {
       const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
       expect(nails).toBeDefined();
       expect(nails?.unit).toBe("кг");
+      expect(nails?.quantity).toBeCloseTo(9.238, 3);
+      expect(nails?.withReserve).toBeCloseTo(9.699, 3);
       expect(nails?.packageInfo?.size).toBe(5);
-      expect(nails?.purchaseQty).toBe(nails!.packageInfo!.count * 5);
+      expect(nails?.purchaseQty).toBe(10);
+      expect(nails?.subtitle).toContain("0.1 кг/м²");
+    });
+
+    it("не показывает подсказку про уклон металлочерепицы для мягкой кровли", () => {
+      const lowSlope = calc({
+        roofingType: 1,
+        area: 80,
+        slope: 10,
+        ridgeLength: 8,
+        sheetWidth: 1.18,
+        sheetLength: 2.5,
+      });
+
+      expect(
+        lowSlope.practicalNotes?.some((note) => note.includes("металлочерепицы")),
+      ).toBe(false);
     });
   });
 

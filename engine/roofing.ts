@@ -25,7 +25,6 @@ interface RoofingInputs {
 
 const COMPLEXITY_COEFFS = [1.05, 1.15, 1.25];
 const ROOFING_SCREW_PACK_SIZE = 250;
-const SOFT_ROOFING_NAIL_BOX_KG = 5;
 
 const ROOFING_TYPE_LABELS: Record<number, string> = {
   0: "Металлочерепица",
@@ -186,8 +185,13 @@ export function computeCanonicalRoofing(
 
     const masticKg = (perimeterEst + ridgeLength) * 0.1 + realArea * 0.1;
     const masticBuckets = Math.ceil(masticKg / 3);
-    const nailsKg = Math.ceil(realArea * 80 / 400 * 1.05);
-    const nailBoxes = Math.ceil(nailsKg / SOFT_ROOFING_NAIL_BOX_KG);
+    const nailRateKgPerM2 =
+      slope <= spec.material_rules.soft_nails_high_slope_threshold
+        ? spec.material_rules.soft_nails_kg_per_m2_low_slope
+        : spec.material_rules.soft_nails_kg_per_m2_high_slope;
+    const nailsExactKg = realArea * nailRateKgPerM2;
+    const nailsWithReserveKg = nailsExactKg * spec.material_rules.soft_nails_reserve;
+    const nailBoxes = Math.ceil(nailsWithReserveKg / spec.material_rules.soft_nail_box_kg);
     const ridgeShingles = Math.ceil(ridgeLength / 0.5 * 1.05);
     const osbSheets = Math.ceil(realArea / 3.125 * 1.05);
     const ventOutputs = Math.ceil(realArea / 25);
@@ -229,12 +233,16 @@ export function computeCanonicalRoofing(
     });
     materials.push({
       name: "Гвозди ершёные оцинкованные 3,2×30 мм",
-      subtitle: "С широкой шляпкой для крепления гибкой черепицы к сплошному основанию",
-      quantity: nailsKg,
+      subtitle: `Расход ${nailRateKgPerM2} кг/м² при уклоне ${roundDisplay(slope, 0)}°; для другой нарезки проверьте инструкцию производителя`,
+      quantity: roundDisplay(nailsExactKg, 3),
       unit: "кг",
-      withReserve: nailsKg,
-      purchaseQty: nailBoxes * SOFT_ROOFING_NAIL_BOX_KG,
-      packageInfo: { count: nailBoxes, size: SOFT_ROOFING_NAIL_BOX_KG, packageUnit: "коробок" },
+      withReserve: roundDisplay(nailsWithReserveKg, 3),
+      purchaseQty: nailBoxes * spec.material_rules.soft_nail_box_kg,
+      packageInfo: {
+        count: nailBoxes,
+        size: spec.material_rules.soft_nail_box_kg,
+        packageUnit: "коробок",
+      },
       category: "Крепёж",
     });
     materials.push({
@@ -467,8 +475,10 @@ export function computeCanonicalRoofing(
 
 
   const practicalNotes: string[] = [];
-  if (slope < 15) {
-    practicalNotes.push(`Уклон ${roundDisplay(slope, 0)}° — критически мало для металлочерепицы, минимум 14° по СП`);
+  if (roofingType === 0 && slope < spec.warnings_rules.metal_tile_min_slope) {
+    practicalNotes.push(
+      `Уклон ${roundDisplay(slope, 0)}° ниже принятого минимума ${spec.warnings_rules.metal_tile_min_slope}° для металлочерепицы`,
+    );
   }
   practicalNotes.push("Не экономьте на гидроизоляции подкровельного пространства — протечка на чердаке обойдётся дороже рулона мембраны");
 

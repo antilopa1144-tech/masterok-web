@@ -1056,9 +1056,11 @@ export interface RoofingMaterialRules {
   soft_underlayment_roll_m2: number;
   soft_underlayment_reserve: number;
   soft_mastic_bucket_kg: number;
-  soft_nails_per_m2: number;
-  soft_nails_per_kg: number;
+  soft_nails_kg_per_m2_low_slope: number;
+  soft_nails_kg_per_m2_high_slope: number;
+  soft_nails_high_slope_threshold: number;
   soft_nails_reserve: number;
+  soft_nail_box_kg: number;
   soft_ridge_element_m: number;
   soft_ridge_reserve: number;
   soft_osb_sheet_m2: number;
