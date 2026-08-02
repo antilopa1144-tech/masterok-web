@@ -8,7 +8,6 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
-import frostDepthRf from "../configs/regional/frost-depth-rf.json";
 import { getInputDefault } from "./spec-helpers";
 
 interface StripFoundationInputs {
@@ -18,48 +17,16 @@ interface StripFoundationInputs {
   aboveGround?: number;
   reinforcement?: number;
   deliveryMethod?: number;
-  /** ID региона из configs/regional/frost-depth-rf.json для проверки глубины
-   *  промерзания (Москва: "moscow", СПб: "saint-petersburg" и т.д.). Если не
-   *  задан — региональная валидация не применяется (поведение как раньше). */
-  regionId?: string;
-  /** Тип грунта: 0=суглинки/глины (default), 1=супеси, 2=мелкий песок,
-   *  3=крупный песок и гравий. Влияет на коэффициент глубины промерзания. */
-  soilType?: number;
+  /** Необязательная высота щитов для интеграций с отдельным UI. Web по
+   *  умолчанию считает опалубку только по aboveGround. */
+  formworkHeight?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/** Карта soilType (number) → коэффициент глубины промерзания. Источник:
- *  СНиП 2.02.01-83* Приложение 1, формула d = d0 * sqrt(Mt) с поправками. */
-const SOIL_CORRECTION: Record<number, number> = {
-  0: 1.0,   // суглинки и глины
-  1: 1.22,  // супеси
-  2: 1.27,  // мелкий и пылеватый песок
-  3: 1.30,  // крупнообломочные / гравелистые / крупные пески
-};
-
-interface FrostRegion {
-  id: string;
-  name: string;
-  min_frost_depth_m: number;
-  federal_subject: string;
-}
-
-function getRegionFrostDepthMm(regionId: string | undefined, soilType: number): number | null {
-  if (!regionId) return null;
-  const region = (frostDepthRf.regions as FrostRegion[]).find((r) => r.id === regionId);
-  if (!region) return null;
-  const correction = SOIL_CORRECTION[soilType] ?? 1.0;
-  return Math.round(region.min_frost_depth_m * correction * 1000);
-}
-
-function getRegionDisplayName(regionId: string | undefined): string | null {
-  if (!regionId) return null;
-  const region = (frostDepthRf.regions as FrostRegion[]).find((r) => r.id === regionId);
-  return region?.name ?? null;
-}
-
 function buildMaterials(
-  volReserve: number,
+  vol: number,
+  concreteExactNeed: number,
+  concretePurchaseM3: number,
   longLen: number,
   longWeightKg: number,
   clampLen: number,
@@ -68,26 +35,27 @@ function buildMaterials(
   formwork: number,
   boards: number,
   rebarDiam: number,
+  clampDiameterMm: number,
+  standardRodLengthM: number,
 ): CanonicalMaterialResult[] {
-  const concretePurchaseM3 = roundDisplay(Math.ceil(volReserve * 10) / 10, 1);
-  const longBars117 = Math.ceil(longLen / 11.7);
-  const clampBars117 = Math.ceil(clampLen / 11.7);
+  const longBars = Math.ceil(longLen / standardRodLengthM);
+  const clampBars = Math.ceil(clampLen / standardRodLengthM);
 
-  return [
+  const materials: CanonicalMaterialResult[] = [
     {
-      name: "Бетон М300 (товарный, класс В22,5)",
+      name: "Товарный бетон — класс по проекту",
       subtitle:
-        "Заказывайте с шагом 0,1 м³; подвижность, морозостойкость и водонепроницаемость уточняются по проекту и способу подачи",
-      quantity: roundDisplay(volReserve, 3),
+        "Чистый объём, расчётная потребность и заказ с шагом 0,1 м³ разделены; класс, подвижность, морозостойкость и водонепроницаемость задаёт проект",
+      quantity: roundDisplay(vol, 3),
       unit: "м³",
-      withReserve: roundDisplay(volReserve, 3),
+      withReserve: roundDisplay(concreteExactNeed, 3),
       purchaseQty: concretePurchaseM3,
       category: "Основное",
     },
     {
       name: `Рифлёная продольная арматура ∅${rebarDiam} мм`,
       subtitle:
-        `Нужно ${roundDisplay(longLen, 1)} пог. м — примерно ${longBars117} прутков по 11,7 м; класс стали выбирают по проекту, обычно А500С`,
+        `Нужно ${roundDisplay(longLen, 1)} пог. м — примерно ${longBars} прутков по ${standardRodLengthM} м; диаметр, класс и анкеровку задаёт проект`,
       quantity: roundDisplay(longWeightKg, 3),
       unit: "кг",
       withReserve: Math.ceil(longWeightKg),
@@ -95,9 +63,9 @@ function buildMaterials(
       category: "Армирование",
     },
     {
-      name: "Хомуты из гладкой арматуры ∅8 мм",
+      name: `Хомуты ∅${clampDiameterMm} мм`,
       subtitle:
-        `Нужно ${roundDisplay(clampLen, 1)} пог. м — примерно ${clampBars117} прутков по 11,7 м; расчёт выполнен для шага хомутов из спецификации`,
+        `Нужно ${roundDisplay(clampLen, 1)} пог. м — примерно ${clampBars} прутков по ${standardRodLengthM} м; класс стали и шаг проверяют по проекту`,
       quantity: roundDisplay(clampWeightKg, 3),
       unit: "кг",
       withReserve: Math.ceil(clampWeightKg),
@@ -106,23 +74,26 @@ function buildMaterials(
     },
     {
       name: "Проволока вязальная отожжённая ∅1,2 мм",
-      subtitle: "Для ручной вязки продольных стержней и поперечных хомутов",
+      subtitle: "Расчёт по числу пересечений, 0,3 м проволоки на одну вязку",
       quantity: roundDisplay(wireKg, 3),
       unit: "кг",
       withReserve: roundDisplay(wireKg, 3),
       purchaseQty: Math.ceil(wireKg),
       category: "Армирование",
     },
-    {
+  ];
+
+  if (formwork > 0) {
+    materials.push({
       name: "Опалубка — щиты из обрезной доски",
-      subtitle: "Расчётная площадь щитов; количество досок приведено отдельной строкой",
+      subtitle: "Площадь двух сторон надземной части ленты; щиты в траншее этим значением не учитываются",
       quantity: roundDisplay(formwork, 3),
       unit: "м²",
-      withReserve: Math.ceil(formwork),
+      withReserve: roundDisplay(formwork, 3),
       purchaseQty: Math.ceil(formwork),
       category: "Опалубка",
-    },
-    {
+    });
+    materials.push({
       name: "Доска обрезная не менее 25×150×6000 мм",
       subtitle:
         "Для щитов опалубки; толщину доски, шаг стоек и раскосов проверяют по высоте ленты и давлению бетонной смеси",
@@ -131,8 +102,10 @@ function buildMaterials(
       withReserve: boards,
       purchaseQty: boards,
       category: "Опалубка",
-    },
-  ];
+    });
+  }
+
+  return materials;
 }
 
 export function computeCanonicalStripFoundation(
@@ -141,7 +114,7 @@ export function computeCanonicalStripFoundation(
   factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+  const accuracyMult = getPrimaryMultiplier("concrete", accuracyMode);
 
   const perimeter = Math.max(10, Math.min(200, inputs.perimeter ?? getInputDefault(spec, "perimeter", 40)));
   const width = Math.max(200, Math.min(600, inputs.width ?? getInputDefault(spec, "width", 400)));
@@ -149,33 +122,49 @@ export function computeCanonicalStripFoundation(
   const aboveGround = Math.max(0, Math.min(600, inputs.aboveGround ?? getInputDefault(spec, "aboveGround", 300)));
   const reinforcement = Math.max(0, Math.min(3, Math.round(inputs.reinforcement ?? getInputDefault(spec, "reinforcement", 1))));
   const deliveryMethod = Math.max(0, Math.min(2, Math.round(inputs.deliveryMethod ?? getInputDefault(spec, "deliveryMethod", 0))));
-  const regionId = inputs.regionId;
-  const soilType = Math.max(0, Math.min(3, Math.round(inputs.soilType ?? 0)));
-  const requiredFrostDepthMm = getRegionFrostDepthMm(regionId, soilType);
-  const regionDisplayName = getRegionDisplayName(regionId);
+  const formworkHeightMm = inputs.formworkHeight === undefined
+    ? aboveGround
+    : Math.max(0, Math.min(2000, inputs.formworkHeight));
 
   const rebarDiam = spec.material_rules.rebar_diameters[String(reinforcement)] ?? 12;
   const threads = spec.material_rules.rebar_threads[String(reinforcement)] ?? 4;
   const weightPerM = spec.material_rules.weight_per_m[String(rebarDiam)] ?? 0.888;
 
   const totalH = (depth + aboveGround) / 1000;
-  const vol = perimeter * (width / 1000) * totalH;
-  const techLoss = spec.material_rules.tech_loss[String(deliveryMethod)] ?? 0;
-  const volReserveRaw = roundDisplay((vol + techLoss) * spec.material_rules.concrete_reserve, 6);
-  const volReserve = roundDisplay(volReserveRaw * accuracyMult, 6);
+  const vol = roundDisplay(perimeter * (width / 1000) * totalH, 6);
+  const deliveryLossM3 = spec.material_rules.delivery_loss_m3[String(deliveryMethod)] ?? 0;
+  const baseOrderNeed = roundDisplay(vol + deliveryLossM3, 6);
+  const accuracyAdjustedVolume = roundDisplay(vol * accuracyMult, 6);
 
-  const longLen = roundDisplay(perimeter * threads * spec.material_rules.overlap, 6);
+  const longLen = roundDisplay(
+    perimeter * threads * spec.material_rules.longitudinal_reserve_factor,
+    6,
+  );
   const longWeightKg = roundDisplay(longLen * weightPerM, 6);
 
-  const clampCount = Math.ceil(perimeter / spec.material_rules.clamp_step);
-  const clampPerim = 2 * ((width / 1000) - 0.1 + totalH - 0.1) + 0.3;
-  const clampLen = roundDisplay(clampCount * Math.max(0.8, clampPerim) * 1.05, 6);
-  const clampWeightKg = roundDisplay(clampLen * spec.material_rules.clamp_weight, 6);
+  const clampCount = Math.ceil(perimeter / spec.material_rules.clamp_step_m);
+  const clampWidth = Math.max(0, width / 1000 - 2 * spec.material_rules.concrete_cover_m);
+  const clampHeight = Math.max(0, totalH - 2 * spec.material_rules.concrete_cover_m);
+  const clampPerimeterM = 2 * (clampWidth + clampHeight) + spec.material_rules.clamp_hooks_m;
+  const clampLen = roundDisplay(
+    clampCount * clampPerimeterM * spec.material_rules.clamp_length_reserve,
+    6,
+  );
+  const clampWeightKg = roundDisplay(
+    clampLen * spec.material_rules.clamp_weight_kg_per_m,
+    6,
+  );
 
-  const wireKg = roundDisplay(Math.ceil(clampCount * threads * 0.05 * 1.1 * 10) / 10, 6);
+  const tieCount = clampCount * threads;
+  const wireLengthM = roundDisplay(tieCount * spec.material_rules.wire_length_per_tie_m, 6);
+  const wireKg = roundDisplay(wireLengthM * spec.material_rules.wire_weight_kg_per_m, 6);
 
-  const formwork = roundDisplay(2 * perimeter * (aboveGround / 1000 + 0.1), 6);
-  const boards = Math.ceil(formwork / (0.15 * 6));
+  const formwork = roundDisplay(2 * perimeter * (formworkHeightMm / 1000), 6);
+  const boardAreaM2 = spec.material_rules.formwork_board_width_m
+    * spec.material_rules.formwork_board_length_m;
+  const boards = formwork > 0
+    ? Math.ceil(formwork * spec.material_rules.formwork_board_reserve / boardAreaM2)
+    : 0;
 
   const packageOptions = [{
     size: spec.packaging_rules.volume_step_m3,
@@ -185,7 +174,8 @@ export function computeCanonicalStripFoundation(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(volReserve * multiplier, 6);
+    const scenarioNeed = accuracyAdjustedVolume * multiplier + deliveryLossM3;
+    const exactNeed = roundDisplay(Math.max(baseOrderNeed, scenarioNeed), 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -196,6 +186,8 @@ export function computeCanonicalStripFoundation(
         `formula_version:${spec.formula_version}`,
         `reinforcement:${reinforcement}`,
         `deliveryMethod:${deliveryMethod}`,
+        `delivery_loss_m3:${deliveryLossM3}`,
+        `longitudinal_reserve_factor:${spec.material_rules.longitudinal_reserve_factor}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
@@ -215,41 +207,30 @@ export function computeCanonicalStripFoundation(
 
   const recScenario = scenarios.REC;
 
-  const warnings: string[] = [];
+  const warnings: string[] = [
+    "Калькулятор считает материалы по заданным размерам. Ширину, глубину, класс бетона и схему армирования определяют по нагрузкам и инженерно-геологическим данным участка.",
+  ];
   if (depth <= spec.warnings_rules.shallow_depth_threshold_mm) {
-    warnings.push("Мелкое заглубление — убедитесь, что глубина ниже уровня промерзания грунта");
-  }
-  if (perimeter > spec.warnings_rules.large_perimeter_threshold_m) {
-    warnings.push("Большой периметр — рекомендуется разделить на секции с деформационными швами");
-  }
-  // Региональная валидация глубины промерзания. Если пользователь выбрал
-  // регион и ввёл depth меньше нормативной — даём конкретный warning. Расчёт
-  // продолжаем (не блокируем) — пользователь может строить мелкозаглублённый
-  // на непучинистом грунте сознательно.
-  if (requiredFrostDepthMm !== null && depth < requiredFrostDepthMm) {
-    const requiredM = (requiredFrostDepthMm / 1000).toFixed(2);
     warnings.push(
-      `Глубина ${depth} мм меньше нормативной для региона «${regionDisplayName}» (${requiredM} м по СНиП 2.02.01-83*). ` +
-        `На пучинистых грунтах фундамент может выдавить морозом. Либо увеличьте глубину, либо примите меры (утепление основания, дренаж).`,
+      "Введено мелкое заглубление. Его допустимость нельзя определить только по региону: нужны грунты, уровень подземных вод, нагрузки, тепловой режим и расчёт деформаций.",
     );
   }
 
   const practicalNotes: string[] = [];
-  if (depth < 600) {
-    practicalNotes.push(`Глубина ${roundDisplay(depth, 0)} мм — мелкозаглублённый фундамент, работает только на непучинистых грунтах`);
+  if (deliveryLossM3 > 0) {
+    practicalNotes.push(`Для бетононасоса отдельно добавлено ${roundDisplay(deliveryLossM3, 1)} м³ на заполнение и остаток в системе`);
   }
-  if (volReserve > 10) {
-    practicalNotes.push(`Объём ${roundDisplay(volReserve, 1)} м³ — заказывайте бетон с доставкой, ручной замес на таком объёме нерентабелен`);
-  }
-  if (width < 300) {
-    practicalNotes.push(`Ширина ленты ${roundDisplay(width, 0)} мм — для каменных стен минимум 400 мм`);
+  if (recScenario.purchase_quantity > spec.warnings_rules.large_order_threshold_m3) {
+    practicalNotes.push(`К заказу ${roundDisplay(recScenario.purchase_quantity, 1)} м³ — заранее согласуйте подачу, подъезд и непрерывность бетонирования`);
   }
 
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials: buildMaterials(
-      volReserve,
+      vol,
+      recScenario.exact_need,
+      recScenario.purchase_quantity,
       longLen,
       longWeightKg,
       clampLen,
@@ -258,6 +239,8 @@ export function computeCanonicalStripFoundation(
       formwork,
       boards,
       rebarDiam,
+      spec.material_rules.clamp_diameter_mm,
+      spec.material_rules.standard_rod_length_m,
     ),
     totals: {
       perimeter: roundDisplay(perimeter, 3),
@@ -266,13 +249,10 @@ export function computeCanonicalStripFoundation(
       aboveGround: roundDisplay(aboveGround, 3),
       reinforcement: reinforcement,
       deliveryMethod: deliveryMethod,
-      // Региональная информация — только числовые поля (totals: Record<string, number>).
-      // Имя региона доступно в тексте warning'а.
-      soilType: soilType,
-      requiredFrostDepthMm: requiredFrostDepthMm ?? 0,
+      deliveryLossM3: roundDisplay(deliveryLossM3, 3),
       totalH: roundDisplay(totalH, 3),
       vol: roundDisplay(vol, 3),
-      volReserve: roundDisplay(volReserve, 3),
+      volReserve: roundDisplay(recScenario.exact_need, 3),
       rebarDiam: rebarDiam,
       threads: threads,
       longLen: roundDisplay(longLen, 3),
@@ -280,7 +260,10 @@ export function computeCanonicalStripFoundation(
       clampCount: clampCount,
       clampLen: roundDisplay(clampLen, 3),
       clampWeightKg: roundDisplay(clampWeightKg, 3),
+      tieCount: tieCount,
+      wireLengthM: roundDisplay(wireLengthM, 3),
       wireKg: roundDisplay(wireKg, 3),
+      formworkHeightMm: roundDisplay(formworkHeightMm, 3),
       formwork: roundDisplay(formwork, 3),
       boards: boards,
       minExactNeedM3: scenarios.MIN.exact_need,
@@ -294,6 +277,6 @@ export function computeCanonicalStripFoundation(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(volReserveRaw, "generic", accuracyMode).explanation,
+    accuracyExplanation: applyAccuracyMode(vol, "concrete", accuracyMode).explanation,
   };
 }

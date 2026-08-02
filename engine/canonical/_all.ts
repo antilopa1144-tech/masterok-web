@@ -1792,16 +1792,25 @@ export interface StripFoundationMaterialRules {
   rebar_diameters: Record<string, number>;
   rebar_threads: Record<string, number>;
   weight_per_m: Record<string, number>;
-  clamp_weight: number;
-  clamp_step: number;
-  tech_loss: Record<string, number>;
-  concrete_reserve: number;
-  overlap: number;
+  clamp_diameter_mm: number;
+  clamp_weight_kg_per_m: number;
+  clamp_step_m: number;
+  concrete_cover_m: number;
+  clamp_hooks_m: number;
+  clamp_length_reserve: number;
+  wire_length_per_tie_m: number;
+  wire_weight_kg_per_m: number;
+  delivery_loss_m3: Record<string, number>;
+  longitudinal_reserve_factor: number;
+  standard_rod_length_m: number;
+  formwork_board_width_m: number;
+  formwork_board_length_m: number;
+  formwork_board_reserve: number;
 }
 
 export interface StripFoundationWarningRules {
   shallow_depth_threshold_mm: number;
-  large_perimeter_threshold_m: number;
+  large_order_threshold_m3: number;
 }
 
 export interface StripFoundationCanonicalSpec extends CanonicalCalculatorSpecBase {

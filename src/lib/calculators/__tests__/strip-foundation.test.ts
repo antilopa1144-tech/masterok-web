@@ -10,7 +10,7 @@ describe("Калькулятор ленточного фундамента", () 
   describe("Периметр 40 м, ширина 400 мм, глубина 700 мм, цоколь 300 мм, reinforcement=1", () => {
     // widthM = 0.4, totalH = (700+300)/1000 = 1.0
     // vol = 40 * 0.4 * 1.0 = 16
-    // volReserve = (16 + techLoss) * concrete_reserve
+    // Чистый объём = 16; при basic + самосливе REC остаётся 16 м³.
     const result = calc({
       perimeter: 40,
       width: 400,
@@ -23,18 +23,26 @@ describe("Калькулятор ленточного фундамента", () 
       expect(result.totals.vol).toBeCloseTo(16, 2);
     });
 
-    it("бетон М300 присутствует", () => {
-      // Engine: "Бетон М300"
-      expect(findMaterial(result, "Бетон М300")).toBeDefined();
+    it("товарный бетон без выдуманного класса присутствует", () => {
+      expect(findMaterial(result, "Товарный бетон")).toBeDefined();
     });
 
-    it("объём с запасом > 16 м³", () => {
-      const concrete = findMaterial(result, "Бетон М300");
-      expect(concrete!.purchaseQty).toBeGreaterThan(16);
+    it("при базовом режиме и самосливе REC не добавляет скрытый запас", () => {
+      const concrete = findMaterial(result, "Товарный бетон");
+      expect(concrete?.quantity).toBe(16);
+      expect(concrete?.withReserve).toBe(16);
+      expect(concrete?.purchaseQty).toBe(16);
     });
 
     it("бетон к покупке округляется до 0,1 м³, а не до целого куба", () => {
-      const concrete = findMaterial(result, "Бетон М300");
+      const decimalResult = calc({
+        perimeter: 40.25,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+      });
+      const concrete = findMaterial(decimalResult, "Товарный бетон");
       expect((concrete?.purchaseQty ?? 0) * 10).toBeCloseTo(
         Math.round((concrete?.purchaseQty ?? 0) * 10),
         8,
@@ -46,7 +54,7 @@ describe("Калькулятор ленточного фундамента", () 
       // Engine: "Арматура продольная ∅XX мм"
       const rebar = findMaterial(result, "продольная");
       expect(rebar).toBeDefined();
-      expect(rebar?.subtitle).toContain("прутков по 11,7 м");
+      expect(rebar?.subtitle).toMatch(/прутков по 11[,.]7 м/);
     });
 
     it("арматура поперечная (хомуты) присутствует", () => {
@@ -69,13 +77,25 @@ describe("Калькулятор ленточного фундамента", () 
       expect(findMaterial(result, "Доска обрезная")).toBeDefined();
     });
 
+    it("опалубка считается по двум сторонам цоколя без скрытых 100 мм", () => {
+      expect(result.totals.formwork).toBe(24);
+      expect(result.totals.boards).toBe(30);
+    });
+
+    it("вязальная проволока считается по длине вязок, а не по 50 г на узел", () => {
+      expect(result.totals.tieCount).toBe(400);
+      expect(result.totals.wireLengthM).toBe(120);
+      expect(result.totals.wireKg).toBeCloseTo(0.72, 6);
+      expect(findMaterial(result, "Проволока")?.purchaseQty).toBe(1);
+    });
+
     it("инварианты", () => {
       checkInvariants(result);
     });
   });
 
   describe("Предупреждения", () => {
-    it("мелкое заглубление → предупреждение о промерзании", () => {
+    it("мелкое заглубление → предупреждение о необходимости расчёта", () => {
       const result = calc({
         perimeter: 40,
         width: 400,
@@ -83,20 +103,59 @@ describe("Калькулятор ленточного фундамента", () 
         aboveGround: 300,
         reinforcement: 1,
       });
-      // Engine: "Мелкое заглубление — убедитесь, что глубина ниже уровня промерзания грунта"
-      expect(result.warnings.some((w) => w.includes("промерзания"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("мелкое заглубление"))).toBe(true);
     });
 
-    it("большой периметр → предупреждение о деформационных швах", () => {
+    it("всегда объясняет, что размеры и армирование задаёт проект", () => {
       const result = calc({
-        perimeter: 200,
+        perimeter: 40,
         width: 400,
         depth: 700,
         aboveGround: 300,
         reinforcement: 1,
       });
-      // Engine: "Большой периметр — рекомендуется разделить на секции с деформационными швами"
-      expect(result.warnings.some((w) => w.includes("деформационными швами"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("по заданным размерам"))).toBe(true);
+    });
+  });
+
+  describe("Подача и сценарии", () => {
+    it("0,5 м³ добавляется только для бетононасоса", () => {
+      const selfDischarge = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        deliveryMethod: 0,
+      });
+      const pump = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+        deliveryMethod: 1,
+      });
+
+      expect(selfDischarge.totals.deliveryLossM3).toBe(0);
+      expect(selfDischarge.scenarios?.REC.exact_need).toBe(16);
+      expect(pump.totals.deliveryLossM3).toBe(0.5);
+      expect(pump.scenarios?.REC.exact_need).toBe(16.5);
+      expect(pump.scenarios?.REC.purchase_quantity).toBe(16.5);
+    });
+
+    it("ни один сценарий не опускается ниже чистой геометрии", () => {
+      const result = calc({
+        perimeter: 40,
+        width: 400,
+        depth: 700,
+        aboveGround: 300,
+        reinforcement: 1,
+      });
+
+      expect(result.scenarios?.MIN.exact_need).toBeGreaterThanOrEqual(16);
+      expect(result.scenarios?.REC.exact_need).toBeGreaterThanOrEqual(16);
+      expect(result.scenarios?.MAX.exact_need).toBeGreaterThanOrEqual(16);
     });
   });
 
@@ -115,128 +174,4 @@ describe("Калькулятор ленточного фундамента", () 
     });
   });
 
-  describe("Региональная валидация глубины промерзания", () => {
-    it("Москва, depth 700 мм < 1400 мм → warning о промерзании", () => {
-      const result = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "moscow",
-      });
-      const hasFrostWarning = result.warnings.some((w) =>
-        w.includes("Москва") && w.includes("1.40")
-      );
-      expect(hasFrostWarning).toBe(true);
-      expect(result.totals.requiredFrostDepthMm).toBe(1400);
-    });
-
-    it("Москва, depth 1500 мм >= 1400 мм → нет warning о регионе", () => {
-      const result = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 1500,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "moscow",
-      });
-      const hasFrostWarning = result.warnings.some((w) => w.includes("«Москва»"));
-      expect(hasFrostWarning).toBe(false);
-    });
-
-    it("Сочи, depth 700 мм >= 600 мм → нет warning", () => {
-      const result = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "sochi",
-      });
-      const hasFrostWarning = result.warnings.some((w) => w.includes("«Сочи»"));
-      expect(hasFrostWarning).toBe(false);
-      expect(result.totals.requiredFrostDepthMm).toBe(600);
-    });
-
-    it("Несуществующий regionId → нет региональной валидации", () => {
-      const result = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "atlantida-fictional",
-      });
-      // Регион не найден → requiredFrostDepthMm = 0, warning по региону отсутствует
-      expect(result.totals.requiredFrostDepthMm).toBe(0);
-    });
-
-    it("Без regionId → backward-compat, поведение как раньше", () => {
-      const result = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-      });
-      const hasRegionalWarning = result.warnings.some((w) => w.includes("«"));
-      expect(hasRegionalWarning).toBe(false);
-      expect(result.totals.requiredFrostDepthMm).toBe(0);
-    });
-
-    it("UI-флоу: regionIndex=6 (Москва) даёт ту же валидацию что regionId='moscow'", () => {
-      // Мапа: 1=krasnodar, 2=sochi, 3=rostov, 4=volgograd, 5=voronezh, 6=moscow
-      // (см. порядок в configs/regional/frost-depth-rf.json)
-      const r = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionIndex: 6,
-      });
-      expect(r.totals.requiredFrostDepthMm).toBe(1400);
-      const hasMoscowWarning = r.warnings.some((w) =>
-        w.includes("Москва") && w.includes("1.40"),
-      );
-      expect(hasMoscowWarning).toBe(true);
-    });
-
-    it("UI-флоу: regionIndex=0 → нет региональной валидации", () => {
-      const r = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 700,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionIndex: 0,
-      });
-      expect(r.totals.requiredFrostDepthMm).toBe(0);
-    });
-
-    it("Тип грунта: песок (soilType=3) даёт большую требуемую глубину чем суглинок (0)", () => {
-      const loamResult = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 1000,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "moscow",
-        soilType: 0,
-      });
-      const sandResult = calc({
-        perimeter: 40,
-        width: 400,
-        depth: 1000,
-        aboveGround: 300,
-        reinforcement: 1,
-        regionId: "moscow",
-        soilType: 3,
-      });
-      // Москва суглинок = 1400, песок = 1400 * 1.30 = 1820
-      expect(loamResult.totals.requiredFrostDepthMm).toBe(1400);
-      expect(sandResult.totals.requiredFrostDepthMm).toBe(1820);
-    });
-  });
 });
