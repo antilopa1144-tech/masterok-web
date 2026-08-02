@@ -9,7 +9,7 @@
  * and compare results — ensuring cross-platform parity.
  *
  * Usage:
- *   npx tsx scripts/generate-parity-fixtures.ts
+ *   npx tsx scripts/generate-parity-fixtures.ts [calculator-id]
  *
  * Output:
  *   tests/fixtures/parity/<calculator-id>.parity.json
@@ -60,10 +60,16 @@ interface ParityFixture {
 
 async function generateFixtures() {
   const factorTable = JSON.parse(fs.readFileSync(FACTOR_TABLE_PATH, "utf-8")).factors;
+  const requestedCalculatorId = process.argv[2]?.trim();
 
   const configFiles = fs.readdirSync(CONFIGS_DIR)
     .filter((f) => f.endsWith("-canonical.v1.json"))
+    .filter((f) => !requestedCalculatorId || f === `${requestedCalculatorId}-canonical.v1.json`)
     .sort();
+
+  if (requestedCalculatorId && configFiles.length === 0) {
+    throw new Error(`Canonical spec not found: ${requestedCalculatorId}`);
+  }
 
   // Ensure output dirs exist
   for (const dir of [OUTPUT_DIR, FLUTTER_OUTPUT_DIR]) {

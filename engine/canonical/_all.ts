@@ -1578,28 +1578,27 @@ export interface GuttersPackagingRules {
   package_size: number;
 }
 
-export interface GuttersMaterialRules {
-  gutter_reserve: number;
+export interface GuttersSystemRule {
+  label: string;
+  gutter_diameter_mm: number;
+  pipe_diameter_mm: number;
+  capacity_edge_m2: number;
   hook_step_m: number;
-  hook_reserve: number;
+}
+
+export interface GuttersMaterialRules {
+  systems: Record<string, GuttersSystemRule>;
+  special_element_offset_m: number;
   pipe_clamp_step_m: number;
-  pipe_clamp_reserve: number;
-  building_corners: number;
-  connector_reserve: number;
-  sealant_connections_per_tube: number;
-  sealant_tube_ml: number;
-  /** Расход герметика на стык желоба, мл (опционально, для будущего точного расчёта). */
-  sealant_per_joint_ml?: number;
-  recommended_funnel_interval_m: number;
+  max_gutter_run_per_funnel_m: number;
 }
 
 export interface GuttersWarningRules {
-  recommended_funnel_interval_m: number;
+  max_gutter_run_per_funnel_m: number;
 }
 
 export interface GuttersCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
-    gutter_diameters: number[];
     gutter_lengths: number[];
   };
   packaging_rules: GuttersPackagingRules;

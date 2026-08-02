@@ -10,31 +10,23 @@ import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
-/* ─── constants ─── */
-
-const GUTTER_RESERVE = 1.05;
-const HOOK_STEP_M = 0.6;
-const HOOK_RESERVE = 1.05;
-const PIPE_CLAMP_STEP_M = 1.5;
-const PIPE_CLAMP_RESERVE = 1.05;
-const BUILDING_CORNERS = 8; // 4 corners × 2 elbows
-const CONNECTOR_RESERVE = 1.05;
-const SEALANT_CONNECTIONS_PER_TUBE = 20;
-const SEALANT_TUBE_ML = 310;
-const RECOMMENDED_FUNNEL_INTERVAL_M = 11;
-
 /* ─── inputs ─── */
 
 interface GuttersInputs {
   roofPerimeter?: number;
+  roofArea?: number;
   roofHeight?: number;
   funnels?: number;
+  systemType?: number;
   gutterDia?: number;
   gutterLength?: number;
-  /** Количество колен/отводов 45° (на изгибах трассы трубы). Если 0 и bendCount90=0
-   *  — используется legacy формула (corners=8, knees=funnels). */
+  gutterSections?: number;
+  gutterCornerCount?: number;
+  endCapCount?: number;
+  hasEaveOffset?: number;
+  /** Дополнительные колена/отводы 45° на изгибах трассы трубы. */
   bendCount45?: number;
-  /** Количество колен/отводов 90° (типично — отвод от воронки). */
+  /** Дополнительные колена/отводы 90° на изгибах трассы трубы. */
   bendCount90?: number;
   accuracyMode?: AccuracyMode;
 }
@@ -51,53 +43,70 @@ export function computeCanonicalGutters(
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
-  const roofPerimeter = Math.max(5, Math.min(200, inputs.roofPerimeter ?? getInputDefault(spec, "roofPerimeter", 40)));
+  const roofPerimeter = Math.max(5, Math.min(200, inputs.roofPerimeter ?? getInputDefault(spec, "roofPerimeter", 20)));
+  const roofArea = Math.max(10, Math.min(1000, inputs.roofArea ?? getInputDefault(spec, "roofArea", 100)));
   const roofHeight = Math.max(2, Math.min(15, inputs.roofHeight ?? getInputDefault(spec, "roofHeight", 5)));
-  const funnels = Math.max(1, Math.min(20, Math.round(inputs.funnels ?? getInputDefault(spec, "funnels", 4))));
-  const gutterDia = Math.max(75, Math.min(125, Math.round(inputs.gutterDia ?? getInputDefault(spec, "gutterDia", 90))));
-  const gutterLength = Math.max(3, Math.min(4, Math.round(inputs.gutterLength ?? getInputDefault(spec, "gutterLength", 3))));
+  const funnels = Math.max(1, Math.min(20, Math.round(inputs.funnels ?? getInputDefault(spec, "funnels", 2))));
+  const systemType = Math.max(0, Math.min(3, Math.round(inputs.systemType ?? getInputDefault(spec, "systemType", 1))));
+  const system = spec.material_rules.systems[String(systemType)] ?? spec.material_rules.systems["1"];
+  const gutterLength = Math.max(1.5, Math.min(3, inputs.gutterLength ?? getInputDefault(spec, "gutterLength", 3)));
+  const gutterSections = Math.max(1, Math.min(20, Math.round(inputs.gutterSections ?? getInputDefault(spec, "gutterSections", 2))));
+  const gutterCornerCount = Math.max(0, Math.min(20, Math.round(inputs.gutterCornerCount ?? getInputDefault(spec, "gutterCornerCount", 0))));
+  const endCapCount = Math.max(0, Math.min(40, Math.round(inputs.endCapCount ?? getInputDefault(spec, "endCapCount", 4))));
+  const hasEaveOffset = Math.round(inputs.hasEaveOffset ?? getInputDefault(spec, "hasEaveOffset", 1)) === 1;
   const bendCount45 = Math.max(0, Math.min(20, Math.round(inputs.bendCount45 ?? getInputDefault(spec, "bendCount45", 0))));
   const bendCount90 = Math.max(0, Math.min(20, Math.round(inputs.bendCount90 ?? getInputDefault(spec, "bendCount90", 0))));
-  const useLegacyBends = bendCount45 === 0 && bendCount90 === 0;
 
   /* ─── gutters ─── */
-  const gutterPcs = Math.ceil(roofPerimeter / gutterLength * GUTTER_RESERVE);
+  const gutterSectionLength = roofPerimeter / gutterSections;
+  const gutterPcsPerSection = Math.ceil(gutterSectionLength / gutterLength);
+  const gutterExactPcs = roofPerimeter / gutterLength;
+  const gutterPcs = gutterPcsPerSection * gutterSections;
 
   /* ─── pipes ─── */
-  const pipePerFunnel = Math.ceil(roofHeight / gutterLength) + 1;
+  const pipeExactPcs = roofHeight * funnels / gutterLength;
+  const pipePerFunnel = Math.ceil(roofHeight / gutterLength);
   const pipePcs = pipePerFunnel * funnels;
+  const pipeCouplings = Math.max(0, (pipePerFunnel - 1) * funnels);
 
   /* ─── gutter joints ─── */
-  const gutterJoints = Math.ceil(roofPerimeter / gutterLength) - 1;
+  const gutterJoints = Math.max(0, (gutterPcsPerSection - 1) * gutterSections);
 
   /* ─── hooks ─── */
-  const gutterHooks = Math.ceil(roofPerimeter / HOOK_STEP_M * HOOK_RESERVE);
+  const specialElementBrackets = gutterCornerCount + funnels * 2 + gutterJoints * 2;
+  const regularBracketLength = Math.max(
+    0,
+    roofPerimeter - specialElementBrackets * spec.material_rules.special_element_offset_m,
+  );
+  const gutterHooks = Math.ceil(
+    specialElementBrackets + regularBracketLength / system.hook_step_m,
+  );
 
   /* ─── pipe clamps ─── */
-  const pipeClamps = Math.ceil(roofHeight / PIPE_CLAMP_STEP_M * funnels * PIPE_CLAMP_RESERVE);
+  const pipeClamps = Math.ceil(
+    (roofHeight / spec.material_rules.pipe_clamp_step_m + 1) * funnels,
+  );
 
-  /* ─── corners (legacy) и явные колена 45/90 ─── */
-  const corners = useLegacyBends ? BUILDING_CORNERS : 0;
-  const elbows45 = useLegacyBends ? 0 : bendCount45;
-  const elbows90 = useLegacyBends ? 0 : bendCount90;
+  /* ─── corners и явные дополнительные колена 45/90 ─── */
+  const corners = gutterCornerCount;
+  const elbows45 = bendCount45;
+  const elbows90 = bendCount90;
 
-  /* ─── knee elbows (отводы от воронки к стене) ─── */
-  const kneeElbows = funnels;
+  /* ─── два колена для обхода карнизного вылета ─── */
+  const kneeElbows = hasEaveOffset ? funnels * 2 : 0;
+  const drainOutlets = funnels;
 
   /* ─── end caps ─── */
-  const endCaps = funnels;
+  const endCaps = endCapCount;
 
   /* ─── connectors ─── */
-  const connectors = Math.ceil(gutterJoints * CONNECTOR_RESERVE);
-
-  /* ─── sealant ─── */
-  const sealantTubes = Math.ceil((gutterJoints + funnels * 2) / SEALANT_CONNECTIONS_PER_TUBE);
+  const connectors = gutterJoints;
 
   /* ─── primary quantity for scenarios ─── */
-  const primaryQuantityRaw = gutterPcs;
+  const primaryQuantityRaw = gutterExactPcs;
   const primaryQuantity = Math.ceil(primaryQuantityRaw * accuracyMult);
   const primaryUnit = "шт";
-  const primaryLabel = `gutter-${gutterDia}mm-${gutterLength}m`;
+  const primaryLabel = `gutter-${system.gutter_diameter_mm}mm-${gutterLength}m`;
 
   /* ─── scenarios ─── */
   const packageOptions = [{
@@ -117,7 +126,7 @@ export function computeCanonicalGutters(
       leftover: roundDisplay(packaging.leftover, 6),
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `gutterDia:${gutterDia}`,
+        `systemType:${systemType}`,
         `gutterLength:${gutterLength}`,
         `packaging:${packaging.package.label}`,
       ],
@@ -139,18 +148,20 @@ export function computeCanonicalGutters(
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Желоб водосточный (ø${gutterDia} мм, ${gutterLength} м)`,
-      quantity: gutterPcs,
+      name: `Желоб водосточный (ø${system.gutter_diameter_mm} мм, ${gutterLength} м)`,
+      subtitle: `${system.label}; ${gutterSections} прямых участка по ${roundDisplay(gutterSectionLength, 2)} м`,
+      quantity: roundDisplay(gutterExactPcs, 3),
       unit: "шт",
-      withReserve: gutterPcs,
+      withReserve: roundDisplay(gutterExactPcs, 3),
       purchaseQty: gutterPcs,
       category: "Желоба",
     },
     {
-      name: `Труба водосточная (ø${gutterDia} мм, ${gutterLength} м)`,
-      quantity: pipePcs,
+      name: `Труба водосточная (ø${system.pipe_diameter_mm} мм, ${gutterLength} м)`,
+      subtitle: "Вертикальная часть стояков; отрезок для обхода карниза проверяется по фактическому вылету",
+      quantity: roundDisplay(pipeExactPcs, 3),
       unit: "шт",
-      withReserve: pipePcs,
+      withReserve: roundDisplay(pipeExactPcs, 3),
       purchaseQty: pipePcs,
       category: "Трубы",
     },
@@ -162,30 +173,46 @@ export function computeCanonicalGutters(
       purchaseQty: funnels,
       category: "Воронки",
     },
-    {
+    ...(connectors > 0 ? [{
       name: "Соединители желобов",
       quantity: connectors,
       unit: "шт",
       withReserve: connectors,
       purchaseQty: connectors,
       category: "Соединители",
-    },
-    {
-      name: "Колена водосточные",
+    } satisfies CanonicalMaterialResult] : []),
+    ...(pipeCouplings > 0 ? [{
+      name: "Муфты соединительные для труб",
+      quantity: pipeCouplings,
+      unit: "шт",
+      withReserve: pipeCouplings,
+      purchaseQty: pipeCouplings,
+      category: "Соединители",
+    } satisfies CanonicalMaterialResult] : []),
+    ...(kneeElbows > 0 ? [{
+      name: "Колена универсальные для обхода карниза",
       quantity: kneeElbows,
       unit: "шт",
       withReserve: kneeElbows,
       purchaseQty: kneeElbows,
       category: "Фасонные",
-    },
+    } satisfies CanonicalMaterialResult] : []),
     {
-      name: "Заглушки желоба (пары)",
+      name: "Водосточные сливы (наконечники)",
+      quantity: drainOutlets,
+      unit: "шт",
+      withReserve: drainOutlets,
+      purchaseQty: drainOutlets,
+      category: "Фасонные",
+    },
+    ...(endCaps > 0 ? [{
+      name: "Заглушки желоба",
       quantity: endCaps,
       unit: "шт",
       withReserve: endCaps,
       purchaseQty: endCaps,
       category: "Заглушки",
-    },
+    } satisfies CanonicalMaterialResult] : []),
     {
       name: "Кронштейны желоба",
       quantity: gutterHooks,
@@ -226,26 +253,30 @@ export function computeCanonicalGutters(
       purchaseQty: elbows90,
       category: "Фасонные",
     } satisfies CanonicalMaterialResult] : []),
-    {
-      name: `Герметик (${SEALANT_TUBE_ML} мл)`,
-      quantity: sealantTubes,
-      unit: "тюбиков",
-      withReserve: sealantTubes,
-      purchaseQty: sealantTubes,
-      category: "Герметизация",
-    },
   ];
 
   /* ─── warnings ─── */
   const warnings: string[] = [];
-  const recommendedFunnels = Math.ceil(roofPerimeter / RECOMMENDED_FUNNEL_INTERVAL_M);
+  const recommendedFunnelsByArea = Math.ceil(roofArea / system.capacity_edge_m2);
+  const recommendedFunnelsByLength = gutterSections * Math.ceil(
+    gutterSectionLength / spec.warnings_rules.max_gutter_run_per_funnel_m,
+  );
+  const recommendedFunnels = Math.max(
+    gutterSections,
+    recommendedFunnelsByArea,
+    recommendedFunnelsByLength,
+  );
   if (funnels < recommendedFunnels) {
-    warnings.push(`Недостаточно воронок: рекомендуется минимум ${recommendedFunnels} шт. (1 на каждые ${RECOMMENDED_FUNNEL_INTERVAL_M} м периметра) для достаточного водоотведения`);
+    warnings.push(
+      `Недостаточно воронок: рекомендуется минимум ${recommendedFunnels} шт. для ${roundDisplay(roofArea, 0)} м² и ${gutterSections} участков желоба`,
+    );
   }
 
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Уклон желоба 3-5 мм на метр — иначе вода будет стоять и переливаться");
+  practicalNotes.push("Расчёт относится к наружному водостоку скатной крыши; внутренние воронки плоской кровли рассчитываются отдельно");
+  practicalNotes.push("Уклон желоба 3–3,5 мм на метр — иначе вода будет стоять и переливаться");
+  practicalNotes.push("Штатные ПВХ-соединения не заполняйте герметиком: температурные зазоры должны работать по инструкции системы");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -253,13 +284,24 @@ export function computeCanonicalGutters(
     materials,
     totals: {
       roofPerimeter: roundDisplay(roofPerimeter, 3),
+      roofArea: roundDisplay(roofArea, 3),
       roofHeight: roundDisplay(roofHeight, 3),
       funnels,
-      gutterDia,
+      systemType,
+      gutterDia: system.gutter_diameter_mm,
+      pipeDia: system.pipe_diameter_mm,
       gutterLength,
+      gutterSections,
+      gutterSectionLength: roundDisplay(gutterSectionLength, 3),
+      gutterCornerCount,
+      endCapCount,
+      hasEaveOffset: hasEaveOffset ? 1 : 0,
+      gutterExactPcs: roundDisplay(gutterExactPcs, 3),
       gutterPcs,
+      pipeExactPcs: roundDisplay(pipeExactPcs, 3),
       pipePcs,
       pipePerFunnel,
+      pipeCouplings,
       gutterJoints,
       gutterHooks,
       pipeClamps,
@@ -269,9 +311,11 @@ export function computeCanonicalGutters(
       bendCount45,
       bendCount90,
       kneeElbows,
+      drainOutlets,
       endCaps,
       connectors,
-      sealantTubes,
+      recommendedFunnelsByArea,
+      recommendedFunnelsByLength,
       recommendedFunnels,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: scenarios.REC.exact_need,
