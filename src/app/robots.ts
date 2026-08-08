@@ -17,6 +17,8 @@ export const dynamic = "force-static";
  *    (генерирует warnings в GSC).
  *
  * Что включаем:
+ *  - Ресурсы `/_next/` не блокируем: Googlebot должен загружать CSS, JS,
+ *    шрифты и оптимизированные изображения для корректного рендеринга страниц.
  *  - Явные правила для Yandex/YandexBot/YandexMobileBot/YandexImages —
  *    нужны для тонкой настройки сканирования по типам ботов Yandex.
  *  - Правила для AI-краулеров (GPTBot, OAI-SearchBot, ClaudeBot, anthropic-ai,
@@ -30,29 +32,29 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/_next/"],
+        disallow: ["/api/"],
       },
       // Yandex — явные правила для основных краулеров (поиск, мобильный, картинки).
       // Yandex Нейро и Алиса используют тот же индекс Yandex Поиска.
       {
         userAgent: "Yandex",
         allow: "/",
-        disallow: ["/api/", "/_next/"],
+        disallow: ["/api/"],
       },
       {
         userAgent: "YandexBot",
         allow: "/",
-        disallow: ["/api/", "/_next/"],
+        disallow: ["/api/"],
       },
       {
         userAgent: "YandexMobileBot",
         allow: "/",
-        disallow: ["/api/", "/_next/"],
+        disallow: ["/api/"],
       },
       {
         userAgent: "YandexImages",
         allow: "/",
-        disallow: ["/api/", "/_next/"],
+        disallow: ["/api/"],
       },
       // Явные правила для основных AI-краулеров — видимость в ChatGPT, Claude,
       // Perplexity, Gemini. Разрешаем всё кроме API — см. также llms.txt.
