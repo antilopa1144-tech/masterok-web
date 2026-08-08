@@ -214,6 +214,40 @@ describe("Калькулятор плитного фундамента", () => {
     });
   });
 
+  describe("Переключение способа ввода", () => {
+    it("в режиме по площади игнорирует скрытые размеры формы", () => {
+      const result = calc({
+        inputMode: 1,
+        area: 100,
+        length: 10,
+        width: 6,
+        thickness: 200,
+      });
+
+      expect(result.totals.area).toBe(100);
+      expect(result.totals.length).toBe(10);
+      expect(result.totals.width).toBe(10);
+      expect(result.totals.perimeter).toBe(40);
+      expect(result.totals.concreteM3).toBe(20);
+    });
+
+    it("в режиме по размерам игнорирует скрытую площадь формы", () => {
+      const result = calc({
+        inputMode: 0,
+        area: 100,
+        length: 10,
+        width: 6,
+        thickness: 200,
+      });
+
+      expect(result.totals.area).toBe(60);
+      expect(result.totals.length).toBe(10);
+      expect(result.totals.width).toBe(6);
+      expect(result.totals.perimeter).toBe(32);
+      expect(result.totals.concreteM3).toBe(12);
+    });
+  });
+
   describe("Вытянутая плита 3×20 м — заметная разница с sqrt-аппроксимацией", () => {
     // length=20, width=3, area=60 (та же что и квадрат 7.75×7.75)
     // periметр = 2*(3+20) = 46 м (vs 31 у квадрата → +48% опалубки!)

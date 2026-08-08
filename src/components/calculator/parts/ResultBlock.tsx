@@ -255,7 +255,6 @@ export function ResultBlock({
   const accuracyLabel = result.accuracyMode
     ? ACCURACY_MODE_LABELS[result.accuracyMode]
     : result.accuracyExplanation?.modeLabel ?? "Расчёт";
-  const accuracyMultiplier = result.accuracyExplanation?.combinedMultiplier;
 
   const handlePriceChange = (key: string, value: number) => {
     void setPrice(priceScope, key, value);
@@ -308,9 +307,7 @@ export function ResultBlock({
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-slate-950 dark:text-white">Результат</h2>
             <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" title={`Режим расчёта: ${accuracyLabel}`}>
-              {accuracyMultiplier && accuracyMultiplier > 1
-                ? `Запас +${Math.round((accuracyMultiplier - 1) * 100)}%`
-                : accuracyLabel}
+              {accuracyLabel} режим
             </span>
           </div>
 

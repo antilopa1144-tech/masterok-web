@@ -140,7 +140,16 @@ export const foundationSlabDef: CalculatorDefinition = {
   calculate(inputs) {
     const spec = foundationslabSpec as any;
     const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalFoundationSlab(spec, inputs, factorTable);
+    // Поля неактивной группы остаются в состоянии формы. Явно исключаем их,
+    // чтобы скрытые дефолты 10×6 не переопределяли введённую площадь и наоборот.
+    // Если inputMode отсутствует (старые ссылки/вызовы), сохраняем прежнее
+    // поведение canonical-движка для обратной совместимости.
+    const canonicalInputs = inputs.inputMode === 1
+      ? { ...inputs, length: 0, width: 0 }
+      : inputs.inputMode === 0
+        ? { ...inputs, area: undefined }
+        : inputs;
+    const canonical = computeCanonicalFoundationSlab(spec, canonicalInputs, factorTable);
 
     return {
       materials: canonical.materials,
