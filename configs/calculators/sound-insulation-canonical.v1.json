@@ -1,16 +1,16 @@
 {
   "calculator_id": "sound-insulation",
-  "formula_version": "sound-insulation-canonical-v2",
+  "formula_version": "sound-insulation-canonical-v3",
   "input_schema": [
     { "key": "area", "unit": "m²", "default_value": 30, "min": 1, "max": 500 },
     { "key": "surfaceType", "default_value": 0, "min": 0, "max": 2 },
     { "key": "system", "default_value": 0, "min": 0, "max": 3 },
+    { "key": "perimeter", "unit": "m", "default_value": 0, "min": 0, "max": 2000 },
+    { "key": "screedThicknessMm", "unit": "mm", "default_value": 50, "min": 30, "max": 100 },
     { "key": "acousticPlatesPerPack", "unit": "шт", "default_value": 6, "min": 1, "max": 50 }
   ],
   "field_factors": {
     "enabled": [
-      "geometry_complexity",
-      "worker_skill",
       "waste_factor"
     ]
   },
@@ -34,12 +34,9 @@
     "vibro_tape_roll": 30,
     "zips_plate": 0.72,
     "zips_reserve": 1.1,
-    "zips_dubels_per_panel": 6,
-    "zips_dubel_reserve": 1.05,
     "float_mat_roll": 20,
     "float_reserve": 1.1,
     "damp_tape_roll": 25,
-    "screed_thickness": 0.05,
     "screed_density": 1800,
     "screed_bag": 50,
     "sealant_per_perim": 20,
@@ -52,5 +49,10 @@
   },
   "scenario_policy": {
     "contract": "min-rec-max-v1"
-  }
+  },
+  "source_notes": [
+    "Площадь панели ЗИПС принята 0,72 м² по рабочему размеру 1200×600 мм. Крепёж считается комплектом панели, а не отдельными дюбелями.",
+    "Периметр используется для лент и герметизации. Если он не введён, применяется явно обозначенная оценка для квадратной поверхности.",
+    "Толщина стяжки для плавающего пола задаётся пользователем; допустимую конструкцию и нагрузку проверяют по проекту и паспорту выбранной системы."
+  ]
 }

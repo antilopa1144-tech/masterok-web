@@ -17,10 +17,10 @@ describe("Звукоизоляция", () => {
       expect(findMaterial(r, "Вибролента")).toBeDefined();
     });
 
-    it("вата: area*1.1/0.6 плит", () => {
+    it("отделяет точную потребность плит от сценарного запаса", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      // areaWithReserve=33, plates=ceil(33/0.6)=55
-      expect(r.totals.primaryQty).toBe(55);
+      expect(r.totals.primaryQty).toBe(50);
+      expect(r.scenarios?.REC.exact_need).toBe(53);
     });
 
     it("округляет акустические плиты до полных упаковок", () => {
@@ -32,16 +32,16 @@ describe("Звукоизоляция", () => {
       });
       const insulation = findMaterial(r, "Акустическая минеральная")!;
 
-      expect(r.scenarios?.REC.exact_need).toBeCloseTo(58.3, 5);
+      expect(r.scenarios?.REC.exact_need).toBe(53);
       expect(r.scenarios?.REC.buy_plan.package_size).toBe(6);
-      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(10);
-      expect(r.scenarios?.REC.purchase_quantity).toBe(60);
+      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(9);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(54);
       expect(insulation.packageInfo).toEqual({
-        count: 10,
+        count: 9,
         size: 6,
         packageUnit: "упаковок",
       });
-      expect(insulation.purchaseQty).toBe(60);
+      expect(insulation.purchaseQty).toBe(54);
     });
 
     it("ГКЛ 2 слоя: area*1.1*2/3 листов", () => {
@@ -64,15 +64,18 @@ describe("Звукоизоляция", () => {
     it("30 м²", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 1 });
       checkInvariants(r);
-      // Engine: "ЗИПС панели", areaWithReserve=33, panelArea=0.72, panels=ceil(33/0.72)=46
-      expect(findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!.quantity).toBe(46);
+      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
+      expect(panels.quantity).toBeCloseTo(44.166667, 5);
+      expect(panels.purchaseQty).toBe(45);
     });
 
-    it("дюбели для ЗИПС присутствуют", () => {
+    it("не предлагает покупать штатный крепёж ЗИПС отдельно", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 1 });
-      // Engine: "Дюбели для ЗИПС"
-      const fastener = findMaterial(r, "Фирменный крепёжный комплект");
-      expect(fastener?.subtitle).toContain("штатные виброузлы");
+      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
+      const fastener = findMaterial(r, "Комплект крепежа, поставляемый")!;
+      expect(fastener.subtitle).toContain("Отдельно не прибавляется");
+      expect(fastener.unit).toBe("комплектов");
+      expect(fastener.purchaseQty).toBe(panels.purchaseQty);
     });
 
     it("оставляет ЗИПС поштучным товаром", () => {
@@ -83,10 +86,9 @@ describe("Звукоизоляция", () => {
       expect(panels.packageInfo).toBeUndefined();
     });
 
-    it("предупреждение о ровном основании", () => {
+    it("направляет к инструкции конкретной системы", () => {
       const r = calc({ area: 30, surfaceType: 0, system: 1 });
-      // Engine: "Система ЗИПС требует ровного основания"
-      expect(r.warnings.some(w => w.includes("ровного основания"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("инструкции выбранной модели"))).toBe(true);
     });
   });
 
@@ -127,6 +129,26 @@ describe("Звукоизоляция", () => {
       // Engine: "Уплотнительная лента 30м"
       expect(findMaterial(r, "Уплотнительная виброизоляционная лента")).toBeDefined();
     });
+
+    it("использует введённый периметр вместо оценки по квадрату", () => {
+      const r = calc({ area: 30, system: 0, perimeter: 100 });
+      expect(r.totals.perim).toBe(100);
+      expect(r.totals.perimeterEstimated).toBe(0);
+      expect(r.totals.sealTape).toBe(8);
+    });
+
+    it("явно отмечает оценочный периметр", () => {
+      const r = calc({ area: 25, system: 0, perimeter: 0 });
+      expect(r.totals.perim).toBe(20);
+      expect(r.totals.perimeterEstimated).toBe(1);
+      expect(r.practicalNotes?.some(note => note.includes("Периметр не задан"))).toBe(true);
+    });
+  });
+
+  it("считает смесь по заданной толщине плавающей стяжки", () => {
+    const r = calc({ area: 30, system: 2, screedThicknessMm: 70 });
+    expect(r.totals.screedThicknessMm).toBe(70);
+    expect(findMaterial(r, "Сухая смесь для стяжки")!.quantity).toBe(76);
   });
 
   describe("Предупреждения", () => {
@@ -137,10 +159,9 @@ describe("Звукоизоляция", () => {
     });
   });
 
-  it("передаёт web-поля surface и systemType в canonical engine", () => {
+  it("определяет поверхность по выбранной конструкции", () => {
     const r = soundInsulationDef.calculate({
       area: 30,
-      surface: 2,
       systemType: 3,
       acousticPlatesPerPack: 6,
     });
@@ -148,5 +169,10 @@ describe("Звукоизоляция", () => {
     expect(r.totals.surfaceType).toBe(2);
     expect(r.totals.system).toBe(3);
     expect(findMaterial(r, "Виброподвес для акустического потолка")).toBeDefined();
+  });
+
+  it("не показывает отдельный выбор поверхности с несовместимыми комбинациями", () => {
+    expect(soundInsulationDef.fields.some(field => field.key === "surface")).toBe(false);
+    expect(soundInsulationDef.fields.some(field => field.key === "systemType")).toBe(true);
   });
 });

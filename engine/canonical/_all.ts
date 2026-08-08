@@ -2380,12 +2380,9 @@ export interface SoundInsulationMaterialRules {
   vibro_tape_roll: number;
   zips_plate: number;
   zips_reserve: number;
-  zips_dubels_per_panel: number;
-  zips_dubel_reserve: number;
   float_mat_roll: number;
   float_reserve: number;
   damp_tape_roll: number;
-  screed_thickness: number;
   screed_density: number;
   screed_bag: number;
   sealant_per_perim: number;
