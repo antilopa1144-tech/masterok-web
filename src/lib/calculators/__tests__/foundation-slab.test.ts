@@ -14,23 +14,22 @@ describe("Калькулятор плитного фундамента", () => {
       insulationThickness: 0,
     });
 
-    it("объём бетона ≈ area * thickness/1000 * reserve", () => {
-      // concreteM3 = roundDisplay(60 * 0.2 * reserve, 6)
-      expect(result.totals.concreteM3).toBeGreaterThan(12);
+    it("чистый объём бетона = area × thickness, без двойного запаса", () => {
+      expect(result.totals.concreteM3).toBeCloseTo(12, 3);
+      expect(result.totals.recExactNeedM3).toBeGreaterThan(12);
     });
 
-    it("бетон М300 присутствует", () => {
-      // Engine: "Бетон М300"
-      expect(findMaterial(result, "Бетон М300")).toBeDefined();
+    it("класс бетона не назначается калькулятором", () => {
+      expect(findMaterial(result, "Товарный бетон — класс по проекту")).toBeDefined();
     });
 
     it("бетон к покупке округляется до 0,1 м³, а не до целого куба", () => {
-      const concrete = findMaterial(result, "Бетон М300");
+      const concrete = findMaterial(result, "Товарный бетон");
       expect((concrete?.purchaseQty ?? 0) * 10).toBeCloseTo(
         Math.round((concrete?.purchaseQty ?? 0) * 10),
         8,
       );
-      expect(concrete?.purchaseQty).toBeLessThan(Math.ceil(concrete!.quantity));
+      expect(concrete?.purchaseQty).toBeGreaterThanOrEqual(concrete!.quantity);
     });
 
     it("арматура присутствует", () => {
@@ -39,7 +38,7 @@ describe("Калькулятор плитного фундамента", () => {
     });
 
     it("для арматуры показан ориентир по длине и пруткам", () => {
-      expect(findMaterial(result, "Арматура")?.subtitle).toContain("прутков по 11,7 м");
+      expect(findMaterial(result, "Арматура")?.subtitle).toContain("без раскроя");
     });
 
     it("rebarKg в totals", () => {
@@ -50,6 +49,11 @@ describe("Калькулятор плитного фундамента", () => {
     it("вязальная проволока присутствует", () => {
       // Engine: "Проволока вязальная"
       expect(findMaterial(result, "Проволока вязальная")).toBeDefined();
+    });
+
+    it("проволока считается по длине вязки и массе погонного метра", () => {
+      // 40 × 40 пересечений × 2 сетки × 0,3 м × 0,0089 кг/м.
+      expect(result.totals.wireKg).toBeCloseTo(8.544, 3);
     });
 
     it("щебень подготовка = 60 × 0.15 = 9 м³", () => {
@@ -82,6 +86,29 @@ describe("Калькулятор плитного фундамента", () => {
 
     it("инварианты", () => {
       checkInvariants(result);
+    });
+  });
+
+  describe("Проектные слои подготовки", () => {
+    it("использует введённые толщины вместо скрытых констант", () => {
+      const result = calc({
+        area: 60,
+        thickness: 200,
+        rebarDiam: 12,
+        rebarStep: 200,
+        sandLayerMm: 200,
+        gravelLayerMm: 80,
+        insulationThickness: 0,
+      });
+
+      expect(result.totals.sand).toBeCloseTo(12, 3);
+      expect(result.totals.gravel).toBeCloseTo(4.8, 3);
+    });
+
+    it("позволяет исключить слой из расчёта", () => {
+      const result = calc({ area: 60, sandLayerMm: 0, gravelLayerMm: 0 });
+      expect(result.totals.sand).toBe(0);
+      expect(result.totals.gravel).toBe(0);
     });
   });
 
@@ -123,8 +150,7 @@ describe("Калькулятор плитного фундамента", () => {
   describe("Предупреждения", () => {
     it("тонкая плита → предупреждение", () => {
       const result = calc({ area: 60, thickness: 150, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-      // Engine: "Тонкая плита — убедитесь, что расчёт соответствует нагрузкам"
-      expect(result.warnings.some((w) => w.includes("Тонкая плита"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("подтверждена расчётом конструктора"))).toBe(true);
     });
 
     it("большая площадь → предупреждение", () => {

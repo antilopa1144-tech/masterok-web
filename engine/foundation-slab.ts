@@ -20,6 +20,8 @@ interface FoundationSlabInputs {
   thickness?: number;
   rebarDiam?: number;
   rebarStep?: number;
+  sandLayerMm?: number;
+  gravelLayerMm?: number;
   insulationThickness?: number;
   accuracyMode?: AccuracyMode;
 }
@@ -42,7 +44,7 @@ function buildMaterials(
 
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Бетон М300 (товарный, класс В22,5)",
+      name: "Товарный бетон — класс по проекту",
       subtitle:
         "Заказывайте с шагом 0,1 м³; подвижность, морозостойкость и водонепроницаемость уточняются по проекту и способу подачи",
       quantity: roundDisplay(concreteM3, 3),
@@ -54,7 +56,7 @@ function buildMaterials(
     {
       name: `Арматура рифлёная ∅${rebarDiam} мм для двух сеток`,
       subtitle:
-        `Нужно ${roundDisplay(totalBarLen, 1)} пог. м — примерно ${rebarBars117} прутков по 11,7 м; класс стали выбирают по проекту, обычно А500С`,
+        `Теоретический минимум ${roundDisplay(totalBarLen, 1)} пог. м — ${rebarBars117} прутков по 11,7 м без раскроя, нахлёстов, выпусков и усилений; класс стали выбирают по проекту`,
       quantity: roundDisplay(rebarKg, 3),
       unit: "кг",
       withReserve: Math.ceil(rebarKg),
@@ -137,13 +139,15 @@ export function computeCanonicalFoundationSlab(
   const thickness = Math.max(150, Math.min(300, inputs.thickness ?? getInputDefault(spec, "thickness", 200)));
   const rebarDiam = Math.max(10, Math.min(16, inputs.rebarDiam ?? getInputDefault(spec, "rebarDiam", 12)));
   const rebarStep = Math.max(150, Math.min(250, inputs.rebarStep ?? getInputDefault(spec, "rebarStep", 200)));
+  const sandLayerMm = Math.max(0, Math.min(500, inputs.sandLayerMm ?? getInputDefault(spec, "sandLayerMm", 100)));
+  const gravelLayerMm = Math.max(0, Math.min(500, inputs.gravelLayerMm ?? getInputDefault(spec, "gravelLayerMm", 150)));
   const insulationThickness = Math.max(0, Math.min(150, inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 0)));
 
   // Геометрия: если пользователь ввёл length и width — считаем точный прямоугольник.
   // Иначе fallback на квадратную аппроксимацию через sqrt(area). Это устраняет
   // переоценку арматуры/опалубки на вытянутых плитах (3×20 и т.п.).
-  const lengthInput = inputs.length ?? 0;
-  const widthInput = inputs.width ?? 0;
+  const lengthInput = Math.max(0, Math.min(50, inputs.length ?? 0));
+  const widthInput = Math.max(0, Math.min(50, inputs.width ?? 0));
   const useRect = lengthInput > 0 && widthInput > 0;
 
   const length = useRect ? lengthInput : Math.sqrt(areaInput);
@@ -161,17 +165,24 @@ export function computeCanonicalFoundationSlab(
   const barsPerDir = barsAlongLength;
 
   const weightPerMeter = spec.material_rules.weight_per_meter[String(rebarDiam)] ?? 0.888;
-  const concreteM3Raw = roundDisplay(area * (thickness / 1000) * spec.material_rules.concrete_reserve, 6);
+  // Чистая геометрия без запаса. Полевые поправки применяются ровно один раз
+  // ниже, при построении MIN/REC/MAX сценариев.
+  const concreteM3Raw = roundDisplay(area * (thickness / 1000), 6);
   const concreteM3 = roundDisplay(concreteM3Raw * accuracyMult, 6);
   // Длина одной сетки = (прутки вдоль длины × длина) + (прутки вдоль ширины × ширина).
   // Двух сеток (верх + низ) — × 2.
   const totalBarLen = (barsAlongLength * length + barsAlongWidth * width) * 2;
   const rebarKg = roundDisplay(totalBarLen * weightPerMeter, 6);
-  const wireKg = roundDisplay(barsAlongLength * barsAlongWidth * 2 * spec.material_rules.wire_per_joint, 6);
+  const wireKg = roundDisplay(
+    barsAlongLength * barsAlongWidth * 2 *
+      spec.material_rules.wire_length_per_joint_m *
+      spec.material_rules.wire_mass_per_meter_kg,
+    6,
+  );
   const formworkArea = roundDisplay(perimeter * (thickness / 1000) * spec.material_rules.formwork_reserve, 6);
   const geotextile = roundDisplay(area * spec.material_rules.geotextile_reserve, 6);
-  const gravel = roundDisplay(area * spec.material_rules.gravel_layer, 6);
-  const sand = roundDisplay(area * spec.material_rules.sand_layer, 6);
+  const gravel = roundDisplay(area * (gravelLayerMm / 1000), 6);
+  const sand = roundDisplay(area * (sandLayerMm / 1000), 6);
   const eppsPlates = insulationThickness > 0
     ? Math.ceil(area * spec.material_rules.insulation_reserve / spec.material_rules.epps_plate_m2)
     : 0;
@@ -216,21 +227,18 @@ export function computeCanonicalFoundationSlab(
 
   const warnings: string[] = [];
   if (thickness <= spec.warnings_rules.thin_slab_threshold_mm) {
-    warnings.push("Тонкая плита — убедитесь, что расчёт соответствует нагрузкам");
+    warnings.push("Толщина плиты должна быть подтверждена расчётом конструктора по нагрузкам и основанию");
   }
   if (area > spec.warnings_rules.large_area_threshold_m2) {
     warnings.push("Большая площадь плиты — рекомендуется профессиональный расчёт нагрузок");
   }
 
-  const practicalNotes: string[] = [];
-  if (thickness <= 150) {
-    practicalNotes.push(`Плита ${roundDisplay(thickness, 0)} мм — только для лёгких каркасных конструкций, для кирпичного дома минимум 250 мм`);
-  }
+  const practicalNotes: string[] = [
+    "Калькулятор считает объёмы по введённой схеме, но не подбирает толщину плиты, бетон и армирование",
+    "Нахлёсты, выпуски, усиления, защитный слой и раскрой арматуры добавляются по конструктивному проекту",
+  ];
   if (area > 100) {
-    practicalNotes.push(`Плита ${roundDisplay(area, 0)} м² — обязательно непрерывная заливка, иначе холодный шов ослабит конструкцию`);
-  }
-  if (rebarStep > 200) {
-    practicalNotes.push(`Шаг арматуры ${roundDisplay(rebarStep, 0)} мм — для плиты под жилой дом рекомендую не более 200 мм`);
+    practicalNotes.push(`Для плиты ${roundDisplay(area, 0)} м² заранее согласуйте с проектировщиком и поставщиком схему бетонирования и допустимые рабочие швы`);
   }
 
   return {
@@ -256,6 +264,8 @@ export function computeCanonicalFoundationSlab(
       thickness: roundDisplay(thickness, 3),
       rebarDiam: roundDisplay(rebarDiam, 3),
       rebarStep: roundDisplay(rebarStep, 3),
+      sandLayerMm: roundDisplay(sandLayerMm, 3),
+      gravelLayerMm: roundDisplay(gravelLayerMm, 3),
       insulationThickness: roundDisplay(insulationThickness, 3),
       side: roundDisplay(side, 3),
       perimeter: roundDisplay(perimeter, 3),

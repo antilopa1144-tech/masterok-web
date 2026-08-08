@@ -1759,13 +1759,11 @@ export interface FoundationSlabPackagingRules {
 
 export interface FoundationSlabMaterialRules {
   weight_per_meter: Record<string, number>;
-  wire_per_joint: number;
+  wire_length_per_joint_m: number;
+  wire_mass_per_meter_kg: number;
   epps_plate_m2: number;
   geotextile_reserve: number;
   formwork_reserve: number;
-  concrete_reserve: number;
-  gravel_layer: number;
-  sand_layer: number;
   insulation_reserve: number;
 }
 
