@@ -10,6 +10,41 @@ describe("Калькулятор обоев", () => {
     expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v2");
   });
 
+  it("web-дефолты длины рулона и запаса совпадают с canonical и Flutter", () => {
+    const rollLengthField = wallpaperDef.fields.find((field) => field.key === "rollLength");
+    const reserveRollsField = wallpaperDef.fields.find((field) => field.key === "reserveRolls");
+
+    expect(rollLengthField?.defaultValue).toBe(10.05);
+    expect(rollLengthField?.step).toBe(0.05);
+    expect(reserveRollsField?.defaultValue).toBe(0);
+  });
+
+  it("не добавляет скрытый запасной рулон, если поле запаса не передано", () => {
+    const withoutReserve = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 0,
+      doors: 1,
+      windows: 1,
+    });
+    const explicitZeroReserve = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 0,
+      doors: 1,
+      windows: 1,
+      reserveRolls: 0,
+    });
+
+    expect(withoutReserve.totals.reserveRolls).toBe(0);
+    expect(withoutReserve.totals.recPurchaseRolls).toBe(9);
+    expect(withoutReserve.totals.recPurchaseRolls).toBe(explicitZeroReserve.totals.recPurchaseRolls);
+  });
+
   describe("Canonical wallpaper fixture parity", () => {
     for (const fixtureCase of wallpaperFixture.cases) {
       it(fixtureCase.id, () => {

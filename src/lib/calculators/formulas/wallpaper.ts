@@ -15,7 +15,7 @@ export const wallpaperDef: CalculatorDefinition = {
   formulaVersion: wallpaperCanonicalSpec.formula_version,
   title: "Калькулятор обоев",
   h1: "Калькулятор обоев онлайн — расчёт количества рулонов",
-  description: "Рассчитайте точное количество рулонов обоев с учётом высоты комнаты, дверей, окон и раппорта.",
+  description: "Рассчитайте количество рулонов обоев с учётом высоты комнаты, дверей, окон и раппорта.",
   metaTitle: withSiteMetaTitle("Калькулятор обоев: расчёт материалов онлайн"),
   metaDescription: "Бесплатный калькулятор обоев: рассчитайте количество рулонов, полос, клея и грунтовки с учётом высоты комнаты, окон, дверей и раппорта узора.",
   category: "interior",
@@ -52,8 +52,8 @@ export const wallpaperDef: CalculatorDefinition = {
       unit: "м",
       min: 5,
       max: 25,
-      step: 1,
-      defaultValue: 10,
+      step: 0.05,
+      defaultValue: 10.05,
       hint: "Стандарт — 10 м, европейский — 10.05 м",
     },
     {
@@ -106,8 +106,8 @@ export const wallpaperDef: CalculatorDefinition = {
       min: 0,
       max: 5,
       step: 1,
-      defaultValue: 1,
-      hint: "Рекомендуемый запас на подрезку, брак и будущий ремонт",
+      defaultValue: 0,
+      hint: "Дополнительный целый рулон сверх выбранного сценария расчёта",
     },
     ...(manufacturerField ? [manufacturerField] : []),
   ],
@@ -142,7 +142,7 @@ export const wallpaperDef: CalculatorDefinition = {
         rollWidth,
         rapport: inputs.rapport,
         wallpaperType: inputs.wallpaperType ?? 1,
-        reserveRolls: inputs.reserveRolls ?? 1,
+        reserveRolls: inputs.reserveRolls ?? 0,
         reservePercent: inputs.reservePercent ?? 0,
         accuracyMode: inputs.accuracyMode as any,
       },
@@ -245,6 +245,5 @@ export const wallpaperDef: CalculatorDefinition = {
     ],
   },
 };
-
 
 
