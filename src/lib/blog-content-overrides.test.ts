@@ -98,6 +98,29 @@ describe("applyBlogContentOverrides", () => {
     expect(twice).toEqual(once);
   });
 
+  it("заменяет статью о доме 10×10 на расчёт с явными допущениями", () => {
+    const result = applyBlogContentOverrides(makePost({
+      slug: "skolko-kirpicha-na-dom-10x10",
+      title: "Точный расчёт 2026 года",
+      content: "<p>Ошибки проектирования сведены к минимуму.</p>",
+    }));
+
+    expect(result.title).toContain("Сколько кирпича нужно на дом 10×10");
+    expect(result.description).toContain("одноэтажный дом 10 × 10 м");
+    expect(result.relatedCalculator).toEqual({ slug: "kirpich", categorySlug: "steny" });
+    expect(result.content).toContain("чистая площадь кладки составит 105 м²");
+    expect(result.content).toContain("16 065");
+    expect(result.content).toContain("16 869");
+    expect(result.content).toContain("не определяет несущую способность");
+    expect(result.content).not.toContain("Ошибки проектирования сведены к минимуму");
+  });
+
+  it("идемпотентно применяет замену статьи о доме 10×10", () => {
+    const post = makePost({ slug: "skolko-kirpicha-na-dom-10x10" });
+    const once = applyBlogContentOverrides(post);
+    expect(applyBlogContentOverrides(once)).toEqual(once);
+  });
+
   it("не меняет остальные статьи", () => {
     const post = makePost({ slug: "drugaya-statya" });
     expect(applyBlogContentOverrides(post)).toBe(post);
