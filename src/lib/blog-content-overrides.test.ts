@@ -71,6 +71,33 @@ describe("applyBlogContentOverrides", () => {
     expect(twice).toEqual(once);
   });
 
+  it("заменяет статью о расчёте ГКЛ на проверяемую методику для стены", () => {
+    const result = applyBlogContentOverrides(makePost({
+      slug: "rasschitat-gipsokarton-na-stenu",
+      title: "Как рассчитать гипсокартон",
+      content: "<p>Лист 3000 × 1200 мм имеет площадь 3,5 м².</p>",
+    }));
+
+    expect(result.title).toContain("Расчёт гипсокартона на стену");
+    expect(result.metaTitle).toContain("листы и профиль");
+    expect(result.description).toContain("пример стены 4 × 2,7 м");
+    expect(result.relatedCalculator).toEqual({ slug: "gipsokarton", categorySlug: "steny" });
+    expect(result.content).toContain("1,2 × 3,0");
+    expect(result.content).toContain("3,6 м²");
+    expect(result.content).toContain("минимум 4 целых листа");
+    expect(result.content).toContain("Реальном");
+    expect(result.content).toContain("КНАУФ С 623");
+    expect(result.content).not.toContain("3,5 м²");
+  });
+
+  it("идемпотентно применяет полную замену статьи о расчёте ГКЛ", () => {
+    const post = makePost({ slug: "rasschitat-gipsokarton-na-stenu" });
+    const once = applyBlogContentOverrides(post);
+    const twice = applyBlogContentOverrides(once);
+
+    expect(twice).toEqual(once);
+  });
+
   it("не меняет остальные статьи", () => {
     const post = makePost({ slug: "drugaya-statya" });
     expect(applyBlogContentOverrides(post)).toBe(post);
