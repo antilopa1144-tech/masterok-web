@@ -5,6 +5,27 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(terraceDef.calculate.bind(terraceDef));
 
 describe("Калькулятор террасной доски", () => {
+  describe("Сценарий по умолчанию", () => {
+    it("web-форма использует canonical-дефолт без обработки для ДПК", () => {
+      const treatmentField = terraceDef.fields.find((field) => field.key === "withTreatment");
+
+      expect(treatmentField?.defaultValue).toBe(0);
+    });
+
+    it("не добавляет масло или антисептик, если пользователь не менял обработку", () => {
+      const result = calc({
+        length: 5,
+        width: 3,
+        boardType: 0,
+        boardLength: 3000,
+        lagStep: 400,
+      });
+
+      expect(findMaterial(result, "Масло")).toBeUndefined();
+      expect(findMaterial(result, "Антисептик")).toBeUndefined();
+    });
+  });
+
   describe("ДПК 150 мм: 5×3 м, доска 3000 мм, шаг лаг 400 мм, без обработки", () => {
     // area = 5 * 3 = 15
     // boardWidth = 150, gap = 5, boardPitch = 155/1000 = 0.155

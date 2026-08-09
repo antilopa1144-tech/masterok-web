@@ -78,11 +78,11 @@ export const terraceDef: CalculatorDefinition = {
       key: "withTreatment",
       label: "Пропитка / масло (для дерева)",
       type: "select",
-      defaultValue: 1,
+      defaultValue: 0,
       options: [
-        { value: 0, label: "Не требуется для композитной доски" },
-        { value: 1, label: "Масло для террасной доски" },
-        { value: 2, label: "Антисептик + масло (2 слоя)" },
+        { value: 0, label: "Без обработки (обычно для ДПК)" },
+        { value: 1, label: "Масло для деревянной доски" },
+        { value: 2, label: "Антисептик для деревянной доски (2 слоя)" },
       ],
     },
   ],
@@ -185,4 +185,3 @@ export const terraceDef: CalculatorDefinition = {
     ],
   },
 };
-
