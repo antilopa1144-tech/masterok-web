@@ -1,0 +1,4 @@
+interface:
+  display_name: "Проверить SEO по фактам"
+  short_description: "SEO-аудит с разделением доказательств"
+  default_prompt: "Use $audit-seo-evidence to separate verified SEO facts, live-data checks, and hypotheses before proposing changes."

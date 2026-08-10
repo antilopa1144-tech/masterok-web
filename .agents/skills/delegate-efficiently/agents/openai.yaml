@@ -1,0 +1,4 @@
+interface:
+  display_name: "Экономно делегировать"
+  short_description: "Субагенты без лишнего расхода токенов"
+  default_prompt: "Use $delegate-efficiently to split only worthwhile independent work across a small number of subagents."

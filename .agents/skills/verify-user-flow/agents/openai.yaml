@@ -1,0 +1,4 @@
+interface:
+  display_name: "Проверить пользовательский путь"
+  short_description: "Проверка реального UX калькулятора"
+  default_prompt: "Use $verify-user-flow to verify the calculator default flow, mobile behavior, validation, and result clarity."

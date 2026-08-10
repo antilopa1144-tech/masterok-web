@@ -1,0 +1,4 @@
+interface:
+  display_name: "Создать калькулятор"
+  short_description: "Полный цикл создания калькулятора"
+  default_prompt: "Use $build-calculator to implement a calculator end to end with canonical logic, parity, UI, SEO, and tests."

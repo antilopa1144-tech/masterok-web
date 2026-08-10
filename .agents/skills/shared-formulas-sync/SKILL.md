@@ -1,21 +1,26 @@
 ---
 name: shared-formulas-sync
-description: Use when changing or auditing calculation logic shared between Flutter app and Next.js site.
+description: Синхронизируй расчётный контракт masterok-web и Flutter из canonical-спеков. Используй при изменении формул, полей, типов, дефолтов, коэффициентов, упаковок, округления, MIN/REC/MAX или структуры результата, которые должны совпадать на web и mobile.
 ---
 
-# Shared formulas sync
+# Shared Formulas Sync
 
-Goal: keep calculation logic identical across Flutter and Next.js.
+## Сохранить источник истины
 
-Procedure:
-1. Search repository for all implementations of the formula.
-2. Identify the current source of truth.
-3. Compare Flutter and Next.js implementations.
-4. Update both implementations if duplicates exist.
-5. Review labels, hints, validation, and tests.
-6. Run checks.
+1. Найти canonical-спеку в `engine/` и соответствующие web/mobile consumers.
+2. Не исправлять одинаковую формулу вручную в двух UI. Менять canonical engine/config и генератор, если текущая архитектура это поддерживает.
+3. Сравнить не только числа, но и поля, типы, дефолты, единицы, validation, scenario semantics и формат результата.
 
-Rules:
-- Never update only one platform.
-- Treat rounding differences as potential bugs.
-- Do not change formula meaning unless explicitly required.
+## Синхронизировать
+
+1. Добавить или обновить deterministic web-тест до генерации.
+2. Выполнить `npm run sync:all`.
+3. Проверить diff сгенерированных Dart-спеков, parity-фикстур и meta.
+4. Если parity-файлы уже были изменены до начала задачи, не считать все новые изменения своими; сопоставить каждый затронутый slug с canonical diff.
+5. Выполнить `npm run test:parity` и релевантные тесты обеих платформ, когда mobile checkout доступен.
+
+## Разрешить расхождение
+
+При конфликте определить корректный строительный контракт, затем унифицировать обе платформы. Не закреплять случайное текущее поведение только ради зелёного parity-теста. Расхождение в округлении считать потенциальным пользовательским багом.
+
+Для полной реализации использовать `$build-calculator`; для независимой проверки формулы использовать `$audit-calculator`.

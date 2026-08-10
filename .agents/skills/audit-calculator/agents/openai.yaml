@@ -1,0 +1,4 @@
+interface:
+  display_name: "Проверить калькулятор"
+  short_description: "Аудит формул, упаковок и результата"
+  default_prompt: "Use $audit-calculator to audit this calculator for formula, units, field factors, packaging, and edge cases."

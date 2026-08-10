@@ -1,0 +1,4 @@
+interface:
+  display_name: "Диагностировать продакшен"
+  short_description: "Диагностика Timeweb, Next.js и Ghost"
+  default_prompt: "Use $diagnose-production to diagnose a Masterok production, Timeweb, Next.js, Ghost, or API incident."

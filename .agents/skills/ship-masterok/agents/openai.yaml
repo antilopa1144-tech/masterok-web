@@ -1,0 +1,4 @@
+interface:
+  display_name: "Завершить задачу Мастерок"
+  short_description: "Проверки, staging, commit, push и CI"
+  default_prompt: "Use $ship-masterok to safely verify and publish the completed Masterok changes."
