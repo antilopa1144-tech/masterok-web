@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { getCategoryById } from "@/lib/calculators/categories";
+import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -67,9 +68,19 @@ export default async function CalculatorPage({ params }: PageProps) {
   if (!calc) notFound();
 
   const category = getCategoryById(calc.category);
+  const companionOrder = new Map(
+    (CALCULATOR_COMPANIONS[calc.slug] ?? []).map((item, index) => [item.slug, index]),
+  );
   const related = ALL_CALCULATORS_META
     .filter((item) => item.slug !== calc.slug)
     .sort((a, b) => {
+      const companionA = companionOrder.get(a.slug);
+      const companionB = companionOrder.get(b.slug);
+      if (companionA !== undefined || companionB !== undefined) {
+        if (companionA === undefined) return 1;
+        if (companionB === undefined) return -1;
+        return companionA - companionB;
+      }
       const sameCategoryA = a.category === calc.category ? 1 : 0;
       const sameCategoryB = b.category === calc.category ? 1 : 0;
       return sameCategoryB - sameCategoryA || b.popularity - a.popularity;

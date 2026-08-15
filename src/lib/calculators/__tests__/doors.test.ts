@@ -1,10 +1,31 @@
 import { describe, it, expect } from "vitest";
 import { doorsDef } from "../formulas/doors";
+import { CALCULATOR_COMPANIONS } from "../companions";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(doorsDef.calculate.bind(doorsDef));
 
 describe("Калькулятор установки дверей", () => {
+  it("честно описывает расчёт монтажных материалов в сниппете", () => {
+    expect(doorsDef.metaTitle).toContain("пена, доборы, наличники");
+    expect(doorsDef.metaDescription).toContain("установки 1–20 дверей");
+    expect(doorsDef.seoContent?.descriptionHtml).toContain("не подбирает размер полотна");
+  });
+
+  it("связан с отделкой дверного проёма", () => {
+    expect(CALCULATOR_COMPANIONS["ustanovka-dverej"]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: "otkosy-okon-i-dverej" }),
+        expect.objectContaining({ slug: "krepezh" }),
+      ]),
+    );
+    expect(CALCULATOR_COMPANIONS["otkosy-okon-i-dverej"]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: "ustanovka-dverej" }),
+      ]),
+    );
+  });
+
   describe("3 двери 700×2000, стена 120 мм, с наличниками", () => {
     // doorType=0 → w=700, h=2000
     // perimM = 2*(700+2000)/1000 = 5.4

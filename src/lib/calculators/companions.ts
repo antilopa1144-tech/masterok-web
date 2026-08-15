@@ -178,10 +178,16 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "klej-dlya-plitki", reason: "Клей для камня" },
   ],
   "otkosy-okon-i-dverej": [
+    { slug: "ustanovka-dverej", reason: "Материалы для монтажа дверной коробки" },
     { slug: "shtukaturka", reason: "Штукатурка откосов" },
     { slug: "gruntovka", reason: "Грунтовка под отделку" },
     { slug: "shpaklevka", reason: "Шпаклёвка перед покраской" },
     { slug: "kraska", reason: "Покраска откосов" },
+  ],
+  "ustanovka-dverej": [
+    { slug: "otkosy-okon-i-dverej", reason: "Отделка дверных откосов" },
+    { slug: "krepezh", reason: "Дополнительный крепёж для монтажа" },
+    { slug: "shpaklevka", reason: "Подготовка откосов под покраску" },
   ],
   "vannaya-komnata": [
     { slug: "plitka", reason: "Плитка для стен и пола" },
