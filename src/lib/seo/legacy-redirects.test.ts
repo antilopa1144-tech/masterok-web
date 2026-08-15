@@ -21,6 +21,10 @@ describe("legacy calculator redirects", () => {
       "/kalkulyatory/steny/gipsokarton-potolok/",
       "/kalkulyatory/potolki/podvesnoy-potolok-gkl/",
     ],
+    [
+      "/kalkulyatory/fasad/zaborny-kalkulyator/",
+      "/kalkulyatory/fasad/zabor/",
+    ],
   ])("перенаправляет %s на актуальный калькулятор", (source, destination) => {
     expect(redirectBySource.get(source)).toEqual({
       source,

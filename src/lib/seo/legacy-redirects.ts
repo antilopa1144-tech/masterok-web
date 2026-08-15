@@ -66,6 +66,16 @@ export const LEGACY_CALCULATOR_REDIRECTS: LegacyRedirect[] = [
     destination: "/kalkulyatory/potolki/podvesnoy-potolok-gkl/",
     permanent: true,
   },
+  {
+    source: "/kalkulyatory/fasad/zaborny-kalkulyator",
+    destination: "/kalkulyatory/fasad/zabor/",
+    permanent: true,
+  },
+  {
+    source: "/kalkulyatory/fasad/zaborny-kalkulyator/",
+    destination: "/kalkulyatory/fasad/zabor/",
+    permanent: true,
+  },
 ];
 
 /**

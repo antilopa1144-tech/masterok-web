@@ -36,7 +36,7 @@ interface Props {
   blogPosts?: { slug: string; title: string; description: string; category: string }[];
   checklists?: { slug: string; title: string; description: string; category: string }[];
   tools?: ToolSearchItem[];
-  /** Синхронизация с ?q= в URL (главная + schema.org SearchAction). */
+  /** Синхронизация поискового запроса с ?q= в URL главной страницы. */
   syncUrlQuery?: boolean;
   /** Крупный вариант для hero главной: поле и явная кнопка поиска. */
   hero?: boolean;
@@ -141,7 +141,7 @@ export default function CalculatorSearch({
     return () => clearTimeout(timer);
   }, [isOpen, query, results.length]);
 
-  // SearchAction schema на главной указывает ?q= — подставляем запрос из URL.
+  // Подставляем запрос из URL, чтобы поиском можно было делиться по ссылке.
   useEffect(() => {
     if (!syncUrlQuery) return;
     const q = searchParams.get("q")?.trim();

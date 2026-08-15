@@ -77,11 +77,6 @@ export default async function HomePage() {
     name: SITE_NAME,
     url: SITE_URL,
     description: SITE_WEBPAGE_DESCRIPTION,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/?q={search_term_string}` },
-      "query-input": "required name=search_term_string",
-    },
   };
 
   const organizationLd = {
