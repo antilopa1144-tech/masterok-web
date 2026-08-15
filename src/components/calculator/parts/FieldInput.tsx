@@ -3,6 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import type { CalculatorField } from "@/lib/calculators/types";
 import { CALCULATOR_UI_TEXT } from "../uiText";
+import {
+  finalizeDecimalDraft,
+  formatDecimalValue,
+  isDecimalDraft,
+  normalizeDecimalDraft,
+  parseDecimalDraft,
+} from "./numericInput";
 // ── Компонент поля ввода ─────────────────────────────────────────────────────
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
@@ -96,6 +103,13 @@ export function FieldInput({
   onChange: (v: number) => void;
   accentColor: string;
 }) {
+  const [draftValue, setDraftValue] = useState(() => formatDecimalValue(value));
+  const isEditing = useRef(false);
+
+  useEffect(() => {
+    if (!isEditing.current) setDraftValue(formatDecimalValue(value));
+  }, [value]);
+
   if (field.type === "select" || field.type === "radio") {
     const isRadio = field.type === "radio";
     return (
@@ -189,7 +203,11 @@ export function FieldInput({
   const min = field.min ?? 0;
   const max = field.max ?? 100;
   const step = field.step ?? 1;
-  const isOutOfRange = value < min || value > max;
+  const draftNumber = Number(normalizeDecimalDraft(draftValue));
+  const hasDraftNumber = draftValue !== "" && Number.isFinite(draftNumber);
+  const isOutOfRange = hasDraftNumber
+    ? draftNumber < min || draftNumber > max
+    : value < min || value > max;
 
   return (
     <div>
@@ -197,15 +215,27 @@ export function FieldInput({
         <label className="input-label mb-0"><FieldLabel label={field.label} hint={field.hint} /></label>
         <div className="flex items-center gap-1.5">
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            value={value}
-            min={min}
-            max={max}
-            step={step}
+            value={draftValue}
+            onFocus={() => {
+              isEditing.current = true;
+            }}
             onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
+              const nextDraft = normalizeDecimalDraft(e.target.value);
+              if (!isDecimalDraft(nextDraft)) return;
+
+              setDraftValue(nextDraft);
+              const parsed = parseDecimalDraft(nextDraft);
+              if (parsed !== null) {
+                onChange(Math.max(min, Math.min(max, parsed)));
+              }
+            }}
+            onBlur={() => {
+              isEditing.current = false;
+              const finalized = finalizeDecimalDraft(draftValue, value, min, max);
+              setDraftValue(formatDecimalValue(finalized));
+              if (finalized !== value) onChange(finalized);
             }}
             className={`w-20 text-right text-base md:text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1.5 min-h-[44px] md:min-h-[36px] focus:outline-none focus:ring-2 transition-colors ${
               isOutOfRange
