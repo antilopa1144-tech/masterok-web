@@ -42,7 +42,7 @@ export default function PrivacyPage() {
 
         <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
           <p>
-            Дата последнего обновления: 26 марта 2026 года.
+            Дата последнего обновления: 16 августа 2026 года.
           </p>
 
           <section>
@@ -64,12 +64,13 @@ export default function PrivacyPage() {
             <ul>
               <li>Яндекс.Метрика — анонимная статистика посещаемости, источники трафика,
                 поведение на сайте (время на странице, глубина просмотра)</li>
+              <li>Google Analytics 4 — статистика посещаемости, просмотров страниц и
+                использования функций сайта</li>
               <li>Firebase Crashlytics (в мобильном приложении) — анонимные отчёты об ошибках
                 для повышения стабильности</li>
             </ul>
             <p>
-              Все данные аналитики являются обезличенными и не позволяют идентифицировать
-              конкретного пользователя.
+              Данные аналитики используются в агрегированном виде для улучшения сайта.
             </p>
           </section>
 
@@ -77,7 +78,7 @@ export default function PrivacyPage() {
             <h2>3. Файлы cookie</h2>
             <p>
               Сайт использует cookie для сохранения пользовательских настроек (тема оформления:
-              светлая/тёмная) и корректной работы аналитики Яндекс.Метрики. Вы можете
+              светлая/тёмная) и корректной работы Яндекс.Метрики и Google Analytics. Вы можете
               отключить cookie в настройках браузера — это не повлияет на работу калькуляторов.
             </p>
           </section>
@@ -89,6 +90,12 @@ export default function PrivacyPage() {
                 Политика конфиденциальности Яндекса:{" "}
                 <a href="https://yandex.ru/legal/confidential/" target="_blank" rel="noopener noreferrer">
                   yandex.ru/legal/confidential
+                </a>
+              </li>
+              <li><strong>Google Analytics 4</strong> — веб-аналитика (идентификатор
+                G-R0N1L7QDR3). Политика конфиденциальности Google: {" "}
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                  policies.google.com/privacy
                 </a>
               </li>
               <li><strong>Unsplash</strong> — изображения для блога (загружаются с серверов Unsplash)</li>

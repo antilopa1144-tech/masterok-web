@@ -12,7 +12,8 @@ import YandexMetrikaLoader from "@/components/analytics/YandexMetrikaLoader";
 import WebVitalsReporter from "@/components/analytics/WebVitalsReporter";
 import StorageMigrationInitializer from "@/components/storage/StorageMigrationInitializer";
 import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
-import { YANDEX_METRIKA_COUNTER } from "@/lib/analytics/config";
+import { getGoogleAnalyticsInitScript } from "@/lib/analytics/google-analytics";
+import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER } from "@/lib/analytics/config";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
@@ -38,6 +39,7 @@ const THEME_INIT_SCRIPT = `(() => {
 })();`;
 
 const YM_INIT_SCRIPT = getYandexMetrikaDeferredInitScript(YANDEX_METRIKA_COUNTER);
+const GA_INIT_SCRIPT = getGoogleAnalyticsInitScript(GOOGLE_ANALYTICS_ID);
 
 // Веса 400/500/600/700 покрывают весь дизайн (font-normal, font-medium, font-semibold,
 // font-bold). Вес 800 (font-extrabold) убран сознательно — экономит ~20-40 KB woff2 на
@@ -131,6 +133,7 @@ export default async function RootLayout({
         {/* Очередь ym должна существовать до гидрации и первого SPA-перехода.
             Сам tag.js по-прежнему загружается отложенно внутри скрипта. */}
         <script id="ym-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
+        <script id="ga-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: GA_INIT_SCRIPT }} />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <noscript>
@@ -151,6 +154,11 @@ export default async function RootLayout({
           Перейти к основному содержимому
         </a>
         <YandexMetrikaLoader />
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+          strategy="afterInteractive"
+          nonce={nonce}
+        />
         <WebVitalsReporter />
         <StorageMigrationInitializer />
         <Header />

@@ -42,11 +42,11 @@ const CYRILLIC_OR_ENCODED = /[Ѐ-ӿ]|%D[0-9A-Fa-f]/;
 function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-eval' 'nonce-${nonce}' https://mc.yandex.ru https://mc.yandex.com https://yastatic.net`,
+    `script-src 'self' 'unsafe-eval' 'nonce-${nonce}' https://mc.yandex.ru https://mc.yandex.com https://yastatic.net https://www.googletagmanager.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
+    "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
     "object-src 'none'",
     "base-uri 'self'",

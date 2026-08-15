@@ -1,17 +1,22 @@
 /**
  * Lightweight analytics event helper.
- * Sends goals/events to Yandex.Metrika when available.
+ * Sends goals/events to Yandex.Metrika and Google Analytics when available.
  */
 
-import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 
 export function trackEvent(
   target: string,
   params?: Record<string, unknown>,
 ): void {
-  if (!YANDEX_METRIKA_COUNTER_ID || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
   try {
-    (window as any).ym?.(YANDEX_METRIKA_COUNTER_ID, "reachGoal", target, params);
+    if (YANDEX_METRIKA_COUNTER_ID) {
+      window.ym?.(YANDEX_METRIKA_COUNTER_ID, "reachGoal", target, params);
+    }
+    if (GOOGLE_ANALYTICS_ID) {
+      window.gtag?.("event", target, params);
+    }
   } catch {
     // silently ignore analytics errors
   }

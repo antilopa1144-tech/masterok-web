@@ -12,10 +12,12 @@ import {
 
 describe("tool analytics", () => {
   const ym = vi.fn();
+  const gtag = vi.fn();
 
   beforeEach(() => {
     ym.mockClear();
-    vi.stubGlobal("window", { ym });
+    gtag.mockClear();
+    vi.stubGlobal("window", { ym, gtag });
   });
 
   afterEach(() => {
@@ -37,6 +39,18 @@ describe("tool analytics", () => {
       2,
       YANDEX_METRIKA_COUNTER_ID,
       "reachGoal",
+      "tool_result_view",
+      { tool: "raskladka-plitki" },
+    );
+    expect(gtag).toHaveBeenNthCalledWith(
+      1,
+      "event",
+      "tool_start",
+      { tool: "raskladka-plitki", source: "surface_size" },
+    );
+    expect(gtag).toHaveBeenNthCalledWith(
+      2,
+      "event",
       "tool_result_view",
       { tool: "raskladka-plitki" },
     );
