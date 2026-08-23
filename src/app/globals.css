@@ -534,8 +534,16 @@ input[type="range"]:focus-visible {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.wallpaper-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (min-width: 1280px) {
   .laminate-workspace {
+    grid-template-columns: 300px minmax(0, 1fr) 300px;
+  }
+
+  .wallpaper-workspace {
     grid-template-columns: 300px minmax(0, 1fr) 300px;
   }
 }

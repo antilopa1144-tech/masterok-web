@@ -45,22 +45,24 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <div className="border-b border-slate-200 bg-gradient-to-b from-orange-50 to-white dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
-        <div className="page-container py-6">
-          <Breadcrumbs items={[
-            { href: "/instrumenty/", label: "Инструменты" },
-            { label: "Раскладка обоев" },
-          ]} />
-          <h1 className="mt-4 text-2xl font-bold text-slate-900 md:text-3xl dark:text-slate-100">
+      <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+        <div className="page-container-wide py-4 sm:py-5">
+          <div className="sr-only">
+            <Breadcrumbs items={[
+              { href: "/instrumenty/", label: "Инструменты" },
+              { label: "Раскладка обоев" },
+            ]} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl dark:text-white">
             Генератор раскладки обоев
           </h1>
-          <p className="mt-2 max-w-3xl text-slate-500 dark:text-slate-400">
+          <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
             Спланируйте полосы на каждой стене и раскрой каждого рулона с учётом раппорта, прямой или смещённой подгонки рисунка.
           </p>
         </div>
       </div>
 
-      <div className="page-container py-8">
+      <div className="page-container-wide py-5 lg:py-6">
         <Suspense fallback={<div className="card animate-pulse p-8 text-sm text-slate-400">Загрузка…</div>}>
           <WallpaperLayoutGenerator />
         </Suspense>
