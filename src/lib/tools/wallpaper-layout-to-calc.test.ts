@@ -74,4 +74,35 @@ describe("wallpaper-layout-to-calc", () => {
     expect(parsed.offset).toBe(32);
     expect(parsed.trimAllowance).toBe(10);
   });
+
+  it("сохраняет визуальную конфигурацию комнаты в ссылке", () => {
+    const visual = {
+      presentationMode: "room" as const,
+      finish: "linen-blue" as const,
+      compareMode: true,
+      comparisonFinish: "terracotta-arches" as const,
+      textureScale: 150,
+      activeWallIndex: 2,
+      showWindow: true,
+      showDoor: false,
+      windowWidthM: 1.8,
+      windowHeightM: 1.3,
+      windowPositionPercent: 42,
+      doorWidthM: 0.9,
+      doorHeightM: 2.1,
+      doorPositionPercent: 80,
+    };
+    const href = buildWallpaperLayoutShareHref({ geometryMode: "rectangle", roomWidth: 4, roomLength: 5, input, visual });
+    const parsed = parseWallpaperLayoutSearchParams(new URL(href, "https://getmasterok.ru").searchParams);
+
+    expect(parsed.visual).toEqual(visual);
+  });
+
+  it("отбрасывает неизвестный декор и визуальные значения вне диапазона", () => {
+    const parsed = parseWallpaperLayoutSearchParams(new URLSearchParams(
+      "finish=unknown&textureScale=500&windowW=8&window=maybe&door=0",
+    ));
+
+    expect(parsed.visual).toEqual({ showDoor: false });
+  });
 });

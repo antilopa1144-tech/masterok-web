@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import ToolSectionNav from "@/components/tools/ToolSectionNav";
@@ -26,11 +26,11 @@ import {
   buildWallpaperCalculatorHref,
   buildWallpaperLayoutShareHref,
   parseWallpaperLayoutSearchParams,
+  type WallpaperVisualFinish,
 } from "@/lib/tools/wallpaper-layout-to-calc";
 
 type GeometryMode = "rectangle" | "walls";
 type WallpaperPresentationMode = "room" | "walls";
-type WallpaperVisualFinish = "botanical-sage" | "art-deco-greige" | "linen-blue" | "terracotta-arches";
 
 const WALLPAPER_VISUAL_FINISHES: Record<WallpaperVisualFinish, {
   label: string;
@@ -214,6 +214,8 @@ function WallpaperRoomSVG({
   doorWidthM,
   doorHeightM,
   doorPositionPercent,
+  textureSrcOverride,
+  finishLabelOverride,
   testId = "wallpaper-room-preview",
 }: {
   result: WallpaperLayoutResult;
@@ -228,10 +230,14 @@ function WallpaperRoomSVG({
   doorWidthM: number;
   doorHeightM: number;
   doorPositionPercent: number;
+  textureSrcOverride?: string;
+  finishLabelOverride?: string;
   testId?: string;
 }) {
   const uid = useId().replace(/:/g, "");
   const palette = WALLPAPER_VISUAL_FINISHES[finish];
+  const textureSrc = textureSrcOverride ?? palette.textureSrc;
+  const finishLabel = finishLabelOverride ?? palette.label;
   const wall = result.walls[Math.min(wallIndex, Math.max(result.walls.length - 1, 0))];
   if (!wall) return null;
   const patternId = `wallpaper-room-pattern-${uid}`;
@@ -263,11 +269,11 @@ function WallpaperRoomSVG({
       viewBox="0 0 760 430"
       className="h-auto w-full rounded-xl border border-slate-200 bg-[#e9e5df] dark:border-slate-700"
       role="img"
-      aria-label={`Объёмная модель комнаты: ${wall.name}, декор ${palette.label.toLowerCase()}`}
+      aria-label={`Объёмная модель комнаты: ${wall.name}, декор ${finishLabel.toLowerCase()}`}
     >
       <defs>
         <pattern id={patternId} width={patternSize} height={patternSize} patternUnits="userSpaceOnUse">
-          <image href={palette.textureSrc} width={patternSize} height={patternSize} preserveAspectRatio="xMidYMid slice" />
+          <image href={textureSrc} width={patternSize} height={patternSize} preserveAspectRatio="xMidYMid slice" />
         </pattern>
         <filter id={shadowId} x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#1f2937" floodOpacity="0.22" />
@@ -409,10 +415,13 @@ export default function WallpaperLayoutGenerator() {
   const [trimAllowance, setTrimAllowance] = useState(10);
   const [reserveRolls, setReserveRolls] = useState(1);
   const [showAllRolls, setShowAllRolls] = useState(false);
-  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "copied-without-photo">("idle");
   const [exportState, setExportState] = useState<"idle" | "preparing" | "done" | "error">("idle");
   const [presentationMode, setPresentationMode] = useState<WallpaperPresentationMode>("room");
   const [visualFinish, setVisualFinish] = useState<WallpaperVisualFinish>("botanical-sage");
+  const [customTexture, setCustomTexture] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [useCustomTexture, setUseCustomTexture] = useState(false);
+  const [textureUploadError, setTextureUploadError] = useState<string | null>(null);
   const [comparisonFinish, setComparisonFinish] = useState<WallpaperVisualFinish>("art-deco-greige");
   const [compareMode, setCompareMode] = useState(false);
   const [textureScale, setTextureScale] = useState(100);
@@ -456,6 +465,20 @@ export default function WallpaperLayoutGenerator() {
     if (parsed.offset != null) setOffset(parsed.offset);
     if (parsed.trimAllowance != null) setTrimAllowance(parsed.trimAllowance);
     if (parsed.reserveRolls != null) setReserveRolls(parsed.reserveRolls);
+    if (parsed.visual?.presentationMode != null) setPresentationMode(parsed.visual.presentationMode);
+    if (parsed.visual?.finish != null) setVisualFinish(parsed.visual.finish);
+    if (parsed.visual?.compareMode != null) setCompareMode(parsed.visual.compareMode);
+    if (parsed.visual?.comparisonFinish != null) setComparisonFinish(parsed.visual.comparisonFinish);
+    if (parsed.visual?.textureScale != null) setTextureScale(parsed.visual.textureScale);
+    if (parsed.visual?.activeWallIndex != null) setActiveWallIndex(parsed.visual.activeWallIndex);
+    if (parsed.visual?.showWindow != null) setShowWindow(parsed.visual.showWindow);
+    if (parsed.visual?.showDoor != null) setShowDoor(parsed.visual.showDoor);
+    if (parsed.visual?.windowWidthM != null) setWindowWidthM(parsed.visual.windowWidthM);
+    if (parsed.visual?.windowHeightM != null) setWindowHeightM(parsed.visual.windowHeightM);
+    if (parsed.visual?.windowPositionPercent != null) setWindowPositionPercent(parsed.visual.windowPositionPercent);
+    if (parsed.visual?.doorWidthM != null) setDoorWidthM(parsed.visual.doorWidthM);
+    if (parsed.visual?.doorHeightM != null) setDoorHeightM(parsed.visual.doorHeightM);
+    if (parsed.visual?.doorPositionPercent != null) setDoorPositionPercent(parsed.visual.doorPositionPercent);
   }, [searchParams]);
 
   const walls = useMemo(
@@ -481,10 +504,14 @@ export default function WallpaperLayoutGenerator() {
     () => buildWallpaperCalculatorHref(result.input, result.purchaseRolls),
     [result],
   );
+  const visualFinishLabel = useCustomTexture && customTexture != null
+    ? `Свои обои: ${customTexture.name}`
+    : WALLPAPER_VISUAL_FINISHES[visualFinish].label;
+  const visualSummary = `${visualFinishLabel}${compareMode ? ` ↔ ${WALLPAPER_VISUAL_FINISHES[comparisonFinish].label}` : ""} · масштаб ${textureScale}% · ${showWindow ? "с окном" : "без окна"} · ${showDoor ? "с дверью" : "без двери"}`;
   const projectMaterials = useMemo(() => [
-    { name: "Обои к покупке", quantity: result.purchaseRolls, unit: "рулонов", category: "Обои" },
+    { name: "Обои к покупке", subtitle: visualSummary, quantity: result.purchaseRolls, unit: "рулонов", category: "Обои" },
     { name: "Площадь стен без вычета проёмов", quantity: result.wallAreaM2, unit: "м²", category: "Обои" },
-  ], [result.purchaseRolls, result.wallAreaM2]);
+  ], [result.purchaseRolls, result.wallAreaM2, visualSummary]);
 
   const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -504,6 +531,35 @@ export default function WallpaperLayoutGenerator() {
     start("surface_size");
     setCustomWalls((current) => current.map((wall) => wall.id === id ? { ...wall, lengthM: value } : wall));
   };
+
+  const uploadCustomTexture = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type)) {
+      setTextureUploadError("Поддерживаются JPG, PNG и WebP.");
+      input.value = "";
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setTextureUploadError("Файл больше 8 МБ. Уменьшите изображение и попробуйте снова.");
+      input.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        setTextureUploadError("Не удалось прочитать изображение.");
+        return;
+      }
+      setCustomTexture({ name: file.name, dataUrl: reader.result });
+      setUseCustomTexture(true);
+      setTextureUploadError(null);
+    };
+    reader.onerror = () => setTextureUploadError("Не удалось прочитать изображение.");
+    reader.readAsDataURL(file);
+    input.value = "";
+  }, []);
 
   const exportPng = useCallback(async () => {
     const svg = svgRef.current?.querySelector("svg");
@@ -547,6 +603,22 @@ export default function WallpaperLayoutGenerator() {
       roomWidth,
       roomLength,
       input: result.input,
+      visual: {
+        presentationMode,
+        finish: visualFinish,
+        compareMode,
+        comparisonFinish,
+        textureScale,
+        activeWallIndex: resolvedActiveWallIndex,
+        showWindow,
+        showDoor,
+        windowWidthM,
+        windowHeightM,
+        windowPositionPercent,
+        doorWidthM,
+        doorHeightM,
+        doorPositionPercent,
+      },
     });
     const outcome = await shareOrCopy({
       title: "Раскладка обоев",
@@ -554,10 +626,10 @@ export default function WallpaperLayoutGenerator() {
       url: `${window.location.origin}${href}`,
     });
     if (outcome === "copied") {
-      setShareState("copied");
+      setShareState(useCustomTexture && customTexture != null ? "copied-without-photo" : "copied");
       window.setTimeout(() => setShareState("idle"), 2500);
     }
-  }, [geometryMode, result, roomLength, roomWidth]);
+  }, [compareMode, comparisonFinish, customTexture, doorHeightM, doorPositionPercent, doorWidthM, geometryMode, presentationMode, resolvedActiveWallIndex, result, roomLength, roomWidth, showDoor, showWindow, textureScale, useCustomTexture, visualFinish, windowHeightM, windowPositionPercent, windowWidthM]);
 
   return (
     <div className="space-y-4">
@@ -726,13 +798,32 @@ export default function WallpaperLayoutGenerator() {
           <p className="mt-3 text-[10px] font-semibold text-slate-500 dark:text-slate-400">Вариант A</p>
           <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Декор обоев, вариант A">
             {(Object.entries(WALLPAPER_VISUAL_FINISHES) as [WallpaperVisualFinish, (typeof WALLPAPER_VISUAL_FINISHES)[WallpaperVisualFinish]][]).map(([value, finish]) => (
-              <button key={value} type="button" aria-pressed={visualFinish === value} onClick={() => setVisualFinish(value)} className={`min-h-16 rounded-xl border p-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${visualFinish === value ? "border-orange-500 bg-white shadow-sm ring-1 ring-orange-500/20 dark:bg-slate-900" : "border-slate-200 bg-white/70 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900/60"}`}>
+              <button key={value} type="button" aria-pressed={!useCustomTexture && visualFinish === value} onClick={() => { setVisualFinish(value); setUseCustomTexture(false); }} className={`min-h-16 rounded-xl border p-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${!useCustomTexture && visualFinish === value ? "border-orange-500 bg-white shadow-sm ring-1 ring-orange-500/20 dark:bg-slate-900" : "border-slate-200 bg-white/70 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900/60"}`}>
                 <span className="block h-8 rounded-lg bg-cover bg-center shadow-inner" style={{ backgroundImage: `url(${finish.textureSrc})` }} />
                 <span className="mt-1.5 block truncate text-[10px] font-semibold text-slate-700 dark:text-slate-200">{finish.label}</span>
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{WALLPAPER_VISUAL_FINISHES[visualFinish].description}</p>
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{useCustomTexture && customTexture != null ? `Загружено локально: ${customTexture.name}` : WALLPAPER_VISUAL_FINISHES[visualFinish].description}</p>
+          <div className="mt-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/60 p-3 dark:border-orange-800 dark:bg-orange-950/20">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg bg-orange-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-orange-700">
+                Загрузить свои обои
+                <input data-testid="wallpaper-custom-texture-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadCustomTexture} className="sr-only" />
+              </label>
+              {customTexture != null && (
+                <>
+                  <button type="button" aria-pressed={useCustomTexture} onClick={() => setUseCustomTexture(true)} className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border px-2 text-left text-[10px] font-semibold ${useCustomTexture ? "border-orange-500 bg-white text-orange-700 ring-1 ring-orange-500/20 dark:bg-slate-900 dark:text-orange-300" : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"}`}>
+                    <span className="size-8 shrink-0 rounded-md bg-cover bg-center" style={{ backgroundImage: `url(${customTexture.dataUrl})` }} />
+                    <span className="truncate">{customTexture.name}</span>
+                  </button>
+                  <button type="button" aria-label="Удалить загруженные обои" onClick={() => { setCustomTexture(null); setUseCustomTexture(false); setTextureUploadError(null); }} className="min-h-11 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 hover:border-rose-300 hover:text-rose-600 dark:border-slate-700">Удалить</button>
+                </>
+              )}
+            </div>
+            <p className="mt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">JPG, PNG или WebP до 8 МБ. Фото используется локально в этой вкладке, не отправляется на сервер и не добавляется в общую ссылку.</p>
+            {textureUploadError != null && <p role="alert" className="mt-2 text-[10px] font-medium text-rose-600 dark:text-rose-400">{textureUploadError}</p>}
+          </div>
           {compareMode && (
             <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
               <p className="text-[10px] font-semibold text-violet-600 dark:text-violet-300">Вариант B</p>
@@ -813,8 +904,8 @@ export default function WallpaperLayoutGenerator() {
           {presentationMode === "room" ? (
             <div data-testid="wallpaper-room-comparison" className={compareMode ? "grid gap-3 lg:grid-cols-2" : undefined}>
               <figure>
-                {compareMode && <figcaption className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-orange-700 dark:text-orange-300">Вариант A · {WALLPAPER_VISUAL_FINISHES[visualFinish].label}</figcaption>}
-                <WallpaperRoomSVG result={result} wallIndex={resolvedActiveWallIndex} finish={visualFinish} textureScale={textureScale} showWindow={showWindow} showDoor={showDoor} windowWidthM={windowWidthM} windowHeightM={windowHeightM} windowPositionPercent={windowPositionPercent} doorWidthM={doorWidthM} doorHeightM={doorHeightM} doorPositionPercent={doorPositionPercent} />
+                {compareMode && <figcaption className="mb-2 truncate text-[10px] font-bold uppercase tracking-[0.14em] text-orange-700 dark:text-orange-300">Вариант A · {visualFinishLabel}</figcaption>}
+                <WallpaperRoomSVG result={result} wallIndex={resolvedActiveWallIndex} finish={visualFinish} textureScale={textureScale} showWindow={showWindow} showDoor={showDoor} windowWidthM={windowWidthM} windowHeightM={windowHeightM} windowPositionPercent={windowPositionPercent} doorWidthM={doorWidthM} doorHeightM={doorHeightM} doorPositionPercent={doorPositionPercent} textureSrcOverride={useCustomTexture ? customTexture?.dataUrl : undefined} finishLabelOverride={useCustomTexture && customTexture != null ? `свои обои ${customTexture.name}` : undefined} />
               </figure>
               {compareMode && (
                 <figure>
@@ -902,7 +993,7 @@ export default function WallpaperLayoutGenerator() {
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Link href={calculatorHref} onClick={() => trackToolRelatedClick("raskladka-oboev", "wallpaper-calculator")} className="btn-primary inline-flex text-sm no-underline">Клей и грунтовка →</Link>
             <button type="button" onClick={shareLayout} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition-colors hover:border-orange-300 hover:text-orange-700 dark:border-slate-700 dark:text-slate-300">
-              {shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}
+              {shareState === "copied" ? "Ссылка с настройками скопирована" : shareState === "copied-without-photo" ? "Ссылка скопирована без фото" : "Поделиться раскладкой"}
             </button>
             <SaveToProjectButton calcId="instrument-raskladka-oboev" calcTitle="Раскладка обоев" slug="oboi" categorySlug="otdelka" materials={projectMaterials} calendarScenarioId="room" />
           </div>
