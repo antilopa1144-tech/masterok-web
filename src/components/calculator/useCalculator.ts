@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CalculatorResult, CalculatorField } from "@/lib/calculators/types";
 import { fieldUsesDynamicOptions } from "@/lib/calculators/insulation-smart";
@@ -14,6 +14,7 @@ import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { shareOrCopy } from "@/lib/clipboard";
 import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackCalculatorStart, trackComparisonOpen } from "@/lib/analytics";
+import { getInvalidCalculatorFields } from "./calculatorValidation";
 import {
   addCalculationHistory,
   getAccuracyModeSetting,
@@ -48,6 +49,19 @@ export interface HistoryEntry {
   values: Record<string, number>;
   result: CalculatorResult;
   ts: number;
+}
+
+function getVisibleCalculatorFields(
+  calculator: CalculatorWidgetProps,
+  values: Record<string, number>,
+): CalculatorField[] {
+  return calculator.fields
+    .filter((field) => isFieldVisible(field, values))
+    .map((field) => {
+      if (!fieldUsesDynamicOptions(field)) return field;
+      const resolved = resolveFieldOptions(field, values);
+      return resolved ? { ...field, options: resolved } : field;
+    });
 }
 
 export function formatNumber(n: number): string {
@@ -92,6 +106,15 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const hasTrackedStartRef = useRef(false);
 
   const category = getCategoryById(calculator.category);
+  const visibleFields = useMemo(
+    () => getVisibleCalculatorFields(calculator, values),
+    [calculator, values],
+  );
+  const invalidFields = useMemo(
+    () => getInvalidCalculatorFields(visibleFields, values),
+    [visibleFields, values],
+  );
+  const hasValidationErrors = invalidFields.length > 0;
 
   // Загружаем историю при монтировании
   useEffect(() => {
@@ -122,6 +145,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       void getCalculateFn(calculator.slug).then((fn) => {
         if (fn) {
           const initVals = getInitialValues();
+          const initialFields = getVisibleCalculatorFields(calculator, initVals);
+          if (getInvalidCalculatorFields(initialFields, initVals).length > 0) return;
           const res = fn({ ...initVals, accuracyMode: accuracyMode as unknown as number });
           setResult(res);
           setHasCalculated(true);
@@ -139,6 +164,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   const runAutoCalc = useCallback((newValues: Record<string, number>) => {
     clearTimeout(debounceRef.current);
+    const nextFields = getVisibleCalculatorFields(calculator, newValues);
+    if (getInvalidCalculatorFields(nextFields, newValues).length > 0) return;
     debounceRef.current = setTimeout(() => {
       void getCalculateFn(calculator.slug).then((fn) => {
         if (!fn) return;
@@ -155,7 +182,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         }
       });
     }, 300);
-  }, [calculator.slug]);
+  }, [calculator]);
 
   // Очистка таймера при размонтировании
   useEffect(() => () => clearTimeout(debounceRef.current), []);
@@ -182,6 +209,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     if (mode !== "custom") void setAccuracyModeSetting(mode);
     // Apply or clear custom modifiers
     setCustomModifiers(mode === "custom" ? customModifiers : null);
+    if (hasValidationErrors) return;
     // Trigger recalculation with new mode
     clearTimeout(debounceRef.current);
     void getCalculateFn(calculator.slug).then((fn) => {
@@ -190,10 +218,11 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       setResult(res);
       setHasCalculated(true);
     });
-  }, [calculator.slug, values, accuracyMode, customModifiers]);
+  }, [calculator.slug, values, accuracyMode, customModifiers, hasValidationErrors]);
 
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
+    if (hasValidationErrors) return false;
     void getCalculateFn(calculator.slug).then((fn) => {
       if (!fn) return;
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
@@ -212,7 +241,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       };
       void addCalculationHistory(entry).then(setHistory);
     });
-  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode]);
+    return true;
+  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors]);
 
   const handleReset = useCallback(() => {
     const defaults = Object.fromEntries(
@@ -328,31 +358,21 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
   }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
 
-  // Фильтруем поля по inputMode и по hideIf-условиям (общий предикат
-  // isFieldVisible — тот же, что использует контекст Михалыча), и подменяем
-  // динамические options (зависящие от выбранного бренда — `optionsFromBrand`).
-  const visibleFields = calculator.fields
-    .filter((f) => isFieldVisible(f, values))
-    .map((f) => {
-      if (!fieldUsesDynamicOptions(f)) return f;
-      const resolved = resolveFieldOptions(f, values);
-      if (!resolved) return f;
-      return { ...f, options: resolved };
-    });
-
   // История только для текущего калькулятора
   const calcHistory = history.filter((h) => h.calcId === calculator.id);
 
   return {
     values,
-    result,
-    hasCalculated,
+    result: hasValidationErrors ? null : result,
+    hasCalculated: hasValidationErrors ? false : hasCalculated,
     calcNonce,
     shareState,
     showHistory,
     setShowHistory,
     category,
     visibleFields,
+    invalidFields,
+    hasValidationErrors,
     calcHistory,
     accuracyMode,
     accuracyHint,

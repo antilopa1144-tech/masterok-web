@@ -99,6 +99,9 @@ export type ToolInteractionSource =
   | "material_size"
   | "layout_mode"
   | "joint_width"
+  | "material_reserve"
+  | "material_packaging"
+  | "opening"
   | "preset";
 
 export function trackToolStart(tool: string, source: ToolInteractionSource): void {
@@ -125,7 +128,7 @@ export function trackToolPresetSelect(
   });
 }
 
-export function trackToolExport(tool: string, format: "png"): void {
+export function trackToolExport(tool: string, format: "png" | "pdf" | "share"): void {
   trackEvent("tool_export", { tool, format });
 }
 

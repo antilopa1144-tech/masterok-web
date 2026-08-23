@@ -22,13 +22,31 @@ export interface Material {
   category?: string;
 }
 
-interface EstimateData {
+export interface PdfVisual {
+  title: string;
+  dataUrl: string;
+  aspectRatio: number;
+}
+
+export interface PdfPassportSummary {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  metrics: Array<{ label: string; value: string }>;
+  procurement: string;
+  related: string[];
+}
+
+export interface EstimateData {
   calculatorName: string;
   date: string;
   materials: Material[];
   totals?: Record<string, number>;
   warnings?: string[];
   accuracyModeLabel?: string;
+  visuals?: PdfVisual[];
+  passport?: PdfPassportSummary;
 }
 
 const EXPORT_TITLE = `${SITE_NAME} — смета материалов`;
@@ -77,13 +95,22 @@ function binaryToBase64(bytes: Uint8Array): string {
 }
 
 /** Подключает Roboto из /public для корректной кириллицы в PDF */
-async function applyRobotoFont(doc: import('jspdf').jsPDF): Promise<boolean> {
+async function applyRobotoFont(
+  doc: import('jspdf').jsPDF,
+  fontBase64?: string,
+): Promise<boolean> {
   try {
-    const res = await fetch('/fonts/Roboto-Regular.ttf');
-    if (!res.ok) return false;
-    const base64 = binaryToBase64(new Uint8Array(await res.arrayBuffer()));
+    let base64 = fontBase64;
+    if (!base64) {
+      const res = await fetch('/fonts/Roboto-Regular.ttf');
+      if (!res.ok) return false;
+      base64 = binaryToBase64(new Uint8Array(await res.arrayBuffer()));
+    }
     doc.addFileToVFS('Roboto-Regular.ttf', base64);
     doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    // В public пока хранится одно начертание. Регистрируем тот же файл и для
+    // bold, иначе jsPDF переключается на встроенный шрифт без кириллицы.
+    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'bold');
     doc.setFont('Roboto', 'normal');
     return true;
   } catch {
@@ -138,12 +165,15 @@ function groupMaterialsByCategory(materials: Material[]): [string, Material[]][]
   return Object.entries(groups);
 }
 
-export async function exportToPDF(data: EstimateData): Promise<void> {
+export async function buildEstimatePdfDocument(
+  data: EstimateData,
+  options: { fontBase64?: string } = {},
+): Promise<import('jspdf').jsPDF> {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  const hasRoboto = await applyRobotoFont(doc);
+  const hasRoboto = await applyRobotoFont(doc, options.fontBase64);
   if (!hasRoboto) {
     doc.setFont('helvetica', 'normal');
   }
@@ -171,6 +201,107 @@ export async function exportToPDF(data: EstimateData): Promise<void> {
     y += 5;
   }
   y += 3;
+
+  const visuals = data.visuals
+    ?.filter((visual) => visual.dataUrl.startsWith('data:image/png') && visual.aspectRatio > 0)
+    .slice(0, 2);
+  if (visuals && visuals.length > 0) {
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text('Схема раскладки', margin, y);
+    y += 6;
+
+    const gap = 5;
+    const cardWidth = visuals.length === 1
+      ? Math.min(112, pageW - margin * 2)
+      : (pageW - margin * 2 - gap) / 2;
+    const cardHeight = 58;
+    const imageMaxWidth = cardWidth - 4;
+    const imageMaxHeight = 47;
+
+    visuals.forEach((visual, index) => {
+      const x = margin + index * (cardWidth + gap);
+      const imageWidth = Math.min(imageMaxWidth, imageMaxHeight * visual.aspectRatio);
+      const imageHeight = imageWidth / visual.aspectRatio;
+      const imageX = x + (cardWidth - imageWidth) / 2;
+      const imageY = y + 8;
+
+      doc.setDrawColor(220, 224, 230);
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
+      doc.setFontSize(8.5);
+      doc.setTextColor(PDF_MUTED[0], PDF_MUTED[1], PDF_MUTED[2]);
+      doc.text(visual.title, x + cardWidth / 2, y + 5, { align: 'center' });
+      doc.addImage(visual.dataUrl, 'PNG', imageX, imageY, imageWidth, imageHeight, undefined, 'FAST');
+    });
+
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'normal');
+    y += cardHeight + 7;
+  }
+
+  if (data.passport) {
+    const passport = data.passport;
+    const cardHeight = 49;
+    if (y + cardHeight > doc.internal.pageSize.getHeight() - 18) {
+      doc.addPage();
+      y = margin;
+    }
+
+    doc.setDrawColor(225, 228, 233);
+    doc.setFillColor(252, 252, 251);
+    doc.roundedRect(margin, y, pageW - margin * 2, cardHeight, 2.5, 2.5, 'FD');
+
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(PDF_ORANGE[0], PDF_ORANGE[1], PDF_ORANGE[2]);
+    doc.text(passport.eyebrow.toUpperCase(), margin + 4, y + 5);
+
+    doc.setFontSize(11);
+    doc.setTextColor(25, 25, 25);
+    doc.text(passport.title, margin + 4, y + 10);
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'normal');
+    doc.setFontSize(7.6);
+    doc.setTextColor(PDF_MUTED[0], PDF_MUTED[1], PDF_MUTED[2]);
+    doc.text(doc.splitTextToSize(passport.subtitle, pageW - margin * 2 - 48)[0], margin + 4, y + 14.5);
+
+    const badgeWidth = Math.min(43, Math.max(25, doc.getTextWidth(passport.badge) + 7));
+    doc.setFillColor(236, 253, 245);
+    doc.roundedRect(pageW - margin - badgeWidth - 4, y + 4, badgeWidth, 6, 2, 2, 'F');
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(4, 120, 87);
+    doc.text(passport.badge, pageW - margin - badgeWidth / 2 - 4, y + 7.9, { align: 'center' });
+
+    const metrics = passport.metrics.slice(0, 4);
+    const metricGap = 2;
+    const metricWidth = (pageW - margin * 2 - 8 - metricGap * (metrics.length - 1)) / metrics.length;
+    metrics.forEach((metric, index) => {
+      const x = margin + 4 + index * (metricWidth + metricGap);
+      doc.setFillColor(247, 248, 250);
+      doc.roundedRect(x, y + 18, metricWidth, 11, 1.5, 1.5, 'F');
+      doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(metric.label.toUpperCase(), x + 2, y + 21.8);
+      doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(25, 25, 25);
+      doc.text(metric.value, x + 2, y + 27);
+    });
+
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'normal');
+    doc.setFontSize(7.3);
+    doc.setTextColor(55, 55, 55);
+    doc.text(doc.splitTextToSize(passport.procurement, pageW - margin * 2 - 8)[0], margin + 4, y + 34);
+    passport.related.slice(0, 2).forEach((item, index) => {
+      doc.setTextColor(index === 0 ? 146 : 4, index === 0 ? 64 : 120, index === 0 ? 14 : 87);
+      const line = doc.splitTextToSize(item, pageW - margin * 2 - 8)[0];
+      doc.text(line, margin + 4, y + 39 + index * 4);
+    });
+    doc.setFont(hasRoboto ? 'Roboto' : 'helvetica', 'normal');
+    y += cardHeight + 7;
+  }
 
   type Row = (string | { content: string; colSpan: number; styles?: Record<string, unknown> })[];
   const tableBody: Row[] = [];
@@ -295,6 +426,11 @@ export async function exportToPDF(data: EstimateData): Promise<void> {
     doc.text(footer, margin, doc.internal.pageSize.getHeight() - 8);
   }
 
+  return doc;
+}
+
+export async function exportToPDF(data: EstimateData): Promise<void> {
+  const doc = await buildEstimatePdfDocument(data);
   const filename = `smeta-${safeFilenamePart(data.calculatorName)}-${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 }
@@ -352,7 +488,9 @@ export function useEstimateExport(calculatorName: string) {
     materials: Material[],
     totals?: Record<string, number>,
     warnings?: string[],
-    accuracyModeLabel?: string
+    accuracyModeLabel?: string,
+    visuals?: PdfVisual[],
+    passport?: PdfPassportSummary,
   ) => {
     const data: EstimateData = {
       calculatorName,
@@ -361,11 +499,13 @@ export function useEstimateExport(calculatorName: string) {
       totals,
       warnings,
       accuracyModeLabel,
+      visuals,
+      passport,
     };
 
     return {
-      toPDF: () => void exportToPDF(data),
-      toExcel: () => void exportToExcel(data),
+      toPDF: () => exportToPDF(data),
+      toExcel: () => exportToExcel(data),
     };
   };
 

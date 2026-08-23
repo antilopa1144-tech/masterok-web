@@ -24,9 +24,13 @@ describe("числовой ввод калькулятора", () => {
     expect(parseDecimalDraft(normalizeDecimalDraft("5,5"))).toBe(5.5);
   });
 
-  it("на выходе из поля восстанавливает или ограничивает значение", () => {
-    expect(finalizeDecimalDraft("", 10, 0, 100)).toBe(10);
-    expect(finalizeDecimalDraft("5.", 10, 0, 100)).toBe(5);
-    expect(finalizeDecimalDraft("150", 10, 0, 100)).toBe(100);
+  it("на выходе из поля восстанавливает незавершённый ввод", () => {
+    expect(finalizeDecimalDraft("", 10)).toBe(10);
+    expect(finalizeDecimalDraft("5.", 10)).toBe(5);
+  });
+
+  it("не подменяет неверное значение допустимой границей", () => {
+    expect(finalizeDecimalDraft("-1", 10)).toBe(-1);
+    expect(finalizeDecimalDraft("150", 10)).toBe(150);
   });
 });

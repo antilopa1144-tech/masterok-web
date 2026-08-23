@@ -16,6 +16,7 @@ import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { pluralizeRu } from "@/lib/format/pluralize";
 import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
+import { buildTileLayoutHrefFromCalculatorValues } from "@/lib/tools/tile-layout-to-calc";
 import {
   buildLaminateLayoutHref,
   LAMINATE_LAYOUT_TRANSFER_FROM,
@@ -66,6 +67,8 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     setShowHistory,
     category,
     visibleFields,
+    invalidFields,
+    hasValidationErrors,
     calcHistory,
     handleChange,
     handleCalculate,
@@ -77,6 +80,17 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const accentColor = category?.color ?? "#f97316";
   const mobileCollapsedCount = Math.max(0, visibleFields.length - MOBILE_PRIMARY_FIELD_COUNT);
   const desktopCollapsedCount = Math.max(0, visibleFields.length - DESKTOP_PRIMARY_FIELD_COUNT);
+
+  const triggerCalculate = () => {
+    if (handleCalculate()) return;
+
+    setShowAllFields(true);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`calculator-field-${invalidFields[0]?.field.key}`)?.focus();
+      });
+    });
+  };
 
   const reviewInput = useMemo(() => {
     if (!hasCalculated || !result || result.materials.length === 0) return null;
@@ -136,20 +150,20 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
 
       {hasCalculated && result && (
         <nav className="sticky top-[4.5rem] z-20 grid grid-cols-2 gap-1.5 rounded-xl border border-slate-200 bg-white/95 p-1.5 shadow-lg shadow-slate-900/5 backdrop-blur sm:hidden dark:border-slate-700 dark:bg-slate-900/95" aria-label="Навигация по расчёту" data-print-hide>
-          <button type="button" onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-slate-600 dark:text-slate-300">Параметры</button>
-          <button type="button" onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="min-h-10 rounded-lg bg-accent-700 px-3 text-sm font-semibold text-white">Результат ↓</button>
+          <button type="button" onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="min-h-11 rounded-lg px-3 text-sm font-semibold text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 dark:text-slate-300">Параметры</button>
+          <button type="button" onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="min-h-11 rounded-lg bg-accent-700 px-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50">Результат ↓</button>
         </nav>
       )}
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <section ref={formRef} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-24 sm:p-6 dark:border-slate-700 dark:bg-slate-900" data-print-hide aria-labelledby="calculator-parameters-title">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 id="calculator-parameters-title" className="text-xl font-bold text-slate-950 dark:text-white">Параметры расчёта</h2>
-            <div className="flex items-center gap-3">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <h2 id="calculator-parameters-title" className="mr-auto text-xl font-bold text-slate-950 dark:text-white">Параметры расчёта</h2>
+            <div className="ml-auto flex shrink-0 items-center gap-3">
               {calcHistory.length > 0 && (
-                <button type="button" onClick={() => setShowHistory(!showHistory)} className="text-sm font-medium text-slate-400 hover:text-accent-700" title={CALCULATOR_UI_TEXT.historyTitle}>История · {calcHistory.length}</button>
+                <button type="button" onClick={() => setShowHistory(!showHistory)} className="whitespace-nowrap text-sm font-medium text-slate-400 hover:text-accent-700" title={CALCULATOR_UI_TEXT.historyTitle}>История · {calcHistory.length}</button>
               )}
-              <button type="button" onClick={() => { handleReset(); setShowAllFields(false); }} className="text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Сбросить</button>
+              <button type="button" onClick={() => { handleReset(); setShowAllFields(false); }} className="whitespace-nowrap text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Сбросить</button>
             </div>
           </div>
 
@@ -179,7 +193,30 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             </button>
           )}
 
-          <button type="button" onClick={handleCalculate} className="btn-primary mt-5 min-h-12 w-full text-base">Рассчитать</button>
+          {hasValidationErrors && (
+            <p id="calculator-validation-summary" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300" role="alert">
+              Проверьте выделенные поля: значение должно быть в указанном диапазоне.
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={triggerCalculate}
+            aria-describedby={hasValidationErrors ? "calculator-validation-summary" : undefined}
+            className="btn-primary mt-5 min-h-12 w-full text-base"
+          >
+            {hasValidationErrors ? "Исправьте параметры" : "Рассчитать"}
+          </button>
+
+          {calculator.slug === "plitka" && (
+            <Link
+              href={buildTileLayoutHrefFromCalculatorValues(values)}
+              onClick={() => trackCalculatorRelatedClick("plitka", "raskladka-plitki")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800 no-underline dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300"
+            >
+              Увидеть плитку, швы и подрезку на схеме <span aria-hidden>→</span>
+            </Link>
+          )}
 
           {calculator.slug === "laminat" && (
             <Link

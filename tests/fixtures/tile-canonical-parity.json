@@ -1,5 +1,5 @@
 {
-  "formulaVersion": "tile-canonical-v2",
+  "formulaVersion": "tile-canonical-v3",
   "cases": [
     {
       "id": "room_straight_30x30",
@@ -18,7 +18,7 @@
       "expected": {
         "area": 12,
         "wastePercent": 10,
-        "formulaVersion": "tile-canonical-v2",
+        "formulaVersion": "tile-canonical-v3",
         "materials": {
           "tiles": 160,
           "tilePackages": 10,
@@ -27,7 +27,7 @@
           "primerCans": 5,
           "crosses": 192
         },
-        "warningsCount": 0,
+        "warningsCount": 1,
         "recScenario": {
           "packageSize": 16,
           "exactNeed": 146.666667,
@@ -50,7 +50,7 @@
       "expected": {
         "area": 20,
         "wastePercent": 25,
-        "formulaVersion": "tile-canonical-v2",
+        "formulaVersion": "tile-canonical-v3",
         "materials": {
           "tiles": 40,
           "tilePackages": 20,
@@ -59,7 +59,7 @@
           "primerCans": 5,
           "svpPackages": 1
         },
-        "warningsCount": 2,
+        "warningsCount": 3,
         "recScenario": {
           "packageSize": 2,
           "exactNeed": 39.0625,
@@ -82,7 +82,7 @@
       "expected": {
         "area": 35,
         "wastePercent": 30,
-        "formulaVersion": "tile-canonical-v2",
+        "formulaVersion": "tile-canonical-v3",
         "materials": {
           "tiles": 2300,
           "tilePackages": 46,
@@ -91,7 +91,7 @@
           "primerCans": 10,
           "crosses": 2760
         },
-        "warningsCount": 1,
+        "warningsCount": 2,
         "recScenario": {
           "packageSize": 50,
           "exactNeed": 2275,

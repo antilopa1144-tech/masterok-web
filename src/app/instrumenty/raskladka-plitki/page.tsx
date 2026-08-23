@@ -45,22 +45,24 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <div className="bg-gradient-to-b from-orange-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container py-6">
-          <Breadcrumbs items={[
-            { href: "/instrumenty/", label: "Инструменты" },
-            { label: "Раскладка плитки" },
-          ]} />
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
+      <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+        <div className="page-container-wide py-4 sm:py-5">
+          <div className="sr-only">
+            <Breadcrumbs items={[
+              { href: "/instrumenty/", label: "Инструменты" },
+              { label: "Раскладка плитки" },
+            ]} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl dark:text-white">
             Генератор раскладки плитки
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-            Введите размеры поверхности и плитки — увидите раскладку, количество целых плиток, подрезку и отход.
+          <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
+            Настройте стену, плитку и проём — сразу увидите раскладку, подрезку и количество к покупке.
           </p>
         </div>
       </div>
 
-      <div className="page-container py-8">
+      <div className="page-container-wide py-5 lg:py-6">
         <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка…</div>}>
           <TileLayoutGenerator />
         </Suspense>

@@ -17,6 +17,8 @@ export interface CalculatorField {
   min?: number;
   max?: number;
   step?: number;
+  /** Поле принимает только целые значения, например количество изделий в упаковке. */
+  integerOnly?: boolean;
   defaultValue: number;
   options?: FieldOption[];
   hint?: string;

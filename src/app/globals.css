@@ -525,6 +525,11 @@ input[type="range"] {
   cursor: pointer;
 }
 
+input[type="range"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-500) 45%, transparent);
+  outline-offset: 8px;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 28px;

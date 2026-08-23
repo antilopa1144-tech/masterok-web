@@ -30,5 +30,5 @@ export function ToolNotes({ warnings, notes }: { warnings: string[]; notes: stri
 }
 
 export function ToolPresetButton({ active = false, children, onClick }: { active?: boolean; children: React.ReactNode; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${active ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-900/20" : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-400"}`}>{children}</button>;
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`min-h-11 rounded-lg border px-3 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 ${active ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-900/20" : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-400"}`}>{children}</button>;
 }

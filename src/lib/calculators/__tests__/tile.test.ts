@@ -7,7 +7,7 @@ const calc = withBasicAccuracy(tileDef.calculate.bind(tileDef));
 
 describe("Калькулятор плитки", () => {
   it("декларирует formulaVersion для canonical tile", () => {
-    expect(tileDef.formulaVersion).toBe("tile-canonical-v2");
+    expect(tileDef.formulaVersion).toBe("tile-canonical-v3");
   });
 
   describe("Canonical tile fixture parity", () => {
@@ -62,6 +62,49 @@ describe("Калькулятор плитки", () => {
     expect(result.scenarios?.REC.purchase_quantity).toBe(160);
     expect(tile?.packageInfo).toEqual({ count: 10, size: 16, packageUnit: "упаковок" });
     expect(tile?.purchaseQty).toBe(160);
+  });
+
+  it("использует количество плиток с этикетки вместо вывода из площади", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 10,
+      tileWidth: 600,
+      tileHeight: 300,
+      packagingMode: 1,
+      tilesPerPackage: 10,
+      packArea: 1.44,
+      layingMethod: 0,
+      roomComplexity: 0,
+    });
+
+    const tile = findMaterial(result, "Плитка");
+    expect(result.scenarios?.REC.buy_plan.package_size).toBe(10);
+    expect(result.scenarios?.REC.buy_plan.packages_count).toBe(7);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(70);
+    expect(result.totals.packArea).toBe(1.8);
+    expect(result.totals.packagingSource).toBe(1);
+    expect(result.scenarios?.REC.assumptions).toContain("packaging_source:label");
+    expect(tile?.subtitle).toContain("По этикетке: 10 шт.");
+    expect(result.warnings.some((warning) => warning.includes("предварительной оценкой"))).toBe(false);
+  });
+
+  it("помечает старый расчёт по площади коробки как оценку", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 10,
+      tileWidth: 600,
+      tileHeight: 300,
+      packagingMode: 0,
+      packArea: 1.44,
+      layingMethod: 0,
+      roomComplexity: 0,
+    });
+
+    expect(result.scenarios?.REC.buy_plan.package_size).toBe(8);
+    expect(result.totals.packagingSource).toBe(0);
+    expect(result.scenarios?.REC.assumptions).toContain("packaging_source:estimated");
+    expect(findMaterial(result, "Плитка")?.subtitle).toContain("Оценка по площади коробки");
+    expect(result.warnings.some((warning) => warning.includes("предварительной оценкой"))).toBe(true);
   });
 
   it("добавляет предупреждение для диагональной укладки", () => {

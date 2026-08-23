@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import type { CalculatorField } from "@/lib/calculators/types";
 import { CALCULATOR_UI_TEXT } from "../uiText";
 import {
@@ -17,34 +17,50 @@ import {
 function Tooltip({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const tooltipId = useId();
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
     document.addEventListener("mousedown", handler);
     document.addEventListener("touchstart", handler);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
   return (
     <div className="relative inline-block" ref={ref}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold leading-none flex items-center justify-center hover:bg-accent-100 hover:text-accent-700 dark:hover:bg-accent-900/30 dark:hover:text-accent-400 transition-colors"
+        className="-my-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold leading-none text-slate-500 transition-colors hover:bg-accent-100 hover:text-accent-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 dark:text-slate-400 dark:hover:bg-accent-900/30 dark:hover:text-accent-400"
         aria-label="Подсказка"
+        aria-expanded={open}
+        aria-controls={tooltipId}
       >
-        ?
+        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden>?</span>
       </button>
       {open && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg leading-relaxed">
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="absolute bottom-full left-0 z-50 mb-2 w-[min(14rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs leading-relaxed text-slate-700 shadow-lg sm:left-1/2 sm:-translate-x-1/2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        >
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-2 h-2 rotate-45 bg-white dark:bg-slate-800 border-r border-b border-slate-200 dark:border-slate-700" />
+          <div className="absolute left-3 top-full -mt-px h-2 w-2 rotate-45 border-b border-r border-slate-200 bg-white sm:left-1/2 sm:-translate-x-1/2 dark:border-slate-700 dark:bg-slate-800" />
         </div>
       )}
     </div>
@@ -72,8 +88,10 @@ export function ExperienceModeToggle({
   return (
     <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
       <button
+        type="button"
         onClick={() => onChange("beginner")}
-        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        aria-pressed={mode === "beginner"}
+        className={`min-h-11 flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           mode === "beginner"
             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
             : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -82,8 +100,10 @@ export function ExperienceModeToggle({
         Новичок
       </button>
       <button
+        type="button"
         onClick={() => onChange("pro")}
-        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        aria-pressed={mode === "pro"}
+        className={`min-h-11 flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           mode === "pro"
             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
             : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -105,6 +125,8 @@ export function FieldInput({
 }) {
   const [draftValue, setDraftValue] = useState(() => formatDecimalValue(value));
   const isEditing = useRef(false);
+  const inputId = `calculator-field-${field.key}`;
+  const errorId = `${inputId}-error`;
 
   useEffect(() => {
     if (!isEditing.current) setDraftValue(formatDecimalValue(value));
@@ -120,6 +142,7 @@ export function FieldInput({
             {field.options?.map((opt) => (
               <button
                 key={opt.value}
+                type="button"
                 onClick={() => onChange(opt.value)}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all min-h-[44px] ${
                   value === opt.value
@@ -185,16 +208,19 @@ export function FieldInput({
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel label={field.label} hint={field.hint} /></label>
         </div>
         <button
+          type="button"
           onClick={() => onChange(value > 0 ? 0 : 1)}
           role="switch"
           aria-checked={value > 0}
           aria-label={field.label}
-          className={`relative w-12 h-7 rounded-full transition-colors ${
-            value > 0 ? "" : "bg-slate-200 dark:bg-slate-700"
-          }`}
-          style={value > 0 ? { backgroundColor: accentColor } : {}}
+          className="relative h-11 w-12 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
         >
-          <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white dark:bg-slate-100 rounded-full shadow-sm transition-transform ${value > 0 ? "translate-x-5" : ""}`} />
+          <span
+            className={`absolute inset-x-0 top-2 h-7 rounded-full transition-colors ${value > 0 ? "" : "bg-slate-200 dark:bg-slate-700"}`}
+            style={value > 0 ? { backgroundColor: accentColor } : {}}
+            aria-hidden
+          />
+          <span className={`absolute left-0.5 top-2.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform dark:bg-slate-100 ${value > 0 ? "translate-x-5" : ""}`} aria-hidden />
         </button>
       </div>
     );
@@ -207,16 +233,24 @@ export function FieldInput({
   const hasDraftNumber = draftValue !== "" && Number.isFinite(draftNumber);
   const isOutOfRange = hasDraftNumber
     ? draftNumber < min || draftNumber > max
-    : value < min || value > max;
+    : !Number.isFinite(value) || value < min || value > max;
+  const isFractional = field.integerOnly && hasDraftNumber && !Number.isInteger(draftNumber);
+  const isInvalidValue = isOutOfRange || isFractional;
+  const errorMessage = isFractional
+    ? `Введите целое число от ${min} до ${max}${field.unit ? ` ${field.unit}` : ""}`
+    : Number.isFinite(value)
+      ? CALCULATOR_UI_TEXT.allowedValues(min, max, field.unit)
+      : "Введите числовое значение";
 
   return (
     <div>
       <div className="flex justify-between items-center mb-1.5">
-        <label className="input-label mb-0"><FieldLabel label={field.label} hint={field.hint} /></label>
+        <label htmlFor={inputId} className="input-label mb-0"><FieldLabel label={field.label} hint={field.hint} /></label>
         <div className="flex items-center gap-1.5">
           <input
             type="text"
-            inputMode="decimal"
+            id={inputId}
+            inputMode={field.integerOnly ? "numeric" : "decimal"}
             value={draftValue}
             onFocus={() => {
               isEditing.current = true;
@@ -228,21 +262,22 @@ export function FieldInput({
               setDraftValue(nextDraft);
               const parsed = parseDecimalDraft(nextDraft);
               if (parsed !== null) {
-                onChange(Math.max(min, Math.min(max, parsed)));
+                onChange(parsed);
               }
             }}
             onBlur={() => {
               isEditing.current = false;
-              const finalized = finalizeDecimalDraft(draftValue, value, min, max);
+              const finalized = finalizeDecimalDraft(draftValue, value);
               setDraftValue(formatDecimalValue(finalized));
               if (finalized !== value) onChange(finalized);
             }}
             className={`w-20 text-right text-base md:text-sm font-semibold border bg-white dark:bg-slate-900 rounded-lg px-2 py-1.5 min-h-[44px] md:min-h-[36px] focus:outline-none focus:ring-2 transition-colors ${
-              isOutOfRange
+              isInvalidValue
                 ? "text-red-600 border-red-300 focus:ring-red-500/30 focus:border-red-500"
                 : "text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 focus:ring-accent-500/30 focus:border-accent-500"
             }`}
-            aria-invalid={isOutOfRange}
+            aria-invalid={isInvalidValue}
+            aria-describedby={isInvalidValue ? errorId : undefined}
             aria-label={field.label}
           />
           {field.unit && <span className="text-xs text-slate-400 dark:text-slate-400 w-8 shrink-0">{field.unit}</span>}
@@ -258,12 +293,13 @@ export function FieldInput({
           onChange={(e) => onChange(parseFloat(e.target.value))}
           className="range-slider"
           aria-label={field.label}
+          aria-describedby={isInvalidValue ? errorId : undefined}
           style={{ accentColor }}
         />
       )}
-      {isOutOfRange && (
-        <p className="mt-1 text-xs text-red-500">
-          {CALCULATOR_UI_TEXT.allowedValues(min, max, field.unit)}
+      {isInvalidValue && (
+        <p id={errorId} className="mt-1 text-xs font-medium text-red-600 dark:text-red-400" aria-live="polite">
+          {errorMessage}
         </p>
       )}
       {/* hint shown via tooltip icon next to label */}

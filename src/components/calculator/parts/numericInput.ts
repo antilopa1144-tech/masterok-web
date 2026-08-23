@@ -26,8 +26,6 @@ export function parseDecimalDraft(rawValue: string): number | null {
 export function finalizeDecimalDraft(
   rawValue: string,
   fallback: number,
-  min: number,
-  max: number,
 ): number {
   const normalized = normalizeDecimalDraft(rawValue);
   if (
@@ -40,7 +38,7 @@ export function finalizeDecimalDraft(
 
   const parsed = Number(normalized);
   if (!Number.isFinite(parsed)) return fallback;
-  return Math.max(min, Math.min(max, parsed));
+  return parsed;
 }
 
 export function formatDecimalValue(value: number): string {

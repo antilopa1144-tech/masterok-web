@@ -26,7 +26,9 @@ interface TileInputs {
   area?: number;
   tileWidthCm?: number;
   tileHeightCm?: number;
+  packagingMode?: number;
   packArea?: number;
+  tilesPerPackage?: number;
   jointWidth?: number;
   groutDepth?: number;
   layoutPattern?: number;
@@ -89,6 +91,7 @@ function buildMaterials(
   packagesCount: number,
   tilesPerPackage: number,
   packAreaM2: number,
+  packagingSource: "label" | "estimated",
   glueKg: number,
   glueBags: number,
   groutKg: number,
@@ -111,7 +114,9 @@ function buildMaterials(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Плитка ${tileSizeLabel}`,
-      subtitle: `Коробка ${roundDisplay(packAreaM2, 3)} м² — ${tilesPerPackage} шт.; сверьте площадь упаковки у выбранной коллекции и покупайте одной партии и одного калибра`,
+      subtitle: packagingSource === "label"
+        ? `По этикетке: ${tilesPerPackage} шт. в коробке (${roundDisplay(packAreaM2, 3)} м²); покупайте одной партии и одного калибра`
+        : `Оценка по площади коробки: ${roundDisplay(packAreaM2, 3)} м² — примерно ${tilesPerPackage} шт.; подтвердите фасовку на этикетке коллекции`,
       quantity: roundDisplay(recExactNeed, 6),
       unit: spec.packaging_rules.tile_unit,
       withReserve: roundDisplay(recPurchaseQuantity, 6),
@@ -200,6 +205,7 @@ export function computeCanonicalTile(
   const sizeAdjustment = resolveTileSizeAdjustment(spec, averageTileSizeCm);
   const wastePercent = roundDisplay(layout.waste_percent + roomComplexity.waste_bonus_percent + sizeAdjustment, 3);
   const tileAreaM2 = roundDisplay((tileWidthCm / 100) * (tileHeightCm / 100), 6);
+  const packagingMode = Math.round(inputs.packagingMode ?? getInputDefault(spec, "packagingMode", 0));
   const requestedPackAreaM2 = Math.max(
     0.1,
     Math.min(
@@ -208,7 +214,18 @@ export function computeCanonicalTile(
         ?? getInputDefault(spec, "packArea", spec.packaging_rules.tile_package_area_m2),
     ),
   );
-  const tilesPerPackage = Math.max(1, Math.round(requestedPackAreaM2 / tileAreaM2));
+  const packagingSource = packagingMode === 1 ? "label" : "estimated";
+  const requestedTilesPerPackage = inputs.tilesPerPackage
+    ?? getInputDefault(spec, "tilesPerPackage", 16);
+  if (packagingSource === "label"
+    && (!Number.isInteger(requestedTilesPerPackage)
+      || requestedTilesPerPackage < 1
+      || requestedTilesPerPackage > 500)) {
+    throw new RangeError("Количество плиток в коробке должно быть целым числом от 1 до 500");
+  }
+  const tilesPerPackage = packagingSource === "label"
+    ? requestedTilesPerPackage
+    : Math.max(1, Math.round(requestedPackAreaM2 / tileAreaM2));
   const packAreaM2 = roundDisplay(tilesPerPackage * tileAreaM2, 6);
 
   // Apply accuracy mode to tile quantity (tile-specific modifiers)
@@ -253,6 +270,7 @@ export function computeCanonicalTile(
         `layout:${layout.key}`,
         `room:${roomComplexity.key}`,
         `accuracy_mode:${accuracyMode}`,
+        `packaging_source:${packagingSource}`,
         `pack_area_m2:${packAreaM2}`,
         `packaging:${packaging.package.label}`,
       ],
@@ -287,6 +305,9 @@ export function computeCanonicalTile(
   const siliconeTubes = Math.max(1, Math.ceil(area.area / spec.material_rules.silicone_tube_area_m2));
 
   const warnings: string[] = [];
+  if (packagingSource === "estimated") {
+    warnings.push("Количество плиток в коробке является предварительной оценкой по площади упаковки — перед покупкой подтвердите фасовку на этикетке коллекции");
+  }
   if (baseExactNeed < spec.warnings_rules.low_tile_count_threshold) {
     warnings.push("При укладке меньше 5 плиток процент отходов может быть выше расчётного");
   }
@@ -326,6 +347,7 @@ export function computeCanonicalTile(
       recScenario.buy_plan.packages_count,
       tilesPerPackage,
       packAreaM2,
+      packagingSource,
       glueKg,
       glueBags,
       groutKg,
@@ -351,6 +373,7 @@ export function computeCanonicalTile(
       tileArea: tileAreaM2,
       packArea: packAreaM2,
       tilesPerPackage,
+      packagingSource: packagingSource === "label" ? 1 : 0,
       packagesNeeded: recScenario.buy_plan.packages_count,
       wastePercent: wastePercent,
       sizeAdjustment: roundDisplay(sizeAdjustment, 3),

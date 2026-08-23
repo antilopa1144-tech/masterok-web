@@ -17,6 +17,7 @@ import { trackRecentCalculator } from "./RecentCalculators";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
+import { buildTileLayoutHrefFromCalculatorValues } from "@/lib/tools/tile-layout-to-calc";
 
 // Three.js — тяжёлая библиотека (~500 KB), нужна только для 2 калькуляторов из 70+.
 // Ленивая загрузка исключает three из основного бандла — экономия ~150 KB gzip.
@@ -49,6 +50,8 @@ export default function CalculatorWidget({ calculator }: Props) {
     setShowHistory,
     category,
     visibleFields,
+    invalidFields,
+    hasValidationErrors,
     calcHistory,
     accuracyMode,
     accuracyHint,
@@ -83,7 +86,12 @@ export default function CalculatorWidget({ calculator }: Props) {
   }, [calculator.id, calculator.slug, calculator.title, calculator.categorySlug, category]);
 
   const triggerCalculate = () => {
-    handleCalculate();
+    if (!handleCalculate()) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`calculator-field-${invalidFields[0]?.field.key}`)?.focus();
+      });
+      return;
+    }
     setPulse(true);
     window.setTimeout(() => setPulse(false), 620);
   };
@@ -216,13 +224,34 @@ export default function CalculatorWidget({ calculator }: Props) {
           </>
         )}
 
+        {hasValidationErrors && (
+          <p id="calculator-validation-summary" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300" role="alert">
+            Проверьте выделенные поля: значение должно быть в указанном диапазоне.
+          </p>
+        )}
+
         <button
           onClick={triggerCalculate}
+          aria-describedby={hasValidationErrors ? "calculator-validation-summary" : undefined}
           className={`btn-primary w-full text-base${pulse ? " btn-primary-pulse" : ""}`}
           style={{ backgroundColor: category?.color }}
         >
-          {hasCalculated ? CALCULATOR_UI_TEXT.saveToHistory : CALCULATOR_UI_TEXT.calculate}
+          {hasValidationErrors
+            ? "Исправьте параметры"
+            : hasCalculated
+              ? CALCULATOR_UI_TEXT.saveToHistory
+              : CALCULATOR_UI_TEXT.calculate}
         </button>
+
+        {calculator.slug === "plitka" && (
+          <Link
+            href={buildTileLayoutHrefFromCalculatorValues(values)}
+            className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800 no-underline transition-colors hover:border-blue-300 hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300 dark:hover:bg-blue-950/40"
+          >
+            <span>Увидеть плитку, швы и подрезку на схеме</span>
+            <span aria-hidden>→</span>
+          </Link>
+        )}
 
         {calculator.slug === "oboi" && (
           <Link
