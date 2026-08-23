@@ -12,6 +12,7 @@
  */
 
 export type LaminateMode = "deck-third" | "deck-half" | "herringbone";
+export type LaminateDirection = "along-width" | "along-length";
 
 export interface LaminateBoard {
   /** Левый-нижний угол в координатах поверхности, мм (для прямой укладки). */
@@ -337,5 +338,37 @@ export function calculateLaminateLayout(
     boardW,
     boardH,
     notes,
+  };
+}
+
+/**
+ * Строит ту же раскладку с выбором направления длинной стороны доски.
+ * Для поворота на 90° расчёт выполняется в повёрнутой системе координат,
+ * после чего геометрия возвращается к исходным размерам помещения.
+ */
+export function calculateDirectionalLaminateLayout(
+  surfaceW: number,
+  surfaceH: number,
+  boardW: number,
+  boardH: number,
+  mode: LaminateMode = "deck-third",
+  direction: LaminateDirection = "along-width",
+): LaminateLayoutResult {
+  if (direction === "along-width" || mode === "herringbone") {
+    return calculateLaminateLayout(surfaceW, surfaceH, boardW, boardH, mode);
+  }
+
+  const rotated = calculateLaminateLayout(surfaceH, surfaceW, boardW, boardH, mode);
+  return {
+    ...rotated,
+    surfaceW,
+    surfaceH,
+    rows: rotated.rows?.map((row) => row.map((board) => ({
+      x: board.y,
+      y: board.x,
+      widthMm: board.heightMm,
+      heightMm: board.widthMm,
+      type: board.type,
+    }))),
   };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateLaminateLayout } from "./laminate-layout";
+import { calculateDirectionalLaminateLayout, calculateLaminateLayout } from "./laminate-layout";
 
 describe("laminate-layout", () => {
   describe("палуба 1/3", () => {
@@ -73,6 +73,32 @@ describe("laminate-layout", () => {
       const r = calculateLaminateLayout(3000, 4000, 1285, 192, "deck-third");
       // Закупка должна покрывать как минимум целые доски (недозакуп недопустим).
       expect(r.purchaseBoards).toBeGreaterThanOrEqual(r.wholeBoards);
+    });
+  });
+
+  describe("направление досок", () => {
+    it("поворачивает палубу на 90 градусов и сохраняет координаты комнаты", () => {
+      const r = calculateDirectionalLaminateLayout(3000, 4000, 1285, 192, "deck-third", "along-length");
+      const boards = r.rows?.flat() ?? [];
+
+      expect(r.surfaceW).toBe(3000);
+      expect(r.surfaceH).toBe(4000);
+      expect(boards.length).toBeGreaterThan(0);
+      expect(boards.every((board) => board.x >= 0 && board.y >= 0)).toBe(true);
+      expect(boards.every((board) => board.x + board.widthMm <= 3000.5)).toBe(true);
+      expect(boards.every((board) => board.y + board.heightMm <= 4000.5)).toBe(true);
+      expect(boards.some((board) => board.heightMm > board.widthMm)).toBe(true);
+    });
+
+    it("направление может менять раскрой, но не добавляет отдельную формулу запаса", () => {
+      const across = calculateDirectionalLaminateLayout(2600, 4100, 1285, 192, "deck-third", "along-width");
+      const along = calculateDirectionalLaminateLayout(2600, 4100, 1285, 192, "deck-third", "along-length");
+
+      expect(across.purchaseReserveBoards).toBe(Math.ceil(across.basePurchaseBoards * 1.05) - across.basePurchaseBoards);
+      expect(along.purchaseReserveBoards).toBe(Math.ceil(along.basePurchaseBoards * 1.05) - along.basePurchaseBoards);
+      expect(along.rows?.flat().some((board) => board.heightMm === 1285)).toBe(true);
+      expect(along.purchaseBoards).not.toBe(across.purchaseBoards);
+      expect(along.cutBoards).not.toBe(across.cutBoards);
     });
   });
 

@@ -530,6 +530,16 @@ input[type="range"]:focus-visible {
   outline-offset: 8px;
 }
 
+.laminate-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1280px) {
+  .laminate-workspace {
+    grid-template-columns: 300px minmax(0, 1fr) 300px;
+  }
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 28px;
