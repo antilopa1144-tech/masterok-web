@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { type ChangeEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
-import ToolSectionNav from "@/components/tools/ToolSectionNav";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -31,6 +30,17 @@ import {
 
 type GeometryMode = "rectangle" | "walls";
 type WallpaperPresentationMode = "room" | "walls";
+type WallpaperWorkspaceStage = "parameters" | "layout" | "result";
+
+const WALLPAPER_WORKSPACE_STAGES: Array<{
+  value: WallpaperWorkspaceStage;
+  shortLabel: string;
+  label: string;
+}> = [
+  { value: "parameters", shortLabel: "Параметры", label: "Размеры и рулон" },
+  { value: "layout", shortLabel: "Схема", label: "Вид комнаты" },
+  { value: "result", shortLabel: "Результат", label: "Итог к покупке" },
+];
 
 const WALLPAPER_VISUAL_FINISHES: Record<WallpaperVisualFinish, {
   label: string;
@@ -124,6 +134,49 @@ function NumberInput({
         <span className="text-xs text-slate-400">{unit}</span>
       </span>
     </label>
+  );
+}
+
+function WallpaperStageNav({
+  activeStage,
+  result,
+  onChange,
+}: {
+  activeStage: WallpaperWorkspaceStage;
+  result: WallpaperLayoutResult;
+  onChange: (stage: WallpaperWorkspaceStage) => void;
+}) {
+  return (
+    <div className="sticky top-16 z-20 overflow-hidden rounded-2xl border border-stone-200 bg-[#fffdf9]/95 shadow-[0_10px_32px_rgba(62,45,31,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:static">
+      <nav aria-label="Этапы раскладки обоев" className="grid grid-cols-3 border-b border-stone-200 dark:border-slate-700">
+        {WALLPAPER_WORKSPACE_STAGES.map((stage, index) => {
+          const isActive = activeStage === stage.value;
+          return (
+            <button
+              key={stage.value}
+              type="button"
+              aria-current={isActive ? "step" : undefined}
+              onClick={() => onChange(stage.value)}
+              className={`group relative flex min-h-14 items-center justify-center gap-2 px-2 py-2 text-left transition-colors sm:min-h-16 sm:px-4 ${isActive ? "bg-orange-50/80 text-stone-950 dark:bg-orange-950/20 dark:text-white" : "text-stone-500 hover:bg-stone-50 dark:text-slate-400 dark:hover:bg-slate-800"}`}
+            >
+              <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${isActive ? "bg-orange-600 text-white" : "bg-stone-100 text-stone-500 dark:bg-slate-800 dark:text-slate-300"}`}>{index + 1}</span>
+              <span>
+                <span className="block text-[11px] font-semibold sm:text-sm">{stage.shortLabel}</span>
+                <span className="hidden text-[10px] font-normal text-stone-400 sm:block">{stage.label}</span>
+              </span>
+              {isActive && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-orange-600" />}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="grid grid-cols-4 divide-x divide-stone-100 px-1 py-2 dark:divide-slate-800 sm:px-3 sm:py-3">
+        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Площадь</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.wallAreaM2.toLocaleString("ru-RU")} м²</p></div>
+        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Полосы</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.stripCount} шт.</p></div>
+        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Купить</p><p className="mt-0.5 text-sm font-bold text-orange-700 dark:text-orange-300 sm:text-base">{result.purchaseRolls} рул.</p></div>
+        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Отходы</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.wastePercent.toLocaleString("ru-RU")}%</p></div>
+      </div>
+    </div>
   );
 }
 
@@ -402,6 +455,7 @@ function RollPlan({ result, limit }: { result: WallpaperLayoutResult; limit?: nu
 
 export default function WallpaperLayoutGenerator() {
   const searchParams = useSearchParams();
+  const [activeStage, setActiveStage] = useState<WallpaperWorkspaceStage>("layout");
   const [geometryMode, setGeometryMode] = useState<GeometryMode>("rectangle");
   const [roomWidth, setRoomWidth] = useState(4);
   const [roomLength, setRoomLength] = useState(5);
@@ -436,10 +490,9 @@ export default function WallpaperLayoutGenerator() {
   const [activeWallIndex, setActiveWallIndex] = useState(0);
   const hydratedFromUrl = useRef(false);
   const svgRef = useRef<HTMLDivElement>(null);
-  const parametersRef = useRef<HTMLDivElement>(null);
-  const layoutRef = useRef<HTMLDivElement>(null);
+  const workspaceTopRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  const { hasStarted, markStarted, selectMode } = useToolAnalytics("raskladka-oboev", resultRef);
+  const { markStarted, selectMode } = useToolAnalytics("raskladka-oboev", resultRef);
 
   useEffect(() => {
     if (hydratedFromUrl.current) return;
@@ -513,8 +566,9 @@ export default function WallpaperLayoutGenerator() {
     { name: "Площадь стен без вычета проёмов", quantity: result.wallAreaM2, unit: "м²", category: "Обои" },
   ], [result.purchaseRolls, result.wallAreaM2, visualSummary]);
 
-  const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const changeStage = useCallback((stage: WallpaperWorkspaceStage) => {
+    setActiveStage(stage);
+    window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }, []);
   const start = useCallback((source: "surface_size" | "material_size" | "preset") => markStarted(source), [markStarted]);
 
@@ -633,12 +687,13 @@ export default function WallpaperLayoutGenerator() {
 
   return (
     <div className="space-y-4">
-      <RenovationHubStrip scenarioId="room" compact />
-      <ToolSectionNav visible={hasStarted} onParameters={() => scrollTo(parametersRef)} onLayout={() => scrollTo(layoutRef)} onResult={() => scrollTo(resultRef)} />
+      <div ref={workspaceTopRef} className="scroll-mt-20">
+        <WallpaperStageNav activeStage={activeStage} result={result} onChange={changeStage} />
+      </div>
 
-      <div className="wallpaper-workspace grid items-start gap-4">
-      <div ref={parametersRef} className="card scroll-mt-24 space-y-6 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <div className="grid items-start gap-4">
+      <div data-testid="wallpaper-stage-parameters" className={`${activeStage === "parameters" ? "grid" : "hidden"} card scroll-mt-24 gap-4 p-4 sm:p-5 lg:grid-cols-2`}>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800 lg:col-span-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Параметры раскладки</h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Схема и раскрой обновляются сразу — отдельная кнопка расчёта не нужна.</p>
@@ -648,11 +703,12 @@ export default function WallpaperLayoutGenerator() {
           </span>
         </div>
 
-        <section>
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span className="flex size-6 items-center justify-center rounded-full bg-orange-100 text-xs text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">1</span>
-            Стены помещения
-          </div>
+        <details className="group rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden">
+            <span className="flex min-w-0 items-center gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">1</span><span><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Стены помещения</span><span className="mt-0.5 block text-[10px] text-stone-400">{geometryMode === "rectangle" ? `${roomWidth.toLocaleString("ru-RU")} × ${roomLength.toLocaleString("ru-RU")} × ${wallHeight.toLocaleString("ru-RU")} м` : `${customWalls.length} стен · высота ${wallHeight.toLocaleString("ru-RU")} м`}</span></span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="border-t border-stone-200 p-4 dark:border-slate-700">
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-md">
             {(["rectangle", "walls"] as const).map((mode) => (
               <button
@@ -708,13 +764,15 @@ export default function WallpaperLayoutGenerator() {
           <div className="mt-4 max-w-[13rem]">
             <NumberInput label="Высота помещения" value={wallHeight} unit="м" min={1.5} max={6} step={0.05} onChange={(value) => { start("surface_size"); setWallHeight(value); }} />
           </div>
-        </section>
-
-        <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span className="flex size-6 items-center justify-center rounded-full bg-orange-100 text-xs text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">2</span>
-            Рулон и припуск
           </div>
+        </details>
+
+        <details className="group rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden">
+            <span className="flex min-w-0 items-center gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">2</span><span><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Рулон и припуск</span><span className="mt-0.5 block text-[10px] text-stone-400">{rollWidth.toLocaleString("ru-RU")} × {rollLength.toLocaleString("ru-RU")} м · припуск {trimAllowance.toLocaleString("ru-RU")} см</span></span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="border-t border-stone-200 p-4 dark:border-slate-700">
           <div className="grid grid-cols-1 gap-3">
             <NumberInput label="Ширина рулона" value={rollWidth} unit="м" min={0.4} max={1.5} step={0.01} onChange={(value) => { start("material_size"); setRollWidth(value); }} />
             <NumberInput label="Длина рулона" value={rollLength} unit="м" min={5} max={50} step={0.05} onChange={(value) => { start("material_size"); setRollLength(value); }} />
@@ -728,13 +786,15 @@ export default function WallpaperLayoutGenerator() {
               </button>
             ))}
           </div>
-        </section>
-
-        <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span className="flex size-6 items-center justify-center rounded-full bg-orange-100 text-xs text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">3</span>
-            Подгонка рисунка
           </div>
+        </details>
+
+        <details className="group rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden">
+            <span className="flex min-w-0 items-center gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">3</span><span><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Подгонка рисунка</span><span className="mt-0.5 block text-[10px] text-stone-400">{WALLPAPER_MATCH_OPTIONS.find((option) => option.value === matchType)?.label}{matchType !== "free" ? ` · раппорт ${rapport.toLocaleString("ru-RU")} см` : ""}</span></span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="border-t border-stone-200 p-4 dark:border-slate-700">
           <div className="grid grid-cols-1 gap-2">
             {WALLPAPER_MATCH_OPTIONS.map((option) => (
               <button type="button" key={option.value} aria-pressed={matchType === option.value} onClick={() => changeMatchType(option.value)} className={`min-h-11 rounded-xl border p-3 text-left transition-all ${matchType === option.value ? "border-orange-400 bg-orange-50 shadow-sm dark:bg-orange-900/20" : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"}`}>
@@ -752,18 +812,30 @@ export default function WallpaperLayoutGenerator() {
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             Смотрите обозначение на этикетке: одно число — раппорт; два числа, например 64/32, — раппорт и смещение.
           </p>
-        </section>
+          </div>
+        </details>
 
-        <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
+        <details className="group rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:hidden">
+            <span className="flex min-w-0 items-center gap-3"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">4</span><span><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Резерв на ремонт</span><span className="mt-0.5 block text-[10px] text-stone-400">{reserveRolls} закрыт. рул. сверх раскроя</span></span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="border-t border-stone-200 p-4 dark:border-slate-700">
           <div className="max-w-[13rem]">
             <NumberInput label="Закрытый рулон в резерв" value={reserveRolls} unit="шт" min={0} max={10} step={1} onChange={(value) => { start("material_size"); setReserveRolls(value); }} />
           </div>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Резерв хранится для брака и ремонта. Он не считается отходом и не участвует в раскрое.</p>
-        </section>
+          </div>
+        </details>
+        <div className="lg:col-span-2 lg:flex lg:justify-end">
+          <button type="button" onClick={() => changeStage("layout")} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#a93617] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8f2e14] lg:w-auto">
+            Посмотреть схему →
+          </button>
+        </div>
       </div>
 
-      <div ref={layoutRef} className="card scroll-mt-24 space-y-5 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <div data-testid="wallpaper-stage-layout" className={`${activeStage === "layout" ? "grid" : "hidden"} card scroll-mt-24 gap-5 p-4 sm:p-5 lg:grid-cols-2`}>
+        <div className="order-1 flex flex-wrap items-start justify-between gap-3 lg:col-span-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Как обои будут выглядеть в комнате</h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Сравните интерьерный вид с точной развёрткой полос и планом раскроя.</p>
@@ -779,7 +851,12 @@ export default function WallpaperLayoutGenerator() {
           </div>
         </div>
 
-        <div data-testid="wallpaper-finish-controls" className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+        <details className="group order-5 rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-800 marker:hidden dark:text-slate-100">
+            <span><span className="block">Обои и декор</span><span className="mt-0.5 block text-[10px] font-normal text-stone-400">{visualFinishLabel} · масштаб {textureScale}%</span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+        <div data-testid="wallpaper-finish-controls" className="border-t border-stone-200 p-3 dark:border-slate-700">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Декор обоев</p>
@@ -839,9 +916,15 @@ export default function WallpaperLayoutGenerator() {
             </div>
           )}
         </div>
+        </details>
 
         {presentationMode === "room" && (
-          <div data-testid="wallpaper-scene-controls" className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+          <details className="group order-6 rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-800 marker:hidden dark:text-slate-100">
+              <span><span className="block">Комната и проёмы</span><span className="mt-0.5 block text-[10px] font-normal text-stone-400">{showWindow ? "Окно" : "Без окна"} · {showDoor ? "дверь" : "без двери"}</span></span>
+              <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+            </summary>
+          <div data-testid="wallpaper-scene-controls" className="border-t border-stone-200 p-3 dark:border-slate-700">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Настройка комнаты</p>
@@ -890,9 +973,10 @@ export default function WallpaperLayoutGenerator() {
               </div>
             )}
           </div>
+          </details>
         )}
 
-        <div className="flex flex-wrap gap-1.5" aria-label="Стена для объёмного просмотра">
+        <div className="order-2 flex flex-wrap gap-1.5 lg:col-span-2" aria-label="Стена для объёмного просмотра">
           {result.walls.map((wall, index) => (
               <button key={wall.id} type="button" aria-pressed={resolvedActiveWallIndex === index} onClick={() => setActiveWallIndex(index)} className={`min-h-11 rounded-lg border px-3 text-[11px] font-semibold ${resolvedActiveWallIndex === index ? "border-orange-400 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300" : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-300"}`}>
               {wall.name} · {wall.strips.length}
@@ -900,7 +984,7 @@ export default function WallpaperLayoutGenerator() {
           ))}
         </div>
 
-        <div ref={svgRef} className={presentationMode === "walls" ? "overflow-x-auto rounded-xl border border-orange-100 bg-orange-50/40 dark:border-slate-700 dark:bg-slate-900" : undefined}>
+        <div ref={svgRef} className={`order-3 lg:col-span-2 ${presentationMode === "walls" ? "overflow-x-auto rounded-xl border border-orange-100 bg-orange-50/40 dark:border-slate-700 dark:bg-slate-900" : ""}`}>
           {presentationMode === "room" ? (
             <div data-testid="wallpaper-room-comparison" className={compareMode ? "grid gap-3 lg:grid-cols-2" : undefined}>
               <figure>
@@ -918,16 +1002,20 @@ export default function WallpaperLayoutGenerator() {
             <WallpaperWallSVG result={result} />
           )}
         </div>
-        {presentationMode === "walls" && <p className="-mt-3 text-[11px] text-slate-400 sm:hidden">Развёртку можно прокручивать по горизонтали.</p>}
-        {presentationMode === "room" && <p className="-mt-3 text-[11px] leading-relaxed text-slate-400">Окно и дверь показывают масштаб. Как и в расчёте, полотна заводятся на проёмы и подрезаются на месте — автоматического вычета нет.</p>}
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+        {presentationMode === "walls" && <p className="order-4 text-[11px] text-slate-400 sm:hidden lg:col-span-2">Развёртку можно прокручивать по горизонтали.</p>}
+        {presentationMode === "room" && <p className="order-4 text-[11px] leading-relaxed text-slate-400 lg:col-span-2">Окно и дверь показывают масштаб. Как и в расчёте, полотна заводятся на проёмы и подрезаются на месте — автоматического вычета нет.</p>}
+        <div className="order-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 lg:col-span-2">
           <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-orange-400" /> Полоса без сдвига</span>
           {matchType === "offset" && <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-orange-300" /> Полоса со смещением</span>}
           <span className="flex items-center gap-1.5"><i className="size-3 rounded-sm bg-orange-200" /> Крайняя подрезка</span>
         </div>
 
-        <div className="border-t border-slate-100 pt-5 dark:border-slate-800">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Раскрой рулонов</h3>
+        <details className="group order-7 rounded-2xl border border-stone-200 bg-[#fffdf9] dark:border-slate-700 dark:bg-slate-900/50 lg:col-span-2">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-800 marker:hidden dark:text-slate-100">
+            <span><span className="block">Подробный раскрой рулонов</span><span className="mt-0.5 block text-[10px] font-normal text-stone-400">{result.baseRolls} рул. в раскрой · нажмите, чтобы посмотреть карты резки</span></span>
+            <span className="text-lg text-stone-400 transition-transform group-open:rotate-45">+</span>
+          </summary>
+        <div className="border-t border-stone-200 p-4 dark:border-slate-700">
           <div className="my-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-orange-400" /> Полотно</span>
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-5 rounded-sm bg-rose-300" /> Подгонка рисунка</span>
@@ -951,10 +1039,25 @@ export default function WallpaperLayoutGenerator() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300">Раскрой невозможен с указанной длиной рулона. Проверьте высоту и припуск.</div>
           )}
         </div>
+        </details>
+        <div className="order-8 grid gap-2 sm:grid-cols-2 lg:col-span-2">
+          <button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-stone-200 px-5 text-sm font-semibold text-stone-600 hover:border-orange-300 hover:text-orange-700 dark:border-slate-700 dark:text-slate-300">← Изменить параметры</button>
+          <button type="button" onClick={() => changeStage("result")} className="min-h-12 rounded-xl bg-[#a93617] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#8f2e14]">Посмотреть результат →</button>
+        </div>
       </div>
 
-      <div ref={resultRef} data-testid="wallpaper-result" className="card scroll-mt-24 p-4 sm:p-5 xl:sticky xl:top-20">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Итог к покупке</h2>
+      <div ref={resultRef} data-testid="wallpaper-result" className={`${activeStage === "result" ? "block" : "hidden"} card scroll-mt-24 p-4 sm:p-5`}>
+        <div className="flex items-stretch justify-between gap-4 rounded-2xl border border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#a93617]">Паспорт раскладки</p>
+            <h2 className="mt-1 text-lg font-bold text-stone-950 dark:text-white">{geometryMode === "rectangle" ? `Комната ${roomWidth.toLocaleString("ru-RU")} × ${roomLength.toLocaleString("ru-RU")} м` : `${result.walls.length} стен · ${result.perimeterM.toLocaleString("ru-RU")} м`}</h2>
+            <p className="mt-1 text-xs leading-relaxed text-stone-500 dark:text-slate-400">{result.wallAreaM2.toLocaleString("ru-RU")} м² · {result.stripCount} полос · {matchType === "free" ? "без подгонки" : matchType === "straight" ? "прямая подгонка" : "смещённая подгонка"}</p>
+            <span className="mt-3 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Готово к закупке</span>
+          </div>
+          <div className="hidden w-28 shrink-0 rounded-xl bg-cover bg-center shadow-inner sm:block" style={{ backgroundImage: `linear-gradient(135deg, rgba(255,255,255,.1), rgba(34,24,18,.2)), url(${useCustomTexture && customTexture != null ? customTexture.dataUrl : WALLPAPER_VISUAL_FINISHES[visualFinish].textureSrc})` }} aria-hidden="true" />
+        </div>
+
+        <h3 className="mt-5 text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Итог к покупке</h3>
         <div className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800/60 dark:bg-orange-900/20">
           <p className="text-xs font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-300">Купить рулонов одной партии</p>
           <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
@@ -997,9 +1100,11 @@ export default function WallpaperLayoutGenerator() {
             </button>
             <SaveToProjectButton calcId="instrument-raskladka-oboev" calcTitle="Раскладка обоев" slug="oboi" categorySlug="otdelka" materials={projectMaterials} calendarScenarioId="room" />
           </div>
+          <button type="button" onClick={() => changeStage("layout")} className="min-h-11 w-full rounded-xl border border-stone-200 px-4 text-sm font-semibold text-stone-600 hover:border-orange-300 hover:text-orange-700 dark:border-slate-700 dark:text-slate-300 sm:w-auto">← Вернуться к схеме</button>
         </div>
       </div>
       </div>
+      <RenovationHubStrip scenarioId="room" compact />
     </div>
   );
 }
