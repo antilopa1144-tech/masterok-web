@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { getPrices as getUserPrices, setPrices as setUserPrices, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import {
   calculateRenovationCost,
@@ -11,13 +12,22 @@ import {
   ROOM_PRESETS,
 } from "@/lib/tools/renovation-cost";
 
+type RenovationCostStage = "parameters" | "prices" | "result";
+const RENOVATION_COST_STAGES = [
+  { value: "parameters", shortLabel: "Параметры", label: "Площадь и тип" },
+  { value: "prices", shortLabel: "Цены", label: "Материалы и работы" },
+  { value: "result", shortLabel: "Итог", label: "Смета и сроки" },
+] satisfies Array<{ value: RenovationCostStage; shortLabel: string; label: string }>;
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function RenovationCostCalculator() {
+  const [activeStage, setActiveStage] = useState<RenovationCostStage>("parameters");
   const [area, setArea] = useState(55);
   const [typeId, setTypeId] = useState("standard");
   const [withWork, setWithWork] = useState(true);
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+  const workspaceTopRef = useRef<HTMLDivElement>(null);
   const scopeKey = `${PRICE_SCOPES.renovation}:${typeId}`;
 
   useEffect(() => {
@@ -49,240 +59,55 @@ export default function RenovationCostCalculator() {
     [area, typeId, withWork, customPrices],
   );
 
+  const changeStage = useCallback((stage: RenovationCostStage) => {
+    setActiveStage(stage);
+    window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, []);
+
+  const totalRange = result.hasAnyPrice ? formatRenovationPriceRange(result.total) : null;
+
   return (
-    <div className="max-w-3xl space-y-6">
-      {/* Input form */}
-      <div className="card p-6 space-y-5">
-        {/* Area */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Площадь квартиры, м²
-          </label>
-          <input
-            type="number"
-            inputMode="decimal"
-            min={5}
-            max={500}
-            value={area}
-            onChange={(e) => setArea(Math.max(1, Number(e.target.value) || 1))}
-            className="input-field text-lg w-32"
-          />
-          <div className="flex flex-wrap gap-2 mt-2">
-            {ROOM_PRESETS.map((p) => (
-              <button
-                key={p.area}
-                onClick={() => setArea(p.area)}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                  area === p.area
-                    ? "border-accent-300 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 font-medium"
-                    : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Тип ремонта
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {RENOVATION_TYPES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTypeId(t.id)}
-                className={`text-left p-4 rounded-xl border-2 transition-all ${
-                  typeId === t.id
-                    ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 shadow-sm"
-                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div className="text-2xl mb-1">{t.icon}</div>
-                <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{t.label}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">{t.description}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* With work toggle */}
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={withWork}
-            onChange={(e) => setWithWork(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-accent-500 focus:ring-accent-500"
-          />
-          <span className="text-sm text-slate-700 dark:text-slate-300">
-            Включить стоимость работ (наёмные мастера)
-          </span>
-        </label>
+    <div ref={workspaceTopRef} className="max-w-6xl space-y-4 scroll-mt-24">
+      <div className="xl:hidden">
+        <CompactToolWorkspaceNav activeStage={activeStage} ariaLabel="Этапы сметы ремонта" stages={RENOVATION_COST_STAGES} onChange={changeStage} metrics={[
+          { label: "Площадь", value: `${area} м²` },
+          { label: "Материалы", value: result.materialTotal > 0 ? `${formatRenovationPrice(result.materialTotal)} ₽` : "—" },
+          { label: "Работы", value: !withWork ? "Не включены" : result.workTotal > 0 ? `${formatRenovationPrice(result.workTotal)} ₽` : "—" },
+          { label: "Итого", value: result.hasAnyPrice ? `${formatRenovationPrice(result.total)} ₽` : "Введите цены", accent: true },
+        ]} />
       </div>
 
-      {/* Results */}
-      <div className="card overflow-hidden">
-        {/* Total banner */}
-        <div className="bg-accent-50 dark:bg-accent-900/20 p-6 border-b border-accent-200 dark:border-accent-800/40">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-            <div>
-              <p className="text-xs font-semibold text-accent-700 dark:text-accent-400 uppercase tracking-wider mb-1">
-                Ваша смета
-              </p>
-              {result.hasAnyPrice ? (
-                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  {formatRenovationPriceRange(result.total)[0]} — {formatRenovationPriceRange(result.total)[1]} ₽
-                </p>
-              ) : (
-                <p className="text-base text-slate-500 dark:text-slate-400">
-                  Введите свои цены в таблицах ниже — итог появится здесь
-                </p>
-              )}
-            </div>
-            <div className="text-right space-y-0.5">
-              {result.hasAnyPrice && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {formatRenovationPrice(result.perM2)} ₽/м²
-                </p>
-              )}
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                ~{result.durationDays} дней
-              </p>
-            </div>
+      <div className="grid items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)_300px]">
+        <section className={`card space-y-5 p-4 sm:p-5 xl:sticky xl:top-20 ${activeStage === "parameters" ? "block" : "hidden xl:block"}`}>
+          <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Шаг 1</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Параметры ремонта</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Площадь, уровень отделки и участие мастеров.</p></div>
+          <div>
+            <label htmlFor="renovation-area" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Площадь квартиры, м²</label>
+            <input id="renovation-area" type="number" inputMode="decimal" min={5} max={500} value={area} onChange={(e) => setArea(Math.max(1, Number(e.target.value) || 1))} className="input-field w-32 text-lg" />
+            <div className="mt-2 flex flex-wrap gap-2">{ROOM_PRESETS.map((preset) => <button type="button" key={preset.area} onClick={() => setArea(preset.area)} className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${area === preset.area ? "border-accent-300 bg-accent-50 font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-300" : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
           </div>
+          <fieldset><legend className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Тип ремонта</legend><div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">{RENOVATION_TYPES.map((renovationType) => <button type="button" key={renovationType.id} aria-pressed={typeId === renovationType.id} onClick={() => setTypeId(renovationType.id)} className={`flex min-h-20 items-center gap-3 rounded-xl border-2 p-3 text-left transition-all sm:block xl:flex ${typeId === renovationType.id ? "border-accent-400 bg-accent-50 shadow-sm dark:bg-accent-900/20" : "border-slate-200 hover:border-slate-300 dark:border-slate-700"}`}><span className="text-2xl" aria-hidden="true">{renovationType.icon}</span><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{renovationType.label}</span><span className="mt-0.5 block text-[11px] leading-snug text-slate-500 dark:text-slate-400">{renovationType.description}</span></span></button>)}</div></fieldset>
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-3 dark:border-slate-700"><input type="checkbox" checked={withWork} onChange={(e) => setWithWork(e.target.checked)} className="size-5 rounded border-slate-300 text-accent-500 focus:ring-accent-500" /><span className="text-sm text-slate-700 dark:text-slate-300">Включить стоимость работ</span></label>
+          <button type="button" onClick={() => changeStage("prices")} className="btn-primary min-h-12 w-full justify-center text-sm xl:hidden">Указать цены →</button>
+        </section>
 
-          {/* Breakdown bar */}
-          {withWork && result.hasAnyPrice && result.total > 0 && (
-            <div className="mt-4">
-              <div className="flex rounded-full overflow-hidden h-3">
-                <div
-                  className="bg-blue-400 dark:bg-blue-500"
-                  style={{ width: `${(result.materialTotal / result.total) * 100}%` }}
-                  title={`Материалы: ${formatRenovationPrice(result.materialTotal)} ₽`}
-                />
-                <div
-                  className="bg-emerald-400 dark:bg-emerald-500"
-                  style={{ width: `${(result.workTotal / result.total) * 100}%` }}
-                  title={`Работы: ${formatRenovationPrice(result.workTotal)} ₽`}
-                />
-              </div>
-              <div className="flex justify-between mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-blue-400" />
-                  Материалы: {formatRenovationPrice(result.materialTotal)} ₽
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  Работы: {formatRenovationPrice(result.workTotal)} ₽
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+        <section className={`card overflow-hidden ${activeStage === "prices" ? "block" : "hidden xl:block"}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Шаг 2</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Цены и объёмы</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Введите известные цены за единицу — частичный итог обновится сразу.</p></div>{Object.values(customPrices).some((value) => value > 0) && <button type="button" onClick={handleResetPrices} className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 hover:border-rose-300 hover:text-rose-600 dark:border-slate-700">Сбросить цены</button>}</div>
+          <details open className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Материалы</span><span className="text-[10px] text-slate-400">{result.materialLines.length} позиций · {result.materialTotal > 0 ? `${formatRenovationPrice(result.materialTotal)} ₽` : "цены не заполнены"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Материал и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.materialLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за единицу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[line.name] || ""} placeholder="₽" onChange={(e) => setCustomPrices((prices) => ({ ...prices, [line.name]: Number(e.target.value) || 0 }))} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.materialTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Материалы</span><span>{formatRenovationPrice(result.materialTotal)} ₽</span></div>}</div></details>
+          {withWork && result.workLines.length > 0 && <details className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Работы</span><span className="text-[10px] text-slate-400">{result.workLines.length} позиций · {result.workTotal > 0 ? `${formatRenovationPrice(result.workTotal)} ₽` : "откройте и заполните при необходимости"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Работа и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.workLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за работу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[`work:${line.name}`] || ""} placeholder="₽" onChange={(e) => setCustomPrices((prices) => ({ ...prices, [`work:${line.name}`]: Number(e.target.value) || 0 }))} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.workTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Работы</span><span>{formatRenovationPrice(result.workTotal)} ₽</span></div>}</div></details>}
+          <div className="grid gap-2 border-t border-slate-100 p-4 dark:border-slate-800 sm:grid-cols-2 sm:p-5 xl:hidden"><button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Параметры</button><button type="button" onClick={() => changeStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm">Посмотреть смету →</button></div>
+        </section>
 
-        {/* Materials table */}
-        <div className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Материалы
-            </h3>
-            {Object.values(customPrices).some((v) => v > 0) && (
-              <button
-                type="button"
-                onClick={handleResetPrices}
-                className="text-[11px] text-slate-400 hover:text-red-500 transition-colors"
-                title="Сбросить все введённые цены"
-              >
-                Сбросить все цены
-              </button>
-            )}
+        <section className={`card overflow-hidden xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden xl:block"}`}>
+          <div className="border-b border-accent-200 bg-accent-50 p-4 dark:border-accent-800/40 dark:bg-accent-900/20 sm:p-5"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Паспорт сметы</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{type.icon} {type.label}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{area} м² · {withWork ? "материалы и работы" : "только материалы"} · примерно {result.durationDays} дней</p></div>
+          <div className="p-4 sm:p-5"><p className="text-xs font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-300">По введённым ценам</p>{totalRange ? <><p className="mt-2 text-2xl font-bold leading-tight text-slate-950 dark:text-white">{totalRange[0]} — {totalRange[1]} ₽</p><p className="mt-1 text-xs text-slate-500">Ориентир ±15% · {formatRenovationPrice(result.perM2)} ₽/м²</p></> : <div className="mt-3 rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">Укажите хотя бы одну цену на втором шаге — здесь появится частичный итог.</div>}
+            {withWork && result.hasAnyPrice && result.total > 0 && <div className="mt-5"><div className="flex h-3 overflow-hidden rounded-full"><div className="bg-blue-400 dark:bg-blue-500" style={{ width: `${(result.materialTotal / result.total) * 100}%` }} /><div className="bg-emerald-400 dark:bg-emerald-500" style={{ width: `${(result.workTotal / result.total) * 100}%` }} /></div><div className="mt-2 space-y-1 text-xs text-slate-500"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-blue-400" />Материалы</span><strong className="text-slate-700 dark:text-slate-200">{formatRenovationPrice(result.materialTotal)} ₽</strong></div><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-400" />Работы</span><strong className="text-slate-700 dark:text-slate-200">{formatRenovationPrice(result.workTotal)} ₽</strong></div></div></div>}
+            <div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><p className="text-xl font-bold text-slate-950 dark:text-white">{area} м²</p><p className="text-[10px] text-slate-500">Площадь</p></div><div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><p className="text-xl font-bold text-slate-950 dark:text-white">~{result.durationDays}</p><p className="text-[10px] text-slate-500">Дней работы</p></div></div>
+            <button type="button" onClick={() => changeStage("prices")} className="mt-5 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 xl:hidden">← Изменить цены</button>
           </div>
-          <p className="text-xs text-slate-400 dark:text-slate-400 mb-2">Введите свои цены — итог появится автоматически</p>
-          <div className="space-y-1.5">
-            {result.materialLines.map((line, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
-                <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                <span className="text-slate-400 dark:text-slate-400 text-xs w-16 text-right">
-                  {line.qty} {line.unit}
-                </span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={customPrices[line.name] || ""}
-                  placeholder="₽"
-                  onChange={(e) => setCustomPrices((p) => ({ ...p, [line.name]: Number(e.target.value) || 0 }))}
-                  className={`w-16 text-right text-xs border rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
-                    line.price > 0
-                      ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
-                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  }`}
-                  title="Ваша цена за единицу"
-                />
-                <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                  {line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}
-                </span>
-              </div>
-            ))}
-            {result.materialTotal > 0 && (
-              <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
-                <span>Итого материалы</span>
-                <span>{formatRenovationPrice(result.materialTotal)} ₽</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Works table */}
-        {withWork && result.workLines.length > 0 && (
-          <div className="p-5 border-t border-slate-100 dark:border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-              Работы
-            </h3>
-            <div className="space-y-1.5">
-              {result.workLines.map((line, i) => (
-                <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-800 last:border-0">
-                  <span className="text-slate-700 dark:text-slate-200 flex-1">{line.name}</span>
-                  <span className="text-slate-400 dark:text-slate-400 text-xs w-16 text-right">
-                    {line.qty} {line.unit}
-                  </span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    value={customPrices[`work:${line.name}`] || ""}
-                    placeholder="₽"
-                    onChange={(e) => setCustomPrices((p) => ({ ...p, [`work:${line.name}`]: Number(e.target.value) || 0 }))}
-                    className={`w-16 text-right text-xs border rounded px-1 py-0.5 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent-500/30 ${
-                      line.price > 0
-                        ? "border-accent-300 dark:border-accent-600 bg-accent-50/50 dark:bg-accent-900/10"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                    }`}
-                    title="Ваша цена за единицу"
-                  />
-                  <span className="font-medium text-slate-900 dark:text-slate-100 w-24 text-right">
-                    {line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}
-                  </span>
-                </div>
-              ))}
-              {result.workTotal > 0 && (
-                <div className="flex items-center justify-between text-sm font-semibold pt-2 text-slate-900 dark:text-slate-100">
-                  <span>Итого работы</span>
-                  <span>{formatRenovationPrice(result.workTotal)} ₽</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </section>
       </div>
 
-      {/* Disclaimer */}
-      <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
-        * Цены вводите сами — так смета получается честной, под ваш регион и поставщиков. Итог показан в диапазоне ±15%.
-        Расходы материалов рассчитаны по типовым нормативам на м² пола. Для точного расчёта отдельных материалов используйте наши калькуляторы.
-      </p>
+      <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-400">* Цены вводите сами — так смета остаётся честной для вашего региона и поставщиков. Итог показан в диапазоне ±15%. Расходы материалов рассчитаны по типовым нормативам на м² пола; для точного расчёта отдельных материалов используйте профильные калькуляторы.</p>
     </div>
   );
 }
