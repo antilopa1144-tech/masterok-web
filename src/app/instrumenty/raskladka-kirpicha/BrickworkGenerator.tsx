@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useMemo, useRef, useCallback } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
+import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import {
   calculateBrickwork,
   computeBrickSvgBoundsMm,
@@ -17,6 +18,13 @@ import { calcHref } from "@/lib/tools/config";
 // Оттенки кирпича: основной + варианты для баварской кладки.
 const BRICK_TONES = ["#B45309", "#92400E", "#C2683A"]; // терракот, тёмный, светлый
 const JOINT_COLOR = "#D6D3D1";
+type BrickWorkspaceStage = "parameters" | "layout" | "result";
+
+const BRICK_WORKSPACE_STAGES = [
+  { value: "parameters", shortLabel: "Параметры", label: "Стена и кирпич" },
+  { value: "layout", shortLabel: "Схема", label: "Вид кладки" },
+  { value: "result", shortLabel: "Результат", label: "Итог к покупке" },
+] satisfies Array<{ value: BrickWorkspaceStage; shortLabel: string; label: string }>;
 
 function BrickworkSVG({ result, jointMm }: { result: BrickLayoutResult; jointMm: number }) {
   const bounds = computeBrickSvgBoundsMm(result, jointMm);
@@ -69,6 +77,7 @@ function BrickworkSVG({ result, jointMm }: { result: BrickLayoutResult; jointMm:
 }
 
 export default function BrickworkGenerator() {
+  const [activeStage, setActiveStage] = useState<BrickWorkspaceStage>("layout");
   const [surfaceW, setSurfaceW] = useState(4000);
   const [surfaceH, setSurfaceH] = useState(2700);
   const [brickL, setBrickL] = useState(250);
@@ -76,6 +85,7 @@ export default function BrickworkGenerator() {
   const [jointMm, setJointMm] = useState(10);
   const [bond, setBond] = useState<BondType>("stretcher");
   const svgRef = useRef<HTMLDivElement>(null);
+  const workspaceTopRef = useRef<HTMLDivElement>(null);
 
   const result = useMemo(
     () => calculateBrickwork(surfaceW, surfaceH, brickL, brickH, jointMm, bond),
@@ -119,172 +129,218 @@ export default function BrickworkGenerator() {
   );
 
   const kladkaHref = calcHref({ slug: "kladka-kirpicha", categorySlug: "steny" });
+  const selectedBond = BOND_OPTIONS.find((option) => option.value === bond) ?? BOND_OPTIONS[0];
+
+  const changeStage = useCallback((stage: BrickWorkspaceStage) => {
+    setActiveStage(stage);
+    window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, []);
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="card p-6 space-y-5">
-        {/* Размер стены */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер стены (мм)
-          </label>
-          <div className="flex items-center gap-2">
-            <input type="number" inputMode="numeric" min={250} max={30000} value={surfaceW} onChange={(e) => setSurfaceW(Number(e.target.value) || 250)} className="input-field w-28" />
-            <span className="text-slate-400">×</span>
-            <input type="number" inputMode="numeric" min={65} max={15000} value={surfaceH} onChange={(e) => setSurfaceH(Number(e.target.value) || 65)} className="input-field w-28" />
-            <span className="text-xs text-slate-400">мм</span>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {WALL_SIZE_PRESETS.map((p) => (
-              <button
-                key={p.label}
-                onClick={() => { setSurfaceW(p.w); setSurfaceH(p.h); }}
-                className={`text-xs px-2.5 py-1 rounded border transition-colors ${
-                  surfaceW === p.w && surfaceH === p.h
-                    ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
-                    : "border-slate-200 text-slate-500 hover:border-slate-300"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div ref={workspaceTopRef} className="space-y-4 scroll-mt-24">
+      <CompactToolWorkspaceNav
+        activeStage={activeStage}
+        ariaLabel="Этапы раскладки кирпича"
+        stages={BRICK_WORKSPACE_STAGES}
+        onChange={changeStage}
+        metrics={[
+          { label: "Площадь", value: `${surfaceAreaM2.toLocaleString("ru-RU")} м²` },
+          { label: "Ряды", value: `${result.rows.length}` },
+          { label: "По схеме", value: `${result.totalBricks} шт.` },
+          { label: "Купить", value: `${result.purchaseBricks} шт.`, accent: true },
+        ]}
+      />
 
-        {/* Размер кирпича */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Размер кирпича (длина × высота, мм)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {BRICK_SIZE_PRESETS.map((p) => (
-              <button
-                key={p.label}
-                onClick={() => { setBrickL(p.l); setBrickH(p.h); }}
-                className={`text-xs px-2.5 py-1 rounded border transition-colors ${
-                  brickL === p.l && brickH === p.h
-                    ? "border-accent-300 bg-accent-50 text-accent-700 font-medium"
-                    : "border-slate-200 text-slate-500 hover:border-slate-300"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+      {activeStage === "parameters" && (
+        <section aria-labelledby="brick-parameters-title" className="card overflow-hidden border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+          <div className="mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">Шаг 1</p>
+            <h2 id="brick-parameters-title" className="mt-1 text-xl font-bold text-stone-950 dark:text-white">Параметры раскладки</h2>
+            <p className="mt-1 text-sm text-stone-500 dark:text-slate-400">Три коротких блока — геометрия, формат кирпича и рисунок кладки.</p>
           </div>
-        </div>
 
-        {/* Тип перевязки */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Тип перевязки
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {BOND_OPTIONS.map((m) => (
-              <button
-                key={m.value}
-                onClick={() => setBond(m.value)}
-                className={`text-left p-3 rounded-xl border transition-all ${
-                  bond === m.value
-                    ? "border-accent-400 bg-accent-50 dark:bg-accent-900/20 shadow-sm"
-                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                }`}
-              >
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.label}</span>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{m.desc}</p>
-              </button>
-            ))}
+          <div className="space-y-3">
+            <details open className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+              <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span>
+                  <span className="block text-sm font-semibold text-stone-950 dark:text-white">Размер стены</span>
+                  <span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{surfaceW.toLocaleString("ru-RU")} × {surfaceH.toLocaleString("ru-RU")} мм · {surfaceAreaM2.toLocaleString("ru-RU")} м²</span>
+                </span>
+                <span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span>
+              </summary>
+              <div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+                  <label className="text-xs text-stone-500 dark:text-slate-400">
+                    Ширина
+                    <input aria-label="Ширина стены в миллиметрах" type="number" inputMode="numeric" min={250} max={30000} value={surfaceW} onChange={(event) => setSurfaceW(Number(event.target.value) || 250)} className="input-field mt-1 w-full" />
+                  </label>
+                  <span className="pb-3 text-stone-400">×</span>
+                  <label className="text-xs text-stone-500 dark:text-slate-400">
+                    Высота
+                    <input aria-label="Высота стены в миллиметрах" type="number" inputMode="numeric" min={65} max={15000} value={surfaceH} onChange={(event) => setSurfaceH(Number(event.target.value) || 65)} className="input-field mt-1 w-full" />
+                  </label>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {WALL_SIZE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => { setSurfaceW(preset.w); setSurfaceH(preset.h); }}
+                      className={`min-h-10 rounded-xl border px-3 py-2 text-xs transition-colors ${surfaceW === preset.w && surfaceH === preset.h ? "border-orange-400 bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950/20 dark:text-orange-200" : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-slate-700 dark:text-slate-300"}`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
+
+            <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+              <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span>
+                  <span className="block text-sm font-semibold text-stone-950 dark:text-white">Формат кирпича</span>
+                  <span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{brickL} × {brickH} мм</span>
+                </span>
+                <span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span>
+              </summary>
+              <div className="grid gap-2 border-t border-stone-100 px-4 pb-4 pt-3 sm:grid-cols-2 dark:border-slate-800">
+                {BRICK_SIZE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => { setBrickL(preset.l); setBrickH(preset.h); }}
+                    className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs transition-colors ${brickL === preset.l && brickH === preset.h ? "border-orange-400 bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950/20 dark:text-orange-200" : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-slate-700 dark:text-slate-300"}`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </details>
+
+            <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+              <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span>
+                  <span className="block text-sm font-semibold text-stone-950 dark:text-white">Перевязка и шов</span>
+                  <span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{selectedBond.label} · шов {jointMm} мм</span>
+                </span>
+                <span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span>
+              </summary>
+              <div className="space-y-4 border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {BOND_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setBond(option.value)}
+                      className={`min-h-16 rounded-xl border p-3 text-left transition-colors ${bond === option.value ? "border-orange-400 bg-orange-50 shadow-sm dark:bg-orange-950/20" : "border-stone-200 hover:border-stone-300 dark:border-slate-700"}`}
+                    >
+                      <span className="text-sm font-semibold text-stone-950 dark:text-white">{option.label}</span>
+                      <span className="mt-0.5 block text-[11px] leading-snug text-stone-500 dark:text-slate-400">{option.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-slate-300">
+                  Толщина шва: <strong>{jointMm} мм</strong>
+                  <input aria-label="Толщина шва в миллиметрах" type="range" min={0} max={20} step={1} value={jointMm} onChange={(event) => setJointMm(Number(event.target.value))} className="mt-3 w-full accent-orange-600" />
+                  <span className="mt-1 flex justify-between text-xs font-normal text-stone-400"><span>0 мм</span><span>20 мм</span></span>
+                </label>
+              </div>
+            </details>
           </div>
-        </div>
 
-        {/* Шов */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Толщина шва: {jointMm} мм
-          </label>
-          <input type="range" min={0} max={20} step={1} value={jointMm} onChange={(e) => setJointMm(Number(e.target.value))} className="w-full accent-accent-500" />
-          <div className="flex justify-between text-xs text-slate-400 mt-1">
-            <span>0 мм</span>
-            <span>20 мм</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Визуализация */}
-      <div className="card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            Схема кладки
-          </h3>
-          <button
-            onClick={handleExportPNG}
-            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-accent-300 hover:text-accent-700 transition-colors"
-          >
-            📥 Скачать PNG
+          <button type="button" onClick={() => changeStage("layout")} className="btn-primary mt-5 min-h-12 w-full justify-center text-sm sm:w-auto">
+            Посмотреть схему →
           </button>
-        </div>
-        <div ref={svgRef}>
-          <BrickworkSVG result={result} jointMm={jointMm} />
-        </div>
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm" style={{ background: BRICK_TONES[0] }} />
-            Целый кирпич ({result.wholeBricks} шт)
-          </div>
-          {result.cutBricks > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm opacity-60" style={{ background: BRICK_TONES[0] }} />
-              Обрезка по краям ({result.cutBricks} шт)
+        </section>
+      )}
+
+      {activeStage === "layout" && (
+        <section aria-labelledby="brick-layout-title" className="card overflow-hidden border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">Шаг 2 · живая схема</p>
+              <h2 id="brick-layout-title" className="mt-1 text-xl font-bold text-stone-950 dark:text-white">{selectedBond.label}</h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-slate-400">Стена {surfaceW.toLocaleString("ru-RU")} × {surfaceH.toLocaleString("ru-RU")} мм · кирпич {brickL} × {brickH} мм</p>
             </div>
-          )}
-        </div>
-      </div>
+            <button type="button" onClick={handleExportPNG} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 transition-colors hover:border-orange-300 hover:text-orange-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+              Скачать PNG
+            </button>
+          </div>
 
-      {/* Результат */}
-      <div className="card p-5">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-          Результат
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.purchaseBricks}</p>
-            <p className="text-xs text-slate-500">Кирпичей к закупке</p>
+          <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-2 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-5" ref={svgRef}>
+            <div className="mx-auto flex min-h-56 items-center justify-center sm:min-h-80">
+              <BrickworkSVG result={result} jointMm={jointMm} />
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold" style={{ color: BRICK_TONES[0] }}>{result.totalBricks}</p>
-            <p className="text-xs text-slate-500">По схеме</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{surfaceAreaM2} м²</p>
-            <p className="text-xs text-slate-500">Площадь кладки</p>
-          </div>
-        </div>
 
-        {result.notes.length > 0 && (
-          <ul className="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-4 mt-4">
-            {result.notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        )}
-
-        <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Перенесём в калькулятор кладки: {surfaceAreaM2} м² — посчитаем точное количество кирпича, раствора и кладочной сетки по толщине стены и ГОСТ.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link href={kladkaHref} className="btn-primary inline-flex text-sm no-underline">
-              Кирпич, раствор, сетка →
-            </Link>
-            <SaveToProjectButton
-              calcId="instrument-raskladka-kirpicha"
-              calcTitle="Раскладка кирпичной кладки"
-              slug="kladka-kirpicha"
-              categorySlug="steny"
-              materials={materials}
-            />
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-stone-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm" style={{ background: BRICK_TONES[0] }} />Целые: {result.wholeBricks} шт.</span>
+            {result.cutBricks > 0 && <span className="flex items-center gap-1.5"><span className="size-3 rounded-sm opacity-60" style={{ background: BRICK_TONES[0] }} />Подрезка: {result.cutBricks} шт.</span>}
+            <span>Шов: {jointMm} мм</span>
           </div>
-        </div>
-      </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Изменить параметры</button>
+            <button type="button" onClick={() => changeStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm">Посмотреть результат →</button>
+          </div>
+        </section>
+      )}
+
+      {activeStage === "result" && (
+        <section aria-labelledby="brick-result-title" className="space-y-4">
+          <div className="card overflow-hidden border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 dark:border-orange-900/50 dark:from-orange-950/20 dark:to-amber-950/10">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-800 dark:text-orange-300">Паспорт раскладки</p>
+              <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 id="brick-result-title" className="text-xl font-bold text-stone-950 dark:text-white">{selectedBond.label}</h2>
+                  <p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{surfaceW.toLocaleString("ru-RU")} × {surfaceH.toLocaleString("ru-RU")} мм · {result.rows.length} рядов · шов {jointMm} мм</p>
+                </div>
+                <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Готово к расчёту</span>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+              <p className="text-xs text-stone-500 dark:text-slate-400">Кирпичей к закупке</p>
+              <p className="mt-1 text-4xl font-bold tracking-tight text-orange-800 dark:text-orange-300">{result.purchaseBricks} <span className="text-lg">шт.</span></p>
+              <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">На схеме {result.totalBricks} элементов кладки; закупка считает целые кирпичи, повторное использование подходящих обрезков и запас на бой.</p>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ["Площадь", `${surfaceAreaM2.toLocaleString("ru-RU")} м²`],
+                ["Ряды", `${result.rows.length}`],
+                ["Целые", `${result.wholeBricks} шт.`],
+                ["Подрезка", `${result.cutBricks} шт.`],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-stone-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
+                  <p className="text-[11px] text-stone-500 dark:text-slate-400">{label}</p>
+                  <p className="mt-1 text-lg font-bold text-stone-950 dark:text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {result.notes.length > 0 && (
+              <div className="mt-4 rounded-2xl bg-stone-100 p-4 dark:bg-slate-800/70">
+                <p className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-slate-300">Что учтено</p>
+                <ul className="mt-2 space-y-1.5 pl-4 text-xs text-stone-600 dark:text-slate-400">
+                  {result.notes.map((note) => <li key={note} className="list-disc">{note}</li>)}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-5 space-y-3 border-t border-stone-100 pt-4 dark:border-slate-800">
+              <p className="text-xs leading-relaxed text-stone-500 dark:text-slate-400">Перенесём {surfaceAreaM2.toLocaleString("ru-RU")} м² в калькулятор кладки — там можно уточнить толщину стены и получить кирпич, раствор и кладочную сетку.</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link href={kladkaHref} className="btn-primary min-h-12 justify-center text-sm no-underline">Кирпич, раствор, сетка →</Link>
+                <SaveToProjectButton calcId="instrument-raskladka-kirpicha" calcTitle="Раскладка кирпичной кладки" slug="kladka-kirpicha" categorySlug="steny" materials={materials} />
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onClick={() => changeStage("layout")} className="min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">← Вернуться к схеме</button>
+        </section>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { type ChangeEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
+import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -134,49 +135,6 @@ function NumberInput({
         <span className="text-xs text-slate-400">{unit}</span>
       </span>
     </label>
-  );
-}
-
-function WallpaperStageNav({
-  activeStage,
-  result,
-  onChange,
-}: {
-  activeStage: WallpaperWorkspaceStage;
-  result: WallpaperLayoutResult;
-  onChange: (stage: WallpaperWorkspaceStage) => void;
-}) {
-  return (
-    <div className="sticky top-16 z-20 overflow-hidden rounded-2xl border border-stone-200 bg-[#fffdf9]/95 shadow-[0_10px_32px_rgba(62,45,31,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:static">
-      <nav aria-label="Этапы раскладки обоев" className="grid grid-cols-3 border-b border-stone-200 dark:border-slate-700">
-        {WALLPAPER_WORKSPACE_STAGES.map((stage, index) => {
-          const isActive = activeStage === stage.value;
-          return (
-            <button
-              key={stage.value}
-              type="button"
-              aria-current={isActive ? "step" : undefined}
-              onClick={() => onChange(stage.value)}
-              className={`group relative flex min-h-14 items-center justify-center gap-2 px-2 py-2 text-left transition-colors sm:min-h-16 sm:px-4 ${isActive ? "bg-orange-50/80 text-stone-950 dark:bg-orange-950/20 dark:text-white" : "text-stone-500 hover:bg-stone-50 dark:text-slate-400 dark:hover:bg-slate-800"}`}
-            >
-              <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${isActive ? "bg-orange-600 text-white" : "bg-stone-100 text-stone-500 dark:bg-slate-800 dark:text-slate-300"}`}>{index + 1}</span>
-              <span>
-                <span className="block text-[11px] font-semibold sm:text-sm">{stage.shortLabel}</span>
-                <span className="hidden text-[10px] font-normal text-stone-400 sm:block">{stage.label}</span>
-              </span>
-              {isActive && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-orange-600" />}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="grid grid-cols-4 divide-x divide-stone-100 px-1 py-2 dark:divide-slate-800 sm:px-3 sm:py-3">
-        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Площадь</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.wallAreaM2.toLocaleString("ru-RU")} м²</p></div>
-        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Полосы</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.stripCount} шт.</p></div>
-        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Купить</p><p className="mt-0.5 text-sm font-bold text-orange-700 dark:text-orange-300 sm:text-base">{result.purchaseRolls} рул.</p></div>
-        <div className="px-2 sm:px-3"><p className="text-[9px] text-stone-400 sm:text-[10px]">Отходы</p><p className="mt-0.5 text-sm font-bold text-stone-950 dark:text-white sm:text-base">{result.wastePercent.toLocaleString("ru-RU")}%</p></div>
-      </div>
-    </div>
   );
 }
 
@@ -688,7 +646,18 @@ export default function WallpaperLayoutGenerator() {
   return (
     <div className="space-y-4">
       <div ref={workspaceTopRef} className="scroll-mt-20">
-        <WallpaperStageNav activeStage={activeStage} result={result} onChange={changeStage} />
+        <CompactToolWorkspaceNav
+          activeStage={activeStage}
+          ariaLabel="Этапы раскладки обоев"
+          stages={WALLPAPER_WORKSPACE_STAGES}
+          metrics={[
+            { label: "Площадь", value: `${result.wallAreaM2.toLocaleString("ru-RU")} м²` },
+            { label: "Полосы", value: `${result.stripCount} шт.` },
+            { label: "Купить", value: `${result.purchaseRolls} рул.`, accent: true },
+            { label: "Отходы", value: `${result.wastePercent.toLocaleString("ru-RU")}%` },
+          ]}
+          onChange={changeStage}
+        />
       </div>
 
       <div className="grid items-start gap-4">
