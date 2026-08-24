@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
-import ToolSectionNav from "@/components/tools/ToolSectionNav";
+import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { trackToolExport, trackToolPresetSelect, trackToolRelatedClick } from "@/lib/analytics";
 import { shareOrCopy } from "@/lib/clipboard";
@@ -26,6 +26,14 @@ const SURFACE_PRESETS = [
   { label: "Стена 5 × 2,7 м", width: 5000, height: 2700, surface: "wall" as const },
   { label: "Пол 3 × 4 м", width: 3000, height: 4000, surface: "floor" as const },
 ] as const;
+
+type SheetWorkspaceStage = "parameters" | "layout" | "result";
+
+const SHEET_WORKSPACE_STAGES = [
+  { value: "parameters", shortLabel: "Параметры", label: "Основание и лист" },
+  { value: "layout", shortLabel: "Схема", label: "Раскладка и рез" },
+  { value: "result", shortLabel: "Результат", label: "Итог к покупке" },
+] satisfies Array<{ value: SheetWorkspaceStage; shortLabel: string; label: string }>;
 
 function NumberInput({ label, value, unit, min, max, step, onChange }: {
   label: string; value: number; unit: string; min: number; max: number; step: number; onChange: (value: number) => void;
@@ -206,6 +214,7 @@ function orientationLabel(surface: SheetSurface, orientation: ResolvedSheetOrien
 
 export default function SheetLayoutGenerator() {
   const searchParams = useSearchParams();
+  const [activeStage, setActiveStage] = useState<SheetWorkspaceStage>("layout");
   const [surfaceWidth, setSurfaceWidth] = useState(5000);
   const [surfaceHeight, setSurfaceHeight] = useState(2700);
   const [sheetWidth, setSheetWidth] = useState(1200);
@@ -224,10 +233,11 @@ export default function SheetLayoutGenerator() {
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const hydrated = useRef(false);
   const svgRef = useRef<HTMLDivElement>(null);
+  const workspaceTopRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  const { hasStarted, markStarted, selectMode } = useToolAnalytics("raskladka-listov", resultRef);
+  const { markStarted, selectMode } = useToolAnalytics("raskladka-listov", resultRef);
 
   useEffect(() => {
     if (hydrated.current) return;
@@ -286,8 +296,12 @@ export default function SheetLayoutGenerator() {
     { name: "Площадь обшивки", quantity: result.coveredAreaM2, unit: "м²", category: "Листовые материалы" },
   ], [material, result.coveredAreaM2, result.purchaseSheets]);
 
-  const scrollTo = useCallback((ref: { current: HTMLElement | null }) => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), []);
   const start = useCallback((source: "surface_size" | "material_size" | "preset") => markStarted(source), [markStarted]);
+
+  const changeStage = useCallback((stage: SheetWorkspaceStage) => {
+    setActiveStage(stage);
+    window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, []);
 
   const applySheetPreset = (preset: (typeof SHEET_PRESETS)[number]) => {
     start("preset");
@@ -358,18 +372,33 @@ export default function SheetLayoutGenerator() {
   }, [result]);
 
   const visibleStock = showAllStock ? result.stock : result.stock.slice(0, 4);
+  const surfaceLabel = surface === "wall" ? "Стена" : surface === "floor" ? "Пол" : "Потолок";
+  const materialShortLabel = material === "drywall" ? "Гипсокартон" : material === "osb" ? "ОСП-плита" : "Свой лист";
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <RenovationHubStrip scenarioId="room" compact />
-      <div ref={parametersRef} className="card scroll-mt-24 space-y-6 p-5 sm:p-6">
+    <div ref={workspaceTopRef} className="max-w-5xl space-y-4 scroll-mt-24">
+      <CompactToolWorkspaceNav
+        activeStage={activeStage}
+        ariaLabel="Этапы раскладки листов"
+        stages={SHEET_WORKSPACE_STAGES}
+        onChange={changeStage}
+        metrics={[
+          { label: "Площадь", value: `${result.coveredAreaM2.toLocaleString("ru-RU")} м²` },
+          { label: "Детали", value: `${result.layoutPieces} шт.` },
+          { label: "Раскрой", value: `${result.baseSheets} л.` },
+          { label: "Купить", value: `${result.purchaseSheets} л.`, accent: true },
+        ]}
+      />
+
+      <div ref={parametersRef} hidden={activeStage !== "parameters"} className="card scroll-mt-24 space-y-4 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
           <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Параметры раскладки</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Сравниваем обе ориентации и повторно используем подходящие обрезки.</p></div>
           <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">{result.surfaceAreaM2} м² × {layers} {layers === 1 ? "слой" : "слоя"}</span>
         </div>
 
-        <section>
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><span className="flex size-6 items-center justify-center rounded-full bg-teal-100 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">1</span>Поверхность</div>
+        <details open className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Поверхность</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{surfaceLabel} · {surfaceWidth.toLocaleString("ru-RU")} × {surfaceHeight.toLocaleString("ru-RU")} мм</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary>
+          <div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800">
           <div className="mb-3 grid grid-cols-3 gap-2 sm:max-w-lg">
             {(["wall", "floor", "ceiling"] as const).map((value) => <button type="button" key={value} aria-pressed={surface === value} onClick={() => { start("surface_size"); setSurface(value); }} className={`rounded-xl border px-2 py-2 text-sm font-medium ${surface === value ? "border-teal-400 bg-teal-50 text-teal-800 dark:bg-teal-900/20 dark:text-teal-200" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>{value === "wall" ? "Стена" : value === "floor" ? "Пол" : "Потолок"}</button>)}
           </div>
@@ -377,18 +406,22 @@ export default function SheetLayoutGenerator() {
             <NumberInput label={surface === "wall" ? "Длина стены" : "Ширина поверхности"} value={surfaceWidth} unit="мм" min={300} max={30000} step={10} onChange={(value) => { start("surface_size"); setSurfaceWidth(value); }} />
             <NumberInput label={surface === "wall" ? "Высота стены" : "Длина поверхности"} value={surfaceHeight} unit="мм" min={300} max={30000} step={10} onChange={(value) => { start("surface_size"); setSurfaceHeight(value); }} />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">{SURFACE_PRESETS.map((preset) => <button type="button" key={preset.label} onClick={() => { start("preset"); trackToolPresetSelect("raskladka-listov", "surface", preset.label); setSurfaceWidth(preset.width); setSurfaceHeight(preset.height); setSurface(preset.surface); }} className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400">{preset.label}</button>)}</div>
-        </section>
+            <div className="mt-3 flex flex-wrap gap-2">{SURFACE_PRESETS.map((preset) => <button type="button" key={preset.label} onClick={() => { start("preset"); trackToolPresetSelect("raskladka-listov", "surface", preset.label); setSurfaceWidth(preset.width); setSurfaceHeight(preset.height); setSurface(preset.surface); }} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400">{preset.label}</button>)}</div>
+          </div>
+        </details>
 
-        <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><span className="flex size-6 items-center justify-center rounded-full bg-teal-100 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">2</span>Материал и формат листа</div>
+        <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Материал и формат листа</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{materialShortLabel} · {sheetWidth.toLocaleString("ru-RU")} × {sheetLength.toLocaleString("ru-RU")} мм</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary>
+          <div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800">
           <div className="mb-3 grid grid-cols-3 gap-2 sm:max-w-lg">{(["drywall", "osb", "custom"] as const).map((value) => <button type="button" key={value} aria-pressed={material === value} onClick={() => changeMaterial(value)} className={`rounded-xl border px-2 py-2 text-sm font-medium ${material === value ? "border-teal-400 bg-teal-50 text-teal-800 dark:bg-teal-900/20 dark:text-teal-200" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>{value === "drywall" ? "Гипсокартон" : value === "osb" ? "ОСП-плита" : "Свой лист"}</button>)}</div>
           <div className="grid grid-cols-1 gap-3 sm:max-w-md sm:grid-cols-2"><NumberInput label="Ширина листа" value={sheetWidth} unit="мм" min={300} max={3000} step={5} onChange={(value) => { start("material_size"); setSheetWidth(value); setMaterial("custom"); }} /><NumberInput label="Длина листа" value={sheetLength} unit="мм" min={600} max={6000} step={5} onChange={(value) => { start("material_size"); setSheetLength(value); setMaterial("custom"); }} /></div>
-          <div className="mt-3 flex flex-wrap gap-2">{SHEET_PRESETS.filter((preset) => material === "custom" || preset.material === material).map((preset) => <button type="button" key={preset.id} onClick={() => applySheetPreset(preset)} className={`rounded-lg border px-2.5 py-1 text-xs ${sheetWidth === preset.widthMm && sheetLength === preset.lengthMm ? "border-teal-300 bg-teal-50 font-medium text-teal-700 dark:bg-teal-900/20" : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
-        </section>
+            <div className="mt-3 flex flex-wrap gap-2">{SHEET_PRESETS.filter((preset) => material === "custom" || preset.material === material).map((preset) => <button type="button" key={preset.id} onClick={() => applySheetPreset(preset)} className={`min-h-10 rounded-xl border px-3 py-2 text-xs ${sheetWidth === preset.widthMm && sheetLength === preset.lengthMm ? "border-teal-300 bg-teal-50 font-medium text-teal-700 dark:bg-teal-900/20" : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
+          </div>
+        </details>
 
-        <section className="border-t border-slate-100 pt-5 dark:border-slate-800">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><span className="flex size-6 items-center justify-center rounded-full bg-teal-100 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">3</span>Ориентация и стыки</div>
+        <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Ориентация и стыки</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{orientationLabel(surface, result.orientation)} · {layers} {layers === 1 ? "слой" : "слоя"} · запас {reservePercent}%</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary>
+          <div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800">
           <div className="grid gap-2 sm:grid-cols-3">{(["auto", "portrait", "landscape"] as const).map((value) => {
             const comparison = value === "auto" ? undefined : result.comparisons.find((item) => item.orientation === value);
             return <button type="button" key={value} aria-pressed={orientation === value} onClick={() => { selectMode(value); setOrientation(value); }} className={`rounded-xl border p-3 text-left ${orientation === value ? "border-teal-400 bg-teal-50 shadow-sm dark:bg-teal-900/20" : "border-slate-200 dark:border-slate-700"}`}><span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{value === "auto" ? "Авто — экономнее" : orientationLabel(surface, value)}</span><span className="mt-1 block text-[11px] text-slate-500 dark:text-slate-400">{value === "auto" ? `Выбрано: ${orientationLabel(surface, result.orientation).toLowerCase()}` : `${comparison?.baseSheets ?? 0} листов · отход ${comparison?.wastePercent ?? 0}%`}</span></button>;
@@ -399,32 +432,35 @@ export default function SheetLayoutGenerator() {
             <NumberInput label="Зазор между листами" value={jointGap} unit="мм" min={0} max={20} step={0.5} onChange={(value) => { start("material_size"); setJointGap(value); }} />
             <NumberInput label="Закрытый запас" value={reservePercent} unit="%" min={0} max={30} step={1} onChange={(value) => { start("material_size"); setReservePercent(value); }} />
           </div>
-        </section>
+          </div>
+        </details>
+        <button type="button" onClick={() => changeStage("layout")} className="btn-primary min-h-12 w-full justify-center text-sm sm:w-auto">Посмотреть схему →</button>
       </div>
 
-      <ToolSectionNav visible={hasStarted} onParameters={() => scrollTo(parametersRef)} onLayout={() => scrollTo(layoutRef)} onResult={() => scrollTo(resultRef)} />
-
-      <div ref={layoutRef} className="card scroll-mt-24 space-y-5 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Листы показаны прямо на основании: видны швы, подрезки и размеры деталей.</p></div><button type="button" onClick={exportPng} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400">Скачать PNG</button></div>
+      <div ref={layoutRef} hidden={activeStage !== "layout"} className="card scroll-mt-24 space-y-5 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Шаг 2 · живая схема</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">{materialShortLabel} {sheetWidth.toLocaleString("ru-RU")} × {sheetLength.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()}</p></div><button type="button" onClick={exportPng} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">Скачать PNG</button></div>
         {layers === 2 && <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">{[1, 2].map((value) => <button type="button" key={value} onClick={() => setActiveLayer(value)} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${activeLayer === value ? "bg-white text-teal-700 shadow-sm dark:bg-slate-700 dark:text-teal-300" : "text-slate-500"}`}>Слой {value}</button>)}</div>}
-        <div ref={svgRef} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
+        <div ref={svgRef} className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
         <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300"><span className="flex items-center gap-2"><i className="flex size-6 shrink-0 items-center justify-center rounded-md bg-teal-700 text-[9px] not-italic font-bold text-white">Л1</i> Номер покупного листа</span><span className="flex items-center gap-2"><i className="size-5 shrink-0 rounded border border-teal-700 bg-[repeating-linear-gradient(45deg,#ccfbf1,#ccfbf1_3px,#99f6e4_3px,#99f6e4_4px)]" /> Штриховка — подрезка</span><span className="flex items-center gap-2"><i className="h-0.5 w-5 shrink-0 bg-slate-600" /> Тёмные линии — монтажные швы</span></div>
 
-        <div className="border-t border-slate-100 pt-5 dark:border-slate-800"><h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Из каких листов вырезать детали</h3><p className="mt-1 text-xs text-slate-500">Метка «Л1» на стене ведёт к карте «Лист 1» ниже. Так видно, где используется целый лист, а где — его остаток.</p>
+        <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Карты раскроя покупных листов</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{result.stock.length} листов · открыть детали и остатки</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800"><p className="text-xs text-slate-500">Метка «Л1» на стене ведёт к карте «Лист 1» ниже. Так видно, где используется целый лист, а где — его остаток.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{visibleStock.map((sheet) => <div key={sheet.index} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><div className="mb-2 flex items-center justify-between gap-2 text-xs"><strong className="text-slate-700 dark:text-slate-200">Лист {sheet.index}</strong><span className="text-slate-500">{sheet.cuts.length} деталей</span></div><StockSheetSvg result={result} sheetIndex={sheet.index - 1} /><p className="mt-2 text-[11px] text-slate-500">Остаток {sheet.offcutAreaM2} м²{sheet.largestOffcut && sheet.largestOffcut.areaM2 >= 0.05 ? ` · крупнейший ${sheet.largestOffcut.widthMm}×${sheet.largestOffcut.heightMm}` : ""}</p></div>)}</div>
           {result.stock.length > 4 && <button type="button" onClick={() => setShowAllStock((value) => !value)} className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{showAllStock ? "Свернуть карты" : `Показать все листы (${result.stock.length})`}</button>}
-        </div>
+        </div></details>
+        <div className="grid gap-2 sm:grid-cols-2"><button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Изменить параметры</button><button type="button" onClick={() => changeStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm">Посмотреть результат →</button></div>
       </div>
 
-      <div ref={resultRef} className="card scroll-mt-24 p-5 sm:p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Итог к покупке</h2>
+      <div ref={resultRef} hidden={activeStage !== "result"} className="card scroll-mt-24 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:border-teal-900/50 dark:from-teal-950/20 dark:to-cyan-950/10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-800 dark:text-teal-300">Паспорт раскладки</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold text-stone-950 dark:text-white">{materialShortLabel} · {surfaceLabel.toLowerCase()}</h2><p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{surfaceWidth.toLocaleString("ru-RU")} × {surfaceHeight.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()} · {layers} {layers === 1 ? "слой" : "слоя"}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Готово к закупке</span></div></div>
         <div className="mt-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 dark:border-teal-800/60 dark:bg-teal-900/20"><p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Купить листов</p><div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1"><p className="text-4xl font-bold text-slate-950 dark:text-white">{result.purchaseSheets}</p><p className="pb-1 text-sm text-slate-600 dark:text-slate-300">{result.baseSheets} в раскрой + {result.reserveSheets} закрытых в запас</p></div></div>
         <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4"><div><p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.layoutPieces}</p><p className="text-xs text-slate-500">Деталей на схеме</p></div><div><p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{result.wholePlacements}</p><p className="text-xs text-slate-500">Целых листов</p></div><div><p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{result.cutPieces}</p><p className="text-xs text-slate-500">Деталей с резом</p></div><div><p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{result.wastePercent}%</p><p className="text-xs text-slate-500">Остаток раскроя</p></div></div>
         <div className="mt-5 grid gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:bg-slate-900"><p className="flex justify-between gap-3"><span className="text-slate-500">Поверхность</span><strong>{result.surfaceAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Обшивка со слоями</span><strong>{result.coveredAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Материал без зазоров</span><strong>{result.netMaterialAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Ориентация</span><strong>{orientationLabel(surface, result.orientation)}</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Межлистовой зазор</span><strong>{result.input.jointGapMm} мм</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Остаток открытых листов</span><strong>{result.offcutAreaM2} м²</strong></p></div>
         {result.warnings.length > 0 && <div className="mt-4 space-y-2">{result.warnings.map((warning) => <p key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">⚠ {warning}</p>)}</div>}
-        <ul className="mt-4 list-disc space-y-1 pl-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{result.notes.map((note) => <li key={note}>{note}</li>)}</ul>
-        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800"><p className="text-xs text-slate-500 dark:text-slate-400">Раскладка даёт листы и карту реза. Профиль, крепёж, ленту и шпаклёвку считайте комплектно в калькуляторе гипсокартона.</p><div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">{material === "drywall" && surface !== "floor" && <Link href={drywallHref} onClick={() => trackToolRelatedClick("raskladka-listov", "drywall-calculator")} className="btn-primary inline-flex text-sm no-underline">Профиль и крепёж →</Link>}<button type="button" onClick={shareLayout} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}</button><SaveToProjectButton calcId="instrument-raskladka-listov" calcTitle="Раскладка листов" slug="gipsokarton" categorySlug="steny" materials={projectMaterials} calendarScenarioId="room" /></div></div>
+        <details className="group mt-4 rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden"><span>Монтажные условия · {result.notes.length}</span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><ul className="list-disc space-y-1 border-t border-stone-100 px-8 pb-4 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">{result.notes.map((note) => <li key={note}>{note}</li>)}</ul></details>
+        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800"><p className="text-xs text-slate-500 dark:text-slate-400">Раскладка даёт листы и карту реза. Профиль, крепёж, ленту и шпаклёвку считайте комплектно в калькуляторе гипсокартона.</p><div className="grid gap-2 sm:grid-cols-3">{material === "drywall" && surface !== "floor" && <Link href={drywallHref} onClick={() => trackToolRelatedClick("raskladka-listov", "drywall-calculator")} className="btn-primary min-h-11 justify-center text-sm no-underline">Профиль и крепёж →</Link>}<button type="button" onClick={shareLayout} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}</button><SaveToProjectButton calcId="instrument-raskladka-listov" calcTitle="Раскладка листов" slug="gipsokarton" categorySlug="steny" materials={projectMaterials} calendarScenarioId="room" /></div></div>
+        <button type="button" onClick={() => changeStage("layout")} className="mt-4 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">← Вернуться к схеме</button>
       </div>
+      <RenovationHubStrip scenarioId="room" compact />
     </div>
   );
 }
