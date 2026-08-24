@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useMemo, useRef, useCallback, useEffect, useId } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
-import ToolSectionNav from "@/components/tools/ToolSectionNav";
+import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -39,6 +39,13 @@ type LaminateVisualFinish = "natural-oak" | "white-oak" | "smoked-oak" | "walnut
 type LaminatePresentationMode = "room" | "plan";
 type LaminateLightSource = "left" | "center" | "right";
 type LaminateRoomDetails = "clear" | "furnished";
+type LaminateWorkspaceStage = "parameters" | "layout" | "result";
+
+const LAMINATE_WORKSPACE_STAGES = [
+  { value: "parameters", shortLabel: "Параметры", label: "Комната и доска" },
+  { value: "layout", shortLabel: "Схема", label: "2.5D и раскладка" },
+  { value: "result", shortLabel: "Результат", label: "Итог к покупке" },
+] satisfies Array<{ value: LaminateWorkspaceStage; shortLabel: string; label: string }>;
 
 const LAMINATE_VISUAL_FINISHES: Record<LaminateVisualFinish, {
   label: string;
@@ -342,6 +349,7 @@ function LaminateRoomSVG({
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function LaminateLayoutGenerator() {
+  const [activeStage, setActiveStage] = useState<LaminateWorkspaceStage>("layout");
   const [surfaceW, setSurfaceW] = useState(3000);
   const [surfaceH, setSurfaceH] = useState(4000);
   const [boardW, setBoardW] = useState(1285);
@@ -356,11 +364,12 @@ export default function LaminateLayoutGenerator() {
   const [compareFinish, setCompareFinish] = useState<LaminateVisualFinish>("white-oak");
   const [compareDirection, setCompareDirection] = useState<LaminateDirection>("along-length");
   const hydratedFromUrl = useRef(false);
+  const workspaceTopRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  const { hasStarted, markStarted, selectMode } = useToolAnalytics(
+  const { markStarted, selectMode } = useToolAnalytics(
     "raskladka-laminata",
     resultRef,
   );
@@ -374,8 +383,9 @@ export default function LaminateLayoutGenerator() {
     if (parsed.mode != null) setMode(parsed.mode);
   }, []);
 
-  const scrollTo = useCallback((ref: { current: HTMLElement | null }) => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const changeStage = useCallback((stage: LaminateWorkspaceStage) => {
+    setActiveStage(stage);
+    window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }, []);
 
   const result = useMemo(
@@ -433,16 +443,18 @@ export default function LaminateLayoutGenerator() {
   });
 
   return (
-    <div className="space-y-4">
+    <div ref={workspaceTopRef} className="space-y-4 scroll-mt-24">
       <RenovationHubStrip scenarioId="room" compact />
-      <ToolSectionNav
-        visible={hasStarted}
-        onParameters={() => scrollTo(parametersRef)}
-        onLayout={() => scrollTo(layoutRef)}
-        onResult={() => scrollTo(resultRef)}
-      />
+      <div className="xl:hidden">
+        <CompactToolWorkspaceNav activeStage={activeStage} ariaLabel="Этапы раскладки ламината" stages={LAMINATE_WORKSPACE_STAGES} onChange={changeStage} metrics={[
+          { label: "Площадь", value: `${surfaceAreaM2} м²` },
+          { label: mode === "herringbone" ? "Чистая оценка" : "По схеме", value: `${mode === "herringbone" ? result.basePurchaseBoards : result.totalBoards} шт.` },
+          { label: "Подрезка", value: `${result.wastePercent.toFixed(1)}%` },
+          { label: "Купить", value: `${result.purchaseBoards} шт.`, accent: true },
+        ]} />
+      </div>
       <div className="laminate-workspace grid items-start gap-4">
-      <div ref={parametersRef} className="card scroll-mt-24 space-y-5 p-4 sm:p-5 xl:sticky xl:top-20">
+      <div ref={parametersRef} className={`card scroll-mt-24 space-y-5 p-4 sm:p-5 xl:sticky xl:top-20 ${activeStage === "parameters" ? "block" : "hidden xl:block"}`}>
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Параметры раскладки</h2>
@@ -539,11 +551,12 @@ export default function LaminateLayoutGenerator() {
             ))}
           </div>
         </div>
+        <button type="button" onClick={() => changeStage("layout")} className="btn-primary min-h-12 w-full justify-center text-sm xl:hidden">Посмотреть комнату →</button>
       </div>
 
       {/* Визуализация */}
-      <div ref={layoutRef} className="card scroll-mt-24 space-y-4 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <div ref={layoutRef} className={`card scroll-mt-24 flex-col gap-4 p-4 sm:p-5 ${activeStage === "layout" ? "flex" : "hidden xl:flex"}`}>
+        <div className="order-1 flex flex-wrap items-start justify-between gap-3">
           <div><h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Как ламинат ляжет в комнате</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Видны рисунок пола, смещение рядов, направление досок и подрезки.</p></div>
           <div className="flex flex-wrap gap-2">
             <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-900" aria-label="Режим визуализации">
@@ -555,7 +568,7 @@ export default function LaminateLayoutGenerator() {
           </div>
         </div>
 
-        <div data-testid="laminate-texture-controls" className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+        <div data-testid="laminate-texture-controls" className="order-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60 xl:order-2">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Декор покрытия</p>
@@ -627,7 +640,7 @@ export default function LaminateLayoutGenerator() {
           )}
         </div>
 
-        <div ref={svgRef}>
+        <div ref={svgRef} className="order-2 xl:order-3">
           {presentationMode === "room" ? (
             compareMode ? (
               <div className="grid gap-3 lg:grid-cols-2">
@@ -639,7 +652,7 @@ export default function LaminateLayoutGenerator() {
         </div>
 
         {presentationMode === "room" && compareMode && (
-          <div data-testid="laminate-comparison-summary" className="grid gap-2 sm:grid-cols-2">
+          <div data-testid="laminate-comparison-summary" className="order-4 grid gap-2 sm:grid-cols-2">
             {[
               { title: "Вариант A", finish: visualFinish, direction, result },
               { title: "Вариант B", finish: compareFinish, direction: compareDirection, result: compareResult },
@@ -658,7 +671,7 @@ export default function LaminateLayoutGenerator() {
           </div>
         )}
 
-        <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300">
+        <div className="order-5 grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300">
           {mode === "herringbone" ? (
             <>
               <div className="flex items-center gap-1.5"><span className="h-4 w-8 rounded-sm border border-amber-900 bg-gradient-to-r from-amber-700 via-amber-300 to-amber-800" /><span>Рисунок ёлочки</span></div>
@@ -673,10 +686,11 @@ export default function LaminateLayoutGenerator() {
             </>
           )}
         </div>
+        <div className="order-6 grid gap-2 sm:grid-cols-2 xl:hidden"><button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Изменить параметры</button><button type="button" onClick={() => changeStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm">Посмотреть результат →</button></div>
       </div>
 
       {/* Результат */}
-      <div ref={resultRef} data-testid="laminate-result" className="card scroll-mt-24 p-4 sm:p-5 xl:sticky xl:top-20">
+      <div ref={resultRef} data-testid="laminate-result" className={`card scroll-mt-24 p-4 sm:p-5 xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden xl:block"}`}>
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           Результат
         </h3>
@@ -717,6 +731,7 @@ export default function LaminateLayoutGenerator() {
             />
           </div>
         </div>
+        <button type="button" onClick={() => changeStage("layout")} className="mt-4 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 xl:hidden">← Вернуться к комнате</button>
       </div>
       </div>
     </div>
