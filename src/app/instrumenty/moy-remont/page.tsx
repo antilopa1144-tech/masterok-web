@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -36,33 +35,21 @@ export default function MoyRemontPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <div className="bg-gradient-to-b from-violet-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container py-6">
+      <div className="border-b border-stone-200 bg-gradient-to-b from-orange-50/70 to-white dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
+        <div className="page-container py-5 md:py-6">
           <Breadcrumbs
             items={[
               { label: "Инструменты", href: "/instrumenty/" },
               { label: "Мой ремонт" },
             ]}
           />
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
-            Мастер «Мой ремонт»
-          </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-            Один ввод размеров — пакет расчётов и сводный список материалов. Для ванной используется готовый
-            комплексный калькулятор; для кухни и комнаты — связка проверенных калькуляторов пола и отделки.
-          </p>
-          <div className="flex flex-wrap gap-4 mt-4 text-sm font-medium">
-            <Link href="/proekty/" className="text-accent-700 hover:text-accent-800 dark:text-accent-400 no-underline">
-              Сохранённые проекты →
-            </Link>
-            <Link href="/instrumenty/kalendar-remonta/" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 no-underline">
-              Календарь этапов →
-            </Link>
-          </div>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Сводная закупка помещения</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Мастер «Мой ремонт»</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">Размеры вводятся один раз. На выходе — приоритетные покупки, полная ведомость и сохранение в проект.</p>
         </div>
       </div>
 
-      <div className="page-container py-8">
+      <div className="page-container py-5 md:py-8">
         <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка мастера…</div>}>
           <RoomMasterWizard />
         </Suspense>

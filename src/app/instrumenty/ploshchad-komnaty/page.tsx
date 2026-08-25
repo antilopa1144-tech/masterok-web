@@ -105,6 +105,15 @@ export default function PloshadKomnatyPage() {
   );
   const selectedShape = SHAPES.find((item) => item.id === shape) ?? SHAPES[0];
   const hasInputError = isNegative(wallHeight) || result.error !== undefined;
+  const roomMasterHref = useMemo(() => {
+    const params = new URLSearchParams({ pack: "room" });
+    if (shape === "rect" && !hasInputError) {
+      params.set("length", a);
+      params.set("width", b);
+      params.set("height", wallHeight || "0");
+    }
+    return `/instrumenty/moy-remont/?${params}`;
+  }, [a, b, hasInputError, shape, wallHeight]);
 
   return (
     <div className="page-container max-w-6xl py-6 md:py-8">
@@ -243,7 +252,7 @@ export default function PloshadKomnatyPage() {
               <p className="mt-2 rounded-xl bg-stone-100 px-3 py-3 text-xs leading-relaxed text-stone-500 dark:bg-slate-950 dark:text-slate-400">Исправьте размеры — после этого откроются калькуляторы закупки.</p>
             ) : (
               <div className="mt-2 grid gap-2">
-                <Link href="/instrumenty/moy-remont/?pack=room" className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
+                <Link href={roomMasterHref} className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
                 <div className="grid grid-cols-2 gap-2">
                   <Link href="/kalkulyatory/poly/laminat/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для пола</Link>
                   <Link href="/kalkulyatory/otdelka/oboi/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для стен</Link>
