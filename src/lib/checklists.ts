@@ -23,7 +23,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Общее строительство",
     categoryIcon: "🏠",
     complexity: 3,
-    totalItems: 42,
+    totalItems: 58,
     duration: "2–6 месяцев",
     steps: [
       {
@@ -144,7 +144,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Полы и стены",
     categoryIcon: "🔲",
     complexity: 2,
-    totalItems: 25,
+    totalItems: 33,
     duration: "2–5 дней",
     steps: [
       {
@@ -225,7 +225,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Полы",
     categoryIcon: "🏗️",
     complexity: 2,
-    totalItems: 20,
+    totalItems: 26,
     duration: "3–7 дней (+ 28 дней набор прочности)",
     steps: [
       {
@@ -294,7 +294,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Стены",
     categoryIcon: "🧱",
     complexity: 2,
-    totalItems: 22,
+    totalItems: 27,
     duration: "1–3 дня",
     steps: [
       {
@@ -364,7 +364,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Отделка",
     categoryIcon: "🎨",
     complexity: 1,
-    totalItems: 18,
+    totalItems: 24,
     duration: "2–3 дня",
     steps: [
       {
@@ -426,7 +426,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Отделка",
     categoryIcon: "🖼️",
     complexity: 1,
-    totalItems: 15,
+    totalItems: 20,
     duration: "1–2 дня",
     steps: [
       {
@@ -543,7 +543,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Фасад",
     categoryIcon: "🧱",
     complexity: 3,
-    totalItems: 24,
+    totalItems: 22,
     duration: "1–3 недели",
     steps: [
       {
@@ -597,7 +597,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Кровля",
     categoryIcon: "🏠",
     complexity: 3,
-    totalItems: 30,
+    totalItems: 28,
     duration: "1–3 недели",
     steps: [
       {
@@ -662,7 +662,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
     category: "Инженерные системы",
     categoryIcon: "⚡",
     complexity: 3,
-    totalItems: 26,
+    totalItems: 23,
     duration: "3–7 дней",
     steps: [
       {

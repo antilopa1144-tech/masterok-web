@@ -11,6 +11,7 @@ import {
   buildChecklistDetailBreadcrumbJsonLd,
   buildChecklistHowToJsonLd,
 } from "@/lib/tools/checklist-schema";
+import InteractiveChecklist from "./InteractiveChecklist";
 
 const UI_TEXT = {
   notFoundTitle: "Чек-лист не найден",
@@ -118,30 +119,7 @@ export default async function ChecklistPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Этапы и пункты */}
-      <div className="space-y-6">
-        {cl.steps.map((step, stepIndex) => (
-          <div key={stepIndex} className="card p-5">
-            {/* Заголовок этапа */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent-100 text-accent-700 flex items-center justify-center text-sm font-bold shrink-0">
-                {stepIndex + 1}
-              </div>
-              <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base">{step.title}</h2>
-            </div>
-
-            {/* Пункты */}
-            <ul className="space-y-2.5">
-              {step.items.map((item, itemIndex) => (
-                <li key={itemIndex} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-sm border-2 border-slate-300 dark:border-slate-600 shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-700 dark:text-slate-200 leading-snug">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <InteractiveChecklist checklist={cl} />
 
       {/* Нижние кнопки */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -166,7 +144,6 @@ export default async function ChecklistPage({ params }: Props) {
     </>
   );
 }
-
 
 
 
