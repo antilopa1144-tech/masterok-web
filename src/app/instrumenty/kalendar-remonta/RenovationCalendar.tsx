@@ -40,11 +40,20 @@ export default function RenovationCalendar() {
     scenarioId: initialScenario,
   });
   const [hydrated, setHydrated] = useState(false);
+  const [expandedStageId, setExpandedStageId] = useState<string | null>(
+    RENOVATION_SCENARIOS[initialScenario].stages[0]?.id ?? null,
+  );
 
   useEffect(() => {
     const saved = loadCalendarState();
     const fromUrl = parseScenarioId(searchParams.get("scenario"));
     setState({ ...saved, scenarioId: fromUrl });
+    const scenarioFromUrl = RENOVATION_SCENARIOS[fromUrl];
+    setExpandedStageId(
+      scenarioFromUrl.stages.find((stage) => !saved.completedStageIds.includes(stage.id))?.id
+        ?? scenarioFromUrl.stages[0]?.id
+        ?? null,
+    );
     setHydrated(true);
   }, [searchParams]);
 
@@ -62,12 +71,24 @@ export default function RenovationCalendar() {
   const progress = scenario.stages.length
     ? Math.round((state.completedStageIds.length / scenario.stages.length) * 100)
     : 0;
+  const nextStage = scenario.stages.find((stage) => !completedSet.has(stage.id)) ?? null;
 
   const toggleStage = (stageId: string) => {
-    const next = completedSet.has(stageId)
+    const wasCompleted = completedSet.has(stageId);
+    const next = wasCompleted
       ? state.completedStageIds.filter((id) => id !== stageId)
       : [...state.completedStageIds, stageId];
     persist({ ...state, completedStageIds: next });
+    if (wasCompleted) {
+      setExpandedStageId(stageId);
+      return;
+    }
+
+    const stageIndex = scenario.stages.findIndex((stage) => stage.id === stageId);
+    const followingStage = scenario.stages
+      .slice(stageIndex + 1)
+      .find((stage) => !next.includes(stage.id));
+    setExpandedStageId(followingStage?.id ?? stageId);
   };
 
   const changeScenario = (id: RenovationScenarioId) => {
@@ -77,6 +98,7 @@ export default function RenovationCalendar() {
       completedStageIds: [],
       completedTaskKeys: [],
     });
+    setExpandedStageId(RENOVATION_SCENARIOS[id].stages[0]?.id ?? null);
   };
 
   const toggleTask = (stageId: string, index: number) => {
@@ -92,77 +114,77 @@ export default function RenovationCalendar() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Сценарий ремонта">
-        {getScenarioList().map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={state.scenarioId === s.id}
-            onClick={() => changeScenario(s.id)}
-            className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-              state.scenarioId === s.id
-                ? "bg-accent-600 text-white shadow-sm"
-                : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
-            }`}
-          >
-            <span className="mr-1.5" aria-hidden>
-              {s.icon}
-            </span>
-            {s.title}
-          </button>
-        ))}
-      </div>
-
-      <p className="text-sm text-slate-600 dark:text-slate-400">
-        {scenario.description} Ориентир: <strong>{scenario.durationLabel}</strong>.
-      </p>
-
-      <div className="card p-5 flex flex-col sm:flex-row sm:items-end gap-4">
-        <label className="flex-1 block">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            Дата начала работ (ориентир)
-          </span>
-          <input
-            type="date"
-            value={state.startDate ?? ""}
-            onChange={(e) => persist({ ...state, startDate: e.target.value || null })}
-            className="input-field mt-2 w-full"
-          />
-        </label>
-        <div className="sm:text-right shrink-0">
-          <p className="text-xs text-slate-500">Прогресс</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{progress}%</p>
-          <p className="text-xs text-slate-400">
-            {state.completedStageIds.length} из {scenario.stages.length} этапов
-          </p>
+    <div className="max-w-4xl space-y-4">
+      <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" role="tablist" aria-label="Сценарий ремонта">
+        <div className="flex min-w-max gap-2">
+          {getScenarioList().map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={state.scenarioId === s.id}
+              onClick={() => changeScenario(s.id)}
+              className={`min-h-11 rounded-xl px-4 text-sm font-semibold transition-all ${
+                state.scenarioId === s.id
+                  ? "bg-accent-600 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              }`}
+            >
+              <span className="mr-1.5" aria-hidden>{s.icon}</span>
+              {s.title}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-        <div
-          className="h-full bg-accent-500 transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <section className="card overflow-hidden">
+        <div className="border-b border-sky-200 bg-gradient-to-br from-sky-50 via-white to-accent-50 p-4 dark:border-sky-800/50 dark:from-sky-950/30 dark:via-slate-900 dark:to-accent-950/20 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Паспорт плана</p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{scenario.icon} {scenario.title}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{scenario.description}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-3xl font-bold text-slate-950 dark:text-white">{progress}%</p>
+              <p className="text-[10px] text-slate-500">{state.completedStageIds.length} из {scenario.stages.length}</p>
+            </div>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80 dark:bg-slate-800">
+            <div className="h-full bg-accent-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_220px] sm:p-5">
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Дата начала работ</span>
+            <input type="date" value={state.startDate ?? ""} onChange={(event) => persist({ ...state, startDate: event.target.value || null })} className="input-field mt-2 min-h-12 w-full" />
+          </label>
+          <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{nextStage ? "Следующий этап" : "План завершён"}</p>
+            <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">{nextStage?.title ?? "Все этапы отмечены"}</p>
+            <p className="mt-1 text-[10px] text-slate-500">Ориентир всего: {scenario.durationLabel}</p>
+          </div>
+        </div>
+      </section>
 
-      <ol className="space-y-4">
+      <ol className="space-y-3">
         {scenario.stages.map((stage, index) => {
           const done = completedSet.has(stage.id);
+          const expanded = expandedStageId === stage.id;
           const inlineTasks = getStageInlineTasks(state.scenarioId, stage.id);
           const dateHint = formatStageDateRange(state.startDate, stage.dayFrom, stage.dayTo);
           return (
             <li
               key={stage.id}
-              className={`card p-5 transition-opacity ${done ? "opacity-70" : ""}`}
+              className={`card overflow-hidden transition-opacity ${done ? "opacity-70" : ""}`}
             >
-              <div className="flex gap-3">
+              <div className="flex items-start gap-2 p-3 sm:gap-3 sm:p-5">
                 <button
                   type="button"
                   onClick={() => toggleStage(stage.id)}
                   aria-pressed={done}
-                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold transition-colors ${
+                  aria-label={done ? `Вернуть этап «${stage.title}» в работу` : `Отметить этап «${stage.title}» выполненным`}
+                  className={`flex size-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold transition-colors sm:size-9 ${
                     done
                       ? "border-green-500 bg-green-500 text-white"
                       : "border-slate-300 dark:border-slate-600 text-transparent hover:border-accent-400"
@@ -171,55 +193,49 @@ export default function RenovationCalendar() {
                   ✓
                 </button>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-xs font-bold text-slate-400">Этап {index + 1}</span>
-                    <h3
-                      className={`text-base font-bold ${done ? "line-through text-slate-500" : "text-slate-900 dark:text-slate-100"}`}
-                    >
-                      {stage.title}
-                    </h3>
-                  </div>
-                  {dateHint && (
-                    <p className="text-xs text-accent-700 dark:text-accent-400 mt-1 font-medium">
-                      📅 {dateHint}
-                    </p>
-                  )}
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                    {stage.summary}
-                  </p>
-                  {inlineTasks.length > 0 && (
-                    <ul className="mt-3 space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/30">
-                      {inlineTasks.map((task, ti) => {
-                        const taskKey = renovationTaskKey(state.scenarioId, stage.id, ti);
-                        const taskDone = completedTasksSet.has(taskKey);
-                        return (
-                          <li key={taskKey}>
-                            <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
-                              <input
-                                type="checkbox"
-                                checked={taskDone}
-                                onChange={() => toggleTask(stage.id, ti)}
-                                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-accent-600 focus:ring-accent-500/30"
-                              />
-                              <span className={taskDone ? "line-through text-slate-400" : ""}>
-                                {task}
-                              </span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {stage.links.map((link) => (
-                      <Link
-                        key={`${stage.id}-${link.href}-${link.label}`}
-                        href={link.href}
-                        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold no-underline hover:opacity-90 ${LINK_STYLE[link.type]}`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                  <button type="button" aria-expanded={expanded} onClick={() => setExpandedStageId(expanded ? null : stage.id)} className="flex min-h-11 w-full items-center justify-between gap-3 text-left sm:cursor-default">
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Этап {index + 1}{dateHint ? ` · ${dateHint}` : ""}</span>
+                      <span className={`mt-0.5 block text-base font-bold ${done ? "line-through text-slate-500" : "text-slate-900 dark:text-slate-100"}`}>{stage.title}</span>
+                    </span>
+                    <span className={`text-lg text-slate-400 transition-transform sm:hidden ${expanded ? "rotate-180" : ""}`} aria-hidden="true">⌄</span>
+                  </button>
+                  <div className={`${expanded ? "block" : "hidden"} pt-2 sm:block`}>
+                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{stage.summary}</p>
+                    {inlineTasks.length > 0 && (
+                      <ul className="mt-3 space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/30">
+                        {inlineTasks.map((task, ti) => {
+                          const taskKey = renovationTaskKey(state.scenarioId, stage.id, ti);
+                          const taskDone = completedTasksSet.has(taskKey);
+                          return (
+                            <li key={taskKey}>
+                              <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                <input
+                                  type="checkbox"
+                                  checked={taskDone}
+                                  onChange={() => toggleTask(stage.id, ti)}
+                                  className="mt-0.5 size-5 shrink-0 rounded border-slate-300 text-accent-600 focus:ring-accent-500/30"
+                                />
+                                <span className={taskDone ? "line-through text-slate-400" : ""}>
+                                  {task}
+                                </span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {stage.links.map((link) => (
+                        <Link
+                          key={`${stage.id}-${link.href}-${link.label}`}
+                          href={link.href}
+                          className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold no-underline hover:opacity-90 ${LINK_STYLE[link.type]}`}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
