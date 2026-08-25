@@ -1,30 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
   calculateRoomArea,
   parseRoomDimension,
-  type RoomAreaResult,
   type RoomShape,
 } from "@/lib/tools/room-area";
-
-const UI_TEXT = {
-  breadcrumbHome: "Главная",
-  breadcrumbTools: "Инструменты",
-  breadcrumbCurrent: "Площадь комнаты",
-  pageTitle: "Калькулятор площади комнаты в м²",
-  pageDescription: "Введите длину, ширину и высоту — получите квадратуру пола, периметр и площадь стен для прямоугольной, Г-, Т-образной и других форм.",
-  defaultLengthUnit: "м",
-  onlyFloorHint: "Площадь стен считается без вычета окон и дверей. Оставьте 0, если нужна только площадь пола",
-  shapeTitle: "Форма помещения",
-  dimensionsTitle: "Размеры",
-  calculate: "Рассчитать",
-  resultTitle: "Результат",
-  floorAreaLabel: "Площадь пола",
-  perimeterLabel: "Периметр",
-  wallAreaLabel: "Площадь стен",
-} as const;
 
 interface ShapeOption {
   id: RoomShape;
@@ -34,283 +16,290 @@ interface ShapeOption {
 }
 
 const SHAPES: ShapeOption[] = [
-  { id: "rect", label: "Прямоугольник", icon: "▭", desc: "Стандартная прямоугольная комната" },
-  { id: "lshape", label: "Г-образная", icon: "⌐", desc: "Прямоугольник с угловым вырезом" },
-  { id: "tshape", label: "Т-образная", icon: "⊤", desc: "Перекладина и центральная стойка" },
-  { id: "trapezoid", label: "Трапеция", icon: "⏢", desc: "Равнобедренная трапеция" },
-  { id: "triangle", label: "Треугольник", icon: "△", desc: "Равнобедренный треугольник" },
-  { id: "circle", label: "Круг / сектор", icon: "○", desc: "Круглая комната или сектор" },
+  { id: "rect", label: "Прямоугольник", icon: "▭", desc: "Обычная комната" },
+  { id: "lshape", label: "Г-образная", icon: "⌐", desc: "С угловым вырезом" },
+  { id: "tshape", label: "Т-образная", icon: "⊤", desc: "Две зоны" },
+  { id: "trapezoid", label: "Трапеция", icon: "⏢", desc: "Разные основания" },
+  { id: "triangle", label: "Треугольник", icon: "△", desc: "Основание и высота" },
+  { id: "circle", label: "Круг / сектор", icon: "○", desc: "По радиусу" },
 ];
 
 function fmtM(n: number): string {
-  if (isNaN(n) || n <= 0) return "—";
+  if (!Number.isFinite(n) || n <= 0) return "—";
   return n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+}
+
+function isNegative(value: string): boolean {
+  const parsed = Number.parseFloat(value.replace(",", "."));
+  return Number.isFinite(parsed) && parsed < 0;
 }
 
 function NumInput({
   label,
   value,
   onChange,
-  unit = UI_TEXT.defaultLengthUnit,
+  unit = "м",
   hint,
+  allowZero = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   unit?: string;
   hint?: string;
+  allowZero?: boolean;
 }) {
+  const invalid = isNegative(value) || (!allowZero && parseRoomDimension(value) === 0);
+  const errorId = `${label.replace(/\W+/g, "-")}-error`;
+
   return (
-    <div>
-      <label className="input-label">{label}</label>
-      <div className="flex items-center gap-2">
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-slate-300">{label}</span>
+      <span className={`flex min-h-11 items-center rounded-xl border bg-white transition focus-within:ring-2 focus-within:ring-accent-200 dark:bg-slate-950 ${
+        invalid
+          ? "border-red-300 dark:border-red-800"
+          : "border-stone-200 focus-within:border-accent-400 dark:border-slate-700"
+      }`}>
         <input
           type="number"
           inputMode="decimal"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           min={0}
           step={0.01}
-          className="input-field flex-1"
-          placeholder="0"
+          aria-invalid={invalid}
+          aria-describedby={invalid ? errorId : undefined}
+          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base font-semibold text-slate-950 outline-none dark:text-white"
+          placeholder={allowZero ? "0" : "0,00"}
         />
-        <span className="text-sm text-slate-500 dark:text-slate-400 w-6 shrink-0">{unit}</span>
-      </div>
-      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-400">{hint}</p>}
-    </div>
+        <span className="border-l border-stone-100 px-3 text-xs font-semibold text-stone-400 dark:border-slate-800 dark:text-slate-500">{unit}</span>
+      </span>
+      {invalid && (
+        <span id={errorId} className="mt-1 block text-xs text-red-600 dark:text-red-300">
+          {allowZero ? "Укажите 0 или больше" : "Введите значение больше 0"}
+        </span>
+      )}
+      {hint && !invalid && <span className="mt-1 block text-xs leading-relaxed text-stone-400 dark:text-slate-500">{hint}</span>}
+    </label>
   );
 }
 
 export default function PloshadKomnatyPage() {
   const [shape, setShape] = useState<RoomShape>("rect");
   const [wallHeight, setWallHeight] = useState("2.7");
-  const [result, setResult] = useState<RoomAreaResult | null>(null);
-
-  // Поля по форме
   const [a, setA] = useState("5");
   const [b, setB] = useState("4");
   const [c, setC] = useState("2");
   const [d, setD] = useState("2");
 
-  const calculate = () => {
-    setResult(calculateRoomArea({
+  const result = useMemo(
+    () => calculateRoomArea({
       shape,
       a: parseRoomDimension(a),
       b: parseRoomDimension(b),
       c: parseRoomDimension(c),
       d: parseRoomDimension(d),
       wallHeight: parseRoomDimension(wallHeight),
-    }));
-  };
-
-  const shapeChange = (s: RoomShape) => {
-    setShape(s);
-    setResult(null);
-  };
+    }),
+    [a, b, c, d, shape, wallHeight],
+  );
+  const selectedShape = SHAPES.find((item) => item.id === shape) ?? SHAPES[0];
+  const hasInputError = isNegative(wallHeight) || result.error !== undefined;
 
   return (
-    <div className="page-container py-8 max-w-3xl">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-6">
-        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
+    <div className="page-container max-w-6xl py-6 md:py-8">
+      <nav className="mb-5 flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400">
+        <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
-        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
+        <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
         <span>/</span>
-        <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
+        <span className="text-slate-600 dark:text-slate-300">Площадь комнаты</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-        {UI_TEXT.pageTitle}
-      </h1>
-      <p className="text-slate-500 dark:text-slate-400 mb-8">
-        {UI_TEXT.pageDescription}
-      </p>
-
-      {/* Выбор формы */}
-      <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">{UI_TEXT.shapeTitle}</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {SHAPES.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => shapeChange(s.id)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                shape === s.id
-                  ? "border-accent-400 bg-accent-50 text-accent-700"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600"
-              }`}
-            >
-              <span className="text-lg leading-none">{s.icon}</span>
-              <div>
-                <div className="text-sm font-medium">{s.label}</div>
-                <div className="text-xs text-slate-400 dark:text-slate-400 leading-tight hidden sm:block">{s.desc}</div>
-              </div>
-            </button>
-          ))}
-        </div>
+      <div className="mb-5 max-w-3xl">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Геометрия помещения</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Площадь комнаты</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+          Выберите форму и укажите размеры — план, площадь пола, стен и периметр обновятся сразу.
+        </p>
       </div>
 
-      {/* SVG Схема */}
-      <div className="card p-5 mb-5 flex justify-center">
-        <ShapeSVG shape={shape} />
-      </div>
-
-      {/* Параметры */}
-      <div className="card p-5 mb-5">
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">{UI_TEXT.dimensionsTitle}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {shape === "rect" && (
-            <>
-              <NumInput label="Длина комнаты (A)" value={a} onChange={setA} />
-              <NumInput label="Ширина комнаты (B)" value={b} onChange={setB} />
-            </>
-          )}
-          {shape === "lshape" && (
-            <>
-              <NumInput label="Длина большого прямоугольника (A)" value={a} onChange={setA} />
-              <NumInput label="Ширина большого прямоугольника (B)" value={b} onChange={setB} />
-              <NumInput label="Ширина выреза (C)" value={c} onChange={setC} />
-              <NumInput label="Длина выреза (D)" value={d} onChange={setD} />
-            </>
-          )}
-          {shape === "tshape" && (
-            <>
-              <NumInput label="Длина перекладины (A)" value={a} onChange={setA} />
-              <NumInput label="Глубина перекладины (B)" value={b} onChange={setB} />
-              <NumInput label="Ширина стойки (C)" value={c} onChange={setC} />
-              <NumInput label="Длина стойки (D)" value={d} onChange={setD} />
-            </>
-          )}
-          {shape === "trapezoid" && (
-            <>
-              <NumInput label="Основание A" value={a} onChange={setA} />
-              <NumInput label="Основание B" value={b} onChange={setB} />
-              <NumInput label="Высота трапеции" value={c} onChange={setC} />
-            </>
-          )}
-          {shape === "triangle" && (
-            <>
-              <NumInput label="Основание" value={a} onChange={setA} />
-              <NumInput label="Высота" value={b} onChange={setB} />
-            </>
-          )}
-          {shape === "circle" && (
-            <>
-              <NumInput label="Радиус" value={a} onChange={setA} />
-              <NumInput label="Угол сектора (0 или 360 = полный круг)" value={b} onChange={setB} unit="°" />
-            </>
-          )}
-
-          {/* Высота стен */}
-          <NumInput
-            label="Высота стен (для расчёта площади стен)"
-            value={wallHeight}
-            onChange={setWallHeight}
-            hint={UI_TEXT.onlyFloorHint}
-          />
-        </div>
-
-        <button onClick={calculate} className="btn-primary w-full mt-5">{UI_TEXT.calculate}</button>
-      </div>
-
-      {/* Результат */}
-      {result && (
-        result.error ? (
-          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
-            {result.error}
+      <div className="mb-4 grid grid-cols-3 rounded-2xl border border-stone-200 bg-white p-1.5 text-center text-xs dark:border-slate-800 dark:bg-slate-900 lg:hidden" aria-label="Состав расчёта">
+        {[["1", "Форма"], ["2", "Размеры"], ["3", "Результат"]].map(([number, label]) => (
+          <div key={number} className="flex min-h-9 items-center justify-center gap-1.5 rounded-xl text-stone-600 dark:text-slate-300">
+            <span className="grid size-5 place-items-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">{number}</span>
+            {label}
           </div>
-        ) : (
-          <div className="result-card">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">{UI_TEXT.resultTitle}</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <ResultItem label={UI_TEXT.floorAreaLabel} value={fmtM(result.floorArea)} unit="м²" />
-              <ResultItem label={UI_TEXT.perimeterLabel} value={fmtM(result.perimeter)} unit="м" />
-              {result.wallArea !== undefined && result.wallArea > 0 && (
-                <ResultItem label={UI_TEXT.wallAreaLabel} value={fmtM(result.wallArea)} unit="м²" />
-              )}
+        ))}
+      </div>
+
+      <section className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)_280px]" aria-label="Рабочая область расчёта">
+        <div className="order-2 space-y-4 lg:order-1">
+          <div className="card border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Шаг 1</p>
+                <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Форма комнаты</h2>
+              </div>
+              <span className="text-xs text-stone-400">6 вариантов</span>
             </div>
-            {result.notes && (
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{result.notes}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Форма помещения">
+              {SHAPES.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={shape === item.id}
+                  onClick={() => setShape(item.id)}
+                  className={`min-h-14 rounded-xl border px-3 py-2 text-left transition ${
+                    shape === item.id
+                      ? "border-emerald-400 bg-emerald-50 text-emerald-950 shadow-sm dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-100"
+                      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                  }`}
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold"><span className="text-lg leading-none" aria-hidden>{item.icon}</span>{item.label}</span>
+                  <span className="mt-0.5 hidden text-[10px] text-stone-400 sm:block lg:hidden xl:block">{item.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="card border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">Шаг 2</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Размеры в метрах</h2>
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-1 xl:grid-cols-2">
+              {shape === "rect" && <><NumInput label="Длина A" value={a} onChange={setA} /><NumInput label="Ширина B" value={b} onChange={setB} /></>}
+              {shape === "lshape" && <><NumInput label="Длина A" value={a} onChange={setA} /><NumInput label="Ширина B" value={b} onChange={setB} /><NumInput label="Вырез C" value={c} onChange={setC} /><NumInput label="Вырез D" value={d} onChange={setD} /></>}
+              {shape === "tshape" && <><NumInput label="Перекладина A" value={a} onChange={setA} /><NumInput label="Глубина B" value={b} onChange={setB} /><NumInput label="Стойка C" value={c} onChange={setC} /><NumInput label="Длина D" value={d} onChange={setD} /></>}
+              {shape === "trapezoid" && <><NumInput label="Основание A" value={a} onChange={setA} /><NumInput label="Основание B" value={b} onChange={setB} /><NumInput label="Высота C" value={c} onChange={setC} /></>}
+              {shape === "triangle" && <><NumInput label="Основание A" value={a} onChange={setA} /><NumInput label="Высота B" value={b} onChange={setB} /></>}
+              {shape === "circle" && <><NumInput label="Радиус" value={a} onChange={setA} /><NumInput label="Угол сектора" value={b} onChange={setB} unit="°" allowZero hint="0 или 360 — полный круг" /></>}
+              <div className="col-span-2 lg:col-span-1 xl:col-span-2">
+                <NumInput label="Высота стен" value={wallHeight} onChange={setWallHeight} allowZero hint="0 — если нужна только площадь пола" />
+              </div>
+            </div>
+            <p className="mt-3 flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400">
+              <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
+              Пересчитывается автоматически
+            </p>
+          </div>
+        </div>
+
+        <div className="order-1 overflow-hidden rounded-3xl border border-stone-200 bg-[#f4efe5] shadow-sm dark:border-slate-700 dark:bg-slate-900 lg:order-2">
+          <div className="flex items-center justify-between border-b border-white/70 px-4 py-3 dark:border-slate-800">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500 dark:text-slate-400">План помещения</p>
+              <p className="mt-0.5 text-sm font-bold text-stone-900 dark:text-white">{selectedShape.label}</p>
+            </div>
+            <span className="rounded-full border border-white bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-stone-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Вид сверху</span>
+          </div>
+          <div className="relative flex min-h-[245px] items-center justify-center overflow-hidden p-5 sm:min-h-[320px]">
+            <div className="absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(rgba(120,113,108,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,.08) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+            <div className="relative w-full max-w-lg"><ShapeSVG shape={shape} /></div>
+          </div>
+          <div className="grid grid-cols-3 border-t border-white/80 bg-white/70 dark:border-slate-800 dark:bg-slate-950/50" aria-live="polite">
+            <PlanMetric label="Пол" value={hasInputError ? "—" : `${fmtM(result.floorArea)} м²`} />
+            <PlanMetric label="Периметр" value={hasInputError ? "—" : `${fmtM(result.perimeter)} м`} />
+            <PlanMetric label="Стены" value={hasInputError || !result.wallArea ? "—" : `${fmtM(result.wallArea)} м²`} />
+          </div>
+        </div>
+
+        <div className="order-3 card overflow-hidden border-stone-200 bg-[#fffdf9] p-0 dark:border-slate-700 dark:bg-slate-900">
+          <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 to-amber-50 p-4 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-amber-950/10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Паспорт помещения</p>
+            <div className="mt-2 flex items-start justify-between gap-3 lg:block">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950 dark:text-white">{selectedShape.label}</h2>
+                <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">{a || "—"} × {b || "—"} м · стены {wallHeight || "0"} м</p>
+              </div>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold lg:mt-3 lg:inline-flex ${hasInputError ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"}`}>
+                {hasInputError ? "Нужно исправить" : "Расчёт готов"}
+              </span>
+            </div>
+          </div>
+
+          {hasInputError ? (
+            <div role="alert" className="m-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-relaxed text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+              {isNegative(wallHeight) ? "Высота стен не может быть отрицательной." : result.error}
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Площадь пола</p>
+                <p className="mt-1 text-4xl font-bold tracking-tight text-slate-950 dark:text-white">{fmtM(result.floorArea)} <span className="text-lg font-semibold text-stone-500 dark:text-slate-400">м²</span></p>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <ResultItem label="Периметр" value={fmtM(result.perimeter)} unit="м" />
+                <ResultItem label="Площадь стен" value={result.wallArea ? fmtM(result.wallArea) : "—"} unit="м²" />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-stone-500 dark:text-slate-400">Площадь стен дана без вычета окон и дверей. Проёмы и запас учитываются в профильном калькуляторе.</p>
+              {result.notes && <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">{result.notes}</p>}
+            </div>
+          )}
+
+          <div className="border-t border-stone-100 p-4 dark:border-slate-800">
+            <p className="text-xs font-semibold text-stone-700 dark:text-slate-300">Следующий шаг</p>
+            {hasInputError ? (
+              <p className="mt-2 rounded-xl bg-stone-100 px-3 py-3 text-xs leading-relaxed text-stone-500 dark:bg-slate-950 dark:text-slate-400">Исправьте размеры — после этого откроются калькуляторы закупки.</p>
+            ) : (
+              <div className="mt-2 grid gap-2">
+                <Link href="/instrumenty/moy-remont/?pack=room" className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/kalkulyatory/poly/laminat/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для пола</Link>
+                  <Link href="/kalkulyatory/otdelka/oboi/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для стен</Link>
+                </div>
+              </div>
             )}
           </div>
-        )
-      )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PlanMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border-r border-stone-200 px-2 py-3 text-center last:border-r-0 dark:border-slate-800">
+      <p className="text-[10px] text-stone-400 dark:text-slate-500">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-bold text-slate-950 dark:text-white">{value}</p>
     </div>
   );
 }
 
 function ResultItem({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="bg-accent-50 dark:bg-slate-800 rounded-xl p-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
-      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
-        {value} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{unit}</span>
-      </p>
+    <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
+      <p className="text-[10px] text-stone-500 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{value} <span className="text-xs font-medium text-stone-400">{unit}</span></p>
     </div>
   );
 }
 
-// SVG-схема выбранной формы
 function ShapeSVG({ shape }: { shape: RoomShape }) {
-  const W = 200, H = 120;
-  const stroke = "#475569";
-  const fill = "#f1f5f9";
-  const dimColor = "#f97316";
-  const textStyle = { fontSize: 11, fill: dimColor, fontFamily: "system-ui" };
+  const stroke = "#57534e";
+  const fill = "url(#floor)";
+  const dimColor = "#c2410c";
+  const textStyle = { fontSize: 10, fontWeight: 700, fill: dimColor, fontFamily: "system-ui" };
+  const shared = { fill, stroke, strokeWidth: 2.5, filter: "url(#shadow)" };
+  const defs = (
+    <defs>
+      <linearGradient id="floor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffdf8" /><stop offset="1" stopColor="#ded6c9" /></linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#78716c" floodOpacity=".22" /></filter>
+    </defs>
+  );
 
   switch (shape) {
     case "rect":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <rect x={30} y={15} width={140} height={90} fill={fill} stroke={stroke} strokeWidth={2} />
-          <text x={100} y={8} textAnchor="middle" style={textStyle}>A</text>
-          <text x={22} y={65} textAnchor="middle" style={textStyle}>B</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План прямоугольной комнаты">{defs}<rect x="32" y="25" width="156" height="100" rx="2" {...shared} /><path d="M32 50H188M32 75H188M32 100H188M58 25V125M84 25V125M110 25V125M136 25V125M162 25V125" stroke="#a8a29e" strokeOpacity=".22" strokeWidth=".7" /><text x="110" y="18" textAnchor="middle" style={textStyle}>A · длина</text><text x="21" y="78" textAnchor="middle" transform="rotate(-90 21 78)" style={textStyle}>B · ширина</text></svg>;
     case "lshape":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <polygon points="20,10 150,10 150,60 90,60 90,110 20,110" fill={fill} stroke={stroke} strokeWidth={2} />
-          <text x={85} y={8} textAnchor="middle" style={textStyle}>A</text>
-          <text x={12} y={65} textAnchor="middle" style={textStyle}>B</text>
-          <text x={120} y={75} textAnchor="middle" style={{ ...textStyle, fill: "#94a3b8" }}>C×D</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План Г-образной комнаты">{defs}<polygon points="24,20 188,20 188,78 112,78 112,132 24,132" {...shared} /><text x="105" y="14" textAnchor="middle" style={textStyle}>A</text><text x="15" y="78" textAnchor="middle" transform="rotate(-90 15 78)" style={textStyle}>B</text><text x="151" y="98" textAnchor="middle" style={textStyle}>вырез C × D</text></svg>;
     case "tshape":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <polygon points="10,10 190,10 190,50 130,50 130,110 70,110 70,50 10,50" fill={fill} stroke={stroke} strokeWidth={2} />
-          <text x={100} y={8} textAnchor="middle" style={textStyle}>A</text>
-          <text x={194} y={33} textAnchor="middle" style={textStyle}>B</text>
-          <text x={100} y={118} textAnchor="middle" style={textStyle}>C</text>
-          <text x={136} y={82} textAnchor="middle" style={textStyle}>D</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План Т-образной комнаты">{defs}<polygon points="16,22 204,22 204,70 144,70 144,132 76,132 76,70 16,70" {...shared} /><text x="110" y="15" textAnchor="middle" style={textStyle}>A</text><text x="210" y="49" style={textStyle}>B</text><text x="110" y="144" textAnchor="middle" style={textStyle}>C</text><text x="151" y="103" style={textStyle}>D</text></svg>;
     case "trapezoid":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <polygon points="20,100 180,100 150,20 50,20" fill={fill} stroke={stroke} strokeWidth={2} />
-          <text x={100} y={115} textAnchor="middle" style={textStyle}>A</text>
-          <text x={100} y={16} textAnchor="middle" style={textStyle}>B</text>
-          <text x={185} y={65} style={textStyle}>h</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План комнаты в форме трапеции">{defs}<polygon points="24,127 196,127 164,25 56,25" {...shared} /><text x="110" y="142" textAnchor="middle" style={textStyle}>A</text><text x="110" y="18" textAnchor="middle" style={textStyle}>B</text><line x1="164" y1="25" x2="164" y2="127" stroke={dimColor} strokeDasharray="4 4" /><text x="171" y="79" style={textStyle}>C</text></svg>;
     case "triangle":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <polygon points="100,10 180,110 20,110" fill={fill} stroke={stroke} strokeWidth={2} />
-          <line x1={100} y1={10} x2={100} y2={110} stroke={dimColor} strokeWidth={1} strokeDasharray="4 3" />
-          <text x={100} y={118} textAnchor="middle" style={textStyle}>основание</text>
-          <text x={108} y={65} style={textStyle}>h</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План треугольной комнаты">{defs}<polygon points="110,18 198,130 22,130" {...shared} /><line x1="110" y1="18" x2="110" y2="130" stroke={dimColor} strokeDasharray="4 4" /><text x="110" y="144" textAnchor="middle" style={textStyle}>A · основание</text><text x="118" y="78" style={textStyle}>B</text></svg>;
     case "circle":
-      return (
-        <svg width={W} height={H} viewBox="0 0 200 120">
-          <circle cx={100} cy={60} r={50} fill={fill} stroke={stroke} strokeWidth={2} />
-          <line x1={100} y1={60} x2={150} y2={60} stroke={dimColor} strokeWidth={2} />
-          <text x={125} y={55} textAnchor="middle" style={textStyle}>r</text>
-        </svg>
-      );
+      return <svg className="h-auto w-full" viewBox="0 0 220 150" role="img" aria-label="План круглой комнаты">{defs}<circle cx="110" cy="75" r="58" {...shared} /><line x1="110" y1="75" x2="168" y2="75" stroke={dimColor} strokeWidth="2" /><text x="139" y="68" textAnchor="middle" style={textStyle}>радиус</text></svg>;
   }
 }
