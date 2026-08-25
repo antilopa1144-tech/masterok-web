@@ -48,7 +48,7 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
       <div className="bg-gradient-to-b from-amber-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container py-6">
+        <div className="page-container py-5 sm:py-6">
           <Breadcrumbs items={[
             { href: "/instrumenty/", label: "Инструменты" },
             { label: "Таймер схватывания" },
@@ -57,12 +57,12 @@ export default function Page() {
             Таймер схватывания и высыхания
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-            Выберите материал — таймер покажет когда можно наносить следующий слой или продолжать работу.
+            Выберите материал, запустите отсчёт и получите понятный сигнал, когда пора проверить поверхность.
           </p>
         </div>
       </div>
 
-      <div className="page-container py-8">
+      <div className="page-container py-5 sm:py-8">
         <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка…</div>}>
           <CuringTimer />
         </Suspense>
