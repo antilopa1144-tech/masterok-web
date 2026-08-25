@@ -51,11 +51,18 @@ export default function SaveToProjectButton({
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const clickHandler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", clickHandler);
+    document.addEventListener("keydown", keyHandler);
+    return () => {
+      document.removeEventListener("mousedown", clickHandler);
+      document.removeEventListener("keydown", keyHandler);
+    };
   }, [open]);
 
   const handleSave = async (projectId: string, createdProject = false) => {
@@ -72,7 +79,6 @@ export default function SaveToProjectButton({
     });
     trackProjectSave(calcId, createdProject);
     setSaved(projectId);
-    setTimeout(() => { setSaved(null); setOpen(false); }, 1200);
   };
 
   const handleCreateAndSave = async () => {
@@ -89,7 +95,12 @@ export default function SaveToProjectButton({
   return (
     <div className="relative w-full sm:w-auto" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setSaved(null);
+          setOpen(!open);
+        }}
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-accent-500/40 sm:w-auto"
         title="Сохранить расчёт в проект"
       >
@@ -101,7 +112,7 @@ export default function SaveToProjectButton({
       </button>
 
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 z-50 overflow-hidden">
+        <div role="dialog" aria-label="Сохранить расчёт в проект" className="absolute bottom-full right-0 z-50 mb-2 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -118,34 +129,52 @@ export default function SaveToProjectButton({
             </div>
           </div>
 
-          {projects.length > 0 && (
+          {saved ? (
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300" aria-hidden>
+                  <svg className="h-5 w-5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l3.5 3.5L13 5"/></svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Расчёт добавлен</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                    {projects.find((project) => project.id === saved)?.name ?? "Новый проект"}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <Link
+                  href={`/proekty/${saved}`}
+                  className="btn-primary min-h-11 justify-center px-3 text-xs no-underline"
+                  onClick={() => setOpen(false)}
+                >
+                  Открыть смету →
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="btn-secondary min-h-11 justify-center px-3 text-xs"
+                >
+                  Остаться здесь
+                </button>
+              </div>
+            </div>
+          ) : projects.length > 0 && (
             <div className="max-h-40 overflow-y-auto">
               {projects.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => void handleSave(p.id)}
-                  disabled={!!saved}
                   className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors flex items-center justify-between gap-2"
                 >
                   <span className="truncate">{p.name}</span>
-                  {saved === p.id ? (
-                    <Link
-                      href={`/proekty/${p.id}`}
-                      className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-green-600 dark:text-green-400 no-underline"
-                      onClick={() => setOpen(false)}
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l3.5 3.5L13 5"/></svg>
-                      Смета →
-                    </Link>
-                  ) : (
-                    <span className="shrink-0 text-[10px] text-slate-400">{p.entries.length} расч.</span>
-                  )}
+                  <span className="shrink-0 text-[10px] text-slate-400">{p.entries.length} расч.</span>
                 </button>
               ))}
             </div>
           )}
 
-          {calendarScenarioId && (
+          {!saved && calendarScenarioId && (
             <div className="border-t border-slate-100 px-3 py-2 dark:border-slate-800">
               <Link
                 href={calendarHref(calendarScenarioId)}
@@ -156,7 +185,7 @@ export default function SaveToProjectButton({
               </Link>
             </div>
           )}
-          <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          {!saved && <div className="border-t border-slate-100 p-3 dark:border-slate-800">
             <p className="mb-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {projects.length === 0 ? "Создать первый проект" : "Новый проект"}
             </p>
@@ -178,7 +207,7 @@ export default function SaveToProjectButton({
                 {creating ? "…" : "Создать"}
               </button>
             </div>
-          </div>
+          </div>}
         </div>
       )}
     </div>
