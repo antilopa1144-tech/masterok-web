@@ -22,11 +22,12 @@ describe("Калькулятор кирпича", () => {
       expect(brick).toBeDefined();
     });
 
-    it("кирпича 1840 шт (с запасом + REC-сценарий ×1.06)", () => {
+    it("отделяет чистую потребность, выбранный запас и целую покупку", () => {
       const brick = findMaterial(result, "Кирпич");
-      // baseBricksNeeded = 16.2 * 102 * 1.05 = 1735.02
-      // REC multiplier = 1.06 → 1839.12 → ceil = 1840
-      expect(brick?.purchaseQty).toBe(1840);
+      // Чисто: 16.2 × 102 = 1652.4; выбранный запас 5% = 1735.02.
+      expect(brick?.quantity).toBeCloseTo(1652.4, 5);
+      expect(brick?.withReserve).toBeCloseTo(1735.02, 5);
+      expect(brick?.purchaseQty).toBe(1736);
     });
 
     it("площадь в totals = 16.2 м²", () => {
@@ -57,10 +58,11 @@ describe("Калькулятор кирпича", () => {
       workingConditions: 1,
     });
 
-    it("кирпича 869 шт (с REC-сценарием ×1.06)", () => {
+    it("кирпича 819 шт с выбранным запасом 5%", () => {
       const brick = findMaterial(result, "Кирпич");
-      // baseBricksNeeded = 20 * 39 * 1.05 = 819, × 1.06 = 868.14 → ceil = 869
-      expect(brick?.purchaseQty).toBe(869);
+      expect(brick?.quantity).toBe(780);
+      expect(brick?.withReserve).toBe(819);
+      expect(brick?.purchaseQty).toBe(819);
     });
 
     it("wallThickness=0 → предупреждение о ненесущих перегородках", () => {
@@ -117,6 +119,36 @@ describe("Калькулятор кирпича", () => {
       const mesh = findMaterial(result, "Кладочная сетка");
       expect(mesh?.unit).toBe("п.м.");
       expect(result.totals.meshLengthM).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Прозрачный запас", () => {
+    it("не добавляет второй скрытый запас режимами точности", () => {
+      const inputs = { wallWidth: 5, wallHeight: 3, brickType: 0, wallThickness: 1, wasteMode: 0 };
+      const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
+        brickDef.calculate({ ...inputs, accuracyMode }),
+      );
+
+      for (const r of results) {
+        const brick = findMaterial(r, "Кирпич");
+        expect(r.scenarios.MIN.exact_need).toBe(1530);
+        expect(r.scenarios.REC.exact_need).toBeCloseTo(1606.5, 5);
+        expect(r.scenarios.MAX.exact_need).toBe(1683);
+        expect(brick?.quantity).toBe(1530);
+        expect(brick?.withReserve).toBeCloseTo(1606.5, 5);
+        expect(brick?.purchaseQty).toBe(1607);
+        expect(r.accuracyExplanation?.combinedMultiplier).toBe(1);
+      }
+    });
+
+    it("REC следует выбранному запасу, MAX не превышает доступные в форме 10%", () => {
+      const minimal = calc({ wallWidth: 5, wallHeight: 3, wasteMode: 2 });
+      const reinforced = calc({ wallWidth: 5, wallHeight: 3, wasteMode: 1 });
+
+      expect(minimal.scenarios.REC.exact_need).toBeCloseTo(1530 * 1.03, 5);
+      expect(minimal.scenarios.MAX.exact_need).toBe(1683);
+      expect(reinforced.scenarios.REC.exact_need).toBe(1683);
+      expect(reinforced.scenarios.MAX.exact_need).toBe(1683);
     });
   });
 });

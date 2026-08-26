@@ -1,4 +1,3 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
@@ -7,7 +6,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 import { evaluateCompanionMaterials } from "./companion-materials";
 
@@ -66,7 +65,9 @@ const BRICK_TYPE_LABELS: Record<number, string> = {
 function buildMaterials(
   spec: BrickCanonicalSpec,
   brickType: number,
-  bricksNeeded: number,
+  bricksNet: number,
+  bricksWithWaste: number,
+  bricksPurchase: number,
   cementBags: number,
   sandM3: number,
   meshLengthM: number,
@@ -74,11 +75,11 @@ function buildMaterials(
   const materials: CanonicalMaterialResult[] = [
     {
       name: BRICK_TYPE_LABELS[brickType] ?? "Кирпич",
-      subtitle: "Вид кирпича, марку прочности, морозостойкость и пустотность выбирайте по проекту и условиям эксплуатации.",
-      quantity: roundDisplay(bricksNeeded, 6),
+      subtitle: "Чистая потребность рассчитана по площади и толщине стены; выбранный запас на бой и подрезку показан отдельно, покупка округлена вверх до целого кирпича.",
+      quantity: roundDisplay(bricksNet, 6),
       unit: "шт",
-      withReserve: Math.ceil(bricksNeeded),
-      purchaseQty: Math.ceil(bricksNeeded),
+      withReserve: roundDisplay(bricksWithWaste, 6),
+      purchaseQty: bricksPurchase,
       category: "Основное",
     },
     {
@@ -116,10 +117,8 @@ function buildMaterials(
 export function computeCanonicalBrick(
   spec: BrickCanonicalSpec,
   inputs: BrickInputs,
-  factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
   const areaInfo = resolveArea(spec, inputs);
   const brickType = resolveBrickType(spec, inputs);
@@ -132,9 +131,10 @@ export function computeCanonicalBrick(
   const brickHeightMm = spec.normative_formula.brick_height_mm[String(brickType)] ?? 65;
   const conditionsMultiplier = spec.normative_formula.conditions_multiplier[String(workingConditions)] ?? 1.0;
   const wasteCoeff = spec.normative_formula.waste_coeffs[String(wasteMode)] ?? 1.05;
+  const maxWasteCoeff = Math.max(...Object.values(spec.normative_formula.waste_coeffs));
 
   const area = areaInfo.area;
-  const baseBricksNeeded = area * bricksPerSqm * wasteCoeff * accuracyMult;
+  const bricksNet = area * bricksPerSqm;
 
   const mortarVolume = roundDisplay(area * mortarPerSqm * spec.material_rules.mortar_loss_factor * conditionsMultiplier, 6);
   const cementKg = roundDisplay(mortarVolume * spec.material_rules.cement_kg_per_m3, 3);
@@ -156,8 +156,12 @@ export function computeCanonicalBrick(
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(baseBricksNeeded * multiplier, 6);
+    const scenarioWasteCoeff = scenario === "MIN"
+      ? 1
+      : scenario === "MAX"
+        ? Math.max(wasteCoeff, maxWasteCoeff)
+        : wasteCoeff;
+    const exactNeed = roundDisplay(bricksNet * scenarioWasteCoeff, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -169,11 +173,13 @@ export function computeCanonicalBrick(
         `brickType:${brickType}`,
         `wallThickness:${wallThickness}`,
         `wasteMode:${wasteMode}`,
+        `wasteMultiplier:${scenarioWasteCoeff}`,
+        "scenario_policy:explicit_brick_waste",
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        waste_multiplier: roundDisplay(scenarioWasteCoeff, 6),
+        field_multiplier: roundDisplay(scenarioWasteCoeff, 6),
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -219,7 +225,9 @@ export function computeCanonicalBrick(
   const baseMaterials = buildMaterials(
     spec,
     brickType,
+    bricksNet,
     recScenario.exact_need,
+    recScenario.purchase_quantity,
     cementBags,
     sandM3,
     meshLengthM,
@@ -261,6 +269,8 @@ export function computeCanonicalBrick(
       bricksPerSqm: bricksPerSqm,
       mortarPerSqm: mortarPerSqm,
       conditionsMultiplier: conditionsMultiplier,
+      bricksNet: roundDisplay(bricksNet, 3),
+      bricksWithWaste: roundDisplay(recScenario.exact_need, 3),
       bricksNeeded: roundDisplay(recScenario.exact_need, 3),
       mortarVolume: mortarVolume,
       cementKg: cementKg,
@@ -284,7 +294,13 @@ export function computeCanonicalBrick(
       maxPurchaseBricks: scenarios.MAX.purchase_quantity,
     },
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(area * bricksPerSqm * wasteCoeff, "generic", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Скрытые коэффициенты точности не применяются: запас кирпича задаётся отдельным полем один раз"],
+    },
     warnings,
     practicalNotes,
     scenarios,

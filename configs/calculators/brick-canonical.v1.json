@@ -1,6 +1,6 @@
 {
   "calculator_id": "brick",
-  "formula_version": "brick-canonical-v2",
+  "formula_version": "brick-canonical-v3",
   "input_schema": [
     { "key": "inputMode", "default_value": 0, "min": 0, "max": 1 },
     { "key": "wallWidth", "unit": "m", "default_value": 5, "min": 0.5, "max": 50 },
@@ -13,11 +13,7 @@
     { "key": "mortarAdditive", "default_value": 0, "min": 0, "max": 1 }
   ],
   "field_factors": {
-    "enabled": [
-      "geometry_complexity",
-      "worker_skill",
-      "waste_factor"
-    ]
+    "enabled": []
   },
   "normative_formula": {
     "bricks_per_sqm": {
@@ -55,7 +51,11 @@
     "manual_mix_grade_threshold": 5
   },
   "scenario_policy": {
-    "contract": "min-rec-max-v1"
+    "contract": "explicit-brick-waste-v1",
+    "MIN": "Чистая геометрическая потребность без запаса",
+    "REC": "Чистая потребность с выбранным пользователем запасом на бой и подрезку",
+    "MAX": "Чистая потребность с максимальным доступным в форме запасом 10%",
+    "purchase_quantity": "Округление каждого сценария вверх до целого кирпича"
   },
   "companion_materials": [
     {

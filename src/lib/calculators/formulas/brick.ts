@@ -2,7 +2,6 @@ import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalBrick } from "../../../../engine/brick";
 import brickSpec from "../../../../configs/calculators/brick-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
 import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
 const brickManufacturerField = buildManufacturerField("brick");
@@ -125,8 +124,7 @@ export const brickDef: CalculatorDefinition = {
   ],
   calculate(inputs) {
     const spec = brickSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalBrick(spec, inputs, factorTable);
+    const canonical = computeCanonicalBrick(spec, inputs);
 
     const manufacturer = getManufacturerByIndex("brick", inputs.manufacturer);
     const materials = manufacturer
@@ -155,6 +153,8 @@ export const brickDef: CalculatorDefinition = {
 1. **Количество кирпича**: Рассчитывается исходя из объёма кладки за вычетом растворных швов (стандарт 10 мм).
 2. **Расход раствора**: В среднем 0.23–0.25 м³ на 1 м³ кладки.
 3. **Запас**: 5% — стандарт на бой при разгрузке и подрезку. 10% — если в стене много проёмов и углов.
+
+Запас из поля «Бой и подрезка» применяется один раз. MIN показывает чистую потребность, REC — выбранный запас, MAX — сложную кладку с 10%; к покупке каждый результат округляется вверх до целого кирпича.
 
 **Пропорции раствора М150**: 1 часть цемента М400 на 3 части песка.
 

@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { computeCanonicalBrick } from "../../engine/brick";
 import type { BrickCanonicalSpec } from "../../engine/canonical";
-import type { FactorTable } from "../../engine/factors";
 import brickSpec from "../../configs/calculators/brick-canonical.v1.json";
-import factorTablesJson from "../../configs/factor-tables.json";
 
 const spec = brickSpec as unknown as BrickCanonicalSpec;
-const factorTable = factorTablesJson.factors as unknown as FactorTable;
 
 function calc(inputs: Parameters<typeof computeCanonicalBrick>[1]) {
-  return computeCanonicalBrick(spec, inputs, factorTable);
+  return computeCanonicalBrick(spec, inputs);
 }
 
 describe("computeCanonicalBrick — golden snapshot (basic mode)", () => {
@@ -23,22 +20,25 @@ describe("computeCanonicalBrick — golden snapshot (basic mode)", () => {
     expect(r.totals.wallThicknessMm).toBe(250);
     expect(r.totals.bricksPerSqm).toBe(102);
     expect(r.totals.wasteCoeff).toBe(1.05);
-    expect(r.totals.bricksNeeded).toBeCloseTo(1702.89, 2);
+    expect(r.totals.bricksNet).toBe(1530);
+    expect(r.totals.bricksNeeded).toBeCloseTo(1606.5, 2);
     expect(r.totals.cementBags).toBe(4);
     expect(r.totals.totalRows).toBe(40);
     expect(r.totals.meshLayers).toBe(8);
-    expect(r.scenarios.REC.purchase_quantity).toBe(1703);
-    expect(r.scenarios.MAX.purchase_quantity).toBe(2215);
+    expect(r.scenarios.MIN.purchase_quantity).toBe(1530);
+    expect(r.scenarios.REC.purchase_quantity).toBe(1607);
+    expect(r.scenarios.MAX.purchase_quantity).toBe(1683);
   });
 
-  it("realistic mode даёт больше кирпичей чем basic", () => {
+  it("режим точности не добавляет скрытый второй запас", () => {
     const basic = calc({ accuracyMode: "basic" });
     const real = calc({ accuracyMode: "realistic" });
+    const professional = calc({ accuracyMode: "professional" });
 
-    expect(real.totals.bricksNeeded).toBeGreaterThan(basic.totals.bricksNeeded);
-    expect(real.scenarios.REC.purchase_quantity).toBeGreaterThan(
-      basic.scenarios.REC.purchase_quantity,
-    );
+    expect(real.totals.bricksNeeded).toBe(basic.totals.bricksNeeded);
+    expect(professional.totals.bricksNeeded).toBe(basic.totals.bricksNeeded);
+    expect(real.scenarios.REC.purchase_quantity).toBe(1607);
+    expect(professional.scenarios.REC.purchase_quantity).toBe(1607);
   });
 
   it("полкирпича (wallThickness=0) даёт предупреждение про ненесущую перегородку", () => {
