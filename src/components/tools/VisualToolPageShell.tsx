@@ -40,13 +40,15 @@ export default function VisualToolPageShell({ slug, breadcrumb, title, descripti
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <div className={`border-b border-slate-200 bg-linear-to-b ${accentClass} to-white dark:border-slate-800 dark:from-slate-900 dark:to-slate-950`}>
-        <div className="page-container py-6">
-          <Breadcrumbs items={[{ href: "/instrumenty/", label: "Инструменты" }, { label: breadcrumb }]} />
-          <h1 className="mt-4 text-2xl font-bold text-slate-900 md:text-3xl dark:text-slate-100">{title}</h1>
-          <p className="mt-2 max-w-3xl text-slate-500 dark:text-slate-400">{description}</p>
+        <div className="page-container-wide py-4 sm:py-5">
+          <div className="sr-only">
+            <Breadcrumbs items={[{ href: "/instrumenty/", label: "Инструменты" }, { label: breadcrumb }]} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl dark:text-white">{title}</h1>
+          <p className="mt-1.5 hidden max-w-4xl text-sm text-slate-500 sm:block sm:text-base dark:text-slate-400">{description}</p>
         </div>
       </div>
-      <div className="page-container py-8">{children}</div>
+      <div className="page-container-wide py-5 lg:py-6">{children}</div>
       <ToolPageExtras slug={slug} />
     </>
   );
