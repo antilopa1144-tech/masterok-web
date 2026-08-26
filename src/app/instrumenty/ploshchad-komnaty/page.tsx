@@ -24,6 +24,14 @@ const SHAPES: ShapeOption[] = [
   { id: "circle", label: "Круг / сектор", icon: "○", desc: "По радиусу" },
 ];
 
+type RoomWorkspaceStage = "parameters" | "layout" | "result";
+
+const ROOM_WORKSPACE_STAGES: Array<{ value: RoomWorkspaceStage; label: string }> = [
+  { value: "parameters", label: "Параметры" },
+  { value: "layout", label: "План" },
+  { value: "result", label: "Результат" },
+];
+
 function fmtM(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "—";
   return n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
@@ -85,6 +93,7 @@ function NumInput({
 }
 
 export default function PloshadKomnatyPage() {
+  const [activeStage, setActiveStage] = useState<RoomWorkspaceStage>("layout");
   const [shape, setShape] = useState<RoomShape>("rect");
   const [wallHeight, setWallHeight] = useState("2.7");
   const [a, setA] = useState("5");
@@ -116,8 +125,8 @@ export default function PloshadKomnatyPage() {
   }, [a, b, hasInputError, shape, wallHeight]);
 
   return (
-    <div className="page-container max-w-6xl py-6 md:py-8">
-      <nav className="mb-5 flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400">
+    <div className="page-container max-w-6xl py-4 sm:py-6 md:py-8">
+      <nav className="sr-only items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 sm:not-sr-only sm:mb-5 sm:flex">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>
         <span>/</span>
         <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">Инструменты</Link>
@@ -125,25 +134,29 @@ export default function PloshadKomnatyPage() {
         <span className="text-slate-600 dark:text-slate-300">Площадь комнаты</span>
       </nav>
 
-      <div className="mb-5 max-w-3xl">
+      <div className="mb-4 max-w-3xl sm:mb-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Геометрия помещения</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Площадь комнаты</h1>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+        <p className="mt-2 hidden text-sm leading-relaxed text-slate-500 dark:text-slate-400 sm:block md:text-base">
           Выберите форму и укажите размеры — план, площадь пола, стен и периметр обновятся сразу.
         </p>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 rounded-2xl border border-stone-200 bg-white p-1.5 text-center text-xs dark:border-slate-800 dark:bg-slate-900 lg:hidden" aria-label="Состав расчёта">
-        {[["1", "Форма"], ["2", "Размеры"], ["3", "Результат"]].map(([number, label]) => (
-          <div key={number} className="flex min-h-9 items-center justify-center gap-1.5 rounded-xl text-stone-600 dark:text-slate-300">
-            <span className="grid size-5 place-items-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">{number}</span>
-            {label}
-          </div>
-        ))}
-      </div>
+      <nav className="sticky top-16 z-20 mb-4 grid grid-cols-3 overflow-hidden rounded-2xl border border-stone-200 bg-[#fffdf9]/95 shadow-[0_10px_32px_rgba(62,45,31,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 lg:hidden" aria-label="Этапы расчёта площади комнаты">
+        {ROOM_WORKSPACE_STAGES.map((stage, index) => {
+          const isActive = stage.value === activeStage;
+          return (
+            <button key={stage.value} type="button" aria-current={isActive ? "step" : undefined} onClick={() => setActiveStage(stage.value)} className={`relative flex min-h-14 items-center justify-center gap-2 px-2 py-2 text-xs font-semibold transition-colors ${isActive ? "bg-emerald-50 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100" : "text-stone-500 hover:bg-stone-50 dark:text-slate-400 dark:hover:bg-slate-800"}`}>
+              <span className={`grid size-6 place-items-center rounded-full text-[11px] font-bold ${isActive ? "bg-emerald-600 text-white" : "bg-stone-100 text-stone-500 dark:bg-slate-800 dark:text-slate-300"}`}>{index + 1}</span>
+              {stage.label}
+              {isActive && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-emerald-600" />}
+            </button>
+          );
+        })}
+      </nav>
 
       <section className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)_280px]" aria-label="Рабочая область расчёта">
-        <div className="order-2 space-y-4 lg:order-1">
+        <div className={`order-2 space-y-4 lg:order-1 lg:block ${activeStage === "parameters" ? "block" : "hidden"}`}>
           <div className="card border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-end justify-between gap-3">
               <div>
@@ -192,9 +205,10 @@ export default function PloshadKomnatyPage() {
               Пересчитывается автоматически
             </p>
           </div>
+          <button type="button" onClick={() => setActiveStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm lg:hidden">Посмотреть результат →</button>
         </div>
 
-        <div className="order-1 overflow-hidden rounded-3xl border border-stone-200 bg-[#f4efe5] shadow-sm dark:border-slate-700 dark:bg-slate-900 lg:order-2">
+        <div className={`order-1 overflow-hidden rounded-3xl border border-stone-200 bg-[#f4efe5] shadow-sm dark:border-slate-700 dark:bg-slate-900 lg:order-2 lg:block ${activeStage === "layout" ? "block" : "hidden"}`}>
           <div className="flex items-center justify-between border-b border-white/70 px-4 py-3 dark:border-slate-800">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500 dark:text-slate-400">План помещения</p>
@@ -211,9 +225,13 @@ export default function PloshadKomnatyPage() {
             <PlanMetric label="Периметр" value={hasInputError ? "—" : `${fmtM(result.perimeter)} м`} />
             <PlanMetric label="Стены" value={hasInputError || !result.wallArea ? "—" : `${fmtM(result.wallArea)} м²`} />
           </div>
+          <div className="grid grid-cols-2 gap-2 border-t border-white/80 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-950/50 lg:hidden">
+            <button type="button" onClick={() => setActiveStage("parameters")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Изменить размеры</button>
+            <button type="button" onClick={() => setActiveStage("result")} className="min-h-11 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800">Подробный результат</button>
+          </div>
         </div>
 
-        <div className="order-3 card overflow-hidden border-stone-200 bg-[#fffdf9] p-0 dark:border-slate-700 dark:bg-slate-900">
+        <div className={`order-3 card overflow-hidden border-stone-200 bg-[#fffdf9] p-0 dark:border-slate-700 dark:bg-slate-900 lg:block ${activeStage === "result" ? "block" : "hidden"}`}>
           <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 to-amber-50 p-4 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-amber-950/10">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Паспорт помещения</p>
             <div className="mt-2 flex items-start justify-between gap-3 lg:block">
@@ -259,6 +277,7 @@ export default function PloshadKomnatyPage() {
                 </div>
               </div>
             )}
+            <button type="button" onClick={() => setActiveStage("parameters")} className="mt-3 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 lg:hidden">← Изменить размеры</button>
           </div>
         </div>
       </section>
