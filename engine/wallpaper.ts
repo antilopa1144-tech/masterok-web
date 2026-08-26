@@ -1,7 +1,6 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
+import type { FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
@@ -10,11 +9,9 @@ import type {
 } from "./canonical";
 import { roundDisplay } from "./units";
 import {
+  ACCURACY_MODE_LABELS,
   type AccuracyMode,
   DEFAULT_ACCURACY_MODE,
-  applyAccuracyMode,
-  getPrimaryMultiplier,
-  getAccessoriesMultiplier,
 } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
@@ -146,13 +143,14 @@ function buildMaterials(
   rollWidth: number,
   rollLength: number,
   rapport: number,
-  netArea: number,
+  baseExactRolls: number,
   recExactNeed: number,
-  recPurchaseQuantity: number,
   recPackageCount: number,
-  pasteNeeded: number,
+  pasteBaseNeeded: number,
+  pasteWithReserve: number,
   pastePacks: number,
-  primerNeeded: number,
+  primerBaseNeeded: number,
+  primerWithReserve: number,
   primerCans: number,
 ): CanonicalMaterialResult[] {
   const rollLabel = `${roundDisplay(rollWidth, 3)}×${roundDisplay(rollLength, 3)} м`;
@@ -161,22 +159,30 @@ function buildMaterials(
     {
       name: `Обои — ${wallpaperType.label.toLowerCase()}, рулон ${rollLabel}${rapportLabel}`,
       subtitle: "Проверьте на этикетке рулона ширину, длину, раппорт, смещение рисунка и номер партии.",
-      quantity: roundDisplay(recExactNeed, 6),
+      quantity: roundDisplay(baseExactRolls, 6),
       unit: spec.packaging_rules.roll_unit,
-      withReserve: roundDisplay(recPurchaseQuantity, 6),
+      withReserve: roundDisplay(recExactNeed, 6),
       purchaseQty: recPackageCount,
       category: "Основное",
     },
     {
       name: `Клей обойный (${wallpaperType.label.toLowerCase()}, ${spec.packaging_rules.paste_pack_kg} кг)`,
-      quantity: roundDisplay(pasteNeeded, 6),
+      quantity: roundDisplay(pasteBaseNeeded, 6),
       unit: "кг",
-      withReserve: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
+      withReserve: roundDisplay(pasteWithReserve, 6),
       purchaseQty: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
       packageInfo: { count: pastePacks, size: spec.packaging_rules.paste_pack_kg, packageUnit: "уп" },
       category: "Клей",
     },
-    { ...buildPrimerMaterial(primerNeeded), category: "Грунтовка" },
+    {
+      name: `Грунтовка глубокого проникновения (${spec.packaging_rules.primer_can_l} л)`,
+      quantity: roundDisplay(primerBaseNeeded, 6),
+      unit: "л",
+      withReserve: roundDisplay(primerWithReserve, 6),
+      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
+      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
+      category: "Грунтовка",
+    },
     {
       name: "Валик для клея",
       quantity: spec.material_rules.glue_roller_count,
@@ -231,7 +237,7 @@ function buildMaterials(
 export function computeCanonicalWallpaper(
   spec: WallpaperCanonicalSpec,
   inputs: WallpaperInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   const geometry = resolveGeometry(spec, inputs);
@@ -249,9 +255,8 @@ export function computeCanonicalWallpaper(
   const stripsNeeded = geometry.wallHeight > 0 && rollWidth > 0
     ? Math.ceil(geometry.netArea / (rollWidth * geometry.wallHeight))
     : 0;
-  const wallpaperPrimaryMult = getPrimaryMultiplier("wallpaper", accuracyMode);
-  const baseExactRolls = stripsPerRoll > 0 ? (stripsNeeded / stripsPerRoll) * wallpaperPrimaryMult : 0;
-  const reserveMultiplier = 1 + reservePercent / 100;
+  const baseExactRolls = stripsPerRoll > 0 ? stripsNeeded / stripsPerRoll : 0;
+  const recommendedSpareRolls = Math.max(0, Math.round(spec.scenario_policy.recommended_spare_rolls ?? 1));
   const packageOptions = [{
     size: spec.packaging_rules.roll_package_size,
     label: `wallpaper-roll-${spec.packaging_rules.roll_package_size}`,
@@ -259,8 +264,14 @@ export function computeCanonicalWallpaper(
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(baseExactRolls * multiplier * reserveMultiplier + reserveRolls, 6);
+    const scenarioReservePercent = scenario === "MIN" ? 0 : reservePercent;
+    const scenarioReserveRolls = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? Math.max(reserveRolls, recommendedSpareRolls)
+        : reserveRolls;
+    const reserveMultiplier = 1 + scenarioReservePercent / 100;
+    const exactNeed = roundDisplay(baseExactRolls * reserveMultiplier + scenarioReserveRolls, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -271,13 +282,13 @@ export function computeCanonicalWallpaper(
         `formula_version:${spec.formula_version}`,
         `wallpaper:${wallpaperType.key}`,
         `accuracy_mode:${accuracyMode}`,
+        "scenario_policy:explicit_wallpaper_reserve",
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-        reserve_percent: roundDisplay(reservePercent, 3),
-        reserve_rolls: reserveRolls,
+        field_multiplier: roundDisplay(reserveMultiplier, 6),
+        reserve_percent: roundDisplay(scenarioReservePercent, 3),
+        reserve_rolls: scenarioReserveRolls,
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -291,12 +302,12 @@ export function computeCanonicalWallpaper(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
-  const accessoriesMult = getAccessoriesMultiplier("wallpaper", accuracyMode);
-  const pasteNeeded = geometry.netArea * wallpaperType.paste_kg_per_m2 * spec.material_rules.paste_reserve_factor * accessoriesMult;
-  const pastePacks = pasteNeeded > 0 ? Math.max(1, Math.ceil(pasteNeeded / spec.packaging_rules.paste_pack_kg)) : 0;
-  const primerPrimaryMult = getPrimaryMultiplier("primer", accuracyMode);
-  const primerNeeded = geometry.netArea * spec.material_rules.primer_l_per_m2 * spec.material_rules.primer_reserve_factor * primerPrimaryMult;
-  const primerCans = primerNeeded > 0 ? Math.max(1, Math.ceil(primerNeeded / spec.packaging_rules.primer_can_l)) : 0;
+  const pasteBaseNeeded = geometry.netArea * wallpaperType.paste_kg_per_m2;
+  const pasteWithReserve = pasteBaseNeeded * spec.material_rules.paste_reserve_factor;
+  const pastePacks = pasteWithReserve > 0 ? Math.max(1, Math.ceil(pasteWithReserve / spec.packaging_rules.paste_pack_kg)) : 0;
+  const primerBaseNeeded = geometry.netArea * spec.material_rules.primer_l_per_m2;
+  const primerWithReserve = primerBaseNeeded * spec.material_rules.primer_reserve_factor;
+  const primerCans = primerWithReserve > 0 ? Math.max(1, Math.ceil(primerWithReserve / spec.packaging_rules.primer_can_l)) : 0;
 
   const warnings: string[] = [];
   if (geometry.netArea <= 0) {
@@ -325,13 +336,14 @@ export function computeCanonicalWallpaper(
       rollWidth,
       rollLength,
       rapport,
-      geometry.netArea,
+      baseExactRolls,
       recScenario.exact_need,
-      recScenario.purchase_quantity,
       recScenario.buy_plan.packages_count,
-      pasteNeeded,
+      pasteBaseNeeded,
+      pasteWithReserve,
       pastePacks,
-      primerNeeded,
+      primerBaseNeeded,
+      primerWithReserve,
       primerCans,
     ),
     totals: {
@@ -352,9 +364,13 @@ export function computeCanonicalWallpaper(
       stripsNeeded,
       baseExactRolls: roundDisplay(baseExactRolls, 6),
       rollsNeeded: recScenario.purchase_quantity,
-      pasteNeededKg: roundDisplay(pasteNeeded, 6),
+      pasteBaseNeededKg: roundDisplay(pasteBaseNeeded, 6),
+      pasteNeededKg: roundDisplay(pasteWithReserve, 6),
+      pastePurchaseKg: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
       pastePacks,
-      primerNeededL: roundDisplay(primerNeeded, 6),
+      primerBaseNeededL: roundDisplay(primerBaseNeeded, 6),
+      primerNeededL: roundDisplay(primerWithReserve, 6),
+      primerPurchaseL: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
       primerCans,
       minExactNeedRolls: scenarios.MIN.exact_need,
       recExactNeedRolls: recScenario.exact_need,
@@ -367,6 +383,12 @@ export function computeCanonicalWallpaper(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(baseExactRolls / wallpaperPrimaryMult, "wallpaper", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Скрытые коэффициенты точности не применяются: раскрой задают размеры рулона и раппорт, запас — отдельные поля"],
+    },
   };
 }

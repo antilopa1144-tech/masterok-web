@@ -142,17 +142,17 @@ describe("Accuracy modes — Putty", () => {
 describe("Accuracy modes — Wallpaper", () => {
   const inputs = { perimeter: 14, height: 2.7, rollLength: 10, rollWidth: 0.53, rapport: 0, doors: 1, windows: 1, reserveRolls: 1 };
 
-  it("professional > realistic > basic for rolls", () => {
+  it("does not hide extra wallpaper rolls inside accuracy modes", () => {
     const r = threeModesRec(computeCanonicalWallpaper, wallpaperSpec, inputs);
-    expect(r.realistic.recExactNeed).toBeGreaterThan(r.basic.recExactNeed);
-    expect(r.professional.recExactNeed).toBeGreaterThan(r.realistic.recExactNeed);
+    expect(r.realistic.recExactNeed).toBe(r.basic.recExactNeed);
+    expect(r.professional.recExactNeed).toBe(r.basic.recExactNeed);
   });
 
-  it("paste and primer also scale", () => {
+  it("keeps paste and primer reserves explicit and mode-independent", () => {
     const basic = computeCanonicalWallpaper(wallpaperSpec as any, { ...inputs, accuracyMode: "basic" }, FT);
     const prof = computeCanonicalWallpaper(wallpaperSpec as any, { ...inputs, accuracyMode: "professional" }, FT);
-    expect(prof.totals.pasteNeededKg).toBeGreaterThan(basic.totals.pasteNeededKg);
-    expect(prof.totals.primerNeededL).toBeGreaterThan(basic.totals.primerNeededL);
+    expect(prof.totals.pasteNeededKg).toBe(basic.totals.pasteNeededKg);
+    expect(prof.totals.primerNeededL).toBe(basic.totals.primerNeededL);
   });
 });
 

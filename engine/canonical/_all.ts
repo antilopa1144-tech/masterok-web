@@ -168,6 +168,7 @@ export interface CanonicalCalculatorSpecBase {
   scenario_policy: {
     contract: "min-rec-max-v1";
     recommended_max_reserve_percent?: number;
+    recommended_spare_rolls?: number;
     MIN?: string;
     REC?: string;
     MAX?: string;

@@ -7,7 +7,7 @@ const calc = withBasicAccuracy(wallpaperDef.calculate.bind(wallpaperDef));
 
 describe("Калькулятор обоев", () => {
   it("декларирует formulaVersion для canonical wallpaper", () => {
-    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v2");
+    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v3");
   });
 
   it("web-дефолты длины рулона и запаса совпадают с canonical и Flutter", () => {
@@ -43,6 +43,57 @@ describe("Калькулятор обоев", () => {
     expect(withoutReserve.totals.reserveRolls).toBe(0);
     expect(withoutReserve.totals.recPurchaseRolls).toBe(9);
     expect(withoutReserve.totals.recPurchaseRolls).toBe(explicitZeroReserve.totals.recPurchaseRolls);
+  });
+
+  it("не занижает MIN и применяет явный запас к чистой потребности только один раз", () => {
+    const result = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 0,
+      doors: 0,
+      windows: 0,
+      reservePercent: 15,
+      reserveRolls: 0,
+    });
+
+    expect(result.totals.baseExactRolls).toBe(9);
+    expect(result.scenarios?.MIN.exact_need).toBe(9);
+    expect(result.scenarios?.REC.exact_need).toBeCloseTo(10.35, 6);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(11);
+    expect(result.scenarios?.MAX.exact_need).toBeCloseTo(11.35, 6);
+    expect(result.scenarios?.MAX.purchase_quantity).toBe(12);
+  });
+
+  it("разделяет чистую потребность, рабочий запас и покупку упаковок", () => {
+    const result = calc({
+      perimeter: 14,
+      height: 2.7,
+      rollLength: 10.05,
+      rollWidth: 530,
+      rapport: 0,
+      doors: 0,
+      windows: 0,
+      reservePercent: 0,
+      reserveRolls: 0,
+    });
+
+    const wallpaper = findMaterial(result, "Обои");
+    const paste = findMaterial(result, "Клей");
+    const primer = findMaterial(result, "Грунтовка");
+
+    expect(wallpaper?.quantity).toBe(9);
+    expect(wallpaper?.withReserve).toBe(9);
+    expect(wallpaper?.purchaseQty).toBe(9);
+
+    expect(paste?.quantity).toBeCloseTo(0.189, 6);
+    expect(paste?.withReserve).toBeCloseTo(0.2079, 6);
+    expect(paste?.purchaseQty).toBe(0.25);
+
+    expect(primer?.quantity).toBeCloseTo(5.67, 6);
+    expect(primer?.withReserve).toBeCloseTo(6.237, 6);
+    expect(primer?.purchaseQty).toBe(10);
   });
 
   describe("Canonical wallpaper fixture parity", () => {
