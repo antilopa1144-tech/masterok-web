@@ -15,7 +15,7 @@ import type { ProjectWithEntries } from "@/lib/storage/types";
 import { IconChevron, IconSearch } from "./ProjectEstimateIcons";
 import ProcurementLineRow from "./ProcurementLineRow";
 
-const SHOW_SEARCH_FROM = 8;
+const SHOW_SEARCH_FROM = 12;
 
 interface Props {
   project: ProjectWithEntries;
@@ -49,6 +49,7 @@ export default function ProjectEstimateProcurementPanel({
   const [search, setSearch] = useState("");
   const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>("all");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+  const [extrasOpen, setExtrasOpen] = useState(false);
 
   const purchaseStats = useMemo(
     () => computePurchaseStats(procurement, resolvedPrices, checked),
@@ -224,7 +225,29 @@ export default function ProjectEstimateProcurementPanel({
         )}
       </div>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,360px)]">
+      <button
+        type="button"
+        onClick={() => setExtrasOpen((open) => !open)}
+        className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 text-left shadow-sm dark:border-slate-700 dark:bg-slate-900 md:hidden"
+        aria-expanded={extrasOpen}
+      >
+        <span>
+          <span className="block text-sm font-bold text-slate-900 dark:text-slate-100">
+            Дополнительные расходы и итог
+          </span>
+          <span className="block text-[11px] text-slate-400">Запас, доставка, общая стоимость</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="text-sm font-black tabular-nums text-accent-700 dark:text-accent-300">
+            {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "—"}
+          </span>
+          <IconChevron open={extrasOpen} className="h-4 w-4 text-slate-400" />
+        </span>
+      </button>
+
+      <section
+        className={`gap-4 lg:grid-cols-[1fr_minmax(280px,360px)] ${extrasOpen ? "grid" : "hidden"} md:grid`}
+      >
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900 space-y-3">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Дополнительные расходы</h3>
           <div className="grid sm:grid-cols-2 gap-4">

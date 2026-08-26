@@ -46,6 +46,7 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
   const [nameDraft, setNameDraft] = useState("");
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
 
   const refresh = useCallback(async () => {
     const projects = await getProjects();
@@ -80,8 +81,13 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
   }, [view, checked]);
 
   const showCalculationsTab = (project?.entries.length ?? 0) > 1;
-  const showStickyBar =
-    tab === "procurement" && (project?.entries.length ?? 0) > 0 && totals && purchaseStats;
+  const showStickyBar = Boolean(
+    tab === "procurement" &&
+      (project?.entries.length ?? 0) > 0 &&
+      totals &&
+      purchaseStats &&
+      (totals.grandTotal > 0 || purchaseStats.purchasedCount > 0),
+  );
 
   const handlePriceChange = (materialName: string, raw: string) => {
     if (!project || !view) return;
@@ -212,11 +218,11 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
         totals={totals}
       />
 
-      <div className={`print:hidden space-y-5 ${showStickyBar ? "pb-28" : ""}`}>
+      <div className={`print:hidden space-y-3 sm:space-y-5 ${showStickyBar ? "pb-28 md:pb-0" : ""}`}>
         <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-900 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-accent-500 to-accent-400" />
           <div className="p-4 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   Смета проекта
@@ -257,7 +263,7 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
                     <IconPencil className="w-4 h-4 mt-1.5 shrink-0 text-slate-300 group-hover:text-accent-500 transition-colors" />
                   </button>
                 )}
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">
                   {project.entries.length}{" "}
                   {project.entries.length === 1 ? "расчёт" : project.entries.length < 5 ? "расчёта" : "расчётов"}
                   {" · "}
@@ -271,65 +277,101 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
                   })}
                 </p>
 
-                {/* Реквизиты документа: объект и заказчик. Необязательны —
-                    пустые поля не мешают, но при заполнении смета выглядит
-                    как настоящий документ (и попадают в печать). */}
-                <div className="mt-3 grid gap-2 sm:grid-cols-2 max-w-xl">
-                  <label className="block">
-                    <span className="text-[11px] text-slate-400">Объект / адрес</span>
-                    <input
-                      type="text"
-                      value={meta.objectName ?? ""}
-                      onChange={(e) => handleMetaChange({ objectName: e.target.value })}
-                      placeholder="напр. Квартира, ул. Ленина 10"
-                      className="input-field mt-0.5 w-full py-1.5 text-sm"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-[11px] text-slate-400">Заказчик</span>
-                    <input
-                      type="text"
-                      value={meta.customerName ?? ""}
-                      onChange={(e) => handleMetaChange({ customerName: e.target.value })}
-                      placeholder="напр. Иванов И. И."
-                      className="input-field mt-0.5 w-full py-1.5 text-sm"
-                    />
-                  </label>
-                </div>
               </div>
 
-              <div className="flex flex-col items-stretch sm:items-end gap-3 shrink-0">
-                <div className="flex flex-wrap gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="btn-secondary text-xs px-3 py-2 inline-flex items-center gap-1.5"
-                  >
-                    <IconPrint className="w-3.5 h-3.5" />
-                    Печать
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCsv}
-                    className="btn-secondary text-xs px-3 py-2 inline-flex items-center gap-1.5"
-                  >
-                    <IconTable className="w-3.5 h-3.5" />
-                    CSV
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleCopyEstimate()}
-                    className="btn-secondary text-xs px-3 py-2 hidden sm:inline-flex"
-                  >
-                    {copied ? "Скопировано" : "Копировать список"}
-                  </button>
-                </div>
-                <div className="hidden sm:block text-right">
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого к оплате</p>
-                  <p className="text-2xl sm:text-3xl font-black tabular-nums text-accent-700 dark:text-accent-300">
-                    {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "— ₽"}
-                  </p>
-                </div>
+              <div className="hidden shrink-0 text-right sm:block">
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого к оплате</p>
+                <p className="text-2xl sm:text-3xl font-black tabular-nums text-accent-700 dark:text-accent-300">
+                  {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "— ₽"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:hidden">
+              <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
+                <p className="text-[10px] text-slate-400">Позиций</p>
+                <p className="mt-0.5 text-base font-black tabular-nums text-slate-900 dark:text-slate-100">
+                  {totals.totalLines}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
+                <p className="text-[10px] text-slate-400">Цены</p>
+                <p className="mt-0.5 text-base font-black tabular-nums text-slate-900 dark:text-slate-100">
+                  {totals.pricedLines}/{totals.totalLines}
+                </p>
+              </div>
+              <div className="rounded-xl bg-accent-50 px-2.5 py-2 dark:bg-accent-950/30">
+                <p className="text-[10px] text-accent-600 dark:text-accent-400">Итого</p>
+                <p className="mt-0.5 truncate text-base font-black tabular-nums text-accent-700 dark:text-accent-300">
+                  {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "—"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowProjectDetails((open) => !open)}
+              className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300 sm:hidden"
+              aria-expanded={showProjectDetails}
+            >
+              Реквизиты и экспорт
+              <span aria-hidden className={`text-slate-400 transition-transform ${showProjectDetails ? "rotate-180" : ""}`}>
+                ⌄
+              </span>
+            </button>
+
+            {/* Необязательные реквизиты и экспорт не заслоняют закупку на мобильном. */}
+            <div
+              className={`mt-3 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end ${
+                showProjectDetails ? "grid" : "hidden sm:grid"
+              }`}
+            >
+              <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-[11px] text-slate-400">Объект / адрес</span>
+                  <input
+                    type="text"
+                    value={meta.objectName ?? ""}
+                    onChange={(e) => handleMetaChange({ objectName: e.target.value })}
+                    placeholder="напр. Квартира, ул. Ленина 10"
+                    className="input-field mt-0.5 w-full py-1.5 text-sm"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] text-slate-400">Заказчик</span>
+                  <input
+                    type="text"
+                    value={meta.customerName ?? ""}
+                    onChange={(e) => handleMetaChange({ customerName: e.target.value })}
+                    placeholder="напр. Иванов И. И."
+                    className="input-field mt-0.5 w-full py-1.5 text-sm"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="btn-secondary inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs sm:min-h-0 sm:flex-none"
+                >
+                  <IconPrint className="w-3.5 h-3.5" />
+                  Печать
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCsv}
+                  className="btn-secondary inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs sm:min-h-0 sm:flex-none"
+                >
+                  <IconTable className="w-3.5 h-3.5" />
+                  CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyEstimate()}
+                  className="btn-secondary inline-flex min-h-11 w-full items-center justify-center px-3 py-2 text-xs sm:min-h-0 sm:w-auto"
+                >
+                  {copied ? "Скопировано" : "Копировать список"}
+                </button>
               </div>
             </div>
 
@@ -355,6 +397,7 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
           </div>
         </section>
 
+        {showCalculationsTab && (
         <div className="flex gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 w-fit max-w-full overflow-x-auto">
           <button
             type="button"
@@ -372,20 +415,19 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
               </span>
             )}
           </button>
-          {showCalculationsTab && (
-            <button
-              type="button"
-              onClick={() => setTab("calculations")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
-                tab === "calculations"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
-            >
-              По расчётам
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setTab("calculations")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+              tab === "calculations"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            По расчётам
+          </button>
         </div>
+        )}
 
         {project.entries.length === 0 ? (
           <div className="card p-10 text-center space-y-4">

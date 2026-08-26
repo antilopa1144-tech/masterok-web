@@ -14,9 +14,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
 
   return (
-    <div className="page-container py-8">
+    <div className="page-container py-4 sm:py-8">
+      <Link
+        href="/proekty/"
+        className="mb-3 inline-flex min-h-11 items-center text-sm font-semibold text-slate-500 hover:text-accent-600 sm:hidden"
+        data-print-hide
+      >
+        ← Все проекты
+      </Link>
       <nav
-        className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 mb-6"
+        className="mb-6 hidden items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500 sm:flex"
         data-print-hide
       >
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">Главная</Link>

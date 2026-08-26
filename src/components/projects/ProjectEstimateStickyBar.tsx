@@ -23,7 +23,7 @@ export default function ProjectEstimateStickyBar({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 print:hidden pointer-events-none"
+      className="fixed inset-x-0 bottom-0 z-40 pointer-events-none print:hidden md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="pointer-events-auto mx-auto max-w-5xl px-3 pb-3 sm:px-4">

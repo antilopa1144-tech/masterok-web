@@ -16,6 +16,8 @@ export function loadProjectMeta(projectId: string): ProjectEstimateMeta {
     return {
       reservePercent: Math.max(0, Math.min(30, Number(parsed.reservePercent) || 0)),
       deliveryRub: Math.max(0, Number(parsed.deliveryRub) || 0),
+      objectName: typeof parsed.objectName === "string" ? parsed.objectName : undefined,
+      customerName: typeof parsed.customerName === "string" ? parsed.customerName : undefined,
     };
   } catch {
     return { ...DEFAULT_META };

@@ -27,6 +27,10 @@ function useIsDesktop() {
   return isDesktop;
 }
 
+function displayMaterialName(name: string) {
+  return name.replace(/^\[[^\]]+\]\s*/, "");
+}
+
 export default function ProcurementLineRow(props: ProcurementLineRowProps) {
   const isDesktop = useIsDesktop();
   return isDesktop ? <DesktopRow {...props} /> : <MobileRow {...props} />;
@@ -67,25 +71,24 @@ function MobileRow({
   onPriceChange,
   onPriceBlur,
 }: ProcurementLineRowProps) {
-  const sourceLabel =
-    line.sources.length === 1 ? line.sources[0]!.calcTitle : `${line.sources.length} расчёта`;
+  const multiSource = line.sources.length > 1;
   const specifications = line.subtitles ?? [];
 
   return (
     <div
-      className={`px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 transition-colors ${
+      className={`border-b border-slate-100 px-3 py-3 transition-colors dark:border-slate-800 ${
         purchased ? "bg-green-50/50 dark:bg-green-950/20" : ""
       }`}
     >
-      <div className="flex items-start gap-3">
-        <label className="flex items-center gap-2 shrink-0 cursor-pointer pt-0.5">
+      <div className="flex items-start gap-2">
+        <label className="-ml-1 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
           <input
             type="checkbox"
             checked={purchased}
             onChange={onToggle}
-            className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+            className="h-5 w-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
+            aria-label={`Куплено: ${line.name}`}
           />
-          <span className="text-[11px] font-medium text-slate-500">Куплено</span>
         </label>
         <div className="min-w-0 flex-1">
           <p
@@ -95,23 +98,24 @@ function MobileRow({
                 : "text-slate-900 dark:text-slate-100"
             }`}
           >
-            {line.name}
+            {displayMaterialName(line.name)}
           </p>
           {specifications.map((specification) => (
             <p key={specification} className="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
               {specification}
             </p>
           ))}
-          <p className="text-[11px] text-slate-400 mt-0.5 truncate">{sourceLabel}</p>
+          {multiSource && (
+            <p className="mt-0.5 truncate text-[11px] text-slate-400">из {line.sources.length} расчётов</p>
+          )}
         </div>
+        <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold tabular-nums text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          {formatQuantity(line.quantity, line.unit)}
+        </span>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 mb-0.5">Кол-во</p>
-          <p className="text-sm font-bold tabular-nums">{formatQuantity(line.quantity, line.unit)}</p>
-        </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-2.5 py-2 min-w-0">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 mb-0.5">₽/ед.</p>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)] items-end gap-2 pl-10">
+        <label className="min-w-0">
+          <span className="mb-1 block text-[10px] font-semibold uppercase text-slate-400">Цена за ед., ₽</span>
           <PriceInput
             line={line}
             price={price}
@@ -119,9 +123,9 @@ function MobileRow({
             onPriceChange={onPriceChange}
             onPriceBlur={onPriceBlur}
           />
-        </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase text-slate-400 mb-0.5">Сумма</p>
+        </label>
+        <div className="pb-2 text-right">
+          <p className="mb-1 text-[10px] font-semibold uppercase text-slate-400">Сумма</p>
           <p
             className={`text-sm font-black tabular-nums ${
               sum > 0 ? "text-accent-700 dark:text-accent-300" : "text-slate-400"
