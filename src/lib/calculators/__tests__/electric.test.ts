@@ -5,6 +5,68 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(electricDef.calculate.bind(electricDef));
 
 describe("Электропроводка", () => {
+  it("сценарии используют границы введённого запаса и округляют каждое сечение отдельно", () => {
+    const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 1 });
+    const cablePurchase = r.materials
+      .filter((material) => material.category === "Кабель")
+      .reduce((total, material) => total + (material.purchaseQty ?? 0), 0);
+
+    expect(r.scenarios?.REC.buy_plan.unit).toBe("м");
+    expect(r.scenarios?.REC.buy_plan.package_label).toBe("electric-cable-lines");
+    expect(r.scenarios?.REC.purchase_quantity).toBe(cablePurchase);
+    expect(r.scenarios?.MIN.exact_need).toBeLessThan(r.scenarios!.REC.exact_need);
+    expect(r.scenarios?.MAX.exact_need).toBeGreaterThan(r.scenarios!.REC.exact_need);
+    expect(r.scenarios?.MIN.key_factors.input_reserve_multiplier).toBe(1.05);
+    expect(r.scenarios?.REC.key_factors.input_reserve_multiplier).toBe(1.15);
+    expect(r.scenarios?.MAX.key_factors.input_reserve_multiplier).toBe(1.3);
+    expect(r.formulaVersion).toBe("electric-canonical-v2");
+    expect(r.scenarios?.MIN.exact_need).toBeCloseTo(219.88524, 5);
+    expect(r.scenarios?.REC.exact_need).toBeCloseTo(239.19024, 5);
+    expect(r.scenarios?.MAX.exact_need).toBeCloseTo(268.14774, 5);
+    expect(r.scenarios?.MIN.purchase_quantity).toBe(268);
+    expect(r.scenarios?.REC.purchase_quantity).toBe(268);
+    expect(r.scenarios?.MAX.purchase_quantity).toBe(318);
+    expect(r.scenarios?.REC.leftover).toBeCloseTo(
+      r.scenarios!.REC.purchase_quantity - r.scenarios!.REC.exact_need,
+      5,
+    );
+  });
+
+  it.each(["basic", "realistic", "professional"])(
+    "явный запас не дублируется скрытым режимом точности %s",
+    (accuracyMode) => {
+      const r = electricDef.calculate({
+        apartmentArea: 60,
+        roomsCount: 3,
+        ceilingHeight: 2.7,
+        wiringType: 0,
+        hasKitchen: 1,
+        reserve: 15,
+        accuracyMode: accuracyMode as unknown as number,
+      });
+
+      expect(r.scenarios?.REC.exact_need).toBeCloseTo(239.19024, 5);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(268);
+    },
+  );
+
+  it("REC следует выбранному запасу, а MIN и MAX остаются объяснимыми границами", () => {
+    const r = calc({
+      apartmentArea: 60,
+      roomsCount: 3,
+      ceilingHeight: 2.7,
+      wiringType: 0,
+      hasKitchen: 1,
+      reserve: 20,
+    });
+
+    expect(r.scenarios?.MIN.key_factors.input_reserve_multiplier).toBe(1.05);
+    expect(r.scenarios?.REC.key_factors.input_reserve_multiplier).toBe(1.2);
+    expect(r.scenarios?.MAX.key_factors.input_reserve_multiplier).toBe(1.3);
+    expect(r.scenarios?.MIN.exact_need).toBeLessThan(r.scenarios!.REC.exact_need);
+    expect(r.scenarios?.REC.exact_need).toBeLessThan(r.scenarios!.MAX.exact_need);
+  });
+
   describe("Стандартная квартира", () => {
     it("60 м², 3 комнаты, высота 2.7 м, с плитой", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 1 });

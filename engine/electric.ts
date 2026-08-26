@@ -1,5 +1,3 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
   ElectricCanonicalSpec,
@@ -7,7 +5,6 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
 interface ElectricInputs {
@@ -17,38 +14,14 @@ interface ElectricInputs {
   wiringType?: number;
   hasKitchen?: number;
   reserve?: number;
-  accuracyMode?: AccuracyMode;
 }
 
 /* ─── constants ─── */
 
-const CABLE_15_RATE = 1.1;             // m per m² for lighting 3×1.5
-const CABLE_25_RATE = 1.6;             // m per m² for outlets 3×2.5
-const CABLE_6_KITCHEN_FACTOR = 1.5;    // base multiplier for stove cable
-const CABLE_6_RESERVE = 1.2;
-const CONDUIT_RATIO = 0.8;            // ratio of conduit to total cable
-const OUTLETS_PER_M2 = 0.6;
-const OUTLETS_PER_ROOM = 2;           // additional
-const SWITCHES_BASE = 2;              // additional beyond rooms
-const CABLE_SPOOL_M = 50;
 const CABLE_CHANNEL_PIECE_M = 2;
-const SOCKET_BOX_RESERVE = 1.1;
-const AC_GROUPS_DIVISOR = 2;
 const RCD_MODULES = 2;
 const PANEL_SPARE_MODULES = 2;
 const GYPSUM_BAG_KG = 5;
-
-/* ─── factor defaults ─── */
-
-const ELECTRIC_FACTOR_TABLE: FactorTable = {
-  surface_quality: { min: 1, rec: 1, max: 1 },
-  geometry_complexity: { min: 0.95, rec: 1, max: 1.1 },
-  installation_method: { min: 0.95, rec: 1, max: 1.05 },
-  worker_skill: { min: 0.95, rec: 1, max: 1.1 },
-  waste_factor: { min: 0.97, rec: 1, max: 1.05 },
-  logistics_buffer: { min: 1, rec: 1, max: 1 },
-  packaging_rounding: { min: 1, rec: 1, max: 1 },
-};
 
 /* ─── helpers ─── */
 
@@ -57,22 +30,23 @@ const ELECTRIC_FACTOR_TABLE: FactorTable = {
 export function computeCanonicalElectric(
   spec: ElectricCanonicalSpec,
   inputs: ElectricInputs,
-  factorTable: FactorTable = ELECTRIC_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
-  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
-
   const apartmentArea = Math.max(20, Math.min(500, inputs.apartmentArea ?? getInputDefault(spec, "apartmentArea", 60)));
   const roomsCount = Math.max(1, Math.min(10, Math.round(inputs.roomsCount ?? getInputDefault(spec, "roomsCount", 3))));
   const ceilingHeight = Math.max(2.4, Math.min(4.0, inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7)));
   const wiringType = Math.max(0, Math.min(1, Math.round(inputs.wiringType ?? getInputDefault(spec, "wiringType", 0))));
   const hasKitchen = Math.max(0, Math.min(1, Math.round(inputs.hasKitchen ?? getInputDefault(spec, "hasKitchen", 1))));
   const reserve = Math.max(5, Math.min(30, inputs.reserve ?? getInputDefault(spec, "reserve", 15)));
+  const cable15Rate = spec.material_rules.cable_15_rate;
+  const cable25Rate = spec.material_rules.cable_25_rate;
+  const cable6KitchenFactor = spec.material_rules.cable_6_kitchen_factor;
+  const cable6Reserve = spec.material_rules.cable_6_reserve;
+  const cableSpoolM = spec.packaging_rules.cable_spool_m;
 
   /* ─── groups ─── */
   const lightingGroups = roomsCount + 1;
   const outletGroups = roomsCount + 2;
-  const acGroups = Math.ceil(roomsCount / AC_GROUPS_DIVISOR);
+  const acGroups = Math.ceil(roomsCount / spec.material_rules.ac_groups_divisor);
   const breakersCount = lightingGroups + outletGroups + acGroups + (hasKitchen ? 1 : 0);
   const uzoCount = Math.ceil(outletGroups / 2) + (hasKitchen ? 1 : 0) + 1;
   const panelModules = breakersCount + uzoCount * RCD_MODULES + PANEL_SPARE_MODULES;
@@ -82,23 +56,48 @@ export function computeCanonicalElectric(
   const wiringMultiplier = wiringType === 1
     ? (spec.material_rules.cable_open_wiring_multiplier ?? 1.0)
     : (spec.material_rules.cable_hidden_wiring_multiplier ?? 1.0);
-  const cable15length = (apartmentArea * CABLE_15_RATE + lightingGroups * ceilingHeight) * (1 + reserve / 100) * wiringMultiplier;
-  const cable25length = (apartmentArea * CABLE_25_RATE + outletGroups * ceilingHeight * 1.5) * (1 + reserve / 100) * wiringMultiplier;
-  const cable6length = hasKitchen ? (Math.sqrt(apartmentArea) * CABLE_6_KITCHEN_FACTOR + ceilingHeight) * CABLE_6_RESERVE * wiringMultiplier : 0;
-  const conduitLength = Math.ceil((cable15length + cable25length + cable6length) * CONDUIT_RATIO);
+  const cable15BaseLength = (apartmentArea * cable15Rate + lightingGroups * ceilingHeight) * wiringMultiplier;
+  const cable25BaseLength = (apartmentArea * cable25Rate + outletGroups * ceilingHeight * 1.5) * wiringMultiplier;
+  const cable15length = cable15BaseLength * (1 + reserve / 100);
+  const cable25length = cable25BaseLength * (1 + reserve / 100);
+  const cable6length = hasKitchen
+    ? (Math.sqrt(apartmentArea) * cable6KitchenFactor + ceilingHeight) * cable6Reserve * wiringMultiplier
+    : 0;
+  const conduitLength = Math.ceil(
+    (cable15length + cable25length + cable6length) * spec.material_rules.conduit_ratio,
+  );
 
   /* ─── outlets & switches ─── */
-  const outletsCount = Math.ceil(apartmentArea * OUTLETS_PER_M2) + roomsCount * OUTLETS_PER_ROOM;
-  const switchesCount = roomsCount + SWITCHES_BASE;
+  const outletsCount = Math.ceil(apartmentArea * spec.material_rules.outlets_per_m2)
+    + roomsCount * spec.material_rules.outlets_per_room;
+  const switchesCount = roomsCount + spec.material_rules.switches_base;
 
   /* ─── packaging ─── */
-  const cable15spools = Math.ceil(cable15length / CABLE_SPOOL_M);
-  const cable25spools = Math.ceil(cable25length / CABLE_SPOOL_M);
-  const conduitPackageSize = wiringType === 1 ? CABLE_CHANNEL_PIECE_M : CABLE_SPOOL_M;
+  const cable15spools = Math.ceil(cable15length / cableSpoolM);
+  const cable25spools = Math.ceil(cable25length / cableSpoolM);
+  const conduitPackageSize = wiringType === 1 ? CABLE_CHANNEL_PIECE_M : cableSpoolM;
   const conduitPacks = Math.ceil(conduitLength / conduitPackageSize);
-  const socketBoxes = Math.ceil((outletsCount + switchesCount) * SOCKET_BOX_RESERVE);
+  const socketBoxes = Math.ceil((outletsCount + switchesCount) * spec.material_rules.socket_box_reserve);
   const gypsumKg = Math.ceil((outletsCount + switchesCount) / 5);
   const gypsumBags = Math.ceil(gypsumKg / GYPSUM_BAG_KG);
+  const reserveField = spec.input_schema.find((field) => field.key === "reserve");
+  const scenarioReserve = {
+    MIN: reserveField?.min ?? reserve,
+    REC: reserve,
+    MAX: reserveField?.max ?? reserve,
+  } as const;
+
+  function calculateCableScenario(reservePercent: number) {
+    const cable15 = cable15BaseLength * (1 + reservePercent / 100);
+    const cable25 = cable25BaseLength * (1 + reservePercent / 100);
+    const exactNeed = roundDisplay(cable15 + cable25 + cable6length, 6);
+    // Сечения нельзя объединять в условные бухты: каждую линию округляем
+    // отдельно и только затем складываем метры для сводного сценария.
+    const purchaseQuantity = Math.ceil(cable15 / cableSpoolM) * cableSpoolM
+      + Math.ceil(cable25 / cableSpoolM) * cableSpoolM
+      + (hasKitchen ? Math.ceil(cable6length) : 0);
+    return { exactNeed, purchaseQuantity };
+  }
 
   /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
@@ -108,8 +107,8 @@ export function computeCanonicalElectric(
       quantity: roundDisplay(cable15length, 1),
       unit: "м",
       withReserve: roundDisplay(cable15length, 1),
-      purchaseQty: cable15spools * CABLE_SPOOL_M,
-      packageInfo: { count: cable15spools, size: CABLE_SPOOL_M, packageUnit: "бухт" },
+      purchaseQty: cable15spools * cableSpoolM,
+      packageInfo: { count: cable15spools, size: cableSpoolM, packageUnit: "бухт" },
       category: "Кабель",
     },
     {
@@ -118,8 +117,8 @@ export function computeCanonicalElectric(
       quantity: roundDisplay(cable25length, 1),
       unit: "м",
       withReserve: roundDisplay(cable25length, 1),
-      purchaseQty: cable25spools * CABLE_SPOOL_M,
-      packageInfo: { count: cable25spools, size: CABLE_SPOOL_M, packageUnit: "бухт" },
+      purchaseQty: cable25spools * cableSpoolM,
+      packageInfo: { count: cable25spools, size: cableSpoolM, packageUnit: "бухт" },
       category: "Кабель",
     },
   ];
@@ -175,6 +174,34 @@ export function computeCanonicalElectric(
       category: "Защита",
     },
   );
+
+  const scenarios = SCENARIOS.reduce((acc, scenario) => {
+    const reservePercent = scenarioReserve[scenario];
+    const cableScenario = calculateCableScenario(reservePercent);
+    acc[scenario] = {
+      exact_need: cableScenario.exactNeed,
+      purchase_quantity: cableScenario.purchaseQuantity,
+      leftover: roundDisplay(cableScenario.purchaseQuantity - cableScenario.exactNeed, 6),
+      assumptions: [
+        `formula_version:${spec.formula_version}`,
+        `wiringType:${wiringType}`,
+        `reserve:${reservePercent}`,
+        "scenario:separate-rounding-by-cable-section",
+      ],
+      key_factors: {
+        input_reserve_multiplier: roundDisplay(1 + reservePercent / 100, 6),
+        stove_line_reserve_multiplier: hasKitchen ? cable6Reserve : 1,
+      },
+      buy_plan: {
+        package_label: "electric-cable-lines",
+        package_size: 1,
+        packages_count: 0,
+        unit: "м",
+      },
+    };
+    return acc;
+  }, {} as ScenarioBundle);
+  const recScenario = scenarios.REC;
 
   if (hasKitchen) {
     materials.push({
@@ -258,43 +285,6 @@ export function computeCanonicalElectric(
     },
   );
 
-  /* ─── scenarios ─── */
-  const basePrimaryRaw = cable15spools + cable25spools;
-  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
-  const packageOptions = [{ size: 1, label: "electric-cable-spool", unit: "бухт" }];
-
-  const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
-
-    acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
-      assumptions: [
-        `formula_version:${spec.formula_version}`,
-        `wiringType:${wiringType}`,
-        `reserve:${reserve}`,
-        `packaging:${packaging.package.label}`,
-      ],
-      key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-      },
-      buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
-      },
-    };
-
-    return acc;
-  }, {} as ScenarioBundle);
-
-  const recScenario = scenarios.REC;
-
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (apartmentArea > spec.warnings_rules.three_phase_area_threshold) {
@@ -312,6 +302,8 @@ export function computeCanonicalElectric(
     practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод 380 В, если выделенной однофазной мощности недостаточно`);
   }
   practicalNotes.push("Каждая розеточная группа — через своё устройство защитного отключения (УЗО) на 30 мА. Ванная — отдельное УЗО на 10 мА");
+  practicalNotes.push(`MIN/REC/MAX используют запас 5% / выбранное значение / 30% для линий 3×1,5 и 3×2,5 мм²; для ориентировочной линии плиты 3×6 мм² в спецификации задан отдельный коэффициент ${roundDisplay(cable6Reserve, 2)}`);
+  practicalNotes.push("Сводный итог дан в метрах для сравнения сценариев; покупать кабель нужно отдельными строками по сечению, указанными в ведомости");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -352,7 +344,5 @@ export function computeCanonicalElectric(
     warnings,
     practicalNotes,
     scenarios,
-    accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

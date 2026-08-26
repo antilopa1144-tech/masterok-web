@@ -1,6 +1,6 @@
 {
   "calculator_id": "electric",
-  "formula_version": "electric-canonical-v1",
+  "formula_version": "electric-canonical-v2",
   "input_schema": [
     { "key": "apartmentArea", "unit": "m2", "default_value": 60, "min": 20, "max": 500 },
     { "key": "roomsCount", "default_value": 3, "min": 1, "max": 10 },
@@ -10,7 +10,7 @@
     { "key": "reserve", "unit": "%", "default_value": 15, "min": 5, "max": 30 }
   ],
   "field_factors": {
-    "enabled": ["geometry_complexity", "installation_method", "worker_skill", "waste_factor"]
+    "enabled": []
   },
   "normative_formula": {
     "wiring_types": [
@@ -41,6 +41,11 @@
     "three_phase_area_threshold": 100
   },
   "scenario_policy": {
-    "contract": "min-rec-max-v1"
+    "contract": "min-rec-max-v1",
+    "primary_measure": "total_cable_length_m",
+    "min_reserve_percent": 5,
+    "rec_reserve_source": "input.reserve",
+    "max_reserve_percent": 30,
+    "packaging": "round_each_cable_section_before_sum"
   }
 }

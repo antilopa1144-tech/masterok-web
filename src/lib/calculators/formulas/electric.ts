@@ -2,7 +2,6 @@ import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalElectric } from "../../../../engine/electric";
 import electricSpec from "../../../../configs/calculators/electric-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const electricDef: CalculatorDefinition = {
   id: "engineering_electrics",
   slug: "elektrika",
@@ -78,8 +77,7 @@ export const electricDef: CalculatorDefinition = {
   ],
   calculate(inputs) {
     const spec = electricSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalElectric(spec, inputs, factorTable);
+    const canonical = computeCanonicalElectric(spec, inputs);
 
     return {
       materials: canonical.materials,
@@ -96,12 +94,13 @@ export const electricDef: CalculatorDefinition = {
   formulaDescription: `
 **Расчёт электропроводки (опыт монтажа):**
 
-1. **Метраж кабеля**: 
-   - Розетки: S_пола × 1.6 + спуски к каждой точке.
-   - Свет: S_пола × 1.1 + спуски к выключателям.
-2. **Запас**: 15% — необходимый минимум на петли в подрозетниках, распаечных коробках и щите.
-3. **Автоматы**: 1 группа на 1 комнату (свет) + 1 группа на 1 комнату (розетки) + мощные потребители (кухня, стиральная машина, кондиционеры).
-4. **Защита**: УЗО обязательно на все «мокрые» группы и розеточные сети.
+1. **Метраж кабеля**:
+   - Розетки: S_пола × 1.6 + ориентировочные спуски по числу групп.
+   - Свет: S_пола × 1.1 + ориентировочные спуски по числу групп.
+2. **Запас**: выбранные 5–30% на петли в подрозетниках, коробках, щите и монтажные отклонения.
+3. **Покупка кабеля**: линии 3×1,5 и 3×2,5 мм² округляются до бухт отдельно; метры разных сечений не складываются в одну условную бухту.
+4. **Автоматы**: 1 группа на 1 комнату (свет) + 1 группа на 1 комнату (розетки) + мощные потребители (кухня, стиральная машина, кондиционеры).
+5. **Защита**: УЗО обязательно на все «мокрые» группы и розеточные сети.
   `,
   howToUse: [
     "Введите общую площадь объекта",
@@ -139,14 +138,15 @@ export const electricDef: CalculatorDefinition = {
     descriptionHtml: `
 <h2>Формула расчёта электропроводки</h2>
 <p>Метраж кабеля рассчитывается по площади и количеству групп:</p>
-<p><strong>L<sub>розетки</sub> = S &times; 1.6 + N<sub>точек</sub> &times; H<sub>спуска</sub></strong></p>
-<p><strong>L<sub>свет</sub> = S &times; 1.1 + N<sub>выкл</sub> &times; H<sub>спуска</sub></strong></p>
+<p><strong>L<sub>розетки</sub> = (S &times; 1.6 + N<sub>групп</sub> &times; H &times; 1.5) &times K<sub>запаса</sub></strong></p>
+<p><strong>L<sub>свет</sub> = (S &times; 1.1 + N<sub>групп</sub> &times; H) &times K<sub>запаса</sub></strong></p>
 <ul>
   <li><strong>S</strong> — площадь квартиры/дома (м&sup2;)</li>
-  <li><strong>N<sub>точек</sub></strong> — количество розеток и выключателей</li>
-  <li><strong>H<sub>спуска</sub></strong> — высота спуска к точке (обычно 0.9–1.5 м)</li>
-  <li><strong>Запас 15%</strong> — на петли в подрозетниках, коробках и щите</li>
+  <li><strong>N<sub>групп</sub></strong> — расчётное количество групп освещения или розеток</li>
+  <li><strong>H</strong> — введённая высота помещения</li>
+  <li><strong>K<sub>запаса</sub></strong> — выбранные пользователем 5–30% на петли, коробки, щит и монтажные отклонения</li>
 </ul>
+<p>Это ориентировочная ведомость по площади и числу групп, а не трассировка по плану. Кабель каждого сечения округляется к покупке отдельно.</p>
 
 <h2>Сечение кабеля по назначению</h2>
 <table>
