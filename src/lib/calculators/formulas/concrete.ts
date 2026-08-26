@@ -1,62 +1,10 @@
-import type { CalculatorDefinition, MaterialResult } from "../types";
+import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalConcrete } from "../../../../engine/concrete";
 import concreteSpec from "../../../../configs/calculators/concrete-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
 import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
 const cementManufacturerField = buildManufacturerField("cement", { label: "Производитель цемента" });
-
-const round3 = (n: number) => Math.round(n * 1000) / 1000;
-
-/**
- * Пересчитывает компоненты ручного замеса (цемент/песок/щебень) от REC-объёма
- * бетона вместо totalVolume — чтобы их хватало ровно на показанный объём бетона
- * (см. подробный комментарий в calculate). Мутирует totals и возвращает новый
- * список материалов. Если замес не включён — список без изменений.
- */
-function rescaleManualMixComponents(
-  materials: MaterialResult[],
-  totals: Record<string, number>,
-  cementBagKg: number,
-): MaterialResult[] {
-  if (!totals.manualMix) return materials;
-
-  const totalVolume = totals.totalVolume;
-  const recVolume = totals.recExactNeedM3;
-  if (!(totalVolume > 0) || !(recVolume > 0)) return materials;
-
-  const scale = recVolume / totalVolume; // = REC waste-множитель (~1.06)
-  if (Math.abs(scale - 1) < 1e-6) return materials;
-
-  const next = materials.map((m): MaterialResult => {
-    if (m.category !== "Компоненты") return m;
-
-    if (m.name.startsWith("Цемент")) {
-      const kg = round3((totals.cementKg ?? m.quantity) * scale);
-      const bags = Math.ceil(kg / cementBagKg);
-      return {
-        ...m,
-        quantity: kg,
-        withReserve: bags * cementBagKg,
-        purchaseQty: bags * cementBagKg,
-        packageInfo: { count: bags, size: cementBagKg, packageUnit: "мешков" },
-      };
-    }
-    // Песок / щебень — м³, запас 1.05 уже в quantity, масштабируем пропорционально
-    const vol = round3(m.quantity * scale);
-    return { ...m, quantity: vol, withReserve: vol, purchaseQty: Math.ceil(vol) };
-  });
-
-  // Привести totals к новым значениям компонентов
-  totals.cementKg = round3((totals.cementKg ?? 0) * scale);
-  totals.cementBags = Math.ceil(totals.cementKg / cementBagKg);
-  totals.sandM3 = round3((totals.sandM3 ?? 0) * scale);
-  totals.gravelM3 = round3((totals.gravelM3 ?? 0) * scale);
-  totals.waterL = round3((totals.waterL ?? 0) * scale);
-
-  return next;
-}
 
 export const concreteDef: CalculatorDefinition = {
   id: "concrete_universal",
@@ -165,21 +113,8 @@ export const concreteDef: CalculatorDefinition = {
   ],
   calculate(inputs) {
     const spec = concreteSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalConcrete(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any }, factorTable);
-
-    // Согласование компонентов ручного замеса с объёмом бетона.
-    //
-    // Движок считает цемент/песок/щебень от totalVolume (объём с запасом
-    // пользователя), а строку «Бетон» — от REC-объёма, который дополнительно
-    // включает технологические отходы (waste-фактор сценария, ~+6%). Из-за
-    // этого по списку компонентов получалось на ~6% меньше бетона, чем в
-    // заголовке. Пересчитываем компоненты от того же REC-объёма, чтобы их
-    // хватало ровно на показанный объём бетона.
-    //
-    // Делаем в web-слое, не трогая движок/parity (мобильный паритет сохранён).
-    const totals = { ...canonical.totals };
-    let materials = rescaleManualMixComponents(canonical.materials, totals, spec.packaging_rules.cement_bag_kg);
+    const canonical = computeCanonicalConcrete(spec, { ...inputs, accuracyMode: inputs.accuracyMode as any });
+    let materials = canonical.materials;
 
     const manufacturer = getManufacturerByIndex("cement", inputs.manufacturer);
     if (manufacturer) {
@@ -192,7 +127,7 @@ export const concreteDef: CalculatorDefinition = {
 
     return {
       materials,
-      totals,
+      totals: canonical.totals,
       warnings: canonical.warnings,
       scenarios: canonical.scenarios,
       formulaVersion: canonical.formulaVersion,
@@ -204,6 +139,8 @@ export const concreteDef: CalculatorDefinition = {
 **Формула расчёта бетона по СНиП:**
 
 Объём с запасом = Объём × (1 + Запас/100)
+
+Поле «Запас» применяется один раз: MIN показывает чистый объём, REC — выбранный запас, MAX — не меньше рекомендуемых 10%. Заказ готового бетона округляется вверх с шагом 0,1 м³.
 
 Состав на 1 м³ бетона (цемент М400), те же значения, что в блоке «Пропорции» ниже по странице:
 | Марка | Цемент, кг | Песок, м³ | Щебень, м³ | Вода, л |

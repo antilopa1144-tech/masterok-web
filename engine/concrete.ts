@@ -1,4 +1,3 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
@@ -8,7 +7,7 @@ import type {
   ConcreteProportionSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 import { evaluateCompanionMaterials } from "./companion-materials";
 
@@ -51,8 +50,8 @@ function buildMaterials(
   gradeLabel: string,
   proportions: ConcreteProportionSpec,
   manualMix: number,
+  sourceVolume: number,
   recExactNeed: number,
-  recPurchaseQuantity: number,
   recPackageSize: number,
   recPackageCount: number,
   cementBags: number,
@@ -64,9 +63,9 @@ function buildMaterials(
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Бетон ${gradeLabel}`,
-      quantity: roundDisplay(recExactNeed, 3),
+      quantity: roundDisplay(sourceVolume, 3),
       unit: "м³",
-      withReserve: roundDisplay(recPurchaseQuantity, 3),
+      withReserve: roundDisplay(recExactNeed, 3),
       purchaseQty: roundDisplay(recPackageCount * recPackageSize, 3),
       category: "Основное",
     },
@@ -108,23 +107,24 @@ function buildMaterials(
 export function computeCanonicalConcrete(
   spec: ConcreteCanonicalSpec,
   inputs: ConcreteInputs,
-  factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
   const volume = resolveVolume(spec, inputs);
   const concreteGrade = Math.max(1, Math.min(7, Math.round(inputs.concreteGrade ?? getInputDefault(spec, "concreteGrade", 3))));
   const manualMix = Math.round(inputs.manualMix ?? getInputDefault(spec, "manualMix", 0)) === 1 ? 1 : 0;
-  const reserve = Math.max(0, Math.min(50, inputs.reserve ?? getInputDefault(spec, "reserve", 10)));
+  const reserve = Math.max(0, Math.min(20, inputs.reserve ?? getInputDefault(spec, "reserve", 5)));
   const proportions = resolveProportions(spec, concreteGrade);
   const gradeLabel = proportions.label;
 
   const application = Math.max(0, Math.min(2, Math.round(inputs.application ?? getInputDefault(spec, "application", 0))));
 
   const sourceVolume = volume.sourceVolume;
-  const totalVolumeRaw = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
-  const accuracyMult = getPrimaryMultiplier("concrete", accuracyMode);
-  const totalVolume = roundDisplay(totalVolumeRaw * accuracyMult, 6);
+  const totalVolume = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
+  const recommendedMaxReserve = Math.max(
+    0,
+    spec.scenario_policy.recommended_max_reserve_percent ?? 10,
+  );
 
   // Геометрия для опалубки и боковой гидроизоляции.
   // estimated_slab_thickness_m — это высота борта/толщина плиты, используется
@@ -160,8 +160,13 @@ export function computeCanonicalConcrete(
   }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(totalVolume * multiplier, 6);
+    const scenarioReserve = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? Math.max(reserve, recommendedMaxReserve)
+        : reserve;
+    const reserveMultiplier = 1 + scenarioReserve / 100;
+    const exactNeed = roundDisplay(sourceVolume * reserveMultiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -172,11 +177,13 @@ export function computeCanonicalConcrete(
         `formula_version:${spec.formula_version}`,
         `grade:${proportions.grade}`,
         `manual_mix:${manualMix}`,
+        `reserve_percent:${scenarioReserve}`,
+        "scenario_policy:explicit_concrete_reserve",
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        reserve_percent: roundDisplay(scenarioReserve, 3),
+        field_multiplier: roundDisplay(reserveMultiplier, 6),
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -216,8 +223,8 @@ export function computeCanonicalConcrete(
     gradeLabel,
     proportions,
     manualMix,
+    sourceVolume,
     recScenario.exact_need,
-    recScenario.purchase_quantity,
     recScenario.buy_plan.package_size,
     recScenario.buy_plan.packages_count,
     cementBags,
@@ -281,6 +288,12 @@ export function computeCanonicalConcrete(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(totalVolumeRaw, "concrete", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Скрытые коэффициенты точности не применяются: запас бетона задаётся отдельным полем один раз"],
+    },
   };
 }

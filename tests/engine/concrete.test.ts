@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { computeCanonicalConcrete } from "../../engine/concrete";
 import type { ConcreteCanonicalSpec } from "../../engine/canonical";
-import type { FactorTable } from "../../engine/factors";
 import concreteSpec from "../../configs/calculators/concrete-canonical.v1.json";
-import factorTablesJson from "../../configs/factor-tables.json";
 
 const spec = concreteSpec as unknown as ConcreteCanonicalSpec;
-const factorTable = factorTablesJson.factors as unknown as FactorTable;
 
-/** Wrap inputs to use basic accuracy mode (preserves pre-accuracy-mode baseline) */
 function calc(inputs: Parameters<typeof computeCanonicalConcrete>[1]) {
-  return computeCanonicalConcrete(spec, { ...inputs, accuracyMode: "basic" }, factorTable);
+  return computeCanonicalConcrete(spec, { ...inputs, accuracyMode: "basic" });
 }
 
 // ─── 1. Positive tests (стандартные входные данные) ───
@@ -31,6 +27,45 @@ describe("computeCanonicalConcrete — стандартные входные д�
     const mainMaterial = result.materials.find((m) => m.name.includes("Бетон М200"));
     expect(mainMaterial).toBeDefined();
     expect(mainMaterial!.category).toBe("Основное");
+  });
+
+  it("разделяет чистый объём, выбранный запас и заказ с шагом 0.1 м³", () => {
+    const result = calc({ concreteVolume: 5, reserve: 5, manualMix: 0 });
+    const concrete = result.materials.find((material) => material.name.includes("Бетон М200"));
+
+    expect(result.scenarios.MIN.exact_need).toBe(5);
+    expect(result.scenarios.MIN.purchase_quantity).toBe(5);
+    expect(result.scenarios.REC.exact_need).toBe(5.25);
+    expect(result.scenarios.REC.purchase_quantity).toBe(5.3);
+    expect(result.scenarios.MAX.exact_need).toBe(5.5);
+    expect(result.scenarios.MAX.purchase_quantity).toBe(5.5);
+    expect(concrete?.quantity).toBe(5);
+    expect(concrete?.withReserve).toBe(5.25);
+    expect(concrete?.purchaseQty).toBe(5.3);
+  });
+
+  it("режим точности не добавляет второй скрытый запас", () => {
+    const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
+      computeCanonicalConcrete(spec, {
+        concreteVolume: 5,
+        reserve: 5,
+        accuracyMode: accuracyMode as "basic" | "realistic" | "professional",
+      }),
+    );
+
+    for (const result of results) {
+      expect(result.scenarios.REC.exact_need).toBe(5.25);
+      expect(result.scenarios.REC.purchase_quantity).toBe(5.3);
+      expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+    }
+  });
+
+  it("MAX не добавляет запас сверх выбранных пользователем 20%", () => {
+    const result = calc({ concreteVolume: 5, reserve: 20 });
+
+    expect(result.scenarios.REC.exact_need).toBe(6);
+    expect(result.scenarios.MAX.exact_need).toBe(6);
+    expect(result.scenarios.MAX.purchase_quantity).toBe(6);
   });
 
   it("Объём 5 м³, марка M200, ручной замес → цемент, песок, щебень в materials; вода — только в totals", () => {
@@ -127,14 +162,14 @@ describe("computeCanonicalConcrete — нулевые и граничные зн
     expect(result.totals.totalVolume).toBe(result.totals.sourceVolume);
   });
 
-  it("Запас 50 (максимум) → totalVolume = sourceVolume * 1.5", () => {
+  it("Запас выше доступных в форме 20% → clamp до 20%", () => {
     const result = calc({
       concreteVolume: 10,
       reserve: 50,
       inputMode: 0,
     });
 
-    expect(result.totals.totalVolume).toBe(15);
+    expect(result.totals.totalVolume).toBe(12);
   });
 });
 
@@ -261,8 +296,8 @@ describe("computeCanonicalConcrete — структура результата",
     expect(result.canonicalSpecId).toBe("concrete");
   });
 
-  it("formulaVersion = 'concrete-canonical-v1'", () => {
-    expect(result.formulaVersion).toBe("concrete-canonical-v1");
+  it("formulaVersion = 'concrete-canonical-v2'", () => {
+    expect(result.formulaVersion).toBe("concrete-canonical-v2");
   });
 });
 

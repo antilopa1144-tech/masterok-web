@@ -17,11 +17,11 @@ describe("Калькулятор бетона", () => {
       expect(result.totals.totalVolume).toBeCloseTo(5.25, 2);
     });
 
-    it("объём бетона с учётом REC-сценария ≈ 5.6 м³", () => {
+    it("разделяет объём с запасом и заказ с шагом 0.1 м³", () => {
       const concrete = findMaterial(result, "Бетон М200");
-      // totalVolume=5.25, REC multiplier=1.06, exactNeed=5.565
-      // packaging step=0.1 → purchaseQuantity=5.6, packageCount=56
-      expect(concrete?.withReserve).toBeCloseTo(5.6, 1);
+      expect(concrete?.quantity).toBe(5);
+      expect(concrete?.withReserve).toBe(5.25);
+      expect(concrete?.purchaseQty).toBe(5.3);
     });
 
     it("готовый бетон не показывается как десятки доставок по 0.1 м³", () => {
@@ -57,14 +57,12 @@ describe("Калькулятор бетона", () => {
       expect(gravel).toBeDefined();
     });
 
-    it("цемент М400 согласован с REC-объёмом бетона (не недобирает на отходы)", () => {
+    it("цемент М400 согласован с выбранным запасом без скрытой надбавки", () => {
       const cement = findMaterial(result, "Цемент М400");
       const concrete = findMaterial(result, "Бетон М200");
-      // Компоненты считаются от REC-объёма бетона (с учётом отходов), а не от
-      // totalVolume. REC = 5.25 × 1.06 = 5.565 м³; цемент = 5.565 × 290 = 1613.85 кг
-      // → ceil(1613.85/50) = 33 мешка × 50 = 1650 кг.
-      expect(cement?.purchaseQty).toBe(1650);
-      // Цемента хватает на объём бетона из заголовка, без 6%-недобора.
+      // REC = 5 × 1.05 = 5.25 м³; цемент = 5.25 × 290 = 1522.5 кг
+      // → ceil(1522.5/50) = 31 мешок × 50 = 1550 кг.
+      expect(cement?.purchaseQty).toBe(1550);
       const cementVolumeM3 = (cement!.quantity) / 290;
       expect(cementVolumeM3).toBeCloseTo(concrete!.withReserve!, 1);
     });

@@ -167,6 +167,11 @@ export interface CanonicalCalculatorSpecBase {
   };
   scenario_policy: {
     contract: "min-rec-max-v1";
+    recommended_max_reserve_percent?: number;
+    MIN?: string;
+    REC?: string;
+    MAX?: string;
+    purchase_quantity?: string;
   };
 }
 
