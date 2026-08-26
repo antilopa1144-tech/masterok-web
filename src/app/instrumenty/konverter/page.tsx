@@ -2,6 +2,12 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import {
+  convertLinearUnit,
+  convertTemperature,
+  formatConvertedValue,
+  parseUnitValue,
+} from "@/lib/tools/unit-converter";
 
 const UI_TEXT = {
   breadcrumbHome: "Главная",
@@ -19,6 +25,7 @@ const UI_TEXT = {
 } as const;
 
 type UnitGroupId = "length" | "area" | "volume" | "mass" | "pressure" | "temperature";
+type ConverterMode = "units" | "density";
 
 // Категории единиц
 interface UnitGroup {
@@ -103,36 +110,13 @@ const UNIT_GROUPS: UnitGroup[] = [
   },
 ];
 
-function convertTemperature(value: number, from: string, to: string): number {
-  let celsius: number;
-  if (from === "c") celsius = value;
-  else if (from === "f") celsius = (value - 32) * 5 / 9;
-  else celsius = value - 273.15;
-
-  if (to === "c") return celsius;
-  if (to === "f") return celsius * 9 / 5 + 32;
-  return celsius + 273.15;
-}
-
-function formatResult(n: number): string {
-  if (isNaN(n) || !isFinite(n)) return "—";
-  if (n === 0) return "0";
-  const abs = Math.abs(n);
-  if (abs >= 0.001 && abs < 1e10) {
-    const decimals = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
-    return n.toLocaleString("ru-RU", {
-      maximumFractionDigits: decimals,
-      minimumFractionDigits: 0,
-    });
-  }
-  return n.toExponential(4);
-}
-
 export default function KonverterPage() {
+  const [converterMode, setConverterMode] = useState<ConverterMode>("units");
   const [groupIndex, setGroupIndex] = useState(0);
   const [fromUnit, setFromUnit] = useState("m");
   const [toUnit, setToUnit] = useState("mm");
   const [inputValue, setInputValue] = useState("1");
+  const [showAllUnits, setShowAllUnits] = useState(false);
 
   const group = UNIT_GROUPS[groupIndex];
   const isTemperature = group.id === "temperature";
@@ -144,22 +128,22 @@ export default function KonverterPage() {
     setFromUnit(g.units[0].key);
     setToUnit(g.units[1]?.key ?? g.units[0].key);
     setInputValue(UI_TEXT.defaultInputValue);
+    setShowAllUnits(false);
   };
 
   const calculate = (): string => {
-    const num = parseFloat(inputValue.replace(",", "."));
-    if (isNaN(num)) return "—";
+    const num = parseUnitValue(inputValue);
+    if (num === null) return "—";
 
     if (isTemperature) {
-      return formatResult(convertTemperature(num, fromUnit, toUnit));
+      return formatConvertedValue(convertTemperature(num, fromUnit, toUnit));
     }
 
     const fromDef = group.units.find((u) => u.key === fromUnit);
     const toDef = group.units.find((u) => u.key === toUnit);
     if (!fromDef || !toDef) return "—";
 
-    const baseValue = num * fromDef.toBase;
-    return formatResult(baseValue / toDef.toBase);
+    return formatConvertedValue(convertLinearUnit(num, fromDef.toBase, toDef.toBase));
   };
 
   const result = calculate();
@@ -170,9 +154,15 @@ export default function KonverterPage() {
   };
 
   return (
-    <div className="page-container py-8 max-w-3xl">
+    <div className="page-container max-w-4xl py-4 sm:py-8">
+      <Link
+        href="/instrumenty/"
+        className="mb-2 inline-flex min-h-11 items-center text-sm font-semibold text-slate-500 hover:text-accent-600 sm:hidden"
+      >
+        ← Все инструменты
+      </Link>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 mb-6">
+      <nav className="mb-6 hidden items-center gap-1.5 text-sm text-slate-400 dark:text-slate-400 sm:flex">
         <Link href="/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbHome}</Link>
         <span>/</span>
         <Link href="/instrumenty/" className="hover:text-slate-600 dark:hover:text-slate-300">{UI_TEXT.breadcrumbTools}</Link>
@@ -180,20 +170,57 @@ export default function KonverterPage() {
         <span className="text-slate-600 dark:text-slate-300">{UI_TEXT.breadcrumbCurrent}</span>
       </nav>
 
-      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-        {UI_TEXT.title}
-      </h1>
-      <p className="text-slate-500 dark:text-slate-400 mb-8">
-        {UI_TEXT.description}
-      </p>
+      <div className="mb-4 sm:mb-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-600 dark:text-accent-400 sm:hidden">
+          Быстрый инструмент
+        </p>
+        <h1 className="mt-0.5 text-2xl font-bold text-slate-900 dark:text-slate-100 md:text-3xl">
+          {UI_TEXT.title}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 sm:text-base">
+          {UI_TEXT.description}
+        </p>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800/80" role="tablist" aria-label="Режим конвертера">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={converterMode === "units"}
+          onClick={() => setConverterMode("units")}
+          className={`min-h-11 rounded-xl px-3 text-sm font-semibold transition-colors ${
+            converterMode === "units"
+              ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100"
+              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          Единицы
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={converterMode === "density"}
+          onClick={() => setConverterMode("density")}
+          className={`min-h-11 rounded-xl px-3 text-sm font-semibold transition-colors ${
+            converterMode === "density"
+              ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100"
+              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          Масса ↔ объём
+        </button>
+      </div>
+
+      {converterMode === "units" ? (
+        <>
 
       {/* Выбор категории */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {UNIT_GROUPS.map((g, i) => (
           <button
             key={g.id}
             onClick={() => handleGroupChange(i)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-medium transition-all ${
               i === groupIndex
                 ? "bg-accent-500 text-white border-accent-500"
                 : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
@@ -206,15 +233,16 @@ export default function KonverterPage() {
       </div>
 
       {/* Конвертер */}
-      <div className="card p-6 md:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
+      <div className="card p-4 sm:p-6 md:p-8">
+        <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_minmax(0,1fr)] items-end gap-2 sm:gap-4">
           {/* Откуда */}
           <div>
             <label className="input-label">{UI_TEXT.fromLabel}</label>
             <select
               value={fromUnit}
               onChange={(e) => setFromUnit(e.target.value)}
-              className="input-field mb-3"
+              className="input-field mb-2 w-full truncate px-2 sm:mb-3 sm:px-3"
+              aria-label="Исходная единица"
             >
               {group.units.map((u) => (
                 <option key={u.key} value={u.key}>{u.label}</option>
@@ -226,8 +254,8 @@ export default function KonverterPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={UI_TEXT.inputPlaceholder}
-              className="input-field text-lg font-semibold"
-              autoFocus
+              className="input-field w-full px-2 text-lg font-semibold sm:px-3"
+              aria-label="Исходное значение"
             />
           </div>
 
@@ -235,7 +263,7 @@ export default function KonverterPage() {
           <div className="flex justify-center pb-1">
             <button
               onClick={swap}
-              className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100 transition-colors text-lg"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
               title={UI_TEXT.swapTitle}
               aria-label={UI_TEXT.swapTitle}
             >
@@ -249,20 +277,34 @@ export default function KonverterPage() {
             <select
               value={toUnit}
               onChange={(e) => setToUnit(e.target.value)}
-              className="input-field mb-3"
+              className="input-field mb-2 w-full truncate px-2 sm:mb-3 sm:px-3"
+              aria-label="Целевая единица"
             >
               {group.units.map((u) => (
                 <option key={u.key} value={u.key}>{u.label}</option>
               ))}
             </select>
-            <div className="input-field text-lg font-bold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40 select-all cursor-text">
+            <output className="input-field block w-full cursor-text select-all truncate border-accent-200 bg-accent-50 px-2 text-lg font-bold text-accent-700 dark:border-accent-800/40 dark:bg-accent-900/20 dark:text-accent-300 sm:px-3" aria-label="Результат">
               {result}
-            </div>
+            </output>
           </div>
         </div>
 
         {/* Быстрые результаты по всем единицам */}
-        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700">
+        <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700 sm:mt-6 sm:pt-5">
+          <button
+            type="button"
+            onClick={() => setShowAllUnits((open) => !open)}
+            className="flex min-h-11 w-full items-center justify-between text-left sm:hidden"
+            aria-expanded={showAllUnits}
+          >
+            <span>
+              <span className="block text-sm font-semibold text-slate-700 dark:text-slate-200">Другие единицы</span>
+              <span className="block text-[11px] text-slate-400">{group.units.length - 1} быстрых пересчётов</span>
+            </span>
+            <span aria-hidden className={`text-slate-400 transition-transform ${showAllUnits ? "rotate-180" : ""}`}>⌄</span>
+          </button>
+          <div className={`${showAllUnits ? "block" : "hidden"} sm:block`}>
           <p className="text-xs text-slate-400 dark:text-slate-400 font-medium uppercase tracking-wider mb-3">
             {inputValue || UI_TEXT.defaultInputValue} {group.units.find(u => u.key === fromUnit)?.label} {UI_TEXT.quickResultsSuffix}
           </p>
@@ -270,16 +312,17 @@ export default function KonverterPage() {
             {group.units
               .filter((u) => u.key !== fromUnit)
               .map((u) => {
-                const num = parseFloat(inputValue.replace(",", ".")) || 1;
+                const num = parseUnitValue(inputValue);
                 let res: string;
-                if (isTemperature) {
-                  res = formatResult(convertTemperature(num, fromUnit, u.key));
+                if (num === null) {
+                  res = "—";
+                } else if (isTemperature) {
+                  res = formatConvertedValue(convertTemperature(num, fromUnit, u.key));
                 } else {
                   const fromDef = group.units.find((x) => x.key === fromUnit);
                   if (!fromDef) { res = "—"; }
                   else {
-                    const base = num * fromDef.toBase;
-                    res = formatResult(base / u.toBase);
+                    res = formatConvertedValue(convertLinearUnit(num, fromDef.toBase, u.toBase));
                   }
                 }
                 return (
@@ -298,15 +341,17 @@ export default function KonverterPage() {
                 );
               })}
           </div>
+          </div>
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-slate-400 dark:text-slate-400 text-center">
+      <p className="mt-3 hidden text-center text-xs text-slate-400 dark:text-slate-400 sm:block">
         {UI_TEXT.quickTargetHint}
       </p>
-
-      {/* Калькулятор плотности: масса ↔ объём */}
-      <DensityCalculator />
+        </>
+      ) : (
+        <DensityCalculator />
+      )}
     </div>
   );
 }
@@ -331,27 +376,30 @@ const DENSITY_PRESETS = [
   { label: "Грунтовка", density: 1050 },
 ];
 
-type DensityMode = "mass-to-volume" | "volume-to-mass" | "calc-density";
+type DensityMode = "mass-to-volume" | "volume-to-mass";
 
 function DensityCalculator() {
   const [mode, setMode] = useState<DensityMode>("mass-to-volume");
-  const [density, setDensity] = useState(2400);
+  const [densityInput, setDensityInput] = useState("2400");
   const [inputVal, setInputVal] = useState("1");
 
-  const num = parseFloat(inputVal.replace(",", ".")) || 0;
+  const density = parseUnitValue(densityInput) ?? Number.NaN;
+  const num = parseUnitValue(inputVal) ?? 0;
+  const densityIsValid = Number.isFinite(density) && density > 0;
+  const selectedPreset = DENSITY_PRESETS.find((preset) => preset.density === density);
 
   const result = useMemo(() => {
-    if (density <= 0 || num <= 0) return "—";
-    if (mode === "mass-to-volume") return formatResult(num / density);
-    if (mode === "volume-to-mass") return formatResult(num * density);
+    if (!densityIsValid || num <= 0) return "—";
+    if (mode === "mass-to-volume") return formatConvertedValue(num / density);
+    if (mode === "volume-to-mass") return formatConvertedValue(num * density);
     return "—";
-  }, [mode, density, num]);
+  }, [mode, density, densityIsValid, num]);
 
   const resultUnit = mode === "mass-to-volume" ? "м³" : "кг";
   const inputUnit = mode === "mass-to-volume" ? "кг" : "м³";
 
   return (
-    <div className="card p-6 mt-8">
+    <div className="card p-4 sm:p-6">
       <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
         Масса ↔ Объём через плотность
       </h2>
@@ -360,7 +408,7 @@ function DensityCalculator() {
       </p>
 
       {/* Режим */}
-      <div className="flex gap-2 mb-5">
+      <div className="mb-5 flex gap-2">
         <button
           onClick={() => setMode("mass-to-volume")}
           className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
@@ -383,39 +431,49 @@ function DensityCalculator() {
         </button>
       </div>
 
-      {/* Плотность — пресеты */}
-      <div className="mb-4">
-        <label className="input-label">Материал / плотность (кг/м³)</label>
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {DENSITY_PRESETS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => setDensity(p.density)}
-              className={`text-xs px-2 py-1 rounded border transition-colors ${
-                density === p.density
-                  ? "border-accent-300 bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 font-medium"
-                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={1}
-          value={density}
-          onChange={(e) => setDensity(Number(e.target.value) || 1)}
-          className="input-field w-32"
-        />
+      {/* Материал и его плотность */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="input-label">Материал</span>
+          <select
+            value={selectedPreset ? String(selectedPreset.density) : "custom"}
+            onChange={(e) => {
+              if (e.target.value !== "custom") setDensityInput(e.target.value);
+            }}
+            className="input-field w-full"
+          >
+            {DENSITY_PRESETS.map((preset) => (
+              <option key={preset.label} value={preset.density}>{preset.label}</option>
+            ))}
+            <option value="custom">Своя плотность</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="input-label">Плотность, кг/м³</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={1}
+            value={densityInput}
+            onChange={(e) => setDensityInput(e.target.value)}
+            className="input-field w-full"
+            aria-invalid={!densityIsValid}
+            aria-describedby={!densityIsValid ? "density-error" : undefined}
+          />
+          {!densityIsValid && (
+            <span id="density-error" className="mt-1 block text-xs text-red-600 dark:text-red-400">
+              Укажите плотность больше 0 кг/м³
+            </span>
+          )}
+        </label>
       </div>
 
       {/* Ввод / результат */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <div>
-          <label className="input-label">Значение ({inputUnit})</label>
+          <label htmlFor="density-value" className="input-label">Значение ({inputUnit})</label>
           <input
+            id="density-value"
             type="number"
             inputMode="decimal"
             value={inputVal}
@@ -424,10 +482,10 @@ function DensityCalculator() {
           />
         </div>
         <div>
-          <label className="input-label">Результат ({resultUnit})</label>
-          <div className="input-field text-lg font-bold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40">
+          <span className="input-label">Результат ({resultUnit})</span>
+          <output className="input-field block text-lg font-bold text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-900/20 border-accent-200 dark:border-accent-800/40" aria-label={`Результат (${resultUnit})`}>
             {result}
-          </div>
+          </output>
         </div>
       </div>
     </div>
