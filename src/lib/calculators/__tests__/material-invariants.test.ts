@@ -47,7 +47,7 @@ describe("Material invariants — all calculators", () => {
             expect(
               m.purchaseQty,
               `${m.name}: purchaseQty (${m.purchaseQty}) !== count×size (${expected})`,
-            ).toBeCloseTo(expected, 0);
+            ).toBeCloseTo(expected, 6);
             expect(m.packageInfo.count, `${m.name}: packageInfo.count <= 0`).toBeGreaterThan(0);
             expect(m.packageInfo.size, `${m.name}: packageInfo.size <= 0`).toBeGreaterThan(0);
             expect(m.packageInfo.packageUnit, `${m.name}: packageUnit empty`).toBeTruthy();

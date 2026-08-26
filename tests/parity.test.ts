@@ -12,6 +12,18 @@ const FACTOR_TABLE = JSON.parse(
 // Parity tests verify normative baseline (matching Flutter).
 // Accuracy mode "basic" = no practical modifiers = normative parity.
 const PARITY_ACCURACY_INPUTS = { accuracyMode: "basic" };
+const SCENARIOS = ["MIN", "REC", "MAX"] as const;
+
+function expectNumericRecordToMatch(
+  actual: Record<string, number>,
+  expected: Record<string, number>,
+  context: string,
+) {
+  for (const [key, expectedValue] of Object.entries(expected)) {
+    expect(actual, `${context}: totals.${key} missing`).toHaveProperty(key);
+    expect(actual[key], `${context}: totals.${key}`).toBeCloseTo(expectedValue, 6);
+  }
+}
 
 function getEngineFunctionName(calcId: string): string {
   const pascal = calcId
@@ -45,7 +57,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           expect(result.materials.length).toBe(testCase.expected_materials_count);
         });
 
-        it(`${testCase.id}: scenario REC exact need and purchase match`, async () => {
+        it(`${testCase.id}: all scenario exact needs and purchases match`, async () => {
           const configFile = `${calcId}-canonical.v1.json`;
           const config = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8"));
           const enginePath = path.join(ENGINE_DIR, `${calcId}.ts`);
@@ -54,17 +66,45 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           const fnName = getEngineFunctionName(calcId);
           const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
 
-          expect(result.scenarios.REC.exact_need).toBeCloseTo(
-            testCase.expected_scenarios.REC.exact_need,
-            4,
-          );
-          expect(result.scenarios.REC.purchase_quantity).toBeCloseTo(
-            testCase.expected_scenarios.REC.purchase_quantity,
-            4,
+          for (const scenario of SCENARIOS) {
+            expect(result.scenarios[scenario].exact_need, `${scenario}.exact_need`).toBeCloseTo(
+              testCase.expected_scenarios[scenario].exact_need,
+              4,
+            );
+            expect(
+              result.scenarios[scenario].purchase_quantity,
+              `${scenario}.purchase_quantity`,
+            ).toBeCloseTo(testCase.expected_scenarios[scenario].purchase_quantity, 4);
+          }
+        });
+
+        it(`${testCase.id}: totals match`, async () => {
+          const configFile = `${calcId}-canonical.v1.json`;
+          const config = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8"));
+          const enginePath = path.join(ENGINE_DIR, `${calcId}.ts`);
+          const engineUrl = new URL(`file:///${enginePath.replace(/\\/g, "/")}`).href;
+          const engineModule = await import(engineUrl);
+          const fnName = getEngineFunctionName(calcId);
+          const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
+
+          expectNumericRecordToMatch(result.totals, testCase.expected_totals, `${calcId}/${testCase.id}`);
+        });
+
+        it(`${testCase.id}: material names and order match`, async () => {
+          const configFile = `${calcId}-canonical.v1.json`;
+          const config = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8"));
+          const enginePath = path.join(ENGINE_DIR, `${calcId}.ts`);
+          const engineUrl = new URL(`file:///${enginePath.replace(/\\/g, "/")}`).href;
+          const engineModule = await import(engineUrl);
+          const fnName = getEngineFunctionName(calcId);
+          const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
+
+          expect(result.materials.map((material: { name: string }) => material.name)).toEqual(
+            testCase.expected_material_names,
           );
         });
 
-        it(`${testCase.id}: warnings count matches`, async () => {
+        it(`${testCase.id}: warnings match`, async () => {
           const configFile = `${calcId}-canonical.v1.json`;
           const config = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8"));
           const enginePath = path.join(ENGINE_DIR, `${calcId}.ts`);
@@ -74,6 +114,7 @@ describe("Cross-platform parity: TS engine vs fixtures", () => {
           const result = engineModule[fnName](config, { ...testCase.inputs, ...PARITY_ACCURACY_INPUTS }, FACTOR_TABLE);
 
           expect(result.warnings.length).toBe(testCase.expected_warnings_count);
+          expect(result.warnings).toEqual(testCase.expected_warnings);
         });
       }
     });
