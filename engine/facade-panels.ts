@@ -1,303 +1,215 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
-import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import { buildPrimerMaterial } from "./smart-packaging";
+import type { FactorTable } from "./factors";
 import type {
-  FacadePanelsCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
+  FacadePanelsCanonicalSpec,
 } from "./canonical";
+import type { ScenarioBundle } from "./scenarios";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
-/* ─── constants ─── */
-
-/* ─── labels ─── */
-
-const PANEL_TYPE_LABELS: Record<number, string> = {
-  0: "Фиброцементные панели 1200×3000 мм (3,6 м²)",
-  1: "Металлокассеты 600×1200 мм (0,72 м²)",
-  2: "Фасадные панели из слоистого пластика (HPL) 1200×2440 мм (2,928 м²)",
-  3: "Металлический сайдинг 230×3000 мм (0,69 м²)",
-};
-
-const SUBSTRUCTURE_LABELS: Record<number, string> = {
-  0: "Алюминиевая",
-  1: "Оцинкованная",
-  2: "Деревянная",
-};
-
-/* ─── inputs ─── */
-
 interface FacadePanelsInputs {
+  inputMode?: number;
   area?: number;
+  houseLength?: number;
+  houseWidth?: number;
+  wallLength?: number;
+  wallHeight?: number;
+  openingsArea?: number;
   panelType?: number;
-  substructure?: number;
-  insulationThickness?: number;
-  /** Использовать горизонтальные направляющие в дополнение к вертикальным.
-   *  По умолчанию 0 — backward-compat с прежней формулой (только вертикали). */
-  withHorizontalRails?: number;
-  accuracyMode?: AccuracyMode;
+  panelUsefulArea?: number;
+  reservePercent?: number;
+  needProfile?: number;
+  profileStep?: number;
+  profilePieceLength?: number;
+  fastenersPerPanel?: number;
+  needInsulation?: number;
+  insulationPackArea?: number;
+  externalCorners?: number;
+  cornerPieceLength?: number;
+  starterPieceLength?: number;
 }
 
-/* ─── helpers ─── */
+const finiteOr = (value: number | undefined, fallback: number) =>
+  Number.isFinite(value) ? Number(value) : fallback;
 
-/* ─── main ─── */
+const positiveOr = (value: number | undefined, fallback: number) =>
+  Math.max(0.000001, finiteOr(value, fallback));
 
 export function computeCanonicalFacadePanels(
   spec: FacadePanelsCanonicalSpec,
   inputs: FacadePanelsInputs,
-  factorTable: FactorTable,
+  _factorTable?: FactorTable,
 ): CanonicalCalculatorResult {
-  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
+  const inputMode = Math.round(finiteOr(inputs.inputMode, getInputDefault(spec, "inputMode", 1))) === 0 ? 0 : 1;
+  const houseLength = positiveOr(inputs.houseLength, getInputDefault(spec, "houseLength", 10));
+  const houseWidth = positiveOr(inputs.houseWidth, getInputDefault(spec, "houseWidth", 10));
+  const wallHeight = positiveOr(inputs.wallHeight, getInputDefault(spec, "wallHeight", 3));
+  const perimeter = positiveOr(inputs.wallLength, 2 * (houseLength + houseWidth));
+  const openingsArea = Math.max(0, finiteOr(inputs.openingsArea, getInputDefault(spec, "openingsArea", 10)));
+  const grossArea = inputMode === 0 ? perimeter * wallHeight : positiveOr(inputs.area, getInputDefault(spec, "area", 100));
+  const netArea = inputMode === 0 ? Math.max(0, grossArea - openingsArea) : grossArea;
 
-  const area = Math.max(10, Math.min(2000, Math.round(inputs.area ?? getInputDefault(spec, "area", 100))));
-  const panelType = Math.max(0, Math.min(3, Math.round(inputs.panelType ?? getInputDefault(spec, "panelType", 0))));
-  const substructure = Math.max(0, Math.min(2, Math.round(inputs.substructure ?? getInputDefault(spec, "substructure", 0))));
-  const insulationThickness = Math.max(0, Math.min(100, Math.round(inputs.insulationThickness ?? getInputDefault(spec, "insulationThickness", 0))));
-  const withHorizontalRails = Math.max(0, Math.min(1, Math.round(inputs.withHorizontalRails ?? getInputDefault(spec, "withHorizontalRails", 0))));
-  const rules = spec.material_rules;
+  const panelType = Math.max(0, Math.min(6, Math.round(finiteOr(inputs.panelType, 0))));
+  const panelUsefulArea = positiveOr(inputs.panelUsefulArea, getInputDefault(spec, "panelUsefulArea", 0.84));
+  const reservePercent = Math.max(0, Math.min(30, finiteOr(inputs.reservePercent, getInputDefault(spec, "reservePercent", 10))));
+  const maxReservePercent = Math.max(reservePercent, spec.material_rules.max_reserve_percent);
 
-  /* ─── panel area ─── */
-  const panelArea = rules.panel_areas[String(panelType)] ?? rules.panel_areas["0"];
+  const exactPanelsMin = netArea / panelUsefulArea;
+  const exactPanelsRec = exactPanelsMin * (1 + reservePercent / 100);
+  const exactPanelsMax = exactPanelsMin * (1 + maxReservePercent / 100);
 
-  /* ─── formulas ─── */
-  const panelsRaw = Math.ceil(area * rules.panel_reserve / panelArea);
-  const panels = Math.ceil(panelsRaw * accuracyMult);
-  const brackets = Math.ceil(area / rules.bracket_spacing_m2 * rules.bracket_reserve);
-  const guides = Math.ceil(area / rules.guide_spacing * rules.guide_reserve / rules.guide_length);
-  // Горизонтальные направляющие: при withHorizontalRails=1 формула симметрична вертикальным
-  // (площадь / шаг_горизонтального / длина_секции × запас). Шаг по умолчанию 0.6 м (СП 70.13330).
-  const horizontalRailStepM = spec.material_rules.horizontal_rail_step_m ?? 0.6;
-  const horizontalGuides = withHorizontalRails === 1
-    ? Math.ceil((area / horizontalRailStepM) * rules.guide_reserve / rules.guide_length)
-    : 0;
-  const fasteners = Math.ceil(panels * rules.fasteners_per_panel * rules.fastener_reserve);
-  const anchors = Math.ceil(brackets * rules.anchor_per_bracket * rules.anchor_reserve);
-  const insPlates = insulationThickness > 0 ? Math.ceil(area * rules.insulation_reserve / rules.insulation_plate) : 0;
-  const insDowels = insPlates > 0 ? Math.ceil(area * rules.insulation_dowels_per_m2 * rules.insulation_reserve) : 0;
-  const membrane = insPlates > 0 ? Math.ceil(area * rules.membrane_reserve / rules.wind_membrane_roll) : 0;
-  const primer = Math.ceil(area * rules.primer_l_per_m2 * rules.primer_reserve / rules.primer_can);
-  const sealant = Math.ceil(Math.sqrt(area) * 4 / rules.sealant_per_perim);
-
-  /* ─── scenarios ─── */
-  const packageOptions = [{
-    size: 1,
-    label: "facade-panel",
-    unit: "шт",
-  }];
-
-  const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(panels * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
-
-    acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
+  const scenarioFor = (exactNeed: number, reserve: number) => {
+    const purchase = Math.ceil(exactNeed);
+    return {
+      exact_need: roundDisplay(exactNeed, 6),
+      purchase_quantity: purchase,
+      leftover: roundDisplay(purchase - exactNeed, 6),
       assumptions: [
         `formula_version:${spec.formula_version}`,
         `panelType:${panelType}`,
-        `substructure:${substructure}`,
-        `insulationThickness:${insulationThickness}`,
-        `packaging:${packaging.package.label}`,
+        `panelUsefulArea:${panelUsefulArea}`,
+        `reservePercent:${reserve}`,
       ],
-      key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-      },
+      key_factors: { reserve_percent: reserve },
       buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
+        package_label: "панель",
+        package_size: 1,
+        packages_count: purchase,
+        unit: "шт",
       },
     };
-
-    return acc;
-  }, {} as ScenarioBundle);
-
-  const recScenario = scenarios.REC;
-
-  const panelFastenerSpecs: Record<number, { name: string; subtitle: string }> = {
-    0: substructure === 2
-      ? {
-          name: "Саморезы для фиброцементных панелей",
-          subtitle: "С антикоррозионным покрытием; длину подбирают по толщине панели и деревянной обрешётки",
-        }
-      : {
-          name: "Фасадные заклёпки для фиброцементных панелей",
-          subtitle: "Диаметр, длина и цвет должны соответствовать выбранной фасадной системе",
-        },
-    1: {
-      name: "Заклёпки или саморезы для металлокассет",
-      subtitle: "Типоразмер зависит от замка кассеты и материала направляющей подсистемы",
-    },
-    2: {
-      name: "Фасадные заклёпки 4,8–5,0 мм для панелей из слоистого пластика (HPL)",
-      subtitle: "Длину и цвет выбирают по толщине панели и каталогу фасадной системы",
-    },
-    3: substructure === 2
-      ? {
-          name: "Саморезы по дереву для металлического сайдинга",
-          subtitle: "С уплотнительной шайбой из EPDM-резины; длину подбирают по толщине обрешётки",
-        }
-      : {
-          name: "Саморезы 4,2×19 мм с прессшайбой",
-          subtitle: "Для крепления металлического сайдинга к металлической подсистеме",
-        },
   };
-  const panelFastenerSpec = panelFastenerSpecs[panelType];
 
-  /* ─── materials ─── */
+  const scenarios: ScenarioBundle = {
+    MIN: scenarioFor(exactPanelsMin, 0),
+    REC: scenarioFor(exactPanelsRec, reservePercent),
+    MAX: scenarioFor(exactPanelsMax, maxReservePercent),
+  };
+
+  const panelsCount = scenarios.REC.purchase_quantity;
+  const panelsArea = panelsCount * panelUsefulArea;
+  const needProfile = Math.round(finiteOr(inputs.needProfile, getInputDefault(spec, "needProfile", 1))) === 1;
+  const profileStep = positiveOr(inputs.profileStep, getInputDefault(spec, "profileStep", 0.4));
+  const profilePieceLength = positiveOr(inputs.profilePieceLength, getInputDefault(spec, "profilePieceLength", 3));
+  const profileRuns = needProfile ? Math.ceil(perimeter / profileStep) : 0;
+  const profileLength = profileRuns * wallHeight;
+  const profilePieces = needProfile ? Math.ceil(profileLength / profilePieceLength) : 0;
+
+  const fastenersPerPanel = Math.max(0, finiteOr(inputs.fastenersPerPanel, getInputDefault(spec, "fastenersPerPanel", 0)));
+  const fasteners = Math.ceil(panelsCount * fastenersPerPanel);
+  const needInsulation = Math.round(finiteOr(inputs.needInsulation, getInputDefault(spec, "needInsulation", 0))) === 1;
+  const insulationPackArea = positiveOr(inputs.insulationPackArea, getInputDefault(spec, "insulationPackArea", 5.76));
+  const insulationPacks = needInsulation ? Math.ceil(netArea / insulationPackArea) : 0;
+  const insulationPurchaseArea = insulationPacks * insulationPackArea;
+
+  const externalCorners = Math.max(0, Math.round(finiteOr(inputs.externalCorners, getInputDefault(spec, "externalCorners", 4))));
+  const cornerPieceLength = positiveOr(inputs.cornerPieceLength, getInputDefault(spec, "cornerPieceLength", 3));
+  const starterPieceLength = positiveOr(inputs.starterPieceLength, getInputDefault(spec, "starterPieceLength", 3));
+  const cornersCount = Math.ceil(externalCorners * wallHeight / cornerPieceLength);
+  const startersCount = Math.ceil(perimeter / starterPieceLength);
+
+  const panelName = spec.material_rules.panel_type_labels[String(panelType)] ?? "Фасадные панели";
   const materials: CanonicalMaterialResult[] = [
     {
-      name: PANEL_TYPE_LABELS[panelType],
-      quantity: roundDisplay(recScenario.exact_need, 6),
+      name: panelName,
+      subtitle: `Полезная площадь одной панели ${roundDisplay(panelUsefulArea, 3)} м²; запас ${roundDisplay(reservePercent, 1)}% применён один раз`,
+      quantity: roundDisplay(exactPanelsRec, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: roundDisplay(exactPanelsRec, 6),
+      purchaseQty: panelsCount,
       category: "Облицовка",
     },
-    {
-      name: `Кронштейны (${SUBSTRUCTURE_LABELS[substructure]})`,
-      quantity: brackets,
-      unit: "шт",
-      withReserve: brackets,
-      purchaseQty: brackets,
+  ];
+
+  if (profilePieces > 0) {
+    materials.push({
+      name: `Профиль/рейка по ${roundDisplay(profilePieceLength, 2)} м`,
+      subtitle: `Расчётная длина ${roundDisplay(profileLength, 2)} м при шаге ${roundDisplay(profileStep, 2)} м; шаг и сечение сверьте с системой`,
+      quantity: roundDisplay(profileLength, 6),
+      unit: "м",
+      withReserve: roundDisplay(profileLength, 6),
+      purchaseQty: roundDisplay(profilePieces * profilePieceLength, 6),
       category: "Подсистема",
-    },
-    {
-      name: `Направляющие вертикальные (${rules.guide_length} м)`,
-      quantity: guides,
-      unit: "шт",
-      withReserve: guides,
-      purchaseQty: guides,
-      category: "Подсистема",
-    },
-    ...(horizontalGuides > 0 ? [{
-      name: `Направляющие горизонтальные (${rules.guide_length} м, шаг ${horizontalRailStepM} м)`,
-      quantity: horizontalGuides,
-      unit: "шт",
-      withReserve: horizontalGuides,
-      purchaseQty: horizontalGuides,
-      category: "Подсистема",
-    } satisfies CanonicalMaterialResult] : []),
-    {
-      name: panelFastenerSpec.name,
-      subtitle: panelFastenerSpec.subtitle,
+      packageInfo: { count: profilePieces, size: profilePieceLength, packageUnit: "шт" },
+    });
+  }
+  if (fasteners > 0) {
+    materials.push({
+      name: "Крепёж панелей",
+      subtitle: `${roundDisplay(fastenersPerPanel, 1)} шт. на панель по паспорту выбранной системы`,
       quantity: fasteners,
       unit: "шт",
       withReserve: fasteners,
       purchaseQty: fasteners,
       category: "Крепёж",
-    },
-    {
-      name: "Фасадные анкеры для кронштейнов",
-      subtitle: "Диаметр, длину и глубину анкеровки выбирают по материалу стены и расчётной нагрузке",
-      quantity: anchors,
-      unit: "шт",
-      withReserve: anchors,
-      purchaseQty: anchors,
-      category: "Крепёж",
-    },
-  ];
-
-  if (insPlates > 0) {
-    materials.push(
-      {
-        name: `Минераловатные плиты для вентфасада ${insulationThickness} мм`,
-        subtitle: "Негорючие фасадные плиты; плотность выбирают по проекту и требованиям системы",
-        quantity: insPlates,
-        unit: "шт",
-        withReserve: insPlates,
-        purchaseQty: insPlates,
-        category: "Утепление",
-      },
-      {
-        name: `Дюбели тарельчатые 10×${insulationThickness + 50} мм`,
-        subtitle: "Длина включает 50 мм анкеровки; для рыхлого основания требуется отдельная проверка",
-        quantity: insDowels,
-        unit: "шт",
-        withReserve: insDowels,
-        purchaseQty: insDowels,
-        category: "Крепёж",
-      },
-      {
-        name: `Ветрозащитная диффузионная мембрана (${rules.wind_membrane_roll} м²)`,
-        subtitle: "Паропроницаемость и класс пожарной опасности сверяют с техническим свидетельством фасадной системы",
-        quantity: membrane,
-        unit: "рулонов",
-        withReserve: membrane,
-        purchaseQty: membrane,
-        category: "Утепление",
-      },
-    );
+    });
+  }
+  if (needInsulation) {
+    materials.push({
+      name: "Фасадный утеплитель",
+      subtitle: `В упаковке ${roundDisplay(insulationPackArea, 2)} м²; марку и крепление выбирают по проекту фасада`,
+      quantity: roundDisplay(netArea, 6),
+      unit: "м²",
+      withReserve: roundDisplay(insulationPurchaseArea, 6),
+      purchaseQty: roundDisplay(insulationPurchaseArea, 6),
+      category: "Утепление",
+      packageInfo: { count: insulationPacks, size: insulationPackArea, packageUnit: "упак." },
+    });
+  }
+  if (cornersCount > 0) {
+    materials.push({ name: "Наружные угловые элементы", quantity: cornersCount, unit: "шт", withReserve: cornersCount, purchaseQty: cornersCount, category: "Доборные элементы" });
+  }
+  if (startersCount > 0) {
+    materials.push({ name: "Стартовые элементы", quantity: startersCount, unit: "шт", withReserve: startersCount, purchaseQty: startersCount, category: "Доборные элементы" });
   }
 
-  materials.push(
-    buildPrimerMaterial(area * rules.primer_l_per_m2, { reserveFactor: rules.primer_reserve, category: "Грунтовка" }),
-    {
-      name: "Герметик фасадный атмосферостойкий",
-      subtitle: "Совместимый с материалом панелей и защитным покрытием подсистемы",
-      quantity: sealant,
-      unit: "шт",
-      withReserve: sealant,
-      purchaseQty: sealant,
-      category: "Монтаж",
-    },
-  );
-
-  /* ─── warnings ─── */
   const warnings: string[] = [];
-  if (area > spec.warnings_rules.large_area_threshold_m2) {
-    warnings.push("Большая площадь фасада — рассмотрите оптовую закупку");
-  }
-  if (insulationThickness >= spec.warnings_rules.thick_insulation_threshold_mm) {
-    warnings.push("Толстый утеплитель — проверьте длину кронштейнов");
-  }
-
-
-  const practicalNotes: string[] = [];
-  practicalNotes.push("Шаг кронштейнов, направляющих, анкеры и зазоры уточняют по ветровому и статическому расчёту выбранной фасадной системы");
-  practicalNotes.push("Монтажные зазоры между панелями берут из альбома технических решений производителя, а не назначают одинаковыми для всех материалов");
+  if (netArea <= 0) warnings.push("Площадь проёмов должна быть меньше общей площади стен");
+  if (netArea > spec.warnings_rules.large_area_threshold_m2) warnings.push("Для большого фасада закажите раскрой и спецификацию у поставщика системы");
+  if (fastenersPerPanel === 0) warnings.push("Крепёж не добавлен: укажите расход из паспорта выбранной фасадной системы");
 
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials,
     totals: {
-      area,
+      inputMode,
+      houseLength,
+      houseWidth,
+      wallLength: perimeter,
+      wallHeight,
+      openingsArea,
+      grossArea: roundDisplay(grossArea, 6),
+      wallArea: roundDisplay(netArea, 6),
+      area: roundDisplay(netArea, 6),
       panelType,
-      substructure,
-      insulationThickness,
-      panelArea,
-      panels,
-      brackets,
-      guides,
-      horizontalGuides,
-      withHorizontalRails,
+      panelUsefulArea,
+      reservePercent,
+      panelsArea: roundDisplay(panelsArea, 6),
+      panelsCount,
+      panels: panelsCount,
+      profileLength: roundDisplay(profileLength, 6),
+      profilePieces,
       fasteners,
-      anchors,
-      insPlates,
-      insDowels,
-      membrane,
-      primer,
-      sealant,
+      insulationArea: roundDisplay(needInsulation ? netArea : 0, 6),
+      insulationPacks,
+      insulationPurchaseArea: roundDisplay(insulationPurchaseArea, 6),
+      cornersCount,
+      startersCount,
       minExactNeed: scenarios.MIN.exact_need,
-      recExactNeed: recScenario.exact_need,
+      recExactNeed: scenarios.REC.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,
       minPurchase: scenarios.MIN.purchase_quantity,
-      recPurchase: recScenario.purchase_quantity,
+      recPurchase: scenarios.REC.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
-    accuracyMode,
-    accuracyExplanation: applyAccuracyMode(panelsRaw, "generic", accuracyMode).explanation,
     warnings,
-    practicalNotes,
+    practicalNotes: [
+      "Полезную площадь панели, расход крепежа, шаг и длину профиля возьмите из паспорта конкретной фасадной системы.",
+      "Это оценка закупки по площади, а не схема раскладки: швы, углы, примыкания и раскрой нужно проверить по фасадам здания.",
+      "Подсистема, анкеры и утепление требуют проверки основания, ветровой нагрузки и проектного решения.",
+    ],
     scenarios,
   };
 }

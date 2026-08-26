@@ -1,85 +1,79 @@
-import type { CalculatorDefinition } from "../types";
-import { withSiteMetaTitle } from "../meta";
+import facadePanelsSpec from "../../../../configs/calculators/facade-panels-canonical.v1.json";
 import { computeCanonicalFacadePanels } from "../../../../engine/facade-panels";
-import facadepanelsSpec from "../../../../configs/calculators/facade-panels-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
+import { withSiteMetaTitle } from "../meta";
+import type { CalculatorDefinition } from "../types";
 
 export const facadePanelsDef: CalculatorDefinition = {
   id: "exterior_facade_panels",
   slug: "fasadnye-paneli",
   title: "Калькулятор фасадных панелей",
-  h1: "Калькулятор фасадных панелей — расчёт обшивки фасада",
-  description: "Рассчитайте количество фасадных панелей из фиброцемента, металла или слоистого пластика (HPL), а также подсистему и крепёж.",
-  metaTitle: withSiteMetaTitle("Калькулятор фасадных панелей: материалы онлайн"),
-  metaDescription: "Бесплатный калькулятор фасадных панелей: рассчитайте фиброцементные, металлические или HPL панели, подсистему и крепёж для вентилируемого фасада.",
+  h1: "Калькулятор фасадных панелей — расчёт к покупке",
+  description: "Рассчитайте чистую площадь фасада, панели с одним явным запасом, профиль, утеплитель и доборные элементы по данным выбранной системы.",
+  metaTitle: withSiteMetaTitle("Калькулятор фасадных панелей: расчёт к покупке"),
+  metaDescription: "Бесплатный калькулятор фасадных панелей: рассчитайте площадь без проёмов, количество панелей, профиль, утеплитель и доборные элементы к покупке.",
   category: "facade",
   categorySlug: "fasad",
-  tags: ["фасадные панели", "вентфасад", "фиброцемент", "металлокассеты", "HPL панели"],
+  tags: ["фасадные панели", "сайдинг", "обшивка фасада", "доборные элементы", "профиль"],
   popularity: 55,
   complexity: 2,
   fields: [
     {
-      key: "area",
-      label: "Площадь фасада (без проёмов)",
-      type: "slider",
-      unit: "м²",
-      min: 10,
-      max: 2000,
-      step: 5,
-      defaultValue: 120,
+      key: "inputMode",
+      label: "Способ ввода",
+      type: "radio",
+      defaultValue: 1,
+      options: [
+        { value: 0, label: "По размерам дома" },
+        { value: 1, label: "По готовой площади" },
+      ],
     },
+    {
+      key: "area",
+      label: "Чистая площадь фасада",
+      type: "number",
+      unit: "м²",
+      min: 1,
+      max: 5000,
+      step: 0.1,
+      defaultValue: 100,
+      group: "byArea",
+      hint: "Площадь уже без окон и дверей",
+    },
+    { key: "houseLength", label: "Длина дома", type: "number", unit: "м", min: 1, max: 200, step: 0.1, defaultValue: 10, group: "bySize" },
+    { key: "houseWidth", label: "Ширина дома", type: "number", unit: "м", min: 1, max: 200, step: 0.1, defaultValue: 10, group: "bySize" },
+    { key: "wallHeight", label: "Высота фасада", type: "number", unit: "м", min: 1, max: 20, step: 0.1, defaultValue: 3, group: "bySize" },
+    { key: "openingsArea", label: "Площадь окон и дверей", type: "number", unit: "м²", min: 0, max: 2000, step: 0.1, defaultValue: 10, group: "bySize", hint: "Вычитается из общей площади стен" },
     {
       key: "panelType",
-      label: "Тип панелей",
+      label: "Тип облицовки",
       type: "select",
       defaultValue: 0,
+      fullWidth: true,
       options: [
-        { value: 0, label: "Фиброцементные (1200×3000 мм)" },
-        { value: 1, label: "Металлокассеты (600×1200 мм)" },
-        { value: 2, label: "Панель из слоистого пластика (HPL Compact), 1200×2440 мм" },
-        { value: 3, label: "Сайдинг металлический 230×3000 мм (0,69 м²/полоса)" },
+        { value: 0, label: "Виниловый сайдинг" },
+        { value: 1, label: "Металлический сайдинг" },
+        { value: 2, label: "Фиброцементный сайдинг" },
+        { value: 3, label: "Деревянный блок-хаус" },
+        { value: 4, label: "Фасадные термопанели" },
+        { value: 5, label: "Профлист стеновой" },
+        { value: 6, label: "HPL-панели" },
       ],
+      hint: "Тип задаёт название в смете; размеры и нормы ниже возьмите из паспорта конкретного товара",
     },
-    {
-      key: "substructureType",
-      label: "Подсистема (несущий каркас)",
-      type: "select",
-      defaultValue: 0,
-      options: [
-        { value: 0, label: "Алюминиевый профиль (стандарт)" },
-        { value: 1, label: "Оцинкованная сталь (бюджетная)" },
-        { value: 2, label: "Деревянная обрешётка 50×50 мм" },
-      ],
-    },
-    {
-      key: "insulationIncluded",
-      label: "Утеплитель в составе",
-      type: "select",
-      defaultValue: 0,
-      options: [
-        { value: 0, label: "Без утеплителя" },
-        { value: 1, label: "Минвата 50 мм" },
-        { value: 2, label: "Минвата 100 мм" },
-      ],
-    },
+    { key: "panelUsefulArea", label: "Полезная площадь одной панели", type: "number", unit: "м²", min: 0.01, max: 25, step: 0.01, defaultValue: 0.84, hint: "Не габаритная, а рабочая площадь с учётом замка или нахлёста" },
+    { key: "reservePercent", label: "Запас панелей", type: "slider", unit: "%", min: 0, max: 30, step: 1, defaultValue: 10, hint: "Применяется один раз до округления до целой панели" },
+    { key: "needProfile", label: "Посчитать профиль или обрешётку", type: "switch", defaultValue: 1 },
+    { key: "profileStep", label: "Шаг профиля", type: "number", unit: "м", min: 0.1, max: 2, step: 0.05, defaultValue: 0.4, hideIf: { key: "needProfile", op: "eq", value: 0 }, hint: "По паспорту системы и расчёту основания" },
+    { key: "profilePieceLength", label: "Длина одного профиля", type: "number", unit: "м", min: 0.5, max: 12, step: 0.1, defaultValue: 3, hideIf: { key: "needProfile", op: "eq", value: 0 } },
+    { key: "fastenersPerPanel", label: "Крепежа на одну панель", type: "number", unit: "шт", min: 0, max: 100, step: 1, integerOnly: true, defaultValue: 0, hint: "Укажите норму из паспорта; 0 — не добавлять в смету" },
+    { key: "needInsulation", label: "Посчитать утеплитель", type: "switch", defaultValue: 0 },
+    { key: "insulationPackArea", label: "Площадь утеплителя в упаковке", type: "number", unit: "м²", min: 0.1, max: 100, step: 0.01, defaultValue: 5.76, hideIf: { key: "needInsulation", op: "eq", value: 0 }, hint: "Значение с этикетки выбранного утеплителя" },
+    { key: "externalCorners", label: "Наружных углов", type: "number", unit: "шт", min: 0, max: 100, step: 1, integerOnly: true, defaultValue: 4 },
+    { key: "cornerPieceLength", label: "Длина углового элемента", type: "number", unit: "м", min: 0.5, max: 12, step: 0.1, defaultValue: 3 },
+    { key: "starterPieceLength", label: "Длина стартового элемента", type: "number", unit: "м", min: 0.5, max: 12, step: 0.1, defaultValue: 3 },
   ],
   calculate(inputs) {
-    const spec = facadepanelsSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const insulationThicknessByOption: Record<number, number> = { 0: 0, 1: 50, 2: 100 };
-    const canonical = computeCanonicalFacadePanels(
-      spec,
-      {
-        ...inputs,
-        substructure: inputs.substructure ?? inputs.substructureType,
-        insulationThickness:
-          inputs.insulationThickness
-          ?? insulationThicknessByOption[Math.round(inputs.insulationIncluded ?? 0)]
-          ?? 0,
-      },
-      factorTable,
-    );
-
+    const canonical = computeCanonicalFacadePanels(facadePanelsSpec as any, inputs);
     return {
       materials: canonical.materials,
       totals: canonical.totals,
@@ -88,86 +82,50 @@ export const facadePanelsDef: CalculatorDefinition = {
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes: canonical.practicalNotes ?? [],
-      accuracyMode: canonical.accuracyMode,
-      accuracyExplanation: canonical.accuracyExplanation,
     };
   },
   formulaDescription: `
 **Расчёт фасадных панелей:**
-- Панели: площадь × 1.10 / площадь одной панели
-- Кронштейны: ~3,1 шт/м² с запасом (базовая сетка 600×600 мм)
-- Направляющие: площадь / 0.6 м.п. (шаг 600 мм)
+- Чистая площадь = периметр × высота − площадь проёмов
+- Точная потребность = чистая площадь / полезная площадь одной панели
+- Рекомендуемая потребность = точная потребность × (1 + запас / 100)
+- К покупке = округление рекомендуемой потребности вверх до целой панели
+- Профиль, утеплитель и доборные элементы округляются по введённой длине или площади упаковки
+
+Запас панелей применяется один раз. Общие коэффициенты «на всякий случай» не добавляются.
   `,
   howToUse: [
-    "Введите площадь фасада",
-    "Выберите тип панелей и подсистемы",
-    "Укажите наличие утеплителя",
-    "Нажмите «Рассчитать»",
+    "Введите готовую площадь либо размеры дома и площадь проёмов",
+    "Перенесите полезную площадь панели с паспорта или карточки товара",
+    "Укажите явный запас и параметры профиля, утеплителя и доборов",
+    "Сравните точную потребность и целое количество к покупке",
   ],
   faq: [
     {
-      question: "Нужна ли подсистема под фасадные панели?",
-      answer:
-        "Чаще всего да: подсистема/обрешётка выравнивает плоскость, создаёт вентзазор и задаёт шаг крепления. Тип подсистемы зависит от панелей, основания и утепления — без неё фасад легко «волной» и с проблемами по узлам.",
+      question: "Почему нужна именно полезная площадь панели?",
+      answer: "Габаритная площадь может включать замок или нахлёст, который не закрывает фасад. Для закупки используйте рабочую ширину или полезную площадь из документации производителя.",
     },
     {
-      question: "Стоит ли сразу учитывать утеплитель в расчёте фасада?",
-      answer:
-        "Да, если планируется тёплый навесной фасад. Утеплитель влияет на вынос подсистемы, длину крепежа и узлы примыканий — считать «панели отдельно» почти всегда приводит к пересборке спецификации.",
+      question: "Считает ли калькулятор раскладку по каждому фасаду?",
+      answer: "Нет. Это оценка закупки по площади. Для сложных фасадов отдельно проверьте раскрой, направление монтажа, швы, примыкания и возможность повторно использовать подрезки.",
+    },
+    {
+      question: "Откуда брать шаг профиля и количество крепежа?",
+      answer: "Из альбома технических решений и паспорта выбранной фасадной системы. Эти значения зависят от материала стены, ветрового района, размеров панелей и схемы крепления.",
     },
   ],
   seoContent: {
     descriptionHtml: `
-<h2>Формула расчёта фасадных панелей</h2>
-<p>Количество панелей для вентилируемого фасада:</p>
-<p><strong>N = &lceil;S &times; K<sub>запас</sub> / S<sub>панели</sub>&rceil;</strong></p>
-<ul>
-  <li><strong>S</strong> — площадь фасада за вычетом проёмов (м&sup2;)</li>
-  <li><strong>K<sub>запас</sub></strong> — 1.10 (10% на подрезку и отходы)</li>
-  <li><strong>S<sub>панели</sub></strong> — полезная площадь одной панели (м&sup2;)</li>
-</ul>
-<p>Расчёт подсистемы (несущего каркаса):</p>
-<p><strong>Кронштейны:</strong> S &times; 4 шт/м&sup2; (шаг 600&times;600 мм)</p>
-<p><strong>Направляющие:</strong> S / 0.6 (м.п. вертикальных профилей)</p>
-
-<h2>Площадь стандартных панелей</h2>
-<table>
-  <thead>
-    <tr><th>Тип панели</th><th>Размер, мм</th><th>Площадь, м&sup2;</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Фиброцементная</td><td>1200&times;3000</td><td>3.60</td></tr>
-    <tr><td>Металлокассета</td><td>600&times;1200</td><td>0.72</td></tr>
-    <tr><td>Слоистый пластик (HPL Compact)</td><td>1200&times;2440</td><td>2.93</td></tr>
-    <tr><td>Металлосайдинг</td><td>230&times;3000</td><td>0.69</td></tr>
-  </tbody>
-</table>
-
-<h2>Нормативная база</h2>
-<p>Проектирование вентилируемых фасадов выполняется по <strong>СП 50.13330.2012</strong> «Тепловая защита зданий» и <strong>ГОСТ 33079-2014</strong> «Конструкции фасадные навесные вентилируемые». Стандарты определяют требования к несущей подсистеме, вентиляционному зазору (не менее <strong>40 мм</strong>), ветрозащитной мембране и огнестойкости конструкции.</p>
-
-<h2>Состав системы вентфасада</h2>
-<ul>
-  <li><strong>Кронштейны</strong> — крепятся к стене анкерами через термопрокладку</li>
-  <li><strong>Направляющие профили</strong> — вертикальные, шаг 600 мм</li>
-  <li><strong>Утеплитель</strong> — минвата между кронштейнами (при необходимости)</li>
-  <li><strong>Ветрозащитная мембрана</strong> — поверх утеплителя</li>
-  <li><strong>Облицовочные панели</strong> — на кляммерах или заклёпках</li>
-</ul>
-`,
-    faq: [
-      {
-        question: "Сколько панелей нужно на фасад 120 м²?",
-        answer: "<p>Количество зависит от типа панелей (с учётом 10% запаса):</p><ul><li><strong>Фиброцемент 1200&times;3000</strong>: &lceil;120 &times; 1.10 / 3.60&rceil; = <strong>37 панелей</strong></li><li><strong>Металлокассеты 600&times;1200</strong>: &lceil;120 &times; 1.10 / 0.72&rceil; = <strong>184 кассеты</strong></li><li><strong>HPL 1200&times;2440</strong>: &lceil;120 &times; 1.10 / 2.93&rceil; = <strong>46 панелей</strong></li></ul><p>Подсистема: кронштейнов 120 &times; 4 = <strong>480 шт</strong>, направляющих 120 / 0.6 = <strong>200 м.п.</strong></p>",
-      },
-      {
-        question: "Нужен ли вентиляционный зазор за фасадными панелями?",
-        answer: "<p>Да, вентиляционный зазор — обязательный элемент навесного вентилируемого фасада. По <strong>ГОСТ 33079-2014</strong> минимальная величина зазора — <strong>40 мм</strong>.</p><p>Функции вентзазора:</p><ul><li>Удаление влаги из утеплителя и стены</li><li>Предотвращение конденсата на внутренней стороне панелей</li><li>Выравнивание температурных нагрузок на облицовку</li></ul><p>Внизу и вверху фасада должны быть <strong>приточные и вытяжные отверстия</strong> для циркуляции воздуха. Без них зазор не работает, а влага накапливается в утеплителе.</p>",
-      },
-      {
-        question: "Какой тип подсистемы выбрать для вентфасада?",
-        answer: "<p>Выбор подсистемы зависит от нагрузки и бюджета:</p><table><thead><tr><th>Подсистема</th><th>Нагрузка</th><th>Применение</th></tr></thead><tbody><tr><td>Алюминиевая</td><td>До 50 кг/м&sup2;</td><td>Лёгкие панели, HPL, композит</td></tr><tr><td>Оцинкованная сталь</td><td>До 70 кг/м&sup2;</td><td>Керамогранит, фиброцемент</td></tr><tr><td>Нержавеющая сталь</td><td>До 80 кг/м&sup2;</td><td>Тяжёлый натуральный камень</td></tr><tr><td>Деревянная обрешётка</td><td>До 25 кг/м&sup2;</td><td>Лёгкий сайдинг, имитация бруса</td></tr></tbody></table><p>Для большинства жилых домов оптимальна <strong>оцинкованная сталь</strong> — баланс цены и несущей способности.</p>",
-      },
-    ],
+<h2>Как считается закупка фасадных панелей</h2>
+<p>Сначала калькулятор определяет чистую площадь фасада: для ввода по размерам из площади стен вычитаются окна и двери. Затем площадь делится на <strong>полезную площадь одной панели</strong>. Пользовательский запас применяется один раз, после чего результат округляется вверх до целой панели.</p>
+<p><strong>N = &lceil;(S / S<sub>полезная</sub>) &times; (1 + Z / 100)&rceil;</strong></p>
+<p>Где <strong>S</strong> — чистая площадь, <strong>S<sub>полезная</sub></strong> — рабочая площадь панели, <strong>Z</strong> — выбранный запас.</p>
+<h2>Почему параметры системы вводятся вручную</h2>
+<p>Одинаковое название материала не гарантирует одинаковую рабочую ширину, шаг обрешётки, расход крепежа или фасовку утеплителя. Поэтому калькулятор не подставляет скрытые универсальные нормы: значения переносятся из паспорта конкретного товара и проекта фасада.</p>
+<h2>Что входит в результат</h2>
+<ul><li>чистая площадь фасада;</li><li>точная потребность и целые панели к покупке;</li><li>расчётная длина и количество профилей;</li><li>упаковки утеплителя;</li><li>угловые и стартовые элементы;</li><li>крепёж, если указан паспортный расход.</li></ul>
+<p>Результат остаётся оценкой закупки по площади. Он не заменяет раскладку панелей по отдельным стенам и проверку подсистемы по нагрузкам.</p>
+    `,
+    faq: [],
   },
 };

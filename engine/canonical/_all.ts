@@ -2418,41 +2418,18 @@ export interface FacadePanelsPackagingRules {
 }
 
 export interface FacadePanelsMaterialRules {
-  panel_areas: Record<string, number>;
-  panel_reserve: number;
-  bracket_spacing_m2: number;
-  bracket_reserve: number;
-  guide_spacing: number;
-  guide_length: number;
-  guide_reserve: number;
-  /** Шаг горизонтальных направляющих, м. Применяется при withHorizontalRails=1.
-   *  По умолчанию 0.6 м — типовая горизонтальная обрешётка под фиброцемент/HPL. */
-  horizontal_rail_step_m?: number;
-  fasteners_per_panel: number;
-  fastener_reserve: number;
-  anchor_per_bracket: number;
-  anchor_reserve: number;
-  insulation_plate: number;
-  insulation_reserve: number;
-  insulation_dowels_per_m2: number;
-  wind_membrane_roll: number;
-  membrane_reserve: number;
-  primer_l_per_m2: number;
-  primer_reserve: number;
-  primer_can: number;
-  sealant_per_perim: number;
+  panel_type_labels: Record<string, string>;
+  max_reserve_percent: number;
 }
 
 export interface FacadePanelsWarningRules {
   large_area_threshold_m2: number;
-  thick_insulation_threshold_mm: number;
 }
 
 export interface FacadePanelsCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
     panel_types: number[];
-    substructure_types: number[];
-    insulation_thicknesses: number[];
+    input_modes: number[];
   };
   packaging_rules: FacadePanelsPackagingRules;
   material_rules: FacadePanelsMaterialRules;
