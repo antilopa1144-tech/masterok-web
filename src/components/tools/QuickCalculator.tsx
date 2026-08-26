@@ -188,7 +188,7 @@ export default function QuickCalculator({
   const fontSize = compact
     ? display.length > 9 ? "text-2xl" : "text-3xl"
     : display.length > 10 ? "text-3xl" : "text-4xl";
-  const buttonHeight = compact ? "h-11" : "h-16";
+  const buttonHeight = compact ? "h-11" : "h-14 sm:h-16";
   const buttonRadius = compact ? "rounded-xl" : "rounded-2xl";
   const buttonText = compact ? "text-base" : "text-lg";
   const BTN = `flex items-center justify-center ${buttonRadius} font-semibold ${buttonText} ${buttonHeight} transition-all active:scale-95 select-none cursor-pointer`;
@@ -244,20 +244,29 @@ export default function QuickCalculator({
   }
 
   return (
-    <div className={`${compact ? "space-y-4" : "max-w-sm mx-auto md:mx-0 md:flex md:gap-8 md:max-w-2xl"} ${className}`}>
+    <div
+      className={`${
+        compact
+          ? "space-y-4"
+          : "mx-auto grid max-w-sm gap-5 md:mx-0 md:max-w-4xl md:grid-cols-[minmax(0,384px)_minmax(0,1fr)] md:gap-8"
+      } ${className}`}
+    >
       <div className="w-full max-w-sm">{calculator}</div>
 
-      {history.length > 0 && (
-        <div className={compact ? "" : "mt-6 md:mt-0 flex-1"}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{UI_TEXT.historyTitle}</p>
+      <aside className={`${history.length > 0 ? "block" : "hidden md:block"} min-w-0`} aria-label={UI_TEXT.historyTitle}>
+        <div className="mb-3 flex min-h-8 items-center justify-between">
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{UI_TEXT.historyTitle}</p>
+          {history.length > 0 && (
             <button
               onClick={() => setHistory([])}
-              className="text-xs text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              className="min-h-8 rounded-lg px-2 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
             >
               {UI_TEXT.clearHistory}
             </button>
-          </div>
+          )}
+        </div>
+
+        {history.length > 0 ? (
           <div className="space-y-2">
             {history.map((item, i) => (
               <button
@@ -267,14 +276,34 @@ export default function QuickCalculator({
                   setJustCalculated(true);
                   setExpression("");
                 }}
-                className="card-hover w-full text-right px-4 py-3 block"
+                className="card-hover block min-h-12 w-full px-4 py-3 text-right"
               >
-                <div className="text-xs text-slate-400 dark:text-slate-400 truncate">{item.expr}</div>
+                <span className="block truncate text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200">
+                  {item.expr}
+                </span>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5 dark:border-slate-700 dark:bg-slate-900/50">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Результаты будут здесь</p>
+            <p className="mt-1 max-w-sm text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Считайте как обычно: число, действие, число и «=». Любой результат можно вернуть одним нажатием.
+            </p>
+          </div>
+        )}
+
+        {!compact && enableKeyboard && (
+          <div className="mt-5 hidden rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 md:block">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Клавиатура</p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <p><kbd className="font-semibold text-slate-700 dark:text-slate-200">Enter</kbd><br />посчитать</p>
+              <p><kbd className="font-semibold text-slate-700 dark:text-slate-200">Backspace</kbd><br />стереть</p>
+              <p><kbd className="font-semibold text-slate-700 dark:text-slate-200">Esc</kbd><br />очистить</p>
+            </div>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
