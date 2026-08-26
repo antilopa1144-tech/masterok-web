@@ -1,7 +1,7 @@
 {
   "calculator_id": "ceiling-cassette",
-  "formula_version": "ceiling-cassette-canonical-v1",
-  "generated_at": "2026-07-21T07:37:54.520Z",
+  "formula_version": "ceiling-cassette-canonical-v2",
+  "generated_at": "2026-08-02T05:23:06.715Z",
   "cases": [
     {
       "id": "defaults",
@@ -9,7 +9,8 @@
       "inputs": {
         "area": 30,
         "cassetteSize": 0,
-        "roomLength": 6
+        "roomLength": 6,
+        "cassettesPerPack": 12
       },
       "expected_totals": {
         "area": 30,
@@ -19,6 +20,8 @@
         "cassPerRow": 11,
         "rows": 9,
         "totalCass": 109,
+        "cassettesPerPack": 12,
+        "packagesNeeded": 10,
         "mainRows": 6,
         "mainProfiles": 30,
         "crossPerRow": 10,
