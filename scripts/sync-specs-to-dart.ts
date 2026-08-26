@@ -7,6 +7,7 @@
  *
  * Usage:
  *   npx tsx scripts/sync-specs-to-dart.ts
+ *   npx tsx scripts/sync-specs-to-dart.ts tile
  *
  * Output:
  *   C:\probrab1\lib\domain\generated\canonical_specs.g.dart
@@ -113,15 +114,58 @@ function generateDart(): string {
   return [...header, ...specs, ...indexMap, ...factorTableLines].join("\n");
 }
 
+function generateSpecBlock(configFile: string): string {
+  const raw = fs.readFileSync(path.join(CONFIGS_DIR, configFile), "utf-8");
+  const json = JSON.parse(raw);
+  const calcId = json.calculator_id as string;
+  const varName = `${slugToIdentifier(calcId)}SpecData`;
+  return [
+    `/// Generated from ${configFile}`,
+    `const Map<String, dynamic> ${varName} = ${dartValue(json, 0)};`,
+    "",
+  ].join("\n");
+}
+
+function syncSingleSpec(calculatorId: string): string {
+  const configFile = `${calculatorId}-canonical.v1.json`;
+  const configPath = path.join(CONFIGS_DIR, configFile);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Canonical spec not found: ${calculatorId}`);
+  }
+  if (!fs.existsSync(OUTPUT_PATH)) {
+    throw new Error("Generated Dart specs are missing; run full sync:specs first");
+  }
+
+  const current = fs.readFileSync(OUTPUT_PATH, "utf-8");
+  const marker = `/// Generated from ${configFile}`;
+  const start = current.indexOf(marker);
+  if (start < 0) {
+    throw new Error(`Generated Dart block not found: ${calculatorId}`);
+  }
+  const nextSpec = current.indexOf("/// Generated from ", start + marker.length);
+  const indexStart = current.indexOf("/// Index of all canonical specs", start + marker.length);
+  const candidates = [nextSpec, indexStart].filter((position) => position >= 0);
+  if (candidates.length === 0) {
+    throw new Error(`End of generated Dart block not found: ${calculatorId}`);
+  }
+  const end = Math.min(...candidates);
+  return `${current.slice(0, start)}${generateSpecBlock(configFile)}${current.slice(end)}`;
+}
+
 // Ensure output directory exists
 const outputDir = path.dirname(OUTPUT_PATH);
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-const dart = generateDart();
+const requestedCalculatorId = process.argv[2]?.trim();
+const dart = requestedCalculatorId
+  ? syncSingleSpec(requestedCalculatorId)
+  : generateDart();
 fs.writeFileSync(OUTPUT_PATH, dart, "utf-8");
 
 const configCount = fs.readdirSync(CONFIGS_DIR).filter((f) => f.endsWith("-canonical.v1.json")).length;
 console.log(`✓ Generated ${OUTPUT_PATH}`);
-console.log(`  ${configCount} calculator specs synced`);
+console.log(requestedCalculatorId
+  ? `  1 calculator spec synced: ${requestedCalculatorId}`
+  : `  ${configCount} calculator specs synced`);
