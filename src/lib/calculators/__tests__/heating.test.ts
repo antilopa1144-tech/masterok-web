@@ -14,7 +14,8 @@ describe("Отопление и радиаторы", () => {
       expect(r.totals.totalPowerW).toBeCloseTo(10400, 0);
       const rad = findMaterial(r, "Биметаллический радиатор");
       expect(rad).toBeDefined();
-      expect(rad!.quantity).toBe(58);
+      expect(rad!.quantity).toBeCloseTo(10400 / 180, 5);
+      expect(rad!.purchaseQty).toBe(58);
     });
 
     it("radiatorType=1 — 200 Вт/секция", () => {
@@ -31,7 +32,8 @@ describe("Отопление и радиаторы", () => {
       const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType: 2, roomCount: 4 });
       const rad = findMaterial(r, "Чугунный радиатор");
       expect(rad).toBeDefined();
-      expect(rad!.quantity).toBe(12);
+      expect(rad!.quantity).toBeCloseTo(8000 / 700, 5);
+      expect(rad!.purchaseQty).toBe(12);
       expect(r.totals.radiatorCount).toBe(12);
       expect(findMaterial(r, "термоголовкой")?.purchaseQty).toBe(12);
     });
@@ -60,6 +62,47 @@ describe("Отопление и радиаторы", () => {
       expect(findMaterial(r, "термоголовкой")).toBeDefined();
       expect(findMaterial(r, "Маевского")).toBeDefined();
     });
+  });
+
+  it.each([
+    [0, "Биметаллический радиатор", "секций", 8000 / 180, 45],
+    [1, "Алюминиевый радиатор", "секций", 40, 40],
+    [2, "Чугунный радиатор", "шт", 8000 / 700, 12],
+    [3, "Стальной панельный радиатор", "шт", 8000 / 700, 12],
+  ])("тип %i: отделяет точную потребность от покупки и сохраняет единицу", (radiatorType, name, unit, exactNeed, purchase) => {
+    const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType, roomCount: 4 });
+    const radiator = findMaterial(r, name);
+
+    expect(radiator?.quantity).toBeCloseTo(exactNeed, 5);
+    expect(radiator?.withReserve).toBeCloseTo(exactNeed, 5);
+    expect(radiator?.purchaseQty).toBe(purchase);
+    expect(radiator?.unit).toBe(unit);
+    expect(r.scenarios?.REC.exact_need).toBeCloseTo(exactNeed, 5);
+    expect(r.scenarios?.REC.purchase_quantity).toBe(purchase);
+    expect(r.scenarios?.REC.buy_plan.unit).toBe(unit);
+  });
+
+  it("не применяет отходы и навык мастера к тепловой мощности", () => {
+    const inputs = { totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType: 0, roomCount: 4 };
+    const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
+      heatingDef.calculate({ ...inputs, accuracyMode }),
+    );
+
+    for (const r of results) {
+      expect(r.scenarios?.MIN.exact_need).toBeCloseTo(8000 / 180, 5);
+      expect(r.scenarios?.REC.exact_need).toBeCloseTo(8000 / 180, 5);
+      expect(r.scenarios?.MAX.exact_need).toBeCloseTo(8000 / 180, 5);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(45);
+      expect(r.accuracyExplanation?.combinedMultiplier).toBe(1);
+    }
+  });
+
+  it("использует нейтральный canonical-дефолт: квартира на среднем этаже", () => {
+    const r = heatingDef.calculate({});
+
+    expect(r.totals.buildingType).toBe(1);
+    expect(r.totals.totalPowerW).toBe(8000);
+    expect(r.totals.totalUnits).toBe(45);
   });
 
   it("понимает старое значение высоты 270 см и не зажимает его до 3,5 м", () => {

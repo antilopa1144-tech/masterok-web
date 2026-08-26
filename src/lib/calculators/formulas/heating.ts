@@ -2,7 +2,6 @@ import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalHeating } from "../../../../engine/heating";
 import heatingSpec from "../../../../configs/calculators/heating-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const heatingDef: CalculatorDefinition = {
   id: "engineering_heating",
@@ -56,7 +55,7 @@ export const heatingDef: CalculatorDefinition = {
       key: "buildingType",
       label: "Тип здания",
       type: "select",
-      defaultValue: 0,
+      defaultValue: 1,
       options: [
         { value: 0, label: "Квартира (угловая/последний этаж)" },
         { value: 1, label: "Квартира (средний этаж)" },
@@ -89,8 +88,7 @@ export const heatingDef: CalculatorDefinition = {
   ],
   calculate(inputs) {
     const spec = heatingSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalHeating(spec, inputs, factorTable);
+    const canonical = computeCanonicalHeating(spec, inputs);
 
     return {
       materials: canonical.materials,
@@ -108,7 +106,8 @@ export const heatingDef: CalculatorDefinition = {
 **Предварительный расчёт мощности отопления:**
 - Базовая: 80–150 Вт/м² в зависимости от региона
 - Поправки: тип здания (×1.0–1.4), высота потолков
-- Количество секций или приборов = расчётная мощность / паспортная мощность выбранной модели
+- Точная потребность = расчётная мощность / паспортная мощность выбранной модели
+- К покупке — округление вверх до целой секции или прибора, без скрытого процента «на отходы»
 
 Расчёт по площади нужен для предварительной сметы. Для окончательного подбора системы нужны теплопотери каждого помещения, температурный режим и гидравлический расчёт.
   `,
@@ -149,10 +148,10 @@ export const heatingDef: CalculatorDefinition = {
     <tr><th>Регион</th><th>Расчётная t, &deg;C</th><th>q, Вт/м&sup2;</th></tr>
   </thead>
   <tbody>
-    <tr><td>Юг (Краснодар, Ростов)</td><td>&minus;15</td><td>80–100</td></tr>
-    <tr><td>Центр (Москва, Воронеж)</td><td>&minus;25</td><td>100–120</td></tr>
-    <tr><td>Урал, Сибирь (Новосибирск)</td><td>&minus;35</td><td>120–140</td></tr>
-    <tr><td>Крайний север (Якутск)</td><td>&minus;45</td><td>140–200</td></tr>
+    <tr><td>Юг (Краснодар, Ростов)</td><td>&minus;15</td><td>80</td></tr>
+    <tr><td>Центр (Москва, Воронеж)</td><td>&minus;25</td><td>100</td></tr>
+    <tr><td>Урал, Сибирь (Новосибирск)</td><td>&minus;35</td><td>130</td></tr>
+    <tr><td>Крайний север (Якутск)</td><td>&minus;45</td><td>150</td></tr>
   </tbody>
 </table>
 <p>Количество секций радиатора: <strong>N<sub>секций</sub> = &lceil;Q<sub>комнаты</sub> / P<sub>секции</sub>&rceil;</strong>, где P — теплоотдача одной секции (обычно 150–200 Вт для биметаллических).</p>
@@ -185,4 +184,3 @@ export const heatingDef: CalculatorDefinition = {
     ],
   },
 };
-

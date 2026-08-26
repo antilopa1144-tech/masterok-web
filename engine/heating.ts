@@ -1,4 +1,3 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
@@ -7,7 +6,7 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
 interface HeatingInputs {
@@ -27,29 +26,13 @@ const RADIATOR_NAMES: Record<number, string> = {
   3: "Стальной панельный радиатор тип 22, 700 Вт",
 };
 
-/* ─── factor defaults ─── */
-
-const HEATING_FACTOR_TABLE: FactorTable = {
-  surface_quality: { min: 1, rec: 1, max: 1 },
-  geometry_complexity: { min: 0.95, rec: 1, max: 1.1 },
-  installation_method: { min: 1, rec: 1, max: 1 },
-  worker_skill: { min: 0.95, rec: 1, max: 1.1 },
-  waste_factor: { min: 0.97, rec: 1, max: 1.05 },
-  logistics_buffer: { min: 1, rec: 1, max: 1 },
-  packaging_rounding: { min: 1, rec: 1, max: 1 },
-};
-
-/* ─── helpers ─── */
-
 /* ─── main ─── */
 
 export function computeCanonicalHeating(
   spec: HeatingCanonicalSpec,
   inputs: HeatingInputs,
-  factorTable: FactorTable = HEATING_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
   const totalArea = Math.max(10, Math.min(500, inputs.totalArea ?? getInputDefault(spec, "totalArea", 80)));
   const ceilingHeightInput = inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7);
@@ -73,7 +56,8 @@ export function computeCanonicalHeating(
 
   /* ─── radiator calculation ─── */
   const wattPerUnit = spec.material_rules.radiator_power[radiatorType];
-  const totalUnits = Math.ceil(totalPowerW / wattPerUnit);
+  const exactUnits = totalPowerW / wattPerUnit;
+  const totalUnits = Math.ceil(exactUnits);
   const radiatorCount = radiatorType <= 1 ? roomCount : totalUnits;
 
   /* ─── piping ─── */
@@ -97,10 +81,10 @@ export function computeCanonicalHeating(
   const materials: CanonicalMaterialResult[] = [
     {
       name: radiatorLabel,
-      subtitle: "Расчёт по номинальной мощности. Перед покупкой подставьте паспортную теплоотдачу выбранной модели при температурном режиме вашей системы.",
-      quantity: totalUnits,
+      subtitle: "Точная потребность рассчитана по номинальной мощности, к покупке округлена вверх до целой секции или прибора. Перед покупкой подставьте паспортную теплоотдачу выбранной модели при температурном режиме вашей системы.",
+      quantity: roundDisplay(exactUnits, 6),
       unit: radiatorType <= 1 ? "секций" : "шт",
-      withReserve: totalUnits,
+      withReserve: roundDisplay(exactUnits, 6),
       purchaseQty: totalUnits,
       category: "Отопление",
     },
@@ -152,13 +136,11 @@ export function computeCanonicalHeating(
   ];
 
   /* ─── scenarios ─── */
-  const basePrimaryRaw = totalUnits;
-  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
-  const packageOptions = [{ size: 1, label: "radiator-unit", unit: "шт" }];
+  const primaryUnit = radiatorType <= 1 ? "секций" : "шт";
+  const packageOptions = [{ size: 1, label: "отопительный прибор", unit: primaryUnit }];
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
+    const exactNeed = roundDisplay(exactUnits, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -170,11 +152,11 @@ export function computeCanonicalHeating(
         `climateZone:${climateZone}`,
         `buildingType:${buildingType}`,
         `radiatorType:${radiatorType}`,
+        "scenario_policy:deterministic_heat_load",
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        field_multiplier: 1,
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -192,7 +174,7 @@ export function computeCanonicalHeating(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (totalPowerKW > spec.warnings_rules.gas_boiler_power_threshold_kw) {
-    warnings.push("Расчётная мощность выше 20 кВт. Тип и мощность источника тепла подбирают по расчёту теплопотерь и нагрузке горячего водоснабжения");
+    warnings.push(`Расчётная мощность выше ${spec.warnings_rules.gas_boiler_power_threshold_kw} кВт. Тип и мощность источника тепла подбирают по расчёту теплопотерь и нагрузке горячего водоснабжения`);
   }
   if (buildingType === 3 && climateZone >= 2) {
     warnings.push("Слабая изоляция + холодная зона — рекомендуется профессиональный теплотехнический расчёт");
@@ -204,6 +186,7 @@ export function computeCanonicalHeating(
     practicalNotes.push(`Мощность ${totalPowerKW} кВт — предварительная оценка. Не выбирайте котёл только по этой цифре без расчёта теплопотерь`);
   }
   practicalNotes.push("Распределите мощность по комнатам и окнам: общий итог калькулятора не заменяет подбор каждого радиатора по помещению");
+  practicalNotes.push("MIN, REC и MAX совпадают: отходы, подрезка и навык монтажа не меняют требуемую тепловую мощность");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -220,6 +203,7 @@ export function computeCanonicalHeating(
       totalPowerW: roundDisplay(totalPowerW, 1),
       totalPowerKW,
       wattPerUnit,
+      exactUnits: roundDisplay(exactUnits, 6),
       totalUnits,
       radiatorCount,
       pipeSticks,
@@ -238,6 +222,12 @@ export function computeCanonicalHeating(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Режим точности не добавляет скрытый запас к тепловой мощности; условия здания задаются отдельными параметрами"],
+    },
   };
 }
