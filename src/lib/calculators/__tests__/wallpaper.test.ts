@@ -7,7 +7,7 @@ const calc = withBasicAccuracy(wallpaperDef.calculate.bind(wallpaperDef));
 
 describe("Калькулятор обоев", () => {
   it("декларирует formulaVersion для canonical wallpaper", () => {
-    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v3");
+    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v4");
   });
 
   it("web-дефолты длины рулона и запаса совпадают с canonical и Flutter", () => {
@@ -87,12 +87,12 @@ describe("Калькулятор обоев", () => {
     expect(wallpaper?.withReserve).toBe(9);
     expect(wallpaper?.purchaseQty).toBe(9);
 
-    expect(paste?.quantity).toBeCloseTo(0.189, 6);
-    expect(paste?.withReserve).toBeCloseTo(0.2079, 6);
-    expect(paste?.purchaseQty).toBe(0.25);
+    expect(paste?.quantity).toBeCloseTo(0.315, 6);
+    expect(paste?.withReserve).toBeCloseTo(0.315, 6);
+    expect(paste?.purchaseQty).toBe(0.5);
 
     expect(primer?.quantity).toBeCloseTo(5.67, 6);
-    expect(primer?.withReserve).toBeCloseTo(6.237, 6);
+    expect(primer?.withReserve).toBeCloseTo(5.67, 6);
     expect(primer?.purchaseQty).toBe(10);
   });
 
@@ -178,5 +178,23 @@ describe("Калькулятор обоев", () => {
 
     expect(result.totals.stripLength).toBeCloseTo(3.2, 3);
     expect((result.totals.stripLength * 100) % 64).toBeCloseTo(0, 6);
+  });
+
+  it("по умолчанию не заменяет целые полосы площадью проёмов", () => {
+    const safe = calc({ perimeter: 14, height: 2.7, openingsArea: 10, rollLength: 10.05, rollWidth: 530 });
+    const optimistic = calc({ perimeter: 14, height: 2.7, openingsArea: 10, openingDeductionMode: 1, rollLength: 10.05, rollWidth: 530 });
+
+    expect(safe.totals.stripsNeeded).toBe(27);
+    expect(optimistic.totals.stripsNeeded).toBe(20);
+    expect(safe.totals.rollsNeeded).toBeGreaterThan(optimistic.totals.rollsNeeded);
+  });
+
+  it("учитывает смещение рисунка до округления по раппорту", () => {
+    const straight = calc({ perimeter: 14, height: 2.7, rapport: 64, patternShift: 0, rollLength: 10.05, rollWidth: 530 });
+    const shifted = calc({ perimeter: 14, height: 2.7, rapport: 64, patternShift: 48, rollLength: 10.05, rollWidth: 530 });
+
+    expect(straight.totals.stripLength).toBeCloseTo(3.2, 3);
+    expect(shifted.totals.stripLength).toBeCloseTo(3.84, 3);
+    expect(shifted.totals.rollsNeeded).toBeGreaterThan(straight.totals.rollsNeeded);
   });
 });

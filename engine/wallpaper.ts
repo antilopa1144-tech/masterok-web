@@ -27,6 +27,7 @@ interface WallpaperInputs {
   height?: number;
   wallHeight?: number;
   openingsArea?: number;
+  openingDeductionMode?: number;
   doorsCount?: number;
   windowsCount?: number;
   doors?: number;
@@ -34,9 +35,16 @@ interface WallpaperInputs {
   rollLength?: number;
   rollWidth?: number;
   rapport?: number;
+  patternShift?: number;
+  trimAllowanceCm?: number;
   wallpaperType?: number;
   reservePercent?: number;
   reserveRolls?: number;
+  pasteCoverageM2?: number;
+  pastePackKg?: number;
+  primerRate?: number;
+  primerLayers?: number;
+  primerCanL?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -152,6 +160,8 @@ function buildMaterials(
   primerBaseNeeded: number,
   primerWithReserve: number,
   primerCans: number,
+  pastePackKg: number,
+  primerCanL: number,
 ): CanonicalMaterialResult[] {
   const rollLabel = `${roundDisplay(rollWidth, 3)}×${roundDisplay(rollLength, 3)} м`;
   const rapportLabel = rapport > 0 ? `, раппорт ${roundDisplay(rapport * 100, 1)} см` : ", без подгонки рисунка";
@@ -166,21 +176,21 @@ function buildMaterials(
       category: "Основное",
     },
     {
-      name: `Клей обойный (${wallpaperType.label.toLowerCase()}, ${spec.packaging_rules.paste_pack_kg} кг)`,
+      name: `Клей обойный (${wallpaperType.label.toLowerCase()}, ${roundDisplay(pastePackKg, 3)} кг)`,
       quantity: roundDisplay(pasteBaseNeeded, 6),
       unit: "кг",
       withReserve: roundDisplay(pasteWithReserve, 6),
-      purchaseQty: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
-      packageInfo: { count: pastePacks, size: spec.packaging_rules.paste_pack_kg, packageUnit: "уп" },
+      purchaseQty: roundDisplay(pastePacks * pastePackKg, 6),
+      packageInfo: { count: pastePacks, size: pastePackKg, packageUnit: "уп" },
       category: "Клей",
     },
     {
-      name: `Грунтовка глубокого проникновения (${spec.packaging_rules.primer_can_l} л)`,
+      name: `Грунтовка глубокого проникновения (${roundDisplay(primerCanL, 3)} л)`,
       quantity: roundDisplay(primerBaseNeeded, 6),
       unit: "л",
       withReserve: roundDisplay(primerWithReserve, 6),
-      purchaseQty: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
-      packageInfo: { count: primerCans, size: spec.packaging_rules.primer_can_l, packageUnit: "канистр" },
+      purchaseQty: roundDisplay(primerCans * primerCanL, 6),
+      packageInfo: { count: primerCans, size: primerCanL, packageUnit: "канистр" },
       category: "Грунтовка",
     },
     {
@@ -245,15 +255,21 @@ export function computeCanonicalWallpaper(
   const rollWidth = resolveRollWidth(spec, inputs);
   const rollLength = resolveRollLength(spec, inputs);
   const rapport = resolveRapportMeters(spec, inputs);
+  const patternShift = Math.max(0, inputs.patternShift ?? getInputDefault(spec, "patternShift", 0)) / 100;
+  const trimAllowance = Math.max(0, inputs.trimAllowanceCm ?? getInputDefault(spec, "trimAllowanceCm", 10)) / 100;
+  const openingDeductionMode = Math.round(inputs.openingDeductionMode ?? getInputDefault(spec, "openingDeductionMode", 0)) === 1 ? 1 : 0;
   const reservePercent = Math.max(0, inputs.reservePercent ?? getInputDefault(spec, "reservePercent", 0));
   const reserveRolls = Math.max(0, Math.round(inputs.reserveRolls ?? getInputDefault(spec, "reserveRolls", 0)));
-  const stripLengthWithTrim = geometry.wallHeight + spec.material_rules.trim_allowance_m;
+  const stripLengthWithTrim = geometry.wallHeight + trimAllowance + (rapport > 0 ? patternShift : 0);
   const stripLength = rapport > 0
     ? Math.ceil(stripLengthWithTrim / rapport) * rapport
     : stripLengthWithTrim;
   const stripsPerRoll = stripLength > 0 ? Math.max(0, Math.floor(rollLength / stripLength)) : 0;
+  const stripBasis = openingDeductionMode === 1
+    ? geometry.netArea / geometry.wallHeight
+    : geometry.perimeter;
   const stripsNeeded = geometry.wallHeight > 0 && rollWidth > 0
-    ? Math.ceil(geometry.netArea / (rollWidth * geometry.wallHeight))
+    ? Math.ceil(stripBasis / rollWidth)
     : 0;
   const baseExactRolls = stripsPerRoll > 0 ? stripsNeeded / stripsPerRoll : 0;
   const recommendedSpareRolls = Math.max(0, Math.round(spec.scenario_policy.recommended_spare_rolls ?? 1));
@@ -302,12 +318,17 @@ export function computeCanonicalWallpaper(
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
-  const pasteBaseNeeded = geometry.netArea * wallpaperType.paste_kg_per_m2;
-  const pasteWithReserve = pasteBaseNeeded * spec.material_rules.paste_reserve_factor;
-  const pastePacks = pasteWithReserve > 0 ? Math.max(1, Math.ceil(pasteWithReserve / spec.packaging_rules.paste_pack_kg)) : 0;
-  const primerBaseNeeded = geometry.netArea * spec.material_rules.primer_l_per_m2;
-  const primerWithReserve = primerBaseNeeded * spec.material_rules.primer_reserve_factor;
-  const primerCans = primerWithReserve > 0 ? Math.max(1, Math.ceil(primerWithReserve / spec.packaging_rules.primer_can_l)) : 0;
+  const pasteCoverageM2 = Math.max(1, inputs.pasteCoverageM2 ?? getInputDefault(spec, "pasteCoverageM2", 30));
+  const pastePackKg = Math.max(0.05, inputs.pastePackKg ?? getInputDefault(spec, "pastePackKg", 0.25));
+  const pastePacks = geometry.netArea > 0 ? Math.ceil(geometry.netArea / pasteCoverageM2) : 0;
+  const pasteBaseNeeded = geometry.netArea / pasteCoverageM2 * pastePackKg;
+  const pasteWithReserve = pasteBaseNeeded;
+  const primerRate = Math.max(0.01, inputs.primerRate ?? getInputDefault(spec, "primerRate", 0.15));
+  const primerLayers = Math.max(1, Math.round(inputs.primerLayers ?? getInputDefault(spec, "primerLayers", 1)));
+  const primerCanL = Math.max(0.5, inputs.primerCanL ?? getInputDefault(spec, "primerCanL", 5));
+  const primerBaseNeeded = geometry.netArea * primerRate * primerLayers;
+  const primerWithReserve = primerBaseNeeded;
+  const primerCans = primerWithReserve > 0 ? Math.ceil(primerWithReserve / primerCanL) : 0;
 
   const warnings: string[] = [];
   if (geometry.netArea <= 0) {
@@ -326,6 +347,10 @@ export function computeCanonicalWallpaper(
 
   const practicalNotes: string[] = [];
   practicalNotes.push("Первую полосу выравнивайте по вертикальной линии, отмеченной уровнем или отвесом; направление оклейки сверяйте с инструкцией производителя");
+  practicalNotes.push(openingDeductionMode === 0
+    ? "Полосы рассчитаны безопасно по всему периметру: проёмы уменьшают расход клея, но не число целых полотен"
+    : "Число полос уменьшено по площади проёмов: проверьте, что короткие подрезки действительно заменят целые полотна");
+  practicalNotes.push("Покрытие упаковки клея, расход грунтовки, раппорт и смещение рисунка сверяйте с этикетками выбранных материалов");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -345,6 +370,8 @@ export function computeCanonicalWallpaper(
       primerBaseNeeded,
       primerWithReserve,
       primerCans,
+      pastePackKg,
+      primerCanL,
     ),
     totals: {
       wallArea: roundDisplay(geometry.wallArea, 3),
@@ -356,6 +383,9 @@ export function computeCanonicalWallpaper(
       rollWidth: roundDisplay(rollWidth, 3),
       rollLength: roundDisplay(rollLength, 3),
       rapport: roundDisplay(rapport * 100, 3),
+      patternShift: roundDisplay(patternShift * 100, 3),
+      trimAllowanceCm: roundDisplay(trimAllowance * 100, 3),
+      openingDeductionMode,
       wallpaperType: wallpaperType.id,
       reservePercent: roundDisplay(reservePercent, 3),
       reserveRolls,
@@ -366,11 +396,16 @@ export function computeCanonicalWallpaper(
       rollsNeeded: recScenario.purchase_quantity,
       pasteBaseNeededKg: roundDisplay(pasteBaseNeeded, 6),
       pasteNeededKg: roundDisplay(pasteWithReserve, 6),
-      pastePurchaseKg: roundDisplay(pastePacks * spec.packaging_rules.paste_pack_kg, 6),
+      pasteCoverageM2: roundDisplay(pasteCoverageM2, 3),
+      pastePackKg: roundDisplay(pastePackKg, 3),
+      pastePurchaseKg: roundDisplay(pastePacks * pastePackKg, 6),
       pastePacks,
       primerBaseNeededL: roundDisplay(primerBaseNeeded, 6),
       primerNeededL: roundDisplay(primerWithReserve, 6),
-      primerPurchaseL: roundDisplay(primerCans * spec.packaging_rules.primer_can_l, 6),
+      primerRate: roundDisplay(primerRate, 3),
+      primerLayers,
+      primerCanL: roundDisplay(primerCanL, 3),
+      primerPurchaseL: roundDisplay(primerCans * primerCanL, 6),
       primerCans,
       minExactNeedRolls: scenarios.MIN.exact_need,
       recExactNeedRolls: recScenario.exact_need,

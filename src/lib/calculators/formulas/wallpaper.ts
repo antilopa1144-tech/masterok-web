@@ -4,7 +4,7 @@ import factorTables from "../../../../configs/factor-tables.json";
 import wallpaperCanonicalSpecJson from "../../../../configs/calculators/wallpaper-canonical.v1.json";
 import { computeCanonicalWallpaper } from "../../../../engine/wallpaper";
 import type { WallpaperCanonicalSpec } from "../../../../engine/canonical";
-import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
+import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
 const wallpaperCanonicalSpec = wallpaperCanonicalSpecJson as WallpaperCanonicalSpec;
 const manufacturerField = buildManufacturerField("wallpaper");
@@ -25,6 +25,27 @@ export const wallpaperDef: CalculatorDefinition = {
   complexity: 1,
   fields: [
     {
+      key: "inputMode",
+      label: "Способ ввода",
+      type: "radio",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "По периметру" },
+        { value: 1, label: "По площади стен" },
+      ],
+    },
+    {
+      key: "area",
+      label: "Площадь стен до вычета проёмов",
+      type: "number",
+      unit: "м²",
+      min: 1,
+      max: 1000,
+      step: 0.1,
+      defaultValue: 40,
+      group: "byArea",
+    },
+    {
       key: "perimeter",
       label: "Периметр комнаты",
       type: "slider",
@@ -34,6 +55,7 @@ export const wallpaperDef: CalculatorDefinition = {
       step: 0.5,
       defaultValue: 14,
       hint: "Сумма длин всех стен",
+      group: "bySize",
     },
     {
       key: "height",
@@ -44,6 +66,24 @@ export const wallpaperDef: CalculatorDefinition = {
       max: 5.0,
       step: 0.05,
       defaultValue: 2.7,
+    },
+    {
+      key: "openingsArea",
+      label: "Площадь окон и дверей",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 500,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Всегда вычитается из площади для клея; влияние на полосы выбирается ниже",
+    },
+    {
+      key: "openingDeductionMode",
+      label: "Уменьшать полосы на площадь проёмов",
+      type: "switch",
+      defaultValue: 0,
+      hint: "По умолчанию выключено: безопасный расчёт целых полос по периметру. Включайте только если подрезки над и под проёмами точно заменят целые полотна",
     },
     {
       key: "rollLength",
@@ -79,24 +119,37 @@ export const wallpaperDef: CalculatorDefinition = {
       hint: "Если рисунок без подгонки — 0",
     },
     {
-      key: "doors",
-      label: "Количество дверей",
-      type: "slider",
-      unit: "шт",
+      key: "patternShift",
+      label: "Смещение рисунка",
+      type: "number",
+      unit: "см",
       min: 0,
-      max: 10,
+      max: 100,
       step: 1,
-      defaultValue: 1,
+      defaultValue: 0,
+      hint: "Второе число на этикетке для смещённой стыковки; добавляется как безопасный припуск перед округлением по раппорту",
+      hideIf: { key: "rapport", op: "eq", value: 0 },
     },
     {
-      key: "windows",
-      label: "Количество окон",
-      type: "slider",
-      unit: "шт",
+      key: "trimAllowanceCm",
+      label: "Припуск на подрезку",
+      type: "number",
+      unit: "см",
       min: 0,
-      max: 10,
+      max: 50,
       step: 1,
-      defaultValue: 1,
+      defaultValue: 10,
+    },
+    {
+      key: "reservePercent",
+      label: "Запас к расчётным рулонам",
+      type: "slider",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 0,
+      hint: "Применяется один раз до округления",
     },
     {
       key: "reserveRolls",
@@ -109,18 +162,20 @@ export const wallpaperDef: CalculatorDefinition = {
       defaultValue: 0,
       hint: "Дополнительные целые рулоны сверх чистой потребности по полосам",
     },
+    { key: "pasteCoverageM2", label: "Покрытие упаковки клея", type: "number", unit: "м²", min: 1, max: 200, step: 1, defaultValue: 30, hint: "Перенесите с этикетки выбранного клея" },
+    { key: "pastePackKg", label: "Масса упаковки клея", type: "number", unit: "кг", min: 0.05, max: 20, step: 0.05, defaultValue: 0.25 },
+    { key: "primerRate", label: "Расход грунтовки на слой", type: "number", unit: "л/м²", min: 0.01, max: 1, step: 0.01, defaultValue: 0.15, hint: "По паспорту грунтовки и впитываемости основания" },
+    { key: "primerLayers", label: "Слоёв грунтовки", type: "number", min: 1, max: 3, step: 1, integerOnly: true, defaultValue: 1 },
+    { key: "primerCanL", label: "Объём канистры грунтовки", type: "number", unit: "л", min: 0.5, max: 20, step: 0.5, defaultValue: 5 },
     ...(manufacturerField ? [manufacturerField] : []),
   ],
   calculate(inputs) {
     const manufacturer = getManufacturerByIndex("wallpaper", inputs.manufacturer);
-    const brandRollWidth = getSpec<number | undefined>(manufacturer, "rollWidth", undefined);
-    const brandRollLength = getSpec<number | undefined>(manufacturer, "rollLength", undefined);
-
     const inputRollWidth = inputs.rollWidth !== undefined
       ? (inputs.rollWidth > 10 ? inputs.rollWidth / 1000 : inputs.rollWidth)
       : undefined;
-    const rollWidth = brandRollWidth ?? inputRollWidth;
-    const rollLength = brandRollLength ?? inputs.rollLength;
+    const rollWidth = inputRollWidth;
+    const rollLength = inputs.rollLength;
 
     const result = computeCanonicalWallpaper(
       wallpaperCanonicalSpec,
@@ -136,14 +191,22 @@ export const wallpaperDef: CalculatorDefinition = {
         height: inputs.height,
         wallHeight: inputs.wallHeight ?? inputs.height,
         openingsArea: inputs.openingsArea,
+        openingDeductionMode: inputs.openingDeductionMode,
         doorsCount: inputs.doorsCount ?? inputs.doors,
         windowsCount: inputs.windowsCount ?? inputs.windows,
         rollLength,
         rollWidth,
         rapport: inputs.rapport,
+        patternShift: inputs.patternShift,
+        trimAllowanceCm: inputs.trimAllowanceCm,
         wallpaperType: inputs.wallpaperType ?? 1,
         reserveRolls: inputs.reserveRolls ?? 0,
         reservePercent: inputs.reservePercent ?? 0,
+        pasteCoverageM2: inputs.pasteCoverageM2,
+        pastePackKg: inputs.pastePackKg,
+        primerRate: inputs.primerRate,
+        primerLayers: inputs.primerLayers,
+        primerCanL: inputs.primerCanL,
         accuracyMode: inputs.accuracyMode as any,
       },
       factorTables.factors,
@@ -155,16 +218,21 @@ export const wallpaperDef: CalculatorDefinition = {
           ? { ...m, name: `${m.name} — ${manufacturer.name}` }
           : m
       );
+      result.practicalNotes = [
+        ...(result.practicalNotes ?? []),
+        `Производитель выбран только для подписи. Размеры рулона не подменяются скрытно: в расчёте использованы значения из полей формы.`,
+      ];
     }
     return result;
   },
   formulaDescription: `
 **Расчёт обоев:**
-Рулоны считаются через полезную площадь стен, раскрой полосы и выход полос из рулона.
+Рулоны считаются по целым полотнам, а клей и грунтовка — по полезной площади стен.
 
-Сначала определяется полезная площадь после вычета проёмов, затем — длина полосы с припуском и округлением
-вверх до целого раппорта. MIN показывает чистую потребность, REC применяет выбранный запас один раз,
-а MAX добавляет минимум один запасной рулон на будущий ремонт.
+По умолчанию проёмы не уменьшают число целых полотен: их подрезки нельзя заранее считать полной заменой полосы.
+Длина полотна включает припуск и смещение рисунка, после чего округляется вверх до целого раппорта.
+MIN показывает чистую потребность, REC применяет выбранный запас один раз, а MAX предусматривает минимум
+один запасной рулон на будущий ремонт.
   `,
   howToUse: [
     "Измерьте периметр комнаты и высоту потолков",
@@ -199,13 +267,15 @@ export const wallpaperDef: CalculatorDefinition = {
     descriptionHtml: `
 <h2>Формула расчёта обоев</h2>
 <p>Количество рулонов рассчитывается по формуле:</p>
-<p><strong>Рулоны = &lceil;Полосы / Полос_из_рулона&rceil; + Запас</strong></p>
+<p><strong>Рулоны = &lceil;(Полосы / Полос_из_рулона) &times; (1 + Запас, %) + Запасные_рулоны&rceil;</strong></p>
 <ul>
-  <li><strong>Полосы</strong> = Периметр / Ширина_рулона &minus; Проёмы</li>
-  <li><strong>Длина полосы</strong> = &lceil;(Высота + припуск) / Раппорт&rceil; &times; Раппорт; без рисунка — Высота + припуск</li>
+  <li><strong>Полосы, безопасный режим</strong> = &lceil;Периметр / Ширина_рулона&rceil;</li>
+  <li><strong>Полосы с использованием подрезок</strong> = &lceil;(Полезная_площадь / Высота) / Ширина_рулона&rceil;</li>
+  <li><strong>Длина полосы</strong> = &lceil;(Высота + припуск + смещение) / Раппорт&rceil; &times; Раппорт; без рисунка — Высота + припуск</li>
   <li><strong>Полос_из_рулона</strong> = &lfloor;Длина_рулона / Длина_полосы&rfloor;</li>
   <li><strong>Раппорт</strong> — шаг повтора рисунка (0 — без подгонки)</li>
 </ul>
+<p>Проёмы всегда уменьшают площадь для клея и грунтовки. Уменьшать по ним число полотен безопасно только тогда, когда размеры и расположение проёмов действительно позволяют использовать короткие подрезки.</p>
 
 <h2>Стандартные размеры рулонов</h2>
 <table>
@@ -218,33 +288,33 @@ export const wallpaperDef: CalculatorDefinition = {
     <tr><td>Под покраску</td><td>1.06</td><td>25.0</td><td>26.5</td></tr>
   </tbody>
 </table>
-<p>При наличии раппорта (подгонки рисунка) выход полос из рулона снижается. Раппорт 32–64 см может увеличить расход на <strong>15–25%</strong>.</p>
+<p>При наличии раппорта выход полотен из рулона может снизиться. Расход меняется ступенчато, поэтому калькулятор сначала определяет длину одного полотна, а затем считает, сколько целых полотен помещается в рулоне.</p>
 
 <h2>Нормативная база</h2>
 <p>Оклеечные работы регламентируются <strong>СП 71.13330.2017</strong> «Изоляционные и отделочные покрытия». Раздел 7.4 определяет требования к подготовке основания: ровность, влажность, грунтование. Основание должно быть сухим (влажность &lt; 8%), ровным и загрунтованным.</p>
 
-<h2>Полезные формулы</h2>
+<h2>Что проверить перед покупкой</h2>
 <ul>
   <li><strong>Периметр комнаты</strong> = 2 &times; (длина + ширина)</li>
-  <li><strong>Вычет на дверь</strong> — обычно ширина 0.8–0.9 м (&asymp; 1 полоса)</li>
-  <li><strong>Вычет на окно</strong> — обычно ширина 1.2–1.5 м (&asymp; 2 полосы)</li>
-  <li><strong>Рекомендуемый запас</strong> — 1 рулон на будущий ремонт</li>
+  <li><strong>Раппорт и смещение</strong> — перенесите оба значения с этикетки рулона</li>
+  <li><strong>Покрытие клея</strong> — укажите площадь, заявленную для выбранного типа обоев</li>
+  <li><strong>Расход грунтовки</strong> — возьмите из паспорта материала с учётом числа слоёв</li>
+  <li><strong>Партия</strong> — все рулоны должны иметь один номер партии и оттенка</li>
 </ul>
 `,
     faq: [
       {
-        question: "Сколько рулонов обоев нужно на комнату 15 м²?",
-        answer: "<p>Для комнаты 15 м&sup2; (например, 5 &times; 3 м) с высотой потолка 2.7 м, 1 дверью и 1 окном:</p><ul><li>Периметр = 2 &times; (5 + 3) = 16 м</li><li>Полосы (ширина 0.53 м) = 16 / 0.53 &minus; 3 (проёмы) &asymp; <strong>27 полос</strong></li><li>Полос из рулона (без раппорта) = 10.05 / 2.7 = <strong>3 полосы</strong></li><li>Рулоны = 27 / 3 = <strong>9 рулонов</strong> + 1 запас = <strong>10 рулонов</strong></li></ul><p>При раппорте 32 см: полос из рулона = 10.05 / (2.7 + 0.32) = 3 &rarr; расход не изменится, но с раппортом 64 см будет только 2 полосы из рулона, и понадобится уже <strong>14 рулонов</strong>.</p>",
+        question: "Сколько рулонов нужно для комнаты 5 × 3 м?",
+        answer: "<p>При высоте 2.7 м, рулоне 0.53 &times; 10.05 м и обоях без рисунка безопасный расчёт такой:</p><ul><li>Периметр = 2 &times; (5 + 3) = 16 м</li><li>Полосы = &lceil;16 / 0.53&rceil; = <strong>31 полоса</strong></li><li>Длина полосы с припуском 10 см = 2.8 м</li><li>Из рулона выходит &lfloor;10.05 / 2.8&rfloor; = <strong>3 полосы</strong></li><li>Рулоны = &lceil;31 / 3&rceil; = <strong>11 рулонов</strong></li></ul><p>Дверь и окна по умолчанию уменьшают расход клея, но не число целых полотен. Включайте вычет проёмов из полотен только если уверены, что подрезки можно использовать.</p>",
       },
       {
         question: "Как учитывать раппорт при расчёте обоев?",
-        answer: "<p>Раппорт — шаг повторения рисунка на этикетке рулона. К высоте стены добавляется припуск на подрезку, затем длина полосы округляется вверх до ближайшего целого раппорта:</p><p><strong>Длина_полосы = &lceil;(Высота + припуск) / Раппорт&rceil; &times; Раппорт</strong></p><p>Поэтому расход меняется ступенчато: пока из рулона выходит прежнее число полос, покупка не увеличивается; при переходе на одну полосу меньше понадобится дополнительный рулон. Для обоев со смещением рисунка сверяйтесь также со вторым числом на этикетке.</p>",
+        answer: "<p>Раппорт — шаг повторения рисунка на этикетке рулона. К высоте стены добавляются припуск на подрезку и указанное смещение, затем длина полотна округляется вверх до ближайшего целого раппорта:</p><p><strong>Длина_полосы = &lceil;(Высота + припуск + смещение) / Раппорт&rceil; &times; Раппорт</strong></p><p>Расход меняется ступенчато: пока из рулона выходит прежнее число полотен, покупка не увеличивается. Перенесите с этикетки и раппорт, и смещение рисунка.</p>",
       },
       {
         question: "Какой клей выбрать для обоев и сколько его нужно?",
-        answer: "<p>Тип клея зависит от основы обоев:</p><table><thead><tr><th>Обои</th><th>Клей</th><th>Расход, м&sup2;/уп</th></tr></thead><tbody><tr><td>Бумажные</td><td>КМЦ / универсальный</td><td>30–40</td></tr><tr><td>Виниловые</td><td>Виниловый (Quelyd, Metylan)</td><td>25–35</td></tr><tr><td>Флизелиновые</td><td>Флизелиновый</td><td>25–30</td></tr><tr><td>Тяжёлые, стеклообои</td><td>Усиленный / готовый</td><td>15–20</td></tr></tbody></table><p>На 1 упаковку клея приходится в среднем <strong>5–7 рулонов</strong> обоев. Клей наносится на стену (флизелин) или на полотно с выдержкой 5–10 минут (бумага, винил на бумаге).</p>",
+        answer: "<p>Выберите клей, который производитель разрешает для вашего типа и массы обоев. В калькулятор перенесите с упаковки две величины: площадь покрытия одной упаковки и её массу.</p><p>Калькулятор делит полезную площадь стен на заявленное покрытие и округляет число упаковок вверх. Универсальная норма «упаковок на рулон» не используется, потому что концентрация и покрытие у составов различаются.</p>",
       },
     ],
   },
 };
-
