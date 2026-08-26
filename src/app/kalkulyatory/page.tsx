@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
-import CategoryIcon from "@/components/ui/CategoryIcon";
+import CalculatorCatalog from "@/components/calculator/CalculatorCatalog";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -67,53 +66,12 @@ export default function KalkulyatoryPage() {
         </div>
       </div>
 
-      <div className="page-container-wide py-8 space-y-10">
-        {CATEGORIES.map((cat) => {
-          const calcs = ALL_CALCULATORS_META.filter((c) => c.category === cat.id);
-          if (calcs.length === 0) return null;
-          return (
-            <section key={cat.id}>
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: cat.bgColor }}
-                >
-                  <CategoryIcon icon={cat.icon} size={20} color={cat.color} />
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{cat.label}</h2>
-                <span className="text-sm text-slate-400 dark:text-slate-400">({calcs.length})</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {calcs.map((calc) => (
-                  <Link
-                    key={calc.id}
-                    href={`/kalkulyatory/${calc.categorySlug}/${calc.slug}/`}
-                    className="card-hover px-5 py-4 block no-underline group"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-accent-700 transition-colors">
-                        {calc.title}
-                      </h3>
-                      {calc.popularity >= 9 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400 font-medium shrink-0">
-                          ТОП
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed line-clamp-2">
-                      {calc.description}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      <div className="page-container-wide py-8">
+        <CalculatorCatalog calculators={ALL_CALCULATORS_META} categories={CATEGORIES} />
       </div>
     </div>
   );
 }
-
 
 
 

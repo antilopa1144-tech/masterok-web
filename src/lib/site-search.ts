@@ -97,6 +97,7 @@ function scoreCalculator(query: string, calculator: SearchableCalculator): numbe
 export function rankCalculatorSearch<T extends SearchableCalculator>(
   query: string,
   calculators: readonly T[],
+  minScore = 1,
 ): T[] {
   return calculators
     .map((calculator, index) => ({
@@ -104,7 +105,7 @@ export function rankCalculatorSearch<T extends SearchableCalculator>(
       index,
       score: scoreCalculator(query, calculator),
     }))
-    .filter((item) => item.score > 0)
+    .filter((item) => item.score >= minScore)
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .map((item) => item.calculator);
 }

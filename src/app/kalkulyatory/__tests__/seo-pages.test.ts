@@ -14,8 +14,17 @@ vi.mock("@/components/calculator/CalculatorWithMikhalych", () => ({
 
 import CategoryPage from "../[category]/page";
 import CalculatorPage from "../[category]/[slug]/page";
+import CatalogPage from "../page";
 
 describe("SEO-страницы калькуляторов", () => {
+  it("рендерит полный каталог с поиском и только восемью метками ТОП", () => {
+    const html = renderToStaticMarkup(React.createElement(CatalogPage));
+
+    expect(html).toContain('id="calculator-catalog-search"');
+    expect(html).toContain("Все калькуляторы");
+    expect(html.match(/>ТОП<\/span>/g)).toHaveLength(8);
+  });
+
   it("выводит быстрые ссылки фундаментного кластера", async () => {
     const page = await CategoryPage({
       params: Promise.resolve({ category: "fundament" }),
