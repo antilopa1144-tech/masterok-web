@@ -1,4 +1,4 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
+import type { FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
@@ -11,7 +11,7 @@ import type {
   PaintSurfaceSpec,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 import { evaluateCompanionMaterials } from "./companion-materials";
 
@@ -162,7 +162,13 @@ function resolveColorIntensity(spec: PaintCanonicalSpec, rawColorIntensity: numb
 
 function resolveCoverage(spec: PaintCanonicalSpec, rawCoverage: number | undefined, paintType: PaintScopeSpec): number {
   const fallback = paintType.id === 1 ? 7 : 10;
-  return Math.max(4, Math.min(15, rawCoverage ?? getInputDefault(spec, "coverage", fallback)));
+  return Math.max(5, Math.min(20, rawCoverage ?? getInputDefault(spec, "coverage", fallback)));
+}
+
+function resolveReservePercent(spec: PaintCanonicalSpec, accuracyMode: AccuracyMode): number {
+  const configured = spec.scenario_policy.reserve_by_accuracy_mode_percent?.[accuracyMode];
+  const fallback = accuracyMode === "basic" ? 0 : accuracyMode === "professional" ? 15 : 10;
+  return Math.max(0, Math.min(30, configured ?? fallback));
 }
 
 function resolveCoats(spec: PaintCanonicalSpec, rawCoats: number | undefined): number {
@@ -208,7 +214,7 @@ function buildMaterials(
 export function computeCanonicalPaint(
   spec: PaintCanonicalSpec,
   inputs: PaintInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
@@ -225,9 +231,12 @@ export function computeCanonicalPaint(
   const lPerSqm = (coats * surface.multiplier * preparation.multiplier * color.multiplier) / coverage;
   const wallBaseExactNeed = effectiveWallArea * lPerSqm;
   const ceilingBaseExactNeed = effectiveCeilingArea * lPerSqm * spec.material_rules.ceiling_premium_factor;
-  const baseExactNeedRaw = wallBaseExactNeed + ceilingBaseExactNeed;
-  const accuracyMult = getPrimaryMultiplier("paint", accuracyMode);
-  const baseExactNeed = baseExactNeedRaw * accuracyMult;
+  const baseExactNeed = wallBaseExactNeed + ceilingBaseExactNeed;
+  const reservePercent = resolveReservePercent(spec, accuracyMode);
+  const recommendedMaxReserve = Math.max(
+    reservePercent,
+    spec.scenario_policy.recommended_max_reserve_percent ?? 15,
+  );
   const packageOptions = resolvePackagingOptions(spec, inputs.canSize).map((option) => ({
     size: option.size,
     label: option.label,
@@ -235,8 +244,13 @@ export function computeCanonicalPaint(
   }));
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(baseExactNeed * multiplier, 6);
+    const scenarioReservePercent = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? recommendedMaxReserve
+        : reservePercent;
+    const reserveMultiplier = 1 + scenarioReservePercent / 100;
+    const exactNeed = roundDisplay(baseExactNeed * reserveMultiplier, 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -247,11 +261,13 @@ export function computeCanonicalPaint(
         `formula_version:${spec.formula_version}`,
         `paint:${paintType.key}`,
         `surface:${surface.key}`,
+        `reserve_percent:${scenarioReservePercent}`,
+        "scenario_policy:single_explicit_paint_reserve",
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        reserve_percent: roundDisplay(scenarioReservePercent, 3),
+        field_multiplier: roundDisplay(reserveMultiplier, 6),
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -336,6 +352,7 @@ export function computeCanonicalPaint(
       colorIntensity: color.id,
       coats,
       coverage: roundDisplay(coverage, 3),
+      reservePercent: roundDisplay(reservePercent, 3),
       canSize: paintPackageSize,
       lPerSqm: roundDisplay(lPerSqm, 6),
       estimatedPerimeter: roundDisplay(work.estimatedPerimeter, 3),
@@ -357,6 +374,23 @@ export function computeCanonicalPaint(
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(baseExactNeedRaw, "paint", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: roundDisplay(1 + reservePercent / 100, 6),
+      appliedModifiers: reservePercent > 0
+        ? [{
+            key: "topUp",
+            label: "Практический резерв краски",
+            value: roundDisplay(1 + reservePercent / 100, 6),
+            reason: "применяется один раз после расчёта по укрывистости и условиям поверхности",
+          }]
+        : [],
+      notes: [
+        reservePercent > 0
+          ? `К паспортной потребности один раз добавлен резерв ${reservePercent}%`
+          : "Расчёт без скрытого запаса: только паспортная укрывистость и выбранные условия поверхности",
+      ],
+    },
   };
 }

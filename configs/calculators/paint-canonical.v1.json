@@ -1,6 +1,6 @@
 {
   "calculator_id": "paint",
-  "formula_version": "paint-canonical-v1",
+  "formula_version": "paint-canonical-v2",
   "input_schema": [
     { "key": "inputMode", "default_value": 1, "min": 0, "max": 1 },
     { "key": "area", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
@@ -19,19 +19,11 @@
     { "key": "surfacePrep", "default_value": 0, "min": 0, "max": 2 },
     { "key": "colorIntensity", "default_value": 0, "min": 0, "max": 2 },
     { "key": "coats", "default_value": 2, "min": 1, "max": 5 },
-    { "key": "coverage", "unit": "m2/l", "default_value": 10, "min": 4, "max": 15 },
+    { "key": "coverage", "unit": "m2/l", "default_value": 10, "min": 5, "max": 20 },
     { "key": "canSize", "unit": "l", "default_value": 0, "min": 0, "max": 15 }
   ],
   "field_factors": {
-    "enabled": [
-      "surface_quality",
-      "geometry_complexity",
-      "installation_method",
-      "worker_skill",
-      "waste_factor",
-      "logistics_buffer",
-      "packaging_rounding"
-    ]
+    "enabled": []
   },
   "normative_formula": {
     "paint_types": [
@@ -92,7 +84,18 @@
     "rough_surface_warning_ids": [5, 8]
   },
   "scenario_policy": {
-    "contract": "min-rec-max-v1"
+    "contract": "min-rec-max-v1",
+    "reserve_by_accuracy_mode_percent": {
+      "basic": 0,
+      "realistic": 10,
+      "professional": 15,
+      "custom": 10
+    },
+    "recommended_max_reserve_percent": 15,
+    "MIN": "Паспортная потребность с выбранными параметрами поверхности, без запаса",
+    "REC": "Паспортная потребность с одним резервом выбранного режима точности",
+    "MAX": "Паспортная потребность с резервом не меньше 15%",
+    "purchase_quantity": "Округление каждого сценария до доступной фасовки"
   },
   "companion_materials": [
     {

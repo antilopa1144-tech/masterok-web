@@ -46,7 +46,7 @@
     "putty": { "family": "dry_mix_area_based", "formulaVersion": "putty-canonical-v1" },
     "plaster": { "family": "dry_mix_area_based", "formulaVersion": "plaster-canonical-v1" },
     "primer": { "family": "liquid_coating_area_based", "formulaVersion": "primer-canonical-v1" },
-    "paint": { "family": "liquid_coating_area_based", "formulaVersion": "paint-canonical-v1" },
+    "paint": { "family": "liquid_coating_area_based", "formulaVersion": "paint-canonical-v2" },
     "wallpaper": { "family": "roll_material", "formulaVersion": "wallpaper-canonical-v1" },
     "tile": { "family": "piece_flooring", "formulaVersion": "tile-canonical-v1" },
     "laminate": { "family": "piece_flooring", "formulaVersion": "laminate-canonical-v1" },

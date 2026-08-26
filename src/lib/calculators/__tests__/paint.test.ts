@@ -7,14 +7,14 @@ const calc = withBasicAccuracy(paintDef.calculate.bind(paintDef));
 
 describe("Калькулятор краски", () => {
   it("декларирует formulaVersion для canonical paint", () => {
-    expect(paintDef.formulaVersion).toBe("paint-canonical-v1");
+    expect(paintDef.formulaVersion).toBe("paint-canonical-v2");
   });
 
   it("переводит legacy web inputs в canonical engine", () => {
     const result = calc({ area: 40, coats: 2, surfaceType: 0, consumption: 10 });
     checkInvariants(result);
 
-    expect(result.formulaVersion).toBe("paint-canonical-v1");
+    expect(result.formulaVersion).toBe("paint-canonical-v2");
     expect(result.totals.area).toBeCloseTo(40, 2);
     expect(result.totals.lPerSqm).toBeCloseTo(0.2, 3);
     expect(result.scenarios?.REC.buy_plan.package_size).toBe(3);
@@ -44,7 +44,7 @@ describe("Калькулятор краски", () => {
     expect(result.totals.ceilingArea).toBeCloseTo(20, 2);
     expect(result.totals.area).toBeCloseTo(60, 2);
     expect(result.totals.ceilingBaseExactNeedL).toBeGreaterThan(result.totals.wallBaseExactNeedL / 3);
-    expect(result.scenarios?.REC.exact_need ?? 0).toBeGreaterThan(result.totals.baseExactNeedL ?? 0);
+    expect(result.scenarios?.REC.exact_need ?? 0).toBe(result.totals.baseExactNeedL ?? 0);
   });
 
   it("поддерживает canonical facade room-dimensions путь", () => {
@@ -65,7 +65,7 @@ describe("Калькулятор краски", () => {
 
     expect(result.totals.area).toBeCloseTo(44.6, 2);
     expect(result.totals.ceilingArea).toBeCloseTo(0, 2);
-    expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(30.391131, 2);
+    expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(27.8304, 2);
     expect(result.scenarios?.REC.buy_plan.package_size).toBe(10);
     expect(findMaterial(result, "Малярная лента")?.purchaseQty).toBe(1);
     expect(result.warnings).toHaveLength(2);
@@ -114,7 +114,5 @@ describe("Canonical paint fixture parity", () => {
     });
   }
 });
-
-
 
 

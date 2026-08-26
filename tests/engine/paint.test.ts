@@ -21,16 +21,17 @@ describe("computeCanonicalPaint — golden snapshot (basic mode)", () => {
     expect(r.totals.coverage).toBe(10);
     expect(r.totals.lPerSqm).toBe(0.2);
     expect(r.totals.baseExactNeedL).toBe(8);
-    expect(r.scenarios.REC.exact_need).toBeCloseTo(8.736096, 5);
+    expect(r.scenarios.REC.exact_need).toBe(8);
     expect(r.scenarios.REC.purchase_quantity).toBe(9);
-    expect(r.scenarios.MAX.purchase_quantity).toBe(15);
+    expect(r.scenarios.MAX.purchase_quantity).toBe(10);
   });
 
-  it("realistic mode завышает базовый объём", () => {
+  it("realistic mode сохраняет чистую потребность и добавляет один резерв в REC", () => {
     const basic = calc({ accuracyMode: "basic" });
     const real = calc({ accuracyMode: "realistic" });
 
-    expect(real.totals.baseExactNeedL).toBeGreaterThan(basic.totals.baseExactNeedL);
+    expect(real.totals.baseExactNeedL).toBe(basic.totals.baseExactNeedL);
+    expect(real.scenarios.REC.exact_need).toBe(8.8);
     expect(real.scenarios.REC.purchase_quantity).toBeGreaterThanOrEqual(
       basic.scenarios.REC.purchase_quantity,
     );
@@ -82,9 +83,38 @@ describe("computeCanonicalPaint — golden snapshot (basic mode)", () => {
   it("структура результата содержит обязательные поля", () => {
     const r = calc({ accuracyMode: "basic" });
     expect(r.canonicalSpecId).toBe("paint");
-    expect(r.formulaVersion).toBe("paint-canonical-v1");
-    expect(r.scenarios.MIN.exact_need).toBeLessThan(r.scenarios.REC.exact_need);
+    expect(r.formulaVersion).toBe("paint-canonical-v2");
+    expect(r.scenarios.MIN.exact_need).toBeLessThanOrEqual(r.scenarios.REC.exact_need);
     expect(r.scenarios.REC.exact_need).toBeLessThan(r.scenarios.MAX.exact_need);
+  });
+});
+
+describe("computeCanonicalPaint — разделение паспортной укрывистости и запаса", () => {
+  it("не обрезает паспортную укрывистость 20 м²/л до 15 м²/л", () => {
+    const r = calc({
+      accuracyMode: "basic",
+      area: 40,
+      coats: 2,
+      coverage: 20,
+      surfaceType: 0,
+      surfacePrep: 0,
+      colorIntensity: 0,
+    });
+
+    expect(r.totals.coverage).toBe(20);
+    expect(r.totals.baseExactNeedL).toBe(4);
+  });
+
+  it("применяет выбранный практический резерв один раз", () => {
+    const basic = calc({ accuracyMode: "basic", area: 40, coats: 2, coverage: 10 });
+    const realistic = calc({ accuracyMode: "realistic", area: 40, coats: 2, coverage: 10 });
+    const professional = calc({ accuracyMode: "professional", area: 40, coats: 2, coverage: 10 });
+
+    expect(basic.scenarios.MIN.exact_need).toBe(8);
+    expect(basic.scenarios.REC.exact_need).toBe(8);
+    expect(realistic.scenarios.REC.exact_need).toBe(8.8);
+    expect(professional.scenarios.REC.exact_need).toBe(9.2);
+    expect(realistic.scenarios.MAX.exact_need).toBe(9.2);
   });
 });
 
