@@ -19,6 +19,32 @@ describe("Калькулятор плитного фундамента", () => {
       expect(result.totals.recExactNeedM3).toBeGreaterThan(12);
     });
 
+    it("MIN не может быть меньше физического объёма плиты, а строка бетона соответствует REC-закупке", () => {
+      const concrete = findMaterial(result, "Товарный бетон");
+
+      expect(result.scenarios?.MIN.exact_need).toBe(12);
+      expect(concrete?.purchaseQty).toBe(result.scenarios?.REC.purchase_quantity);
+      expect(concrete?.withReserve).toBe(result.scenarios?.REC.exact_need);
+      expect(concrete?.quantity).toBe(result.totals.concreteM3);
+    });
+
+    it.each(["basic", "realistic", "professional"])(
+      "чистый объём не меняется в режиме точности %s",
+      (accuracyMode) => {
+        const modeResult = foundationSlabDef.calculate({
+          area: 60,
+          thickness: 200,
+          accuracyMode: accuracyMode as unknown as number,
+        });
+        const concrete = findMaterial(modeResult, "Товарный бетон");
+
+        expect(modeResult.totals.concreteM3).toBe(12);
+        expect(concrete?.quantity).toBe(12);
+        expect(concrete?.withReserve).toBeCloseTo(modeResult.scenarios?.REC.exact_need ?? 0, 3);
+        expect(concrete?.purchaseQty).toBe(modeResult.scenarios?.REC.purchase_quantity);
+      },
+    );
+
     it("класс бетона не назначается калькулятором", () => {
       expect(findMaterial(result, "Товарный бетон — класс по проекту")).toBeDefined();
     });

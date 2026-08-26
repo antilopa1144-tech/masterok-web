@@ -27,7 +27,9 @@ interface FoundationSlabInputs {
 }
 
 function buildMaterials(
-  concreteM3: number,
+  concreteExactM3: number,
+  concreteWithReserveM3: number,
+  concretePurchaseM3: number,
   rebarKg: number,
   wireKg: number,
   formworkArea: number,
@@ -39,7 +41,6 @@ function buildMaterials(
   totalBarLen: number,
   insulationThickness: number,
 ): CanonicalMaterialResult[] {
-  const concretePurchaseM3 = roundDisplay(Math.ceil(concreteM3 * 10) / 10, 1);
   const rebarBars117 = Math.ceil(totalBarLen / 11.7);
 
   const materials: CanonicalMaterialResult[] = [
@@ -47,10 +48,10 @@ function buildMaterials(
       name: "Товарный бетон — класс по проекту",
       subtitle:
         "Заказывайте с шагом 0,1 м³; подвижность, морозостойкость и водонепроницаемость уточняются по проекту и способу подачи",
-      quantity: roundDisplay(concreteM3, 3),
+      quantity: roundDisplay(concreteExactM3, 3),
       unit: "м³",
-      withReserve: roundDisplay(concreteM3, 3),
-      purchaseQty: concretePurchaseM3,
+      withReserve: roundDisplay(concreteWithReserveM3, 3),
+      purchaseQty: roundDisplay(concretePurchaseM3, 1),
       category: "Основное",
     },
     {
@@ -195,7 +196,10 @@ export function computeCanonicalFoundationSlab(
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
     const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(concreteM3 * multiplier, 6);
+    // Объём из геометрии нельзя уменьшать сценарным коэффициентом: даже в
+    // идеальных условиях плита 60 × 0,2 м требует 12 м³ бетона. Поправки
+    // допускается применять только как добавку к этой физической потребности.
+    const exactNeed = roundDisplay(Math.max(concreteM3Raw, concreteM3 * multiplier), 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
 
     acc[scenario] = {
@@ -245,7 +249,9 @@ export function computeCanonicalFoundationSlab(
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials: buildMaterials(
-      concreteM3,
+      concreteM3Raw,
+      recScenario.exact_need,
+      recScenario.purchase_quantity,
       rebarKg,
       wireKg,
       formworkArea,
@@ -269,7 +275,7 @@ export function computeCanonicalFoundationSlab(
       insulationThickness: roundDisplay(insulationThickness, 3),
       side: roundDisplay(side, 3),
       perimeter: roundDisplay(perimeter, 3),
-      concreteM3: roundDisplay(concreteM3, 3),
+      concreteM3: roundDisplay(concreteM3Raw, 3),
       barsPerDir: barsPerDir,
       barsAlongLength: barsAlongLength,
       barsAlongWidth: barsAlongWidth,
