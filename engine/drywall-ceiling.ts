@@ -1,40 +1,14 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import { buildPrimerMaterial } from "./smart-packaging";
 import type {
   DrywallCeilingCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, ACCURACY_MODE_LABELS } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-
-/* ─── constants ─── */
-
-const SHEET_AREA = 3.0;
-const SHEET_RESERVE = 1.10;
-const PROFILE_RESERVE = 1.05;
-const CROSS_STEP = 1.2;
-const SUSPENSION_STEP = 0.7;
-const SCREWS_PER_SHEET = 23;
-const SCREWS_PER_KG = 1000;
-const SCREW_RESERVE = 1.05;
-const CLOP_PER_SUSP = 2;
-const CLOP_PER_CRAB = 4;
-const DOWEL_STEP = 0.5;
-const SERPYANKA_COEFF = 1.2;
-const SERPYANKA_RESERVE = 1.1;
-const SERPYANKA_ROLL = 45;
-const PUTTY_KG_PER_M = 0.25;
-const PUTTY_BAG = 25;
-const PRIMER_L_PER_M2 = 0.15;
-const PRIMER_RESERVE = 1.15;
-const PRIMER_CAN = 10;
-const PROFILE_LENGTH = 3;
-
-/* ─── inputs ─── */
+import type { FactorTable } from "./factors";
 
 interface DrywallCeilingInputs {
   inputMode?: number;
@@ -42,107 +16,81 @@ interface DrywallCeilingInputs {
   width?: number;
   area?: number;
   layers?: number;
-  profileStep?: number;
+  sheetWidthMm?: number;
+  sheetLengthMm?: number;
+  sheetReservePercent?: number;
+  profileLengthM?: number;
+  profileReservePercent?: number;
+  fastenerReservePercent?: number;
+  screwPackCount?: number;
+  tapeRollM?: number;
+  puttyBagKg?: number;
+  primerRateLPerM2?: number;
+  primerCanL?: number;
+  finishReservePercent?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── helpers ─── */
-
-/* ─── main ─── */
+function percentMultiplier(percent: number): number {
+  return 1 + percent / 100;
+}
 
 export function computeCanonicalDrywallCeiling(
   spec: DrywallCeilingCanonicalSpec,
   inputs: DrywallCeilingInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-
   const inputMode = Math.max(0, Math.min(1, Math.round(inputs.inputMode ?? getInputDefault(spec, "inputMode", 0))));
   const length = Math.max(1, Math.min(20, inputs.length ?? getInputDefault(spec, "length", 5)));
   const width = Math.max(1, Math.min(20, inputs.width ?? getInputDefault(spec, "width", 4)));
   const areaInput = Math.max(1, Math.min(200, inputs.area ?? getInputDefault(spec, "area", 20)));
-  const layersRaw = Math.round(inputs.layers ?? getInputDefault(spec, "layers", 1));
-  const layers = layersRaw === 2 ? 2 : 1;
-  const profileStepRaw = inputs.profileStep ?? getInputDefault(spec, "profileStep", 600);
-  const profileStep = profileStepRaw <= 400 ? 400 : 600;
-
-  /* ─── area ─── */
+  const layers = Math.round(inputs.layers ?? getInputDefault(spec, "layers", 1)) === 2 ? 2 : 1;
   const area = inputMode === 0 ? roundDisplay(length * width, 3) : areaInput;
-
-  /* ─── sheets ─── */
-  const sheetsRaw = Math.ceil(area * layers / SHEET_AREA * SHEET_RESERVE);
-  const accuracyMult = getPrimaryMultiplier("drywall", accuracyMode);
-  const sheets = sheetsRaw * accuracyMult;
-
-  /* ─── profiles ─── */
-  const mainProfileRows = Math.ceil(width / (profileStep / 1000));
-  const mainM = mainProfileRows * length;
-  const crossRows = Math.ceil(length / CROSS_STEP);
-  const crossM = crossRows * width;
-  const totalProfileM = (mainM + crossM) * PROFILE_RESERVE;
-  const ppPcs = Math.ceil(totalProfileM / PROFILE_LENGTH);
-
   const effectiveLength = inputMode === 0 ? length : Math.sqrt(area);
   const effectiveWidth = inputMode === 0 ? width : Math.sqrt(area);
-  const pnM = 2 * (effectiveLength + effectiveWidth) * PROFILE_RESERVE;
-  const pnPcs = Math.ceil(pnM / PROFILE_LENGTH);
+  const perimeter = 2 * (effectiveLength + effectiveWidth);
 
-  /* ─── suspensions & crabs ─── */
-  const suspCount = mainProfileRows * Math.ceil(length / SUSPENSION_STEP);
-  const crabCount = mainProfileRows * crossRows;
+  const sheetWidthM = Math.max(0.6, (inputs.sheetWidthMm ?? getInputDefault(spec, "sheetWidthMm", 1200)) / 1000);
+  const sheetLengthM = Math.max(1.2, (inputs.sheetLengthMm ?? getInputDefault(spec, "sheetLengthMm", 2500)) / 1000);
+  const sheetArea = sheetWidthM * sheetLengthM;
+  const sheetReservePercent = Math.max(0, inputs.sheetReservePercent ?? getInputDefault(spec, "sheetReservePercent", 10));
+  const profileLengthM = Math.max(2, inputs.profileLengthM ?? getInputDefault(spec, "profileLengthM", 3));
+  const profileReservePercent = Math.max(0, inputs.profileReservePercent ?? getInputDefault(spec, "profileReservePercent", 5));
+  const fastenerReservePercent = Math.max(0, inputs.fastenerReservePercent ?? getInputDefault(spec, "fastenerReservePercent", 5));
+  const finishReservePercent = Math.max(0, inputs.finishReservePercent ?? getInputDefault(spec, "finishReservePercent", 10));
+  const screwPackCount = Math.max(100, Math.round(inputs.screwPackCount ?? getInputDefault(spec, "screwPackCount", 1000)));
+  const tapeRollM = Math.max(10, inputs.tapeRollM ?? getInputDefault(spec, "tapeRollM", 45));
+  const puttyBagKg = Math.max(1, inputs.puttyBagKg ?? getInputDefault(spec, "puttyBagKg", 25));
+  const primerRateLPerM2 = Math.max(0.05, inputs.primerRateLPerM2 ?? getInputDefault(spec, "primerRateLPerM2", 0.15));
+  const primerCanL = Math.max(0.5, inputs.primerCanL ?? getInputDefault(spec, "primerCanL", 5));
 
-  /* ─── screws ─── */
-  const screwsGKL = sheets * SCREWS_PER_SHEET;
-  const screwsKg = Math.ceil(screwsGKL * SCREW_RESERVE / SCREWS_PER_KG * 10) / 10;
-  const firstLayerScrews = Math.ceil(screwsGKL / layers);
-  const secondLayerScrews = layers === 2 ? Math.max(0, Math.ceil(screwsGKL) - firstLayerScrews) : 0;
-
-  /* ─── clop screws ─── */
-  const clopCount = suspCount * CLOP_PER_SUSP + crabCount * CLOP_PER_CRAB;
-
-  /* ─── dowels ─── */
-  const ceilingAnchors = suspCount * 2;
-  const perimeterDowels = Math.ceil(pnM / DOWEL_STEP);
-  const dowelCount = ceilingAnchors + perimeterDowels;
-
-  /* ─── serpyanka ─── */
-  const serpM = Math.ceil(area * SERPYANKA_COEFF * SERPYANKA_RESERVE);
-  const serpRolls = Math.ceil(serpM / SERPYANKA_ROLL);
-
-  /* ─── putty ─── */
-  const puttyKg = Math.ceil(serpM * PUTTY_KG_PER_M);
-  const puttyBags = Math.ceil(puttyKg / PUTTY_BAG);
-
-  /* ─── primer ─── */
-  const primerL = area * PRIMER_L_PER_M2;
-  const primerCans = Math.ceil(primerL * PRIMER_RESERVE / PRIMER_CAN);
-
-  /* ─── scenarios ─── */
-  const packageOptions = [{
-    size: spec.packaging_rules.package_size,
-    label: `gkl-ceiling-${spec.packaging_rules.package_size}`,
-    unit: spec.packaging_rules.unit,
-  }];
-
+  const baseSheets = area * layers / sheetArea;
+  const recSheets = baseSheets * percentMultiplier(sheetReservePercent);
+  const maxSheetReservePercent = sheetReservePercent + spec.material_rules.max_extra_sheet_percent;
+  const packageOptions = [{ size: 1, label: "gkl-sheet", unit: spec.packaging_rules.unit }];
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(sheets * multiplier, 6);
+    const reservePercent = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? maxSheetReservePercent
+        : sheetReservePercent;
+    const exactNeed = roundDisplay(baseSheets * percentMultiplier(reservePercent), 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
-
     acc[scenario] = {
       exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
+      purchase_quantity: packaging.purchaseQuantity,
       leftover: roundDisplay(packaging.leftover, 6),
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `inputMode:${inputMode}`,
+        `input_mode:${inputMode}`,
         `layers:${layers}`,
-        `profileStep:${profileStep}`,
-        `packaging:${packaging.package.label}`,
+        `sheet:${roundDisplay(sheetWidthM * 1000, 0)}x${roundDisplay(sheetLengthM * 1000, 0)}`,
+        "scenario_policy:explicit_sheet_reserve",
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        field_multiplier: roundDisplay(percentMultiplier(reservePercent), 6),
+        reserve_percent: roundDisplay(reservePercent, 3),
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -151,63 +99,80 @@ export function computeCanonicalDrywallCeiling(
         unit: packaging.package.unit,
       },
     };
-
     return acc;
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
+  const profileBaseM = area * spec.material_rules.pp_m_per_m2;
+  const profileWithReserveM = profileBaseM * percentMultiplier(profileReservePercent);
+  const ppPcs = Math.ceil(profileWithReserveM / profileLengthM);
+  const pnBaseM = perimeter;
+  const pnWithReserveM = pnBaseM * percentMultiplier(profileReservePercent);
+  const pnPcs = Math.ceil(pnWithReserveM / profileLengthM);
+  const suspensionsBase = area * spec.material_rules.suspension_per_m2;
+  const suspCount = Math.ceil(suspensionsBase * percentMultiplier(fastenerReservePercent));
+  const connectorsBase = area * spec.material_rules.connector_per_m2;
+  const crabCount = Math.ceil(connectorsBase * percentMultiplier(fastenerReservePercent));
+  const screwsBase = area * layers * spec.material_rules.screws_per_m2_per_layer;
+  const screwsWithReserve = screwsBase * percentMultiplier(fastenerReservePercent);
+  const screwPacks = Math.ceil(screwsWithReserve / screwPackCount);
+  const perimeterDowelsBase = perimeter / spec.material_rules.perimeter_dowel_step_m;
+  const perimeterDowels = Math.ceil(perimeterDowelsBase * percentMultiplier(fastenerReservePercent));
+  const ceilingAnchors = suspCount;
+  const dowelCount = ceilingAnchors + perimeterDowels;
 
-  /* ─── warnings ─── */
-  const warnings: string[] = [];
-  if (layers === 2) {
-    warnings.push("Второй слой гипсокартона монтируется со смещением 400 мм");
-  }
-  if (area > 50) {
-    warnings.push("Площадь более 50 м² — предусмотрите деформационные швы");
-  }
+  const tapeBaseM = area * spec.material_rules.tape_m_per_m2;
+  const tapeWithReserveM = tapeBaseM * percentMultiplier(finishReservePercent);
+  const tapeRolls = Math.ceil(tapeWithReserveM / tapeRollM);
+  const puttyBaseKg = area * spec.material_rules.putty_kg_per_m2;
+  const puttyWithReserveKg = puttyBaseKg * percentMultiplier(finishReservePercent);
+  const puttyBags = Math.ceil(puttyWithReserveKg / puttyBagKg);
+  const primerBaseL = area * primerRateLPerM2;
+  const primerWithReserveL = primerBaseL * percentMultiplier(finishReservePercent);
+  const primerCans = Math.ceil(primerWithReserveL / primerCanL);
 
-  /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: "Гипсокартонные листы (ГКЛ) 1200×2500 мм для потолка",
-      subtitle: "Для сухого помещения — обычный гипсокартон; для влажного выбирайте влагостойкий (ГКЛВ). Толщину и число слоёв сверяйте с системой потолка",
-      quantity: roundDisplay(recScenario.exact_need, 6),
+      name: `Гипсокартонные листы (ГКЛ) ${roundDisplay(sheetWidthM * 1000, 0)}×${roundDisplay(sheetLengthM * 1000, 0)} мм для потолка`,
+      subtitle: `Чистая потребность ${roundDisplay(baseSheets, 2)} листа; запас ${roundDisplay(sheetReservePercent, 1)}% применён один раз перед округлением`,
+      quantity: roundDisplay(baseSheets, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: roundDisplay(recSheets, 6),
+      purchaseQty: recScenario.purchase_quantity,
       category: "Основное",
+      packageInfo: { count: recScenario.buy_plan.packages_count, size: 1, packageUnit: "листов" },
     },
     {
-      name: "Потолочный профиль ПП 60×27×3000 мм",
-      subtitle: "Толщина металла и несущая способность должны соответствовать выбранной комплектной системе",
-      quantity: ppPcs,
+      name: `Потолочный профиль ПП 60×27×${roundDisplay(profileLengthM * 1000, 0)} мм`,
+      subtitle: `Ориентир ${spec.material_rules.pp_m_per_m2} пог. м/м² для одноуровневого каркаса; точную раскладку сверяйте с системой`,
+      quantity: roundDisplay(profileBaseM / profileLengthM, 6),
       unit: "шт",
-      withReserve: ppPcs,
+      withReserve: roundDisplay(profileWithReserveM / profileLengthM, 6),
       purchaseQty: ppPcs,
       category: "Каркас",
     },
     {
-      name: "Направляющий профиль ПН 27×28×3000 мм",
-      subtitle: "Монтируется по периметру через уплотнительную ленту",
-      quantity: pnPcs,
+      name: `Направляющий профиль ПН 27×28×${roundDisplay(profileLengthM * 1000, 0)} мм`,
+      subtitle: `По расчётному периметру ${roundDisplay(perimeter, 2)} м; в режиме площади принята квадратная форма помещения`,
+      quantity: roundDisplay(pnBaseM / profileLengthM, 6),
       unit: "шт",
-      withReserve: pnPcs,
+      withReserve: roundDisplay(pnWithReserveM / profileLengthM, 6),
       purchaseQty: pnPcs,
       category: "Каркас",
     },
     {
-      name: "Подвес прямой для профиля 60×27 мм",
-      subtitle: "Длину подвеса выбирают по требуемому опуску потолка; при большом опуске нужна другая подвесная система",
-      quantity: suspCount,
+      name: "Подвес для профиля 60×27 мм",
+      subtitle: `Ориентир ${spec.material_rules.suspension_per_m2} шт./м²; тип подвеса зависит от опуска и выбранной системы`,
+      quantity: roundDisplay(suspensionsBase, 6),
       unit: "шт",
       withReserve: suspCount,
       purchaseQty: suspCount,
       category: "Каркас",
     },
     {
-      name: "Одноуровневый соединитель («краб») для потолочного профиля 60×27 мм",
-      subtitle: "Используйте соединитель, совместимый с толщиной и геометрией выбранного профиля",
-      quantity: crabCount,
+      name: "Одноуровневый соединитель («краб») для ПП 60×27 мм",
+      subtitle: `Ориентир ${spec.material_rules.connector_per_m2} шт./м² без потерь на раскрой`,
+      quantity: roundDisplay(connectorsBase, 6),
       unit: "шт",
       withReserve: crabCount,
       purchaseQty: crabCount,
@@ -215,102 +180,103 @@ export function computeCanonicalDrywallCeiling(
     },
     {
       name: layers === 2
-        ? "Чёрные саморезы для гипсокартона по металлу 3,5×25 и 3,5×35 мм"
-        : "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм",
-      subtitle: layers === 2
-        ? `Около ${firstLayerScrews} шт. 3,5×25 мм для первого слоя и ${secondLayerScrews} шт. 3,5×35 мм для второго; итог по массе округлён до закупки`
-        : `Около ${firstLayerScrews} шт. для крепления гипсокартона к металлическому профилю; итог по массе округлён до закупки`,
-      quantity: screwsKg,
-      unit: "кг",
-      withReserve: screwsKg,
-      purchaseQty: Math.ceil(screwsKg),
-      category: "Крепёж",
-    },
-    {
-      name: "Саморезы-клопы по металлу 3,5×9,5 мм",
-      subtitle: "Для соединения металлических профилей и крепления соединителей, не для лицевой стороны гипсокартона",
-      quantity: clopCount,
+        ? "Саморезы для ГКЛ по металлу: первый и второй слой"
+        : "Саморезы для ГКЛ по металлу 3,5×25 мм",
+      subtitle: `${roundDisplay(spec.material_rules.screws_per_m2_per_layer, 0)} шт./м² на слой; длину самореза для второго слоя сверяйте с системой`,
+      quantity: roundDisplay(screwsBase, 6),
       unit: "шт",
-      withReserve: clopCount,
-      purchaseQty: clopCount,
+      withReserve: roundDisplay(screwsWithReserve, 6),
+      purchaseQty: screwPacks * screwPackCount,
       category: "Крепёж",
+      packageInfo: { count: screwPacks, size: screwPackCount, packageUnit: "упаковок" },
     },
     {
-      name: "Крепёж к основанию: анкер-клин 6×40 + дюбель-гвоздь 6×40 мм",
-      subtitle: `${ceilingAnchors} металлических анкеров-клиньев для подвесов к бетонному потолку и ${perimeterDowels} дюбель-гвоздей для направляющего профиля; пластиковые дюбели над головой не применяйте`,
-      quantity: dowelCount,
+      name: "Крепёж к основанию: металлические анкеры подвесов и дюбели направляющего профиля",
+      subtitle: `${ceilingAnchors} анкеров для подвесов и ${perimeterDowels} креплений ПН; тип крепежа выбирают по основанию`,
+      quantity: roundDisplay(suspensionsBase + perimeterDowelsBase, 6),
       unit: "шт",
       withReserve: dowelCount,
       purchaseQty: dowelCount,
       category: "Крепёж",
     },
     {
-      name: "Армирующая лента для швов гипсокартона (45 м)",
-      subtitle: "Тип ленты должен соответствовать шпаклёвочной системе; на потолке предпочтительна системная бумажная лента",
-      quantity: serpRolls,
-      unit: "рулонов",
-      withReserve: serpRolls,
-      purchaseQty: serpRolls,
+      name: `Армирующая лента для швов (${roundDisplay(tapeRollM, 1)} м)`,
+      subtitle: `Расчёт ${spec.material_rules.tape_m_per_m2} м/м²; тип ленты должен соответствовать шпаклёвочной системе`,
+      quantity: roundDisplay(tapeBaseM, 6),
+      unit: "м",
+      withReserve: roundDisplay(tapeWithReserveM, 6),
+      purchaseQty: tapeRolls * tapeRollM,
       category: "Отделка",
+      packageInfo: { count: tapeRolls, size: tapeRollM, packageUnit: "рулонов" },
     },
     {
-      name: "Шпаклёвка для стыков гипсокартона (25 кг)",
-      subtitle: "Выбирайте состав, предназначенный для заделки стыков с армирующей лентой",
-      quantity: puttyBags,
-      unit: "мешков",
-      withReserve: puttyBags,
-      purchaseQty: puttyBags,
+      name: `Шпаклёвка для стыков ГКЛ (${roundDisplay(puttyBagKg, 1)} кг)`,
+      subtitle: `Расчёт ${spec.material_rules.putty_kg_per_m2} кг/м² для заделки стыков; сплошное шпаклевание не включено`,
+      quantity: roundDisplay(puttyBaseKg, 6),
+      unit: "кг",
+      withReserve: roundDisplay(puttyWithReserveKg, 6),
+      purchaseQty: puttyBags * puttyBagKg,
       category: "Отделка",
+      packageInfo: { count: puttyBags, size: puttyBagKg, packageUnit: "мешков" },
     },
     {
-      ...buildPrimerMaterial(primerL, { reserveFactor: PRIMER_RESERVE }),
-      subtitle: "Для подготовки гипсокартона перед сплошной отделкой; совместимость проверяйте по финишному покрытию",
+      name: `Грунтовка (${roundDisplay(primerCanL, 1)} л)`,
+      subtitle: `Расход ${roundDisplay(primerRateLPerM2, 3)} л/м² перенесите с этикетки выбранного состава`,
+      quantity: roundDisplay(primerBaseL, 6),
+      unit: "л",
+      withReserve: roundDisplay(primerWithReserveL, 6),
+      purchaseQty: primerCans * primerCanL,
       category: "Отделка",
+      packageInfo: { count: primerCans, size: primerCanL, packageUnit: "канистр" },
     },
   ];
 
-
-  const practicalNotes: string[] = [];
-  if (area > 50) {
-    practicalNotes.push(`Потолок ${roundDisplay(area, 0)} м² — обязательны деформационные швы, иначе трещины`);
+  const warnings: string[] = [];
+  if (layers === 2) {
+    warnings.push("Для двух слоёв нужна разбежка стыков; допустимость каркаса и нагрузки проверьте по выбранной системе");
   }
-  practicalNotes.push("Подвесы — через каждые 700 мм вдоль каждого профиля, не реже");
+  if (area > spec.warnings_rules.deformation_joint_area_threshold_m2) {
+    warnings.push("Площадь более 50 м² — расположение деформационных швов должен определить проект");
+  }
 
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials,
     totals: {
-      area,
+      area: roundDisplay(area, 3),
+      perimeter: roundDisplay(perimeter, 3),
       inputMode,
       length: inputMode === 0 ? roundDisplay(length, 3) : 0,
       width: inputMode === 0 ? roundDisplay(width, 3) : 0,
       layers,
-      profileStep,
-      sheets,
-      mainProfileRows,
-      mainM: roundDisplay(mainM, 3),
-      crossRows,
-      crossM: roundDisplay(crossM, 3),
-      totalProfileM: roundDisplay(totalProfileM, 3),
+      sheetWidthMm: roundDisplay(sheetWidthM * 1000, 0),
+      sheetLengthMm: roundDisplay(sheetLengthM * 1000, 0),
+      sheetArea: roundDisplay(sheetArea, 6),
+      sheetReservePercent: roundDisplay(sheetReservePercent, 3),
+      baseSheets: roundDisplay(baseSheets, 6),
+      sheets: recScenario.purchase_quantity,
+      profileLengthM: roundDisplay(profileLengthM, 3),
+      profileReservePercent: roundDisplay(profileReservePercent, 3),
+      profileBaseM: roundDisplay(profileBaseM, 6),
+      totalProfileM: roundDisplay(profileWithReserveM, 6),
       ppPcs,
-      pnM: roundDisplay(pnM, 3),
+      pnM: roundDisplay(pnWithReserveM, 6),
       pnPcs,
       suspCount,
       crabCount,
-      screwsGKL,
-      firstLayerScrews,
-      secondLayerScrews,
-      screwsKg,
-      clopCount,
+      screwsGKL: roundDisplay(screwsBase, 6),
+      screwsWithReserve: roundDisplay(screwsWithReserve, 6),
+      screwPacks,
+      screwPackCount,
       dowelCount,
       ceilingAnchors,
       perimeterDowels,
-      serpM,
-      serpRolls,
-      puttyKg,
+      tapeM: roundDisplay(tapeWithReserveM, 6),
+      tapeRolls,
+      puttyKg: roundDisplay(puttyWithReserveKg, 6),
       puttyBags,
-      primerL: roundDisplay(primerL, 3),
+      primerL: roundDisplay(primerWithReserveL, 6),
       primerCans,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,
@@ -320,9 +286,19 @@ export function computeCanonicalDrywallCeiling(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
-    practicalNotes,
+    practicalNotes: [
+      `Профиль, подвесы и соединители оценены по ориентировочному расходу одноуровневой системы: ${spec.material_rules.pp_m_per_m2} пог. м, ${spec.material_rules.suspension_per_m2} подвеса и ${spec.material_rules.connector_per_m2} соединителя на 1 м²`,
+      "Результат — закупочная оценка. Шаги профилей, точки крепления, нагрузки светильников и тип подвеса сверяйте с альбомом выбранной комплектной системы",
+      "Запасы листов, профиля, крепежа и отделки показаны отдельно и применяются по одному разу",
+    ],
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(sheetsRaw, "drywall", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Режим точности не добавляет скрытых коэффициентов: итог определяется геометрией, явными запасами и фасовками"],
+    },
   };
 }

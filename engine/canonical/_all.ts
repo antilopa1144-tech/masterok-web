@@ -2814,26 +2814,14 @@ export interface DrywallCeilingPackagingRules {
 }
 
 export interface DrywallCeilingMaterialRules {
-  sheet_area: number;
-  sheet_reserve: number;
-  profile_reserve: number;
-  cross_step: number;
-  suspension_step: number;
-  screws_per_sheet: number;
-  screws_per_kg: number;
-  screw_reserve: number;
-  clop_per_susp: number;
-  clop_per_crab: number;
-  dowel_step: number;
-  serpyanka_coeff: number;
-  serpyanka_reserve: number;
-  serpyanka_roll: number;
-  putty_kg_per_m: number;
-  putty_bag: number;
-  primer_l_per_m2: number;
-  primer_reserve: number;
-  primer_can: number;
-  profile_length: number;
+  pp_m_per_m2: number;
+  connector_per_m2: number;
+  suspension_per_m2: number;
+  screws_per_m2_per_layer: number;
+  perimeter_dowel_step_m: number;
+  tape_m_per_m2: number;
+  putty_kg_per_m2: number;
+  max_extra_sheet_percent: number;
 }
 
 export interface DrywallCeilingWarningRules {
