@@ -3,9 +3,8 @@ import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { CONSUMPTION_NORMS, type NormCategory } from "@/lib/tools/norms-data";
-import { calcHref } from "@/lib/tools/config";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import ConsumptionNormsExplorer from "@/components/tools/ConsumptionNormsExplorer";
 
 const META = {
   title: "Таблица норм расхода строительных материалов на 1 м²",
@@ -17,71 +16,6 @@ export const metadata: Metadata = buildToolPageMetadata("normy-raskhoda", {
   title: META.title,
   description: META.description,
 });
-
-function NormTable({ category }: { category: NormCategory }) {
-  return (
-    <section id={category.id} className="card scroll-mt-24 overflow-hidden">
-      <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <h2 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <span>{category.icon}</span>
-          {category.title}
-        </h2>
-        {category.calculator && (
-          <Link
-            href={calcHref(category.calculator)}
-            className="text-xs text-accent-700 hover:underline no-underline"
-          >
-            Калькулятор →
-          </Link>
-        )}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50">
-              <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400">Материал</th>
-              <th className="text-right px-4 py-2 font-medium text-slate-500 dark:text-slate-400">Расход</th>
-              <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Условия</th>
-              <th className="text-left px-4 py-2 font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">Основание данных</th>
-            </tr>
-          </thead>
-          <tbody>
-            {category.rows.map((row, i) => (
-              <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="px-4 py-2.5 text-slate-700 dark:text-slate-200">
-                  {row.material}
-                  <a
-                    href={row.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 block text-[11px] text-accent-700 hover:underline md:hidden"
-                  >
-                    Официальный источник ↗
-                  </a>
-                </td>
-                <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                  {row.consumption} <span className="text-slate-400 font-normal">{row.unit}</span>
-                </td>
-                <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs hidden sm:table-cell">{row.conditions}</td>
-                <td className="px-4 py-2.5 text-xs hidden md:table-cell">
-                  <a
-                    href={row.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent-700 hover:underline"
-                    title={`Проверено ${row.verifiedAt}`}
-                  >
-                    {row.source} ↗
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
 
 const breadcrumbLd = {
   "@context": "https://schema.org",
@@ -108,32 +42,54 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-      <div className="bg-gradient-to-b from-cyan-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container py-6">
-          <Breadcrumbs
-            items={[
-              { href: "/instrumenty/", label: "Инструменты" },
-              { label: "Нормы расхода" },
-            ]}
-          />
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
-            Таблица норм расхода строительных материалов на 1 м²
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-            Расход на 1 м² из актуальных технических карт производителей. У каждой строки указаны конкретный материал, условия применения и ссылка на первоисточник.
+      <div className="border-b border-slate-200 bg-gradient-to-b from-cyan-50 to-white dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
+        <div className="page-container py-4 sm:py-6">
+          <Link
+            href="/instrumenty/"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-slate-500 hover:text-cyan-700 sm:hidden"
+          >
+            ← Все инструменты
+          </Link>
+          <div className="hidden sm:block">
+            <Breadcrumbs
+              items={[
+                { href: "/instrumenty/", label: "Инструменты" },
+                { label: "Нормы расхода" },
+              ]}
+            />
+          </div>
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300 sm:hidden">
+            Проверенный справочник
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-400 mt-2">
-            Все строки построчно проверены 1 августа 2026 г. по официальным страницам и техническим картам производителей.
+          <h1 className="mt-0.5 text-2xl font-bold text-slate-900 dark:text-slate-100 sm:mt-4 md:text-3xl">
+            <span className="sm:hidden">Нормы расхода материалов на 1 м²</span>
+            <span className="hidden sm:inline">Таблица норм расхода строительных материалов на 1 м²</span>
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400 sm:text-base">
+            <span className="sm:hidden">Расход по техническим картам производителей — с условиями и первоисточником.</span>
+            <span className="hidden sm:inline">Расход на 1 м² из актуальных технических карт производителей. У каждой строки указаны конкретный материал, условия применения и ссылка на первоисточник.</span>
+          </p>
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-400">
+            <span className="inline-flex rounded-full border border-cyan-200 bg-white/70 px-2.5 py-1 text-cyan-800 dark:border-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-300 sm:hidden">
+              Проверено 01.08.2026
+            </span>
+            <span className="hidden sm:inline">Все строки построчно проверены 1 августа 2026 г. по официальным страницам и техническим картам производителей.</span>
           </p>
         </div>
       </div>
 
-      <div className="page-container py-8 space-y-6">
-        <section className="card p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Как рассчитать расход материала
-          </h2>
-          <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      <div className="page-container space-y-4 py-4 sm:space-y-6 sm:py-8">
+        <ConsumptionNormsExplorer />
+
+        <details className="card group overflow-hidden">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5">
+            <span>
+              <span className="block font-bold text-slate-900 dark:text-slate-100">Как рассчитать расход материала</span>
+              <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Формула, пример и переход от нормы к упаковкам</span>
+            </span>
+            <span aria-hidden className="text-lg text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="space-y-3 border-t border-slate-100 px-4 py-4 text-sm leading-relaxed text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:px-5">
             <p>
               Базовая потребность считается по формуле: площадь × расход на 1 м². Если норма дана для
               определённой толщины или одного слоя, сначала приведите её к фактической толщине и числу
@@ -145,26 +101,8 @@ export default function Page() {
               профильном калькуляторе — там учитываются толщина слоя, неровность основания и фасовка.
             </p>
           </div>
-        </section>
+        </details>
 
-        <nav aria-label="Разделы таблицы норм расхода" className="card p-4 sm:p-5">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Перейти к материалу</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {CONSUMPTION_NORMS.map((category) => (
-              <a
-                key={category.id}
-                href={`#${category.id}`}
-                className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-800 hover:border-cyan-300 hover:bg-cyan-100 dark:border-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-300"
-              >
-                {category.title}
-              </a>
-            ))}
-          </div>
-        </nav>
-
-        {CONSUMPTION_NORMS.map((cat) => (
-          <NormTable key={cat.id} category={cat} />
-        ))}
         <p className="text-xs text-slate-400 dark:text-slate-400 leading-relaxed">
           * Значения относятся только к указанным материалам и условиям. Фактический расход зависит от
           основания, способа нанесения, толщины слоя и квалификации мастера. Перед закупкой повторно
