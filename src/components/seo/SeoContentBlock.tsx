@@ -54,6 +54,7 @@ function AccordionItem({ id, title, icon, children, defaultOpen }: {
   // полный вес контенту в закрытых <details>, если он в DOM (а он в DOM).
   return (
     <details
+      id={id}
       className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden"
       open={defaultOpen}
     >
@@ -109,7 +110,11 @@ export default function SeoContentBlock({
         <AccordionItem id={`${calculatorId}-howto`} title="Как пользоваться" icon="📋" defaultOpen>
           <ol className="px-5 py-4 space-y-2.5">
             {howToUse!.map((step, i) => (
-              <li key={i} className="flex items-start gap-3">
+              <li
+                key={i}
+                id={`${calculatorId}-step-${i + 1}`}
+                className="flex scroll-mt-24 items-start gap-3"
+              >
                 <span
                   className="flex w-6 h-6 rounded-full text-xs font-bold items-center justify-center shrink-0 mt-0.5 text-white"
                   style={{ backgroundColor: accentColor }}

@@ -42,4 +42,28 @@ describe("SEO-страницы калькуляторов", () => {
       "<h1 class=\"text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl dark:text-white\">Калькулятор арматуры — вес, метраж и вязальная проволока</h1>",
     );
   });
+
+  it("связывает HowTo JSON-LD с видимыми шагами", async () => {
+    const page = await CalculatorPage({
+      params: Promise.resolve({
+        category: "inzhenernye",
+        slug: "elektrika",
+      }),
+    });
+    const html = renderToStaticMarkup(page);
+    const schemas = [
+      ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+    ].map((match) => JSON.parse(match[1]) as {
+      "@type"?: string;
+      step?: Array<{ url: string }>;
+    });
+    const howToSteps = schemas.find((schema) => schema["@type"] === "HowTo")?.step ?? [];
+
+    expect(html).toContain('id="engineering_electrics-howto"');
+    expect(howToSteps.length).toBeGreaterThan(0);
+    for (const step of howToSteps) {
+      const stepId = new URL(step.url).hash.slice(1);
+      expect(html).toContain(`id="${stepId}"`);
+    }
+  });
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 import { getCalculatorBySlug } from "@/lib/calculators";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
@@ -13,6 +13,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
+import { getCalculatorCategoryRedirect } from "@/lib/calculators/canonical-path";
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -40,7 +41,9 @@ function RelatedCalcCard({ meta }: { meta: (typeof ALL_CALCULATORS_META)[number]
   );
 }
 
-export const dynamicParams = false;
+// Keep canonical static paths generated above, but let legacy/wrong-category URLs
+// reach the page so they can return a permanent redirect instead of a 404.
+export const dynamicParams = true;
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
@@ -48,9 +51,11 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { category: requestedCategory, slug } = await params;
   const calc = getCalculatorBySlug(slug);
   if (!calc) return {};
+  const canonicalRedirect = getCalculatorCategoryRedirect(requestedCategory, calc);
+  if (canonicalRedirect) permanentRedirect(canonicalRedirect);
   const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
   return buildPageMetadata({
     title: titleWithoutSiteSuffix(calc.metaTitle),
@@ -63,9 +68,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CalculatorPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { category: requestedCategory, slug } = await params;
   const calc = getCalculatorBySlug(slug);
   if (!calc) notFound();
+
+  const canonicalRedirect = getCalculatorCategoryRedirect(requestedCategory, calc);
+  if (canonicalRedirect) permanentRedirect(canonicalRedirect);
 
   const category = getCategoryById(calc.category);
   const companionOrder = new Map(
