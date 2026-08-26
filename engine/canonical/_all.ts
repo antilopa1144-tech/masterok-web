@@ -2993,20 +2993,18 @@ export interface WoodWallCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 export interface DecorStonePackagingRules {
   unit: string;
-  package_size: number;
 }
 
 export interface DecorStoneMaterialRules {
-  stone_reserve: number;
-  glue_kg_per_m2: number[];
-  glue_reserve: number;
-  glue_bag: number;
-  primer_l_per_m2: number;
-  primer_reserve: number;
-  primer_can: number;
-  grout_base_factor: number;
-  grout_reserve: number;
-  grout_bag: number;
+  default_reserve_percent: number;
+  default_pack_area_m2: number;
+  default_glue_rate_kg_m2: number;
+  default_glue_bag_kg: number;
+  default_grout_rate_kg_m2: number;
+  default_grout_bag_kg: number;
+  default_primer_rate_l_m2: number;
+  default_primer_layers: number;
+  default_primer_can_l: number;
 }
 
 export interface DecorStoneWarningRules {
