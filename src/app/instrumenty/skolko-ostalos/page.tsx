@@ -42,20 +42,22 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <div className="bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="page-container py-6">
-          <Breadcrumbs items={[
-            { href: "/instrumenty/", label: "Инструменты" },
-            { label: "Сколько осталось" },
-          ]} />
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-4">
+        <div className="page-container py-3 sm:py-6">
+          <div className="sr-only sm:not-sr-only">
+            <Breadcrumbs items={[
+              { href: "/instrumenty/", label: "Инструменты" },
+              { label: "Сколько осталось" },
+            ]} />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:mt-4 sm:text-2xl md:text-3xl">
             На какую площадь хватит материала?
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
+          <p className="mt-1 hidden max-w-2xl text-slate-500 dark:text-slate-400 sm:block sm:mt-2">
             Введите сколько материала у вас осталось — калькулятор покажет на какую площадь его хватит.
           </p>
         </div>
       </div>
-      <div className="page-container py-8">
+      <div className="page-container py-4 sm:py-8">
         <ReverseCalculator />
       </div>
       <ToolPageExtras slug="skolko-ostalos" />
