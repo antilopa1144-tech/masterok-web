@@ -5,6 +5,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 import { scheduleMetrikaPageview } from "@/lib/analytics/yandex-metrika-pageview";
 
 declare global {
@@ -21,6 +22,7 @@ export default function YandexMetrika() {
   const previousUrl = useRef("");
 
   useEffect(() => {
+    if (!isProductionAnalyticsBrowser()) return;
     if (!YANDEX_METRIKA_COUNTER_ID && !GOOGLE_ANALYTICS_ID) return;
 
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");

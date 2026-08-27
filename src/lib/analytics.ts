@@ -4,12 +4,13 @@
  */
 
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 
 export function trackEvent(
   target: string,
   params?: Record<string, unknown>,
 ): void {
-  if (typeof window === "undefined") return;
+  if (!isProductionAnalyticsBrowser()) return;
   try {
     if (YANDEX_METRIKA_COUNTER_ID) {
       window.ym?.(YANDEX_METRIKA_COUNTER_ID, "reachGoal", target, params);

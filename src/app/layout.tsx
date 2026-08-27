@@ -14,6 +14,7 @@ import StorageMigrationInitializer from "@/components/storage/StorageMigrationIn
 import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
 import { getGoogleAnalyticsInitScript } from "@/lib/analytics/google-analytics";
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER } from "@/lib/analytics/config";
+import { isProductionAnalyticsHost } from "@/lib/analytics/runtime";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
@@ -124,42 +125,54 @@ export default async function RootLayout({
   // Nonce из middleware для CSP — позволяет убрать 'unsafe-inline' из script-src
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") ?? undefined;
+  const requestHost = headersList.get("x-forwarded-host") ?? headersList.get("host");
+  const analyticsEnabled = isProductionAnalyticsHost(requestHost);
 
   return (
     <html lang="ru" className={inter.variable} suppressHydrationWarning>
       <head>
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Блог`} href="/rss.xml" />
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        {/* Очередь ym должна существовать до гидрации и первого SPA-перехода.
-            Сам tag.js по-прежнему загружается отложенно внутри скрипта. */}
-        <script id="ym-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
-        <script id="ga-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: GA_INIT_SCRIPT }} />
+        {analyticsEnabled ? (
+          <>
+            {/* Очередь ym должна существовать до гидрации и первого SPA-перехода.
+                Сам tag.js по-прежнему загружается отложенно внутри скрипта. */}
+            <script id="ym-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: YM_INIT_SCRIPT }} />
+            <script id="ga-init" nonce={nonce} dangerouslySetInnerHTML={{ __html: GA_INIT_SCRIPT }} />
+          </>
+        ) : null}
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
-        <noscript>
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_COUNTER}`}
-              style={{ position: "absolute", left: "-9999px" }}
-              alt=""
-              aria-hidden="true"
-            />
-          </div>
-        </noscript>
+        {analyticsEnabled ? (
+          <noscript>
+            <div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_COUNTER}`}
+                style={{ position: "absolute", left: "-9999px" }}
+                alt=""
+                aria-hidden="true"
+              />
+            </div>
+          </noscript>
+        ) : null}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-accent-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium"
         >
           Перейти к основному содержимому
         </a>
-        <YandexMetrikaLoader />
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
-          strategy="afterInteractive"
-          nonce={nonce}
-        />
-        <WebVitalsReporter />
+        {analyticsEnabled ? (
+          <>
+            <YandexMetrikaLoader />
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+              strategy="afterInteractive"
+              nonce={nonce}
+            />
+            <WebVitalsReporter />
+          </>
+        ) : null}
         <StorageMigrationInitializer />
         <Header />
         <main id="main-content" className="flex-1">{children}</main>

@@ -3,6 +3,7 @@
 import { useReportWebVitals } from "next/web-vitals";
 import { Suspense } from "react";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 
 /**
  * Real User Monitoring — отправляет Web Vitals (LCP, INP, CLS, FCP, TTFB)
@@ -24,6 +25,7 @@ function reportMetric(metric: {
   delta: number;
   navigationType: string;
 }) {
+  if (!isProductionAnalyticsBrowser()) return;
   const ym = getYm();
   if (!ym) return;
 

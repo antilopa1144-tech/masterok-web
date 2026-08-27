@@ -17,7 +17,11 @@ describe("tool analytics", () => {
   beforeEach(() => {
     ym.mockClear();
     gtag.mockClear();
-    vi.stubGlobal("window", { ym, gtag });
+    vi.stubGlobal("window", {
+      location: { hostname: "getmasterok.ru" },
+      ym,
+      gtag,
+    });
   });
 
   afterEach(() => {
@@ -79,5 +83,18 @@ describe("tool analytics", () => {
       "calculator_related_click",
       { calculator: "laminat", target: "raskladka-laminata" },
     );
+  });
+
+  it("не загрязняет production-счётчики с localhost", () => {
+    vi.stubGlobal("window", {
+      location: { hostname: "localhost" },
+      ym,
+      gtag,
+    });
+
+    trackToolStart("raskladka-plitki", "surface_size");
+
+    expect(ym).not.toHaveBeenCalled();
+    expect(gtag).not.toHaveBeenCalled();
   });
 });
