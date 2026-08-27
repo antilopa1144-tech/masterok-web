@@ -1932,15 +1932,7 @@ export interface TerracePackagingRules {
 }
 
 export interface TerraceMaterialRules {
-  board_widths: Record<string, number>;
-  board_gaps: Record<string, number>;
-  lag_length: number;
-  treatment_l_per_m2: number;
-  treatment_layers: Record<string, number>;
-  geotextile_roll: number;
-  board_reserve: number;
-  lag_reserve: number;
-  klaymer_count_per_lag_row: number;
+  max_extra_board_percent: number;
 }
 
 export interface TerraceWarningRules {

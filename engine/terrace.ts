@@ -1,126 +1,121 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
 import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
-import type {
-  TerraceCanonicalSpec,
-  CanonicalCalculatorResult,
-  CanonicalMaterialResult,
-} from "./canonical";
+import type { TerraceCanonicalSpec, CanonicalCalculatorResult, CanonicalMaterialResult } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { type AccuracyMode, DEFAULT_ACCURACY_MODE, ACCURACY_MODE_LABELS } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-
-/* ─── constants ─── */
-
-const BOARD_WIDTHS: Record<number, number> = { 0: 150, 1: 120, 2: 90, 3: 120 };
-const BOARD_GAPS: Record<number, number> = { 0: 5, 1: 5, 2: 5, 3: 0 };
-const LAG_LENGTH = 3;
-const TREATMENT_L_PER_M2 = 0.15;
-const TREATMENT_LAYERS: Record<number, number> = { 0: 0, 1: 2, 2: 2 };
-const GEOTEXTILE_ROLL = 50;
-const BOARD_RESERVE = 1.1;
-const LAG_RESERVE = 1.05;
-const SCREWS_PER_KG = 600;  // 3.5×35 мм (террасные)
-
-/* ─── labels ─── */
+import type { FactorTable } from "./factors";
 
 const BOARD_TYPE_LABELS: Record<number, string> = {
-  0: "Древесно-полимерный композит (ДПК), 150 мм",
-  1: "Лиственница 120 мм",
-  2: "Сосна 90 мм",
-  3: "Планкен 120 мм",
+  0: "Террасная доска из ДПК",
+  1: "Террасная доска из лиственницы",
+  2: "Террасная доска из сосны",
+  3: "Планкен для настила",
 };
 
 const TREATMENT_LABELS: Record<number, string> = {
-  0: "Без обработки",
-  1: "Масло",
-  2: "Антисептик",
+  1: "Масло для дерева",
+  2: "Антисептик для дерева",
 };
-
-/* ─── inputs ─── */
 
 interface TerraceInputs {
   length?: number;
   width?: number;
   boardType?: number;
   boardLength?: number;
+  boardWidthMm?: number;
+  gapMm?: number;
+  offcutReuseMode?: number;
+  boardReservePercent?: number;
   lagStep?: number;
+  lagLengthM?: number;
+  lagReservePercent?: number;
+  clipsPerIntersection?: number;
+  starterClipsPerRow?: number;
+  clipPackCount?: number;
+  fastenersPerClip?: number;
+  fastenerPackCount?: number;
+  fastenerReservePercent?: number;
   withTreatment?: number;
+  treatmentRateLPerM2PerLayer?: number;
+  treatmentLayers?: number;
+  treatmentCanL?: number;
+  treatmentReservePercent?: number;
+  withGeotextile?: number;
+  geotextileRollM2?: number;
+  geotextileReservePercent?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── helpers ─── */
-
-/* ─── main ─── */
+const percentMultiplier = (percent: number) => 1 + percent / 100;
 
 export function computeCanonicalTerrace(
   spec: TerraceCanonicalSpec,
   inputs: TerraceInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const length = Math.max(1, Math.min(30, inputs.length ?? getInputDefault(spec, "length", 5)));
   const width = Math.max(1, Math.min(15, inputs.width ?? getInputDefault(spec, "width", 3)));
   const boardType = Math.max(0, Math.min(3, Math.round(inputs.boardType ?? getInputDefault(spec, "boardType", 0))));
-  const boardLength = Math.max(2000, Math.min(6000, inputs.boardLength ?? getInputDefault(spec, "boardLength", 3000)));
-  const lagStep = Math.max(300, Math.min(600, inputs.lagStep ?? getInputDefault(spec, "lagStep", 400)));
+  const boardLengthMm = Math.max(1000, Math.min(12000, inputs.boardLength ?? getInputDefault(spec, "boardLength", 3000)));
+  const boardLengthM = boardLengthMm / 1000;
+  const boardWidthMm = Math.max(70, Math.min(300, inputs.boardWidthMm ?? getInputDefault(spec, "boardWidthMm", 150)));
+  const gapMm = Math.max(0, Math.min(20, inputs.gapMm ?? getInputDefault(spec, "gapMm", 5)));
+  const offcutReuseMode = Math.round(inputs.offcutReuseMode ?? getInputDefault(spec, "offcutReuseMode", 0)) === 1 ? 1 : 0;
+  const boardReservePercent = Math.max(0, inputs.boardReservePercent ?? getInputDefault(spec, "boardReservePercent", 10));
+  const lagStepMm = Math.max(200, Math.min(1000, inputs.lagStep ?? getInputDefault(spec, "lagStep", 400)));
+  const lagLengthM = Math.max(1, inputs.lagLengthM ?? getInputDefault(spec, "lagLengthM", 3));
+  const lagReservePercent = Math.max(0, inputs.lagReservePercent ?? getInputDefault(spec, "lagReservePercent", 5));
+  const clipsPerIntersection = Math.max(0, inputs.clipsPerIntersection ?? getInputDefault(spec, "clipsPerIntersection", 1));
+  const starterClipsPerRow = Math.max(0, inputs.starterClipsPerRow ?? getInputDefault(spec, "starterClipsPerRow", 2));
+  const clipPackCount = Math.max(1, Math.round(inputs.clipPackCount ?? getInputDefault(spec, "clipPackCount", 100)));
+  const fastenersPerClip = Math.max(0, inputs.fastenersPerClip ?? getInputDefault(spec, "fastenersPerClip", 1));
+  const fastenerPackCount = Math.max(1, Math.round(inputs.fastenerPackCount ?? getInputDefault(spec, "fastenerPackCount", 100)));
+  const fastenerReservePercent = Math.max(0, inputs.fastenerReservePercent ?? getInputDefault(spec, "fastenerReservePercent", 5));
   const withTreatment = Math.max(0, Math.min(2, Math.round(inputs.withTreatment ?? getInputDefault(spec, "withTreatment", 0))));
-
+  const treatmentRate = Math.max(0.01, inputs.treatmentRateLPerM2PerLayer ?? getInputDefault(spec, "treatmentRateLPerM2PerLayer", 0.1));
+  const treatmentLayers = Math.max(1, Math.round(inputs.treatmentLayers ?? getInputDefault(spec, "treatmentLayers", 2)));
+  const treatmentCanL = Math.max(0.5, inputs.treatmentCanL ?? getInputDefault(spec, "treatmentCanL", 2.5));
+  const treatmentReservePercent = Math.max(0, inputs.treatmentReservePercent ?? getInputDefault(spec, "treatmentReservePercent", 10));
+  const withGeotextile = Math.round(inputs.withGeotextile ?? getInputDefault(spec, "withGeotextile", 1)) === 1 ? 1 : 0;
+  const geotextileRollM2 = Math.max(5, inputs.geotextileRollM2 ?? getInputDefault(spec, "geotextileRollM2", 50));
+  const geotextileReservePercent = Math.max(0, inputs.geotextileReservePercent ?? getInputDefault(spec, "geotextileReservePercent", 5));
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("flooring", accuracyMode);
 
-  /* ─── geometry ─── */
   const area = length * width;
-  const boardWidth = BOARD_WIDTHS[boardType] ?? 150;
-  const gap = BOARD_GAPS[boardType] ?? 5;
-  const boardPitch = (boardWidth + gap) / 1000;
-  const rowCount = Math.ceil(width / boardPitch);
-  const boardsPerRow = Math.ceil(length / (boardLength / 1000));
-  const totalBoards = Math.ceil(rowCount * boardsPerRow * BOARD_RESERVE);
+  const boardPitchM = (boardWidthMm + gapMm) / 1000;
+  const rowCount = Math.ceil((width + gapMm / 1000) / boardPitchM);
+  const boardsPerRow = Math.ceil(length / boardLengthM);
+  const safeBaseBoards = rowCount * boardsPerRow;
+  const sharedCutBaseBoards = rowCount * length / boardLengthM;
+  const baseBoardExact = offcutReuseMode === 1 ? sharedCutBaseBoards : safeBaseBoards;
+  const baseBoardPurchase = Math.ceil(baseBoardExact);
+  const totalBoardLinearM = rowCount * length;
+  const baseCutWasteM = Math.max(0, baseBoardPurchase * boardLengthM - totalBoardLinearM);
+  const jointCount = Math.max(0, baseBoardPurchase - rowCount);
 
-  /* ─── lags ─── */
-  const lagRowCount = Math.ceil(length / (lagStep / 1000)) + 1;
-  const lagTotalLen = lagRowCount * width * LAG_RESERVE;
-  const lagPcs = Math.ceil(lagTotalLen / LAG_LENGTH);
-
-  /* ─── fasteners ─── */
-  const klaymerCount = lagRowCount * rowCount;
-  const screwPcs = Math.ceil(lagRowCount * rowCount * (boardType === 3 ? 2 : 1.2));
-  const screwKg = Math.ceil(screwPcs / SCREWS_PER_KG * 10) / 10;
-
-  /* ─── treatment ─── */
-  const treatmentLayers = TREATMENT_LAYERS[withTreatment] ?? 0;
-  const treatmentL = roundDisplay(area * treatmentLayers * TREATMENT_L_PER_M2 * 1.1, 2);
-
-  /* ─── geotextile ─── */
-  const geotextileRolls = Math.ceil(area * 1.05 / GEOTEXTILE_ROLL);
-
-  /* ─── scenarios ─── */
-  const basePrimaryRaw = totalBoards;
-  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
-  const packageOptions = [{
-    size: 1,
-    label: "terrace-board",
-    unit: "шт",
-  }];
-
+  const packageOptions = [{ size: 1, label: "terrace-board", unit: "шт" }];
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
+    const reservePercent = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? boardReservePercent + spec.material_rules.max_extra_board_percent
+        : boardReservePercent;
+    const exactNeed = roundDisplay(baseBoardExact * percentMultiplier(reservePercent), 6);
     const packaging = optimizePackaging(exactNeed, packageOptions);
-
     acc[scenario] = {
       exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
+      purchase_quantity: packaging.purchaseQuantity,
       leftover: roundDisplay(packaging.leftover, 6),
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `boardType:${boardType}`,
-        `lagStep:${lagStep}`,
-        `packaging:${packaging.package.label}`,
+        `board_type:${boardType}`,
+        `offcut_reuse_mode:${offcutReuseMode}`,
+        "scenario_policy:explicit_board_reserve",
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        field_multiplier: roundDisplay(percentMultiplier(reservePercent), 6),
+        reserve_percent: roundDisplay(reservePercent, 3),
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -129,90 +124,106 @@ export function computeCanonicalTerrace(
         unit: packaging.package.unit,
       },
     };
-
     return acc;
   }, {} as ScenarioBundle);
 
   const recScenario = scenarios.REC;
-  const hiddenFastener = boardType === 0
-    ? {
-        name: "Монтажные клипсы для доски из древесно-полимерного композита (ДПК)",
-        subtitle: "Стартовые и рядовые клипсы должны соответствовать пазу выбранной доски",
-      }
-    : {
-        name: "Скрытый крепёж для террасной доски",
-        subtitle: "Тип крепления выбирают по профилю и толщине деревянной доски",
-      };
+  const lagRowCount = Math.ceil(length / (lagStepMm / 1000)) + 1;
+  const lagBaseM = lagRowCount * width;
+  const lagWithReserveM = lagBaseM * percentMultiplier(lagReservePercent);
+  const lagPcs = Math.ceil(lagWithReserveM / lagLengthM);
+  const clipBaseCount = rowCount * lagRowCount * clipsPerIntersection + rowCount * starterClipsPerRow;
+  const clipWithReserveCount = clipBaseCount * percentMultiplier(fastenerReservePercent);
+  const clipPacks = Math.ceil(clipWithReserveCount / clipPackCount);
+  const fastenerBaseCount = clipBaseCount * fastenersPerClip;
+  const fastenerWithReserveCount = fastenerBaseCount * percentMultiplier(fastenerReservePercent);
+  const fastenerPacks = Math.ceil(fastenerWithReserveCount / fastenerPackCount);
+  const treatmentBaseL = withTreatment > 0 ? area * treatmentRate * treatmentLayers : 0;
+  const treatmentWithReserveL = treatmentBaseL * percentMultiplier(treatmentReservePercent);
+  const treatmentCans = treatmentWithReserveL > 0 ? Math.ceil(treatmentWithReserveL / treatmentCanL) : 0;
+  const geotextileBaseM2 = withGeotextile === 1 ? area : 0;
+  const geotextileWithReserveM2 = geotextileBaseM2 * percentMultiplier(geotextileReservePercent);
+  const geotextileRolls = geotextileWithReserveM2 > 0 ? Math.ceil(geotextileWithReserveM2 / geotextileRollM2) : 0;
 
-  /* ─── materials ─── */
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `${BOARD_TYPE_LABELS[boardType]} (${boardLength} мм)`,
-      quantity: roundDisplay(recScenario.exact_need, 6),
+      name: `${BOARD_TYPE_LABELS[boardType]} ${roundDisplay(boardWidthMm, 0)}×${roundDisplay(boardLengthMm, 0)} мм`,
+      subtitle: offcutReuseMode === 0
+        ? `Безопасный раскрой: каждый из ${rowCount} рядов начинается целой доской; пригодные обрезки не переносятся между рядами`
+        : `Оптимистичный раскрой: пригодные обрезки переносятся между рядами; подтвердите схему в инструменте раскладки`,
+      quantity: roundDisplay(baseBoardExact, 6),
       unit: "шт",
-      withReserve: Math.ceil(recScenario.exact_need),
-      purchaseQty: Math.ceil(recScenario.exact_need),
+      withReserve: recScenario.exact_need,
+      purchaseQty: recScenario.purchase_quantity,
       category: "Доска",
+      packageInfo: { count: recScenario.buy_plan.packages_count, size: 1, packageUnit: "досок" },
     },
     {
-      name: `Лаги 50×50 мм (${LAG_LENGTH} м)`,
-      quantity: lagPcs,
+      name: `Лаги выбранной системы (${roundDisplay(lagLengthM, 2)} м)`,
+      subtitle: `Шаг ${roundDisplay(lagStepMm, 0)} мм взят из формы; сечение, материал, двойные лаги у стыков и опоры сверяйте с паспортом системы`,
+      quantity: roundDisplay(lagBaseM / lagLengthM, 6),
       unit: "шт",
-      withReserve: lagPcs,
+      withReserve: roundDisplay(lagWithReserveM / lagLengthM, 6),
       purchaseQty: lagPcs,
       category: "Каркас",
     },
     {
-      name: hiddenFastener.name,
-      subtitle: hiddenFastener.subtitle,
-      quantity: klaymerCount,
+      name: boardType === 0 ? "Монтажные клипсы выбранной системы ДПК" : "Скрытый крепёж выбранной системы",
+      subtitle: `${roundDisplay(clipsPerIntersection, 2)} на пересечение и ${roundDisplay(starterClipsPerRow, 2)} стартовых/финишных на ряд`,
+      quantity: roundDisplay(clipBaseCount, 6),
       unit: "шт",
-      withReserve: klaymerCount,
-      purchaseQty: klaymerCount,
+      withReserve: roundDisplay(clipWithReserveCount, 6),
+      purchaseQty: clipPacks * clipPackCount,
       category: "Крепёж",
+      packageInfo: { count: clipPacks, size: clipPackCount, packageUnit: "упаковок" },
     },
     {
-      name: "Саморезы для скрытого крепежа 3,5×35 мм, нержавеющие A2",
-      subtitle: `Для фиксации клипс к деревянным лагам — около ${screwPcs} шт.; для алюминиевых лаг нужен крепёж системы`,
-      quantity: screwKg,
-      unit: "кг",
-      withReserve: screwKg,
-      purchaseQty: Math.ceil(screwKg),
+      name: "Саморезы для выбранных клипс и лаг",
+      subtitle: "Материал, диаметр и длину крепежа выбирают по клипсе и материалу лаг; калькулятор считает только штуки и упаковки",
+      quantity: roundDisplay(fastenerBaseCount, 6),
+      unit: "шт",
+      withReserve: roundDisplay(fastenerWithReserveCount, 6),
+      purchaseQty: fastenerPacks * fastenerPackCount,
       category: "Крепёж",
-    },
-    {
-      name: `Геотекстиль (${GEOTEXTILE_ROLL} м²)`,
-      quantity: geotextileRolls,
-      unit: "рулонов",
-      withReserve: geotextileRolls,
-      purchaseQty: geotextileRolls,
-      category: "Подготовка",
+      packageInfo: { count: fastenerPacks, size: fastenerPackCount, packageUnit: "упаковок" },
     },
   ];
 
-  if (treatmentLayers > 0) {
+  if (withGeotextile === 1) {
     materials.push({
-      name: `${TREATMENT_LABELS[withTreatment]} для дерева`,
-      quantity: treatmentL,
-      unit: "л",
-      withReserve: treatmentL,
-      purchaseQty: Math.ceil(treatmentL),
-      category: "Защита",
+      name: `Геотекстиль (${roundDisplay(geotextileRollM2, 2)} м²)`,
+      quantity: roundDisplay(geotextileBaseM2, 6),
+      unit: "м²",
+      withReserve: roundDisplay(geotextileWithReserveM2, 6),
+      purchaseQty: geotextileRolls * geotextileRollM2,
+      category: "Подготовка",
+      packageInfo: { count: geotextileRolls, size: geotextileRollM2, packageUnit: "рулонов" },
     });
   }
 
-  /* ─── warnings ─── */
+  if (withTreatment > 0) {
+    materials.push({
+      name: TREATMENT_LABELS[withTreatment],
+      subtitle: `Расход ${roundDisplay(treatmentRate, 3)} л/м² на слой, ${treatmentLayers} сл.; значения перенесите с этикетки`,
+      quantity: roundDisplay(treatmentBaseL, 6),
+      unit: "л",
+      withReserve: roundDisplay(treatmentWithReserveL, 6),
+      purchaseQty: treatmentCans * treatmentCanL,
+      category: "Защита",
+      packageInfo: { count: treatmentCans, size: treatmentCanL, packageUnit: "банок" },
+    });
+  }
+
   const warnings: string[] = [];
+  if (jointCount > 0) {
+    warnings.push(`В базовом раскрое получается ${jointCount} стыков досок: проверьте разбежку и дополнительные лаги под каждым стыком`);
+  }
   if (boardType !== 0 && withTreatment === 0) {
-    warnings.push("Деревянная доска без обработки подвержена гниению — рекомендуется масло или антисептик");
+    warnings.push("Для деревянной доски не выбрана обработка: проверьте заводскую защиту и требования производителя");
   }
-  if (area > 50) {
-    warnings.push("Для террас большой площади рекомендуется профессиональный монтаж");
+  if (area > spec.warnings_rules.large_area_threshold_m2) {
+    warnings.push("Для площади более 50 м² нужна отдельная схема раскладки, стыков и компенсационных зазоров");
   }
-
-
-  const practicalNotes: string[] = [];
-  practicalNotes.push("Лаги террасы не должны лежать на земле — поднимите на столбики или регулируемые опоры");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -223,21 +234,35 @@ export function computeCanonicalTerrace(
       width: roundDisplay(width, 3),
       area: roundDisplay(area, 3),
       boardType,
-      boardLength,
-      lagStep,
-      withTreatment,
-      boardWidth,
-      gap,
-      boardPitch: roundDisplay(boardPitch, 4),
+      boardLength: roundDisplay(boardLengthMm, 0),
+      boardWidth: roundDisplay(boardWidthMm, 0),
+      gap: roundDisplay(gapMm, 3),
+      boardPitch: roundDisplay(boardPitchM, 6),
+      offcutReuseMode,
+      boardReservePercent: roundDisplay(boardReservePercent, 3),
       rowCount,
       boardsPerRow,
-      totalBoards,
+      safeBaseBoards,
+      baseBoardExact: roundDisplay(baseBoardExact, 6),
+      baseBoardPurchase,
+      totalBoards: recScenario.purchase_quantity,
+      totalBoardLinearM: roundDisplay(totalBoardLinearM, 6),
+      baseCutWasteM: roundDisplay(baseCutWasteM, 6),
+      jointCount,
+      lagStep: roundDisplay(lagStepMm, 0),
+      lagLengthM: roundDisplay(lagLengthM, 3),
       lagRowCount,
-      lagTotalLen: roundDisplay(lagTotalLen, 3),
+      lagBaseM: roundDisplay(lagBaseM, 6),
+      lagTotalLen: roundDisplay(lagWithReserveM, 6),
       lagPcs,
-      klaymerCount,
-      screwCount: screwKg,
-      treatmentL,
+      clipBaseCount: roundDisplay(clipBaseCount, 6),
+      klaymerCount: clipPacks * clipPackCount,
+      clipPacks,
+      fastenerBaseCount: roundDisplay(fastenerBaseCount, 6),
+      screwCount: fastenerPacks * fastenerPackCount,
+      fastenerPacks,
+      treatmentL: roundDisplay(treatmentWithReserveL, 6),
+      treatmentCans,
       geotextileRolls,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: recScenario.exact_need,
@@ -247,9 +272,21 @@ export function computeCanonicalTerrace(
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
-    practicalNotes,
+    practicalNotes: [
+      offcutReuseMode === 0
+        ? "Запас доски считается после безопасного раскроя каждого ряда; обрезки между рядами не переиспользуются"
+        : "Переиспользование обрезков снижает покупку только при подтверждённой схеме раскладки и допустимой разбежке стыков",
+      "Шаг и тип лаг, число клипс, крепёж и компенсационные зазоры должны соответствовать паспорту выбранной системы",
+      "Все запасы и фасовки показаны отдельными полями и применяются по одному разу",
+    ],
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "flooring", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: ["Режим точности не добавляет скрытых коэффициентов: доска считается по выбранному раскрою и явному запасу"],
+    },
   };
 }
