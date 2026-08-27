@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { scheduleMetrikaPageview } from "@/lib/analytics/yandex-metrika-pageview";
+import {
+  buildAnalyticsPageLocation,
+  sanitizeAnalyticsUrl,
+} from "@/lib/analytics/pageview";
 
 describe("scheduleMetrikaPageview", () => {
   it("ждёт непустой title перед отправкой hit", () => {
@@ -41,5 +45,26 @@ describe("scheduleMetrikaPageview", () => {
 
     pending.shift()?.();
     expect(send).toHaveBeenCalledWith("Мастерок");
+  });
+});
+
+describe("analytics pageview privacy", () => {
+  it("удаляет query и hash из page_location", () => {
+    expect(
+      buildAnalyticsPageLocation(
+        "https://getmasterok.ru",
+        "/kalkulyatory/otdelka/kraska/?area=40#result",
+      ),
+    ).toBe("https://getmasterok.ru/kalkulyatory/otdelka/kraska/");
+  });
+
+  it("удаляет поисковый запрос и персональные данные из referer", () => {
+    const sanitized = sanitizeAnalyticsUrl(
+      "https://getmasterok.ru/?q=Иван+79991234567#search",
+    );
+
+    expect(sanitized).toBe("https://getmasterok.ru/");
+    expect(sanitized).not.toContain("Иван");
+    expect(sanitized).not.toContain("79991234567");
   });
 });

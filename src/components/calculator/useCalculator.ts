@@ -13,7 +13,14 @@ import { getCategoryById } from "@/lib/calculators/categories";
 import { getCalculateFn } from "@/lib/calculators/registry";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import { shareOrCopy } from "@/lib/clipboard";
-import { trackAccuracyModeChange, trackAccuracyModeCalculation, trackCalculatorStart, trackComparisonOpen } from "@/lib/analytics";
+import {
+  trackAccuracyModeChange,
+  trackAccuracyModeCalculation,
+  trackCalculatorShare,
+  trackCalculatorStart,
+  trackCalculatorValidationError,
+  trackComparisonOpen,
+} from "@/lib/analytics";
 import { getInvalidCalculatorFields } from "./calculatorValidation";
 import {
   addCalculationHistory,
@@ -102,8 +109,17 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [comparisonResults, setComparisonResults] = useState<Record<AccuracyMode, CalculatorResult> | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [customModifiers, setCustomModifiersState] = useState<Partial<AccuracyModifiers>>({});
+  const [hasStarted, setHasStarted] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const hasTrackedStartRef = useRef(false);
+  const lastValidationErrorSignatureRef = useRef("");
+
+  const markCalculatorStarted = useCallback(() => {
+    if (hasTrackedStartRef.current) return;
+    hasTrackedStartRef.current = true;
+    setHasStarted(true);
+    trackCalculatorStart(calculator.slug);
+  }, [calculator.slug]);
 
   const category = getCategoryById(calculator.category);
   const visibleFields = useMemo(
@@ -188,10 +204,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   useEffect(() => () => clearTimeout(debounceRef.current), []);
 
   const handleChange = useCallback((key: string, value: number) => {
-    if (!hasTrackedStartRef.current) {
-      hasTrackedStartRef.current = true;
-      trackCalculatorStart(calculator.slug);
-    }
+    markCalculatorStarted();
     setValues((prev) => {
       const next: Record<string, number> = { ...prev, [key]: value };
       // Доменные правила зависимых полей (каталог утеплителя, толщина по
@@ -200,10 +213,11 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       runAutoCalc(next);
       return next;
     });
-  }, [runAutoCalc, calculator]);
+  }, [runAutoCalc, calculator, markCalculatorStarted]);
 
   // Recalculate when accuracy mode changes
   const handleAccuracyModeChange = useCallback((mode: AccuracyMode) => {
+    markCalculatorStarted();
     trackAccuracyModeChange(calculator.slug, accuracyMode, mode);
     setAccuracyMode(mode);
     if (mode !== "custom") void setAccuracyModeSetting(mode);
@@ -218,11 +232,25 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       setResult(res);
       setHasCalculated(true);
     });
-  }, [calculator.slug, values, accuracyMode, customModifiers, hasValidationErrors]);
+  }, [calculator.slug, values, accuracyMode, customModifiers, hasValidationErrors, markCalculatorStarted]);
 
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
-    if (hasValidationErrors) return false;
+    markCalculatorStarted();
+    if (hasValidationErrors) {
+      const invalidFieldKeys = invalidFields.map(({ field }) => field.key).sort();
+      const signature = invalidFieldKeys.join(",");
+      if (signature !== lastValidationErrorSignatureRef.current) {
+        lastValidationErrorSignatureRef.current = signature;
+        trackCalculatorValidationError(
+          calculator.slug,
+          invalidFieldKeys.length,
+          invalidFieldKeys[0] ?? "unknown",
+        );
+      }
+      return false;
+    }
+    lastValidationErrorSignatureRef.current = "";
     void getCalculateFn(calculator.slug).then((fn) => {
       if (!fn) return;
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
@@ -242,7 +270,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       void addCalculationHistory(entry).then(setHistory);
     });
     return true;
-  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors]);
+  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors, invalidFields, markCalculatorStarted]);
 
   const handleReset = useCallback(() => {
     const defaults = Object.fromEntries(
@@ -276,40 +304,46 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     });
 
     if (outcome === "copied") {
+      trackCalculatorShare(calculator.slug, "clipboard");
       setShareState("copied");
       setTimeout(() => setShareState("idle"), 2500);
+    } else if (outcome === "shared") {
+      trackCalculatorShare(calculator.slug, "native");
     } else if (outcome === "failed") {
       prompt(CALCULATOR_UI_TEXT.copyLinkPrompt, url);
     }
     // "shared" and "cancelled" — no UI feedback needed
-  }, [values, accuracyMode, calculator.title, result]);
+  }, [values, accuracyMode, calculator.slug, calculator.title, result]);
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {
+    markCalculatorStarted();
     setValues(entry.values);
     setResult(entry.result);
     setHasCalculated(true);
     setShowHistory(false);
-  }, []);
+  }, [markCalculatorStarted]);
 
   // Применить пресет (быстрый пример)
   const applyPreset = useCallback((presetValues: Record<string, number>) => {
+    markCalculatorStarted();
     setValues((prev) => {
       const next = { ...prev, ...presetValues };
       runAutoCalc(next);
       return next;
     });
-  }, [runAutoCalc]);
+  }, [runAutoCalc, markCalculatorStarted]);
 
   // Handle custom modifier changes
   const handleCustomModifiersChange = useCallback((mods: Partial<AccuracyModifiers>) => {
+    markCalculatorStarted();
     setCustomModifiersState(mods);
     setCustomModifiers(mods);
     // Recalculate if in custom mode
     if (accuracyModeRef.current === "custom") {
       runAutoCalc(values);
     }
-  }, [values, runAutoCalc]);
+  }, [values, runAutoCalc, markCalculatorStarted]);
 
   // Contextual accuracy mode hint based on current inputs
   const accuracyHint = (() => {
@@ -350,13 +384,14 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   }, [calculator.slug]);
 
   const handleToggleComparison = useCallback(() => {
+    markCalculatorStarted();
     const next = !showComparison;
     setShowComparison(next);
     if (next && hasCalculated) {
       trackComparisonOpen(calculator.slug);
       void computeComparison(values);
     }
-  }, [showComparison, hasCalculated, values, computeComparison, calculator.slug]);
+  }, [showComparison, hasCalculated, values, computeComparison, calculator.slug, markCalculatorStarted]);
 
   // История только для текущего калькулятора
   const calcHistory = history.filter((h) => h.calcId === calculator.id);
@@ -365,6 +400,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     values,
     result: hasValidationErrors ? null : result,
     hasCalculated: hasValidationErrors ? false : hasCalculated,
+    hasStarted,
     calcNonce,
     shareState,
     showHistory,

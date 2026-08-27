@@ -55,7 +55,7 @@ export default function CalculatorSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const lastEmptyQueryRef = useRef("");
+  const seenEmptyQueriesRef = useRef(new Set<string>());
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -134,8 +134,8 @@ export default function CalculatorSearch({
     const trimmedQuery = query.trim();
     if (!isOpen || trimmedQuery.length < 3 || results.length > 0) return;
     const timer = setTimeout(() => {
-      if (lastEmptyQueryRef.current === trimmedQuery) return;
-      lastEmptyQueryRef.current = trimmedQuery;
+      if (seenEmptyQueriesRef.current.has(trimmedQuery)) return;
+      seenEmptyQueriesRef.current.add(trimmedQuery);
       trackSearchNoResults(trimmedQuery);
     }, 800);
     return () => clearTimeout(timer);

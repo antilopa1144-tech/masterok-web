@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 import {
   trackCalculatorRelatedClick,
+  trackSearchNoResults,
+  trackSearchSelection,
   trackToolExport,
   trackToolModeChange,
   trackToolPresetSelect,
@@ -96,5 +98,26 @@ describe("tool analytics", () => {
 
     expect(ym).not.toHaveBeenCalled();
     expect(gtag).not.toHaveBeenCalled();
+  });
+
+  it("не отправляет сырой поисковый запрос и возможные персональные данные", () => {
+    const rawQuery = "Иван +7 999 123-45-67 ищет плитку";
+
+    trackSearchSelection(rawQuery, "calculator", "plitka");
+    trackSearchNoResults(rawQuery);
+
+    const serializedCalls = JSON.stringify(ym.mock.calls);
+    expect(serializedCalls).not.toContain("Иван");
+    expect(serializedCalls).not.toContain("999");
+    expect(ym.mock.calls[0]?.[3]).toEqual({
+      query_length: 33,
+      query_word_count: 6,
+      result_type: "calculator",
+      result_id: "plitka",
+    });
+    expect(ym.mock.calls[1]?.[3]).toEqual({
+      query_length: 33,
+      query_word_count: 6,
+    });
   });
 });

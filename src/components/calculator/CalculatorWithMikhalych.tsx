@@ -21,7 +21,10 @@ import {
   buildLaminateLayoutHref,
   LAMINATE_LAYOUT_TRANSFER_FROM,
 } from "@/lib/tools/laminate-layout-to-calc";
-import { trackCalculatorRelatedClick } from "@/lib/analytics";
+import {
+  trackCalculatorRelatedClick,
+  trackCalculatorResultView,
+} from "@/lib/analytics";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
 const MOBILE_PRIMARY_FIELD_COUNT = 6;
@@ -54,6 +57,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const hasTrackedResultViewRef = useRef(false);
   const [showAllFields, setShowAllFields] = useState(false);
   const [showMikhalych, setShowMikhalych] = useState(false);
 
@@ -61,6 +65,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     values,
     result,
     hasCalculated,
+    hasStarted,
     calcNonce,
     shareState,
     showHistory,
@@ -119,6 +124,36 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     });
     return () => cancelAnimationFrame(frame);
   }, [calcNonce]);
+
+  useEffect(() => {
+    if (!hasStarted || !result || hasTrackedResultViewRef.current) return;
+    const element = resultRef.current;
+    if (!element) return;
+
+    const markResultViewed = () => {
+      if (hasTrackedResultViewRef.current) return;
+      hasTrackedResultViewRef.current = true;
+      trackCalculatorResultView(calculator.slug);
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      markResultViewed();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        markResultViewed();
+        observer.disconnect();
+      },
+      // Блок результата может быть выше viewport в несколько раз. 35% такого
+      // блока недостижимы даже когда пользователь читает его верхнюю часть.
+      { threshold: 0.01 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [calculator.slug, hasStarted, result]);
 
   const fieldVisibilityClass = (index: number) => {
     if (showAllFields) return "";

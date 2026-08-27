@@ -4,11 +4,19 @@
  */
 
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
+import {
+  getSearchQueryMetrics,
+  type AnalyticsEventName,
+  type AnalyticsEventParams,
+  type SearchResultType,
+  type ToolInteractionSource,
+} from "@/lib/analytics/events";
+export type { ToolInteractionSource } from "@/lib/analytics/events";
 import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 
-export function trackEvent(
-  target: string,
-  params?: Record<string, unknown>,
+export function trackEvent<EventName extends AnalyticsEventName>(
+  target: EventName,
+  params: AnalyticsEventParams[EventName],
 ): void {
   if (!isProductionAnalyticsBrowser()) return;
   try {
@@ -57,27 +65,43 @@ export function trackCalculatorStart(calculatorSlug: string): void {
   trackEvent("calculator_start", { calculator: calculatorSlug });
 }
 
-function safeSearchQuery(query: string): string {
-  const value = query.trim().replace(/\s+/g, " ").slice(0, 80);
-  const looksLikeEmail = /\S+@\S+\.\S+/.test(value);
-  const looksLikePhone = /(?:\+?7|8)[\s()-]*\d(?:[\s()-]*\d){9}/.test(value);
-  return looksLikeEmail || looksLikePhone ? "[redacted]" : value;
+export function trackCalculatorResultView(calculatorSlug: string): void {
+  trackEvent("calculator_result_view", { calculator: calculatorSlug });
+}
+
+export function trackCalculatorValidationError(
+  calculatorSlug: string,
+  invalidFieldCount: number,
+  firstInvalidField: string,
+): void {
+  trackEvent("calculator_validation_error", {
+    calculator: calculatorSlug,
+    invalid_field_count: invalidFieldCount,
+    first_invalid_field: firstInvalidField,
+  });
+}
+
+export function trackCalculatorShare(
+  calculatorSlug: string,
+  method: "native" | "clipboard",
+): void {
+  trackEvent("calculator_share", { calculator: calculatorSlug, method });
 }
 
 export function trackSearchSelection(
   query: string,
-  resultType: string,
+  resultType: SearchResultType,
   resultId: string,
 ): void {
   trackEvent("site_search_select", {
-    query: safeSearchQuery(query),
+    ...getSearchQueryMetrics(query),
     result_type: resultType,
     result_id: resultId,
   });
 }
 
 export function trackSearchNoResults(query: string): void {
-  trackEvent("site_search_empty", { query: safeSearchQuery(query) });
+  trackEvent("site_search_empty", getSearchQueryMetrics(query));
 }
 
 export function trackExport(calculatorName: string, format: "pdf" | "excel"): void {
@@ -94,16 +118,6 @@ export function trackProjectSave(calculatorId: string, createdProject: boolean):
 export function trackRuStoreClick(placement: string): void {
   trackEvent("rustore_click", { placement });
 }
-
-export type ToolInteractionSource =
-  | "surface_size"
-  | "material_size"
-  | "layout_mode"
-  | "joint_width"
-  | "material_reserve"
-  | "material_packaging"
-  | "opening"
-  | "preset";
 
 export function trackToolStart(tool: string, source: ToolInteractionSource): void {
   trackEvent("tool_start", { tool, source });
