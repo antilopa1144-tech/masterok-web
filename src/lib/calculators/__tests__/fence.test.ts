@@ -1,135 +1,105 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { fenceDef } from "../formulas/fence";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(fenceDef.calculate.bind(fenceDef));
 
-describe("Забор", () => {
-  describe("Профнастил, 50 м, высота 2 м, шаг 2.5 м, 1 ворота, 1 калитка", () => {
-    it("netLength = 50 - 4*1 - 1*1 = 45", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      checkInvariants(r);
-      expect(r.totals.netLength).toBeCloseTo(45, 1);
-    });
+describe("Калькулятор забора v2", () => {
+  it("считает профлист по паспортной рабочей ширине без скрытого запаса", () => {
+    const result = calc({});
+    const sheets = findMaterial(result, "Профнастил");
 
-    it("столбы: ceil(45/2.5)+1 + 1*2 + 1*2 = 23", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const postsCount = Math.ceil(45 / 2.5) + 1 + 1 * 2 + 1 * 2;
-      expect(r.totals.postsCount).toBe(postsCount);
-      // Engine: "Столбы 60×60 мм (2.9 м)"
-      const posts = findMaterial(r, "Столбы 60×60");
-      expect(posts).toBeDefined();
-      expect(posts!.quantity).toBe(postsCount);
-    });
-
-    it("профнастил присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Профнастил (2 м)"
-      const sheets = findMaterial(r, "Профнастил");
-      expect(sheets).toBeDefined();
-    });
-
-    it("лаги 40×20 мм: h=2 <= 2 → 2 лаги/пролёт", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Лаги 40×20 мм"
-      const lags = findMaterial(r, "Лаги 40×20");
-      expect(lags).toBeDefined();
-      const lagSpans = Math.ceil(45 / 2.5);
-      const lagsCount = lagSpans * 2;
-      expect(lags!.quantity).toBe(lagsCount);
-    });
-
-    it("саморезы кровельные присутствуют", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Саморезы кровельные (упаковка 200 шт)"
-      expect(findMaterial(r, "Саморезы кровельные")).toBeDefined();
-    });
-
-    it("грунт-спрей для срезов присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Грунт-спрей для срезов"
-      expect(findMaterial(r, "Грунт-спрей")).toBeDefined();
-    });
+    expect(result.formulaVersion).toBe("fence-canonical-v2");
+    expect(result.totals.netLength).toBe(45);
+    expect(result.totals.sheetWorkingWidthMm).toBe(1150);
+    expect(result.totals.sheetExactNeed).toBeCloseTo(45 / 1.15, 5);
+    expect(result.scenarios?.MIN.exact_need).toBeCloseTo(45 / 1.15, 5);
+    expect(result.scenarios?.REC.exact_need).toBeCloseTo(45 / 1.15, 5);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(40);
+    expect(result.scenarios?.MAX.purchase_quantity).toBe(42);
+    expect(sheets?.quantity).toBeCloseTo(45 / 1.15, 5);
+    expect(sheets?.withReserve).toBeCloseTo(45 / 1.15, 5);
+    expect(sheets?.purchaseQty).toBe(40);
+    expect(sheets?.subtitle).toContain("Точная потребность 39,13 листа");
+    expect(sheets?.subtitle).toContain("нахлёст");
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+    checkInvariants(result);
   });
 
-  describe("Высота > 2 м → 3 лаги", () => {
-    it("h=2.5 → 3 лаги на пролёт", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2.5, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const netLength = 45;
-      const lagSpans = Math.ceil(netLength / 2.5);
-      const lagsCount = lagSpans * 3;
-      const lags = findMaterial(r, "Лаги 40×20");
-      expect(lags!.quantity).toBe(lagsCount);
-    });
+  it("рабочая ширина 1000 мм для подтверждённого С21 меняет покупку на 45 листов", () => {
+    const result = calc({ sheetWorkingWidthMm: 1000 });
+
+    expect(result.totals.sheetExactNeed).toBe(45);
+    expect(result.totals.sheets).toBe(45);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(45);
   });
 
-  describe("Сетка-рабица (fenceType=1)", () => {
-    it("сетка-рабица присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 1, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      checkInvariants(r);
-      // Engine: "Сетка-рабица (2 м, рулон 10 м)"
-      const mesh = findMaterial(r, "Сетка-рабица");
-      expect(mesh).toBeDefined();
-    });
+  it("явный запас применяется один раз до округления", () => {
+    const result = calc({ sheetWorkingWidthMm: 1150, coverReservePercent: 10 });
 
-    it("проволока натяжная присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 1, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Проволока натяжная"
-      const wire = findMaterial(r, "Проволока натяжная");
-      expect(wire).toBeDefined();
-    });
+    expect(result.scenarios?.MIN.exact_need).toBeCloseTo(45 / 1.15, 5);
+    expect(result.scenarios?.REC.exact_need).toBeCloseTo(45 / 1.15 * 1.1, 5);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(44);
+    expect(result.scenarios?.REC.key_factors.reserve_percent).toBe(10);
   });
 
-  describe("Деревянный штакетник (fenceType=2)", () => {
-    it("штакетник присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 2, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      checkInvariants(r);
-      // Engine: "Деревянный штакетник (2 м)"
-      const slats = findMaterial(r, "Деревянный штакетник");
-      expect(slats).toBeDefined();
-    });
+  it("режим точности не меняет закупку профлиста", () => {
+    const basic = fenceDef.calculate({ accuracyMode: "basic" as never });
+    const detailed = fenceDef.calculate({ accuracyMode: "detailed" as never });
 
-    it("антисептик присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 2, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Антисептик (5 л)"
-      expect(findMaterial(r, "Антисептик")).toBeDefined();
-    });
+    expect(basic.totals.sheets).toBe(40);
+    expect(detailed.totals.sheets).toBe(40);
+    expect(detailed.accuracyExplanation?.combinedMultiplier).toBe(1);
   });
 
-  describe("Ворота и калитки", () => {
-    it("ворота > 0 → предупреждение об усиленных столбах", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 2, wicketsCount: 1 });
-      // Engine: "При наличии ворот рекомендуются усиленные столбы 80×80 или 100×100 мм"
-      expect(r.warnings.some(w => w.includes("усиленные столбы"))).toBe(true);
-    });
+  it("саморезы считает в штуках и округляет до фактической упаковки", () => {
+    const result = calc({ screwsPerSheet: 6, screwReservePercent: 5, screwPackCount: 200 });
+    const screws = findMaterial(result, "Саморезы для профлиста");
 
-    it("0 ворот → нет предупреждения", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 0, wicketsCount: 1 });
-      expect(r.warnings.some(w => w.includes("усиленные столбы"))).toBe(false);
-    });
+    expect(screws?.quantity).toBe(240);
+    expect(screws?.withReserve).toBe(252);
+    expect(screws?.purchaseQty).toBe(400);
+    expect(screws?.unit).toBe("шт");
+    expect(screws?.packageInfo).toEqual({ count: 2, size: 200, packageUnit: "упаковок" });
+    expect(JSON.stringify(result)).not.toContain("кг");
   });
 
-  describe("Бетон и заглушки", () => {
-    it("бетон для столбов присутствует", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      // Engine: "Бетон для столбов"
-      const concrete = findMaterial(r, "Бетон для столбов");
-      expect(concrete).toBeDefined();
-    });
+  it("не показывает пустую позицию крепежа, если норма равна нулю", () => {
+    const result = calc({ screwsPerSheet: 0 });
 
-    it("заглушки: ceil(postsCount*1.05)", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      const postsCount = r.totals.postsCount;
-      const expectedCaps = Math.ceil(postsCount * 1.05);
-      // Engine: "Заглушки для столбов"
-      const caps = findMaterial(r, "Заглушки для столбов");
-      expect(caps).toBeDefined();
-      expect(caps!.quantity).toBe(expectedCaps);
-    });
+    expect(findMaterial(result, "Саморезы для профлиста")).toBeUndefined();
+  });
 
-    it("объясняет, что глубина 0.9 м является ориентиром", () => {
-      const r = calc({ fenceLength: 50, fenceHeight: 2, fenceType: 0, postStep: 2.5, gatesCount: 1, wicketsCount: 1 });
-      expect(r.practicalNotes?.some(note => note.includes("0.9 м") && note.includes("ориентир"))).toBe(true);
-    });
+  it("сохраняет геометрию опор и явно предупреждает об узле ворот", () => {
+    const result = calc({});
+
+    expect(result.totals.postsCount).toBe(23);
+    expect(result.totals.lagsPerSpan).toBe(2);
+    expect(result.totals.lagsCount).toBe(36);
+    expect(result.warnings.some((warning) => warning.includes("отдельный расчёт усиленных опор"))).toBe(true);
+    expect(findMaterial(result, "Столбы выбранной системы")).toBeDefined();
+  });
+
+  it("сетка и штакетник используют ту же прозрачную цепочку сценариев", () => {
+    const mesh = calc({ fenceType: 1, coverReservePercent: 0 });
+    const slats = calc({ fenceType: 2, coverReservePercent: 5 });
+
+    expect(mesh.scenarios?.REC.exact_need).toBe(4.5);
+    expect(mesh.scenarios?.REC.purchase_quantity).toBe(5);
+    expect(findMaterial(mesh, "Сетка-рабица")?.purchaseQty).toBe(5);
+    expect(slats.scenarios?.REC.exact_need).toBeCloseTo(45 / 0.13 * 1.05, 5);
+    expect(findMaterial(slats, "Антисептик")?.packageInfo?.size).toBe(5);
+    checkInvariants(mesh);
+    checkInvariants(slats);
+  });
+
+  it("SEO-пример совпадает с расчётом 1150 и 1000 мм", () => {
+    const html = fenceDef.seoContent?.faq.map((item) => item.answer).join(" ") ?? "";
+
+    expect(html).toContain("<strong>39,13 листа</strong>");
+    expect(html).toContain("<strong>40 листов</strong>");
+    expect(html).toContain("<strong>45 листов</strong>");
+    expect(html).toContain("<strong>2 упаковки, 400 шт. к покупке</strong>");
+    expect(html).not.toContain("С20 с нахлёстом");
   });
 });

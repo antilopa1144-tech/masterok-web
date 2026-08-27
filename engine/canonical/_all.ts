@@ -1282,10 +1282,7 @@ export interface FencePackagingRules {
 
 export interface FenceMaterialRules {
   post_burial_m: number;
-  profnastil_useful_width: number;
-  profnastil_reserve: number;
-  profnastil_screws_per_sheet: number;
-  screws_pack: number;
+  max_extra_cover_percent: number;
   primer_spray_m_per_can: number;
   post_concrete_m3: number;
   caps_reserve: number;
@@ -1293,7 +1290,6 @@ export interface FenceMaterialRules {
   tension_wire_reserve: number;
   slat_width: number;
   slat_gap: number;
-  slat_reserve: number;
   antiseptic_l_per_m2: number;
   antiseptic_can_l: number;
   gate_width: number;
