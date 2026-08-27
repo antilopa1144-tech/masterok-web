@@ -60,10 +60,15 @@ describe("calculator risk registry", () => {
     }
   });
 
-  it("не выдаёт структурную готовность за независимое предметное ревью", () => {
+  it("отделяет implementation-аудит от независимого предметного ревью", () => {
     for (const entry of CALCULATOR_RISK_REGISTRY) {
       expect(entry.drivers.length, `${entry.slug}: risk drivers`).toBeGreaterThan(0);
       expect(entry.independentReview, `${entry.slug}: independent review`).toBe("pending");
+      if (entry.implementationAudit === "completed") {
+        expect(entry.auditEvidence.length, `${entry.slug}: audit evidence`).toBeGreaterThan(0);
+      } else {
+        expect(entry.auditEvidence, `${entry.slug}: no false evidence`).toEqual([]);
+      }
       if (entry.tier === "P0") {
         expect(
           entry.drivers.some((driver) =>
@@ -73,6 +78,10 @@ describe("calculator risk registry", () => {
         ).toBe(true);
       }
     }
+    expect(
+      CALCULATOR_RISK_REGISTRY.find((entry) => entry.slug === "elektrika")
+        ?.implementationAudit,
+    ).toBe("completed");
   });
 
   it("держит сгенерированный markdown синхронным с реестром", () => {

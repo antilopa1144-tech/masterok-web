@@ -20,12 +20,15 @@ export type CalculationRiskDriver =
   | "packaging";
 
 export type IndependentReviewStatus = "pending" | "partial" | "verified";
+export type ImplementationAuditStatus = "pending" | "completed";
 
 export interface CalculatorRiskEntry {
   slug: string;
   canonicalId: string;
   tier: CalculationRiskTier;
   drivers: CalculationRiskDriver[];
+  implementationAudit: ImplementationAuditStatus;
+  auditEvidence: string[];
   independentReview: IndependentReviewStatus;
 }
 
@@ -51,6 +54,24 @@ const pending = (
   canonicalId,
   tier,
   drivers,
+  implementationAudit: "pending",
+  auditEvidence: [],
+  independentReview: "pending",
+});
+
+const implementationAudited = (
+  slug: string,
+  canonicalId: string,
+  tier: CalculationRiskTier,
+  drivers: CalculationRiskDriver[],
+  auditEvidence: string[],
+): CalculatorRiskEntry => ({
+  slug,
+  canonicalId,
+  tier,
+  drivers,
+  implementationAudit: "completed",
+  auditEvidence,
   independentReview: "pending",
 });
 
@@ -65,7 +86,18 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
   pending("podvesnoy-potolok-gkl", "drywall-ceiling", "P0", ["structural_safety", "complex_geometry", "multi_material"]),
   pending("krovlya", "roofing", "P0", ["structural_safety", "moisture_risk", "large_purchase"]),
   pending("kalkulyator-lestnicy", "stairs", "P0", ["structural_safety", "complex_geometry"]),
-  pending("elektrika", "electric", "P0", ["engineering_safety", "large_purchase", "multi_material"]),
+  implementationAudited(
+    "elektrika",
+    "electric",
+    "P0",
+    ["engineering_safety", "large_purchase", "multi_material"],
+    [
+      "canonical electric-canonical-v3",
+      "официальные карточки СП 256.1325800.2016, ГОСТ Р 50571.4.41-2022 и ГОСТ 31565-2012",
+      "регрессии покупки по метрам/бухтам и выбора фазности",
+      "web/mobile parity и фактический Flutter ProCalculator flow",
+    ],
+  ),
   pending("otoplenie-radiatory", "heating", "P0", ["engineering_safety", "building_physics", "field_factors"]),
   pending("ventilyaciya", "ventilation", "P0", ["engineering_safety", "building_physics", "field_factors"]),
   pending("teplyy-pol", "warm-floor", "P0", ["engineering_safety", "large_purchase", "field_factors"]),

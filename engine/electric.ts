@@ -13,6 +13,7 @@ interface ElectricInputs {
   ceilingHeight?: number;
   wiringType?: number;
   hasKitchen?: number;
+  cablePurchaseMode?: number;
   reserve?: number;
 }
 
@@ -36,6 +37,7 @@ export function computeCanonicalElectric(
   const ceilingHeight = Math.max(2.4, Math.min(4.0, inputs.ceilingHeight ?? getInputDefault(spec, "ceilingHeight", 2.7)));
   const wiringType = Math.max(0, Math.min(1, Math.round(inputs.wiringType ?? getInputDefault(spec, "wiringType", 0))));
   const hasKitchen = Math.max(0, Math.min(1, Math.round(inputs.hasKitchen ?? getInputDefault(spec, "hasKitchen", 1))));
+  const cablePurchaseMode = Math.max(0, Math.min(1, Math.round(inputs.cablePurchaseMode ?? getInputDefault(spec, "cablePurchaseMode", 0))));
   const reserve = Math.max(5, Math.min(30, inputs.reserve ?? getInputDefault(spec, "reserve", 15)));
   const cable15Rate = spec.material_rules.cable_15_rate;
   const cable25Rate = spec.material_rules.cable_25_rate;
@@ -73,8 +75,10 @@ export function computeCanonicalElectric(
   const switchesCount = roomsCount + spec.material_rules.switches_base;
 
   /* ─── packaging ─── */
-  const cable15spools = Math.ceil(cable15length / cableSpoolM);
-  const cable25spools = Math.ceil(cable25length / cableSpoolM);
+  const cable15spools = cablePurchaseMode === 1 ? Math.ceil(cable15length / cableSpoolM) : 0;
+  const cable25spools = cablePurchaseMode === 1 ? Math.ceil(cable25length / cableSpoolM) : 0;
+  const cable15Purchase = cablePurchaseMode === 1 ? cable15spools * cableSpoolM : Math.ceil(cable15length);
+  const cable25Purchase = cablePurchaseMode === 1 ? cable25spools * cableSpoolM : Math.ceil(cable25length);
   const conduitPackageSize = wiringType === 1 ? CABLE_CHANNEL_PIECE_M : cableSpoolM;
   const conduitPacks = Math.ceil(conduitLength / conduitPackageSize);
   const socketBoxes = Math.ceil((outletsCount + switchesCount) * spec.material_rules.socket_box_reserve);
@@ -93,8 +97,8 @@ export function computeCanonicalElectric(
     const exactNeed = roundDisplay(cable15 + cable25 + cable6length, 6);
     // Сечения нельзя объединять в условные бухты: каждую линию округляем
     // отдельно и только затем складываем метры для сводного сценария.
-    const purchaseQuantity = Math.ceil(cable15 / cableSpoolM) * cableSpoolM
-      + Math.ceil(cable25 / cableSpoolM) * cableSpoolM
+    const purchaseQuantity = (cablePurchaseMode === 1 ? Math.ceil(cable15 / cableSpoolM) * cableSpoolM : Math.ceil(cable15))
+      + (cablePurchaseMode === 1 ? Math.ceil(cable25 / cableSpoolM) * cableSpoolM : Math.ceil(cable25))
       + (hasKitchen ? Math.ceil(cable6length) : 0);
     return { exactNeed, purchaseQuantity };
   }
@@ -107,8 +111,10 @@ export function computeCanonicalElectric(
       quantity: roundDisplay(cable15length, 1),
       unit: "м",
       withReserve: roundDisplay(cable15length, 1),
-      purchaseQty: cable15spools * cableSpoolM,
-      packageInfo: { count: cable15spools, size: cableSpoolM, packageUnit: "бухт" },
+      purchaseQty: cable15Purchase,
+      ...(cablePurchaseMode === 1
+        ? { packageInfo: { count: cable15spools, size: cableSpoolM, packageUnit: "бухт" } }
+        : {}),
       category: "Кабель",
     },
     {
@@ -117,8 +123,10 @@ export function computeCanonicalElectric(
       quantity: roundDisplay(cable25length, 1),
       unit: "м",
       withReserve: roundDisplay(cable25length, 1),
-      purchaseQty: cable25spools * cableSpoolM,
-      packageInfo: { count: cable25spools, size: cableSpoolM, packageUnit: "бухт" },
+      purchaseQty: cable25Purchase,
+      ...(cablePurchaseMode === 1
+        ? { packageInfo: { count: cable25spools, size: cableSpoolM, packageUnit: "бухт" } }
+        : {}),
       category: "Кабель",
     },
   ];
@@ -186,6 +194,8 @@ export function computeCanonicalElectric(
         `formula_version:${spec.formula_version}`,
         `wiringType:${wiringType}`,
         `reserve:${reservePercent}`,
+        `purchase_mode:${cablePurchaseMode === 1 ? "spool_50m" : "per_meter"}`,
+        "coefficients:project_assumptions_not_normative_limits",
         "scenario:separate-rounding-by-cable-section",
       ],
       key_factors: {
@@ -193,9 +203,11 @@ export function computeCanonicalElectric(
         stove_line_reserve_multiplier: hasKitchen ? cable6Reserve : 1,
       },
       buy_plan: {
-        package_label: "electric-cable-lines",
+        package_label: cablePurchaseMode === 1
+          ? "electric-cable-lines-mixed-packaging"
+          : "electric-cable-lines-per-meter",
         package_size: 1,
-        packages_count: 0,
+        packages_count: cableScenario.purchaseQuantity,
         unit: "м",
       },
     };
@@ -287,23 +299,23 @@ export function computeCanonicalElectric(
 
   /* ─── warnings ─── */
   const warnings: string[] = [];
-  if (apartmentArea > spec.warnings_rules.three_phase_area_threshold) {
-    warnings.push("Площадь более 100 м² — рассмотрите трёхфазный ввод 380 В; решение принимает проектировщик по выделенной мощности");
+  if (spec.warnings_rules.phase_selection_requires_load_data) {
+    warnings.push("Однофазный или трёхфазный ввод выбирают по выделенной мощности, расчётным нагрузкам и техническим условиям — площадь сама по себе этого не определяет");
   }
   if (hasKitchen) {
     warnings.push("Электроплита: кабель 3×6 мм² и автомат 32 А — ориентир для однофазной линии; проверьте мощность по паспорту плиты");
   }
-  warnings.push("Все розетки в ванной и кухне — через устройство защитного отключения (УЗО) на 10–30 мА");
+  warnings.push("Тип, количество, номиналы и уставки УЗО/дифавтоматов выбирают по проекту, схеме групп, системе заземления и условиям помещений");
   warnings.push("Это предварительная ведомость. Сечения кабелей, номиналы защиты и схему щита должен проверить электропроектировщик");
 
 
   const practicalNotes: string[] = [];
-  if (apartmentArea > 100) {
-    practicalNotes.push(`Квартира ${roundDisplay(apartmentArea, 0)} м² — рассмотрите трёхфазный ввод 380 В, если выделенной однофазной мощности недостаточно`);
-  }
-  practicalNotes.push("Каждая розеточная группа — через своё устройство защитного отключения (УЗО) на 30 мА. Ванная — отдельное УЗО на 10 мА");
+  practicalNotes.push("Количество розеток, групп, автоматов и УЗО — предварительная планировочная оценка по площади и комнатам, а не нормативный проект");
   practicalNotes.push(`MIN/REC/MAX используют запас 5% / выбранное значение / 30% для линий 3×1,5 и 3×2,5 мм²; для ориентировочной линии плиты 3×6 мм² в спецификации задан отдельный коэффициент ${roundDisplay(cable6Reserve, 2)}`);
-  practicalNotes.push("Сводный итог дан в метрах для сравнения сценариев; покупать кабель нужно отдельными строками по сечению, указанными в ведомости");
+  practicalNotes.push(cablePurchaseMode === 1
+    ? `Линии 3×1,5 и 3×2,5 мм² округлены отдельно до бухт по ${cableSpoolM} м; линия 3×6 мм² — до целого метра`
+    : "Каждое сечение кабеля округлено к покупке отдельно до целого метра; если поставщик продаёт только бухтами, переключите режим покупки");
+  practicalNotes.push("Коэффициенты метража, групп и точек — явно зафиксированные проектные допущения; точная ведомость требует плана трасс и нагрузок");
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -315,6 +327,7 @@ export function computeCanonicalElectric(
       ceilingHeight: roundDisplay(ceilingHeight, 3),
       wiringType,
       hasKitchen,
+      cablePurchaseMode,
       reserve,
       lightingGroups,
       outletGroups,

@@ -196,6 +196,8 @@ export interface CalculatorResult {
   accuracyExplanation?: import("../../../engine/accuracy").AccuracyExplanation;
   /** Кастомные карточки в шапке результата (если есть — заменяют стандартные). */
   summaryCards?: SummaryCard[];
+  /** Скрыть generic-бейдж «Основное», если в результате несколько равнозначных главных материалов. */
+  hidePrimaryMaterialBadge?: boolean;
   /** Баннер над списком материалов (калькулятор утеплителя). */
   materialListBanner?: string;
 }

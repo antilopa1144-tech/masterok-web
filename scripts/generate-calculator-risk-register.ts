@@ -96,11 +96,17 @@ const structurallyReady = rows.filter(({ evidence }) =>
 const independentlyVerified = rows.filter(
   ({ entry }) => entry.independentReview === "verified",
 ).length;
+const implementationAudited = rows.filter(
+  ({ entry }) => entry.implementationAudit === "completed",
+).length;
 const parityCases = rows.reduce((sum, row) => sum + row.evidence.parityCases, 0);
 
 const tableRows = rows.map(({ entry, calculator, evidence }) => {
   const drivers = entry.drivers.map((driver) => CALCULATION_RISK_DRIVER_LABELS[driver]).join(", ");
-  return `| ${entry.tier} | ${calculator.title} | \`${entry.slug}\` | \`${entry.canonicalId}\` | ${drivers} | ${mark(evidence.canonical && evidence.engine)} | ${mark(evidence.scenarioPolicy)} | ${mark(evidence.packagingRules)} | ${evidence.parityCases} | ${mark(evidence.dedicatedTest)} | ${reviewLabel[entry.independentReview]} |`;
+  const auditEvidence = entry.auditEvidence.length > 0
+    ? entry.auditEvidence.join("; ")
+    : "—";
+  return `| ${entry.tier} | ${calculator.title} | \`${entry.slug}\` | \`${entry.canonicalId}\` | ${drivers} | ${mark(evidence.canonical && evidence.engine)} | ${mark(evidence.scenarioPolicy)} | ${mark(evidence.packagingRules)} | ${evidence.parityCases} | ${mark(evidence.dedicatedTest)} | ${entry.implementationAudit === "completed" ? "завершён" : "ожидает"} | ${auditEvidence} | ${reviewLabel[entry.independentReview]} |`;
 });
 
 const content = `# Реестр расчётных рисков «Мастерка»
@@ -125,6 +131,7 @@ const content = `# Реестр расчётных рисков «Мастерк
 | Полный структурный каркас | ${structurallyReady}/${rows.length} |
 | Parity-сценарии | ${parityCases} |
 | P0 / P1 / P2 | ${tierCounts.P0} / ${tierCounts.P1} / ${tierCounts.P2} |
+| Implementation-аудит завершён | ${implementationAudited}/${rows.length} |
 | Независимое предметное ревью подтверждено | ${independentlyVerified}/${rows.length} |
 
 «Полный структурный каркас» означает: canonical JSON, engine, scenario policy,
@@ -133,8 +140,8 @@ packaging rules, parity fixture и отдельный calculator/engine test с�
 
 ## Очередь аудита
 
-| Tier | Калькулятор | Slug | Canonical | Драйверы риска | Spec + engine | MIN/REC/MAX policy | Packaging contract | Parity cases | Dedicated test | Независимое ревью |
-|---|---|---|---|---|---:|---:|---:|---:|---:|---|
+| Tier | Калькулятор | Slug | Canonical | Драйверы риска | Spec + engine | MIN/REC/MAX policy | Packaging contract | Parity cases | Dedicated test | Implementation-аудит | Доказательства | Независимое ревью |
+|---|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|
 ${tableRows.join("\n")}
 
 ## Definition of Done одного калькулятора на 9,5+

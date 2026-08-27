@@ -1637,16 +1637,30 @@ export interface ElectricMaterialRules {
 }
 
 export interface ElectricWarningRules {
-  three_phase_area_threshold: number;
+  phase_selection_requires_load_data: boolean;
+}
+
+export interface ElectricEvidenceSource {
+  code: string;
+  scope: string;
+  source: string;
+}
+
+export interface ElectricEvidence {
+  reviewed_at: string;
+  standards: ElectricEvidenceSource[];
+  project_assumptions: string[];
 }
 
 export interface ElectricCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
     wiring_types: { id: number; key: string; label: string }[];
+    purchase_modes: { id: number; key: string; label: string }[];
   };
   packaging_rules: ElectricPackagingRules;
   material_rules: ElectricMaterialRules;
   warnings_rules: ElectricWarningRules;
+  evidence: ElectricEvidence;
 }
 
 /* ─── Heating (отопление) ─── */

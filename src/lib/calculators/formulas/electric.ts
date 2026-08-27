@@ -1,7 +1,60 @@
-import type { CalculatorDefinition } from "../types";
+import type { CalculatorDefinition, CalculatorResult, SummaryCard } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalElectric } from "../../../../engine/electric";
+import { pluralizePackageUnit, pluralizeRu } from "../../format/pluralize";
 import electricSpec from "../../../../configs/calculators/electric-canonical.v1.json";
+
+function formatElectricQuantity(value: number): string {
+  return value.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
+}
+
+function buildElectricSummaryCards(
+  materials: CalculatorResult["materials"],
+  panelModules: number,
+): SummaryCard[] {
+  const cableCards: SummaryCard[] = [
+    { section: "3×1,5", label: "Освещение · 3×1,5 мм²", icon: "💡", tone: "amber" as const },
+    { section: "3×2,5", label: "Розетки · 3×2,5 мм²", icon: "🔌", tone: "violet" as const },
+    { section: "3×6", label: "Электроплита · 3×6 мм²", icon: "⚡", tone: "emerald" as const },
+  ].flatMap(({ section, label, icon, tone }) => {
+    const material = materials.find(
+      (item) => item.category === "Кабель" && item.name.includes(section),
+    );
+    if (!material) return [];
+
+    const purchaseQty = material.purchaseQty ?? material.withReserve ?? material.quantity;
+    const packageCount = material.packageInfo?.count;
+    const value = packageCount == null
+      ? formatElectricQuantity(purchaseQty)
+      : formatElectricQuantity(packageCount);
+    const unit = packageCount == null
+      ? material.unit
+      : pluralizePackageUnit(packageCount, material.packageInfo!.packageUnit);
+
+    return [{
+      icon,
+      label,
+      value,
+      unit,
+      hint: `${formatElectricQuantity(material.quantity)} ${material.unit} нужно · ${formatElectricQuantity(purchaseQty)} ${material.unit} к покупке`,
+      tone,
+    } satisfies SummaryCard];
+  });
+
+  if (cableCards.length < 3) {
+    cableCards.push({
+      icon: "▦",
+      label: "Распределительный щит",
+      value: formatElectricQuantity(panelModules),
+      unit: pluralizeRu(panelModules, ["модуль", "модуля", "модулей"]),
+      hint: "Минимальная вместимость с резервом",
+      tone: "slate",
+    });
+  }
+
+  return cableCards.slice(0, 3);
+}
+
 export const electricDef: CalculatorDefinition = {
   id: "engineering_electrics",
   slug: "elektrika",
@@ -64,6 +117,17 @@ export const electricDef: CalculatorDefinition = {
       hint: "Требует отдельной линии. Для однофазного подключения ориентир — 220 В и 32 А; трёхфазную схему рассчитывают отдельно.",
     },
     {
+      key: "cablePurchaseMode",
+      label: "Как продаётся кабель",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Отрез по метрам" },
+        { value: 1, label: "Бухты по 50 м" },
+      ],
+      hint: "Выберите реальный формат у поставщика. Каждое сечение округляется отдельно.",
+    },
+    {
       key: "reserve",
       label: "Запас кабеля",
       type: "slider",
@@ -89,37 +153,43 @@ export const electricDef: CalculatorDefinition = {
       practicalNotes: canonical.practicalNotes ?? [],
       accuracyMode: canonical.accuracyMode,
       accuracyExplanation: canonical.accuracyExplanation,
+      summaryCards: buildElectricSummaryCards(
+        canonical.materials,
+        canonical.totals.panelModules,
+      ),
+      hidePrimaryMaterialBadge: true,
     };
   },
   formulaDescription: `
-**Расчёт электропроводки (опыт монтажа):**
+**Предварительный расчёт электропроводки:**
 
 1. **Метраж кабеля**:
    - Розетки: S_пола × 1.6 + ориентировочные спуски по числу групп.
    - Свет: S_пола × 1.1 + ориентировочные спуски по числу групп.
 2. **Запас**: выбранные 5–30% на петли в подрозетниках, коробках, щите и монтажные отклонения.
-3. **Покупка кабеля**: линии 3×1,5 и 3×2,5 мм² округляются до бухт отдельно; метры разных сечений не складываются в одну условную бухту.
-4. **Автоматы**: 1 группа на 1 комнату (свет) + 1 группа на 1 комнату (розетки) + мощные потребители (кухня, стиральная машина, кондиционеры).
-5. **Защита**: УЗО обязательно на все «мокрые» группы и розеточные сети.
+3. **Покупка кабеля**: каждое сечение округляется отдельно — до целого метра или бухты 50 м по выбранному режиму.
+4. **Группы и аппараты защиты**: количество оценивается по площади и комнатам как стартовая ведомость, а не как готовый проект щита.
+5. **Границы применимости**: сечения, номиналы, УЗО/дифавтоматы, одно- или трёхфазный ввод проверяют по нагрузкам, длинам линий, системе заземления и техническим условиям.
+
+Коэффициенты 1,1 и 1,6 м кабеля на м², число точек и групп — проектные допущения калькулятора, а не нормативные пределы.
   `,
   howToUse: [
     "Введите общую площадь объекта",
     "Укажите количество жилых комнат",
-    "Выберите наличие электроплиты (влияет на вводной кабель)",
+    "Выберите наличие электроплиты — она добавляет ориентир отдельной линии 3×6 мм²",
+    "Укажите, продаёт ли поставщик кабель по метрам или бухтами по 50 м",
     "Укажите запас (рекомендуем 15-20% для новичков)",
     "Нажмите «Рассчитать» — получите список материалов для чернового монтажа",
   ],
   expertTips: [
     {
-      title: "Маркировка кабеля",
+      title: "Кабель и документы",
       content:
-        "Для жилых помещений обычно применяют медный кабель ВВГнг(А)-LS: «нг(А)» означает, что кабель не распространяет горение при групповой прокладке, а LS — пониженное дымо- и газовыделение. Покупайте кабель по ГОСТ и проверяйте сертификат.",
-      author: "Электрик 5 разряда"
+        "Марка и исполнение кабеля должны соответствовать проекту и условиям прокладки. При покупке проверьте изготовителя, маркировку, документы о соответствии и фактический метраж партии.",
     },
     {
-      title: "Распаечные коробки",
-      content: "Если планируете натяжные потолки, делайте распаечные коробки за ними, но используйте только сварку или опрессовку медными соединительными гильзами. Клеммы Wago в необслуживаемых местах — риск.",
-      author: "Мастер-монтажник"
+      title: "Соединения и доступность",
+      content: "Способ соединения проводников и необходимость доступа к соединениям задают проект, применяемая система и требования производителя. Не скрывайте непроверенные соединения в необслуживаемой полости.",
     }
   ],
   faq: [
@@ -146,7 +216,7 @@ export const electricDef: CalculatorDefinition = {
   <li><strong>H</strong> — введённая высота помещения</li>
   <li><strong>K<sub>запаса</sub></strong> — выбранные пользователем 5–30% на петли, коробки, щит и монтажные отклонения</li>
 </ul>
-<p>Это ориентировочная ведомость по площади и числу групп, а не трассировка по плану. Кабель каждого сечения округляется к покупке отдельно.</p>
+<p>Это ориентировочная ведомость по площади и числу групп, а не трассировка по плану. Коэффициенты 1,1 и 1,6 м/м&sup2;, число групп и точек — проектные допущения калькулятора, а не нормативные пределы. Кабель каждого сечения округляется к покупке отдельно: до целого метра или бухты 50 м по выбранному режиму.</p>
 
 <h2>Сечение кабеля по назначению</h2>
 <table>
@@ -163,12 +233,12 @@ export const electricDef: CalculatorDefinition = {
 </table>
 
 <h2>Нормативная база</h2>
-<p>Электромонтажные работы выполняются по <strong>ПУЭ 7-е издание</strong> (Правила устройства электроустановок) и <strong>СП 256.1325800.2016</strong> «Электроустановки жилых и общественных зданий». Для жилых помещений обычно применяют медный кабель ВВГнг(А)-LS с пониженным дымо- и газовыделением. Сечения кабелей, защитные аппараты и способ соединения выбирают по проекту и допустимой нагрузке.</p>
+<p>Границы проектирования электроустановок жилых и общественных зданий задаёт действующий <a href="https://protect.gost.ru/sp/details/27f20b47-7456-496e-9e1d-8011ddb4a956" target="_blank" rel="noopener noreferrer"><strong>СП 256.1325800.2016</strong></a> с действующим с 26 января 2026 года <a href="https://protect.gost.ru/sp/changesdetails/d438f64b-92ac-4527-8548-9b68adacfc66" target="_blank" rel="noopener noreferrer">изменением № 9</a>; защиту от поражения током рассматривает <a href="https://protect.gost.ru/gost/details/ce4bedcf-0ab7-43a7-9f3e-cab5a14e6580" target="_blank" rel="noopener noreferrer"><strong>ГОСТ Р 50571.4.41-2022</strong></a>, а пожарную безопасность кабельных изделий — <a href="https://protect.gost.ru/gost/details/1ec12685-51c3-482f-aa46-84d87e03a378" target="_blank" rel="noopener noreferrer"><strong>ГОСТ 31565-2012</strong></a>. Эти документы не превращают расчёт по площади в электропроект: сечения кабелей, аппараты защиты, способ прокладки и схему ввода выбирают по нагрузкам и условиям объекта.</p>
 
 <h2>Обязательные элементы электрощита</h2>
 <ul>
   <li><strong>Вводной автомат</strong> — 32–50 А (по мощности ввода)</li>
-  <li><strong>УЗО</strong> — 30 мА на розеточные группы, 10 мА на мокрые зоны</li>
+  <li><strong>УЗО или дифавтоматы</strong> — тип, ток и уставку определяют по проекту и условиям конкретной линии</li>
   <li><strong>Автоматы</strong> — по одному на каждую группу</li>
   <li><strong>Реле напряжения</strong> — защита от скачков (рекомендуется)</li>
   <li><strong>Шина заземления</strong> — обязательна для системы TN-C-S, где рабочий ноль и защитный проводник разделены</li>
@@ -177,11 +247,11 @@ export const electricDef: CalculatorDefinition = {
     faq: [
       {
         question: "Сколько метров кабеля нужно на квартиру 60 м²?",
-        answer: "<p>Для квартиры 60 м&sup2; с 3 комнатами, кухней и санузлом (стандартная разводка):</p><ul><li><strong>Розеточный кабель 3&times;2.5</strong>: 60 &times; 1.6 = 96 м + спуски &asymp; <strong>120 м</strong></li><li><strong>Световой кабель 3&times;1.5</strong>: 60 &times; 1.1 = 66 м + спуски &asymp; <strong>80 м</strong></li><li><strong>Силовой кабель 3&times;6</strong>: плита + духовка &asymp; <strong>15 м</strong></li></ul><p>С запасом 15%: всего <strong>~250 м</strong> кабеля. Автоматов: 8–12 шт, УЗО: 2–3 шт, подрозетников: 30–40 шт.</p>",
+        answer: "<p>При введённых 60 м&sup2;, 3 комнатах, высоте 2,7 м, электроплите и запасе 15% калькулятор оценивает:</p><ul><li><strong>3&times;2,5 мм&sup2;</strong> — около 133,7 м, к покупке 134 м</li><li><strong>3&times;1,5 мм&sup2;</strong> — около 88,3 м, к покупке 89 м</li><li><strong>3&times;6 мм&sup2;</strong> — около 17,2 м, к покупке 18 м</li></ul><p>Итого по режиму «отрез по метрам» — 241 м кабеля разных сечений. Это предварительная оценка: точные трассы, число групп и аппараты защиты определяют по плану и нагрузкам.</p>",
       },
       {
         question: "Нужно ли УЗО в квартире и сколько штук?",
-        answer: "<p>По <strong>Правилам устройства электроустановок (ПУЭ), п. 7.1.71</strong> устройство защитного отключения обязательно для розеточных групп и мокрых зон. Минимальная комплектация для квартиры 60 м&sup2;:</p><ul><li><strong>УЗО 30 мА</strong> — на все розеточные группы (1–2 шт)</li><li><strong>УЗО 10 мА</strong> — на ванную комнату (1 шт)</li></ul><p>Альтернатива: <strong>дифференциальные автоматические выключатели</strong> — совмещают функции автомата и УЗО в одном модуле. Они дороже, но экономят место в щите.</p><p>УЗО защищает <strong>от поражения током</strong> при повреждении изоляции прибора, а автомат — от перегрузки и короткого замыкания.</p>",
+        answer: "<p>УЗО снижает риск поражения током при утечке, но не заменяет автомат защиты от перегрузки и короткого замыкания. Количество устройств, их тип, номинальный ток и уставку нельзя достоверно вывести только из площади квартиры: нужны схема групп, система заземления, условия помещений и расчёт нагрузок. В проекте могут применяться отдельные УЗО с автоматами или дифавтоматы.</p>",
       },
       {
         question: "Какой кабель использовать для проводки в квартире?",

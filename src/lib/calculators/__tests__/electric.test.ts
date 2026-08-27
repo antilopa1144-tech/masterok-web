@@ -5,31 +5,73 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(electricDef.calculate.bind(electricDef));
 
 describe("Электропроводка", () => {
-  it("сценарии используют границы введённого запаса и округляют каждое сечение отдельно", () => {
+  it("по умолчанию покупка по метрам округляет каждое сечение отдельно", () => {
     const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 1 });
     const cablePurchase = r.materials
       .filter((material) => material.category === "Кабель")
       .reduce((total, material) => total + (material.purchaseQty ?? 0), 0);
 
     expect(r.scenarios?.REC.buy_plan.unit).toBe("м");
-    expect(r.scenarios?.REC.buy_plan.package_label).toBe("electric-cable-lines");
+    expect(r.scenarios?.REC.buy_plan.package_label).toBe("electric-cable-lines-per-meter");
     expect(r.scenarios?.REC.purchase_quantity).toBe(cablePurchase);
     expect(r.scenarios?.MIN.exact_need).toBeLessThan(r.scenarios!.REC.exact_need);
     expect(r.scenarios?.MAX.exact_need).toBeGreaterThan(r.scenarios!.REC.exact_need);
     expect(r.scenarios?.MIN.key_factors.input_reserve_multiplier).toBe(1.05);
     expect(r.scenarios?.REC.key_factors.input_reserve_multiplier).toBe(1.15);
     expect(r.scenarios?.MAX.key_factors.input_reserve_multiplier).toBe(1.3);
-    expect(r.formulaVersion).toBe("electric-canonical-v2");
+    expect(r.formulaVersion).toBe("electric-canonical-v3");
     expect(r.scenarios?.MIN.exact_need).toBeCloseTo(219.88524, 5);
     expect(r.scenarios?.REC.exact_need).toBeCloseTo(239.19024, 5);
     expect(r.scenarios?.MAX.exact_need).toBeCloseTo(268.14774, 5);
-    expect(r.scenarios?.MIN.purchase_quantity).toBe(268);
-    expect(r.scenarios?.REC.purchase_quantity).toBe(268);
-    expect(r.scenarios?.MAX.purchase_quantity).toBe(318);
+    expect(r.scenarios?.MIN.purchase_quantity).toBe(222);
+    expect(r.scenarios?.REC.purchase_quantity).toBe(241);
+    expect(r.scenarios?.MAX.purchase_quantity).toBe(270);
     expect(r.scenarios?.REC.leftover).toBeCloseTo(
       r.scenarios!.REC.purchase_quantity - r.scenarios!.REC.exact_need,
       5,
     );
+  });
+
+  it("режим бухт сохраняет отдельное округление сечений до 50 м", () => {
+    const r = calc({
+      apartmentArea: 60,
+      roomsCount: 3,
+      ceilingHeight: 2.7,
+      wiringType: 0,
+      hasKitchen: 1,
+      cablePurchaseMode: 1,
+    });
+
+    expect(r.scenarios?.MIN.purchase_quantity).toBe(268);
+    expect(r.scenarios?.REC.purchase_quantity).toBe(268);
+    expect(r.scenarios?.MAX.purchase_quantity).toBe(318);
+    expect(findMaterial(r, "3×1,5")?.packageInfo).toEqual({
+      count: 2,
+      size: 50,
+      packageUnit: "бухт",
+    });
+    expect(findMaterial(r, "3×2,5")?.packageInfo).toEqual({
+      count: 3,
+      size: 50,
+      packageUnit: "бухт",
+    });
+  });
+
+  it("режим покупки по метрам не создаёт фиктивные упаковки", () => {
+    const r = calc({
+      apartmentArea: 60,
+      roomsCount: 3,
+      ceilingHeight: 2.7,
+      wiringType: 0,
+      hasKitchen: 1,
+      cablePurchaseMode: 0,
+    });
+
+    expect(findMaterial(r, "3×1,5")?.purchaseQty).toBe(89);
+    expect(findMaterial(r, "3×2,5")?.purchaseQty).toBe(134);
+    expect(findMaterial(r, "3×1,5")?.packageInfo).toBeUndefined();
+    expect(findMaterial(r, "3×2,5")?.packageInfo).toBeUndefined();
+    expect(r.scenarios?.REC.assumptions).toContain("purchase_mode:per_meter");
   });
 
   it.each(["basic", "realistic", "professional"])(
@@ -46,7 +88,7 @@ describe("Электропроводка", () => {
       });
 
       expect(r.scenarios?.REC.exact_need).toBeCloseTo(239.19024, 5);
-      expect(r.scenarios?.REC.purchase_quantity).toBe(268);
+      expect(r.scenarios?.REC.purchase_quantity).toBe(241);
     },
   );
 
@@ -79,9 +121,35 @@ describe("Электропроводка", () => {
       expect(findMaterial(r, "3×6")).toBeDefined();
     });
 
+    it("верхний итог показывает покупку каждого сечения кабеля отдельно", () => {
+      const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 1 });
+
+      expect(r.summaryCards).toEqual([
+        expect.objectContaining({ label: "Освещение · 3×1,5 мм²", value: "89", unit: "м" }),
+        expect.objectContaining({ label: "Розетки · 3×2,5 мм²", value: "134", unit: "м" }),
+        expect.objectContaining({ label: "Электроплита · 3×6 мм²", value: "18", unit: "м" }),
+      ]);
+      expect(r.summaryCards?.[0].hint).toContain("89 м к покупке");
+      expect(r.summaryCards?.[1].hint).toContain("134 м к покупке");
+      expect(r.summaryCards?.[2].hint).toContain("17,2 м нужно");
+      expect(r.hidePrimaryMaterialBadge).toBe(true);
+    });
+
     it("без электроплиты → нет кабеля 6 мм²", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 0 });
       expect(findMaterial(r, "3×6")).toBeUndefined();
+    });
+
+    it("без электроплиты верхний итог не показывает несуществующую линию 3×6", () => {
+      const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, wiringType: 0, hasKitchen: 0 });
+
+      expect(r.summaryCards).toHaveLength(3);
+      expect(r.summaryCards?.map((card) => card.label)).toEqual([
+        "Освещение · 3×1,5 мм²",
+        "Розетки · 3×2,5 мм²",
+        "Распределительный щит",
+      ]);
+      expect(r.summaryCards?.some((card) => card.label.includes("3×6"))).toBe(false);
     });
   });
 
@@ -131,10 +199,10 @@ describe("Электропроводка", () => {
   });
 
   describe("Предупреждения", () => {
-    it("> 100 м² → 380В (3 фазы)", () => {
+    it("площадь не используется как основание для совета о трёхфазном вводе", () => {
       const r = calc({ apartmentArea: 120, roomsCount: 5, ceilingHeight: 2.7, hasKitchen: 1 });
-      // Engine: "Площадь более 100 м² — рекомендуется ввод 380В (3 фазы)"
-      expect(r.warnings.some(w => w.includes("380 В"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("Площадь более"))).toBe(false);
+      expect(r.warnings.some(w => w.includes("выделенной мощности"))).toBe(true);
     });
 
     it("электроплита → предупреждение о кабеле 3×6", () => {
@@ -143,10 +211,10 @@ describe("Электропроводка", () => {
       expect(r.warnings.some(w => w.includes("3×6"))).toBe(true);
     });
 
-    it("всегда: розетки через УЗО", () => {
+    it("всегда: защита выбирается по проекту и условиям линии", () => {
       const r = calc({ apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 });
-      // Engine: "Все розетки в ванной и кухне — через УЗО 10-30 мА"
-      expect(r.warnings.some(w => w.includes("УЗО"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("УЗО/дифавтоматов"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("по проекту"))).toBe(true);
     });
   });
 
