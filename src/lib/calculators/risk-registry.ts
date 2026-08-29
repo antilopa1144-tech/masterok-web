@@ -103,7 +103,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
     ],
   ),
-  pending("plitnyj-fundament", "foundation-slab", "P0", ["structural_safety", "large_purchase", "multi_material"]),
+  implementationAudited(
+    "plitnyj-fundament",
+    "foundation-slab",
+    "P0",
+    ["structural_safety", "large_purchase", "multi_material"],
+    [
+      "canonical foundation-slab-canonical-v3",
+      "официальные карточки СП 22.13330.2016, СП 63.13330.2018, ГОСТ 7473-2010 и ГОСТ 34028-2016",
+      "отказ от квадратной аппроксимации по одной площади и скрытых полевых коэффициентов",
+      "явные размеры, проектная сетка, запасы, длина прутка, фасовки и надбавки к заказу уплотняемых слоёв",
+      "целые прутки, упаковки проволоки, рулоны геотекстиля и плиты ЭППС; web/mobile parity и общий Flutter flow",
+    ],
+  ),
   pending("podval-fundamenta", "basement", "P0", ["structural_safety", "moisture_risk", "multi_material"]),
   implementationAudited(
     "armatura",

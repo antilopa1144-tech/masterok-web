@@ -1,314 +1,195 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { foundationSlabDef } from "../formulas/foundation-slab";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(foundationSlabDef.calculate.bind(foundationSlabDef));
 
-describe("Калькулятор плитного фундамента", () => {
-  describe("Стандарт: 60 м², толщина 200 мм, Ø12, шаг 200 мм, без утепления", () => {
-    const result = calc({
-      area: 60,
-      thickness: 200,
-      rebarDiam: 12,
-      rebarStep: 200,
-      insulationThickness: 0,
-    });
+describe("Калькулятор плитного фундамента v3", () => {
+  describe("плита 10 × 6 × 0,2 м по проектной схеме", () => {
+    const result = calc({});
 
-    it("чистый объём бетона = area × thickness, без двойного запаса", () => {
-      expect(result.totals.concreteM3).toBeCloseTo(12, 3);
-      expect(result.totals.recExactNeedM3).toBeGreaterThan(12);
-    });
-
-    it("MIN не может быть меньше физического объёма плиты, а строка бетона соответствует REC-закупке", () => {
-      const concrete = findMaterial(result, "Товарный бетон");
-
-      expect(result.scenarios?.MIN.exact_need).toBe(12);
-      expect(concrete?.purchaseQty).toBe(result.scenarios?.REC.purchase_quantity);
-      expect(concrete?.withReserve).toBe(result.scenarios?.REC.exact_need);
-      expect(concrete?.quantity).toBe(result.totals.concreteM3);
-    });
-
-    it.each(["basic", "realistic", "professional"])(
-      "чистый объём не меняется в режиме точности %s",
-      (accuracyMode) => {
-        const modeResult = foundationSlabDef.calculate({
-          area: 60,
-          thickness: 200,
-          accuracyMode: accuracyMode as unknown as number,
-        });
-        const concrete = findMaterial(modeResult, "Товарный бетон");
-
-        expect(modeResult.totals.concreteM3).toBe(12);
-        expect(concrete?.quantity).toBe(12);
-        expect(concrete?.withReserve).toBeCloseTo(modeResult.scenarios?.REC.exact_need ?? 0, 3);
-        expect(concrete?.purchaseQty).toBe(modeResult.scenarios?.REC.purchase_quantity);
-      },
-    );
-
-    it("класс бетона не назначается калькулятором", () => {
-      expect(findMaterial(result, "Товарный бетон — класс по проекту")).toBeDefined();
-    });
-
-    it("бетон к покупке округляется до 0,1 м³, а не до целого куба", () => {
-      const concrete = findMaterial(result, "Товарный бетон");
-      expect((concrete?.purchaseQty ?? 0) * 10).toBeCloseTo(
-        Math.round((concrete?.purchaseQty ?? 0) * 10),
-        8,
-      );
-      expect(concrete?.purchaseQty).toBeGreaterThanOrEqual(concrete!.quantity);
-    });
-
-    it("арматура присутствует", () => {
-      // Engine: "Арматура ∅12 мм"
-      expect(findMaterial(result, "Арматура")).toBeDefined();
-    });
-
-    it("для арматуры показан ориентир по длине и пруткам", () => {
-      expect(findMaterial(result, "Арматура")?.subtitle).toContain("без раскроя");
-    });
-
-    it("rebarKg в totals", () => {
-      // Engine uses totals.rebarKg (not rebarTons)
-      expect(result.totals.rebarKg).toBeGreaterThan(0);
-    });
-
-    it("вязальная проволока присутствует", () => {
-      // Engine: "Проволока вязальная"
-      expect(findMaterial(result, "Проволока вязальная")).toBeDefined();
-    });
-
-    it("проволока считается по длине вязки и массе погонного метра", () => {
-      // 40 × 40 пересечений × 2 сетки × 0,3 м × 0,0089 кг/м.
-      expect(result.totals.wireKg).toBeCloseTo(8.544, 3);
-    });
-
-    it("щебень подготовка = 60 × 0.15 = 9 м³", () => {
-      // Engine: "Щебень (подушка)"
-      const gravel = findMaterial(result, "Щебень");
-      expect(gravel?.quantity).toBeCloseTo(9, 2);
-    });
-
-    it("песок подушка = 60 × 0.1 = 6 м³", () => {
-      // Engine: "Песок (подушка)"
-      const sand = findMaterial(result, "Песок");
-      expect(sand?.quantity).toBeCloseTo(6, 2);
-    });
-
-    it("геотекстиль присутствует", () => {
-      // Engine: "Геотекстиль"
-      const geo = findMaterial(result, "Геотекстиль");
-      expect(geo).toBeDefined();
-    });
-
-    it("опалубка присутствует", () => {
-      // Engine: "Опалубка (доска)"
-      const formwork = findMaterial(result, "Опалубка");
-      expect(formwork).toBeDefined();
-    });
-
-    it("без утепления — нет ЭППС", () => {
-      expect(findMaterial(result, "ЭППС")).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Проектные слои подготовки", () => {
-    it("использует введённые толщины вместо скрытых констант", () => {
-      const result = calc({
-        area: 60,
-        thickness: 200,
-        rebarDiam: 12,
-        rebarStep: 200,
-        sandLayerMm: 200,
-        gravelLayerMm: 80,
-        insulationThickness: 0,
-      });
-
-      expect(result.totals.sand).toBeCloseTo(12, 3);
-      expect(result.totals.gravel).toBeCloseTo(4.8, 3);
-    });
-
-    it("позволяет исключить слой из расчёта", () => {
-      const result = calc({ area: 60, sandLayerMm: 0, gravelLayerMm: 0 });
-      expect(result.totals.sand).toBe(0);
-      expect(result.totals.gravel).toBe(0);
-    });
-  });
-
-  describe("С утеплением ЭППС 100 мм", () => {
-    const result = calc({
-      area: 60,
-      thickness: 200,
-      rebarDiam: 12,
-      rebarStep: 200,
-      insulationThickness: 100,
-    });
-
-    it("ЭППС присутствует", () => {
-      // Engine: "ЭППС утеплитель"
-      const epps = findMaterial(result, "ЭППС");
-      expect(epps).toBeDefined();
-    });
-
-    it("ЭППС плит > 0", () => {
-      const epps = findMaterial(result, "ЭППС");
-      expect(epps?.purchaseQty).toBeGreaterThan(0);
-    });
-  });
-
-  describe("Разные диаметры арматуры", () => {
-    it("Ø10: масса меньше, чем Ø12", () => {
-      const r10 = calc({ area: 60, thickness: 200, rebarDiam: 10, rebarStep: 200, insulationThickness: 0 });
-      const r12 = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-      expect(r10.totals.rebarKg).toBeLessThan(r12.totals.rebarKg);
-    });
-
-    it("Ø16: масса больше, чем Ø12", () => {
-      const r16 = calc({ area: 60, thickness: 200, rebarDiam: 16, rebarStep: 200, insulationThickness: 0 });
-      const r12 = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-      expect(r16.totals.rebarKg).toBeGreaterThan(r12.totals.rebarKg);
-    });
-  });
-
-  describe("Предупреждения", () => {
-    it("тонкая плита → предупреждение", () => {
-      const result = calc({ area: 60, thickness: 150, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-      expect(result.warnings.some((w) => w.includes("подтверждена расчётом конструктора"))).toBe(true);
-    });
-
-    it("большая площадь → предупреждение", () => {
-      const result = calc({ area: 300, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-      // Engine: "Большая площадь плиты — рекомендуется профессиональный расчёт нагрузок"
-      expect(result.warnings.some((w) => w.includes("Большая площадь"))).toBe(true);
-    });
-  });
-
-  describe("Минимальная площадь (area < 10 → clamped to 10)", () => {
-    const result = calc({ area: 5, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-
-    it("totals.area = 10 (clamped)", () => {
-      expect(result.totals.area).toBe(10);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Прямоугольная плита 6×10 м (60 м²)", () => {
-    // useRect=true: length=10, width=6, area=60
-    // perimeter = 2*(10+6) = 32 м (vs 4*sqrt(60) ≈ 30.98 при квадратной аппроксимации)
-    // barsAlongLength = ceil(6/0.2) + 1 = 31, barsAlongWidth = ceil(10/0.2) + 1 = 51
-    // totalBarLen = (31*10 + 51*6) * 2 = (310 + 306) * 2 = 1232 м (vs 1240 у квадрата)
-    // rebarKg ≈ 1232 * 0.888 ≈ 1094 кг
-    const result = calc({
-      length: 10,
-      width: 6,
-      thickness: 200,
-      rebarDiam: 12,
-      rebarStep: 200,
-      insulationThickness: 0,
-    });
-
-    it("использован реальный прямоугольник: length=10, width=6", () => {
+    it("считает чистую геометрию без квадратной аппроксимации", () => {
+      expect(result.formulaVersion).toBe("foundation-slab-canonical-v3");
       expect(result.totals.length).toBe(10);
       expect(result.totals.width).toBe(6);
-    });
-
-    it("площадь = 60 м² (length × width)", () => {
-      expect(result.totals.area).toBeCloseTo(60, 2);
-    });
-
-    it("периметр = 32 м (2 × (10+6))", () => {
-      expect(result.totals.perimeter).toBeCloseTo(32, 2);
-    });
-
-    it("прутков вдоль длины = 31, вдоль ширины = 51", () => {
-      expect(result.totals.barsAlongLength).toBe(31);
-      expect(result.totals.barsAlongWidth).toBe(51);
-    });
-
-    it("общая длина арматуры = 1232 м (две сетки)", () => {
-      expect(result.totals.totalBarLen).toBeCloseTo(1232, 1);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Переключение способа ввода", () => {
-    it("в режиме по площади игнорирует скрытые размеры формы", () => {
-      const result = calc({
-        inputMode: 1,
-        area: 100,
-        length: 10,
-        width: 6,
-        thickness: 200,
-      });
-
-      expect(result.totals.area).toBe(100);
-      expect(result.totals.length).toBe(10);
-      expect(result.totals.width).toBe(10);
-      expect(result.totals.perimeter).toBe(40);
-      expect(result.totals.concreteM3).toBe(20);
-    });
-
-    it("в режиме по размерам игнорирует скрытую площадь формы", () => {
-      const result = calc({
-        inputMode: 0,
-        area: 100,
-        length: 10,
-        width: 6,
-        thickness: 200,
-      });
-
       expect(result.totals.area).toBe(60);
-      expect(result.totals.length).toBe(10);
-      expect(result.totals.width).toBe(6);
       expect(result.totals.perimeter).toBe(32);
       expect(result.totals.concreteM3).toBe(12);
     });
+
+    it("не использует legacy-площадь вместо обязательных сторон", () => {
+      const legacy = calc({ area: 100 });
+      expect(legacy.totals.area).toBe(60);
+      expect(legacy.totals.length).toBe(10);
+      expect(legacy.totals.width).toBe(6);
+    });
+
+    it("разделяет чистый объём, явный запас и заказ бетона", () => {
+      const concrete = findMaterial(result, "Товарный бетон");
+      expect(result.scenarios?.MIN.exact_need).toBe(12);
+      expect(result.scenarios?.REC.exact_need).toBe(12.6);
+      expect(result.scenarios?.MAX.exact_need).toBe(13.2);
+      expect(concrete?.quantity).toBe(12);
+      expect(concrete?.withReserve).toBe(12.6);
+      expect(concrete?.purchaseQty).toBe(12.6);
+    });
+
+    it("показывает понятные итоговые карточки", () => {
+      expect(result.summaryCards?.map((card) => card.label)).toEqual([
+        "Бетон к заказу",
+        "Арматура к покупке",
+        "Площадь плиты",
+      ]);
+    });
+
+    it("не меняет закупку скрытым режимом точности", () => {
+      const professional = foundationSlabDef.calculate({ accuracyMode: "professional" as never });
+      expect(professional.totals.concreteM3).toBe(12);
+      expect(professional.scenarios?.REC.exact_need).toBe(12.6);
+      expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
+    });
+
+    it("соблюдает общие инварианты результата", () => {
+      checkInvariants(result);
+    });
   });
 
-  describe("Вытянутая плита 3×20 м — заметная разница с sqrt-аппроксимацией", () => {
-    // length=20, width=3, area=60 (та же что и квадрат 7.75×7.75)
-    // periметр = 2*(3+20) = 46 м (vs 31 у квадрата → +48% опалубки!)
-    // barsAlongLength = ceil(3/0.2) + 1 = 16, barsAlongWidth = ceil(20/0.2) + 1 = 101
-    // totalBarLen = (16*20 + 101*3) * 2 = (320 + 303) * 2 = 1246 м
-    const rect = calc({
-      length: 20,
-      width: 3,
-      thickness: 200,
-      rebarDiam: 12,
-      rebarStep: 200,
-      insulationThickness: 0,
-    });
-    const square = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
+  describe("заказ товарного бетона", () => {
+    it("добавляет остаток в линии подачи отдельно и округляет выбранным шагом", () => {
+      const result = calc({
+        concreteReservePercent: 7,
+        deliveryAllowanceM3: 0.3,
+        readyMixOrderStepM3: 0.5,
+      });
 
-    it("периметр прямоугольника > периметра квадрата", () => {
-      // 46 vs ~31
-      expect(rect.totals.perimeter).toBeGreaterThan(square.totals.perimeter * 1.4);
+      expect(result.scenarios?.REC.exact_need).toBe(13.14);
+      expect(result.scenarios?.REC.purchase_quantity).toBe(13.5);
+      expect(result.scenarios?.REC.leftover).toBeCloseTo(0.36, 6);
     });
 
-    it("опалубка прямоугольника заметно больше", () => {
-      const rectFormwork = rect.totals.formworkArea as number;
-      const squareFormwork = square.totals.formworkArea as number;
-      expect(rectFormwork).toBeGreaterThan(squareFormwork * 1.4);
+    it("не назначает класс бетона", () => {
+      expect(findMaterial(calc({}), "Товарный бетон — класс по проекту")).toBeDefined();
     });
   });
 
-  describe("Backward-compat: только area без length/width", () => {
-    const old = calc({ area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
-    const explicit = calc({ length: 0, width: 0, area: 60, thickness: 200, rebarDiam: 12, rebarStep: 200, insulationThickness: 0 });
+  describe("армирование только по введённой схеме", () => {
+    it("учитывает отступ крайнего стержня, число слоёв и максимальный шаг", () => {
+      const result = calc({});
+      expect(result.totals.barsAlongLength).toBe(31);
+      expect(result.totals.barsAlongWidth).toBe(51);
+      expect(result.totals.totalBarLen).toBeCloseTo(1215.6, 3);
+      expect(result.totals.rebarKg).toBeCloseTo(1079.453, 3);
+    });
 
-    it("identical: только area даёт тот же результат, что и length=0/width=0", () => {
-      expect(old.totals.rebarKg).toBeCloseTo(explicit.totals.rebarKg as number, 3);
-      expect(old.totals.concreteM3).toBeCloseTo(explicit.totals.concreteM3 as number, 3);
-      expect(old.totals.perimeter).toBeCloseTo(explicit.totals.perimeter as number, 3);
+    it("применяет запас один раз и округляет до целых прутков", () => {
+      const result = calc({ rebarReservePercent: 10, rodLengthM: 11.7 });
+      const rebar = findMaterial(result, "Арматура сеток");
+
+      expect(result.totals.rebarPlanningLengthM).toBeCloseTo(1337.16, 3);
+      expect(result.totals.rebarRods).toBe(115);
+      expect(result.totals.rebarPurchaseLengthM).toBeCloseTo(1345.5, 3);
+      expect(rebar?.packageInfo).toEqual({ count: 115, size: 11.7, packageUnit: "прутков" });
+    });
+
+    it("один слой уменьшает метраж и число пересечений вдвое", () => {
+      const twoLayers = calc({ gridLayers: 2 });
+      const oneLayer = calc({ gridLayers: 1 });
+      expect(oneLayer.totals.totalBarLen).toBeCloseTo(twoLayers.totals.totalBarLen / 2, 6);
+      expect(oneLayer.totals.intersections).toBe(twoLayers.totals.intersections / 2);
+    });
+
+    it("вязальную проволоку считает по явной доле узлов и целым упаковкам", () => {
+      const result = calc({
+        tieSharePercent: 50,
+        wireLengthPerTieM: 0.25,
+        wireReservePercent: 10,
+        wirePackageKg: 1,
+      });
+      const wire = findMaterial(result, "Проволока вязальная");
+
+      expect(result.totals.tieCount).toBe(1581);
+      expect(result.totals.wireKg).toBeCloseTo(2.372, 3);
+      expect(result.totals.wirePurchaseKg).toBe(3);
+      expect(wire?.packageInfo).toEqual({ count: 3, size: 1, packageUnit: "упаковок" });
+    });
+  });
+
+  describe("подготовка, опалубка и утепление", () => {
+    it("считает площадь щитов по введённой высоте без скрытого округления", () => {
+      const result = calc({ formworkHeightMm: 300, formworkReservePercent: 5 });
+      const formwork = findMaterial(result, "Опалубка");
+      expect(formwork?.quantity).toBe(9.6);
+      expect(formwork?.withReserve).toBeCloseTo(10.08, 3);
+      expect(formwork?.purchaseQty).toBeCloseTo(10.08, 3);
+    });
+
+    it("отделяет объём уплотнённого слоя от надбавки и шага заказа", () => {
+      const result = calc({
+        sandLayerMm: 100,
+        sandOrderExtraPercent: 15,
+        gravelLayerMm: 80,
+        gravelOrderExtraPercent: 10,
+        aggregateOrderStepM3: 0.5,
+      });
+
+      expect(result.totals.sand).toBe(6);
+      expect(result.totals.sandPlanningM3).toBe(6.9);
+      expect(result.totals.sandPurchaseM3).toBe(7);
+      expect(result.totals.gravel).toBe(4.8);
+      expect(result.totals.gravelPlanningM3).toBeCloseTo(5.28, 3);
+      expect(result.totals.gravelPurchaseM3).toBe(5.5);
+    });
+
+    it("позволяет исключить проектные слои", () => {
+      const result = calc({
+        sandLayerMm: 0,
+        gravelLayerMm: 0,
+        includeGeotextile: 0,
+        formworkHeightMm: 0,
+      });
+      expect(findMaterial(result, "Песок")).toBeUndefined();
+      expect(findMaterial(result, "Щебень")).toBeUndefined();
+      expect(findMaterial(result, "Геотекстиль")).toBeUndefined();
+      expect(findMaterial(result, "Опалубка")).toBeUndefined();
+    });
+
+    it("геотекстиль округляет до введённой площади рулона", () => {
+      const result = calc({
+        includeGeotextile: 1,
+        geotextileReservePercent: 20,
+        geotextileRollAreaM2: 50,
+      });
+      const material = findMaterial(result, "Геотекстиль");
+      expect(material?.quantity).toBe(60);
+      expect(material?.withReserve).toBe(72);
+      expect(material?.purchaseQty).toBe(100);
+      expect(material?.packageInfo).toEqual({ count: 2, size: 50, packageUnit: "рулонов" });
+    });
+
+    it("ЭППС округляет до введённой площади плиты", () => {
+      const result = calc({
+        insulationThickness: 100,
+        insulationReservePercent: 5,
+        eppsBoardAreaM2: 0.72,
+      });
+      const material = findMaterial(result, "ЭППС");
+      expect(material?.quantity).toBe(60);
+      expect(material?.withReserve).toBe(63);
+      expect(material?.packageInfo).toEqual({ count: 88, size: 0.72, packageUnit: "плит" });
+      expect(material?.purchaseQty).toBeCloseTo(63.36, 3);
+    });
+  });
+
+  describe("границы безопасности", () => {
+    it("всегда объясняет, что конструкцию калькулятор не проектирует", () => {
+      const result = calc({});
+      expect(result.warnings.some((warning) => warning.includes("не выбирает тип фундамента"))).toBe(true);
+    });
+
+    it("отдельно предупреждает о небольшой толщине и большой площади", () => {
+      const result = calc({ length: 25, width: 10, thickness: 150 });
+      expect(result.warnings.some((warning) => warning.includes("небольшая толщина"))).toBe(true);
+      expect(result.warnings.some((warning) => warning.includes("Большая площадь"))).toBe(true);
     });
   });
 });

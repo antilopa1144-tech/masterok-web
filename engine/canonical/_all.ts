@@ -1757,29 +1757,37 @@ export interface SewageCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 export interface FoundationSlabPackagingRules {
   unit: string;
-  volume_step_m3: number;
+  allowed_ready_mix_order_steps_m3: number[];
+  allowed_rod_lengths_m: number[];
+  allowed_wire_packages_kg: number[];
+  allowed_aggregate_order_steps_m3: number[];
 }
 
 export interface FoundationSlabMaterialRules {
   weight_per_meter: Record<string, number>;
-  wire_length_per_joint_m: number;
+  allowed_rebar_diameters_mm: number[];
   wire_mass_per_meter_kg: number;
-  epps_plate_m2: number;
-  geotextile_reserve: number;
-  formwork_reserve: number;
-  insulation_reserve: number;
 }
 
 export interface FoundationSlabWarningRules {
   large_area_threshold_m2: number;
   thin_slab_threshold_mm: number;
+  large_order_threshold_m3: number;
 }
 
 export interface FoundationSlabCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: Record<string, never>;
+  normative_formula: {
+    concrete: string;
+    reinforcement: string;
+    preparation: string;
+  };
   packaging_rules: FoundationSlabPackagingRules;
   material_rules: FoundationSlabMaterialRules;
   warnings_rules: FoundationSlabWarningRules;
+  scenario_policy: CanonicalCalculatorSpecBase["scenario_policy"] & {
+    max_reserve_floor_percent: number;
+  };
+  evidence: ConcreteEvidenceSpec;
 }
 
 /* ─── Strip Foundation (ленточный фундамент) ─── */

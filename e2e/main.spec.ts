@@ -107,6 +107,34 @@ test.describe("Калькулятор ленточного фундамента"
   });
 });
 
+test.describe("Калькулятор плитного фундамента", () => {
+  test("v3 считает закупку только по явной проектной схеме", async ({ page }) => {
+    await page.goto("/kalkulyatory/fundament/plitnyj-fundament/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("плитного фундамента");
+    await expect(page.getByLabel("Длина плиты по проекту").first()).toHaveValue("10");
+    await expect(page.getByLabel("Ширина плиты по проекту").first()).toHaveValue("6");
+    await expect(page.getByLabel("Толщина плиты по проекту").first()).toHaveValue("200");
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Бетон к заказу");
+    await expect(resultCard).toContainText(/12[,.]6\s*м³/);
+    await expect(resultCard).toContainText("Арматура к покупке");
+    await expect(resultCard).toContainText(/115\s*прутков/);
+    await expect(resultCard).toContainText("Товарный бетон — класс по проекту");
+    await expect(
+      resultCard.getByText(/класс, подвижность, морозостойкость и водонепроницаемость задаёт проект/i),
+    ).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");
