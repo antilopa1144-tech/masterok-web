@@ -833,19 +833,19 @@ export interface ConcreteProportionSpec {
 
 export interface ConcretePackagingRules {
   unit: string;
-  volume_step_m3: number;
+  allowed_ready_mix_order_steps_m3: number[];
   cement_bag_kg: number;
-  mastic_bucket_kg: number;
-  film_roll_m2: number;
+  aggregate_order_step_m3: number;
 }
 
-export interface ConcreteMaterialRules {
-  waterproof_mastic_kg_per_m2: number;
-  waterproof_reserve_factor: number;
-  film_reserve_factor: number;
-  sand_reserve_factor: number;
-  gravel_reserve_factor: number;
-  estimated_slab_thickness_m: number;
+export interface ConcreteEvidenceSpec {
+  reviewed_at: string;
+  standards: Array<{
+    code: string;
+    scope: string;
+    source: string;
+  }>;
+  project_assumptions: string[];
 }
 
 export interface ConcreteWarningRules {
@@ -855,12 +855,16 @@ export interface ConcreteWarningRules {
 
 export interface ConcreteCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
+    volume: string;
+  };
+  planning_mix: {
+    status: "project_estimate_not_mix_design";
+    cement_basis: string;
     proportions: ConcreteProportionSpec[];
   };
   packaging_rules: ConcretePackagingRules;
-  material_rules: ConcreteMaterialRules;
   warnings_rules: ConcreteWarningRules;
-  companion_materials?: CompanionMaterialSpec[];
+  evidence: ConcreteEvidenceSpec;
 }
 
 export interface InsulationTypeSpec {

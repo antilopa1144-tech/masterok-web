@@ -78,6 +78,7 @@ describe("computeCanonicalConcrete — стандартные входные д�
     });
 
     const names = result.materials.map((m) => m.name);
+    expect(names.some((n) => n.includes("Бетон М200"))).toBe(false);
     expect(names.some((n) => n.includes("Цемент"))).toBe(true);
     expect(names.some((n) => n.includes("Песок"))).toBe(true);
     expect(names.some((n) => n.includes("Щебень"))).toBe(true);
@@ -96,6 +97,19 @@ describe("computeCanonicalConcrete — стандартные входные д�
 
     expect(result.totals.sourceVolume).toBe(4);
     expect(result.totals.inputMode).toBe(1);
+  });
+
+  it("готовая смесь округляется по выбранному шагу заказа", () => {
+    const result = calc({
+      concreteVolume: 5,
+      reserve: 5,
+      manualMix: 0,
+      readyMixOrderStepM3: 0.5,
+    });
+
+    expect(result.scenarios.REC.exact_need).toBe(5.25);
+    expect(result.scenarios.REC.purchase_quantity).toBe(5.5);
+    expect(result.totals.readyMixOrderStepM3).toBe(0.5);
   });
 
   describe("Разные марки бетона (M100..M400) — пропорции различаются", () => {
@@ -296,73 +310,32 @@ describe("computeCanonicalConcrete — структура результата",
     expect(result.canonicalSpecId).toBe("concrete");
   });
 
-  it("formulaVersion = 'concrete-canonical-v2'", () => {
-    expect(result.formulaVersion).toBe("concrete-canonical-v2");
+  it("formulaVersion = 'concrete-canonical-v3'", () => {
+    expect(result.formulaVersion).toBe("concrete-canonical-v3");
   });
 });
 
-// ─── Companion materials по application ───────────────────────────────────
+describe("computeCanonicalConcrete — границы достоверности", () => {
+  it("не выводит арматуру, опалубку и гидроизоляцию без проектной геометрии", () => {
+    const result = calc({ concreteVolume: 5, manualMix: 0 });
+    const names = result.materials.map((material) => material.name).join(" ");
 
-describe("computeCanonicalConcrete — сопутствующие материалы по применению", () => {
-  function names(r: ReturnType<typeof calc>) {
-    return r.materials.map((m) => m.name);
-  }
-
-  it("application=0 (фундамент) → мастика + плёнка + арматура плиты + опалубка", () => {
-    const r = calc({ concreteVolume: 5, application: 0, manualMix: 0 });
-    const list = names(r);
-    expect(list.some((n) => n.includes("Мастика"))).toBe(true);
-    expect(list.some((n) => n.includes("Плёнка"))).toBe(true);
-    expect(list.some((n) => n.includes("плиты"))).toBe(true);
-    expect(list.some((n) => n.includes("Опалубочная"))).toBe(true);
-    expect(list.some((n) => n.includes("Сетка кладочная"))).toBe(false);
-    expect(list.some((n) => n.includes("конструктива"))).toBe(false);
+    expect(names).not.toMatch(/Арматур|Опалуб|Мастик|Гидроизоляц|Стульчик/);
   });
 
-  it("application=1 (стяжка) → сетка кладочная, без мастики и опалубки", () => {
-    const r = calc({ concreteVolume: 5, application: 1, manualMix: 0 });
-    const list = names(r);
-    expect(list.some((n) => n.includes("Сетка кладочная"))).toBe(true);
-    expect(list.some((n) => n.includes("Плёнка"))).toBe(true);
-    expect(list.some((n) => n.includes("Мастика"))).toBe(false);
-    expect(list.some((n) => n.includes("Опалубочная"))).toBe(false);
-    expect(list.some((n) => n.includes("Проволока"))).toBe(false);
-    expect(list.some((n) => n.includes("Стульчики"))).toBe(false);
+  it("ручной замес помечен как оценка, а не рецепт", () => {
+    const result = calc({ concreteVolume: 5, concreteGrade: 3, manualMix: 1 });
+
+    expect(result.warnings.some((warning) => warning.includes("не рецепт"))).toBe(true);
+    expect(result.scenarios.REC.assumptions).toContain("mix_table_status:project_estimate_not_mix_design");
   });
 
-  it("application=2 (конструктив) → арматура конструктива + опалубка + проволока + стульчики", () => {
-    const r = calc({ concreteVolume: 5, application: 2, manualMix: 0 });
-    const list = names(r);
-    expect(list.some((n) => n.includes("конструктива"))).toBe(true);
-    expect(list.some((n) => n.includes("Опалубочная"))).toBe(true);
-    expect(list.some((n) => n.includes("Проволока"))).toBe(true);
-    expect(list.some((n) => n.includes("Стульчики"))).toBe(true);
-    expect(list.some((n) => n.includes("Мастика"))).toBe(false);
-    expect(list.some((n) => n.includes("плиты"))).toBe(false);
-  });
+  it("песок и щебень округляются до 0.1 м³, а не до целого куба", () => {
+    const result = calc({ concreteVolume: 1, concreteGrade: 3, reserve: 0, manualMix: 1 });
+    const sand = result.materials.find((material) => material.name === "Песок строительный");
+    const gravel = result.materials.find((material) => material.name === "Щебень");
 
-  it("арматура для конструктива тяжелее чем для плиты при том же объёме", () => {
-    const slab = calc({ concreteVolume: 10, application: 0, manualMix: 0 });
-    const structure = calc({ concreteVolume: 10, application: 2, manualMix: 0 });
-
-    const slabRebar = slab.materials.find((m) => m.name.includes("плиты"));
-    const structureRebar = structure.materials.find((m) => m.name.includes("конструктива"));
-    expect(slabRebar).toBeDefined();
-    expect(structureRebar).toBeDefined();
-    expect(structureRebar!.purchaseQty).toBeGreaterThan(slabRebar!.purchaseQty!);
-  });
-
-  it("укрывная плёнка пакуется рулонами 30 м²", () => {
-    const r = calc({ concreteVolume: 5, application: 0 });
-    const film = r.materials.find((m) => m.name.includes("Плёнка"));
-    expect(film).toBeDefined();
-    expect(film!.packageInfo?.size).toBe(30);
-    expect(film!.packageInfo?.packageUnit).toBe("рулонов");
-  });
-
-  it("дефолтное application=0: материалы как у фундамента", () => {
-    const r = calc({ concreteVolume: 5, manualMix: 0 });
-    expect(r.totals.application).toBe(0);
-    expect(names(r).some((n) => n.includes("Мастика"))).toBe(true);
+    expect(sand?.purchaseQty).toBe(0.5);
+    expect(gravel?.purchaseQty).toBe(0.9);
   });
 });

@@ -77,7 +77,19 @@ const implementationAudited = (
 
 export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
   // P0: ошибка способна повлиять на конструктив или безопасность инженерной системы.
-  pending("beton", "concrete", "P0", ["structural_safety", "large_purchase", "field_factors"]),
+  implementationAudited(
+    "beton",
+    "concrete",
+    "P0",
+    ["structural_safety", "large_purchase", "field_factors"],
+    [
+      "canonical concrete-canonical-v3",
+      "официальные карточки ГОСТ 27006-2019, ГОСТ 7473-2010, ГОСТ 26633-2015 и СП 70.13330.2012",
+      "отказ от расчёта арматуры и опалубки по одному объёму бетона",
+      "регрессии геометрии, запаса, шага заказа, ручного состава и округления заполнителей",
+      "web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
+    ],
+  ),
   pending("lentochnyy-fundament", "strip-foundation", "P0", ["structural_safety", "large_purchase", "complex_geometry"]),
   pending("plitnyj-fundament", "foundation-slab", "P0", ["structural_safety", "large_purchase", "multi_material"]),
   pending("podval-fundamenta", "basement", "P0", ["structural_safety", "moisture_risk", "multi_material"]),

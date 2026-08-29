@@ -31,35 +31,47 @@ test.describe("Калькулятор бетона", () => {
     await expect(page.locator("h1")).toContainText("бетона");
   });
 
-  test("рассчитывает материалы при нажатии кнопки", async ({ page }) => {
+  test("v3 считает заказ готовой смеси по площади, толщине и шагу поставщика", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");
 
-    // Меняем значение слайдера объёма
-    const volumeInput = page.locator('input[aria-label="Объём бетона"]').first();
-    await volumeInput.fill("5");
+    await page.getByRole("button", { name: "По площади и толщине", exact: true }).click();
+    await expect(page.getByLabel("Объём бетона").first()).not.toBeVisible();
+    await page.getByLabel("Площадь заливки").first().fill("10");
+    await page.getByLabel("Толщина слоя").first().fill("150");
+    await page.getByLabel("Шаг заказа готовой смеси").selectOption("0.5");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
 
-    // Нажимаем «Рассчитать»
-    await page.click('button:has-text("Рассчитать")');
-
-    // Ждём появления результатов
-    await expect(page.locator("text=Бетон М200")).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=Арматура")).toBeVisible({ timeout: 5000 });
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    const orderCard = resultCard.getByText("Заказать", { exact: true }).locator("xpath=../..");
+    await expect(resultCard).toContainText("Чистый объём");
+    await expect(resultCard).toContainText("1,5 м³");
+    await expect(orderCard.locator("p").nth(1)).toHaveText(/2\s*м³/);
+    await expect(orderCard.locator("p").nth(2)).toHaveText("Шаг 0.5 м³");
+    await expect(resultCard).not.toContainText("Арматура");
+    await expect(resultCard).not.toContainText("Опалубка");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
   });
 
-  test("меняет сопутку при смене применения", async ({ page }) => {
+  test("v3 в ручном режиме показывает компоненты и границу применимости", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");
 
-    // Выбираем «Стяжка пола»
-    await page.click('[aria-label="Применение бетона"]');
-    await page.click('text=Стяжка пола');
+    await page.getByRole("switch", { name: "Самостоятельный замес" }).click();
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
 
-    // Нажимаем «Рассчитать»
-    await page.click('button:has-text("Рассчитать")');
-
-    // Сетка кладочная вместо арматуры
-    await expect(page.locator("text=Сетка кладочная")).toBeVisible({ timeout: 10000 });
-    // Мастики быть не должно (она только для фундамента)
-    await expect(page.locator("text=Мастика")).not.toBeVisible({ timeout: 3000 });
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(page.getByText(/предварительная закупочная оценка, а не рецепт/i).first()).toBeVisible();
+    await expect(resultCard).toContainText("Расчётный выход");
+    await expect(resultCard).toContainText("Цемент М400");
+    await expect(resultCard).toContainText("Песок строительный");
+    await expect(resultCard).toContainText("Щебень");
+    await expect(resultCard).not.toContainText("Арматура");
+    await expect(resultCard).not.toContainText("Опалубка");
+    await expect(resultCard).not.toContainText("Вода");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
   });
 });
 

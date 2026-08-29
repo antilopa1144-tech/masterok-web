@@ -59,12 +59,19 @@ describe("Калькулятор бетона", () => {
 
     it("цемент М400 согласован с выбранным запасом без скрытой надбавки", () => {
       const cement = findMaterial(result, "Цемент М400");
-      const concrete = findMaterial(result, "Бетон М200");
       // REC = 5 × 1.05 = 5.25 м³; цемент = 5.25 × 290 = 1522.5 кг
       // → ceil(1522.5/50) = 31 мешок × 50 = 1550 кг.
       expect(cement?.purchaseQty).toBe(1550);
       const cementVolumeM3 = (cement!.quantity) / 290;
-      expect(cementVolumeM3).toBeCloseTo(concrete!.withReserve!, 1);
+      expect(cementVolumeM3).toBeCloseTo(result.totals.totalVolume, 1);
+    });
+
+    it("не предлагает одновременно купить готовый бетон и компоненты", () => {
+      expect(findMaterial(result, "Бетон М200")).toBeUndefined();
+    });
+
+    it("показывает предупреждение, что таблица компонентов не является рецептом", () => {
+      expect(result.warnings.some((warning) => warning.includes("не рецепт"))).toBe(true);
     });
   });
 
@@ -90,6 +97,18 @@ describe("Калькулятор бетона", () => {
   });
 
   describe("Граничные условия", () => {
+    it("округляет готовую смесь по выбранному шагу поставщика", () => {
+      const result = calc({
+        concreteVolume: 5,
+        concreteGrade: 3,
+        manualMix: 0,
+        reserve: 5,
+        readyMixOrderStepM3: 0.5,
+      });
+      expect(result.scenarios.REC.exact_need).toBe(5.25);
+      expect(result.scenarios.REC.purchase_quantity).toBe(5.5);
+    });
+
     it("объём < 0.5 м³ → предупреждение о малом объёме", () => {
       const result = calc({ concreteVolume: 0.3, concreteGrade: 3, manualMix: 0, reserve: 5 });
       expect(result.warnings.some((w) => w.includes("Малый объём"))).toBe(true);

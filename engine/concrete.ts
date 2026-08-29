@@ -9,22 +9,25 @@ import type {
 import { roundDisplay } from "./units";
 import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-import { evaluateCompanionMaterials } from "./companion-materials";
 
 interface ConcreteInputs {
   concreteVolume?: number;
   concreteGrade?: number;
   manualMix?: number;
+  readyMixOrderStepM3?: number;
   reserve?: number;
   inputMode?: number;
   area?: number;
   thickness?: number;
-  application?: number;
   accuracyMode?: AccuracyMode;
 }
 
 function resolveProportions(spec: ConcreteCanonicalSpec, grade: number): ConcreteProportionSpec {
-  return spec.normative_formula.proportions.find((p) => p.grade === grade) ?? spec.normative_formula.proportions[2];
+  return spec.planning_mix.proportions.find((p) => p.grade === grade) ?? spec.planning_mix.proportions[2];
+}
+
+function roundUpToStep(value: number, step: number): number {
+  return roundDisplay(Math.ceil((value - Number.EPSILON) / step) * step, 6);
 }
 
 function resolveVolume(spec: ConcreteCanonicalSpec, inputs: ConcreteInputs): { inputMode: number; sourceVolume: number } {
@@ -40,10 +43,10 @@ function resolveVolume(spec: ConcreteCanonicalSpec, inputs: ConcreteInputs): { i
 /**
  * Базовые материалы: основной бетон + компоненты ручного замеса.
  *
- * Гидроизоляция, плёнка для твердения, арматура, опалубка — теперь декларативно
- * через spec.companion_materials (см. конфиг). Вода удалена из списка покупок:
- * вода идёт из водопровода, в товарном списке не нужна; её объём остаётся в
- * totals для технических расчётов.
+ * При готовой смеси основной товар — бетон. При самостоятельном замесе основной
+ * список — цемент и заполнители: показывать одновременно готовую смесь и её
+ * компоненты как две покупки нельзя. Вода остаётся только справочным ориентиром
+ * в totals и не превращается в товар или рецепт дозирования.
  */
 function buildMaterials(
   spec: ConcreteCanonicalSpec,
@@ -60,18 +63,21 @@ function buildMaterials(
   gravelM3: number,
 ): CanonicalMaterialResult[] {
   void proportions;
-  const materials: CanonicalMaterialResult[] = [
-    {
+  const materials: CanonicalMaterialResult[] = [];
+
+  if (!manualMix) {
+    materials.push({
       name: `Бетон ${gradeLabel}`,
       quantity: roundDisplay(sourceVolume, 3),
       unit: "м³",
       withReserve: roundDisplay(recExactNeed, 3),
       purchaseQty: roundDisplay(recPackageCount * recPackageSize, 3),
       category: "Основное",
-    },
-  ];
+    });
+  }
 
   if (manualMix) {
+    const aggregateStep = spec.packaging_rules.aggregate_order_step_m3;
     materials.push(
       {
         name: `Цемент М400 (${spec.packaging_rules.cement_bag_kg} кг)`,
@@ -87,7 +93,7 @@ function buildMaterials(
         quantity: roundDisplay(sandM3, 3),
         unit: "м³",
         withReserve: roundDisplay(sandM3, 3),
-        purchaseQty: Math.ceil(sandM3),
+        purchaseQty: roundUpToStep(sandM3, aggregateStep),
         category: "Компоненты",
       },
       {
@@ -95,7 +101,7 @@ function buildMaterials(
         quantity: roundDisplay(gravelM3, 3),
         unit: "м³",
         withReserve: roundDisplay(gravelM3, 3),
-        purchaseQty: Math.ceil(gravelM3),
+        purchaseQty: roundUpToStep(gravelM3, aggregateStep),
         category: "Компоненты",
       },
     );
@@ -113,11 +119,13 @@ export function computeCanonicalConcrete(
   const volume = resolveVolume(spec, inputs);
   const concreteGrade = Math.max(1, Math.min(7, Math.round(inputs.concreteGrade ?? getInputDefault(spec, "concreteGrade", 3))));
   const manualMix = Math.round(inputs.manualMix ?? getInputDefault(spec, "manualMix", 0)) === 1 ? 1 : 0;
+  const requestedOrderStep = inputs.readyMixOrderStepM3 ?? getInputDefault(spec, "readyMixOrderStepM3", 0.1);
+  const readyMixOrderStepM3 = spec.packaging_rules.allowed_ready_mix_order_steps_m3.includes(requestedOrderStep)
+    ? requestedOrderStep
+    : spec.packaging_rules.allowed_ready_mix_order_steps_m3[0];
   const reserve = Math.max(0, Math.min(20, inputs.reserve ?? getInputDefault(spec, "reserve", 5)));
   const proportions = resolveProportions(spec, concreteGrade);
   const gradeLabel = proportions.label;
-
-  const application = Math.max(0, Math.min(2, Math.round(inputs.application ?? getInputDefault(spec, "application", 0))));
 
   const sourceVolume = volume.sourceVolume;
   const totalVolume = roundDisplay(sourceVolume * (1 + reserve / 100), 6);
@@ -125,16 +133,6 @@ export function computeCanonicalConcrete(
     0,
     spec.scenario_policy.recommended_max_reserve_percent ?? 10,
   );
-
-  // Геометрия для опалубки и боковой гидроизоляции.
-  // estimated_slab_thickness_m — это высота борта/толщина плиты, используется
-  // и для оценки периметра, и для площади опалубки/боковой обмазки.
-  const estimatedThickness = spec.material_rules.estimated_slab_thickness_m;
-  const topSurfaceArea = roundDisplay(totalVolume / estimatedThickness, 6);
-  const perimeterEst = roundDisplay(Math.sqrt(topSurfaceArea) * 4, 6);
-  // formworkArea (= waterproofArea) — площадь боковин: периметр × высота.
-  // Используется одновременно для опалубки и для обмазочной мастики.
-  const formworkArea = roundDisplay(perimeterEst * estimatedThickness, 6);
 
   // Компоненты ручного замеса. Вода считается в totals для технической
   // справки, но в покупаемых материалах не выводится (берётся из водопровода).
@@ -147,15 +145,18 @@ export function computeCanonicalConcrete(
   if (manualMix) {
     cementKg = roundDisplay(totalVolume * proportions.cement_kg, 6);
     cementBags = Math.ceil(cementKg / spec.packaging_rules.cement_bag_kg);
-    sandM3 = roundDisplay(totalVolume * proportions.sand_m3 * spec.material_rules.sand_reserve_factor, 6);
-    gravelM3 = roundDisplay(totalVolume * proportions.gravel_m3 * spec.material_rules.gravel_reserve_factor, 6);
+    sandM3 = roundDisplay(totalVolume * proportions.sand_m3, 6);
+    gravelM3 = roundDisplay(totalVolume * proportions.gravel_m3, 6);
     waterL = roundDisplay(totalVolume * proportions.water_l, 6);
   }
 
   // Package options for the main concrete volume
+  const scenarioPurchaseStep = manualMix ? 0.001 : readyMixOrderStepM3;
   const packageOptions = [{
-    size: spec.packaging_rules.volume_step_m3,
-    label: `concrete-${spec.packaging_rules.volume_step_m3}${spec.packaging_rules.unit}`,
+    size: scenarioPurchaseStep,
+    label: manualMix
+      ? "calculated-concrete-yield"
+      : `ready-mix-step-${readyMixOrderStepM3}${spec.packaging_rules.unit}`,
     unit: spec.packaging_rules.unit,
   }];
 
@@ -179,11 +180,13 @@ export function computeCanonicalConcrete(
         `manual_mix:${manualMix}`,
         `reserve_percent:${scenarioReserve}`,
         "scenario_policy:explicit_concrete_reserve",
+        `mix_table_status:${spec.planning_mix.status}`,
         `packaging:${packaging.package.label}`,
       ],
       key_factors: {
         reserve_percent: roundDisplay(scenarioReserve, 3),
         field_multiplier: roundDisplay(reserveMultiplier, 6),
+        ready_mix_order_step_m3: manualMix ? 0 : readyMixOrderStepM3,
       },
       buy_plan: {
         package_label: packaging.package.label,
@@ -203,19 +206,25 @@ export function computeCanonicalConcrete(
   if (concreteGrade >= spec.warnings_rules.manual_mix_max_grade && manualMix) {
     warnings.push("Бетон высоких марок сложно замешивать вручную — рекомендуется заводской бетон");
   }
+  if (manualMix) {
+    warnings.push(
+      "Компоненты рассчитаны как предварительная закупочная оценка, а не рецепт: рабочий состав и воду подбирают по фактическим материалам и проверяют по ГОСТ 27006-2019",
+    );
+  }
 
   const recScenario = scenarios.REC;
 
-  const practicalNotes: string[] = [];
-  if (totalVolume > 5) {
-    practicalNotes.push(`При ${roundDisplay(totalVolume, 1)} м³ не обойтись без бетононасоса — ручная подача на таком объёме замучает бригаду`);
-  }
-  if (manualMix && totalVolume > 2) {
-    const batches = Math.ceil(totalVolume / 0.15);
-    practicalNotes.push(`Замесить ${roundDisplay(totalVolume, 1)} м³ вручную — это примерно ${batches} замесов в бетономешалке. Серьёзно подумайте о заводском бетоне`);
-  }
-  if (concreteGrade >= 5) {
-    practicalNotes.push(`Марка ${gradeLabel} — обязательно вибрирование, иначе потеряете до 30% прочности`);
+  const practicalNotes: string[] = [
+    "Класс прочности, морозостойкость F, водонепроницаемость W, подвижность и крупность заполнителя задают проектом и условиями бетонирования — калькулятор их не выбирает",
+  ];
+  if (manualMix) {
+    practicalNotes.push(
+      "Расчётный объём воды — только ориентир: учитывайте влажность песка и щебня и не добавляйте всю воду автоматически",
+    );
+  } else {
+    practicalNotes.push(
+      `Шаг заказа ${readyMixOrderStepM3} м³ выбран для планирования; подтвердите у поставщика минимальную партию, фактический шаг и остаток смеси в линии подачи`,
+    );
   }
 
   const baseMaterials = buildMaterials(
@@ -233,45 +242,23 @@ export function computeCanonicalConcrete(
     gravelM3,
   );
 
-  const companionTotals = {
-    totalVolume,
-    topSurfaceArea,
-    formworkArea,
-    waterproofArea: formworkArea, // alias для конфига гидроизоляции
-    perimeterEst,
-  };
-  const companionInputs = {
-    application,
-    concreteGrade,
-    manualMix,
-  };
-  const companions = spec.companion_materials
-    ? evaluateCompanionMaterials(spec.companion_materials, {
-        inputs: companionInputs,
-        totals: companionTotals,
-      })
-    : [];
-
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: [...baseMaterials, ...companions],
+    materials: baseMaterials,
     totals: {
       sourceVolume: roundDisplay(sourceVolume, 3),
       totalVolume: roundDisplay(totalVolume, 3),
       inputMode: volume.inputMode,
       concreteGrade,
       manualMix,
-      application,
+      readyMixOrderStepM3,
       reserve: roundDisplay(reserve, 3),
       gradeIndex: concreteGrade,
       cementKgPerM3: proportions.cement_kg,
       sandM3PerM3: proportions.sand_m3,
       gravelM3PerM3: proportions.gravel_m3,
       waterLPerM3: proportions.water_l,
-      topSurfaceArea: roundDisplay(topSurfaceArea, 3),
-      perimeterEst: roundDisplay(perimeterEst, 3),
-      formworkArea: roundDisplay(formworkArea, 3),
       cementKg: roundDisplay(cementKg, 3),
       cementBags,
       sandM3: roundDisplay(sandM3, 3),
