@@ -75,6 +75,38 @@ test.describe("Калькулятор бетона", () => {
   });
 });
 
+test.describe("Калькулятор ленточного фундамента", () => {
+  test("v3 использует явные проектные параметры и показывает покупку прутками", async ({ page }) => {
+    await page.goto("/kalkulyatory/fundament/lentochnyy-fundament/");
+
+    await expect(page.locator("h1")).toContainText("ленточного фундамента");
+    await expect(page.getByLabel("Остаток в линии подачи").first()).toHaveValue("0");
+    await page.getByLabel("Запас бетона").first().fill("0");
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: "Дополнительные параметры · 9",
+      exact: true,
+    });
+    if (await mobileAdditionalFields.isVisible()) {
+      await mobileAdditionalFields.click();
+    }
+    await page.getByLabel("Остаток в линии подачи").first().fill("0.35");
+    await page.getByLabel("Шаг заказа готовой смеси").selectOption("0.5");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Товарный бетон — класс по проекту");
+    await expect(resultCard).toContainText(/16[,.]5\s*м³/);
+    await expect(resultCard).toContainText(/16\s*прутков\s*×\s*11[,.]7\s*пог\. м/);
+    await expect(resultCard).not.toContainText("ФБС");
+    await expect(resultCard).not.toContainText("Песок");
+    await expect(page.getByText(/Ширину, глубину, класс бетона и схему армирования/).first()).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Валидация числового ввода", () => {
   test("не подменяет отрицательную площадь минимальным значением", async ({ page }) => {
     await page.goto("/kalkulyatory/otdelka/kraska/");

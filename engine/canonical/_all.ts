@@ -1804,7 +1804,8 @@ export interface FoundationSlabCanonicalSpec extends CanonicalCalculatorSpecBase
 
 export interface StripFoundationPackagingRules {
   unit: string;
-  volume_step_m3: number;
+  allowed_ready_mix_order_steps_m3: number[];
+  allowed_rod_lengths_m: number[];
 }
 
 export interface StripFoundationMaterialRules {
@@ -1813,18 +1814,10 @@ export interface StripFoundationMaterialRules {
   weight_per_m: Record<string, number>;
   clamp_diameter_mm: number;
   clamp_weight_kg_per_m: number;
-  clamp_step_m: number;
-  concrete_cover_m: number;
-  clamp_hooks_m: number;
-  clamp_length_reserve: number;
   wire_length_per_tie_m: number;
   wire_weight_kg_per_m: number;
-  delivery_loss_m3: Record<string, number>;
-  longitudinal_reserve_factor: number;
-  standard_rod_length_m: number;
   formwork_board_width_m: number;
   formwork_board_length_m: number;
-  formwork_board_reserve: number;
 }
 
 export interface StripFoundationWarningRules {
@@ -1833,10 +1826,14 @@ export interface StripFoundationWarningRules {
 }
 
 export interface StripFoundationCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: Record<string, never>;
+  normative_formula: {
+    volume: string;
+    reinforcement: string;
+  };
   packaging_rules: StripFoundationPackagingRules;
   material_rules: StripFoundationMaterialRules;
   warnings_rules: StripFoundationWarningRules;
+  evidence: ConcreteEvidenceSpec;
 }
 
 /* ─── Stairs (лестница) ─── */

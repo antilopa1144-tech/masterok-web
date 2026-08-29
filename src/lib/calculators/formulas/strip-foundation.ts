@@ -2,7 +2,6 @@ import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalStripFoundation } from "../../../../engine/strip-foundation";
 import stripfoundationSpec from "../../../../configs/calculators/strip-foundation-canonical.v1.json";
-import defaultFactorTables from "../../../../configs/factor-tables.json";
 
 export const stripFoundationDef: CalculatorDefinition = {
   id: "strip_foundation",
@@ -28,6 +27,7 @@ export const stripFoundationDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 40,
       hint: "Общая длина всех несущих стен с учётом внутренних",
+      group: "Геометрия из проекта",
     },
     {
       key: "width",
@@ -38,6 +38,8 @@ export const stripFoundationDef: CalculatorDefinition = {
       max: 600,
       step: 50,
       defaultValue: 400,
+      hint: "Размер не подбирается калькулятором — возьмите из проекта",
+      group: "Геометрия из проекта",
     },
     {
       key: "depth",
@@ -48,6 +50,8 @@ export const stripFoundationDef: CalculatorDefinition = {
       max: 2000,
       step: 50,
       defaultValue: 700,
+      hint: "Глубина заложения назначается по проекту основания",
+      group: "Геометрия из проекта",
     },
     {
       key: "aboveGround",
@@ -58,6 +62,56 @@ export const stripFoundationDef: CalculatorDefinition = {
       max: 600,
       step: 50,
       defaultValue: 300,
+      group: "Геометрия из проекта",
+    },
+    {
+      key: "formworkHeight",
+      label: "Высота щитов опалубки",
+      type: "number",
+      unit: "мм",
+      min: 0,
+      max: 2000,
+      step: 50,
+      defaultValue: 300,
+      hint: "Укажите фактическую высоту щитов: только цоколь или вся лента в траншее",
+      group: "Геометрия из проекта",
+    },
+    {
+      key: "reserve",
+      label: "Запас бетона",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 20,
+      step: 1,
+      defaultValue: 5,
+      hint: "Явный запас на отклонения геометрии; добавляется один раз",
+      group: "Заказ бетона",
+    },
+    {
+      key: "readyMixOrderStepM3",
+      label: "Шаг заказа готовой смеси",
+      type: "select",
+      defaultValue: 0.1,
+      options: [
+        { value: 0.1, label: "0,1 м³" },
+        { value: 0.5, label: "0,5 м³" },
+        { value: 1, label: "1 м³" },
+      ],
+      hint: "Уточните минимальную партию и шаг у поставщика",
+      group: "Заказ бетона",
+    },
+    {
+      key: "deliveryAllowanceM3",
+      label: "Остаток в линии подачи",
+      type: "number",
+      unit: "м³",
+      min: 0,
+      max: 5,
+      step: 0.05,
+      defaultValue: 0,
+      hint: "Введите только значение, подтверждённое поставщиком или оператором насоса",
+      group: "Заказ бетона",
     },
     {
       key: "reinforcement",
@@ -71,23 +125,84 @@ export const stripFoundationDef: CalculatorDefinition = {
         { value: 3, label: "6 ниток Ø12 мм (по проекту)" },
       ],
       hint: "Калькулятор не подбирает армирование: выберите схему из проекта.",
+      group: "Армирование из проекта",
     },
     {
-      key: "deliveryMethod",
-      label: "Способ заливки",
+      key: "clampStepMm",
+      label: "Шаг хомутов",
+      type: "number",
+      unit: "мм",
+      min: 100,
+      max: 1000,
+      step: 50,
+      defaultValue: 400,
+      hint: "Укажите шаг из проекта каркаса",
+      group: "Армирование из проекта",
+    },
+    {
+      key: "concreteCoverMm",
+      label: "Защитный слой бетона",
+      type: "number",
+      unit: "мм",
+      min: 20,
+      max: 100,
+      step: 5,
+      defaultValue: 50,
+      hint: "До наружной грани хомута; значение задаётся проектом",
+      group: "Армирование из проекта",
+    },
+    {
+      key: "clampHookAllowanceMm",
+      label: "Припуск на замыкание хомута",
+      type: "number",
+      unit: "мм",
+      min: 0,
+      max: 1000,
+      step: 50,
+      defaultValue: 300,
+      hint: "Суммарный припуск на крюки/замыкание по детали проекта",
+      group: "Армирование из проекта",
+    },
+    {
+      key: "rebarReserve",
+      label: "Запас арматуры на раскрой",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 12,
+      hint: "Закупочный запас; не заменяет расчёт нахлёстов и анкеровки",
+      group: "Армирование из проекта",
+    },
+    {
+      key: "rodLengthM",
+      label: "Длина покупного прутка",
       type: "select",
-      defaultValue: 0,
+      defaultValue: 11.7,
       options: [
-        { value: 0, label: "Миксер (самослив)" },
-        { value: 1, label: "Бетононасос (+0.5 м³ потери)" },
-        { value: 2, label: "Вручную (замес на месте)" },
+        { value: 6, label: "6 м" },
+        { value: 11.7, label: "11,7 м" },
+        { value: 12, label: "12 м" },
       ],
+      hint: "Выберите фактическую длину у поставщика",
+      group: "Армирование из проекта",
+    },
+    {
+      key: "formworkReserve",
+      label: "Запас доски на раскрой",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 10,
+      group: "Опалубка",
     },
   ],
   calculate(inputs) {
     const spec = stripfoundationSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalStripFoundation(spec, inputs as any, factorTable);
+    const canonical = computeCanonicalStripFoundation(spec, inputs as any);
 
     return {
       materials: canonical.materials,
@@ -105,9 +220,9 @@ export const stripFoundationDef: CalculatorDefinition = {
 **Расчёт материалов по заданным размерам ленты:**
 
 1. **Чистый объём бетона** = периметр × ширина × полная высота ленты.
-2. **К заказу**: режим точности и сценарий применяются один раз, затем объём округляется с шагом 0,1 м³. Для насоса отдельно добавляется 0,5 м³.
-3. **Арматура**: количество считается для выбранной пользователем схемы; 12% — расчётный резерв на стыки, углы и раскрой.
-4. **Опалубка** = 2 × периметр × высота над землёй. Щиты в траншее не входят.
+2. **К заказу**: явный запас применяется один раз, затем отдельно прибавляется указанное пользователем значение для линии подачи и объём округляется выбранным шагом поставщика.
+3. **Арматура**: расчёт ведётся по введённым проектным параметрам, а покупка округляется вверх до целых прутков выбранной длины.
+4. **Опалубка** = 2 × периметр × указанная высота щитов. Запас доски задаётся отдельно.
 
 Калькулятор не определяет несущую способность, размеры сечения, класс бетона и армирование.
   `,
@@ -115,7 +230,8 @@ export const stripFoundationDef: CalculatorDefinition = {
     "Возьмите периметр, ширину, глубину и армирование из проекта",
     "Введите общую длину наружных и внутренних лент",
     "Отдельно задайте глубину ниже земли и высоту цоколя",
-    "Выберите способ подачи: для насоса калькулятор добавит 0,5 м³",
+    "Укажите запас, шаг заказа и подтверждённый поставщиком остаток в линии подачи",
+    "Перенесите из проекта параметры каркаса и выберите длину покупного прутка",
     "Получите чистую геометрию, расчётную потребность и количество к заказу",
   ],
   expertTips: [
@@ -154,7 +270,7 @@ export const stripFoundationDef: CalculatorDefinition = {
   <li><strong>W</strong> — ширина ленты (м)</li>
   <li><strong>H</strong> — полная высота = глубина заложения + высота цоколя (м)</li>
 </ul>
-<p>Чистый объём, расчётная потребность и количество к заказу показаны отдельно. Для бетононасоса добавляется 0,5 м&sup3; на заполнение и остаток в системе, после чего заказ округляется с шагом 0,1 м&sup3;.</p>
+<p>Чистый объём, расчётная потребность и количество к заказу показаны отдельно. Запас, подтверждённый остаток в линии подачи и шаг заказа вводятся явно: калькулятор не назначает универсальные потери для любого насоса.</p>
 
 <h2>Расчёт арматуры для ленточного фундамента</h2>
 <table>
@@ -163,13 +279,13 @@ export const stripFoundationDef: CalculatorDefinition = {
   </thead>
   <tbody>
     <tr><td>Продольная арматура</td><td>Выбранная схема</td><td>Диаметр и число ниток — из проекта</td></tr>
-    <tr><td>Стыки и раскрой</td><td>+12% к длине</td><td>Закупочное допущение калькулятора</td></tr>
-    <tr><td>Хомуты</td><td>Шаг 400 мм</td><td>Расчётный шаблон, проверить по проекту</td></tr>
+    <tr><td>Стыки и раскрой</td><td>Запас вводит пользователь</td><td>Закупочный запас не заменяет деталировку</td></tr>
+    <tr><td>Хомуты</td><td>Шаг и защитный слой вводятся явно</td><td>Значения переносят из проекта</td></tr>
     <tr><td>Вязальная проволока</td><td>0,3 м на вязку</td><td>Масса по 0,006 кг/м</td></tr>
   </tbody>
 </table>
 <h2>Как считается опалубка ленточного фундамента</h2>
-<p><strong>S<sub>опал</sub> = 2 &times; P &times; h<sub>цоколя</sub></strong>. Это площадь двух сторон только надземной части ленты. Количество досок 150&times;6000 мм округляется вверх с 10% на раскрой. Если щиты нужны ниже уровня земли, их площадь следует добавить отдельно по проекту производства работ.</p>
+<p><strong>S<sub>опал</sub> = 2 &times; P &times; h<sub>щита</sub></strong>. Высоту щитов и запас доски пользователь задаёт явно. Количество досок 150&times;6000 мм округляется вверх до целых штук.</p>
 
 <h2>Нормативная база</h2>
 <ul>
