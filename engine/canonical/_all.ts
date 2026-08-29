@@ -1992,45 +1992,34 @@ export interface BlindAreaCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 export interface BasementPackagingRules {
   unit: string;
-  package_size: number;
+  allowed_ready_mix_order_steps_m3: number[];
+  allowed_rebar_order_steps_kg: number[];
 }
 
 export interface BasementMaterialRules {
-  floor_rebar_kg_per_m2: number;
-  wall_rebar_kg_per_m2: number;
-  wire_ratio: number;
-  formwork_sheet_m2: number;
-  formwork_reserve: number;
-  geotextile_roll: number;
-  drainage_membrane_roll: number;
-  mastic_kg_per_m2: number;
-  mastic_layers: number;
-  roll_reserve: number;
-  roll_m2: number;
-  pen_kg_per_m2: number;
-  pen_reserve: number;
-  vent_per_area: number;
-  min_vents: number;
-  gravel_layer: number;
-  sand_layer: number;
-  epps_plate: number;
-  epps_reserve: number;
+  waterproof_system_codes: Record<string, number>;
+  surface_scope_codes: Record<string, number>;
+  formwork_mode_codes: Record<string, number>;
 }
 
 export interface BasementWarningRules {
-  deep_basement_threshold_m: number;
-  thin_wall_threshold_mm: number;
+  large_order_threshold_m3: number;
 }
 
 export interface BasementCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
-    waterproof_types: number[];
-    wall_thicknesses: number[];
-    floor_thicknesses: number[];
+    wall_concrete: string;
+    floor_concrete: string;
+    procurement: string;
+    secondary_materials: string;
   };
   packaging_rules: BasementPackagingRules;
   material_rules: BasementMaterialRules;
   warnings_rules: BasementWarningRules;
+  scenario_policy: CanonicalCalculatorSpecBase["scenario_policy"] & {
+    max_reserve_floor_percent: number;
+  };
+  evidence: ConcreteEvidenceSpec;
 }
 
 /* ─── Frame House (каркасный дом) ─── */

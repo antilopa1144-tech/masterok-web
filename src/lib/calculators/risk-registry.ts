@@ -116,7 +116,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "целые прутки, упаковки проволоки, рулоны геотекстиля и плиты ЭППС; web/mobile parity и общий Flutter flow",
     ],
   ),
-  pending("podval-fundamenta", "basement", "P0", ["structural_safety", "moisture_risk", "multi_material"]),
+  implementationAudited(
+    "podval-fundamenta",
+    "basement",
+    "P0",
+    ["structural_safety", "moisture_risk", "multi_material"],
+    [
+      "canonical basement-canonical-v2",
+      "официальные карточки СП 22.13330.2016, СП 63.13330.2018, СП 28.13330.2017, СП 71.13330.2017, ГОСТ 7473-2010/2026 и ГОСТ 34028-2016",
+      "стены считаются как наружный контур минус внутренний без двойного счёта углов; плита пола и обе заливки заданы отдельно",
+      "арматура принимается только из проектной ведомости, а опалубка, гидроизоляция и утепление — только по выбранным поверхностям и данным фактического товара",
+      "удалены автоматические продухи, дренаж и универсальные нормы материалов; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
+    ],
+  ),
   implementationAudited(
     "armatura",
     "rebar",

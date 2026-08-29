@@ -1,259 +1,551 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
   BasementCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
 } from "./canonical";
-import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import { ACCURACY_MODE_LABELS, type AccuracyMode, DEFAULT_ACCURACY_MODE } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-
-/* ─── constants ─── */
-
-const FLOOR_REBAR_KG_PER_M2 = 22;
-const WALL_REBAR_KG_PER_M2 = 18;
-const WIRE_RATIO = 0.01;
-const FORMWORK_SHEET_M2 = 2.88;
-const FORMWORK_RESERVE = 1.15;
-const GEOTEXTILE_ROLL = 50;
-const DRAINAGE_MEMBRANE_ROLL = 20;
-const MASTIC_KG_PER_M2 = 1.5;
-const MASTIC_LAYERS = 2;
-const ROLL_RESERVE = 1.15;
-const ROLL_M2 = 10;
-const PEN_KG_PER_M2 = 0.4;
-const PEN_RESERVE = 1.1;
-const VENT_PER_AREA = 10;
-const MIN_VENTS = 4;
-const GRAVEL_LAYER = 0.15;
-const SAND_LAYER = 0.1;
-const EPPS_PLATE = 0.72;
-const EPPS_RESERVE = 1.05;
-
-/* ─── labels ─── */
-
-const WATERPROOF_LABELS: Record<number, string> = {
-  0: "Обмазочная (мастика)",
-  1: "Рулонная (наплавляемая)",
-  2: "Проникающая",
-};
-
-/* ─── inputs ─── */
+import { roundDisplay } from "./units";
 
 interface BasementInputs {
   length?: number;
   width?: number;
   depth?: number;
   wallThickness?: number;
+  wallOpeningsAreaM2?: number;
+  floorLength?: number;
+  floorWidth?: number;
   floorThickness?: number;
-  waterproofType?: number;
+  floorConcreteReservePercent?: number;
+  wallConcreteReservePercent?: number;
+  readyMixOrderStepM3?: number;
+  floorDeliveryAllowanceM3?: number;
+  wallDeliveryAllowanceM3?: number;
+  floorRebarProjectKg?: number;
+  wallRebarProjectKg?: number;
+  rebarReservePercent?: number;
+  rebarOrderStepKg?: number;
+  wallFormworkMode?: number;
+  formworkReservePercent?: number;
+  formworkSheetAreaM2?: number;
+  waterproofScope?: number;
+  waterproofSystem?: number;
+  waterproofWallHeightM?: number;
+  waterproofReservePercent?: number;
+  waterproofConsumptionKgM2?: number;
+  waterproofPackageKg?: number;
+  waterproofLayers?: number;
+  waterproofRollAreaM2?: number;
+  insulationScope?: number;
+  insulationWallHeightM?: number;
+  insulationLayers?: number;
+  insulationReservePercent?: number;
+  insulationBoardAreaM2?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── helpers ─── */
+interface ConcreteScenarioParts {
+  floorNeedM3: number;
+  wallNeedM3: number;
+  floorPurchaseM3: number;
+  wallPurchaseM3: number;
+}
 
-/* ─── main ─── */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function roundUpToStep(value: number, step: number): number {
+  if (value <= 0) return 0;
+  return roundDisplay(Math.ceil(value / step - 1e-9) * step, 6);
+}
+
+function includesWalls(scope: number): boolean {
+  return scope === 1 || scope === 3;
+}
+
+function includesFloor(scope: number): boolean {
+  return scope === 2 || scope === 3;
+}
 
 export function computeCanonicalBasement(
   spec: BasementCanonicalSpec,
   inputs: BasementInputs,
-  factorTable: FactorTable,
+  _factorTable?: unknown,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
-  const length = Math.max(3, Math.min(30, inputs.length ?? getInputDefault(spec, "length", 8)));
-  const width = Math.max(3, Math.min(20, inputs.width ?? getInputDefault(spec, "width", 6)));
-  const depth = Math.max(1.5, Math.min(4, inputs.depth ?? getInputDefault(spec, "depth", 2.5)));
-  const wallThickness = Math.max(150, Math.min(300, inputs.wallThickness ?? getInputDefault(spec, "wallThickness", 200)));
-  const floorThickness = Math.max(100, Math.min(200, inputs.floorThickness ?? getInputDefault(spec, "floorThickness", 150)));
-  const waterproofType = Math.max(0, Math.min(2, Math.round(inputs.waterproofType ?? getInputDefault(spec, "waterproofType", 0))));
+  const length = clamp(inputs.length ?? getInputDefault(spec, "length", 8), 3, 30);
+  const width = clamp(inputs.width ?? getInputDefault(spec, "width", 6), 3, 20);
+  const depth = clamp(inputs.depth ?? getInputDefault(spec, "depth", 2.5), 1.5, 5);
+  const wallThickness = clamp(
+    inputs.wallThickness ?? getInputDefault(spec, "wallThickness", 200),
+    100,
+    1000,
+  );
+  const wallThicknessM = wallThickness / 1000;
+  const requestedOpeningsAreaM2 = clamp(
+    inputs.wallOpeningsAreaM2 ?? getInputDefault(spec, "wallOpeningsAreaM2", 0),
+    0,
+    200,
+  );
+  const floorLength = clamp(
+    inputs.floorLength ?? getInputDefault(spec, "floorLength", 8),
+    3,
+    35,
+  );
+  const floorWidth = clamp(
+    inputs.floorWidth ?? getInputDefault(spec, "floorWidth", 6),
+    3,
+    25,
+  );
+  const floorThickness = clamp(
+    inputs.floorThickness ?? getInputDefault(spec, "floorThickness", 150),
+    100,
+    1000,
+  );
 
-  /* ─── geometry ─── */
-  const floorArea = length * width;
-  const wallPerim = 2 * (length + width);
-  const wallArea = wallPerim * depth;
-  const floorVol = floorArea * (floorThickness / 1000);
-  const wallVol = wallArea * (wallThickness / 1000);
+  const floorConcreteReservePercent = clamp(
+    inputs.floorConcreteReservePercent
+      ?? getInputDefault(spec, "floorConcreteReservePercent", 5),
+    0,
+    20,
+  );
+  const wallConcreteReservePercent = clamp(
+    inputs.wallConcreteReservePercent
+      ?? getInputDefault(spec, "wallConcreteReservePercent", 5),
+    0,
+    20,
+  );
+  const requestedReadyMixStep = inputs.readyMixOrderStepM3
+    ?? getInputDefault(spec, "readyMixOrderStepM3", 0.1);
+  const readyMixOrderStepM3 = spec.packaging_rules.allowed_ready_mix_order_steps_m3
+    .includes(requestedReadyMixStep)
+    ? requestedReadyMixStep
+    : spec.packaging_rules.allowed_ready_mix_order_steps_m3[0];
+  const floorDeliveryAllowanceM3 = clamp(
+    inputs.floorDeliveryAllowanceM3
+      ?? getInputDefault(spec, "floorDeliveryAllowanceM3", 0),
+    0,
+    5,
+  );
+  const wallDeliveryAllowanceM3 = clamp(
+    inputs.wallDeliveryAllowanceM3
+      ?? getInputDefault(spec, "wallDeliveryAllowanceM3", 0),
+    0,
+    5,
+  );
 
-  /* ─── concrete ─── */
-  const floorConcrete = Math.ceil(floorVol * 1.05 * 10) / 10;
-  const wallConcrete = Math.ceil(wallVol * 1.03 * 10) / 10;
+  const floorRebarProjectKg = clamp(
+    inputs.floorRebarProjectKg ?? getInputDefault(spec, "floorRebarProjectKg", 0),
+    0,
+    100000,
+  );
+  const wallRebarProjectKg = clamp(
+    inputs.wallRebarProjectKg ?? getInputDefault(spec, "wallRebarProjectKg", 0),
+    0,
+    100000,
+  );
+  const rebarReservePercent = clamp(
+    inputs.rebarReservePercent ?? getInputDefault(spec, "rebarReservePercent", 0),
+    0,
+    30,
+  );
+  const requestedRebarStep = inputs.rebarOrderStepKg
+    ?? getInputDefault(spec, "rebarOrderStepKg", 1);
+  const rebarOrderStepKg = spec.packaging_rules.allowed_rebar_order_steps_kg
+    .includes(requestedRebarStep)
+    ? requestedRebarStep
+    : spec.packaging_rules.allowed_rebar_order_steps_kg[0];
 
-  /* ─── rebar ─── */
-  const floorRebar = roundDisplay(floorArea * FLOOR_REBAR_KG_PER_M2, 2);
-  const wallRebar = roundDisplay(wallArea * WALL_REBAR_KG_PER_M2, 2);
-  const wire = Math.ceil((floorRebar + wallRebar) * WIRE_RATIO);
+  const wallFormworkMode = Math.round(clamp(
+    inputs.wallFormworkMode ?? getInputDefault(spec, "wallFormworkMode", 0),
+    0,
+    3,
+  ));
+  const formworkReservePercent = clamp(
+    inputs.formworkReservePercent ?? getInputDefault(spec, "formworkReservePercent", 10),
+    0,
+    30,
+  );
+  const formworkSheetAreaM2 = clamp(
+    inputs.formworkSheetAreaM2 ?? getInputDefault(spec, "formworkSheetAreaM2", 2.88),
+    0.1,
+    20,
+  );
 
-  /* ─── formwork ─── */
-  const formwork = Math.ceil(wallArea * 2 * FORMWORK_RESERVE / FORMWORK_SHEET_M2);
+  const waterproofScope = Math.round(clamp(
+    inputs.waterproofScope ?? getInputDefault(spec, "waterproofScope", 0),
+    0,
+    3,
+  ));
+  const waterproofSystem = Math.round(clamp(
+    inputs.waterproofSystem ?? getInputDefault(spec, "waterproofSystem", 1),
+    1,
+    2,
+  ));
+  const requestedWaterproofWallHeightM = clamp(
+    inputs.waterproofWallHeightM ?? getInputDefault(spec, "waterproofWallHeightM", 2.5),
+    0,
+    5,
+  );
+  const waterproofWallHeightM = Math.min(requestedWaterproofWallHeightM, depth);
+  const waterproofReservePercent = clamp(
+    inputs.waterproofReservePercent
+      ?? getInputDefault(spec, "waterproofReservePercent", 15),
+    0,
+    50,
+  );
+  const waterproofConsumptionKgM2 = clamp(
+    inputs.waterproofConsumptionKgM2
+      ?? getInputDefault(spec, "waterproofConsumptionKgM2", 0),
+    0,
+    20,
+  );
+  const waterproofPackageKg = clamp(
+    inputs.waterproofPackageKg ?? getInputDefault(spec, "waterproofPackageKg", 0),
+    0,
+    200,
+  );
+  const waterproofLayers = Math.round(clamp(
+    inputs.waterproofLayers ?? getInputDefault(spec, "waterproofLayers", 1),
+    1,
+    5,
+  ));
+  const waterproofRollAreaM2 = clamp(
+    inputs.waterproofRollAreaM2 ?? getInputDefault(spec, "waterproofRollAreaM2", 0),
+    0,
+    200,
+  );
 
-  /* ─── ventilation ─── */
-  const ventCount = Math.max(MIN_VENTS, Math.ceil(floorArea / VENT_PER_AREA));
+  const insulationScope = Math.round(clamp(
+    inputs.insulationScope ?? getInputDefault(spec, "insulationScope", 0),
+    0,
+    3,
+  ));
+  const requestedInsulationWallHeightM = clamp(
+    inputs.insulationWallHeightM
+      ?? getInputDefault(spec, "insulationWallHeightM", 2.5),
+    0,
+    5,
+  );
+  const insulationWallHeightM = Math.min(requestedInsulationWallHeightM, depth);
+  const insulationLayers = Math.round(clamp(
+    inputs.insulationLayers ?? getInputDefault(spec, "insulationLayers", 1),
+    1,
+    5,
+  ));
+  const insulationReservePercent = clamp(
+    inputs.insulationReservePercent
+      ?? getInputDefault(spec, "insulationReservePercent", 5),
+    0,
+    30,
+  );
+  const insulationBoardAreaM2 = clamp(
+    inputs.insulationBoardAreaM2
+      ?? getInputDefault(spec, "insulationBoardAreaM2", 0.72),
+    0.1,
+    5,
+  );
 
-  /* ─── waterproofing ─── */
-  const totalWpArea = wallArea + floorArea;
-  let masticKg = 0;
-  let rollCount = 0;
-  let penKg = 0;
+  const outerPlanArea = length * width;
+  const innerLength = Math.max(0, length - 2 * wallThicknessM);
+  const innerWidth = Math.max(0, width - 2 * wallThicknessM);
+  const innerPlanArea = innerLength * innerWidth;
+  const outerWallPerimeter = 2 * (length + width);
+  const innerWallPerimeter = 2 * (innerLength + innerWidth);
+  const grossWallVolume = (outerPlanArea - innerPlanArea) * depth;
+  const outerWallAreaGross = outerWallPerimeter * depth;
+  const innerWallAreaGross = innerWallPerimeter * depth;
+  const maxOpeningsAreaM2 = wallThicknessM > 0
+    ? Math.min(outerWallAreaGross, innerWallAreaGross, grossWallVolume / wallThicknessM)
+    : 0;
+  const wallOpeningsAreaM2 = Math.min(requestedOpeningsAreaM2, maxOpeningsAreaM2);
+  const openingsVolume = wallOpeningsAreaM2 * wallThicknessM;
+  const wallVolume = Math.max(0, grossWallVolume - openingsVolume);
+  const outerWallArea = Math.max(0, outerWallAreaGross - wallOpeningsAreaM2);
+  const innerWallArea = Math.max(0, innerWallAreaGross - wallOpeningsAreaM2);
+  const floorArea = floorLength * floorWidth;
+  const floorVolume = floorArea * (floorThickness / 1000);
+  const cleanConcreteM3 = floorVolume + wallVolume;
 
-  if (waterproofType === 0) {
-    masticKg = roundDisplay(totalWpArea * MASTIC_LAYERS * MASTIC_KG_PER_M2, 2);
-  } else if (waterproofType === 1) {
-    const rollArea = totalWpArea * ROLL_RESERVE;
-    rollCount = Math.ceil(rollArea / ROLL_M2 * 2);
-  } else {
-    penKg = roundDisplay(totalWpArea * PEN_KG_PER_M2 * PEN_RESERVE, 2);
-  }
-
-  /* ─── scenarios ─── */
-  const totalConcrete = roundDisplay(floorConcrete + wallConcrete, 3);
-  const basePrimaryRaw = totalConcrete;
-  const basePrimary = roundDisplay(basePrimaryRaw * accuracyMult, 3);
-  const packageOptions = [{
-    size: 1,
-    label: "concrete-m3",
-    unit: "м³",
-  }];
-
+  const concreteParts: Record<string, ConcreteScenarioParts> = {};
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
+    const floorReserve = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? Math.max(floorConcreteReservePercent, spec.scenario_policy.max_reserve_floor_percent)
+        : floorConcreteReservePercent;
+    const wallReserve = scenario === "MIN"
+      ? 0
+      : scenario === "MAX"
+        ? Math.max(wallConcreteReservePercent, spec.scenario_policy.max_reserve_floor_percent)
+        : wallConcreteReservePercent;
+    const floorNeedM3 = floorVolume * (1 + floorReserve / 100) + floorDeliveryAllowanceM3;
+    const wallNeedM3 = wallVolume * (1 + wallReserve / 100) + wallDeliveryAllowanceM3;
+    const floorPurchaseM3 = roundUpToStep(floorNeedM3, readyMixOrderStepM3);
+    const wallPurchaseM3 = roundUpToStep(wallNeedM3, readyMixOrderStepM3);
+    const exactNeed = roundDisplay(floorNeedM3 + wallNeedM3, 6);
+    const purchaseQuantity = roundDisplay(floorPurchaseM3 + wallPurchaseM3, 6);
 
+    concreteParts[scenario] = {
+      floorNeedM3,
+      wallNeedM3,
+      floorPurchaseM3,
+      wallPurchaseM3,
+    };
     acc[scenario] = {
       exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
+      purchase_quantity: purchaseQuantity,
+      leftover: roundDisplay(purchaseQuantity - exactNeed, 6),
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `waterproofType:${waterproofType}`,
-        `wallThickness:${wallThickness}`,
-        `packaging:${packaging.package.label}`,
+        "dimension_reference:outer_wall_contour",
+        "concrete_orders:floor_and_walls_separate",
+        `floor_reserve_percent:${floorReserve}`,
+        `wall_reserve_percent:${wallReserve}`,
+        `ready_mix_order_step_m3:${readyMixOrderStepM3}`,
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        floor_reserve_percent: floorReserve,
+        wall_reserve_percent: wallReserve,
+        field_multiplier: 1,
+        ready_mix_order_step_m3: readyMixOrderStepM3,
       },
       buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
+        package_label: `separate-ready-mix-orders-${readyMixOrderStepM3}m3`,
+        package_size: readyMixOrderStepM3,
+        packages_count: Math.round(purchaseQuantity / readyMixOrderStepM3),
+        unit: spec.packaging_rules.unit,
       },
     };
-
     return acc;
   }, {} as ScenarioBundle);
 
-  const recScenario = scenarios.REC;
+  const recParts = concreteParts.REC;
+  const floorRebarPlanningKg = floorRebarProjectKg * (1 + rebarReservePercent / 100);
+  const wallRebarPlanningKg = wallRebarProjectKg * (1 + rebarReservePercent / 100);
+  const floorRebarPurchaseKg = roundUpToStep(floorRebarPlanningKg, rebarOrderStepKg);
+  const wallRebarPurchaseKg = roundUpToStep(wallRebarPlanningKg, rebarOrderStepKg);
 
-  /* ─── materials ─── */
+  const formworkExactAreaM2 = (
+    wallFormworkMode === 1
+      ? outerWallArea
+      : wallFormworkMode === 2
+        ? innerWallArea
+        : wallFormworkMode === 3
+          ? outerWallArea + innerWallArea
+          : 0
+  );
+  const formworkPlanningAreaM2 = formworkExactAreaM2 * (1 + formworkReservePercent / 100);
+  const formworkSheets = formworkExactAreaM2 > 0
+    ? Math.ceil(formworkPlanningAreaM2 / formworkSheetAreaM2)
+    : 0;
+  const formworkPurchaseAreaM2 = formworkSheets * formworkSheetAreaM2;
+
+  const waterproofWallAreaM2 = includesWalls(waterproofScope)
+    ? outerWallPerimeter * waterproofWallHeightM
+    : 0;
+  const waterproofFloorAreaM2 = includesFloor(waterproofScope) ? floorArea : 0;
+  const waterproofBaseAreaM2 = waterproofWallAreaM2 + waterproofFloorAreaM2;
+  const waterproofMassExactKg = waterproofSystem === 1
+    ? waterproofBaseAreaM2 * waterproofConsumptionKgM2
+    : 0;
+  const waterproofMassPlanningKg = waterproofMassExactKg
+    * (1 + waterproofReservePercent / 100);
+  const waterproofPackages = waterproofScope > 0
+    && waterproofSystem === 1
+    && waterproofMassExactKg > 0
+    && waterproofPackageKg > 0
+    ? Math.ceil(waterproofMassPlanningKg / waterproofPackageKg)
+    : 0;
+  const waterproofMassPurchaseKg = waterproofPackages * waterproofPackageKg;
+  const waterproofRollExactAreaM2 = waterproofSystem === 2
+    ? waterproofBaseAreaM2 * waterproofLayers
+    : 0;
+  const waterproofRollPlanningAreaM2 = waterproofRollExactAreaM2
+    * (1 + waterproofReservePercent / 100);
+  const waterproofRolls = waterproofScope > 0
+    && waterproofSystem === 2
+    && waterproofRollExactAreaM2 > 0
+    && waterproofRollAreaM2 > 0
+    ? Math.ceil(waterproofRollPlanningAreaM2 / waterproofRollAreaM2)
+    : 0;
+  const waterproofRollPurchaseAreaM2 = waterproofRolls * waterproofRollAreaM2;
+
+  const insulationWallAreaM2 = includesWalls(insulationScope)
+    ? outerWallPerimeter * insulationWallHeightM
+    : 0;
+  const insulationFloorAreaM2 = includesFloor(insulationScope) ? floorArea : 0;
+  const insulationBaseAreaM2 = insulationWallAreaM2 + insulationFloorAreaM2;
+  const insulationExactAreaM2 = insulationBaseAreaM2 * insulationLayers;
+  const insulationPlanningAreaM2 = insulationExactAreaM2
+    * (1 + insulationReservePercent / 100);
+  const insulationBoards = insulationExactAreaM2 > 0
+    ? Math.ceil(insulationPlanningAreaM2 / insulationBoardAreaM2)
+    : 0;
+  const insulationPurchaseAreaM2 = insulationBoards * insulationBoardAreaM2;
+
   const materials: CanonicalMaterialResult[] = [
     {
-      name: `Бетон на пол (${floorThickness} мм)`,
-      quantity: floorConcrete,
+      name: "Товарный бетон для плиты пола — класс по проекту",
+      subtitle:
+        `Отдельная заливка: чистый объём, запас ${floorConcreteReservePercent}%, остаток в линии подачи и заказ с шагом ${readyMixOrderStepM3} м³ показаны раздельно`,
+      quantity: roundDisplay(floorVolume, 3),
       unit: "м³",
-      withReserve: floorConcrete,
-      purchaseQty: Math.ceil(floorConcrete * 10) / 10,
+      withReserve: roundDisplay(recParts.floorNeedM3, 3),
+      purchaseQty: roundDisplay(recParts.floorPurchaseM3, 3),
       category: "Бетон",
     },
     {
-      name: `Бетон на стены (${wallThickness} мм)`,
-      quantity: wallConcrete,
+      name: "Товарный бетон для наружных стен — класс по проекту",
+      subtitle:
+        `Объём по наружному и внутреннему контуру без двойного счёта углов; запас ${wallConcreteReservePercent}%, остаток и шаг заказа задаются явно`,
+      quantity: roundDisplay(wallVolume, 3),
       unit: "м³",
-      withReserve: wallConcrete,
-      purchaseQty: Math.ceil(wallConcrete * 10) / 10,
+      withReserve: roundDisplay(recParts.wallNeedM3, 3),
+      purchaseQty: roundDisplay(recParts.wallPurchaseM3, 3),
       category: "Бетон",
-    },
-    {
-      name: "Арматура на пол",
-      quantity: floorRebar,
-      unit: "кг",
-      withReserve: floorRebar,
-      purchaseQty: Math.ceil(floorRebar),
-      category: "Армирование",
-    },
-    {
-      name: "Арматура на стены",
-      quantity: wallRebar,
-      unit: "кг",
-      withReserve: wallRebar,
-      purchaseQty: Math.ceil(wallRebar),
-      category: "Армирование",
-    },
-    {
-      name: "Вязальная проволока",
-      quantity: wire,
-      unit: "кг",
-      withReserve: wire,
-      purchaseQty: wire,
-      category: "Армирование",
-    },
-    {
-      name: `Опалубка (${FORMWORK_SHEET_M2} м²/лист)`,
-      quantity: formwork,
-      unit: "листов",
-      withReserve: formwork,
-      purchaseQty: formwork,
-      category: "Опалубка",
-    },
-    {
-      name: "Продухи (вент. отверстия)",
-      quantity: ventCount,
-      unit: "шт",
-      withReserve: ventCount,
-      purchaseQty: ventCount,
-      category: "Вентиляция",
     },
   ];
 
-  /* ─── waterproofing materials ─── */
-  if (waterproofType === 0) {
+  if (floorRebarProjectKg > 0) {
     materials.push({
-      name: `${WATERPROOF_LABELS[0]}`,
-      quantity: masticKg,
+      name: "Арматура плиты пола — масса из проектной ведомости",
+      subtitle:
+        `Калькулятор добавляет только явный запас ${rebarReservePercent}% и округляет массу заказа с шагом ${rebarOrderStepKg} кг; диаметры и раскрой не определяет`,
+      quantity: roundDisplay(floorRebarProjectKg, 3),
       unit: "кг",
-      withReserve: masticKg,
-      purchaseQty: Math.ceil(masticKg),
+      withReserve: roundDisplay(floorRebarPlanningKg, 3),
+      purchaseQty: roundDisplay(floorRebarPurchaseKg, 3),
+      category: "Армирование",
+    });
+  }
+  if (wallRebarProjectKg > 0) {
+    materials.push({
+      name: "Арматура стен — масса из проектной ведомости",
+      subtitle:
+        `Калькулятор добавляет только явный запас ${rebarReservePercent}% и округляет массу заказа с шагом ${rebarOrderStepKg} кг; усиления проёмов и карта стержней остаются в проекте`,
+      quantity: roundDisplay(wallRebarProjectKg, 3),
+      unit: "кг",
+      withReserve: roundDisplay(wallRebarPlanningKg, 3),
+      purchaseQty: roundDisplay(wallRebarPurchaseKg, 3),
+      category: "Армирование",
+    });
+  }
+  if (formworkExactAreaM2 > 0) {
+    materials.push({
+      name: "Щиты или листы опалубки стен",
+      subtitle:
+        "Площадь выбранных граней за вычетом проёмов; торцы, откосы, стыки, крепёж и оборачиваемость щитов в этот подсчёт не входят",
+      quantity: roundDisplay(formworkExactAreaM2, 3),
+      unit: "м²",
+      withReserve: roundDisplay(formworkPlanningAreaM2, 3),
+      purchaseQty: roundDisplay(formworkPurchaseAreaM2, 3),
+      packageInfo: {
+        count: formworkSheets,
+        size: formworkSheetAreaM2,
+        packageUnit: "листов/щитов",
+      },
+      category: "Опалубка",
+    });
+  }
+  if (waterproofScope > 0 && waterproofSystem === 1 && waterproofPackages > 0) {
+    materials.push({
+      name: "Гидроизоляционный состав — выбранная система",
+      subtitle:
+        `Расход ${waterproofConsumptionKgM2} кг/м² на весь предусмотренный цикл взят из введённых данных товара, а не назначен калькулятором`,
+      quantity: roundDisplay(waterproofMassExactKg, 3),
+      unit: "кг",
+      withReserve: roundDisplay(waterproofMassPlanningKg, 3),
+      purchaseQty: roundDisplay(waterproofMassPurchaseKg, 3),
+      packageInfo: {
+        count: waterproofPackages,
+        size: waterproofPackageKg,
+        packageUnit: "упаковок",
+      },
       category: "Гидроизоляция",
     });
-  } else if (waterproofType === 1) {
+  }
+  if (waterproofScope > 0 && waterproofSystem === 2 && waterproofRolls > 0) {
     materials.push({
-      name: `${WATERPROOF_LABELS[1]} (${ROLL_M2} м²/рулон)`,
-      quantity: rollCount,
-      unit: "рулонов",
-      withReserve: rollCount,
-      purchaseQty: rollCount,
+      name: "Рулонная гидроизоляция — выбранная система",
+      subtitle:
+        `${waterproofLayers} слой(я) по проекту; нахлёсты, примыкания и раскрой учитываются только введённым запасом ${waterproofReservePercent}%`,
+      quantity: roundDisplay(waterproofRollExactAreaM2, 3),
+      unit: "м²",
+      withReserve: roundDisplay(waterproofRollPlanningAreaM2, 3),
+      purchaseQty: roundDisplay(waterproofRollPurchaseAreaM2, 3),
+      packageInfo: {
+        count: waterproofRolls,
+        size: waterproofRollAreaM2,
+        packageUnit: "рулонов",
+      },
       category: "Гидроизоляция",
     });
-  } else {
+  }
+  if (insulationExactAreaM2 > 0) {
     materials.push({
-      name: `${WATERPROOF_LABELS[2]}`,
-      quantity: penKg,
-      unit: "кг",
-      withReserve: penKg,
-      purchaseQty: Math.ceil(penKg),
-      category: "Гидроизоляция",
+      name: "Плитный утеплитель — тип и толщина по проекту",
+      subtitle:
+        `${insulationLayers} слой(я); калькулятор считает только выбранные поверхности, явный запас и фактическую площадь одной плиты`,
+      quantity: roundDisplay(insulationExactAreaM2, 3),
+      unit: "м²",
+      withReserve: roundDisplay(insulationPlanningAreaM2, 3),
+      purchaseQty: roundDisplay(insulationPurchaseAreaM2, 3),
+      packageInfo: {
+        count: insulationBoards,
+        size: insulationBoardAreaM2,
+        packageUnit: "плит",
+      },
+      category: "Утепление",
     });
   }
 
-  /* ─── warnings ─── */
-  const warnings: string[] = [];
-  if (depth > 3) {
-    warnings.push("Глубина подвала более 3 м — требуется проект и расчёт несущей способности");
+  const warnings = [
+    "Калькулятор не проектирует подвал: тип основания, толщину стен и плиты, класс бетона, армирование, трещиностойкость и защиту от воды назначают по геологии и расчёту",
+    "Дренаж, вентиляция, земляные работы, обратная засыпка, швы, вводы и узлы примыкания не рассчитываются — для них нужна отдельная проектная схема",
+  ];
+  if (floorRebarProjectKg <= 0 && wallRebarProjectKg <= 0) {
+    warnings.push(
+      "Арматура не добавлена автоматически: перенесите массы из проектной ведомости или рассчитайте стержни по рабочей схеме в отдельном калькуляторе арматуры",
+    );
   }
-  if (wallThickness < 200) {
-    warnings.push("Толщина стен менее 200 мм — допустима только для неглубоких погребов");
+  if (scenarios.REC.purchase_quantity >= spec.warnings_rules.large_order_threshold_m3) {
+    warnings.push(
+      "Крупный заказ бетона: подтвердите раздельные графики заливки пола и стен, шаг поставщика, насос, подъезд и остаток смеси в линии подачи",
+    );
+  }
+  if (requestedOpeningsAreaM2 > wallOpeningsAreaM2) {
+    warnings.push(
+      "Площадь проёмов превышает доступную площадь стен и ограничена геометрией; проверьте наружный контур, толщину и ведомость проёмов",
+    );
+  }
+  if (waterproofScope > 0 && waterproofSystem === 1
+    && (waterproofConsumptionKgM2 <= 0 || waterproofPackageKg <= 0)) {
+    warnings.push(
+      "Для гидроизоляционного состава не заполнены расход на весь цикл и масса упаковки — позиция к покупке не рассчитана",
+    );
+  }
+  if (waterproofScope > 0 && waterproofSystem === 2 && waterproofRollAreaM2 <= 0) {
+    warnings.push(
+      "Для рулонной гидроизоляции не заполнена площадь рулона — позиция к покупке не рассчитана",
+    );
+  }
+  if (requestedWaterproofWallHeightM > depth) {
+    warnings.push("Высота гидроизоляции ограничена введённой высотой монолитной стены");
+  }
+  if (requestedInsulationWallHeightM > depth) {
+    warnings.push("Высота утепления ограничена введённой высотой монолитной стены");
   }
 
-  const practicalNotes: string[] = [];
-  if (depth > 3) {
-    practicalNotes.push(`Глубина ${roundDisplay(depth, 1)} м — на таких глубинах обязательна профессиональная геология и проект`);
-  }
-  practicalNotes.push("Гидроизоляция подвала — это не экономия. Лучше переплатить сейчас, чем вычерпывать воду потом");
+  const practicalNotes = [
+    "Размеры стен вводятся по наружному контуру, а размеры плиты пола — отдельно: калькулятор не предполагает, что они совпадают",
+    "Пол и стены считаются отдельными заливками и округляются раздельно; объединять их в одну поставку нельзя без фактического графика бетонирования",
+    "Проёмы вычитаются из бетона и плоских граней опалубки, но откосы, торцы и локальные усиления нужно брать из рабочих чертежей",
+    "ГОСТ 7473-2010 действует на дату аудита 29.08.2026; принятый ГОСТ 7473-2026 вводится 01.11.2026",
+  ];
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -264,35 +556,75 @@ export function computeCanonicalBasement(
       width: roundDisplay(width, 3),
       depth: roundDisplay(depth, 3),
       wallThickness,
+      wallOpeningsAreaM2: roundDisplay(wallOpeningsAreaM2, 3),
+      requestedOpeningsAreaM2: roundDisplay(requestedOpeningsAreaM2, 3),
+      floorLength: roundDisplay(floorLength, 3),
+      floorWidth: roundDisplay(floorWidth, 3),
       floorThickness,
-      waterproofType,
+      outerPlanArea: roundDisplay(outerPlanArea, 3),
+      innerPlanArea: roundDisplay(innerPlanArea, 3),
+      innerLength: roundDisplay(innerLength, 3),
+      innerWidth: roundDisplay(innerWidth, 3),
+      outerWallPerimeter: roundDisplay(outerWallPerimeter, 3),
+      innerWallPerimeter: roundDisplay(innerWallPerimeter, 3),
+      outerWallArea: roundDisplay(outerWallArea, 3),
+      innerWallArea: roundDisplay(innerWallArea, 3),
       floorArea: roundDisplay(floorArea, 3),
-      wallPerim: roundDisplay(wallPerim, 3),
-      wallArea: roundDisplay(wallArea, 3),
-      floorVol: roundDisplay(floorVol, 4),
-      wallVol: roundDisplay(wallVol, 4),
-      floorConcrete,
-      wallConcrete,
-      totalConcrete,
-      floorRebar,
-      wallRebar,
-      wire,
-      formwork,
-      ventCount,
-      masticKg,
-      rollCount,
-      penKg,
+      grossWallVolume: roundDisplay(grossWallVolume, 4),
+      openingsVolume: roundDisplay(openingsVolume, 4),
+      wallVolume: roundDisplay(wallVolume, 4),
+      floorVolume: roundDisplay(floorVolume, 4),
+      cleanConcreteM3: roundDisplay(cleanConcreteM3, 4),
+      floorConcreteReservePercent: roundDisplay(floorConcreteReservePercent, 3),
+      wallConcreteReservePercent: roundDisplay(wallConcreteReservePercent, 3),
+      readyMixOrderStepM3,
+      floorDeliveryAllowanceM3: roundDisplay(floorDeliveryAllowanceM3, 3),
+      wallDeliveryAllowanceM3: roundDisplay(wallDeliveryAllowanceM3, 3),
+      floorConcrete: roundDisplay(recParts.floorPurchaseM3, 3),
+      wallConcrete: roundDisplay(recParts.wallPurchaseM3, 3),
+      totalConcrete: roundDisplay(cleanConcreteM3, 3),
+      concreteVolume: roundDisplay(scenarios.REC.purchase_quantity, 3),
+      floorRebarProjectKg: roundDisplay(floorRebarProjectKg, 3),
+      wallRebarProjectKg: roundDisplay(wallRebarProjectKg, 3),
+      floorRebarPurchaseKg: roundDisplay(floorRebarPurchaseKg, 3),
+      wallRebarPurchaseKg: roundDisplay(wallRebarPurchaseKg, 3),
+      rebarPurchaseKg: roundDisplay(floorRebarPurchaseKg + wallRebarPurchaseKg, 3),
+      wallFormworkMode,
+      formworkExactAreaM2: roundDisplay(formworkExactAreaM2, 3),
+      formworkPlanningAreaM2: roundDisplay(formworkPlanningAreaM2, 3),
+      formworkSheets,
+      formworkPurchaseAreaM2: roundDisplay(formworkPurchaseAreaM2, 3),
+      waterproofScope,
+      waterproofSystem,
+      waterproofArea: roundDisplay(waterproofBaseAreaM2, 3),
+      waterproofWallAreaM2: roundDisplay(waterproofWallAreaM2, 3),
+      waterproofFloorAreaM2: roundDisplay(waterproofFloorAreaM2, 3),
+      waterproofPackages,
+      waterproofRolls,
+      insulationScope,
+      insulationArea: roundDisplay(insulationExactAreaM2, 3),
+      insulationBoards,
+      insulationPurchaseAreaM2: roundDisplay(insulationPurchaseAreaM2, 3),
+      drainageLength: 0,
       minExactNeed: scenarios.MIN.exact_need,
-      recExactNeed: recScenario.exact_need,
+      recExactNeed: scenarios.REC.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,
       minPurchase: scenarios.MIN.purchase_quantity,
-      recPurchase: recScenario.purchase_quantity,
+      recPurchase: scenarios.REC.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: [
+        "Скрытые коэффициенты точности не применяются: геометрия, запасы, остатки, проектная масса и фасовки задаются отдельными полями",
+      ],
+    },
   };
 }

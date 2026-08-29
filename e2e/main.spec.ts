@@ -135,6 +135,37 @@ test.describe("Калькулятор плитного фундамента", ()
   });
 });
 
+test.describe("Калькулятор монолитного подвала", () => {
+  test("v2 считает отдельные заливки и не додумывает проектные материалы", async ({ page }) => {
+    await page.goto("/kalkulyatory/fundament/podval-fundamenta/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("подвала");
+    await expect(page.getByLabel("Наружная длина контура стен").first()).toHaveValue("8");
+    await expect(page.getByLabel("Длина плиты пола по проекту").first()).toHaveValue("8");
+    await expect(page.getByRole("button", { name: /Дополнительные параметры/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Бетон к заказу");
+    await expect(resultCard).toContainText(/21[,.]9\s*м³/);
+    await expect(resultCard).toContainText("Чистый объём");
+    await expect(resultCard).toContainText(/20[,.]8\s*м³/);
+    await expect(resultCard).toContainText("Товарный бетон для плиты пола");
+    await expect(resultCard).toContainText("Товарный бетон для наружных стен");
+    await expect(resultCard).not.toContainText("Продухи");
+    await expect(resultCard).not.toContainText("Вязальная проволока");
+    await expect(
+      page.getByText(/Калькулятор не проектирует подвал/).first(),
+    ).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");
