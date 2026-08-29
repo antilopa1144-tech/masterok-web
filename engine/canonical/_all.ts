@@ -965,47 +965,29 @@ export interface InsulationCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 export interface RebarPackagingRules {
   unit: string;
-  package_size: number;
+  allowed_rod_lengths_m: number[];
+  allowed_wire_packages_kg: number[];
 }
 
 export interface RebarMaterialRules {
-  slab_main_reserve_factor: number;
-  slab_vertical_tie_spacing_m: number;
-  slab_vertical_tie_extra_m: number;
-  slab_fixators_per_m2: number;
-  strip_rod_count: number;
-  strip_stirrup_spacing_m: number;
-  strip_assumed_width_m: number;
-  strip_stirrup_diameter: number;
-  belt_rod_count: number;
-  belt_height_m: number;
-  belt_width_m: number;
-  belt_stirrup_spacing_m: number;
-  belt_stirrup_diameter: number;
-  floor_main_reserve_factor: number;
-  floor_secondary_diameter: number;
-  floor_secondary_step_multiplier: number;
-}
-
-export interface RebarWarningRules {
-  slab_min_height_for_double_grid_m: number;
-  min_diameter_for_foundation_mm: number;
-  wide_step_threshold_mm: number;
+  weight_per_meter: Record<string, number>;
+  allowed_diameters_mm: number[];
+  allowed_stirrup_diameters_mm: number[];
+  wire_weight_kg_per_m: number;
 }
 
 export interface RebarCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
-    weight_per_meter: Record<string, number>;
-    standard_rod_length_m: number;
-    wire_length_per_intersection_m: number;
-    wire_kg_per_m: number;
-    rebar_overlap_factor: number;
-    allowed_diameters: number[];
-    allowed_grid_steps: number[];
+    grid: string;
+    frame: string;
+    mass: string;
   };
   packaging_rules: RebarPackagingRules;
   material_rules: RebarMaterialRules;
-  warnings_rules: RebarWarningRules;
+  warnings_rules: Record<string, never>;
+  scenario_policy: CanonicalCalculatorSpecBase["scenario_policy"] & {
+    max_reserve_floor_percent: number;
+  };
 }
 
 export interface RoofingTypeSpec {

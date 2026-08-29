@@ -1,265 +1,144 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { rebarDef } from "../formulas/rebar";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial } from "./_helpers";
 
-const calc = withBasicAccuracy(rebarDef.calculate.bind(rebarDef));
+const calc = (inputs: Record<string, number> = {}) =>
+  rebarDef.calculate({ accuracyMode: "basic", ...inputs } as any);
 
-describe("Калькулятор арматуры", () => {
-  it("закрывает подтверждённый интент веса и вязальной проволоки", () => {
-    expect(rebarDef.h1).toContain("вес, метраж и вязальная проволока");
-    expect(rebarDef.metaTitle).toContain("вес и вязальная проволока");
-    expect(rebarDef.metaDescription).toContain("стержней 11,7 м");
+describe("Калькулятор арматуры v2", () => {
+  it("не обещает подбор армирования и описывает закупочный результат", () => {
+    expect(rebarDef.h1).toContain("прутки к покупке");
+    expect(rebarDef.description).toContain("готовую схему");
+    expect(rebarDef.formulaDescription).toContain("не назначает армирование");
+    expect(rebarDef.formulaDescription).not.toContain("4 продольных прутка");
   });
 
-  it("SEO-пример совпадает с canonical-результатом для плиты 10×8 м", () => {
-    const result = calc({
-      structureType: 0,
-      length: 10,
-      width: 8,
-      height: 0.3,
-      mainDiameter: 12,
-      gridStep: 200,
-    });
-    const content = rebarDef.seoContent?.descriptionHtml ?? "";
-    const wireFaq = rebarDef.seoContent?.faq?.find((item) =>
-      item.question.includes("вязальную проволоку"),
-    );
+  it("считает два слоя сетки по чистым размерам и максимальному шагу", () => {
+    const result = calc();
+
+    expect(result.formulaVersion).toBe("rebar-canonical-v2");
+    expect(result.totals.barsAlongLength).toBe(41);
+    expect(result.totals.barsAlongWidth).toBe(51);
+    expect(result.totals.mainExactLengthM).toBe(1617.6);
+    expect(result.totals.mainExactWeightKg).toBeCloseTo(1436.429, 3);
+    expect(result.totals.mainPlanningLengthM).toBe(1779.36);
+    expect(result.totals.mainRods).toBe(153);
+    expect(result.totals.mainPurchaseLengthM).toBe(1790.1);
+    checkInvariants(result);
+  });
+
+  it("округляет основную арматуру до целых прутков выбранной длины", () => {
+    const result = calc({ reservePercent: 10, rodLengthM: 6 });
+    const main = findMaterial(result, "Арматура сетки");
+
+    expect(result.totals.mainRods).toBe(297);
+    expect(main?.packageInfo).toEqual({ count: 297, size: 6, packageUnit: "прутков" });
+    expect(main?.purchaseQty).toBe(1782);
+  });
+
+  it("применяет закупочный запас один раз", () => {
+    const withoutReserve = calc({ reservePercent: 0 });
+    const withReserve = calc({ reservePercent: 10 });
+
+    expect(withoutReserve.totals.mainExactLengthM).toBe(1617.6);
+    expect(withoutReserve.totals.mainPlanningLengthM).toBe(1617.6);
+    expect(withoutReserve.totals.mainRods).toBe(139);
+    expect(withReserve.totals.mainPlanningLengthM).toBe(1779.36);
+    expect(withReserve.totals.mainRods).toBe(153);
+  });
+
+  it("один слой сетки вдвое уменьшает чистый метраж", () => {
+    const result = calc({ gridLayers: 1 });
+    expect(result.totals.mainExactLengthM).toBe(808.8);
+    expect(result.totals.intersections).toBe(2091);
+  });
+
+  it("явный отступ от кромки меняет длину и число стержней", () => {
+    const noCover = calc({ edgeCoverMm: 0 });
+    const withCover = calc({ edgeCoverMm: 50 });
+
+    expect(noCover.totals.mainExactLengthM).toBe(1636);
+    expect(withCover.totals.mainExactLengthM).toBe(1617.6);
+  });
+
+  it("считает вязальную проволоку по явной доле узлов и фасовке", () => {
+    const result = calc({ tieSharePercent: 100, wireLengthPerTieM: 0.3, wireReservePercent: 10, wirePackageKg: 1 });
     const wire = findMaterial(result, "Проволока вязальная");
 
-    expect(result.totals.mainRebarLength).toBe(1717.8);
-    expect(result.totals.mainRebarKg).toBe(1525.4);
-    expect(result.totals.mainRods).toBe(147);
-    expect(result.totals.wireLength).toBe(1397.4);
-    expect(result.totals.wireKg).toBe(8.38);
-    expect(wire?.purchaseQty).toBe(9);
-    expect(content).toContain("1 717,8 м");
-    expect(content).toContain("1 525,4 кг");
-    expect(content).toContain("147 стержней");
-    expect(content).toContain("8,38 кг");
-    expect(content).toContain("9 кг к покупке");
-    expect(content).toContain("товарная длина стержня");
-    expect(wireFaq?.answer).toContain("не универсальная норма на тонну");
+    expect(result.totals.intersections).toBe(4182);
+    expect(result.totals.tieCount).toBe(4182);
+    expect(result.totals.wireExactLengthM).toBe(1254.6);
+    expect(result.totals.wireExactKg).toBeCloseTo(7.528, 3);
+    expect(result.totals.wirePlanningKg).toBeCloseTo(8.28, 2);
+    expect(result.totals.wirePurchaseKg).toBe(9);
+    expect(wire?.packageInfo).toEqual({ count: 9, size: 1, packageUnit: "упаковок" });
   });
 
-  describe("Плита 10×8, h=0.3, Ø12, шаг 200", () => {
-    // gridStepM = 0.2
-    // barsAlongLength = ceil(8 / 0.2) + 1 = 41
-    // barsAlongWidth = ceil(10 / 0.2) + 1 = 51
-    // mainRebarLength = 2 × (41×10 + 51×8) × 1.05 = 2 × 818 × 1.05 = 1717.8
-    // mainKgPerM (Ø12) = 0.888
-    // mainRebarKg = 1717.8 × 0.888 = 1525.4064
-    // mainRods = ceil(1717.8 / 11.7) = 147
-    //
-    // Vertical ties Ø6: tieCountX = ceil(10/0.6) = 17, tieCountY = ceil(8/0.6) = 14
-    // totalTies = 238, each = 0.3 + 0.2 = 0.5 м → tieRebarLength = 119
-    //
-    // intersections = 41×51×2 + 238×2 = 4182 + 476 = 4658
-    // wireKg = 4658 × 0.3 × 0.006 = 8.3844
-    //
-    // fixators = ceil(80 × 5) = 400
-    const result = calc({
-      structureType: 0,
-      length: 10,
-      width: 8,
-      height: 0.3,
-      mainDiameter: 12,
-      gridStep: 200,
-    });
-
-    it("рабочая арматура ≈ 1717.8 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(1717.8, 0);
-    });
-
-    it("масса рабочей арматуры ≈ 1525 кг", () => {
-      expect(result.totals.mainRebarKg).toBeCloseTo(1525.41, 0);
-    });
-
-    it("стержни 11.7 м = 147 шт", () => {
-      expect(result.totals.mainRods).toBe(147);
-    });
-
-    it("вертикальные связи Ø6 = 119 м.п.", () => {
-      expect(result.totals.tieRebarLength).toBeCloseTo(119, 0);
-    });
-
-    it("вязальная проволока ≈ 8.38 кг", () => {
-      expect(result.totals.wireKg).toBeCloseTo(8.38, 1);
-    });
-
-    it("проволока присутствует в материалах", () => {
-      const wire = findMaterial(result, "Проволока вязальная");
-      expect(wire).toBeDefined();
-      expect(wire!.purchaseQty).toBeGreaterThanOrEqual(1);
-    });
-
-    it("фиксаторы = 400 шт", () => {
-      expect(result.totals.fixators).toBe(400);
-    });
-
-    it("фиксаторы пластиковые = 400 шт (без доп. запаса)", () => {
-      const fix = findMaterial(result, "Фиксаторы");
-      expect(fix).toBeDefined();
-      expect(fix!.purchaseQty).toBe(400);
-    });
-
-    it("totals содержат все ключевые значения", () => {
-      expect(result.totals.mainRebarLength).toBeGreaterThan(0);
-      expect(result.totals.mainRebarKg).toBeGreaterThan(0);
-      expect(result.totals.tieRebarLength).toBeGreaterThan(0);
-      expect(result.totals.tieRebarKg).toBeGreaterThan(0);
-      expect(result.totals.intersections).toBeGreaterThan(0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+  it("может считать только часть перевязываемых узлов", () => {
+    const result = calc({ tieSharePercent: 25 });
+    expect(result.totals.tieCount).toBe(1046);
+    expect(result.totals.wireExactKg).toBeCloseTo(1.883, 3);
   });
 
-  describe("Ленточный фундамент 10×8, h=0.3, Ø12, шаг 200", () => {
-    // perimeter = 2 × (10 + 8) = 36
-    // mainRebarLength = 36 × 4 × 1.12 = 161.28
-    // stirrupCount = ceil(36 / 0.4) = 90
-    // sectionPerimeter = 2 × (0.3 + 0.3 - 0.1) = 1.0, but max(0.8, 1.0) = 1.0
-    // tieRebarLength = 90 × max(0.8, 1.0) = 90
-    // fixators = 0 (strip foundation)
+  it("считает продольный каркас и хомуты как разные товарные позиции", () => {
+    const result = calc({ structureType: 1 });
+    const main = findMaterial(result, "Продольная арматура");
+    const stirrups = findMaterial(result, "Хомуты");
+
+    expect(result.totals.mainExactLengthM).toBe(144);
+    expect(result.totals.mainRods).toBe(14);
+    expect(result.totals.stirrupCount).toBe(91);
+    expect(result.totals.stirrupPieceLengthM).toBe(1.5);
+    expect(result.totals.secondaryExactLengthM).toBe(136.5);
+    expect(result.totals.secondaryRods).toBe(13);
+    expect(main?.packageInfo?.count).toBe(14);
+    expect(stirrups?.packageInfo?.count).toBe(13);
+    checkInvariants(result);
+  });
+
+  it("использует введённые размеры, шаг и число стержней каркаса", () => {
     const result = calc({
       structureType: 1,
-      length: 10,
-      width: 8,
-      height: 0.3,
-      mainDiameter: 12,
-      gridStep: 200,
+      frameLengthM: 10,
+      longitudinalBars: 6,
+      stirrupWidthMm: 400,
+      stirrupHeightMm: 600,
+      stirrupStepMm: 500,
+      stirrupHookAllowanceMm: 200,
     });
 
-    it("4 продольных прутка: 36 × 4 × 1.12 = 161.28 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(161.28, 1);
-    });
-
-    it("арматура для хомутов присутствует", () => {
-      const tie = findMaterial(result, "хомутов");
-      expect(tie).toBeDefined();
-    });
-
-    it("стержни 11.7 м = ceil(161.28 / 11.7) = 14", () => {
-      expect(result.totals.mainRods).toBe(14);
-    });
-
-    it("фиксаторы = 0 (ленточный фундамент)", () => {
-      expect(result.totals.fixators).toBe(0);
-    });
-
-    it("вязальная проволока присутствует", () => {
-      expect(findMaterial(result, "Проволока вязальная")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.mainExactLengthM).toBe(60);
+    expect(result.totals.stirrupCount).toBe(21);
+    expect(result.totals.stirrupPieceLengthM).toBe(2.2);
+    expect(result.totals.secondaryExactLengthM).toBe(46.2);
+    expect(result.totals.intersections).toBe(126);
   });
 
-  describe("Армопояс 10×8, Ø12", () => {
-    // perimeter = 36
-    // mainRebarLength = 36 × 4 × 1.12 = 161.28
-    // stirrupCount = ceil(36 / 0.4) = 90
-    // tieRebarLength = 90 × 2 × (0.30 + 0.25 - 0.1) = 90 × 0.9 = 81
-    const result = calc({
-      structureType: 2,
-      length: 10,
-      width: 8,
-      height: 0.25,
-      mainDiameter: 12,
-      gridStep: 200,
-    });
+  it("MIN/REC/MAX используют только явную политику запаса", () => {
+    const result = calc({ reservePercent: 10 });
 
-    it("4 прутка: 161.28 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(161.28, 1);
-    });
-
-    it("хомуты ≈ 81 м.п.", () => {
-      expect(result.totals.tieRebarLength).toBeCloseTo(81, 0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.scenarios.MIN.exact_need).toBe(1617.6);
+    expect(result.scenarios.MIN.purchase_quantity).toBe(1626.3);
+    expect(result.scenarios.REC.exact_need).toBe(1779.36);
+    expect(result.scenarios.REC.purchase_quantity).toBe(1790.1);
+    expect(result.scenarios.MAX.exact_need).toBe(1860.24);
+    expect(result.scenarios.MAX.purchase_quantity).toBe(1860.3);
+    expect(result.scenarios.REC.key_factors.reserve_percent).toBe(10);
   });
 
-  describe("Перекрытие 10×8, Ø12, шаг 200", () => {
-    // одинарная сетка: barsAlongLength=41, barsAlongWidth=51
-    // mainRebarLength = (41×10 + 51×8) × 1.05 = 818 × 1.05 = 858.9
-    // Вторичная Ø6: secStep = 0.4, secBarsL = ceil(8/0.4)+1=21, secBarsW = ceil(10/0.4)+1=26
-    // tieRebarLength = (21×10 + 26×8) × 1.05 = 418 × 1.05 = 438.9
-    const result = calc({
-      structureType: 3,
-      length: 10,
-      width: 8,
-      height: 0.2,
-      mainDiameter: 12,
-      gridStep: 200,
-    });
+  it("режим точности не добавляет скрытый множитель", () => {
+    const basic = rebarDef.calculate({ accuracyMode: "basic" } as any);
+    const professional = rebarDef.calculate({ accuracyMode: "professional" } as any);
 
-    it("одинарная сетка ≈ 858.9 м.п.", () => {
-      expect(result.totals.mainRebarLength).toBeCloseTo(858.9, 0);
-    });
-
-    it("арматура вторичная Ø6 присутствует", () => {
-      const sec = findMaterial(result, "вторичная");
-      expect(sec).toBeDefined();
-      expect(sec!.quantity).toBeCloseTo(438.9, 0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(basic.totals.mainExactLengthM).toBe(professional.totals.mainExactLengthM);
+    expect(basic.totals.mainRods).toBe(professional.totals.mainRods);
+    expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
   });
 
-  describe("Предупреждения", () => {
-    it("Ø8 для плитного фундамента → предупреждение", () => {
-      const result = calc({
-        structureType: 0,
-        length: 10,
-        width: 8,
-        height: 0.3,
-        mainDiameter: 8,
-        gridStep: 200,
-      });
-      expect(result.warnings.some((w) => w.includes("не менее 10"))).toBe(true);
-    });
-
-    it("толщина плиты < 150 мм → предупреждение по СП", () => {
-      const result = calc({
-        structureType: 0,
-        length: 10,
-        width: 8,
-        height: 0.1,
-        mainDiameter: 12,
-        gridStep: 200,
-      });
-      expect(result.warnings.some((w) => w.includes("150 мм"))).toBe(true);
-    });
-
-    it("Ø8 для ленточного фундамента → предупреждение", () => {
-      const result = calc({
-        structureType: 1,
-        length: 10,
-        width: 8,
-        height: 0.3,
-        mainDiameter: 8,
-        gridStep: 200,
-      });
-      expect(result.warnings.some((w) => w.includes("не менее 10"))).toBe(true);
-    });
-
-    it("шаг сетки > 250 мм → предупреждение о несущей способности", () => {
-      const result = calc({
-        structureType: 0,
-        length: 10,
-        width: 8,
-        height: 0.3,
-        mainDiameter: 12,
-        gridStep: 300,
-      });
-      expect(result.warnings.some((w) => w.includes("250 мм"))).toBe(true);
-    });
+  it("не выдаёт категоричных советов по диаметру и шагу", () => {
+    const result = calc({ mainDiameter: 6, gridStepMm: 500 });
+    expect(result.warnings.join(" ")).toContain("перенесите из проекта");
+    expect(result.warnings.join(" ")).not.toContain("не менее");
+    expect(result.warnings.join(" ")).not.toContain("снижает несущую способность");
   });
 });

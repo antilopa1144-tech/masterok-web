@@ -107,6 +107,48 @@ test.describe("Калькулятор ленточного фундамента"
   });
 });
 
+test.describe("Калькулятор арматуры", () => {
+  test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
+    await page.goto("/kalkulyatory/fundament/armatura/");
+
+    await expect(page.locator("h1")).toContainText("Калькулятор арматуры");
+    await expect(page.getByLabel("Длина сетки").first()).toBeVisible();
+    await expect(page.getByLabel("Суммарная длина каркаса")).toHaveCount(0);
+
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: /Дополнительные параметры/,
+    });
+    if (await mobileAdditionalFields.isVisible()) {
+      await mobileAdditionalFields.click();
+    }
+
+    await expect(page.getByLabel("Длина покупного прутка").first()).toHaveValue("11.7");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Арматура сетки");
+    await expect(resultCard).toContainText(/153\s*прутк(?:а|ов)\s*×\s*11[,.]7\s*пог\. м/);
+    await expect(resultCard).not.toContainText("Фиксатор");
+    await expect(
+      page.getByText(/Калькулятор не назначает диаметр, шаг, число слоёв/).first(),
+    ).toBeVisible();
+
+    await page.getByText("Продольный каркас с хомутами", { exact: true }).click();
+    await expect(page.getByLabel("Суммарная длина каркаса").first()).toBeVisible();
+    await expect(page.getByLabel("Длина сетки")).toHaveCount(0);
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    await expect(resultCard).toContainText("Продольная арматура");
+    await expect(resultCard).toContainText("Хомуты");
+    await expect(resultCard).toContainText(/14\s*прутк(?:а|ов)\s*×\s*11[,.]7\s*пог\. м/);
+    await expect(resultCard).toContainText(/13\s*прутк(?:а|ов)\s*×\s*11[,.]7\s*пог\. м/);
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Валидация числового ввода", () => {
   test("не подменяет отрицательную площадь минимальным значением", async ({ page }) => {
     await page.goto("/kalkulyatory/otdelka/kraska/");
