@@ -2025,42 +2025,32 @@ export interface BasementCanonicalSpec extends CanonicalCalculatorSpecBase {
 /* ─── Frame House (каркасный дом) ─── */
 
 export interface FrameHousePackagingRules {
-  unit: string;
-  package_size: number;
+  outer_sheathing_scenario_unit: string;
+  max_scenario_reserve_floor_percent: number;
 }
 
 export interface FrameHouseMaterialRules {
-  outer_sheet_area: Record<string, number>;
-  inner_sheet_area: Record<string, number>;
-  insulation_thickness: Record<string, number>;
-  plate_area: number;
-  pack_size: number;
-  vapor_roll: number;
-  wind_roll: number;
-  membrane_reserve: number;
-  outer_reserve: number;
-  inner_reserve: number;
-  screws_per_sheet: number;
-  nails_per_stud: number;
-  screw_per_kg: number;
-  nail_per_kg: number;
-  stud_reserve: number;
-  strapping_reserve: number;
-  plate_reserve: number;
-}
-
-export interface FrameHouseWarningRules {
-  large_wall_area_threshold_m2: number;
+  surface_area_basis_codes: {
+    gross_without_opening_deduction: number;
+    net_with_opening_deduction: number;
+  };
 }
 
 export interface FrameHouseCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
-    insulation_types: number[];
-    stud_steps: number[];
+    wall_area: string;
+    framing: string;
+    sheet_layers: string;
+    insulation_and_membranes: string;
+    fasteners_and_tape: string;
   };
   packaging_rules: FrameHousePackagingRules;
   material_rules: FrameHouseMaterialRules;
-  warnings_rules: FrameHouseWarningRules;
+  warnings_rules: Record<string, never>;
+  scenario_policy: CanonicalCalculatorSpecBase["scenario_policy"] & {
+    max_reserve_floor_percent: number;
+  };
+  evidence: ConcreteEvidenceSpec;
 }
 
 /* ─── Doors (двери) ─── */

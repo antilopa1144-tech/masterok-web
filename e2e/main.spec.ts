@@ -166,6 +166,42 @@ test.describe("Калькулятор монолитного подвала", ()
   });
 });
 
+test.describe("Калькулятор материалов каркасного дома", () => {
+  test("v2 считает закупку по проектной ведомости и не проектирует каркас", async ({ page }) => {
+    await page.goto("/kalkulyatory/steny/karkasnyj-dom/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("Каркасный дом");
+    await expect(page.getByLabel("Общая длина рассчитываемых стен").first()).toHaveValue("30");
+    await expect(page.getByLabel("Какую площадь применять к материалам").first()).toHaveValue("0");
+
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: /Дополнительные параметры/,
+    });
+    if (await mobileAdditionalFields.isVisible()) {
+      await mobileAdditionalFields.click();
+    }
+
+    await page.getByLabel("Длина одной позиции пиломатериала из ведомости").first().fill("100");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Конструкционная доска — одна позиция из проектной ведомости");
+    await expect(resultCard).toContainText(/18\s*дос/);
+    await expect(resultCard).toContainText("Наружная листовая обшивка");
+    await expect(resultCard).toContainText(/29\s*лист/);
+    await expect(resultCard).not.toContainText("Стойки каркаса");
+    await expect(resultCard).not.toContainText("Гвозди ершёные");
+    await expect(
+      page.getByText(/Это закупочный расчёт по принятому проекту/i).first(),
+    ).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");

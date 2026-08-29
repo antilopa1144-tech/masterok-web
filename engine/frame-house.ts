@@ -1,301 +1,371 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
-import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import type { FactorTable } from "./factors";
 import type {
-  FrameHouseCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
+  FrameHouseCanonicalSpec,
 } from "./canonical";
-import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import type { ScenarioBundle } from "./scenarios";
+import {
+  ACCURACY_MODE_LABELS,
+  DEFAULT_ACCURACY_MODE,
+  type AccuracyMode,
+} from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
-
-/* ─── constants ─── */
-
-const OUTER_SHEET_AREA: Record<number, number> = { 0: 3.125, 1: 3.125, 2: 3.84 };
-const INNER_SHEET_AREA: Record<number, number> = { 0: 3.125, 1: 3.0, 2: 1.0 };
-const INSULATION_THICKNESS: Record<number, number> = { 0: 0.15, 1: 0.2, 2: 0.15 };
-const PLATE_AREA = 0.72;
-const PACK_SIZE = 8;
-const VAPOR_ROLL = 75;
-const WIND_ROLL = 75;
-const MEMBRANE_RESERVE = 1.15;
-const OUTER_RESERVE = 1.08;
-const INNER_RESERVE = 1.10;
-const SCREWS_PER_SHEET = 28;
-const NAILS_PER_STUD = 20;
-const SCREW_PER_KG = 600;
-const NAIL_PER_KG = 200;
-const STUD_RESERVE = 1.05;
-const STRAPPING_RESERVE = 1.05;
-const PLATE_RESERVE = 1.05;
-
-/* ─── labels ─── */
-
-const INSULATION_TYPE_LABELS: Record<number, string> = {
-  0: "Минеральная вата 150 мм",
-  1: "Минеральная вата 200 мм",
-  2: "Пенополистирол 150 мм",
-};
-
-const OUTER_SHEATHING_LABELS: Record<number, string> = {
-  0: "Ориентированно-стружечная плита (ОСП), 9 мм",
-  1: "Ориентированно-стружечная плита (ОСП), 12 мм",
-  2: "Цементно-стружечная плита (ЦСП), 12 мм",
-};
-
-const INNER_SHEATHING_LABELS: Record<number, string> = {
-  0: "Ориентированно-стружечная плита (ОСП), 9 мм",
-  1: "Гипсокартон (ГКЛ)",
-  2: "Вагонка",
-};
-
-/* ─── inputs ─── */
+import { roundDisplay } from "./units";
 
 interface FrameHouseInputs {
   wallLength?: number;
   wallHeight?: number;
   openingsArea?: number;
-  studStep?: number;
-  insulationType?: number;
-  outerSheathing?: number;
-  innerSheathing?: number;
+  surfaceAreaBasis?: number;
+  framingProjectLengthM?: number;
+  framingReservePercent?: number;
+  framingBoardLengthM?: number;
+  outerSheathingEnabled?: number;
+  outerSheetAreaM2?: number;
+  outerSheathingLayers?: number;
+  outerSheathingReservePercent?: number;
+  innerSheathingEnabled?: number;
+  innerSheetAreaM2?: number;
+  innerSheathingLayers?: number;
+  innerSheathingReservePercent?: number;
+  insulationEnabled?: number;
+  insulationPackageAreaM2?: number;
+  insulationLayers?: number;
+  insulationReservePercent?: number;
+  vaporBarrierEnabled?: number;
+  vaporRollAreaM2?: number;
+  vaporLayers?: number;
+  vaporReservePercent?: number;
+  windBarrierEnabled?: number;
+  windRollAreaM2?: number;
+  windLayers?: number;
+  windReservePercent?: number;
+  tapeProjectM?: number;
+  tapeReservePercent?: number;
+  tapeRollLengthM?: number;
+  sheathingFastenersProjectPcs?: number;
+  sheathingFastenersReservePercent?: number;
+  sheathingFastenersPackagePcs?: number;
+  framingFastenersProjectPcs?: number;
+  framingFastenersReservePercent?: number;
+  framingFastenersPackagePcs?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* ─── helpers ─── */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
-/* ─── main ─── */
+function input(
+  spec: FrameHouseCanonicalSpec,
+  inputs: FrameHouseInputs,
+  key: keyof FrameHouseInputs,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const value = inputs[key];
+  return clamp(
+    typeof value === "number" && Number.isFinite(value)
+      ? value
+      : getInputDefault(spec, String(key), fallback),
+    min,
+    max,
+  );
+}
+
+function roundUpUnits(exactNeed: number, unitSize: number): number {
+  if (exactNeed <= 0 || unitSize <= 0) return 0;
+  return Math.ceil((exactNeed - Number.EPSILON) / unitSize);
+}
+
+function planningQuantity(exactNeed: number, reservePercent: number): number {
+  return exactNeed * (1 + reservePercent / 100);
+}
+
+function packagedMaterial(
+  name: string,
+  category: string,
+  exactNeed: number,
+  reservePercent: number,
+  packageSize: number,
+  unit: string,
+  packageUnit: string,
+  subtitle: string,
+): CanonicalMaterialResult | undefined {
+  if (exactNeed <= 0 || packageSize <= 0) return undefined;
+  const withReserve = planningQuantity(exactNeed, reservePercent);
+  const packageCount = roundUpUnits(withReserve, packageSize);
+  return {
+    name,
+    subtitle,
+    quantity: roundDisplay(exactNeed, 3),
+    unit,
+    withReserve: roundDisplay(withReserve, 3),
+    purchaseQty: roundDisplay(packageCount * packageSize, 3),
+    packageInfo: { count: packageCount, size: packageSize, packageUnit },
+    category,
+  };
+}
+
+function buildOuterSheetScenarios(
+  cleanSheets: number,
+  recReservePercent: number,
+  maxReserveFloorPercent: number,
+): ScenarioBundle {
+  const reserves = {
+    MIN: 0,
+    REC: recReservePercent,
+    MAX: Math.max(recReservePercent, maxReserveFloorPercent),
+  } as const;
+
+  return (Object.keys(reserves) as Array<keyof typeof reserves>).reduce((acc, scenario) => {
+    const reservePercent = reserves[scenario];
+    const exactNeed = planningQuantity(cleanSheets, reservePercent);
+    const purchaseQuantity = Math.ceil(exactNeed - Number.EPSILON);
+    acc[scenario] = {
+      exact_need: roundDisplay(exactNeed, 6),
+      purchase_quantity: purchaseQuantity,
+      leftover: roundDisplay(purchaseQuantity - exactNeed, 6),
+      assumptions: [
+        "primary_material:outer_sheet_sheathing",
+        `reserve_percent:${reservePercent}`,
+      ],
+      key_factors: {
+        field_multiplier: 1,
+        reserve_percent: reservePercent,
+      },
+      buy_plan: {
+        package_label: "outer-sheet",
+        package_size: 1,
+        packages_count: purchaseQuantity,
+        unit: "листов",
+      },
+    };
+    return acc;
+  }, {} as ScenarioBundle);
+}
 
 export function computeCanonicalFrameHouse(
   spec: FrameHouseCanonicalSpec,
   inputs: FrameHouseInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
-  const wallLength = Math.max(1, Math.min(100, inputs.wallLength ?? getInputDefault(spec, "wallLength", 30)));
-  const wallHeight = Math.max(2, Math.min(4, inputs.wallHeight ?? getInputDefault(spec, "wallHeight", 2.7)));
-  const openingsArea = Math.max(0, Math.min(50, inputs.openingsArea ?? getInputDefault(spec, "openingsArea", 10)));
-  const studStep = Math.max(400, Math.min(600, Math.round(inputs.studStep ?? getInputDefault(spec, "studStep", 600))));
-  const insulationType = Math.max(0, Math.min(2, Math.round(inputs.insulationType ?? getInputDefault(spec, "insulationType", 0))));
-  const outerSheathing = Math.max(0, Math.min(2, Math.round(inputs.outerSheathing ?? getInputDefault(spec, "outerSheathing", 0))));
-  const innerSheathing = Math.max(0, Math.min(2, Math.round(inputs.innerSheathing ?? getInputDefault(spec, "innerSheathing", 0))));
+  const wallLength = input(spec, inputs, "wallLength", 30, 1, 200);
+  const wallHeight = input(spec, inputs, "wallHeight", 2.7, 1, 8);
+  const openingsAreaInput = input(spec, inputs, "openingsArea", 10, 0, 500);
+  const surfaceAreaBasis = Math.round(input(spec, inputs, "surfaceAreaBasis", 0, 0, 1));
 
-  /* ─── geometry ─── */
-  const wallArea = Math.max(0, wallLength * wallHeight - openingsArea);
-  const studs = Math.ceil(wallLength / (studStep / 1000)) + 1;
-  const studMeters = studs * wallHeight * STUD_RESERVE;
-  const studBoards = Math.ceil(studMeters / 6);
-  const strappingM = wallLength * 2 * STRAPPING_RESERVE;
-  const strappingBoards = Math.ceil(strappingM / 6);
+  const grossWallArea = wallLength * wallHeight;
+  const openingsArea = Math.min(openingsAreaInput, grossWallArea);
+  const netWallArea = grossWallArea - openingsArea;
+  const selectedSurfaceArea = surfaceAreaBasis === 1 ? netWallArea : grossWallArea;
 
-  /* ─── sheathing ─── */
-  const outerSheetArea = OUTER_SHEET_AREA[outerSheathing] ?? 3.125;
-  const innerSheetArea = INNER_SHEET_AREA[innerSheathing] ?? 3.125;
-  const outerSheets = Math.ceil(wallArea / outerSheetArea * OUTER_RESERVE);
-  const innerSheets = Math.ceil(wallArea * INNER_RESERVE / innerSheetArea);
+  const framingProjectLengthM = input(spec, inputs, "framingProjectLengthM", 0, 0, 100000);
+  const framingReservePercent = input(spec, inputs, "framingReservePercent", 5, 0, 30);
+  const framingBoardLengthM = input(spec, inputs, "framingBoardLengthM", 6, 0.1, 20);
 
-  /* ─── insulation ─── */
-  const thickness = INSULATION_THICKNESS[insulationType] ?? 0.15;
-  const insulVol = roundDisplay(wallArea * thickness, 3);
-  const layerCount = Math.ceil(thickness / 0.05);
-  const platesPerLayer = Math.ceil(wallArea / PLATE_AREA * PLATE_RESERVE);
-  const totalPlates = platesPerLayer * layerCount;
-  const packs = Math.ceil(totalPlates / PACK_SIZE);
+  const outerSheathingEnabled = Math.round(input(spec, inputs, "outerSheathingEnabled", 1, 0, 1));
+  const outerSheetAreaM2 = input(spec, inputs, "outerSheetAreaM2", 3.125, 0.1, 20);
+  const outerSheathingLayers = Math.round(input(spec, inputs, "outerSheathingLayers", 1, 1, 4));
+  const outerSheathingReservePercent = input(spec, inputs, "outerSheathingReservePercent", 10, 0, 50);
 
-  /* ─── membranes ─── */
-  const vaporRolls = Math.ceil(wallArea * MEMBRANE_RESERVE / VAPOR_ROLL);
-  const windRolls = Math.ceil(wallArea * MEMBRANE_RESERVE / WIND_ROLL);
-  const tapeRolls = (vaporRolls + windRolls) * 2;
+  const innerSheathingEnabled = Math.round(input(spec, inputs, "innerSheathingEnabled", 0, 0, 1));
+  const innerSheetAreaM2 = input(spec, inputs, "innerSheetAreaM2", 3, 0.1, 20);
+  const innerSheathingLayers = Math.round(input(spec, inputs, "innerSheathingLayers", 1, 1, 4));
+  const innerSheathingReservePercent = input(spec, inputs, "innerSheathingReservePercent", 10, 0, 50);
 
-  /* ─── fasteners ─── */
-  const outerScrewsPcs = Math.ceil(outerSheets * SCREWS_PER_SHEET * STUD_RESERVE);
-  const innerScrewsPcs = Math.ceil(innerSheets * SCREWS_PER_SHEET * STUD_RESERVE);
-  const screwsKg = Math.ceil((outerSheets + innerSheets) * SCREWS_PER_SHEET * STUD_RESERVE / SCREW_PER_KG * 10) / 10;
-  const nailsPcs = Math.ceil(studs * NAILS_PER_STUD * STUD_RESERVE);
-  const nailsKg = Math.ceil(studs * NAILS_PER_STUD * STUD_RESERVE / NAIL_PER_KG * 10) / 10;
+  const insulationEnabled = Math.round(input(spec, inputs, "insulationEnabled", 0, 0, 1));
+  const insulationPackageAreaM2 = input(spec, inputs, "insulationPackageAreaM2", 0, 0, 100);
+  const insulationLayers = Math.round(input(spec, inputs, "insulationLayers", 1, 1, 10));
+  const insulationReservePercent = input(spec, inputs, "insulationReservePercent", 5, 0, 30);
 
-  /* ─── scenarios ─── */
-  const basePrimaryRaw = totalPlates;
-  const basePrimary = Math.ceil(basePrimaryRaw * accuracyMult);
-  const packageOptions = [{
-    size: PACK_SIZE,
-    label: "insulation-pack-8",
-    unit: "уп",
-  }];
+  const vaporBarrierEnabled = Math.round(input(spec, inputs, "vaporBarrierEnabled", 0, 0, 1));
+  const vaporRollAreaM2 = input(spec, inputs, "vaporRollAreaM2", 0, 0, 500);
+  const vaporLayers = Math.round(input(spec, inputs, "vaporLayers", 1, 1, 5));
+  const vaporReservePercent = input(spec, inputs, "vaporReservePercent", 15, 0, 50);
 
-  const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
+  const windBarrierEnabled = Math.round(input(spec, inputs, "windBarrierEnabled", 0, 0, 1));
+  const windRollAreaM2 = input(spec, inputs, "windRollAreaM2", 0, 0, 500);
+  const windLayers = Math.round(input(spec, inputs, "windLayers", 1, 1, 5));
+  const windReservePercent = input(spec, inputs, "windReservePercent", 15, 0, 50);
 
-    acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
-      assumptions: [
-        `formula_version:${spec.formula_version}`,
-        `insulationType:${insulationType}`,
-        `studStep:${studStep}`,
-        `packaging:${packaging.package.label}`,
-      ],
-      key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-      },
-      buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
-      },
-    };
+  const tapeProjectM = input(spec, inputs, "tapeProjectM", 0, 0, 100000);
+  const tapeReservePercent = input(spec, inputs, "tapeReservePercent", 10, 0, 50);
+  const tapeRollLengthM = input(spec, inputs, "tapeRollLengthM", 0, 0, 1000);
 
-    return acc;
-  }, {} as ScenarioBundle);
+  const sheathingFastenersProjectPcs = input(spec, inputs, "sheathingFastenersProjectPcs", 0, 0, 1000000);
+  const sheathingFastenersReservePercent = input(spec, inputs, "sheathingFastenersReservePercent", 5, 0, 30);
+  const sheathingFastenersPackagePcs = input(spec, inputs, "sheathingFastenersPackagePcs", 0, 0, 100000);
+  const framingFastenersProjectPcs = input(spec, inputs, "framingFastenersProjectPcs", 0, 0, 1000000);
+  const framingFastenersReservePercent = input(spec, inputs, "framingFastenersReservePercent", 5, 0, 30);
+  const framingFastenersPackagePcs = input(spec, inputs, "framingFastenersPackagePcs", 0, 0, 100000);
 
-  const recScenario = scenarios.REC;
-  const outerFastenerLabels: Record<number, string> = {
-    0: "ОСП (ориентированно-стружечная плита) — саморезы по дереву 3,5×35 мм",
-    1: "фанера — саморезы по дереву 3,5×35 мм",
-    2: "ЦСП (цементно-стружечная плита) — специальные саморезы с потайной головкой по толщине листа",
-  };
-  const innerFastenerLabels: Record<number, string> = {
-    0: "ОСП (ориентированно-стружечная плита) — саморезы по дереву 3,5×35 мм",
-    1: "Гипсокартон — чёрные саморезы по металлу 3,5×25 мм",
-    2: "вагонка — кляймеры или финишные гвозди по профилю доски",
-  };
-  const outerFastenerNames: Record<number, string> = {
-    0: "Ориентированно-стружечная плита (ОСП), саморезы 3,5×35 мм",
-    1: "фанера, саморезы 3,5×35 мм",
-    2: "Цементно-стружечная плита (ЦСП), специальные саморезы",
-  };
-  const innerFastenerNames: Record<number, string> = {
-    0: "Ориентированно-стружечная плита (ОСП), саморезы 3,5×35 мм",
-    1: "Гипсокартон, чёрные саморезы по металлу 3,5×25 мм",
-    2: "вагонка, кляймеры или финишные гвозди",
-  };
+  const materials: CanonicalMaterialResult[] = [];
 
-  /* ─── materials ─── */
-  const materials: CanonicalMaterialResult[] = [
-    {
-      name: `Стойки каркаса — конструкционная доска (шаг ${studStep} мм)`,
-      subtitle: "Калькулятор определяет метраж; сечение доски выбирают по нагрузке и проекту дома",
-      quantity: roundDisplay(studMeters, 2),
-      unit: "п.м.",
-      withReserve: studBoards * 6,
-      purchaseQty: studBoards * 6,
-      packageInfo: { count: studBoards, size: 6, packageUnit: "досок" },
-      category: "Каркас",
-    },
-    {
-      name: "Обвязка — конструкционная доска (6 м)",
-      subtitle: "Сечение должно соответствовать стойкам и конструктивному расчёту каркаса",
-      quantity: roundDisplay(strappingM, 2),
-      unit: "м",
-      withReserve: strappingBoards * 6,
-      purchaseQty: strappingBoards * 6,
-      packageInfo: { count: strappingBoards, size: 6, packageUnit: "досок" },
-      category: "Каркас",
-    },
-    {
-      name: `Наружная обшивка — ${OUTER_SHEATHING_LABELS[outerSheathing]}`,
-      quantity: outerSheets,
-      unit: "листов",
-      withReserve: outerSheets,
-      purchaseQty: outerSheets,
-      category: "Обшивка",
-    },
-    {
-      name: `Внутренняя обшивка — ${INNER_SHEATHING_LABELS[innerSheathing]}`,
-      quantity: innerSheets,
-      unit: innerSheathing === 2 ? "шт" : "листов",
-      withReserve: innerSheets,
-      purchaseQty: innerSheets,
-      category: "Обшивка",
-    },
-    {
-      name: `Утеплитель — ${INSULATION_TYPE_LABELS[insulationType]}`,
-      subtitle: `Расчётная толщина ${Math.round(thickness * 1000)} мм, плиты 0,72 м²`,
-      quantity: roundDisplay(recScenario.exact_need, 6),
-      unit: "плит",
-      withReserve: Math.ceil(recScenario.exact_need / PACK_SIZE) * PACK_SIZE,
-      purchaseQty: Math.ceil(recScenario.exact_need / PACK_SIZE) * PACK_SIZE,
-      packageInfo: { count: Math.ceil(recScenario.exact_need / PACK_SIZE), size: PACK_SIZE, packageUnit: "упаковок" },
-      category: "Утепление",
-    },
-    {
-      name: `Утеплитель (упаковки по ${PACK_SIZE} шт)`,
-      quantity: packs,
-      unit: "уп",
-      withReserve: packs,
-      purchaseQty: packs,
-      category: "Утепление",
-    },
-    {
-      name: "Пароизоляция — мембрана (рулон 75 м²)",
-      subtitle: "Для монтажа со стороны тёплого помещения с герметизацией нахлёстов",
-      quantity: vaporRolls,
-      unit: "рулонов",
-      withReserve: vaporRolls,
-      purchaseQty: vaporRolls,
-      category: "Мембраны",
-    },
-    {
-      name: "Ветрозащита — диффузионная мембрана (рулон 75 м²)",
-      subtitle: "Для наружной стороны утеплителя; не заменяйте пароизоляционной плёнкой",
-      quantity: windRolls,
-      unit: "рулонов",
-      withReserve: windRolls,
-      purchaseQty: windRolls,
-      category: "Мембраны",
-    },
-    {
-      name: "Скотч для мембран — системная соединительная лента",
-      subtitle: "Для проклейки нахлёстов и примыканий паро- и ветрозащиты",
-      quantity: tapeRolls,
-      unit: "рулонов",
-      withReserve: tapeRolls,
-      purchaseQty: tapeRolls,
-      category: "Мембраны",
-    },
-    {
-      name: `Крепёж обшивки — ${outerFastenerNames[outerSheathing]} + ${innerFastenerNames[innerSheathing]}`,
-      subtitle: `${outerFastenerLabels[outerSheathing]} — около ${outerScrewsPcs} шт.; ${innerFastenerLabels[innerSheathing]} — около ${innerScrewsPcs} шт.`,
-      quantity: screwsKg,
-      unit: "кг",
-      withReserve: screwsKg,
-      purchaseQty: Math.ceil(screwsKg),
-      category: "Крепёж",
-    },
-    {
-      name: "Гвозди ершёные оцинкованные для сборки каркаса",
-      subtitle: `Около ${nailsPcs} шт.; длину гвоздя выбирают по фактическому сечению соединяемых досок`,
-      quantity: nailsKg,
-      unit: "кг",
-      withReserve: nailsKg,
-      purchaseQty: Math.ceil(nailsKg),
-      category: "Крепёж",
-    },
+  const framing = packagedMaterial(
+    "Конструкционная доска — одна позиция из проектной ведомости",
+    "Каркас по проекту",
+    framingProjectLengthM,
+    framingReservePercent,
+    framingBoardLengthM,
+    "м",
+    "досок",
+    "Сечение, сорт, класс прочности и длины элементов должны совпадать с проектной спецификацией; раскрой проверяют отдельно",
+  );
+  if (framing) materials.push(framing);
+
+  const outerExactAreaM2 = outerSheathingEnabled ? selectedSurfaceArea * outerSheathingLayers : 0;
+  const outer = packagedMaterial(
+    "Наружная листовая обшивка по проекту",
+    "Обшивка",
+    outerExactAreaM2,
+    outerSheathingReservePercent,
+    outerSheetAreaM2,
+    "м²",
+    "листов",
+    "Формат, класс, толщину, ориентацию и схему стыков берут из проекта и маркировки выбранного листа",
+  );
+  if (outer) materials.push(outer);
+
+  const innerExactAreaM2 = innerSheathingEnabled ? selectedSurfaceArea * innerSheathingLayers : 0;
+  const inner = packagedMaterial(
+    "Внутренняя листовая обшивка по проекту",
+    "Обшивка",
+    innerExactAreaM2,
+    innerSheathingReservePercent,
+    innerSheetAreaM2,
+    "м²",
+    "листов",
+    "Материал, число слоёв, формат листа и крепление должны соответствовать принятой системе стены",
+  );
+  if (inner) materials.push(inner);
+
+  const insulationExactAreaM2 = insulationEnabled ? selectedSurfaceArea * insulationLayers : 0;
+  const insulation = packagedMaterial(
+    "Утеплитель принятой проектной толщины",
+    "Утепление",
+    insulationExactAreaM2,
+    insulationReservePercent,
+    insulationPackageAreaM2,
+    "м²",
+    "упаковок",
+    "Площадь упаковки вводят для выбранного материала и толщины; калькулятор не выполняет теплотехнический подбор",
+  );
+  if (insulation) materials.push(insulation);
+
+  const vaporExactAreaM2 = vaporBarrierEnabled ? selectedSurfaceArea * vaporLayers : 0;
+  const vapor = packagedMaterial(
+    "Пароизоляционный слой по проекту",
+    "Мембраны",
+    vaporExactAreaM2,
+    vaporReservePercent,
+    vaporRollAreaM2,
+    "м²",
+    "рулонов",
+    "Тип, сторона монтажа, нахлёсты и герметизация — по проекту и инструкции принятой системы",
+  );
+  if (vapor) materials.push(vapor);
+
+  const windExactAreaM2 = windBarrierEnabled ? selectedSurfaceArea * windLayers : 0;
+  const wind = packagedMaterial(
+    "Наружная защитная мембрана по проекту",
+    "Мембраны",
+    windExactAreaM2,
+    windReservePercent,
+    windRollAreaM2,
+    "м²",
+    "рулонов",
+    "Назначение, паропроницаемость, ориентация и вентиляционный зазор проверяются по проекту стены",
+  );
+  if (wind) materials.push(wind);
+
+  const tape = packagedMaterial(
+    "Системная лента для стыков и примыканий",
+    "Герметизация",
+    tapeProjectM,
+    tapeReservePercent,
+    tapeRollLengthM,
+    "м",
+    "рулонов",
+    "Длину стыков переносят из раскладки мембран; совместимость ленты подтверждает производитель системы",
+  );
+  if (tape) materials.push(tape);
+
+  const sheathingFasteners = packagedMaterial(
+    "Крепёж листовой обшивки из проектной ведомости",
+    "Крепёж",
+    sheathingFastenersProjectPcs,
+    sheathingFastenersReservePercent,
+    sheathingFastenersPackagePcs,
+    "шт",
+    "упаковок",
+    "Тип, диаметр, длина, шаг и краевые расстояния калькулятор не назначает",
+  );
+  if (sheathingFasteners) materials.push(sheathingFasteners);
+
+  const framingFasteners = packagedMaterial(
+    "Крепёж соединений каркаса из проектной ведомости",
+    "Крепёж",
+    framingFastenersProjectPcs,
+    framingFastenersReservePercent,
+    framingFastenersPackagePcs,
+    "шт",
+    "упаковок",
+    "Гвозди, саморезы, пластины, анкеры и узлы принимаются только по рабочей документации",
+  );
+  if (framingFasteners) materials.push(framingFasteners);
+
+  const cleanOuterSheets = outerSheathingEnabled && outerSheetAreaM2 > 0
+    ? outerExactAreaM2 / outerSheetAreaM2
+    : 0;
+  const scenarios = buildOuterSheetScenarios(
+    cleanOuterSheets,
+    outerSheathingReservePercent,
+    spec.scenario_policy.max_reserve_floor_percent,
+  );
+
+  const warnings: string[] = [
+    "Это закупочный расчёт по принятому проекту: несущая схема, шаг и сечение стоек, перемычки, укосины, узлы, крепёж и состав стены здесь не проектируются",
   ];
-
-  /* ─── warnings ─── */
-  const warnings: string[] = [];
-  if (wallArea > 200) {
-    warnings.push("Большая площадь стен — рассмотрите усиление каркаса");
+  if (openingsAreaInput > grossWallArea) {
+    warnings.push("Площадь проёмов превышает валовую площадь стен и ограничена площадью стен");
   }
-  if (insulationType === 2 && wallHeight > 3) {
-    warnings.push("Для высоких стен рекомендуется минеральная вата вместо пенопласта (ПСБ)");
+  if (framingProjectLengthM <= 0) {
+    warnings.push("Пиломатериал каркаса не добавлен: перенесите длину одной позиции из проектной ведомости и повторите расчёт для каждого сечения");
+  }
+  if (insulationEnabled && insulationPackageAreaM2 <= 0) {
+    warnings.push("Утеплитель включён, но площадь упаковки выбранного товара не заполнена");
+  }
+  if (vaporBarrierEnabled && vaporRollAreaM2 <= 0) {
+    warnings.push("Пароизоляция включена, но полезная площадь рулона не заполнена");
+  }
+  if (windBarrierEnabled && windRollAreaM2 <= 0) {
+    warnings.push("Наружная мембрана включена, но полезная площадь рулона не заполнена");
+  }
+  if (tapeProjectM > 0 && tapeRollLengthM <= 0) {
+    warnings.push("Длина ленты задана, но длина одного рулона не заполнена");
+  }
+  if (sheathingFastenersProjectPcs > 0 && sheathingFastenersPackagePcs <= 0) {
+    warnings.push("Крепёж обшивки задан, но количество в упаковке не заполнено");
+  }
+  if (framingFastenersProjectPcs > 0 && framingFastenersPackagePcs <= 0) {
+    warnings.push("Крепёж каркаса задан, но количество в упаковке не заполнено");
+  }
+  if (materials.length === 0) {
+    warnings.push("Не выбрана ни одна закупочная позиция");
   }
 
-
-  const practicalNotes: string[] = [];
-  if (studStep === 400) {
-    practicalNotes.push("Шаг стоек 400 мм — усиленный каркас, обязателен для двухэтажных домов");
-  }
-  practicalNotes.push("Все деревянные элементы каркаса обработайте антисептиком до монтажа — потом не доберётесь");
+  const practicalNotes = [
+    surfaceAreaBasis === 1
+      ? "Для материалов используется чистая площадь после вычитания проёмов; применяйте её только если раскладка подтверждает использование обрезков"
+      : "Для материалов используется валовая площадь стен без вычитания проёмов — консервативный вариант до готовой раскладки",
+    "MIN/REC/MAX относятся только к наружной листовой обшивке; остальные позиции показывают собственные точную потребность, явный запас и округление по упаковке",
+    "Разные сечения и длины пиломатериала считайте отдельными запусками: общий метраж не заменяет карту раскроя",
+  ];
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -304,43 +374,52 @@ export function computeCanonicalFrameHouse(
     totals: {
       wallLength: roundDisplay(wallLength, 3),
       wallHeight: roundDisplay(wallHeight, 3),
+      openingsAreaInput: roundDisplay(openingsAreaInput, 3),
       openingsArea: roundDisplay(openingsArea, 3),
-      studStep,
-      insulationType,
-      outerSheathing,
-      innerSheathing,
-      wallArea: roundDisplay(wallArea, 3),
-      studs,
-      studMeters: roundDisplay(studMeters, 3),
-      studBoards,
-      strappingM: roundDisplay(strappingM, 3),
-      strappingBoards,
-      outerSheets,
-      innerSheets,
-      insulVol,
-      layerCount,
-      platesPerLayer,
-      totalPlates,
-      packs,
-      vaporRolls,
-      windRolls,
-      tapeRolls,
-      screwsKg,
-      outerScrewsPcs,
-      innerScrewsPcs,
-      nailsKg,
-      nailsPcs,
+      grossWallArea: roundDisplay(grossWallArea, 3),
+      netWallArea: roundDisplay(netWallArea, 3),
+      selectedSurfaceArea: roundDisplay(selectedSurfaceArea, 3),
+      surfaceAreaBasis,
+      framingProjectLengthM: roundDisplay(framingProjectLengthM, 3),
+      framingPurchaseBoards: framing?.packageInfo?.count ?? 0,
+      framingPurchaseM: framing?.purchaseQty ?? 0,
+      outerSheathingEnabled,
+      outerExactAreaM2: roundDisplay(outerExactAreaM2, 3),
+      outerSheets: outer?.packageInfo?.count ?? 0,
+      outerPurchaseAreaM2: outer?.purchaseQty ?? 0,
+      innerSheathingEnabled,
+      innerExactAreaM2: roundDisplay(innerExactAreaM2, 3),
+      innerSheets: inner?.packageInfo?.count ?? 0,
+      innerPurchaseAreaM2: inner?.purchaseQty ?? 0,
+      insulationEnabled,
+      insulationExactAreaM2: roundDisplay(insulationExactAreaM2, 3),
+      insulationPackages: insulation?.packageInfo?.count ?? 0,
+      vaporBarrierEnabled,
+      vaporRolls: vapor?.packageInfo?.count ?? 0,
+      windBarrierEnabled,
+      windRolls: wind?.packageInfo?.count ?? 0,
+      tapeRolls: tape?.packageInfo?.count ?? 0,
+      sheathingFastenerPackages: sheathingFasteners?.packageInfo?.count ?? 0,
+      framingFastenerPackages: framingFasteners?.packageInfo?.count ?? 0,
       minExactNeed: scenarios.MIN.exact_need,
-      recExactNeed: recScenario.exact_need,
+      recExactNeed: scenarios.REC.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,
       minPurchase: scenarios.MIN.purchase_quantity,
-      recPurchase: recScenario.purchase_quantity,
+      recPurchase: scenarios.REC.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
     warnings,
     practicalNotes,
     scenarios,
     accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: [
+        "Скрытые коэффициенты точности не применяются: проектные количества, запасы и фасовки задаются отдельными полями",
+      ],
+    },
   };
 }

@@ -1,195 +1,601 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalFrameHouse } from "../../../../engine/frame-house";
-import framehouseSpec from "../../../../configs/calculators/frame-house-canonical.v1.json";
+import frameHouseSpec from "../../../../configs/calculators/frame-house-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
+
+const hideWithoutFraming = { key: "framingProjectLengthM", op: "eq" as const, value: 0 };
+const hideWithoutOuter = { key: "outerSheathingEnabled", op: "eq" as const, value: 0 };
+const hideWithoutInner = { key: "innerSheathingEnabled", op: "eq" as const, value: 0 };
+const hideWithoutInsulation = { key: "insulationEnabled", op: "eq" as const, value: 0 };
+const hideWithoutVapor = { key: "vaporBarrierEnabled", op: "eq" as const, value: 0 };
+const hideWithoutWind = { key: "windBarrierEnabled", op: "eq" as const, value: 0 };
+const hideWithoutTape = { key: "tapeProjectM", op: "eq" as const, value: 0 };
+const hideWithoutSheathingFasteners = {
+  key: "sheathingFastenersProjectPcs",
+  op: "eq" as const,
+  value: 0,
+};
+const hideWithoutFramingFasteners = {
+  key: "framingFastenersProjectPcs",
+  op: "eq" as const,
+  value: 0,
+};
 
 export const frameHouseDef: CalculatorDefinition = {
   id: "frame_house",
   slug: "karkasnyj-dom",
-  title: "Калькулятор каркасного дома",
-  h1: "Калькулятор каркасного дома онлайн — расчёт обшивки и утеплителя",
-  description: "Рассчитайте стойки каркаса, обвязку, наружную и внутреннюю обшивку, утеплитель, пароизоляцию, ветрозащиту и крепёж для каркасного дома.",
-  metaTitle: withSiteMetaTitle("Калькулятор каркасного дома: материалы онлайн"),
-  metaDescription: "Бесплатный калькулятор каркасного дома: рассчитайте стойки, ОСП, гипсокартон, утеплитель, пароизоляцию и ветрозащиту с учётом проёмов и шага каркаса.",
+  title: "Калькулятор материалов каркасного дома",
+  h1: "Каркасный дом — закупка материалов по проектной ведомости",
+  description:
+    "Переведите площадь стен, готовые проектные количества и фасовки выбранных товаров в доски, листы, упаковки, рулоны и крепёж к покупке.",
+  metaTitle: withSiteMetaTitle("Каркасный дом: материалы по проектной ведомости"),
+  metaDescription:
+    "Бесплатный калькулятор материалов каркасного дома: рассчитайте доски, листовую обшивку, утеплитель, мембраны, ленту и крепёж по проектной ведомости.",
   category: "walls",
   categorySlug: "steny",
-  tags: ["каркасный дом", "каркасник", "ОСБ", "утеплитель", "пароизоляция", "ветрозащита"],
+  tags: [
+    "каркасный дом",
+    "каркасник",
+    "пиломатериал",
+    "листовая обшивка",
+    "утеплитель",
+    "мембраны",
+    "материалы по проекту",
+  ],
   popularity: 65,
   complexity: 3,
   fields: [
     {
       key: "wallLength",
-      label: "Общая длина наружных стен (периметр)",
-      type: "slider",
+      label: "Общая длина рассчитываемых стен",
+      type: "number",
       unit: "м",
       min: 1,
-      max: 100,
-      step: 1,
+      max: 200,
+      step: 0.1,
       defaultValue: 30,
+      hint: "Сумма длин стен одного принятого контура; несущую схему калькулятор не определяет",
+      group: "Площадь стен",
     },
     {
       key: "wallHeight",
-      label: "Высота стен",
-      type: "slider",
+      label: "Проектная высота стен",
+      type: "number",
       unit: "м",
-      min: 2,
-      max: 4,
+      min: 1,
+      max: 8,
       step: 0.1,
       defaultValue: 2.7,
+      group: "Площадь стен",
     },
     {
       key: "openingsArea",
-      label: "Площадь проёмов (окна + двери)",
-      type: "slider",
+      label: "Суммарная площадь проёмов",
+      type: "number",
       unit: "м²",
       min: 0,
-      max: 50,
-      step: 0.5,
+      max: 500,
+      step: 0.1,
       defaultValue: 10,
+      hint: "Усиления, перемычки, стойки и отходы вокруг проёмов должны быть учтены проектом или раскладкой",
+      group: "Площадь стен",
     },
     {
-      key: "studStep",
-      label: "Шаг стоек каркаса",
-      type: "select",
-      defaultValue: 600,
-      options: [
-        { value: 400, label: "400 мм" },
-        { value: 600, label: "600 мм (стандарт)" },
-      ],
-    },
-    {
-      key: "insulationType",
-      label: "Тип утеплителя",
+      key: "surfaceAreaBasis",
+      label: "Какую площадь применять к материалам",
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Минвата 150 мм" },
-        { value: 1, label: "Минвата 200 мм" },
-        { value: 2, label: "Пенополистирол (ППС), 150 мм" },
+        { value: 0, label: "Валовую — без вычета проёмов (безопаснее до раскладки)" },
+        { value: 1, label: "Чистую — после вычета проёмов" },
       ],
+      hint: "Чистую площадь выбирайте только если раскладка подтверждает использование обрезков",
+      group: "Площадь стен",
     },
     {
-      key: "outerSheathing",
-      label: "Наружная обшивка",
+      key: "framingProjectLengthM",
+      label: "Длина одной позиции пиломатериала из ведомости",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Сложите длины элементов только одного сечения и сорта; 0 — не добавлять пиломатериал",
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "framingReservePercent",
+      label: "Запас этой позиции на раскрой",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutFraming,
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "framingBoardLengthM",
+      label: "Длина покупной доски",
+      type: "number",
+      unit: "м",
+      min: 0.1,
+      max: 20,
+      step: 0.1,
+      defaultValue: 6,
+      hideIf: hideWithoutFraming,
+      hint: "Округление по общему метражу не заменяет карту раскроя цельных элементов",
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "outerSheathingEnabled",
+      label: "Наружная листовая обшивка",
+      type: "select",
+      defaultValue: 1,
+      options: [
+        { value: 0, label: "Не включать" },
+        { value: 1, label: "Включить по проектной площади" },
+      ],
+      hint: "Тип, класс, толщину, ориентацию и схему стыков определяет проект",
+      group: "Наружная обшивка",
+    },
+    {
+      key: "outerSheetAreaM2",
+      label: "Площадь одного наружного листа",
+      type: "number",
+      unit: "м²",
+      min: 0.1,
+      max: 20,
+      step: 0.001,
+      defaultValue: 3.125,
+      hideIf: hideWithoutOuter,
+      hint: "3,125 м² — только стартовый пример листа 1250 × 2500 мм; введите фактический формат",
+      group: "Наружная обшивка",
+    },
+    {
+      key: "outerSheathingLayers",
+      label: "Слоёв наружной листовой обшивки",
+      type: "number",
+      min: 1,
+      max: 4,
+      step: 1,
+      defaultValue: 1,
+      hideIf: hideWithoutOuter,
+      group: "Наружная обшивка",
+    },
+    {
+      key: "outerSheathingReservePercent",
+      label: "Запас наружной обшивки",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutOuter,
+      group: "Наружная обшивка",
+    },
+    {
+      key: "innerSheathingEnabled",
+      label: "Внутренняя листовая обшивка",
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "ОСП-3 (ориентированно-стружечная плита), 9 мм" },
-        { value: 1, label: "ОСП-3 (ориентированно-стружечная плита), 12 мм" },
-        { value: 2, label: "Цементно-стружечная плита (ЦСП), 12 мм" },
+        { value: 0, label: "Не включать" },
+        { value: 1, label: "Включить по проектной площади" },
       ],
+      group: "Внутренняя обшивка",
     },
     {
-      key: "innerSheathing",
-      label: "Внутренняя обшивка",
+      key: "innerSheetAreaM2",
+      label: "Площадь одного внутреннего листа",
+      type: "number",
+      unit: "м²",
+      min: 0.1,
+      max: 20,
+      step: 0.001,
+      defaultValue: 3,
+      hideIf: hideWithoutInner,
+      hint: "Введите фактическую площадь листа принятого материала",
+      group: "Внутренняя обшивка",
+    },
+    {
+      key: "innerSheathingLayers",
+      label: "Слоёв внутренней листовой обшивки",
+      type: "number",
+      min: 1,
+      max: 4,
+      step: 1,
+      defaultValue: 1,
+      hideIf: hideWithoutInner,
+      group: "Внутренняя обшивка",
+    },
+    {
+      key: "innerSheathingReservePercent",
+      label: "Запас внутренней обшивки",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutInner,
+      group: "Внутренняя обшивка",
+    },
+    {
+      key: "insulationEnabled",
+      label: "Утеплитель принятой толщины",
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "ОСП-3 (ориентированно-стружечная плита), 9 мм" },
-        { value: 1, label: "Гипсокартон (ГКЛ), 12,5 мм" },
-        { value: 2, label: "Вагонка" },
+        { value: 0, label: "Не включать" },
+        { value: 1, label: "Включить по данным упаковки" },
       ],
+      hint: "Толщину и материал выбирают теплотехническим расчётом, а не этим калькулятором",
+      group: "Утепление",
+    },
+    {
+      key: "insulationPackageAreaM2",
+      label: "Площадь утеплителя в одной упаковке",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 100,
+      step: 0.01,
+      defaultValue: 0,
+      hideIf: hideWithoutInsulation,
+      hint: "Возьмите площадь для выбранной проектной толщины с этикетки товара",
+      group: "Утепление",
+    },
+    {
+      key: "insulationLayers",
+      label: "Слоёв утеплителя по проекту",
+      type: "number",
+      min: 1,
+      max: 10,
+      step: 1,
+      defaultValue: 1,
+      hideIf: hideWithoutInsulation,
+      group: "Утепление",
+    },
+    {
+      key: "insulationReservePercent",
+      label: "Запас утеплителя",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutInsulation,
+      group: "Утепление",
+    },
+    {
+      key: "vaporBarrierEnabled",
+      label: "Пароизоляционный слой",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Не включать" },
+        { value: 1, label: "Включить по проекту" },
+      ],
+      hint: "Тип и расположение слоя определяют расчётом и проектом стены",
+      group: "Мембраны",
+    },
+    {
+      key: "vaporRollAreaM2",
+      label: "Полезная площадь рулона пароизоляции",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 500,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutVapor,
+      group: "Мембраны",
+    },
+    {
+      key: "vaporLayers",
+      label: "Слоёв пароизоляции по проекту",
+      type: "number",
+      min: 1,
+      max: 5,
+      step: 1,
+      defaultValue: 1,
+      hideIf: hideWithoutVapor,
+      group: "Мембраны",
+    },
+    {
+      key: "vaporReservePercent",
+      label: "Запас пароизоляции",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 15,
+      hideIf: hideWithoutVapor,
+      group: "Мембраны",
+    },
+    {
+      key: "windBarrierEnabled",
+      label: "Наружная защитная мембрана",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Не включать" },
+        { value: 1, label: "Включить по проекту" },
+      ],
+      hint: "Назначение, паропроницаемость и вентиляционный зазор проверяют по системе стены",
+      group: "Мембраны",
+    },
+    {
+      key: "windRollAreaM2",
+      label: "Полезная площадь рулона наружной мембраны",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 500,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutWind,
+      group: "Мембраны",
+    },
+    {
+      key: "windLayers",
+      label: "Слоёв наружной мембраны по проекту",
+      type: "number",
+      min: 1,
+      max: 5,
+      step: 1,
+      defaultValue: 1,
+      hideIf: hideWithoutWind,
+      group: "Мембраны",
+    },
+    {
+      key: "windReservePercent",
+      label: "Запас наружной мембраны",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 15,
+      hideIf: hideWithoutWind,
+      group: "Мембраны",
+    },
+    {
+      key: "tapeProjectM",
+      label: "Длина системной ленты из раскладки",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "0 — не включать; длину стыков и примыканий берут из раскладки мембран",
+      group: "Лента и крепёж",
+    },
+    {
+      key: "tapeReservePercent",
+      label: "Запас системной ленты",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutTape,
+      group: "Лента и крепёж",
+    },
+    {
+      key: "tapeRollLengthM",
+      label: "Длина ленты в одном рулоне",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 1000,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutTape,
+      group: "Лента и крепёж",
+    },
+    {
+      key: "sheathingFastenersProjectPcs",
+      label: "Крепёж обшивки из ведомости",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 1000000,
+      step: 1,
+      defaultValue: 0,
+      hint: "0 — не включать; тип, шаг и краевые расстояния калькулятор не назначает",
+      group: "Лента и крепёж",
+    },
+    {
+      key: "sheathingFastenersReservePercent",
+      label: "Запас крепежа обшивки",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutSheathingFasteners,
+      group: "Лента и крепёж",
+    },
+    {
+      key: "sheathingFastenersPackagePcs",
+      label: "Крепежа обшивки в упаковке",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 100000,
+      step: 1,
+      defaultValue: 0,
+      hideIf: hideWithoutSheathingFasteners,
+      group: "Лента и крепёж",
+    },
+    {
+      key: "framingFastenersProjectPcs",
+      label: "Крепёж соединений каркаса из ведомости",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 1000000,
+      step: 1,
+      defaultValue: 0,
+      hint: "0 — не включать; гвозди, анкеры, пластины и узлы задаёт проект",
+      group: "Лента и крепёж",
+    },
+    {
+      key: "framingFastenersReservePercent",
+      label: "Запас крепежа каркаса",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutFramingFasteners,
+      group: "Лента и крепёж",
+    },
+    {
+      key: "framingFastenersPackagePcs",
+      label: "Крепежа каркаса в упаковке",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 100000,
+      step: 1,
+      defaultValue: 0,
+      hideIf: hideWithoutFramingFasteners,
+      group: "Лента и крепёж",
     },
   ],
   calculate(inputs) {
-    const spec = framehouseSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalFrameHouse(spec, inputs, factorTable);
-
+    const canonical = computeCanonicalFrameHouse(
+      frameHouseSpec as any,
+      inputs,
+      defaultFactorTables.factors as any,
+    );
+    const totals = canonical.totals;
     return {
       materials: canonical.materials,
-      totals: canonical.totals,
+      totals,
       warnings: canonical.warnings,
-      scenarios: canonical.scenarios,
+      scenarios: totals.outerSheathingEnabled ? canonical.scenarios : undefined,
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes: canonical.practicalNotes ?? [],
       accuracyMode: canonical.accuracyMode,
       accuracyExplanation: canonical.accuracyExplanation,
+      hidePrimaryMaterialBadge: true,
+      summaryCards: [
+        {
+          icon: "📐",
+          label: "Площадь для закупки",
+          value: String(totals.selectedSurfaceArea),
+          unit: "м²",
+          hint: totals.surfaceAreaBasis ? "после вычета проёмов" : "валовая площадь",
+          tone: "slate",
+        },
+        {
+          icon: "🧱",
+          label: "Наружные листы",
+          value: String(totals.outerSheets),
+          unit: "шт.",
+          hint: "по фактической площади листа",
+          tone: "violet",
+        },
+        {
+          icon: "📦",
+          label: "Позиций к покупке",
+          value: String(canonical.materials.length),
+          hint: "только явно включённые",
+          tone: "emerald",
+        },
+      ],
     };
   },
   formulaDescription: `
-**Расчёт каркасного дома:**
-- Площадь стен = Периметр × Высота − Площадь проёмов
-- Стойки: по периметру с заданным шагом + 1
-- Обвязка: верхняя + нижняя = периметр × 2
-- Обшивка: листы ОСП 1250×2500 (3.125 м²), цементно-стружечные плиты 1200×3200 (3.84 м²), гипсокартон 1200×2500 (3.0 м²)
-- Утеплитель: минвата послойно (50 мм слой), пенополистирол — целиковые плиты
-- Мембраны: +15% на нахлёсты, рулон 75 м²
-- Крепёж: 28 саморезов/лист, 20 гвоздей/стойка
+**Калькулятор переводит принятую проектную схему в закупку:**
+
+1. Валовая площадь стен = общая длина × проектная высота. Проёмы вычитаются только при явном выборе чистой площади.
+2. Одна позиция пиломатериала берётся готовым метражом из ведомости, получает явный запас и округляется до покупной длины доски.
+3. Листовые слои считаются по фактической площади листа, утеплитель — по площади упаковки принятой толщины, мембраны — по полезной площади рулона.
+4. Лента и крепёж появляются только после ввода проектного количества и реальной фасовки.
+5. MIN/REC/MAX относятся к наружной листовой обшивке и не смешивают разные единицы материалов.
+
+Калькулятор не назначает несущую схему, шаг и сечение стоек, узлы, перемычки, укосины, крепёж или толщину утепления.
   `,
   howToUse: [
-    "Введите периметр наружных стен (общая длина)",
-    "Укажите высоту стен и площадь проёмов",
-    "Выберите шаг стоек, тип утеплителя и обшивки",
-    "Нажмите «Рассчитать» — получите полный список материалов для каркаса",
+    "Введите общую длину и проектную высоту рассчитываемых стен",
+    "Выберите валовую или подтверждённую раскладкой чистую площадь",
+    "Перенесите одну позицию пиломатериала из проектной ведомости",
+    "Включите только предусмотренные проектом обшивки, утепление и мембраны",
+    "Введите фактические площади листов, упаковок и рулонов",
+    "Добавьте ленту и крепёж только по готовой раскладке или ведомости",
   ],
-faq: [
+  faq: [
     {
-      question: "Какой шаг стоек выбрать для каркасного дома?",
+      question: "Калькулятор подбирает шаг и сечение стоек?",
       answer:
-        "Часто 600 или 400 мм — под ширину утеплителя и раскрой листов ОСП, цементно-стружечных плит или гипсокартона, чтобы снизить отходы. Окончательный шаг задаёт конструкция, нагрузки и облицовка; тяжёлый фасад может потребовать более частых стоек — это сверяют с проектом и СП 31-105-2002 / СП 64.",
+        "Нет. Нагрузки, устойчивость, сорт и класс прочности древесины, шаг, сечение, усиления проёмов, перемычки, укосины и соединения определяются проектом. Здесь считается только закупка по готовым количествам.",
     },
     {
-      question: "Нужен ли запас на ОСП и мембраны?",
+      question: "Почему пиломатериал вводится метражом из ведомости?",
       answer:
-        "Да: на подрезку у проёмов и углов, нахлёсты и узлы ветро- и влагозащиты. Калькулятор уже заложил коэффициенты на листы и рулоны; при сложной форме дома запас иногда имеет смысл увеличить.",
+        "Один периметр не показывает углы, Т-образные примыкания, проёмы, перемычки, двойные стойки, обвязки и разные сечения. Автоматический подсчёт создавал бы правдоподобную, но неполную спецификацию.",
+    },
+    {
+      question: "Почему утеплитель не выбирается как 150 или 200 мм?",
+      answer:
+        "Состав стены и толщину теплоизоляции определяют теплотехническим расчётом по действующему СП 50.13330.2024. После выбора материала введите площадь одной упаковки для принятой толщины.",
     },
   ],
   seoContent: {
     descriptionHtml: `
-<h2>Формулы расчёта каркасного дома</h2>
-<p>Основные формулы для расчёта материалов стенового каркаса:</p>
+<h2>Что считает калькулятор материалов каркасного дома</h2>
+<p>Калькулятор переводит площадь стен, готовые количества из рабочей ведомости и реальные фасовки товаров в закупочные позиции. Он не проектирует несущую схему и стеновой пирог.</p>
+
+<h2>Площадь стен без скрытого вычитания</h2>
+<p>Валовая площадь равна общей длине стен, умноженной на проектную высоту. По умолчанию проёмы не вычитаются: это консервативно до готовой раскладки листов и рулонов. Чистую площадь можно выбрать явно, если обрезки действительно используются.</p>
+
+<h2>Пиломатериал только из проектной ведомости</h2>
+<p>Калькулятор не выводит число стоек из периметра. Пользователь переносит суммарную длину одной позиции одинакового сечения и сорта, задаёт запас и покупную длину доски. Разные позиции считают отдельно и сверяют с картой раскроя.</p>
+
+<h2>Листы, утеплитель и мембраны по фактической упаковке</h2>
+<p>Для листовой обшивки вводится площадь одного листа и число проектных слоёв. Для утеплителя — площадь упаковки выбранного материала при принятой толщине. Для мембран — полезная площадь рулона. Каждая позиция отдельно показывает точную площадь, явный запас, целые упаковки и остаток.</p>
+
+<h2>Нормативная граница расчёта</h2>
 <ul>
-  <li><strong>Площадь стен</strong> = Периметр &times; Высота &minus; Площадь проёмов</li>
-  <li><strong>Стойки каркаса</strong> = Периметр / Шаг + 1 (шт.)</li>
-  <li><strong>Обвязка (верхняя + нижняя)</strong> = Периметр &times; 2 (п.м.)</li>
-  <li><strong>Обшивка ориентированно-стружечными плитами (ОСП)</strong> = Площадь стен / S<sub>листа</sub> &times; 1.10</li>
-  <li><strong>Утеплитель</strong> = Площадь стен &times; (Толщина / Толщину плиты) &times; 1.05</li>
-  <li><strong>Мембраны</strong> = Площадь стен &times; 1.15 / S<sub>рулона</sub></li>
+  <li><strong>СП 64.13330.2017</strong> — расчёт деревянных конструкций и соединений;</li>
+  <li><strong>СП 20.13330.2016</strong> — нагрузки, воздействия и их сочетания;</li>
+  <li><strong>СП 50.13330.2024</strong> — действующая тепловая защита зданий, заменившая редакцию 2012 года;</li>
+  <li><strong>ГОСТ Р 70876-2023</strong> и <strong>ГОСТ Р 57031-2016</strong> — требования к элементам из массивной древесины и сортировке пиломатериалов по прочности;</li>
+  <li><strong>ГОСТ 32567-2013</strong> — технические требования к древесным плитам с ориентированной стружкой.</li>
 </ul>
-
-<h2>Типоразмеры основных материалов</h2>
-<table>
-  <thead>
-    <tr><th>Материал</th><th>Размер</th><th>Площадь листа/рулона</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>ОСП-3 (9 мм)</td><td>1250&times;2500 мм</td><td>3.125 м²</td></tr>
-    <tr><td>ОСП-3 (12 мм)</td><td>1250&times;2500 мм</td><td>3.125 м²</td></tr>
-    <tr><td>Цементно-стружечная плита (12 мм)</td><td>1200&times;3200 мм</td><td>3.84 м²</td></tr>
-    <tr><td>Гипсокартон (12.5 мм)</td><td>1200&times;2500 мм</td><td>3.0 м²</td></tr>
-    <tr><td>Ветрозащита (рулон)</td><td>1500&times;50 000 мм</td><td>75 м²</td></tr>
-    <tr><td>Пароизоляция (рулон)</td><td>1500&times;50 000 мм</td><td>75 м²</td></tr>
-  </tbody>
-</table>
-
-<h2>Нормативная база</h2>
-<p>Проектирование каркасных домов в России регламентируется <strong>СП 31-105-2002</strong> «Проектирование и строительство энергоэффективных одноквартирных жилых домов с деревянным каркасом». Документ определяет шаг стоек, требования к утеплению, схему обшивки и ветрозащиты. Дополнительно учитываются <strong>СП 50.13330.2012</strong> «Тепловая защита зданий» и <strong>СП 64.13330.2017</strong> «Деревянные конструкции».</p>
-
-<h2>Состав стенового пирога (изнутри наружу)</h2>
-<ul>
-  <li>Внутренняя обшивка (гипсокартон, ОСП или вагонка)</li>
-  <li>Пароизоляция (Изоспан Б или аналог)</li>
-  <li>Утеплитель в каркасе (минвата или пенополистирол)</li>
-  <li>Ветрозащитная мембрана (Изоспан А или аналог)</li>
-  <li>Вентиляционный зазор 30–50 мм</li>
-  <li>Наружная обшивка (ОСП, цементно-стружечная плита или фасадный материал)</li>
-</ul>
+<p>Эти документы задают границу ответственности: калькулятор материалов не заменяет рабочую документацию, расчёт нагрузок, теплотехнику, узлы и карту раскроя.</p>
 `,
     faq: [
       {
-        question: "Сколько стоек каркаса нужно на дом 6×8 м?",
-        answer: "<p>Для дома с периметром 28 м и шагом стоек <strong>600 мм</strong>:</p><p><strong>N = 28 000 / 600 + 1 &asymp; 48 стоек</strong> (без учёта проёмов и усилений).</p><ul><li><strong>Шаг 600 мм</strong> — 48 стоек, подходит под утеплитель шириной 610 мм</li><li><strong>Шаг 400 мм</strong> — 71 стойка, повышенная жёсткость каркаса</li></ul><p>Дополнительно потребуются сдвоенные стойки вокруг оконных и дверных проёмов, хедеры над проёмами и укосины по диагонали каждой стены (по <strong>СП 31-105-2002</strong>).</p>",
+        question: "Можно ли посчитать каркасный дом только по периметру?",
+        answer:
+          "<p>По периметру можно получить площадь стен, но нельзя достоверно определить несущие элементы. Для закупки пиломатериала нужна проектная ведомость с углами, примыканиями, проёмами, перемычками, укосинами, обвязками, сечениями и длинами.</p>",
       },
       {
-        question: "Какую толщину утеплителя выбрать для каркасного дома?",
-        answer: "<p>Толщина утеплителя зависит от климатического региона и требований к сопротивлению теплопередаче стен (<strong>СП 50.13330</strong>):</p><table><thead><tr><th>Регион</th><th>R<sub>треб</sub>, м²&middot;°C/Вт</th><th>Минвата, мм</th></tr></thead><tbody><tr><td>Москва, Центр</td><td>3.0–3.2</td><td>150</td></tr><tr><td>Санкт-Петербург, Северо-Запад</td><td>3.2–3.4</td><td>150–200</td></tr><tr><td>Урал, Сибирь</td><td>3.5–4.0</td><td>200–250</td></tr></tbody></table><p>При шаге стоек 600 мм используют плиты шириной 610 мм для плотной установки враспор без щелей.</p>",
+        question: "Вычитать ли окна и двери из обшивки?",
+        answer:
+          "<p>До раскладки безопаснее считать валовую площадь: небольшие проёмы не всегда уменьшают число целых листов. Чистую площадь используйте, когда раскладка подтверждает, что обрезки можно применить.</p>",
       },
       {
-        question: "Зачем нужны ветрозащита и пароизоляция в каркасном доме?",
-        answer: "<p>Эти два слоя защищают утеплитель с разных сторон и решают разные задачи:</p><ul><li><strong>Пароизоляция (изнутри)</strong> — не пропускает тёплый влажный воздух из помещения в утеплитель, предотвращая конденсацию влаги в толще стены</li><li><strong>Ветрозащита (снаружи)</strong> — защищает утеплитель от продувания ветром и выноса тепла, но пропускает пар наружу</li></ul><p>Без пароизоляции минвата набирает влагу и теряет до <strong>50% теплоизоляционных свойств</strong> уже за один отопительный сезон. Без ветрозащиты утеплитель продувается, и реальное сопротивление теплопередаче стены падает на <strong>20–30%</strong>.</p>",
+        question: "Что не входит в результат?",
+        answer:
+          "<p>Не рассчитываются фундамент, перекрытия, кровля, нагрузки, устойчивость, сечения, сорт и влажность древесины, проёмы и ригели, укосины, узлы, анкеровка, инженерные проходки, огнезащита, отделка фасада и карта раскроя.</p>",
       },
     ],
   },
