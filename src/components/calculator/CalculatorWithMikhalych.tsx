@@ -7,6 +7,10 @@ import { useSearchParams } from "next/navigation";
 import { useCalculator, type CalculatorWidgetProps } from "./useCalculator";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
+import {
+  buildConcreteCalculatorHrefFromFoundationResult,
+  getFoundationConcreteSourceLabel,
+} from "@/lib/calculators/foundation-cluster-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -65,6 +69,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
+  const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const hasTrackedResultViewRef = useRef(false);
@@ -91,6 +96,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     handleShare,
     handleRestoreHistory,
   } = useCalculator(calculator);
+
+  const concreteCalculatorHref = useMemo(
+    () => buildConcreteCalculatorHrefFromFoundationResult(calculator.slug, result?.totals),
+    [calculator.slug, result?.totals],
+  );
 
   const accentColor = category?.color ?? "#f97316";
   const mobileCollapsedCount = Math.max(0, visibleFields.length - MOBILE_PRIMARY_FIELD_COUNT);
@@ -179,6 +189,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "plitka" && transferSource === TILE_ROOM_TRANSFER_FROM && (
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300">
             Из расчёта комнаты перенесены {roomTransferValue}. Здесь уточните формат плитки, фасовку, схему укладки, ширину шва и запас.
+          </div>
+        )}
+        {calculator.slug === "beton" && foundationConcreteSourceLabel && (
+          <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
+            Из расчёта {foundationConcreteSourceLabel} перенесены чистый объём бетона и запас. Здесь выберите класс бетона и способ закупки: готовая смесь или самостоятельный замес.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -309,6 +324,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
             >
               Разложить листы и увидеть карту раскроя <span aria-hidden>→</span>
+            </Link>
+          )}
+          {concreteCalculatorHref && (
+            <Link
+              href={concreteCalculatorHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, "beton")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-medium text-stone-700 no-underline hover:border-stone-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+            >
+              Уточнить марку, заказ миксера или состав замеса <span aria-hidden>→</span>
             </Link>
           )}
         </section>
