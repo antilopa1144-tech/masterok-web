@@ -277,6 +277,51 @@ test.describe("Калькулятор прямой лестницы", () => {
   });
 });
 
+test.describe("Калькулятор потолка КНАУФ П 113", () => {
+  test("v3 принимает фактический периметр и показывает комплектную закупку", async ({ page }) => {
+    await page.goto("/kalkulyatory/potolki/podvesnoy-potolok-gkl/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("КНАУФ П 113");
+    await expect(page.getByRole("button", { name: "Длина и ширина", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Площадь и периметр", exact: true }).click();
+
+    await expect(page.getByLabel("Фактическая площадь потолка").first()).toBeVisible();
+    await expect(page.getByLabel("Суммарный периметр примыканий").first()).toBeVisible();
+    await page.getByLabel("Фактическая площадь потолка").first().fill("24");
+    await page.getByLabel("Суммарный периметр примыканий").first().fill("30");
+
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: /Дополнительные параметры/,
+    });
+    if (await mobileAdditionalFields.first().isVisible()) {
+      await mobileAdditionalFields.first().click();
+    }
+
+    await page.getByLabel("Вариант системы").first().selectOption("2");
+    await page.getByLabel("Шурупов TN в упаковке").first().fill("500");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Гипсовые плиты");
+    await expect(resultCard).toContainText("Профиль ПП 60×27");
+    await expect(resultCard).toContainText("Профиль ПН 28×27");
+    await expect(resultCard).toContainText("Шуруп TN 25");
+    await expect(resultCard).toContainText("Шуруп TN 35");
+    await expect(resultCard).toContainText("Бумажная армирующая лента");
+    await expect(
+      page.getByText(/только к комплектной системе КНАУФ П 113/i).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/не вычисляется из условного квадрата/i).first(),
+    ).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");

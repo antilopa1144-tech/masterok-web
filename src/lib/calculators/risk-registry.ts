@@ -155,7 +155,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
     ],
   ),
-  pending("podvesnoy-potolok-gkl", "drywall-ceiling", "P0", ["structural_safety", "complex_geometry", "multi_material"]),
+  implementationAudited(
+    "podvesnoy-potolok-gkl",
+    "drywall-ceiling",
+    "P0",
+    ["structural_safety", "complex_geometry", "multi_material"],
+    [
+      "canonical drywall-ceiling-canonical-v3",
+      "официальные карточки СП 163.1325800.2014 с изменением 1, ГОСТ 32614-2012 и комплектной системы КНАУФ П 113",
+      "расходы разделены для П 113.1 и П 113.2 и привязаны к официальной ведомости на 100 м² без потерь на раскрой",
+      "фактический периметр вводится явно; удалены условный квадрат и скрытый MAX-запас",
+      "плиты, ПП, ПН, ленты, соединители, удлинители, подвесы, анкеры, LN/TN, шпаклёвка и грунтовка округляются отдельными закупочными позициями; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
+    ],
+  ),
   implementationAudited(
     "krovlya",
     "roofing",

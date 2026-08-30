@@ -2729,27 +2729,40 @@ export interface FacadeInsulationCanonicalSpec extends CanonicalCalculatorSpecBa
 /* ─── Drywall Ceiling ─── */
 
 export interface DrywallCeilingPackagingRules {
-  unit: string;
-  package_size: number;
+  sheet_unit: string;
+  profile_unit: string;
+  piece_unit: string;
+  package_unit: string;
+  roll_unit: string;
+  bag_unit: string;
+  can_unit: string;
 }
 
 export interface DrywallCeilingMaterialRules {
+  system_code: string;
+  reference_area_m2: number;
   pp_m_per_m2: number;
   connector_per_m2: number;
+  extension_per_m2: number;
   suspension_per_m2: number;
-  screws_per_m2_per_layer: number;
-  perimeter_dowel_step_m: number;
-  tape_m_per_m2: number;
-  putty_kg_per_m2: number;
-  max_extra_sheet_percent: number;
+  ln_screws_per_m2: number;
+  anchors_per_m2: number;
+  perimeter_dowels_per_m: number;
+  joint_tape_m_per_m2: number;
+  putty_kg_per_m2_single: number;
+  putty_kg_per_m2_double: number;
+  primer_l_per_m2: number;
+  tn25_per_m2_single: number;
+  tn25_per_m2_double: number;
+  tn35_per_m2_double: number;
 }
 
 export interface DrywallCeilingWarningRules {
-  deformation_joint_area_threshold_m2: number;
+  double_layer_suspension_capacity_kn: number;
 }
 
 export interface DrywallCeilingCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: Record<string, never>;
+  normative_formula: Record<string, string>;
   packaging_rules: DrywallCeilingPackagingRules;
   material_rules: DrywallCeilingMaterialRules;
   warnings_rules: DrywallCeilingWarningRules;
