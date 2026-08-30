@@ -1,10 +1,13 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { ToolMetric, ToolNotes, ToolNumberInput, ToolPresetButton } from "@/components/tools/VisualToolPrimitives";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import { pluralizeRu } from "@/lib/format/pluralize";
 import { calculateLinearCutLayout, type LinearCutPartInput } from "@/lib/tools/linear-cut-layout";
+import { readWallSlatCutTransfer } from "@/lib/tools/wall-slat-to-linear-cut";
 
 const COLORS = ["#7c3aed", "#0284c7", "#059669", "#d97706", "#e11d48", "#4f46e5", "#0f766e", "#9333ea"];
 const EXAMPLES: Array<{ label: string; stock: number; kerf: number; parts: LinearCutPartInput[] }> = [
@@ -27,9 +30,13 @@ function CutBars({ result }: { result: ReturnType<typeof calculateLinearCutLayou
 }
 
 export default function LinearCutPlanner() {
+  const searchParams = useSearchParams();
+  const slatTransfer = useMemo(() => readWallSlatCutTransfer(searchParams), [searchParams]);
   const [activeStage, setActiveStage] = useState<LinearCutWorkspaceStage>("layout");
-  const [stockLength, setStockLength] = useState(3000); const [kerf, setKerf] = useState(3); const [reusable, setReusable] = useState(300);
-  const [parts, setParts] = useState<LinearCutPartInput[]>([{ id: "a", label: "Стойка", lengthMm: 2600, quantity: 6 }, { id: "b", label: "Перемычка", lengthMm: 580, quantity: 8 }]);
+  const [stockLength, setStockLength] = useState(() => slatTransfer?.stockLengthMm ?? 3000); const [kerf, setKerf] = useState(3); const [reusable, setReusable] = useState(300);
+  const [parts, setParts] = useState<LinearCutPartInput[]>(() => slatTransfer
+    ? [{ id: "wall-slat", label: "Вертикальная рейка", lengthMm: slatTransfer.partLengthMm, quantity: slatTransfer.quantity }]
+    : [{ id: "a", label: "Стойка", lengthMm: 2600, quantity: 6 }, { id: "b", label: "Перемычка", lengthMm: 580, quantity: 8 }]);
   const workspaceTopRef = useRef<HTMLDivElement>(null); const parametersRef = useRef<HTMLDivElement>(null); const layoutRef = useRef<HTMLDivElement>(null); const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted } = useToolAnalytics("lineynyy-raskroy", resultRef);
   const result = useMemo(() => calculateLinearCutLayout({ stockLengthMm: stockLength, sawKerfMm: kerf, reusableOffcutMm: reusable, parts }), [kerf, parts, reusable, stockLength]);
@@ -41,6 +48,7 @@ export default function LinearCutPlanner() {
     window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }, []);
   return <div ref={workspaceTopRef} className="space-y-4 scroll-mt-24 xl:grid xl:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.55fr)_minmax(280px,0.8fr)] xl:items-start xl:gap-4 xl:space-y-0">
+    {slatTransfer && <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-300 xl:col-span-3" data-testid="slat-cut-transfer-banner">Из раскладки перенесены {slatTransfer.quantity} вертикальных реек по {slatTransfer.partLengthMm.toLocaleString("ru-RU")} мм и хлыст {slatTransfer.stockLengthMm.toLocaleString("ru-RU")} мм. Безопасный расчёт показывал {slatTransfer.safeStockHint} {pluralizeRu(slatTransfer.safeStockHint, ["хлыст", "хлыста", "хлыстов"])} с закрытым запасом {slatTransfer.reservePercent}%. Здесь задайте фактическую ширину пропила: карты оптимизируют базовый раскрой, а закрытый запас добавьте к их итогу отдельно.</div>}
     <div className="xl:col-span-3">
     <CompactToolWorkspaceNav activeStage={activeStage} ariaLabel="Этапы линейного раскроя" stages={LINEAR_CUT_WORKSPACE_STAGES} onChange={changeStage} metrics={[
       { label: "Детали", value: `${result.partCount} шт.` },
