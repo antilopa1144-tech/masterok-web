@@ -1,504 +1,408 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
-import { SCENARIOS, type ScenarioBundle } from "./scenarios";
+import type { FactorTable } from "./factors";
 import type {
-  RoofingCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
+  RoofingCanonicalSpec,
 } from "./canonical";
-import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
+import type { ScenarioBundle } from "./scenarios";
+import {
+  ACCURACY_MODE_LABELS,
+  DEFAULT_ACCURACY_MODE,
+  type AccuracyMode,
+} from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
+import { roundDisplay } from "./units";
 
 interface RoofingInputs {
+  roofAreaMode?: number;
+  projectSlopeAreaM2?: number;
+  planProjectionAreaM2?: number;
+  slopeDeg?: number;
   roofingType?: number;
-  area?: number;
-  slope?: number;
-  ridgeLength?: number;
-  sheetWidth?: number;
-  sheetLength?: number;
-  complexity?: number;
+  primaryCoverageM2?: number;
+  primaryReservePercent?: number;
+  ridgeProjectM?: number;
+  ridgeReservePercent?: number;
+  ridgeElementUsefulLengthM?: number;
+  valleyProjectM?: number;
+  valleyReservePercent?: number;
+  valleyElementUsefulLengthM?: number;
+  eavesProjectM?: number;
+  eavesReservePercent?: number;
+  eavesElementUsefulLengthM?: number;
+  membraneProjectAreaM2?: number;
+  membraneReservePercent?: number;
+  membraneRollCoverageM2?: number;
+  deckProjectAreaM2?: number;
+  deckReservePercent?: number;
+  deckSheetAreaM2?: number;
+  battenProjectLengthM?: number;
+  battenReservePercent?: number;
+  battenBoardLengthM?: number;
+  counterBattenProjectLengthM?: number;
+  counterBattenReservePercent?: number;
+  counterBattenBoardLengthM?: number;
+  fastenersProjectPcs?: number;
+  fastenersReservePercent?: number;
+  fastenersPackagePcs?: number;
+  snowGuardProjectM?: number;
+  snowGuardReservePercent?: number;
+  snowGuardSectionUsefulLengthM?: number;
+  sealingTapeProjectM?: number;
+  sealingTapeReservePercent?: number;
+  sealingTapeRollLengthM?: number;
   accuracyMode?: AccuracyMode;
 }
 
-/* --- constants --- */
-
-const COMPLEXITY_COEFFS = [1.05, 1.15, 1.25];
-const ROOFING_SCREW_PACK_SIZE = 250;
-
-const ROOFING_TYPE_LABELS: Record<number, string> = {
-  0: "Металлочерепица",
-  1: "Мягкая кровля",
-  2: "Профнастил",
-  3: "Ондулин",
-  4: "Шифер",
-  5: "Керамическая черепица",
-};
-
-/* --- helpers --- */
-
-function clampInt(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, Math.round(value)));
-}
-
-function clampFloat(value: number, min: number, max: number): number {
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/* --- main --- */
+function input(
+  spec: RoofingCanonicalSpec,
+  inputs: RoofingInputs,
+  key: keyof RoofingInputs,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const value = inputs[key];
+  return clamp(
+    typeof value === "number" && Number.isFinite(value)
+      ? value
+      : getInputDefault(spec, String(key), fallback),
+    min,
+    max,
+  );
+}
+
+function planningQuantity(exactNeed: number, reservePercent: number): number {
+  return exactNeed * (1 + reservePercent / 100);
+}
+
+function roundUpUnits(exactNeed: number, unitSize: number): number {
+  if (exactNeed <= 0 || unitSize <= 0) return 0;
+  return Math.ceil(exactNeed / unitSize - 1e-9);
+}
+
+function packagedMaterial(
+  name: string,
+  category: string,
+  exactNeed: number,
+  reservePercent: number,
+  packageSize: number,
+  unit: string,
+  packageUnit: string,
+  subtitle: string,
+): CanonicalMaterialResult | undefined {
+  if (exactNeed <= 0 || packageSize <= 0) return undefined;
+  const withReserve = planningQuantity(exactNeed, reservePercent);
+  const packageCount = roundUpUnits(withReserve, packageSize);
+  return {
+    name,
+    subtitle,
+    quantity: roundDisplay(exactNeed, 3),
+    unit,
+    withReserve: roundDisplay(withReserve, 3),
+    purchaseQty: roundDisplay(packageCount * packageSize, 3),
+    packageInfo: { count: packageCount, size: packageSize, packageUnit },
+    category,
+  };
+}
+
+function buildPrimaryScenarios(
+  cleanUnits: number,
+  recReservePercent: number,
+  maxReserveFloorPercent: number,
+  packageLabel: string,
+  packageUnit: string,
+): ScenarioBundle {
+  const reserves = {
+    MIN: 0,
+    REC: recReservePercent,
+    MAX: Math.max(recReservePercent, maxReserveFloorPercent),
+  } as const;
+
+  return (Object.keys(reserves) as Array<keyof typeof reserves>).reduce((acc, scenario) => {
+    const reservePercent = reserves[scenario];
+    const exactNeed = planningQuantity(cleanUnits, reservePercent);
+    const purchaseQuantity = roundUpUnits(exactNeed, 1);
+    acc[scenario] = {
+      exact_need: roundDisplay(exactNeed, 6),
+      purchase_quantity: purchaseQuantity,
+      leftover: roundDisplay(purchaseQuantity - exactNeed, 6),
+      assumptions: [
+        "primary_material:roof_covering",
+        `reserve_percent:${reservePercent}`,
+      ],
+      key_factors: {
+        field_multiplier: 1,
+        reserve_percent: reservePercent,
+      },
+      buy_plan: {
+        package_label: packageLabel,
+        package_size: 1,
+        packages_count: purchaseQuantity,
+        unit: packageUnit,
+      },
+    };
+    return acc;
+  }, {} as ScenarioBundle);
+}
 
 export function computeCanonicalRoofing(
   spec: RoofingCanonicalSpec,
   inputs: RoofingInputs,
-  factorTable: FactorTable,
+  _factorTable: FactorTable,
 ): CanonicalCalculatorResult {
   const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
 
-  const roofingType = clampInt(inputs.roofingType ?? getInputDefault(spec, "roofingType", 0), 0, 5);
-  const area = clampFloat(inputs.area ?? getInputDefault(spec, "area", 80), 10, 500);
-  const slope = clampFloat(inputs.slope ?? getInputDefault(spec, "slope", 30), 5, 60);
-  const ridgeLength = clampFloat(inputs.ridgeLength ?? getInputDefault(spec, "ridgeLength", 8), 1, 30);
-  const sheetWidth = clampFloat(inputs.sheetWidth ?? getInputDefault(spec, "sheetWidth", 1.18), 0.8, 1.5);
-  const sheetLength = clampFloat(inputs.sheetLength ?? getInputDefault(spec, "sheetLength", 2.5), 1, 8);
-  const complexity = clampInt(inputs.complexity ?? getInputDefault(spec, "complexity", 0), 0, 2);
+  const roofAreaMode = Math.round(input(spec, inputs, "roofAreaMode", 0, 0, 1));
+  const projectSlopeAreaM2 = input(spec, inputs, "projectSlopeAreaM2", 100, 1, 10000);
+  const planProjectionAreaM2 = input(spec, inputs, "planProjectionAreaM2", 80, 1, 10000);
+  const slopeDeg = input(spec, inputs, "slopeDeg", 30, 1, 75);
+  const slopeFactor = 1 / Math.cos((slopeDeg * Math.PI) / 180);
+  const selectedSlopeAreaM2 = roofAreaMode === 1
+    ? planProjectionAreaM2 * slopeFactor
+    : projectSlopeAreaM2;
 
-  const complexityCoeff = COMPLEXITY_COEFFS[complexity] ?? 1.05;
-  const slopeFactor = 1 / Math.cos(slope * Math.PI / 180);
-  const realArea = area * slopeFactor;
-  const perimeterEst = 4 * Math.sqrt(area);
+  const roofingType = Math.round(input(spec, inputs, "roofingType", 0, 0, 5));
+  const roofingTypeSpec = spec.normative_formula.roofing_types.find((item) => item.id === roofingType)
+    ?? spec.normative_formula.roofing_types[0];
+  const primaryPackageUnit = spec.material_rules.primary_package_units[String(roofingType)] ?? "единиц";
+  const primaryCoverageM2 = input(spec, inputs, "primaryCoverageM2", 0, 0, 1000);
+  const primaryReservePercent = input(spec, inputs, "primaryReservePercent", 10, 0, 50);
+
+  const ridgeProjectM = input(spec, inputs, "ridgeProjectM", 0, 0, 10000);
+  const ridgeReservePercent = input(spec, inputs, "ridgeReservePercent", 5, 0, 30);
+  const ridgeElementUsefulLengthM = input(spec, inputs, "ridgeElementUsefulLengthM", 0, 0, 100);
+  const valleyProjectM = input(spec, inputs, "valleyProjectM", 0, 0, 10000);
+  const valleyReservePercent = input(spec, inputs, "valleyReservePercent", 10, 0, 50);
+  const valleyElementUsefulLengthM = input(spec, inputs, "valleyElementUsefulLengthM", 0, 0, 100);
+  const eavesProjectM = input(spec, inputs, "eavesProjectM", 0, 0, 10000);
+  const eavesReservePercent = input(spec, inputs, "eavesReservePercent", 5, 0, 30);
+  const eavesElementUsefulLengthM = input(spec, inputs, "eavesElementUsefulLengthM", 0, 0, 100);
+
+  const membraneProjectAreaM2 = input(spec, inputs, "membraneProjectAreaM2", 0, 0, 10000);
+  const membraneReservePercent = input(spec, inputs, "membraneReservePercent", 15, 0, 50);
+  const membraneRollCoverageM2 = input(spec, inputs, "membraneRollCoverageM2", 0, 0, 1000);
+  const deckProjectAreaM2 = input(spec, inputs, "deckProjectAreaM2", 0, 0, 10000);
+  const deckReservePercent = input(spec, inputs, "deckReservePercent", 10, 0, 50);
+  const deckSheetAreaM2 = input(spec, inputs, "deckSheetAreaM2", 0, 0, 100);
+
+  const battenProjectLengthM = input(spec, inputs, "battenProjectLengthM", 0, 0, 100000);
+  const battenReservePercent = input(spec, inputs, "battenReservePercent", 5, 0, 30);
+  const battenBoardLengthM = input(spec, inputs, "battenBoardLengthM", 0, 0, 20);
+  const counterBattenProjectLengthM = input(spec, inputs, "counterBattenProjectLengthM", 0, 0, 100000);
+  const counterBattenReservePercent = input(spec, inputs, "counterBattenReservePercent", 5, 0, 30);
+  const counterBattenBoardLengthM = input(spec, inputs, "counterBattenBoardLengthM", 0, 0, 20);
+
+  const fastenersProjectPcs = input(spec, inputs, "fastenersProjectPcs", 0, 0, 1000000);
+  const fastenersReservePercent = input(spec, inputs, "fastenersReservePercent", 5, 0, 30);
+  const fastenersPackagePcs = input(spec, inputs, "fastenersPackagePcs", 0, 0, 100000);
+  const snowGuardProjectM = input(spec, inputs, "snowGuardProjectM", 0, 0, 10000);
+  const snowGuardReservePercent = input(spec, inputs, "snowGuardReservePercent", 5, 0, 30);
+  const snowGuardSectionUsefulLengthM = input(spec, inputs, "snowGuardSectionUsefulLengthM", 0, 0, 100);
+  const sealingTapeProjectM = input(spec, inputs, "sealingTapeProjectM", 0, 0, 100000);
+  const sealingTapeReservePercent = input(spec, inputs, "sealingTapeReservePercent", 10, 0, 50);
+  const sealingTapeRollLengthM = input(spec, inputs, "sealingTapeRollLengthM", 0, 0, 1000);
 
   const materials: CanonicalMaterialResult[] = [];
-  const warnings: string[] = [];
 
-  /* primary material quantity -- used for scenario packaging */
-  let primaryQuantity = 0;
-  let primaryUnit = "шт";
-  let primaryLabel = "";
+  const primary = packagedMaterial(
+    `${roofingTypeSpec.label} — выбранный товар`,
+    "Основное покрытие",
+    selectedSlopeAreaM2,
+    primaryReservePercent,
+    primaryCoverageM2,
+    "м²",
+    primaryPackageUnit,
+    "Полезную площадь одной покупной единицы вводят по маркировке и инструкции выбранного товара с учётом штатных нахлёстов",
+  );
+  if (primary) materials.push(primary);
 
-  if (roofingType === 0) {
-    /* ── METAL TILE ── */
-    const effectiveWidth = sheetWidth - 0.08;
-    const sheetArea = effectiveWidth * (sheetLength - 0.15);
-    const sheetsNeeded = Math.ceil(realArea / sheetArea * complexityCoeff);
-    const ridgePieces = Math.ceil(ridgeLength / 2 * 1.05);
-    const snowGuards = Math.ceil(perimeterEst / 3);
-    const screws = Math.ceil(realArea * 9);
-    const screwPacks = Math.ceil(screws / ROOFING_SCREW_PACK_SIZE);
-    const waterproofingM2 = Math.ceil(realArea * 1.15);
-    const waterproofingRolls = Math.ceil(waterproofingM2 / 75);
-
-    // Шаг обрешётки зависит от уклона (СП 17.13330.2017 п. 5.5.5):
-    // при slope < solid_sheathing_slope_threshold_deg обрешётка должна быть
-    // сплошной (доски впритык, ~100 мм шаг), иначе листы прогнутся под снегом.
-    // Дефолтный порог — 15°, дефолтный шаг сплошной — 0.1 м.
-    const solidThresholdDeg = spec.material_rules.solid_sheathing_slope_threshold_deg ?? 15;
-    const solidStepM = spec.material_rules.solid_sheathing_step_m ?? 0.1;
-    const effectiveBattenStep = slope < solidThresholdDeg
-      ? solidStepM
-      : spec.material_rules.metal_tile_batten_step_m;
-    const battens = Math.ceil(realArea / effectiveBattenStep * 1.1);
-    const counterBattens = Math.ceil(realArea / 1.0 * 1.1);
-
-    primaryQuantity = sheetsNeeded;
-    primaryUnit = "листов";
-    primaryLabel = "metal-tile-sheet";
-
-    materials.push({
-      name: `${ROOFING_TYPE_LABELS[0]} (${sheetWidth}×${sheetLength} м)`,
-      subtitle:
-        `Указан полный размер листа; расчётная полезная ширина после бокового нахлёста — ${roundDisplay(effectiveWidth, 2)} м`,
-      quantity: sheetsNeeded,
-      unit: "листов",
-      withReserve: sheetsNeeded,
-      purchaseQty: sheetsNeeded,
-      category: "Основное",
-    });
-    materials.push({
-      name: "Коньковая планка для металлочерепицы, длина 2 м",
-      subtitle: "Профиль, цвет и уплотнитель подбирают в системе выбранного производителя",
-      quantity: ridgePieces,
-      unit: "шт",
-      withReserve: ridgePieces,
-      purchaseQty: ridgePieces,
-      category: "Доборные",
-    });
-    materials.push({
-      name: "Снегозадержатели трубчатые, секции 3 м",
-      subtitle: "Количество рядов и расположение определяют по снеговому району, длине ската и проекту кровли",
-      quantity: snowGuards,
-      unit: "шт",
-      withReserve: snowGuards,
-      purchaseQty: snowGuards,
-      category: "Безопасность",
-    });
-    materials.push({
-      name: "Кровельные саморезы 4,8×35 мм с уплотнительной шайбой из EPDM-резины",
-      subtitle: "Для крепления металлочерепицы к деревянной обрешётке в нижнюю волну",
-      quantity: screws,
-      unit: "шт",
-      withReserve: screws,
-      purchaseQty: screwPacks * ROOFING_SCREW_PACK_SIZE,
-      packageInfo: { count: screwPacks, size: ROOFING_SCREW_PACK_SIZE, packageUnit: "упаковок" },
-      category: "Крепёж",
-    });
-    materials.push({
-      name: "Гидроизоляция кровельная — гидроветрозащитная мембрана, рулон 75 м²",
-      subtitle: "Для монтажа над утеплителем с вентиляционным зазором; тип мембраны выбирают по конструкции кровельного пирога",
-      quantity: waterproofingM2,
-      unit: "м²",
-      withReserve: waterproofingRolls * 75,
-      purchaseQty: waterproofingRolls * 75,
-      packageInfo: { count: waterproofingRolls, size: 75, packageUnit: "рулонов" },
-      category: "Изоляция",
-    });
-    materials.push({
-      name: `Обрешётка — доска 25×100 мм, шаг ${roundDisplay(effectiveBattenStep * 1000, 0)} мм`,
-      subtitle: "Количество указано в погонных метрах, а не в досках; длину пиломатериала выберите у поставщика",
-      quantity: battens,
-      unit: "пог. м",
-      withReserve: battens,
-      purchaseQty: battens,
-      category: "Каркас",
-    });
-    materials.push({
-      name: "Контробрешётка — брусок 50×50 мм",
-      subtitle: "Количество указано в погонных метрах; брусок формирует вентиляционный зазор над мембраной",
-      quantity: counterBattens,
-      unit: "пог. м",
-      withReserve: counterBattens,
-      purchaseQty: counterBattens,
-      category: "Каркас",
-    });
-  } else if (roofingType === 1) {
-    /* ── SOFT ROOFING ── */
-    const packs = Math.ceil(realArea / 3.0 * complexityCoeff);
-
-    let underlaymentRolls: number;
-    if (slope < 18) {
-      underlaymentRolls = Math.ceil(realArea * 1.15 / 15);
-    } else {
-      const criticalLinear = perimeterEst + ridgeLength;
-      const criticalArea = criticalLinear * 1.0 * 1.15;
-      underlaymentRolls = Math.ceil(criticalArea / 15);
-    }
-
-    const masticKg = (perimeterEst + ridgeLength) * 0.1 + realArea * 0.1;
-    const masticBuckets = Math.ceil(masticKg / 3);
-    const nailRateKgPerM2 =
-      slope <= spec.material_rules.soft_nails_high_slope_threshold
-        ? spec.material_rules.soft_nails_kg_per_m2_low_slope
-        : spec.material_rules.soft_nails_kg_per_m2_high_slope;
-    const nailsExactKg = realArea * nailRateKgPerM2;
-    const nailsWithReserveKg = nailsExactKg * spec.material_rules.soft_nails_reserve;
-    const nailBoxes = Math.ceil(nailsWithReserveKg / spec.material_rules.soft_nail_box_kg);
-    const ridgeShingles = Math.ceil(ridgeLength / 0.5 * 1.05);
-    const osbSheets = Math.ceil(realArea / 3.125 * 1.05);
-    const ventOutputs = Math.ceil(realArea / 25);
-
-    primaryQuantity = packs;
-    primaryUnit = "упаковок";
-    primaryLabel = "soft-roofing-pack-3m2";
-
-    materials.push({
-      name: `${ROOFING_TYPE_LABELS[1]} (упаковка 3 м²)`,
-      subtitle: "Площадь покрытия одной упаковки проверьте на этикетке выбранной коллекции",
-      quantity: packs,
-      unit: "упаковок",
-      withReserve: packs,
-      purchaseQty: packs,
-      category: "Основное",
-    });
-    materials.push({
-      name: "Подкладочный ковёр (рулон 15 м²)",
-      subtitle:
-        slope < 18
-          ? "Для сплошной укладки по всей площади скатов"
-          : "Для карнизов, конька, ендов и других критических зон",
-      quantity: underlaymentRolls,
-      unit: "рулонов",
-      withReserve: underlaymentRolls,
-      purchaseQty: underlaymentRolls,
-      category: "Изоляция",
-    });
-    materials.push({
-      name: "Мастика битумно-полимерная для гибкой черепицы (ведро 3 кг)",
-      subtitle: "Для ендов, примыканий и локальной приклейки; не наносить сплошным толстым слоем",
-      quantity: roundDisplay(masticKg, 3),
-      unit: "кг",
-      withReserve: masticBuckets * 3,
-      purchaseQty: masticBuckets * 3,
-      packageInfo: { count: masticBuckets, size: 3, packageUnit: "вёдер" },
-      category: "Клей",
-    });
-    materials.push({
-      name: "Гвозди ершёные оцинкованные 3,2×30 мм",
-      subtitle: `Расход ${nailRateKgPerM2} кг/м² при уклоне ${roundDisplay(slope, 0)}°; для другой нарезки проверьте инструкцию производителя`,
-      quantity: roundDisplay(nailsExactKg, 3),
-      unit: "кг",
-      withReserve: roundDisplay(nailsWithReserveKg, 3),
-      purchaseQty: nailBoxes * spec.material_rules.soft_nail_box_kg,
-      packageInfo: {
-        count: nailBoxes,
-        size: spec.material_rules.soft_nail_box_kg,
-        packageUnit: "коробок",
-      },
-      category: "Крепёж",
-    });
-    materials.push({
-      name: "Коньково-карнизная черепица — гонты",
-      subtitle: "Фактическое число гонтов в упаковке зависит от коллекции; сверьте с этикеткой производителя",
-      quantity: ridgeShingles,
-      unit: "шт",
-      withReserve: ridgeShingles,
-      purchaseQty: ridgeShingles,
-      category: "Доборные",
-    });
-    materials.push({
-      name: "Влагостойкая ориентированно-стружечная плита ОСП-3, 1250×2500×12 мм",
-      subtitle:
-        "Для сплошного основания; оставляйте зазор 3–5 мм, а допустимую толщину проверяйте по шагу опор и инструкции к черепице",
-      quantity: osbSheets,
-      unit: "листов",
-      withReserve: osbSheets,
-      purchaseQty: osbSheets,
-      category: "Каркас",
-    });
-    materials.push({
-      name: "Вентиляционные выходы — точечные кровельные аэраторы",
-      subtitle: "Производительность и количество уточняют по инструкции выбранной кровельной системы",
-      quantity: ventOutputs,
-      unit: "шт",
-      withReserve: ventOutputs,
-      purchaseQty: ventOutputs,
-      category: "Вентиляция",
-    });
-  } else {
-    /* ── GENERIC: profnastil (2), ondulin (3), shale (4), ceramic (5) ── */
-    const typeIdx = roofingType - 2; // 0..3
-    let unitSheetArea: number;
-    let unitLabel: string;
-    let unitName: string;
-
-    if (roofingType === 2) {
-      // profnastil
-      const effectiveW = sheetWidth - 0.05;
-      unitSheetArea = effectiveW * (sheetLength - 0.1);
-      unitLabel = `profnastil-${sheetWidth}x${sheetLength}`;
-      unitName = `${ROOFING_TYPE_LABELS[2]} (${sheetWidth}×${sheetLength} м)`;
-    } else if (roofingType === 3) {
-      // ondulin: sheet 0.95x2.0, effective 0.83x1.85
-      unitSheetArea = 0.83 * 1.85; // 1.5355
-      unitLabel = "ondulin-0.95x2.0";
-      unitName = `${ROOFING_TYPE_LABELS[3]} (лист 0.95×2.0 м)`;
-    } else if (roofingType === 4) {
-      // shale: sheet 1.13x1.75, effective 0.98x1.55
-      unitSheetArea = 0.98 * 1.55; // 1.519
-      unitLabel = "shale-1.13x1.75";
-      unitName = `${ROOFING_TYPE_LABELS[4]} (лист 1.13×1.75 м)`;
-    } else {
-      // ceramic: 1 tile = 0.03 m², ~13 tiles/m²
-      unitSheetArea = 1 / 13; // ~0.07692
-      unitLabel = "ceramic-tile";
-      unitName = `${ROOFING_TYPE_LABELS[5]} (~13 шт/м²)`;
-    }
-
-    const sheetsOrTiles = Math.ceil(realArea / unitSheetArea * complexityCoeff);
-    const ridgeSpec: Record<number, { name: string; usefulLengthM: number; subtitle: string }> = {
-      2: {
-        name: "Коньковая планка для профнастила, длина 2 м",
-        usefulLengthM: 2,
-        subtitle: "Профиль и цвет подбирают к выбранному профнастилу; учтён запас на стыки",
-      },
-      3: {
-        name: "Коньковый элемент для ондулина, полезная длина около 0,85 м",
-        usefulLengthM: 0.85,
-        subtitle: "Точную полезную длину и фирменный крепёж проверьте по выбранной системе",
-      },
-      4: {
-        name: "Оцинкованная коньковая планка для шифера, длина 2 м",
-        usefulLengthM: 2,
-        subtitle: "Форму планки и нахлёст уточняют по профилю волны",
-      },
-      5: {
-        name: "Коньковая керамическая черепица",
-        usefulLengthM: 0.4,
-        subtitle: "Ориентир 2,5 шт. на погонный метр; точный расход зависит от модели черепицы",
-      },
-    };
-    const selectedRidge = ridgeSpec[roofingType];
-    const ridgePieces = Math.ceil(ridgeLength / selectedRidge.usefulLengthM * 1.05);
-
-    const fastenerRates = [10, 20, 4, 4];
-    const fastenersNeeded = Math.ceil(realArea * fastenerRates[typeIdx]);
-    const waterproofingRolls = Math.ceil(realArea * 1.15 / 75);
-
-    const tileUnit = roofingType === 5 ? "шт" : "листов";
-
-    primaryQuantity = sheetsOrTiles;
-    primaryUnit = tileUnit;
-    primaryLabel = unitLabel;
-
-    materials.push({
-      name: unitName,
-      quantity: sheetsOrTiles,
-      unit: tileUnit,
-      withReserve: sheetsOrTiles,
-      purchaseQty: sheetsOrTiles,
-      category: "Основное",
-    });
-    materials.push({
-      name: selectedRidge.name,
-      subtitle: selectedRidge.subtitle,
-      quantity: ridgePieces,
-      unit: "шт",
-      withReserve: ridgePieces,
-      purchaseQty: ridgePieces,
-      category: "Доборные",
-    });
-    const fastenerSpec: Record<number, { name: string; subtitle: string }> = {
-      2: {
-        name: "Кровельные саморезы 4,8×35 мм с уплотнительной шайбой из EPDM-резины",
-        subtitle: "Для крепления профнастила к деревянной обрешётке в нижнюю волну",
-      },
-      3: {
-        name: "Гвозди для ондулина с герметизирующей шляпкой",
-        subtitle: "Используйте фирменный крепёж выбранной кровельной системы",
-      },
-      4: {
-        name: "Шиферные гвозди 4,5×120 мм",
-        subtitle: "С оцинкованной шляпкой и уплотнительной шайбой; длину проверьте по высоте волны",
-      },
-      5: {
-        name: "Противоветровые кляймеры для керамической черепицы",
-        subtitle: "Тип крепления выбирают по профилю черепицы и требованиям производителя",
-      },
-    };
-    const selectedFastener = fastenerSpec[roofingType];
-    const fastenerPackSize = roofingType === 2 ? ROOFING_SCREW_PACK_SIZE : 0;
-    const fastenerPacks = fastenerPackSize > 0 ? Math.ceil(fastenersNeeded / fastenerPackSize) : 0;
-
-    materials.push({
-      name: selectedFastener.name,
-      subtitle: selectedFastener.subtitle,
-      quantity: fastenersNeeded,
-      unit: "шт",
-      withReserve: fastenersNeeded,
-      purchaseQty: fastenerPackSize > 0 ? fastenerPacks * fastenerPackSize : fastenersNeeded,
-      ...(fastenerPackSize > 0
-        ? { packageInfo: { count: fastenerPacks, size: fastenerPackSize, packageUnit: "упаковок" } }
-        : {}),
-      category: "Крепёж",
-    });
-    materials.push({
-      name: "Гидроизоляция кровельная — гидроветрозащитная мембрана, рулон 75 м²",
-      subtitle: "Тип и паропроницаемость мембраны выбирают по конструкции кровельного пирога",
-      quantity: Math.ceil(realArea * 1.15),
-      unit: "м²",
-      withReserve: waterproofingRolls * 75,
-      purchaseQty: waterproofingRolls * 75,
-      packageInfo: { count: waterproofingRolls, size: 75, packageUnit: "рулонов" },
-      category: "Изоляция",
-    });
+  const projectLines: Array<CanonicalMaterialResult | undefined> = [
+    packagedMaterial(
+      "Коньковый элемент из проектной ведомости",
+      "Доборные элементы",
+      ridgeProjectM,
+      ridgeReservePercent,
+      ridgeElementUsefulLengthM,
+      "м",
+      "шт",
+      "Полезную длину элемента вводят после учёта штатного нахлёста выбранной системы",
+    ),
+    packagedMaterial(
+      "Ендовный элемент из проектной ведомости",
+      "Доборные элементы",
+      valleyProjectM,
+      valleyReservePercent,
+      valleyElementUsefulLengthM,
+      "м",
+      "шт",
+      "Число, длину, слои и узлы ендов переносят из проекта кровли",
+    ),
+    packagedMaterial(
+      "Карнизная планка из проектной ведомости",
+      "Доборные элементы",
+      eavesProjectM,
+      eavesReservePercent,
+      eavesElementUsefulLengthM,
+      "м",
+      "шт",
+      "Общую длину карнизов и полезную длину планки берут из проекта и паспорта системы",
+    ),
+    packagedMaterial(
+      "Кровельная мембрана по проекту",
+      "Изоляция",
+      membraneProjectAreaM2,
+      membraneReservePercent,
+      membraneRollCoverageM2,
+      "м²",
+      "рулонов",
+      "Тип мембраны, стороны монтажа, нахлёсты и вентиляционные зазоры калькулятор не назначает",
+    ),
+    packagedMaterial(
+      "Сплошное листовое основание по проекту",
+      "Основание",
+      deckProjectAreaM2,
+      deckReservePercent,
+      deckSheetAreaM2,
+      "м²",
+      "листов",
+      "Материал, толщину, шаг опор, зазоры и схему стыков принимают по проекту кровельной системы",
+    ),
+    packagedMaterial(
+      "Обрешётка — одна позиция пиломатериала из проекта",
+      "Пиломатериал",
+      battenProjectLengthM,
+      battenReservePercent,
+      battenBoardLengthM,
+      "м",
+      "досок",
+      "Сечение, сорт, шаг и раскрой должны соответствовать проекту и выбранному покрытию",
+    ),
+    packagedMaterial(
+      "Контробрешётка — одна позиция пиломатериала из проекта",
+      "Пиломатериал",
+      counterBattenProjectLengthM,
+      counterBattenReservePercent,
+      counterBattenBoardLengthM,
+      "м",
+      "брусков",
+      "Сечение, длины и вентиляционный зазор переносят из проекта",
+    ),
+    packagedMaterial(
+      "Крепёж из проектной ведомости",
+      "Крепёж",
+      fastenersProjectPcs,
+      fastenersReservePercent,
+      fastenersPackagePcs,
+      "шт",
+      "упаковок",
+      "Тип, размер, материал, покрытие, шаг и зоны крепления калькулятор не назначает",
+    ),
+    packagedMaterial(
+      "Снегозадержание из проектной ведомости",
+      "Безопасность",
+      snowGuardProjectM,
+      snowGuardReservePercent,
+      snowGuardSectionUsefulLengthM,
+      "м",
+      "секций",
+      "Ряды, опоры и зоны снегозадержания определяют по снеговым нагрузкам, геометрии и проекту",
+    ),
+    packagedMaterial(
+      "Системная лента для мембран и примыканий",
+      "Герметизация",
+      sealingTapeProjectM,
+      sealingTapeReservePercent,
+      sealingTapeRollLengthM,
+      "м",
+      "рулонов",
+      "Длину стыков и совместимость ленты переносят из раскладки и инструкции системы",
+    ),
+  ];
+  for (const material of projectLines) {
+    if (material) materials.push(material);
   }
 
-  /* ── accuracy mode adjustment ── */
-  const primaryQuantityRaw = primaryQuantity;
-  primaryQuantity = Math.ceil(primaryQuantity * accuracyMult);
+  const cleanPrimaryUnits = primaryCoverageM2 > 0
+    ? selectedSlopeAreaM2 / primaryCoverageM2
+    : 0;
+  const primaryPackageLabel = `roof-covering-${roofingType}`;
+  const scenarios = buildPrimaryScenarios(
+    cleanPrimaryUnits,
+    primaryReservePercent,
+    spec.scenario_policy.max_reserve_floor_percent,
+    primaryPackageLabel,
+    primaryPackageUnit,
+  );
 
-  /* ── scenarios (primary material used for packaging) ── */
-  const packageOptions = [{
-    size: 1,
-    label: primaryLabel,
-    unit: primaryUnit,
-  }];
-
-  const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(primaryQuantity * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
-
-    acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
-      assumptions: [
-        `formula_version:${spec.formula_version}`,
-        `roofingType:${roofingType}`,
-        `complexity:${complexity}`,
-        `slope:${slope}`,
-        `packaging:${packaging.package.label}`,
-      ],
-      key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-      },
-      buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
-      },
-    };
-
-    return acc;
-  }, {} as ScenarioBundle);
-
-  /* ── warnings ── */
-  if (slope < spec.warnings_rules.metal_tile_min_slope && roofingType === 0) {
-    warnings.push("Уклон менее 14° — слишком пологий для металлочерепицы");
-  }
-  if (slope < spec.warnings_rules.soft_roofing_min_slope && roofingType === 1) {
-    warnings.push("Уклон менее 12° — слишком пологий для мягкой кровли");
-  }
-  // Сплошная обрешётка при пологом уклоне для металлочерепицы.
-  // По СП 17.13330.2017 п. 5.5.5: при slope < 15° обрешётка под
-  // металлочерепицу должна быть сплошной — листы прогнутся под снегом
-  // на редкой обрешётке. Шаг обрешётки уже скорректирован в расчёте,
-  // но пользователю важно увидеть пояснение.
-  if (roofingType === 0) {
-    const solidThresholdDeg = spec.material_rules.solid_sheathing_slope_threshold_deg ?? 15;
-    if (slope < solidThresholdDeg) {
-      warnings.push(
-        `Уклон ${roundDisplay(slope, 0)}° < ${solidThresholdDeg}° — по СП 17.13330.2017 ` +
-          `обрешётка под металлочерепицу должна быть сплошной (доска впритык). ` +
-          `Расчёт обрешётки скорректирован под этот режим.`,
-      );
-    }
-  }
-  if (complexity === 2) {
-    warnings.push("Сложная геометрия крыши — рекомендуется профессиональный монтаж");
-  }
-  if (realArea > spec.warnings_rules.large_roof_area_threshold) {
-    warnings.push("Большая площадь крыши — рекомендуется доставка краном");
-  }
-
-
-  const practicalNotes: string[] = [];
-  if (roofingType === 0 && slope < spec.warnings_rules.metal_tile_min_slope) {
-    practicalNotes.push(
-      `Уклон ${roundDisplay(slope, 0)}° ниже принятого минимума ${spec.warnings_rules.metal_tile_min_slope}° для металлочерепицы`,
+  const warnings: string[] = [
+    "Это закупочный расчёт по принятому проекту: стропила, прогоны, обрешётка, кровельный пирог, нагрузки, водоотвод и снегозадержание здесь не проектируются",
+  ];
+  if (roofAreaMode === 1) {
+    warnings.push(
+      "Площадь по проекции и уклону допустима только для простой одно- или двухскатной крыши с одинаковым уклоном; для сложной крыши введите сумму площадей скатов из проекта",
     );
   }
-  practicalNotes.push("Не экономьте на гидроизоляции подкровельного пространства — протечка на чердаке обойдётся дороже рулона мембраны");
+  if (primaryCoverageM2 <= 0) {
+    warnings.push("Основное покрытие не рассчитано: заполните полезную площадь одной покупной единицы выбранного товара");
+  }
+
+  const missingPackageWarnings: Array<[number, number, string]> = [
+    [ridgeProjectM, ridgeElementUsefulLengthM, "Длина конька задана, но полезная длина одного конькового элемента не заполнена"],
+    [valleyProjectM, valleyElementUsefulLengthM, "Длина ендов задана, но полезная длина одного ендовного элемента не заполнена"],
+    [eavesProjectM, eavesElementUsefulLengthM, "Длина карнизов задана, но полезная длина одной планки не заполнена"],
+    [membraneProjectAreaM2, membraneRollCoverageM2, "Площадь мембраны задана, но полезная площадь рулона не заполнена"],
+    [deckProjectAreaM2, deckSheetAreaM2, "Площадь сплошного основания задана, но площадь одного листа не заполнена"],
+    [battenProjectLengthM, battenBoardLengthM, "Длина обрешётки задана, но длина покупной доски не заполнена"],
+    [counterBattenProjectLengthM, counterBattenBoardLengthM, "Длина контробрешётки задана, но длина покупного бруска не заполнена"],
+    [fastenersProjectPcs, fastenersPackagePcs, "Количество крепежа задано, но количество в упаковке не заполнено"],
+    [snowGuardProjectM, snowGuardSectionUsefulLengthM, "Длина снегозадержания задана, но полезная длина одной секции не заполнена"],
+    [sealingTapeProjectM, sealingTapeRollLengthM, "Длина ленты задана, но длина одного рулона не заполнена"],
+  ];
+  for (const [projectQuantity, packageSize, warning] of missingPackageWarnings) {
+    if (projectQuantity > 0 && packageSize <= 0) warnings.push(warning);
+  }
+  if (materials.length === 0) {
+    warnings.push("Не рассчитана ни одна закупочная позиция");
+  }
+
+  const practicalNotes = [
+    roofAreaMode === 0
+      ? "Используется суммарная площадь скатов из проекта или обмера — предпочтительный режим для закупки"
+      : `Для простой крыши площадь скатов получена как ${roundDisplay(planProjectionAreaM2, 3)} м² / cos(${roundDisplay(slopeDeg, 1)}°)`,
+    "MIN/REC/MAX относятся только к основному покрытию; остальные позиции показывают собственные проектное количество, явный запас и округление по фактической фасовке",
+    "Разные типоразмеры листов, планок, досок и крепежа считайте отдельными запусками и сверяйте с раскладкой",
+  ];
 
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials,
     totals: {
-      roofingType,
-      area: roundDisplay(area, 3),
-      slope: roundDisplay(slope, 3),
-      ridgeLength: roundDisplay(ridgeLength, 3),
-      sheetWidth: roundDisplay(sheetWidth, 3),
-      sheetLength: roundDisplay(sheetLength, 3),
-      complexity,
+      roofAreaMode,
+      projectSlopeAreaM2: roundDisplay(projectSlopeAreaM2, 3),
+      planProjectionAreaM2: roundDisplay(planProjectionAreaM2, 3),
+      slopeDeg: roundDisplay(slopeDeg, 3),
       slopeFactor: roundDisplay(slopeFactor, 6),
-      realArea: roundDisplay(realArea, 3),
-      perimeterEst: roundDisplay(perimeterEst, 3),
-      complexityCoeff,
-      primaryQuantity,
+      selectedSlopeAreaM2: roundDisplay(selectedSlopeAreaM2, 3),
+      roofingType,
+      primaryCoverageM2: roundDisplay(primaryCoverageM2, 3),
+      primaryUnits: primary?.packageInfo?.count ?? 0,
+      primaryPurchaseAreaM2: primary?.purchaseQty ?? 0,
+      ridgeElements: projectLines[0]?.packageInfo?.count ?? 0,
+      valleyElements: projectLines[1]?.packageInfo?.count ?? 0,
+      eavesElements: projectLines[2]?.packageInfo?.count ?? 0,
+      membraneRolls: projectLines[3]?.packageInfo?.count ?? 0,
+      deckSheets: projectLines[4]?.packageInfo?.count ?? 0,
+      battenBoards: projectLines[5]?.packageInfo?.count ?? 0,
+      counterBattenBoards: projectLines[6]?.packageInfo?.count ?? 0,
+      fastenerPackages: projectLines[7]?.packageInfo?.count ?? 0,
+      snowGuardSections: projectLines[8]?.packageInfo?.count ?? 0,
+      sealingTapeRolls: projectLines[9]?.packageInfo?.count ?? 0,
       minExactNeed: scenarios.MIN.exact_need,
       recExactNeed: scenarios.REC.exact_need,
       maxExactNeed: scenarios.MAX.exact_need,
@@ -506,10 +410,18 @@ export function computeCanonicalRoofing(
       recPurchase: scenarios.REC.purchase_quantity,
       maxPurchase: scenarios.MAX.purchase_quantity,
     },
-    accuracyMode,
-    accuracyExplanation: applyAccuracyMode(primaryQuantityRaw, "generic", accuracyMode).explanation,
     warnings,
     practicalNotes,
     scenarios,
+    accuracyMode,
+    accuracyExplanation: {
+      mode: accuracyMode,
+      modeLabel: ACCURACY_MODE_LABELS[accuracyMode],
+      combinedMultiplier: 1,
+      appliedModifiers: [],
+      notes: [
+        "Скрытые коэффициенты точности не применяются: проектные количества, запасы и фасовки задаются отдельными полями",
+      ],
+    },
   };
 }

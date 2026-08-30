@@ -1,277 +1,252 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { roofingDef } from "../formulas/roofing";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(roofingDef.calculate.bind(roofingDef));
 
-describe("Калькулятор кровли", () => {
-  describe("Металлочерепица: 80 м² (в плане), уклон 30°, лист 1.18×2.5 м", () => {
-    // slopeFactor = 1/cos(30°) ≈ 1.1547
-    // realArea = 80 * 1.1547 ≈ 92.376
-    // effectiveWidth = 1.18 - 0.08 = 1.10
-    // sheetArea = 1.10 * (2.5 - 0.15) = 1.10 * 2.35 = 2.585
-    // sheetsNeeded = ceil((92.376/2.585)*1.05) = ceil(37.53) = 38
+const baseInputs = {
+  roofAreaMode: 0,
+  projectSlopeAreaM2: 100,
+  planProjectionAreaM2: 80,
+  slopeDeg: 30,
+  roofingType: 0,
+  primaryCoverageM2: 2.5,
+  primaryReservePercent: 10,
+};
+
+describe("Калькулятор кровли v3", () => {
+  it("использует готовую площадь скатов без обратного пересчёта", () => {
+    const result = calc(baseInputs);
+
+    expect(result.formulaVersion).toBe("roofing-canonical-v3");
+    expect(result.totals.selectedSlopeAreaM2).toBe(100);
+    expect(result.totals.primaryUnits).toBe(44);
+  });
+
+  it("переводит покрытие в покупные единицы по полезной площади товара", () => {
+    const result = calc(baseInputs);
+    const covering = findMaterial(result, "Металлочерепица");
+
+    expect(covering?.quantity).toBe(100);
+    expect(covering?.withReserve).toBe(110);
+    expect(covering?.purchaseQty).toBe(110);
+    expect(covering?.packageInfo).toEqual({
+      count: 44,
+      size: 2.5,
+      packageUnit: "листов",
+    });
+  });
+
+  it("MIN/REC/MAX применяет только явный запас основного покрытия", () => {
+    const result = calc(baseInputs);
+
+    expect(result.scenarios.MIN.exact_need).toBe(40);
+    expect(result.scenarios.MIN.purchase_quantity).toBe(40);
+    expect(result.scenarios.REC.exact_need).toBe(44);
+    expect(result.scenarios.REC.purchase_quantity).toBe(44);
+    expect(result.scenarios.MAX.exact_need).toBe(46);
+    expect(result.scenarios.MAX.purchase_quantity).toBe(46);
+    expect(result.scenarios.MAX.key_factors).toMatchObject({
+      field_multiplier: 1,
+      reserve_percent: 15,
+    });
+  });
+
+  it("не применяет скрытые коэффициенты сложности или точности", () => {
+    const result = calc({ ...baseInputs, accuracyMode: "conservative" });
+
+    expect(result.scenarios.REC.purchase_quantity).toBe(44);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+    expect(result.accuracyExplanation?.notes.join(" ")).toContain("Скрытые коэффициенты");
+  });
+
+  it("для простой крыши считает площадь как проекцию со свесами / cos(уклона)", () => {
     const result = calc({
-      roofingType: 0,
-      area: 80,
-      slope: 30,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+      ...baseInputs,
+      roofAreaMode: 1,
+      planProjectionAreaM2: 80,
+      slopeDeg: 30,
     });
 
-    it("реальная площадь с уклоном > 80 м²", () => {
-      expect(result.totals.realArea).toBeGreaterThan(80);
-    });
-
-    it("реальная площадь ≈ 92.376 м²", () => {
-      expect(result.totals.realArea).toBeCloseTo(92.376, 1);
-    });
-
-    it("листов металлочерепицы ≈ 38", () => {
-      // Engine: "Металлочерепица (1.18×2.5 м)"
-      const sheets = findMaterial(result, "Металлочерепица");
-      expect(sheets?.purchaseQty).toBe(38);
-    });
-
-    it("коньковые элементы присутствуют", () => {
-      expect(findMaterial(result, "Коньковая планка")).toBeDefined();
-    });
-
-    it("снегозадержатели присутствуют", () => {
-      expect(findMaterial(result, "Снегозадержатели")).toBeDefined();
-    });
-
-    it("кровельные саморезы в шт", () => {
-      const screws = findMaterial(result, "4,8×35 мм с уплотнительной шайбой из EPDM-резины");
-      expect(screws).toBeDefined();
-      expect(screws?.unit).toBe("шт");
-      expect(screws?.packageInfo?.size).toBe(250);
-      expect(screws?.purchaseQty).toBe(screws!.packageInfo!.count * 250);
-    });
-
-    it("гидроизоляция присутствует", () => {
-      // Engine: "Гидроизоляция (рулон 75 м²)"
-      expect(findMaterial(result, "Гидроизоляция")).toBeDefined();
-    });
-
-    it("обрешётка присутствует", () => {
-      // Engine: "Обрешётка (доска 25×100, шаг ~350 мм)"
-      expect(findMaterial(result, "Обрешётка")).toBeDefined();
-      expect(findMaterial(result, "Обрешётка")?.unit).toBe("пог. м");
-    });
-
-    it("контробрешётка присутствует", () => {
-      // Engine: "Контробрешётка (брусок 50×50)"
-      expect(findMaterial(result, "Контробрешётка")).toBeDefined();
-      expect(findMaterial(result, "Контробрешётка")?.unit).toBe("пог. м");
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.selectedSlopeAreaM2).toBeCloseTo(92.376, 3);
+    expect(result.warnings.some((warning) => warning.includes("одно- или двухскатной"))).toBe(true);
   });
 
-  describe("Уклон корректно влияет на реальную площадь", () => {
-    it("уклон 45° даёт реальную площадь больше плановой в √2 раз", () => {
-      const result = calc({
-        roofingType: 0,
-        area: 100,
-        slope: 45,
-        ridgeLength: 10,
-        sheetWidth: 1.18,
-        sheetLength: 2.5,
-      });
-      expect(result.totals.realArea).toBeCloseTo(141.42, 0);
-    });
+  it("не выводит старый условный периметр, сложность и автоподбор", () => {
+    const result = calc(baseInputs);
+    const names = result.materials.map((material) => material.name).join(" ");
+
+    expect(result.totals).not.toHaveProperty("perimeterEst");
+    expect(result.totals).not.toHaveProperty("complexityCoeff");
+    expect(names).not.toContain("Снегозадерж");
+    expect(names).not.toContain("Обрешётка");
+    expect(names).not.toContain("Контробрешётка");
+    expect(names).not.toContain("мембрана");
+    expect(names).not.toContain("Крепёж");
   });
 
-  describe("Мягкая черепица (через roofing calc)", () => {
-    // realArea ≈ 92.376, packArea=3.0
-    // packs = ceil((92.376/3.0)*1.05) = ceil(32.33) = 33
+  it("не рассчитывает покрытие без полезной площади выбранного товара", () => {
+    const result = calc({ ...baseInputs, primaryCoverageM2: 0 });
+
+    expect(result.materials).toHaveLength(0);
+    expect(result.scenarios.REC.purchase_quantity).toBe(0);
+    expect(result.warnings.some((warning) => warning.includes("полезную площадь"))).toBe(true);
+  });
+
+  it("использует корректную покупную единицу для мягкой черепицы", () => {
+    const result = calc({ ...baseInputs, roofingType: 1, primaryCoverageM2: 3 });
+    const covering = findMaterial(result, "Мягкая черепица");
+
+    expect(covering?.packageInfo?.packageUnit).toBe("упаковок");
+    expect(result.scenarios.REC.buy_plan.unit).toBe("упаковок");
+  });
+
+  it("использует штучную покупную единицу для керамической черепицы", () => {
+    const result = calc({ ...baseInputs, roofingType: 5, primaryCoverageM2: 0.077 });
+    const covering = findMaterial(result, "Керамическая");
+
+    expect(covering?.packageInfo?.packageUnit).toBe("шт");
+    expect(covering?.packageInfo?.count).toBe(1429);
+  });
+
+  it("округляет коньковые элементы по полезной длине", () => {
     const result = calc({
-      roofingType: 1,
-      area: 80,
-      slope: 30,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+      ...baseInputs,
+      ridgeProjectM: 8,
+      ridgeReservePercent: 5,
+      ridgeElementUsefulLengthM: 1.9,
     });
+    const ridge = findMaterial(result, "Коньковый элемент");
 
-    it("мягкая кровля в упаковках", () => {
-      // Engine: "Мягкая кровля (упаковка 3 м²)"
-      const packs = findMaterial(result, "Мягкая кровля");
-      expect(packs?.purchaseQty).toBe(33);
-    });
-
-    it("ОСБ для сплошной обрешётки присутствует", () => {
-      // Engine: "Плиты OSB (1250×2500=3.125 м²)"
-      expect(findMaterial(result, "ОСП")).toBeDefined();
-    });
-
-    it("считает гвозди напрямую в кг по расходу производителя", () => {
-      const nails = findMaterial(result, "Гвозди ершёные оцинкованные 3,2×30 мм");
-      expect(nails).toBeDefined();
-      expect(nails?.unit).toBe("кг");
-      expect(nails?.quantity).toBeCloseTo(9.238, 3);
-      expect(nails?.withReserve).toBeCloseTo(9.699, 3);
-      expect(nails?.packageInfo?.size).toBe(5);
-      expect(nails?.purchaseQty).toBe(10);
-      expect(nails?.subtitle).toContain("0.1 кг/м²");
-    });
-
-    it("не показывает подсказку про уклон металлочерепицы для мягкой кровли", () => {
-      const lowSlope = calc({
-        roofingType: 1,
-        area: 80,
-        slope: 10,
-        ridgeLength: 8,
-        sheetWidth: 1.18,
-        sheetLength: 2.5,
-      });
-
-      expect(
-        lowSlope.practicalNotes?.some((note) => note.includes("металлочерепицы")),
-      ).toBe(false);
-    });
+    expect(ridge?.quantity).toBe(8);
+    expect(ridge?.withReserve).toBe(8.4);
+    expect(ridge?.packageInfo?.count).toBe(5);
+    expect(ridge?.purchaseQty).toBe(9.5);
   });
 
-  describe("Профнастил", () => {
+  it("округляет мембрану по фактической полезной площади рулона", () => {
     const result = calc({
-      roofingType: 2,
-      area: 80,
-      slope: 30,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+      ...baseInputs,
+      membraneProjectAreaM2: 110,
+      membraneReservePercent: 10,
+      membraneRollCoverageM2: 75,
     });
+    const membrane = findMaterial(result, "Кровельная мембрана");
 
-    it("кровельный материал присутствует", () => {
-      // Engine: "Профнастил (1.18×2.5 м)"
-      expect(findMaterial(result, "Профнастил")).toBeDefined();
-    });
-
-    it("указаны саморезы для профнастила", () => {
-      const screws = findMaterial(result, "4,8×35 мм с уплотнительной шайбой из EPDM-резины");
-      expect(screws).toBeDefined();
-      expect(screws?.subtitle).toContain("профнастила");
-      expect(screws?.packageInfo?.size).toBe(250);
-    });
-
-    it("конёк считается двухметровыми планками, а не условными элементами по 0,33 м", () => {
-      const ridge = findMaterial(result, "Коньковая планка");
-      expect(ridge?.purchaseQty).toBe(5);
-      expect(ridge?.name).toContain("2 м");
-    });
+    expect(membrane?.quantity).toBe(110);
+    expect(membrane?.withReserve).toBe(121);
+    expect(membrane?.packageInfo?.count).toBe(2);
+    expect(membrane?.purchaseQty).toBe(150);
   });
 
-  describe("Шифер", () => {
+  it("округляет листовое основание по фактическому листу", () => {
     const result = calc({
-      roofingType: 4,
-      area: 80,
-      slope: 30,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+      ...baseInputs,
+      deckProjectAreaM2: 100,
+      deckReservePercent: 10,
+      deckSheetAreaM2: 3.125,
     });
+    const deck = findMaterial(result, "Сплошное листовое основание");
 
-    it("кровельный материал присутствует", () => {
-      // Engine: "Шифер (лист 1.13×1.75 м)"
-      expect(findMaterial(result, "Шифер")).toBeDefined();
-    });
-
-    it("указаны шиферные гвозди и условие выбора длины", () => {
-      const nails = findMaterial(result, "Шиферные гвозди 4,5×120 мм");
-      expect(nails).toBeDefined();
-      expect(nails?.subtitle).toContain("высоте волны");
-    });
+    expect(deck?.packageInfo?.count).toBe(36);
+    expect(deck?.purchaseQty).toBe(112.5);
   });
 
-  describe("Предупреждения", () => {
-    it("металлочерепица при уклоне < 14° → предупреждение", () => {
-      const result = calc({
-        roofingType: 0,
-        area: 80,
-        slope: 10,
-        ridgeLength: 8,
-        sheetWidth: 1.18,
-        sheetLength: 2.5,
-      });
-      expect(result.warnings.some((w) => w.includes("14°"))).toBe(true);
+  it("обрешётку и контробрешётку добавляет только по проектному метражу", () => {
+    const result = calc({
+      ...baseInputs,
+      battenProjectLengthM: 300,
+      battenReservePercent: 5,
+      battenBoardLengthM: 6,
+      counterBattenProjectLengthM: 100,
+      counterBattenReservePercent: 5,
+      counterBattenBoardLengthM: 6,
     });
 
-    it("мягкая черепица при уклоне < 12° → предупреждение", () => {
-      const result = calc({
-        roofingType: 1,
-        area: 80,
-        slope: 10,
-        ridgeLength: 8,
-        sheetWidth: 1.18,
-        sheetLength: 2.5,
-      });
-      expect(result.warnings.some((w) => w.includes("12°"))).toBe(true);
-    });
+    expect(findMaterial(result, "Обрешётка")?.packageInfo?.count).toBe(53);
+    expect(findMaterial(result, "Контробрешётка")?.packageInfo?.count).toBe(18);
   });
 
-  describe("Сплошная обрешётка при пологом уклоне (СП 17.13330.2017)", () => {
-    // Уклон 30° — стандартный шаг 0.35 м
-    const slope30 = calc({
-      roofingType: 0,
-      area: 80,
-      slope: 30,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+  it("крепёж округляет по введённой фасовке без нормы на м²", () => {
+    const result = calc({
+      ...baseInputs,
+      fastenersProjectPcs: 700,
+      fastenersReservePercent: 5,
+      fastenersPackagePcs: 250,
+    });
+    const fasteners = findMaterial(result, "Крепёж из проектной ведомости");
+
+    expect(fasteners?.quantity).toBe(700);
+    expect(fasteners?.withReserve).toBe(735);
+    expect(fasteners?.packageInfo?.count).toBe(3);
+    expect(fasteners?.purchaseQty).toBe(750);
+  });
+
+  it("снегозадержание появляется только по проектной длине", () => {
+    const result = calc({
+      ...baseInputs,
+      snowGuardProjectM: 12,
+      snowGuardReservePercent: 0,
+      snowGuardSectionUsefulLengthM: 3,
     });
 
-    // Уклон 10° — переход на сплошную обрешётку (шаг 0.1 м), досок в 3.5 раза больше
-    const slope10 = calc({
-      roofingType: 0,
-      area: 80,
-      slope: 10,
-      ridgeLength: 8,
-      sheetWidth: 1.18,
-      sheetLength: 2.5,
+    expect(findMaterial(result, "Снегозадержание")?.packageInfo?.count).toBe(4);
+  });
+
+  it("выдаёт предметные предупреждения о незаполненных фасовках", () => {
+    const result = calc({
+      ...baseInputs,
+      ridgeProjectM: 8,
+      membraneProjectAreaM2: 100,
+      fastenersProjectPcs: 500,
     });
 
-    it("обрешётка при уклоне 10° в 3.5 раза больше, чем при 30°", () => {
-      const battens30 = findMaterial(slope30, "Обрешётка")!.purchaseQty as number;
-      const battens10 = findMaterial(slope10, "Обрешётка")!.purchaseQty as number;
-      const ratio = battens10 / battens30;
-      // Шаг 0.35 → 0.1 = 3.5x доска. С учётом разной realArea (но slope*60° vs slope*30° даёт
-      // разную realArea: 80/cos(30°)=92.4 и 80/cos(10°)=81.2). Учитывая обе разницы:
-      // battens30 ~ 92.4/0.35*1.1 = 290; battens10 ~ 81.2/0.1*1.1 = 893; ratio ≈ 3.08
-      expect(ratio).toBeGreaterThan(2.8);
-      expect(ratio).toBeLessThan(3.5);
+    expect(result.warnings.some((warning) => warning.includes("конькового элемента"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("площадь рулона"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("количество в упаковке"))).toBe(true);
+  });
+
+  it("всегда показывает границу закупочного расчёта", () => {
+    const result = calc(baseInputs);
+
+    expect(result.warnings[0]).toContain("стропила");
+    expect(result.warnings[0]).toContain("нагрузки");
+    expect(result.warnings[0]).toContain("не проектируются");
+  });
+
+  it("сохраняет закупочные инварианты для полного набора позиций", () => {
+    const result = calc({
+      ...baseInputs,
+      ridgeProjectM: 8,
+      ridgeElementUsefulLengthM: 1.9,
+      valleyProjectM: 6,
+      valleyElementUsefulLengthM: 1.8,
+      eavesProjectM: 20,
+      eavesElementUsefulLengthM: 1.9,
+      membraneProjectAreaM2: 110,
+      membraneRollCoverageM2: 75,
+      deckProjectAreaM2: 100,
+      deckSheetAreaM2: 3.125,
+      battenProjectLengthM: 300,
+      battenBoardLengthM: 6,
+      counterBattenProjectLengthM: 100,
+      counterBattenBoardLengthM: 6,
+      fastenersProjectPcs: 700,
+      fastenersPackagePcs: 250,
+      snowGuardProjectM: 12,
+      snowGuardSectionUsefulLengthM: 3,
+      sealingTapeProjectM: 150,
+      sealingTapeRollLengthM: 25,
     });
 
-    it("при уклоне 10° есть warning о сплошной обрешётке по СП 17.13330", () => {
-      const hasSheathingWarning = slope10.warnings.some((w) =>
-        w.includes("сплошной") && w.includes("СП 17.13330"),
-      );
-      expect(hasSheathingWarning).toBe(true);
-    });
+    expect(result.materials).toHaveLength(11);
+    checkInvariants(result);
+  });
 
-    it("при уклоне 30° (норма) — backward-compat, нет warning о сплошной", () => {
-      const hasSheathingWarning = slope30.warnings.some((w) =>
-        w.includes("сплошной"),
-      );
-      expect(hasSheathingWarning).toBe(false);
-    });
-
-    it("граница 15°: ровно на пороге → стандартный шаг (>= threshold)", () => {
-      const slope15 = calc({
-        roofingType: 0,
-        area: 80,
-        slope: 15,
-        ridgeLength: 8,
-        sheetWidth: 1.18,
-        sheetLength: 2.5,
-      });
-      const hasSheathingWarning = slope15.warnings.some((w) =>
-        w.includes("сплошной"),
-      );
-      expect(hasSheathingWarning).toBe(false);
-    });
+  it("контент не обещает автопроектирование кровли", () => {
+    expect(roofingDef.h1).toContain("по проекту");
+    expect(roofingDef.formulaDescription).toContain("готовой проектной ведомости");
+    expect(roofingDef.seoContent?.descriptionHtml).toContain("не назначает стропила");
+    expect(roofingDef.seoContent?.descriptionHtml).not.toContain("1 элемент / 3 м");
   });
 });

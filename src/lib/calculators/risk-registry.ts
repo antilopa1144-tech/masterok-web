@@ -156,7 +156,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
     ],
   ),
   pending("podvesnoy-potolok-gkl", "drywall-ceiling", "P0", ["structural_safety", "complex_geometry", "multi_material"]),
-  pending("krovlya", "roofing", "P0", ["structural_safety", "moisture_risk", "large_purchase"]),
+  implementationAudited(
+    "krovlya",
+    "roofing",
+    "P0",
+    ["structural_safety", "moisture_risk", "large_purchase"],
+    [
+      "canonical roofing-canonical-v3",
+      "официальные карточки СП 17.13330.2017 с изменениями 1–5, СП 20.13330.2016, СП 64.13330.2017, ГОСТ 24045-2016, ГОСТ 30340-2012, ГОСТ 32806-2014 и ГОСТ Р 58153-2018",
+      "точная суммарная площадь скатов принимается из проекта; пересчёт горизонтальной проекции по углу оставлен только для простой одно- или двускатной крыши с одинаковым уклоном",
+      "основное покрытие округляется по фактической полезной площади товара, а конёк, ендовы, карниз, мембрана, основание, обрешётка, контробрешётка, крепёж, снегозадержатели и лента — только по проектной ведомости и реальным фасовкам",
+      "удалены квадратная аппроксимация периметра, скрытый коэффициент сложности и автоматическое назначение элементов кровельной системы; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
+    ],
+  ),
   pending("kalkulyator-lestnicy", "stairs", "P0", ["structural_safety", "complex_geometry"]),
   implementationAudited(
     "elektrika",

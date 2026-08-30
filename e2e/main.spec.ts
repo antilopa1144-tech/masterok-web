@@ -202,6 +202,42 @@ test.describe("Калькулятор материалов каркасного 
   });
 });
 
+test.describe("Калькулятор материалов кровли", () => {
+  test("v3 считает закупку по полезной площади товара и не проектирует крышу", async ({ page }) => {
+    await page.goto("/kalkulyatory/krovlya/krovlya/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("Кровля");
+    await expect(page.getByLabel("Как задана площадь кровли").first()).toHaveValue("0");
+    await expect(page.getByLabel("Суммарная площадь скатов").first()).toHaveValue("100");
+
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: /Дополнительные параметры/,
+    });
+    if (await mobileAdditionalFields.isVisible()) {
+      await mobileAdditionalFields.click();
+    }
+
+    await page.getByLabel("Полезная площадь одной покупной единицы").first().fill("2.5");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Металлочерепица — выбранный товар");
+    await expect(resultCard).toContainText(/44\s*лист/);
+    await expect(resultCard).toContainText(/110\s*м²/);
+    await expect(resultCard).not.toContainText("Снегозадержание");
+    await expect(resultCard).not.toContainText("Обрешётка");
+    await expect(resultCard).not.toContainText("Крепёж из проектной ведомости");
+    await expect(
+      page.getByText(/Это закупочный расчёт по принятому проекту/i).first(),
+    ).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");

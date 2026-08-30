@@ -996,91 +996,32 @@ export interface RoofingTypeSpec {
   label: string;
 }
 
-export interface RoofingComplexitySpec {
-  id: number;
-  key: string;
-  label: string;
-  coefficient: number;
-}
-
-export interface RoofingGenericSheetSpec {
-  id: number;
-  key: string;
-  label: string;
-  effective_width: number;
-  effective_height: number;
-  area: number;
-  fasteners_per_m2: number;
-}
-
 export interface RoofingPackagingRules {
-  sheet_unit: string;
-  tile_unit: string;
-  pack_unit: string;
+  max_scenario_reserve_floor_percent: number;
 }
 
 export interface RoofingMaterialRules {
-  metal_tile_overlap_horizontal_m: number;
-  metal_tile_overlap_vertical_m: number;
-  metal_tile_screws_per_m2: number;
-  metal_tile_ridge_element_m: number;
-  metal_tile_ridge_reserve: number;
-  metal_tile_snow_guard_spacing_m: number;
-  metal_tile_waterproofing_reserve: number;
-  metal_tile_waterproofing_roll_m2: number;
-  metal_tile_batten_step_m: number;
-  metal_tile_batten_reserve: number;
-  metal_tile_counter_batten_step_m: number;
-  metal_tile_counter_batten_reserve: number;
-  /**
-   * Порог уклона (град), ниже которого обрешётка под металлочерепицу должна
-   * быть сплошной (по СП 17.13330.2017 — критическая точка для прочности
-   * под снеговой нагрузкой). При slope < threshold engine переключает шаг
-   * обрешётки с metal_tile_batten_step_m на solid_sheathing_step_m.
-   * Опциональное поле для backward-compatibility.
-   */
-  solid_sheathing_slope_threshold_deg?: number;
-  /**
-   * Шаг обрешётки при пологом уклоне (фактически — сплошной настил доска
-   * к доске). Опциональное поле, default ~ 0.1 м (доска 100 мм впритык).
-   */
-  solid_sheathing_step_m?: number;
-  soft_pack_area_m2: number;
-  soft_underlayment_roll_m2: number;
-  soft_underlayment_reserve: number;
-  soft_mastic_bucket_kg: number;
-  soft_nails_kg_per_m2_low_slope: number;
-  soft_nails_kg_per_m2_high_slope: number;
-  soft_nails_high_slope_threshold: number;
-  soft_nails_reserve: number;
-  soft_nail_box_kg: number;
-  soft_ridge_element_m: number;
-  soft_ridge_reserve: number;
-  soft_osb_sheet_m2: number;
-  soft_osb_reserve: number;
-  soft_vent_area_m2: number;
-  soft_low_slope_threshold: number;
-  generic_ridge_element_m: number;
-  generic_ridge_reserve: number;
-  generic_waterproofing_reserve: number;
-  generic_waterproofing_roll_m2: number;
-}
-
-export interface RoofingWarningRules {
-  metal_tile_min_slope: number;
-  soft_roofing_min_slope: number;
-  large_roof_area_threshold: number;
+  roof_area_mode_codes: {
+    project_slope_area: number;
+    simple_projection_and_slope: number;
+  };
+  primary_package_units: Record<string, string>;
 }
 
 export interface RoofingCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
     roofing_types: RoofingTypeSpec[];
-    complexity_profiles: RoofingComplexitySpec[];
-    generic_sheet_specs: RoofingGenericSheetSpec[];
+    slope_area: string;
+    primary_covering: string;
+    project_lines: string;
   };
   packaging_rules: RoofingPackagingRules;
   material_rules: RoofingMaterialRules;
-  warnings_rules: RoofingWarningRules;
+  warnings_rules: Record<string, never>;
+  scenario_policy: CanonicalCalculatorSpecBase["scenario_policy"] & {
+    max_reserve_floor_percent: number;
+  };
+  evidence: ConcreteEvidenceSpec;
 }
 
 export interface AeratedConcreteBlockSizeSpec {

@@ -3,220 +3,574 @@ import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalRoofing } from "../../../../engine/roofing";
 import roofingSpec from "../../../../configs/calculators/roofing-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
-import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
 
-const roofingManufacturerField = buildManufacturerField("roofing");
+const hideProjectArea = { key: "roofAreaMode", op: "eq" as const, value: 1 };
+const hideProjectionArea = { key: "roofAreaMode", op: "eq" as const, value: 0 };
+const hideWithoutRidge = { key: "ridgeProjectM", op: "eq" as const, value: 0 };
+const hideWithoutValley = { key: "valleyProjectM", op: "eq" as const, value: 0 };
+const hideWithoutEaves = { key: "eavesProjectM", op: "eq" as const, value: 0 };
+const hideWithoutMembrane = { key: "membraneProjectAreaM2", op: "eq" as const, value: 0 };
+const hideWithoutDeck = { key: "deckProjectAreaM2", op: "eq" as const, value: 0 };
+const hideWithoutBatten = { key: "battenProjectLengthM", op: "eq" as const, value: 0 };
+const hideWithoutCounterBatten = { key: "counterBattenProjectLengthM", op: "eq" as const, value: 0 };
+const hideWithoutFasteners = { key: "fastenersProjectPcs", op: "eq" as const, value: 0 };
+const hideWithoutSnowGuard = { key: "snowGuardProjectM", op: "eq" as const, value: 0 };
+const hideWithoutTape = { key: "sealingTapeProjectM", op: "eq" as const, value: 0 };
 
 export const roofingDef: CalculatorDefinition = {
   id: "roofing_unified",
   slug: "krovlya",
-  title: "Калькулятор кровли",
-  h1: "Калькулятор кровли онлайн — расчёт материалов для крыши",
-  description: "Рассчитайте материалы для кровли: металлочерепица, профнастил, ондулин, мягкая черепица, шифер. Учёт уклона и сопутствующих материалов.",
-  metaTitle: withSiteMetaTitle("Калькулятор кровли: расчёт материалов онлайн"),
-  metaDescription: "Бесплатный калькулятор кровли: рассчитайте металлочерепицу, профнастил, ондулин, шифер, крепёж и доборные элементы с учётом уклона крыши.",
+  title: "Калькулятор материалов кровли",
+  h1: "Кровля — закупка материалов по проекту и фактическим фасовкам",
+  description:
+    "Переведите площадь скатов и готовую проектную ведомость в листы, упаковки, планки, рулоны, доски, крепёж и секции к покупке.",
+  metaTitle: withSiteMetaTitle("Кровля: расчёт материалов по проекту"),
+  metaDescription:
+    "Бесплатный калькулятор материалов кровли: рассчитайте покрытие, доборные элементы, мембрану, основание, пиломатериал и крепёж по проектным количествам и реальным фасовкам.",
   category: "roofing",
   categorySlug: "krovlya",
-  tags: ["кровля", "крыша", "металлочерепица", "профнастил", "ондулин", "мягкая черепица"],
+  tags: [
+    "кровля",
+    "крыша",
+    "металлочерепица",
+    "профнастил",
+    "битумная черепица",
+    "материалы по проекту",
+  ],
   popularity: 85,
-  complexity: 2,
+  complexity: 3,
   fields: [
     {
+      key: "roofAreaMode",
+      label: "Как задана площадь кровли",
+      type: "select",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Сумма площадей скатов из проекта или обмера" },
+        { value: 1, label: "Простая крыша: проекция со свесами + уклон" },
+      ],
+      hint: "Для вальмовой, мансардной, многощипцовой и любой сложной крыши используйте только готовую сумму площадей скатов",
+      group: "Площадь скатов",
+    },
+    {
+      key: "projectSlopeAreaM2",
+      label: "Суммарная площадь скатов",
+      type: "number",
+      unit: "м²",
+      min: 1,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 100,
+      hideIf: hideProjectArea,
+      hint: "Площадь вместе со свесами, но без закупочного запаса",
+      group: "Площадь скатов",
+    },
+    {
+      key: "planProjectionAreaM2",
+      label: "Горизонтальная проекция скатов со свесами",
+      type: "number",
+      unit: "м²",
+      min: 1,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 80,
+      hideIf: hideProjectionArea,
+      hint: "Не площадь дома по стенам: карнизные и фронтонные свесы уже должны входить",
+      group: "Площадь скатов",
+    },
+    {
+      key: "slopeDeg",
+      label: "Одинаковый уклон простых скатов",
+      type: "number",
+      unit: "°",
+      min: 1,
+      max: 75,
+      step: 1,
+      defaultValue: 30,
+      hideIf: hideProjectionArea,
+      group: "Площадь скатов",
+    },
+    {
       key: "roofingType",
-      label: "Тип кровельного материала",
+      label: "Тип основного покрытия",
       type: "select",
       defaultValue: 0,
       options: [
         { value: 0, label: "Металлочерепица" },
         { value: 1, label: "Мягкая черепица (битумная)" },
         { value: 2, label: "Профнастил" },
-        { value: 3, label: "Ондулин" },
-        { value: 4, label: "Шифер" },
-        { value: 5, label: "Керамическая черепица" },
+        { value: 3, label: "Битумный волнистый лист" },
+        { value: 4, label: "Хризотилцементный волнистый лист" },
+        { value: 5, label: "Керамическая или цементно-песчаная черепица" },
       ],
+      hint: "Тип меняет название покупной единицы, но не подставляет скрытые нормы производителя",
+      group: "Основное покрытие",
     },
     {
-      key: "area",
-      label: "Площадь кровли (в плане)",
-      type: "slider",
+      key: "primaryCoverageM2",
+      label: "Полезная площадь одной покупной единицы",
+      type: "number",
       unit: "м²",
-      min: 10,
-      max: 500,
-      step: 5,
-      defaultValue: 80,
-      hint: "Площадь горизонтальной проекции крыши",
+      min: 0,
+      max: 1000,
+      step: 0.001,
+      defaultValue: 1,
+      hint: "Для листа, упаковки или одной черепицы — по маркировке выбранного товара с учётом штатных нахлёстов",
+      group: "Основное покрытие",
     },
     {
-      key: "slope",
-      label: "Уклон крыши",
-      type: "slider",
-      unit: "°",
-      min: 5,
-      max: 60,
+      key: "primaryReservePercent",
+      label: "Запас основного покрытия по раскладке",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
       step: 1,
-      defaultValue: 30,
+      defaultValue: 10,
+      hint: "Запас задаёт пользователь или проект; форма крыши не заменяется условным коэффициентом сложности",
+      group: "Основное покрытие",
     },
     {
-      key: "ridgeLength",
-      label: "Длина конька",
-      type: "slider",
+      key: "ridgeProjectM",
+      label: "Длина коньковых элементов из ведомости",
+      type: "number",
       unit: "м",
-      min: 1,
-      max: 30,
-      step: 0.5,
-      defaultValue: 8,
-    },
-    {
-      key: "sheetWidth",
-      label: "Полная ширина листа",
-      type: "slider",
-      unit: "м",
-      min: 0.8,
-      max: 1.5,
-      step: 0.01,
-      defaultValue: 1.18,
-      hint: "Введите размер по этикетке. Например, при полной ширине 1,18 м полезная после бокового нахлёста обычно около 1,10 м.",
-    },
-    {
-      key: "sheetLength",
-      label: "Длина листа",
-      type: "slider",
-      unit: "м",
-      min: 1,
-      max: 8,
-      step: 0.5,
-      defaultValue: 2.5,
-    },
-    {
-      key: "complexity",
-      label: "Сложность крыши",
-      type: "select",
+      min: 0,
+      max: 10000,
+      step: 0.1,
       defaultValue: 0,
-      options: [
-        { value: 0, label: "Простая (1-2 ската)" },
-        { value: 1, label: "Средняя (вальмовая, многощипцовая)" },
-        { value: 2, label: "Сложная (эркеры, башенки, много ендов)" },
-      ],
+      hint: "0 — не включать эту позицию",
+      group: "Доборные элементы",
     },
-    ...(roofingManufacturerField ? [roofingManufacturerField] : []),
+    {
+      key: "ridgeReservePercent",
+      label: "Запас коньковых элементов",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutRidge,
+      group: "Доборные элементы",
+    },
+    {
+      key: "ridgeElementUsefulLengthM",
+      label: "Полезная длина одного конькового элемента",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100,
+      step: 0.01,
+      defaultValue: 0,
+      hideIf: hideWithoutRidge,
+      hint: "Уже после вычета нахлёста по инструкции выбранной системы",
+      group: "Доборные элементы",
+    },
+    {
+      key: "valleyProjectM",
+      label: "Длина ендовных элементов из ведомости",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 0,
+      group: "Доборные элементы",
+    },
+    {
+      key: "valleyReservePercent",
+      label: "Запас ендовных элементов",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutValley,
+      group: "Доборные элементы",
+    },
+    {
+      key: "valleyElementUsefulLengthM",
+      label: "Полезная длина одного ендовного элемента",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100,
+      step: 0.01,
+      defaultValue: 0,
+      hideIf: hideWithoutValley,
+      group: "Доборные элементы",
+    },
+    {
+      key: "eavesProjectM",
+      label: "Длина карнизных планок из ведомости",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 0,
+      group: "Доборные элементы",
+    },
+    {
+      key: "eavesReservePercent",
+      label: "Запас карнизных планок",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutEaves,
+      group: "Доборные элементы",
+    },
+    {
+      key: "eavesElementUsefulLengthM",
+      label: "Полезная длина одной карнизной планки",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100,
+      step: 0.01,
+      defaultValue: 0,
+      hideIf: hideWithoutEaves,
+      group: "Доборные элементы",
+    },
+    {
+      key: "membraneProjectAreaM2",
+      label: "Площадь кровельной мембраны из проекта",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Тип, слои, нахлёсты и вентиляционные зазоры должны быть определены проектом",
+      group: "Мембрана и основание",
+    },
+    {
+      key: "membraneReservePercent",
+      label: "Запас мембраны",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 15,
+      hideIf: hideWithoutMembrane,
+      group: "Мембрана и основание",
+    },
+    {
+      key: "membraneRollCoverageM2",
+      label: "Полезная площадь одного рулона мембраны",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 1000,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutMembrane,
+      hint: "По фактическому рулону и принятой схеме нахлёстов",
+      group: "Мембрана и основание",
+    },
+    {
+      key: "deckProjectAreaM2",
+      label: "Площадь сплошного листового основания из проекта",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "0 — не включать; толщину и шаг опор калькулятор не подбирает",
+      group: "Мембрана и основание",
+    },
+    {
+      key: "deckReservePercent",
+      label: "Запас листового основания",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutDeck,
+      group: "Мембрана и основание",
+    },
+    {
+      key: "deckSheetAreaM2",
+      label: "Площадь одного листа основания",
+      type: "number",
+      unit: "м²",
+      min: 0,
+      max: 100,
+      step: 0.001,
+      defaultValue: 0,
+      hideIf: hideWithoutDeck,
+      group: "Мембрана и основание",
+    },
+    {
+      key: "battenProjectLengthM",
+      label: "Длина одной позиции обрешётки из ведомости",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Шаг, сечение и сорт принимает проект; разные позиции считайте отдельно",
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "battenReservePercent",
+      label: "Запас обрешётки на раскрой",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutBatten,
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "battenBoardLengthM",
+      label: "Длина покупной доски обрешётки",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 20,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutBatten,
+      hint: "Общий метраж не заменяет карту раскроя",
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "counterBattenProjectLengthM",
+      label: "Длина одной позиции контробрешётки из ведомости",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100000,
+      step: 0.1,
+      defaultValue: 0,
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "counterBattenReservePercent",
+      label: "Запас контробрешётки на раскрой",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutCounterBatten,
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "counterBattenBoardLengthM",
+      label: "Длина покупного бруска контробрешётки",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 20,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutCounterBatten,
+      group: "Пиломатериал из проекта",
+    },
+    {
+      key: "fastenersProjectPcs",
+      label: "Количество одной позиции крепежа из ведомости",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 1000000,
+      step: 1,
+      defaultValue: 0,
+      hint: "Тип, размер, шаг и зоны крепления определяет проект или инструкция системы",
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "fastenersReservePercent",
+      label: "Запас крепежа",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutFasteners,
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "fastenersPackagePcs",
+      label: "Количество крепежа в упаковке",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 100000,
+      step: 1,
+      defaultValue: 0,
+      hideIf: hideWithoutFasteners,
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "snowGuardProjectM",
+      label: "Длина снегозадержания из проекта",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 10000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Количество рядов и опор должно быть определено по нагрузкам и геометрии",
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "snowGuardReservePercent",
+      label: "Запас снегозадержателей",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+      hideIf: hideWithoutSnowGuard,
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "snowGuardSectionUsefulLengthM",
+      label: "Полезная длина одной секции снегозадержателя",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100,
+      step: 0.01,
+      defaultValue: 0,
+      hideIf: hideWithoutSnowGuard,
+      group: "Крепёж и безопасность",
+    },
+    {
+      key: "sealingTapeProjectM",
+      label: "Длина системной ленты из раскладки",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 100000,
+      step: 0.1,
+      defaultValue: 0,
+      hint: "Для стыков мембран и примыканий; 0 — не включать",
+      group: "Герметизация",
+    },
+    {
+      key: "sealingTapeReservePercent",
+      label: "Запас системной ленты",
+      type: "number",
+      unit: "%",
+      min: 0,
+      max: 50,
+      step: 1,
+      defaultValue: 10,
+      hideIf: hideWithoutTape,
+      group: "Герметизация",
+    },
+    {
+      key: "sealingTapeRollLengthM",
+      label: "Длина одного рулона ленты",
+      type: "number",
+      unit: "м",
+      min: 0,
+      max: 1000,
+      step: 0.1,
+      defaultValue: 0,
+      hideIf: hideWithoutTape,
+      group: "Герметизация",
+    },
   ],
   calculate(inputs) {
-    const spec = roofingSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalRoofing(spec, inputs, factorTable);
-
-    const manufacturer = getManufacturerByIndex("roofing", inputs.manufacturer);
-    const materials = manufacturer
-      ? canonical.materials.map((m) =>
-          m.category === "Основное" || /металлочереп|черепиц|профнастил|профлист|ондулин|кровл|мягкая/i.test(m.name)
-            ? { ...m, name: `${m.name} — ${manufacturer.name}` }
-            : m
-        )
-      : canonical.materials;
-
-    return {
-      materials,
-      totals: canonical.totals,
-      warnings: canonical.warnings,
-      scenarios: canonical.scenarios,
-      formulaVersion: canonical.formulaVersion,
-      canonicalSpecId: canonical.canonicalSpecId,
-      practicalNotes: canonical.practicalNotes ?? [],
-      accuracyMode: canonical.accuracyMode,
-      accuracyExplanation: canonical.accuracyExplanation,
-    };
+    return computeCanonicalRoofing(
+      roofingSpec as never,
+      inputs,
+      defaultFactorTables.factors as never,
+    );
   },
   formulaDescription: `
-**Расчёт кровли (практика РФ):**
+**Закупка материалов кровли по проекту:**
 
-1. **Геометрия**: Площадь скатов = Площадь дома / cos(угла).
-2. **Запас на подрезку**: 
-   - Двускатная: 5%
-   - Вальмовая: 15%
-   - Сложная: до 25-30% (много треугольных обрезков).
-3. **Пирог**: Обязательно учитывается контрбрус (вентзазор) и супердиффузионная мембрана.
-4. **Доборка**: Конёк и планки считаются с нахлёстом 10-15 см на каждый элемент.
+1. **Площадь скатов** — из проекта или обмера. Только для простой одно- или двухскатной крыши допустимо: проекция со свесами / cos(уклона).
+2. **Основное покрытие** — площадь скатов × явный запас / полезная площадь реального листа, упаковки или одной черепицы.
+3. **Доборные и сопутствующие позиции** — количество из готовой проектной ведомости × явный запас / полезная длина, площадь или фасовка товара.
+4. **К покупке** — всегда округление вверх до целых листов, упаковок, рулонов, досок, секций или других покупных единиц.
   `,
   howToUse: [
-    "Укажите площадь дома по фундаменту (в плане)",
-    "Задайте угол наклона крыши (стандарт 30-45°)",
-    "Выберите тип материала и сложность формы крыши",
-    "Нажмите «Рассчитать» — вы получите список от листов до саморезов",
+    "Возьмите сумму площадей скатов из проекта или обмера; для простой крыши можно использовать проекцию со свесами и одинаковый уклон",
+    "Выберите покрытие и перенесите полезную площадь одной покупной единицы из документации товара",
+    "Добавьте только те доборные и сопутствующие позиции, количества которых уже определены проектом",
+    "Сверьте результат к покупке с раскладкой, картой раскроя и спецификацией кровельной системы",
   ],
   expertTips: [
     {
-      title: "Конденсат и вентзазор",
-      content: "Никогда не экономьте на контрбрусе (брусок 50х50 поверх пленки). Без него влага будет скапливаться на обрешетке, что приведет к гниению дерева за 3-5 лет.",
-      author: "Кровельщик со стажем"
+      title: "Полезная площадь важнее полной",
+      content:
+        "Размер листа на ценнике не равен площади покрытия. Для закупки нужна полезная площадь после штатных боковых и продольных нахлёстов конкретного профиля.",
+      author: "Проектная граница калькулятора",
     },
     {
-      title: "Длина листа",
-      content: "Не заказывайте листы металлочерепицы длиннее 4.5 метров. Их крайне сложно поднимать без деформации, и температурное расширение может «порвать» саморезы.",
-      author: "Прораб"
-    }
+      title: "Один метраж не заменяет раскрой",
+      content:
+        "Планки и пиломатериал разных длин и сечений считайте отдельными позициями. Иначе округление общего метража может скрыть нехватку цельных элементов.",
+      author: "Практика комплектации",
+    },
   ],
   faq: [
     {
-      question: "Нужны ли снегозадержатели?",
+      question: "Почему калькулятор не подбирает стропила и шаг обрешётки?",
       answer:
-        "Для скатов с металлом и гладким покрытием — да, над зонами ходьбы, парковки и входов: снижают риск схода снега лавиной на людей и водосток. На длинных скатах делают несколько рядов по проекту.",
+        "Потому что эти решения зависят от снеговых и ветровых нагрузок, пролётов, опор, материала, выбранного покрытия и узлов. Их определяет проект; калькулятор переводит уже принятую ведомость в покупные единицы.",
     },
     {
-      question: "Какая мембрана лучше?",
+      question: "Можно ли считать площадь крыши по площади дома?",
       answer:
-        "Под утеплённую кровлю обычно берут супердиффузионную мембрану по паспорту кровельной системы: паропроницаемость, UV при открытом монтаже, прочность и проклейка нахлёстов. Весь пирог — по СП 17 и инструкции производителя.",
+        "Только для простой одно- или двухскатной крыши с одинаковым уклоном и только если горизонтальная проекция уже включает свесы. Для вальмовой, мансардной, многощипцовой крыши и скатов с разными уклонами нужна сумма площадей из проекта или обмера.",
+    },
+    {
+      question: "Почему крепёж и снегозадержатели не появляются автоматически?",
+      answer:
+        "Универсальная норма по квадратному метру не учитывает профиль, зоны крепления, ветровые усилия, длину ската и число рядов. Введите проектное количество конкретной позиции и её фактическую фасовку.",
     },
   ],
   seoContent: {
     descriptionHtml: `
-<h2>Формула расчёта кровельных материалов</h2>
-<p>Эта страница предназначена для общего расчёта и сравнения покрытий. Для подробной комплектации гибкой черепицы с ендовами, карнизами и подкладочным ковром используйте <a href="/kalkulyatory/krovlya/myagkaya-krovlya/">отдельный калькулятор мягкой кровли</a>.</p>
-<p>Реальная площадь скатов определяется с учётом угла наклона крыши:</p>
-<p><strong>S<sub>скатов</sub> = S<sub>плана</sub> / cos(&alpha;)</strong></p>
-<ul>
-  <li><strong>S<sub>плана</sub></strong> — площадь горизонтальной проекции крыши (м&sup2;)</li>
-  <li><strong>&alpha;</strong> — угол наклона крыши (градусы)</li>
-</ul>
-<p>Количество листов кровельного материала:</p>
-<p><strong>N = &lceil;S<sub>скатов</sub> &times; K<sub>запас</sub> / S<sub>листа</sub>&rceil;</strong></p>
+<h2>Что считает калькулятор материалов кровли</h2>
+<p>Калькулятор переводит готовую площадь скатов и проектные количества в покупные единицы выбранных товаров. Он показывает точную потребность, явный запас, округление по фасовке и остаток.</p>
+<p><strong>Основное покрытие:</strong> N = &lceil;S &times; (1 + Z / 100) / S<sub>полезная</sub>&rceil;, где S — площадь скатов, Z — заданный запас, S<sub>полезная</sub> — полезная площадь одного листа, упаковки или одной черепицы.</p>
 
-<h2>Коэффициенты запаса по сложности крыши</h2>
-<table>
-  <thead>
-    <tr><th>Сложность крыши</th><th>Запас на подрезку</th><th>Пример</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Простая (1–2 ската)</td><td>5%</td><td>Двускатная, односкатная</td></tr>
-    <tr><td>Средняя (вальмовая)</td><td>15%</td><td>Четырёхскатная, многощипцовая</td></tr>
-    <tr><td>Сложная (эркеры, башни)</td><td>25–30%</td><td>С ендовами, слуховыми окнами</td></tr>
-  </tbody>
-</table>
+<h2>Граница расчёта</h2>
+<p>СП 17.13330.2017 распространяется на проектирование кровель разных систем, СП 20.13330.2016 — на нагрузки, а СП 64.13330.2017 — на расчёт деревянных конструкций. Поэтому калькулятор не назначает стропила, прогоны, обрешётку, кровельный пирог, крепёж или снегозадержание по одной площади крыши.</p>
+<p>Полезные размеры и фасовки берутся из маркировки и инструкции конкретного товара. Это особенно важно для металлочерепицы, профнастила, битумной и штучной черепицы: одинаковая полная площадь может давать разную полезную площадь покрытия.</p>
 
-<h2>Нормативная база</h2>
-<p>Проектирование и устройство кровель регламентируется <strong>СП 17.13330.2017</strong> «Кровли» (актуализированная редакция СНиП II-26-76). Стандарт определяет минимальные уклоны для каждого типа покрытия, конструкцию кровельного пирога, требования к вентиляции подкровельного пространства и водоотводу.</p>
-
-<h2>Минимальные уклоны по типу материала</h2>
-<ul>
-  <li><strong>Металлочерепица</strong> — от 14&deg; (1:4)</li>
-  <li><strong>Профнастил</strong> — от 8&deg; (1:7)</li>
-  <li><strong>Гибкая черепица</strong> — от 12&deg; (1:5)</li>
-  <li><strong>Ондулин</strong> — от 6&deg; (1:10)</li>
-  <li><strong>Керамическая черепица</strong> — от 22&deg; (1:2.5)</li>
-</ul>
-<p>При уклоне ниже рекомендуемого возрастает риск протечек, задувания снега и застоя воды на стыках листов.</p>
-`,
+<h2>Как получить надёжный результат</h2>
+<ol>
+  <li>Для сложной крыши перенесите сумму площадей всех скатов из проекта.</li>
+  <li>Введите полезную площадь одной покупной единицы покрытия.</li>
+  <li>Добавьте коньки, ендовы, карнизы, мембрану, основание, пиломатериал, крепёж и снегозадержатели только по готовой ведомости.</li>
+  <li>Разделите разные типоразмеры на отдельные расчёты и сверьте результат с раскладкой.</li>
+</ol>
+    `,
     faq: [
       {
-        question: "Как рассчитать площадь кровли по площади дома?",
-        answer: "<p>Площадь скатов кровли рассчитывается из площади горизонтальной проекции и угла наклона:</p><p><strong>S<sub>скатов</sub> = S<sub>дома</sub> / cos(&alpha;)</strong></p><p>Примеры для дома 10&times;8 м (80 м&sup2;):</p><table><thead><tr><th>Угол, &deg;</th><th>cos(&alpha;)</th><th>S скатов, м&sup2;</th></tr></thead><tbody><tr><td>15</td><td>0.966</td><td>83</td></tr><tr><td>30</td><td>0.866</td><td>92</td></tr><tr><td>45</td><td>0.707</td><td>113</td></tr></tbody></table><p>К площади скатов добавляют свесы карнизов (обычно 0.3–0.5 м по периметру), что увеличивает реальную площадь кровли на <strong>10–15%</strong>.</p>",
+        question: "Что означает MIN, REC и MAX?",
+        answer:
+          "Сценарии относятся только к основному покрытию: MIN — без запаса, REC — с заданным запасом, MAX — с запасом не меньше 15%. Остальные позиции используют собственные запасы из формы.",
       },
       {
-        question: "Сколько саморезов нужно на 1 м² металлочерепицы?",
-        answer: "<p>Норма расхода саморезов для металлочерепицы — <strong>6–8 шт/м&sup2;</strong> (саморезы кровельные 4.8&times;35 мм с EPDM-прокладкой). Схема крепления:</p><ul><li><strong>Нижний ряд</strong> — в каждую волну (через 350 мм)</li><li><strong>Средние ряды</strong> — через волну в шахматном порядке</li><li><strong>У конька и ендовы</strong> — в каждую волну</li></ul><p>Для кровли 100 м&sup2;: 100 &times; 7 = <strong>700 саморезов</strong>. Фасовка: упаковка 250 шт. Потребуется <strong>3 упаковки</strong>.</p>",
-      },
-      {
-        question: "Какой кровельный пирог правильный для утеплённой крыши?",
-        answer: "<p>Правильный кровельный пирог для утеплённой скатной крыши (изнутри наружу):</p><ul><li><strong>Пароизоляция</strong> — плёнка с проклейкой стыков</li><li><strong>Утеплитель</strong> — минвата 150–200 мм между стропил</li><li><strong>Супердиффузионная мембрана</strong> — паропроницаемая, влагозащитная</li><li><strong>Контрбрус</strong> — 50&times;50 мм (вентиляционный зазор)</li><li><strong>Обрешётка</strong> — шаг по типу покрытия (350 мм для металлочерепицы)</li><li><strong>Кровельное покрытие</strong></li></ul><p>Контрбрус обязателен — без него влага скапливается на обрешётке и вызывает гниение. Вентзазор должен быть <strong>не менее 40 мм</strong>.</p>",
+        question: "Что вводить для мягкой черепицы?",
+        answer:
+          "Введите площадь покрытия одной упаковки выбранной коллекции. Подкладочный ковёр, мастику, основание, аэраторы и крепёж добавляйте по проекту и системной инструкции; для детальной комплектации также доступен отдельный калькулятор мягкой кровли.",
       },
     ],
   },
