@@ -27,6 +27,11 @@ import {
   PLASTER_FINISHING_TRANSFER_FROM,
   PUTTY_FINISHING_TRANSFER_FROM,
 } from "@/lib/calculators/finishing-stage-links";
+import {
+  buildFacadeSystemLinksFromInsulationResult,
+  buildInsulationHrefFromFacadeResult,
+  INSULATION_FACADE_TRANSFER_FROM,
+} from "@/lib/calculators/facade-system-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -93,7 +98,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
-  const transferredFinishingArea = Number(searchParams.get("area"));
+  const transferredFinishingArea = Number(searchParams.get("area") ?? searchParams.get("facadeArea"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -165,6 +170,18 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildFinishLinksFromPuttyResult(result?.totals, values.surface)
       : [],
     [calculator.slug, hasCalculated, result?.totals, values.surface],
+  );
+  const facadeSystemLinks = useMemo(
+    () => calculator.slug === INSULATION_FACADE_TRANSFER_FROM && hasCalculated
+      ? buildFacadeSystemLinksFromInsulationResult(result?.totals)
+      : [],
+    [calculator.slug, hasCalculated, result?.totals],
+  );
+  const insulationFromFacadeHref = useMemo(
+    () => calculator.slug === "sayding" || calculator.slug === "fasadnye-paneli"
+      ? buildInsulationHrefFromFacadeResult(calculator.slug, result?.totals)
+      : null,
+    [calculator.slug, result?.totals],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -321,6 +338,41 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             {calculator.slug === "gruntovka" && " Уточните тип основания и необходимое число слоёв по инструкции грунта."}
             {calculator.slug === "kraska" && " Переход предполагает уже загрунтованное основание: уточните число слоёв и укрывистость выбранной краски."}
             {calculator.slug === "oboi" && " Укажите фактическую высоту, площадь проёмов, размер рулона и раппорт: эти параметры нельзя восстановить из площади шпаклевания."}
+          </div>
+        )}
+        {calculator.slug === "uteplenie-fasada-minvatoj" && transferSource === INSULATION_FACADE_TRANSFER_FROM && (
+          <div
+            className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            data-testid="wet-facade-transfer-banner"
+          >
+            Из общего расчёта перенесены площадь фасада, толщина и совместимый тип плит. Проверьте финишный слой и фактическое число плит в упаковке выбранного материала.
+          </div>
+        )}
+        {transferSource === INSULATION_FACADE_TRANSFER_FROM
+          && ["sayding", "fasadnye-paneli"].includes(calculator.slug) && (
+          <div
+            className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            data-testid="facade-cladding-transfer-banner"
+          >
+            Из утепления перенесена чистая площадь фасада
+            {Number.isFinite(transferredFinishingArea) && transferredFinishingArea > 0
+              ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            {calculator.slug === "sayding" && " Проёмы не вычитаются повторно; уточните реальный периметр, высоту, углы и тип сайдинга."}
+            {calculator.slug === "fasadnye-paneli" && " Уточните полезную площадь панели, запас, шаг подсистемы, крепёж и доборные элементы по паспорту."}
+          </div>
+        )}
+        {calculator.slug === INSULATION_FACADE_TRANSFER_FROM
+          && (transferSource === "sayding" || transferSource === "fasadnye-paneli") && (
+          <div
+            className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            data-testid="facade-insulation-transfer-banner"
+          >
+            Из облицовки перенесена рассчитанная чистая площадь фасада
+            {Number.isFinite(transferredFinishingArea) && transferredFinishingArea > 0
+              ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}
+            и выбрана каркасная система. Материал, форму, толщину, климатическую зону, запас и упаковку укажите для своего проекта.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -552,6 +604,38 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
                 ))}
               </div>
             </div>
+          )}
+          {facadeSystemLinks.length > 0 && (
+            <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3 dark:border-orange-900/50 dark:bg-orange-950/20">
+              <p className="px-1 text-sm font-semibold text-orange-900 dark:text-orange-200">
+                Продолжить расчёт фасадной системы
+              </p>
+              <p className="mt-1 px-1 text-xs leading-relaxed text-orange-800/80 dark:text-orange-300/80">
+                Ветку выбирает указанная система монтажа. Переносим только совместимые параметры без подмены материала и геометрии.
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {facadeSystemLinks.map((link) => (
+                  <Link
+                    key={link.target}
+                    href={link.href}
+                    onClick={() => trackCalculatorRelatedClick(INSULATION_FACADE_TRANSFER_FROM, link.target)}
+                    className="rounded-lg border border-orange-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-orange-400 dark:border-orange-900/70 dark:bg-slate-900"
+                  >
+                    <span className="block font-semibold text-orange-900 dark:text-orange-200">{link.title}</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">{link.description}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {insulationFromFacadeHref && (
+            <Link
+              href={insulationFromFacadeHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, INSULATION_FACADE_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            >
+              Рассчитать утеплитель под вентфасад по чистой площади <span aria-hidden>→</span>
+            </Link>
           )}
         </section>
 
