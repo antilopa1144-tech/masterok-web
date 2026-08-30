@@ -3,6 +3,7 @@ import type { WallpaperLayoutInput } from "./wallpaper-layout";
 export const WALLPAPER_CALCULATOR_PATH = "/kalkulyatory/otdelka/oboi/";
 export const WALLPAPER_LAYOUT_PATH = "/instrumenty/raskladka-oboev/";
 export const WALLPAPER_LAYOUT_TRANSFER_FROM = "raskladka-oboev";
+export const WALLPAPER_ROOM_TRANSFER_FROM = "ploshchad-komnaty";
 
 export type WallpaperVisualFinish = "botanical-sage" | "art-deco-greige" | "linen-blue" | "terracotta-arches";
 
@@ -40,6 +41,11 @@ export interface WallpaperLayoutShareValues {
   visual?: WallpaperLayoutVisualValues;
 }
 
+interface WallpaperRoomTransferInput {
+  perimeter: number;
+  height: number;
+}
+
 function round(value: number, digits = 3): number {
   const factor = 10 ** digits;
   return Math.round((value + Number.EPSILON) * factor) / factor;
@@ -72,6 +78,27 @@ export function buildWallpaperCalculatorHref(
   params.set("rapport", String(values.rapport));
   params.set("reserveRolls", String(values.reserveRolls));
   if (rollsHint != null && rollsHint > 0) params.set("rollsHint", String(Math.round(rollsHint)));
+  return `${WALLPAPER_CALCULATOR_PATH}?${params.toString()}`;
+}
+
+export function buildWallpaperCalculatorHrefFromRoom(input: WallpaperRoomTransferInput): string {
+  const perimeter = Number(input.perimeter);
+  const height = Number(input.height);
+  const canTransfer =
+    Number.isFinite(perimeter) &&
+    perimeter >= 5 &&
+    perimeter <= 60 &&
+    Number.isFinite(height) &&
+    height >= 2 &&
+    height <= 5;
+
+  if (!canTransfer) return WALLPAPER_CALCULATOR_PATH;
+
+  const params = new URLSearchParams();
+  params.set("from", WALLPAPER_ROOM_TRANSFER_FROM);
+  params.set("inputMode", "0");
+  params.set("perimeter", String(round(perimeter)));
+  params.set("height", String(round(height)));
   return `${WALLPAPER_CALCULATOR_PATH}?${params.toString()}`;
 }
 

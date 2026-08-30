@@ -14,7 +14,10 @@ import Staircase3DWrapper from "./Staircase3DWrapper";
 import Roof3DWrapper from "./Roof3DWrapper";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { pluralizeRu } from "@/lib/format/pluralize";
-import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
+import {
+  buildWallpaperLayoutHref,
+  WALLPAPER_ROOM_TRANSFER_FROM,
+} from "@/lib/tools/wallpaper-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
 import { buildTileLayoutHrefFromCalculatorValues } from "@/lib/tools/tile-layout-to-calc";
 import {
@@ -178,6 +181,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "laminat" && transferSource === LAMINATE_ROOM_TRANSFER_FROM && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
             Из расчёта комнаты перенесены {roomTransferValue}. Здесь уточните упаковку, способ укладки, запас, подложку и плинтус.
+          </div>
+        )}
+        {calculator.slug === "oboi" && transferSource === WALLPAPER_ROOM_TRANSFER_FROM && (
+          <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+            Из расчёта комнаты перенесены периметр и высота стен. Укажите площадь окон и дверей, параметры рулона, раппорт и запас.
           </div>
         )}
         {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (

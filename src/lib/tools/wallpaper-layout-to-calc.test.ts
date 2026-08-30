@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildRectangleWalls } from "./wallpaper-layout";
 import {
   buildWallpaperCalculatorHref,
+  buildWallpaperCalculatorHrefFromRoom,
   buildWallpaperCalculatorTransferValues,
   buildWallpaperLayoutHref,
   buildWallpaperLayoutShareHref,
@@ -40,6 +41,25 @@ describe("wallpaper-layout-to-calc", () => {
     expect(url.searchParams.get("from")).toBe("raskladka-oboev");
     expect(url.searchParams.get("rollWidth")).toBe("530");
     expect(url.searchParams.get("rollsHint")).toBe("13");
+  });
+
+  it("переносит периметр и высоту из расчёта комнаты", () => {
+    const url = new URL(
+      buildWallpaperCalculatorHrefFromRoom({ perimeter: 18, height: 2.7 }),
+      "https://getmasterok.ru",
+    );
+
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      from: "ploshchad-komnaty",
+      inputMode: "0",
+      perimeter: "18",
+      height: "2.7",
+    });
+  });
+
+  it("не передаёт размеры вне диапазона калькулятора обоев", () => {
+    expect(buildWallpaperCalculatorHrefFromRoom({ perimeter: 80, height: 1.8 }))
+      .toBe("/kalkulyatory/otdelka/oboi/");
   });
 
   it("понимает миллиметры ширины рулона из калькулятора", () => {
