@@ -28,6 +28,10 @@ import {
   buildWallpaperLayoutHref,
   WALLPAPER_ROOM_TRANSFER_FROM,
 } from "@/lib/tools/wallpaper-layout-to-calc";
+import {
+  BRICK_LAYOUT_TRANSFER_FROM,
+  buildBrickworkLayoutHrefFromCalculatorResult,
+} from "@/lib/tools/brickwork-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
 import {
   buildTileLayoutHrefFromCalculatorValues,
@@ -117,6 +121,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     () => calculator.slug === "teplyy-pol"
       ? buildScreedHrefFromElectricFloorResult(result?.totals)
       : null,
+    [calculator.slug, result?.totals],
+  );
+  const brickworkLayoutHref = useMemo(
+    () => buildBrickworkLayoutHrefFromCalculatorResult(calculator.slug, result?.totals),
     [calculator.slug, result?.totals],
   );
 
@@ -222,6 +230,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "styazhka" && transferSource === SCREED_TRANSFER_FROM && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
             Из электрического тёплого пола перенесена площадь всего помещения, а не только зона нагрева. Толщину и конструкцию стяжки укажите по проекту пола.
+          </div>
+        )}
+        {calculator.slug === "kladka-kirpicha" && transferSource === BRICK_LAYOUT_TRANSFER_FROM && (
+          <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+            Из раскладки перенесены размеры одного непрерывного участка, нулевая площадь проёмов, формат кирпича и допустимый шов. Толщину стены и реальные проёмы укажите по проекту.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -352,6 +365,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
             >
               Разложить листы и увидеть карту раскроя <span aria-hidden>→</span>
+            </Link>
+          )}
+          {brickworkLayoutHref && (
+            <Link
+              href={brickworkLayoutHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, "raskladka-kirpicha")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            >
+              Построить схему отдельного участка кладки <span aria-hidden>→</span>
             </Link>
           )}
           {concreteCalculatorHref && (

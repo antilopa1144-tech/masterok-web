@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { useState, useMemo, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import {
+  trackToolExport,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 import {
   calculateBrickwork,
   computeBrickSvgBoundsMm,
@@ -13,7 +20,11 @@ import {
   type BondType,
   type BrickLayoutResult,
 } from "@/lib/tools/brickwork-layout";
-import { calcHref } from "@/lib/tools/config";
+import {
+  BRICKWORK_CALCULATOR_PATH,
+  buildBrickworkCalculatorHref,
+  parseBrickworkLayoutSearchParams,
+} from "@/lib/tools/brickwork-layout-to-calc";
 
 // Оттенки кирпича: основной + варианты для баварской кладки.
 const BRICK_TONES = ["#B45309", "#92400E", "#C2683A"]; // терракот, тёмный, светлый
@@ -77,15 +88,27 @@ function BrickworkSVG({ result, jointMm }: { result: BrickLayoutResult; jointMm:
 }
 
 export default function BrickworkGenerator() {
-  const [activeStage, setActiveStage] = useState<BrickWorkspaceStage>("layout");
-  const [surfaceW, setSurfaceW] = useState(4000);
-  const [surfaceH, setSurfaceH] = useState(2700);
-  const [brickL, setBrickL] = useState(250);
-  const [brickH, setBrickH] = useState(65);
+  const searchParams = useSearchParams();
+  const transfer = useMemo(
+    () => parseBrickworkLayoutSearchParams(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+  const hasTransferredGeometry = transfer.surfaceWmm !== undefined;
+  const [activeStage, setActiveStage] = useState<BrickWorkspaceStage>(hasTransferredGeometry ? "parameters" : "layout");
+  const [surfaceW, setSurfaceW] = useState(transfer.surfaceWmm ?? 4000);
+  const [surfaceH, setSurfaceH] = useState(transfer.surfaceHmm ?? 2700);
+  const [brickL, setBrickL] = useState(transfer.brickLmm ?? 250);
+  const [brickH, setBrickH] = useState(transfer.brickHmm ?? 65);
   const [jointMm, setJointMm] = useState(10);
   const [bond, setBond] = useState<BondType>("stretcher");
   const svgRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLElement>(null);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
+  const { markStarted, selectMode } = useToolAnalytics(
+    "raskladka-kirpicha",
+    resultRef,
+    activeStage === "result",
+  );
 
   const result = useMemo(
     () => calculateBrickwork(surfaceW, surfaceH, brickL, brickH, jointMm, bond),
@@ -98,6 +121,7 @@ export default function BrickworkGenerator() {
   );
 
   const handleExportPNG = useCallback(() => {
+    markStarted("layout_mode");
     const svgEl = svgRef.current?.querySelector("svg");
     if (!svgEl) return;
     const svgData = new XMLSerializer().serializeToString(svgEl);
@@ -116,9 +140,10 @@ export default function BrickworkGenerator() {
       link.download = "brickwork-layout.png";
       link.href = canvas.toDataURL("image/png");
       link.click();
+      trackToolExport("raskladka-kirpicha", "png");
     };
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
-  }, []);
+  }, [markStarted]);
 
   const materials = useMemo(
     () => [
@@ -128,13 +153,15 @@ export default function BrickworkGenerator() {
     [result.purchaseBricks, surfaceAreaM2],
   );
 
-  const kladkaHref = calcHref({ slug: "kladka-kirpicha", categorySlug: "steny" });
+  const kladkaHref = buildBrickworkCalculatorHref({ surfaceWmm: surfaceW, surfaceHmm: surfaceH, brickLmm: brickL, brickHmm: brickH, jointMm });
+  const canTransferToCalculator = kladkaHref !== BRICKWORK_CALCULATOR_PATH;
   const selectedBond = BOND_OPTIONS.find((option) => option.value === bond) ?? BOND_OPTIONS[0];
 
   const changeStage = useCallback((stage: BrickWorkspaceStage) => {
+    markStarted("layout_mode");
     setActiveStage(stage);
     window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }, []);
+  }, [markStarted]);
 
   return (
     <div ref={workspaceTopRef} className="space-y-4 scroll-mt-24">
@@ -150,6 +177,16 @@ export default function BrickworkGenerator() {
           { label: "Купить", value: `${result.purchaseBricks} шт.`, accent: true },
         ]}
       />
+
+      {transfer.source && (
+        <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+          {hasTransferredGeometry
+            ? "Из калькулятора кирпича перенесены размеры одного прямоугольного участка и формат кирпича. Раскладка не учитывает проёмы, углы и толщину стены — проверьте их отдельно по проекту."
+            : transfer.source === "kladka-kirpicha"
+              ? "Калькулятор кладки мог считать суммарный периметр и проёмы, поэтому размеры не перенесены автоматически. Здесь укажите один непрерывный прямоугольный участок стены."
+              : "Расчёт был задан общей площадью, из которой нельзя восстановить реальную форму стены. Здесь укажите ширину и высоту одного непрерывного участка."}
+        </div>
+      )}
 
       {activeStage === "parameters" && (
         <section aria-labelledby="brick-parameters-title" className="card overflow-hidden border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
@@ -172,12 +209,12 @@ export default function BrickworkGenerator() {
                 <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
                   <label className="text-xs text-stone-500 dark:text-slate-400">
                     Ширина
-                    <input aria-label="Ширина стены в миллиметрах" type="number" inputMode="numeric" min={250} max={30000} value={surfaceW} onChange={(event) => setSurfaceW(Number(event.target.value) || 250)} className="input-field mt-1 w-full" />
+                    <input aria-label="Ширина стены в миллиметрах" type="number" inputMode="numeric" min={250} max={30000} value={surfaceW} onChange={(event) => { markStarted("surface_size"); setSurfaceW(Number(event.target.value) || 250); }} className="input-field mt-1 w-full" />
                   </label>
                   <span className="pb-3 text-stone-400">×</span>
                   <label className="text-xs text-stone-500 dark:text-slate-400">
                     Высота
-                    <input aria-label="Высота стены в миллиметрах" type="number" inputMode="numeric" min={65} max={15000} value={surfaceH} onChange={(event) => setSurfaceH(Number(event.target.value) || 65)} className="input-field mt-1 w-full" />
+                    <input aria-label="Высота стены в миллиметрах" type="number" inputMode="numeric" min={65} max={15000} value={surfaceH} onChange={(event) => { markStarted("surface_size"); setSurfaceH(Number(event.target.value) || 65); }} className="input-field mt-1 w-full" />
                   </label>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -185,7 +222,7 @@ export default function BrickworkGenerator() {
                     <button
                       key={preset.label}
                       type="button"
-                      onClick={() => { setSurfaceW(preset.w); setSurfaceH(preset.h); }}
+                      onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-kirpicha", "surface", preset.label); setSurfaceW(preset.w); setSurfaceH(preset.h); }}
                       className={`min-h-10 rounded-xl border px-3 py-2 text-xs transition-colors ${surfaceW === preset.w && surfaceH === preset.h ? "border-orange-400 bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950/20 dark:text-orange-200" : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-slate-700 dark:text-slate-300"}`}
                     >
                       {preset.label}
@@ -208,7 +245,7 @@ export default function BrickworkGenerator() {
                   <button
                     key={preset.label}
                     type="button"
-                    onClick={() => { setBrickL(preset.l); setBrickH(preset.h); }}
+                    onClick={() => { markStarted("preset"); trackToolPresetSelect("raskladka-kirpicha", "material", preset.label); setBrickL(preset.l); setBrickH(preset.h); }}
                     className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs transition-colors ${brickL === preset.l && brickH === preset.h ? "border-orange-400 bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950/20 dark:text-orange-200" : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-slate-700 dark:text-slate-300"}`}
                   >
                     {preset.label}
@@ -231,7 +268,7 @@ export default function BrickworkGenerator() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setBond(option.value)}
+                      onClick={() => { selectMode(option.value); setBond(option.value); }}
                       className={`min-h-16 rounded-xl border p-3 text-left transition-colors ${bond === option.value ? "border-orange-400 bg-orange-50 shadow-sm dark:bg-orange-950/20" : "border-stone-200 hover:border-stone-300 dark:border-slate-700"}`}
                     >
                       <span className="text-sm font-semibold text-stone-950 dark:text-white">{option.label}</span>
@@ -241,7 +278,7 @@ export default function BrickworkGenerator() {
                 </div>
                 <label className="block text-sm font-medium text-stone-700 dark:text-slate-300">
                   Толщина шва: <strong>{jointMm} мм</strong>
-                  <input aria-label="Толщина шва в миллиметрах" type="range" min={0} max={20} step={1} value={jointMm} onChange={(event) => setJointMm(Number(event.target.value))} className="mt-3 w-full accent-orange-600" />
+                  <input aria-label="Толщина шва в миллиметрах" type="range" min={0} max={20} step={1} value={jointMm} onChange={(event) => { markStarted("joint_width"); setJointMm(Number(event.target.value)); }} className="mt-3 w-full accent-orange-600" />
                   <span className="mt-1 flex justify-between text-xs font-normal text-stone-400"><span>0 мм</span><span>20 мм</span></span>
                 </label>
               </div>
@@ -287,7 +324,7 @@ export default function BrickworkGenerator() {
       )}
 
       {activeStage === "result" && (
-        <section aria-labelledby="brick-result-title" className="space-y-4">
+        <section ref={resultRef} aria-labelledby="brick-result-title" className="space-y-4">
           <div className="card overflow-hidden border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
             <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 dark:border-orange-900/50 dark:from-orange-950/20 dark:to-amber-950/10">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-800 dark:text-orange-300">Паспорт раскладки</p>
@@ -330,9 +367,13 @@ export default function BrickworkGenerator() {
             )}
 
             <div className="mt-5 space-y-3 border-t border-stone-100 pt-4 dark:border-slate-800">
-              <p className="text-xs leading-relaxed text-stone-500 dark:text-slate-400">Перенесём {surfaceAreaM2.toLocaleString("ru-RU")} м² в калькулятор кладки — там можно уточнить толщину стены и получить кирпич, раствор и кладочную сетку.</p>
+              <p className="text-xs leading-relaxed text-stone-500 dark:text-slate-400">
+                {canTransferToCalculator
+                  ? "Передадим размеры этого непрерывного участка, формат кирпича и допустимую толщину шва. Толщину стены выберите по проекту; площадь проёмов начнётся с нуля."
+                  : "Размер участка выходит за диапазон калькулятора кладки. Откроем его без параметров — введите проектные размеры вручную."}
+              </p>
               <div className="grid gap-2 sm:grid-cols-2">
-                <Link href={kladkaHref} className="btn-primary min-h-12 justify-center text-sm no-underline">Кирпич, раствор, сетка →</Link>
+                <Link href={kladkaHref} onClick={() => trackToolRelatedClick("raskladka-kirpicha", "brickwork-calculator")} className="btn-primary min-h-12 justify-center text-sm no-underline">Кирпич, раствор, сетка →</Link>
                 <SaveToProjectButton calcId="instrument-raskladka-kirpicha" calcTitle="Раскладка кирпичной кладки" slug="kladka-kirpicha" categorySlug="steny" materials={materials} />
               </div>
             </div>
