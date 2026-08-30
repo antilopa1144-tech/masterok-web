@@ -50,6 +50,12 @@ import {
   PAVER_LAYOUT_TRANSFER_FROM,
   PAVING_CALCULATOR_TRANSFER_FROM,
 } from "@/lib/tools/paver-layout-to-calc";
+import {
+  buildLightingLayoutHrefFromCeilingCalculator,
+  CEILING_STRETCH_TRANSFER_FROM,
+  LIGHTING_LAYOUT_TRANSFER_FROM,
+  readLightingLayoutCeilingTransfer,
+} from "@/lib/tools/lighting-layout-to-ceiling";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -120,6 +126,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
   const deckLayoutBoardsHint = Number(searchParams.get("layoutBoardsHint"));
   const paverLayoutPiecesHint = Number(searchParams.get("layoutPaversHint"));
+  const lightingLayoutTransfer = useMemo(
+    () => readLightingLayoutCeilingTransfer(searchParams),
+    [searchParams],
+  );
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -242,6 +252,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildPaverLayoutHrefFromCalculatorResult(result?.totals)
       : null,
     [calculator.slug, hasCalculated, result?.totals],
+  );
+  const lightingLayoutHref = useMemo(
+    () => calculator.slug === CEILING_STRETCH_TRANSFER_FROM && hasCalculated
+      ? buildLightingLayoutHrefFromCeilingCalculator({ area: values.area, fixtures: values.fixtures })
+      : null,
+    [calculator.slug, hasCalculated, values.area, values.fixtures],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -493,6 +509,13 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               ? <> Схема дала <strong>{paverLayoutPiecesHint} {pluralizeRu(paverLayoutPiecesHint, ["элемент", "элемента", "элементов"])} плитки к покупке</strong>.</>
               : null}
             {" "}Этот штучный итог сохраняйте из раскладки; калькулятор ниже считает плитку в м², основание, песок для швов, бордюр и геотекстиль.
+          </div>
+        )}
+        {calculator.slug === CEILING_STRETCH_TRANSFER_FROM
+          && transferSource === LIGHTING_LAYOUT_TRANSFER_FROM
+          && lightingLayoutTransfer && (
+          <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-300" data-testid="ceiling-lighting-transfer-banner">
+            Из прямоугольной схемы перенесены площадь <strong>{lightingLayoutTransfer.areaM2.toLocaleString("ru-RU")} м²</strong>, четыре угла и <strong>{lightingLayoutTransfer.fixtures} {pluralizeRu(lightingLayoutTransfer.fixtures, ["светильник", "светильника", "светильников"])}</strong>. Точный геометрический периметр комнаты — <strong>{lightingLayoutTransfer.exactPerimeterM.toLocaleString("ru-RU")} м</strong>. Профиль ниже остаётся предварительной оценкой по эквивалентному квадрату; для сметы используйте фактический периметр и уточните ниши, трубы и тип полотна. Количество точек задано пользователем, а не рассчитано по освещённости.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -805,6 +828,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 no-underline dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300"
             >
               Построить схему и уточнить количество плиток по формату <span aria-hidden>→</span>
+            </Link>
+          )}
+          {lightingLayoutHref && (
+            <Link
+              href={lightingLayoutHref}
+              onClick={() => trackCalculatorRelatedClick(CEILING_STRETCH_TRANSFER_FROM, LIGHTING_LAYOUT_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-800 no-underline dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-300"
+            >
+              Расставить выбранные светильники на плане <span aria-hidden>→</span>
             </Link>
           )}
         </section>

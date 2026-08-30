@@ -1,10 +1,18 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { ToolMetric, ToolNotes, ToolNumberInput, ToolPresetButton } from "@/components/tools/VisualToolPrimitives";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import { trackToolRelatedClick } from "@/lib/analytics";
+import { pluralizeRu } from "@/lib/format/pluralize";
 import { calculateLightingLayout, type LightingPattern } from "@/lib/tools/lighting-layout";
+import {
+  buildCeilingStretchHrefFromLightingLayout,
+  readCeilingCalculatorLightingTransfer,
+} from "@/lib/tools/lighting-layout-to-ceiling";
 
 const PRESETS = [
   { label: "Комната 3 × 4 м", width: 3000, length: 4000, columns: 2, rows: 3 },
@@ -49,6 +57,11 @@ function CeilingSvg({ result }: { result: ReturnType<typeof calculateLightingLay
 }
 
 export default function LightingLayoutPlanner() {
+  const searchParams = useSearchParams();
+  const ceilingTransfer = useMemo(
+    () => readCeilingCalculatorLightingTransfer(searchParams),
+    [searchParams],
+  );
   const [activeStage, setActiveStage] = useState<LightingWorkspaceStage>("layout");
   const [width, setWidth] = useState(4000);
   const [length, setLength] = useState(6000);
@@ -63,6 +76,10 @@ export default function LightingLayoutPlanner() {
   const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted, selectMode } = useToolAnalytics("rasstanovka-svetilnikov", resultRef);
   const result = useMemo(() => calculateLightingLayout({ roomWidthMm: width, roomLengthMm: length, columns, rows, wallOffsetXmm: offsetX, wallOffsetYmm: offsetY, pattern }), [columns, length, offsetX, offsetY, pattern, rows, width]);
+  const ceilingCalculatorHref = useMemo(
+    () => buildCeilingStretchHrefFromLightingLayout(result),
+    [result],
+  );
   const start = () => markStarted("surface_size");
   const changeStage = useCallback((stage: LightingWorkspaceStage) => {
     setActiveStage(stage);
@@ -79,6 +96,11 @@ export default function LightingLayoutPlanner() {
         { label: "Шаг Y", value: `${result.spacingYmm} мм`, accent: true },
       ]} />
       </div>
+      {ceilingTransfer && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-300 xl:col-span-3" data-testid="lighting-layout-transfer-banner">
+          Из расчёта натяжного потолка пришли ориентиры: <strong>{ceilingTransfer.areaM2.toLocaleString("ru-RU")} м²</strong> и <strong>{ceilingTransfer.fixtures} {pluralizeRu(ceilingTransfer.fixtures, ["светильник", "светильника", "светильников"])}</strong>. Площадь не задаёт пропорции комнаты: введите фактические ширину и длину, затем подберите число рядов и колонок. Инструмент строит геометрию, но не проверяет достаточность света.
+        </div>
+      )}
       <div ref={parametersRef} className={`card scroll-mt-24 space-y-4 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6 xl:col-start-1 xl:row-start-2 xl:block xl:sticky xl:top-20 ${activeStage === "parameters" ? "block" : "hidden"}`}>
         <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Шаг 1</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">Параметры потолка</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">Размер по чистовой границе, сетка и отступы от стен.</p></div>
         <details open className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Размер потолка</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{width.toLocaleString("ru-RU")} × {length.toLocaleString("ru-RU")} мм · {result.roomAreaM2} м²</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><div className="grid gap-4 border-t border-stone-100 px-4 pb-4 pt-3 sm:grid-cols-2 dark:border-slate-800"><ToolNumberInput label="Ширина потолка" value={width} unit="мм" min={500} max={30000} step={10} onChange={(v) => { start(); setWidth(v); }} /><ToolNumberInput label="Длина потолка" value={length} unit="мм" min={500} max={30000} step={10} onChange={(v) => { start(); setLength(v); }} /></div></details>
@@ -87,7 +109,7 @@ export default function LightingLayoutPlanner() {
         <button type="button" onClick={() => changeStage("layout")} className="btn-primary min-h-12 w-full justify-center text-sm sm:w-auto xl:hidden">Посмотреть схему →</button>
       </div>
       <div ref={layoutRef} className={`card scroll-mt-24 space-y-4 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6 xl:col-start-2 xl:row-start-2 xl:block ${activeStage === "layout" ? "block" : "hidden"}`}><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Шаг 2 · живая схема</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">План потолка</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">{result.count} точек · шаг {result.spacingXmm} × {result.spacingYmm} мм · номера можно переносить в монтажный план</p></div><div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-slate-50 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><CeilingSvg result={result} /></div><div className="grid gap-2 sm:grid-cols-2 xl:hidden"><button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Изменить параметры</button><button type="button" onClick={() => changeStage("result")} className="btn-primary min-h-12 w-full justify-center text-sm">Размеры разметки →</button></div></div>
-      <div ref={resultRef} className={`card scroll-mt-24 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6 xl:col-start-3 xl:row-start-2 xl:block xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden"}`}><div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-amber-50 p-4 dark:border-sky-900/50 dark:from-sky-950/20 dark:to-amber-950/10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-800 dark:text-sky-300">Паспорт разметки</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold text-stone-950 dark:text-white">Светильники на потолке</h2><p className="mt-1 text-xs text-stone-600 dark:text-slate-400">Потолок {width.toLocaleString("ru-RU")} × {length.toLocaleString("ru-RU")} мм · сетка {columns} × {rows}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Точки выровнены</span></div></div><div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-800/60 dark:bg-sky-900/20"><p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">Светильников</p><p className="mt-1 text-4xl font-bold text-slate-950 dark:text-white">{result.count}</p><p className="mt-1 text-xs text-slate-500">{columns} колонок × {rows} рядов · {pattern === "grid" ? "ровная сетка" : "шахматная схема"}</p></div><div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4 xl:grid-cols-2"><ToolMetric value={`${result.spacingXmm} мм`} label="Между центрами по ширине" tone="sky" /><ToolMetric value={`${result.spacingYmm} мм`} label="Между центрами по длине" /><ToolMetric value={`${result.input.wallOffsetXmm} мм`} label="Отступ по бокам" /><ToolMetric value={`${result.input.wallOffsetYmm} мм`} label="Отступ от торцов" /></div><ToolNotes warnings={result.warnings} notes={result.notes} /><button type="button" onClick={() => changeStage("layout")} className="mt-5 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 xl:hidden">← Вернуться к плану</button></div>
+      <div ref={resultRef} className={`card scroll-mt-24 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6 xl:col-start-3 xl:row-start-2 xl:block xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden"}`}><div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-amber-50 p-4 dark:border-sky-900/50 dark:from-sky-950/20 dark:to-amber-950/10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-800 dark:text-sky-300">Паспорт разметки</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold text-stone-950 dark:text-white">Светильники на потолке</h2><p className="mt-1 text-xs text-stone-600 dark:text-slate-400">Потолок {width.toLocaleString("ru-RU")} × {length.toLocaleString("ru-RU")} мм · сетка {columns} × {rows}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Точки выровнены</span></div></div><div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-800/60 dark:bg-sky-900/20"><p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">Светильников</p><p className="mt-1 text-4xl font-bold text-slate-950 dark:text-white">{result.count}</p><p className="mt-1 text-xs text-slate-500">{columns} колонок × {rows} рядов · {pattern === "grid" ? "ровная сетка" : "шахматная схема"}</p></div><div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4 xl:grid-cols-2"><ToolMetric value={`${result.spacingXmm} мм`} label="Между центрами по ширине" tone="sky" /><ToolMetric value={`${result.spacingYmm} мм`} label="Между центрами по длине" /><ToolMetric value={`${result.input.wallOffsetXmm} мм`} label="Отступ по бокам" /><ToolMetric value={`${result.input.wallOffsetYmm} мм`} label="Отступ от торцов" /></div><ToolNotes warnings={result.warnings} notes={result.notes} />{ceilingCalculatorHref && <Link href={ceilingCalculatorHref} onClick={() => trackToolRelatedClick("rasstanovka-svetilnikov", "natyazhnoj-potolok")} className="btn-primary mt-5 min-h-12 justify-center text-sm no-underline">Рассчитать полотно, закладные и термокольца →</Link>}<button type="button" onClick={() => changeStage("layout")} className="mt-3 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 xl:hidden">← Вернуться к плану</button></div>
     </div>
   );
 }
