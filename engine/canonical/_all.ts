@@ -1338,54 +1338,38 @@ export interface BathroomCanonicalSpec extends CanonicalCalculatorSpecBase {
   warnings_rules: BathroomWarningRules;
 }
 
-/* ─── Warm Floor (тёплый пол) ─── */
-
-export interface WarmFloorHeatingTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-}
+/* ─── Electric Warm Floor (электрический тёплый пол) ─── */
 
 export interface WarmFloorPackagingRules {
-  mat_unit: string;
-  cable_unit: string;
-  pipe_unit: string;
-}
-
-export interface WarmFloorMaterialRules {
-  mat_area: number;
-  cable_linear_power_w_per_m: number;
-  cable_reserve: number;
-  pipe_step_m: number;
-  pipe_reserve: number;
-  substrate_reserve: number;
-  substrate_roll_m2: number;
-  corrugated_tube_m: number;
-  tile_adhesive_kg_per_m2: number;
-  tile_adhesive_bag_kg: number;
-  eps_sheet_m2: number;
-  eps_reserve: number;
-  screed_thickness_m: number;
-  screed_density: number;
-  screed_bag_kg: number;
-  mesh_reserve: number;
-  mounting_tape_roll_m: number;
-  pipe_insulation_reserve: number;
-  max_circuit_m: number;
+  kit_unit: string;
+  piece_unit: string;
+  conduit_unit: string;
 }
 
 export interface WarmFloorWarningRules {
-  separate_breaker_kw_threshold: number;
-  ineffective_coverage_ratio: number;
+  coverage_tolerance_m2: number;
+  design_power_low_ratio: number;
+  design_power_high_ratio: number;
+}
+
+export interface WarmFloorEvidenceSource {
+  code: string;
+  scope: string;
+  source: string;
+}
+
+export interface WarmFloorEvidence {
+  reviewed_at: string;
+  standards: WarmFloorEvidenceSource[];
+  project_assumptions: string[];
 }
 
 export interface WarmFloorCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: {
-    heating_types: WarmFloorHeatingTypeSpec[];
-  };
+  normative_formula: Record<string, string>;
   packaging_rules: WarmFloorPackagingRules;
-  material_rules: WarmFloorMaterialRules;
+  material_rules: Record<string, never>;
   warnings_rules: WarmFloorWarningRules;
+  evidence: WarmFloorEvidence;
 }
 
 /* ─── Warm Floor Pipes (трубы тёплого пола) ─── */

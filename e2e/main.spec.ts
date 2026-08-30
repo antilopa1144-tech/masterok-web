@@ -791,6 +791,58 @@ test.describe("Калькулятор радиаторов отопления", 
   });
 });
 
+test.describe("Калькулятор электрического тёплого пола", () => {
+  test("проверяет заводской комплект, ток и раскладку без выдуманного запаса", async ({ page }) => {
+    await page.goto("/kalkulyatory/inzhenernye/teplyy-pol/");
+    await expect(page.locator("h1")).toContainText("электрического тёплого пола");
+    await expect(page.getByLabel("Площадь помещения").first()).toHaveValue("10");
+    await expect(page.getByLabel("Зоны без нагрева").first()).toHaveValue("2");
+    await expect(page.getByLabel("Фактическая площадь раскладки").first()).toHaveValue("8");
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Раскладка");
+    await expect(resultCard).toContainText("Установленная мощность");
+    await expect(resultCard).toContainText("1,2");
+    await expect(resultCard).toContainText("5,22 А");
+    await expect(resultCard).toContainText("К покупке");
+    await expect(resultCard).toContainText("Выбранный заводской комплект нагревательного мата");
+    await expect(resultCard).not.toContainText(/клей|утеплитель|подложка|монтажная лента/i);
+
+    await page.getByRole("button", { name: "Заводской кабельный комплект", exact: true }).click();
+    const additionalFields = page.getByRole("button", { name: /Дополнительные параметры/ }).first();
+    if (await additionalFields.isVisible()) await additionalFields.click();
+    await page.getByLabel("Количество выбранных комплектов").first().fill("2");
+    await page.getByLabel("Площадь укладки одного комплекта").first().fill("5");
+    await page.getByLabel("Паспортная мощность одного комплекта").first().fill("800");
+    await page.getByLabel("Паспортная длина кабеля в комплекте").first().fill("40");
+
+    await page.getByLabel("Требуемая мощность из проекта").first().fill("1800");
+    await page.getByLabel("Расчётное напряжение питания").first().fill("230");
+    await page.getByLabel("Допустимый ток терморегулятора").first().fill("6");
+    await page.getByLabel("Терморегуляторы по ведомости").first().fill("1");
+    await page.getByLabel("Датчики пола по ведомости").first().fill("1");
+    await page.getByLabel("Защитная трубка датчика по ведомости").first().fill("2.2");
+    await page.getByLabel("Длина покупного отрезка трубки").first().fill("1");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    await expect(resultCard).toContainText("1,6");
+    await expect(resultCard).toContainText("6,96 А");
+    await expect(resultCard).toContainText("Выбранный заводской комплект нагревательного кабеля");
+    await expect(resultCard).toContainText(/80\s*м/);
+    await expect(resultCard).toContainText(/100\s*мм/);
+    await expect(resultCard).toContainText("Защитная трубка датчика по проектной ведомости");
+    await expect(resultCard).toContainText(/3\s*м/);
+    await expect(page.getByText(/больше площади раскладки/i).first()).toBeVisible();
+    await expect(page.getByText(/ниже введённой проектной/i).first()).toBeVisible();
+    await expect(page.getByText(/выше паспортного тока/i).first()).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("SEO", () => {
   test("страницы имеют правильные мета-теги", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");

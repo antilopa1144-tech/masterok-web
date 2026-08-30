@@ -1,5 +1,3 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
   WarmFloorCanonicalSpec,
@@ -7,343 +5,279 @@ import type {
   CanonicalMaterialResult,
 } from "./canonical";
 import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 
 interface WarmFloorInputs {
+  roomAreaM2?: number;
+  excludedAreaM2?: number;
+  layoutAreaM2?: number;
+  systemType?: number;
+  kitCount?: number;
+  kitCoverageAreaM2?: number;
+  kitRatedPowerW?: number;
+  cableLengthPerKitM?: number;
+  designHeatLoadW?: number;
+  supplyVoltageV?: number;
+  thermostatRatedCurrentA?: number;
+  thermostatCount?: number;
+  floorSensorCount?: number;
+  sensorConduitLengthM?: number;
+  sensorConduitStockLengthM?: number;
+  // Legacy web query aliases from canonical v2.
   roomArea?: number;
   furnitureArea?: number;
   heatingType?: number;
-  powerDensity?: number;
-  accuracyMode?: AccuracyMode;
 }
 
-/* ─── factor defaults ─── */
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const whole = (value: number, min: number, max: number) => Math.round(clamp(value, min, max));
 
-const WARM_FLOOR_FACTOR_TABLE: FactorTable = {
-  surface_quality: { min: 1, rec: 1, max: 1 },
-  geometry_complexity: { min: 0.98, rec: 1, max: 1.08 },
-  installation_method: { min: 1, rec: 1, max: 1 },
-  worker_skill: { min: 0.95, rec: 1, max: 1.1 },
-  waste_factor: { min: 0.98, rec: 1, max: 1.08 },
-  logistics_buffer: { min: 1, rec: 1, max: 1 },
-  packaging_rounding: { min: 1, rec: 1, max: 1 },
-};
-
-/* ─── helpers ─── */
-
-/* ─── type 0: Mats ─── */
-
-function buildMaterialsMats(
-  heatingArea: number,
-  powerDensity: number,
-  matArea: number,
-  mats: number,
-  corrugatedTube: number,
-  substrateRolls: number,
-  adhesiveBags: number,
-  tileAdhesiveKgPerM2: number,
-  tileAdhesiveBagKg: number,
-  substrateRollM2: number,
-): CanonicalMaterialResult[] {
-  return [
-    {
-      name: `Нагревательный мат ${powerDensity} Вт/м², комплект на ${matArea} м²`,
-      subtitle: "Греющий кабель мата нельзя укорачивать; фактический набор комплектов подбирают по каталогу производителя",
-      quantity: mats,
-      unit: "шт",
-      withReserve: mats,
-      purchaseQty: mats,
-      category: "Основное",
-    },
-    {
-      name: "Терморегулятор с выносным датчиком температуры пола",
-      subtitle: "Допустимый ток регулятора должен быть не ниже расчётной нагрузки системы",
-      quantity: 1,
-      unit: "шт",
-      withReserve: 1,
-      purchaseQty: 1,
-      category: "Управление",
-    },
-    {
-      name: "Гофротрубка Ø16 мм с заглушкой для датчика пола",
-      subtitle: "Датчик устанавливают в трубке между соседними витками нагревательного кабеля",
-      quantity: corrugatedTube,
-      unit: "м",
-      withReserve: corrugatedTube,
-      purchaseQty: corrugatedTube,
-      category: "Монтаж",
-    },
-    {
-      name: `Теплоизоляционная подложка, рулон ${substrateRollM2} м²`,
-      subtitle: "Применять только если такая подложка разрешена конструкцией пола и производителем нагревательной системы",
-      quantity: substrateRolls,
-      unit: "рулонов",
-      withReserve: substrateRolls,
-      purchaseQty: substrateRolls,
-      category: "Подготовка",
-    },
-    {
-      name: `Эластичный плиточный клей для тёплого пола, мешок ${tileAdhesiveBagKg} кг`,
-      subtitle: "Клей должен быть разрешён производителем для полов с подогревом",
-      quantity: roundDisplay(heatingArea * tileAdhesiveKgPerM2, 3),
-      unit: "кг",
-      withReserve: adhesiveBags * tileAdhesiveBagKg,
-      purchaseQty: adhesiveBags * tileAdhesiveBagKg,
-      packageInfo: { count: adhesiveBags, size: tileAdhesiveBagKg, packageUnit: "мешков" },
-      category: "Основное",
-    },
-  ];
+function addPieceMaterial(
+  materials: CanonicalMaterialResult[],
+  name: string,
+  count: number,
+  category: string,
+) {
+  if (count <= 0) return;
+  materials.push({
+    name,
+    quantity: count,
+    unit: "шт",
+    withReserve: count,
+    purchaseQty: count,
+    category,
+  });
 }
 
-/* ─── type 1: Cable in screed ─── */
+function movedWaterResult(spec: WarmFloorCanonicalSpec, roomArea: number): CanonicalCalculatorResult {
+  const scenarios = SCENARIOS.reduce((acc, scenario) => {
+    acc[scenario] = {
+      exact_need: 0,
+      purchase_quantity: 0,
+      leftover: 0,
+      assumptions: [
+        `formula_version:${spec.formula_version}`,
+        "legacy_water_mode:moved_to_warm-floor-pipes",
+      ],
+      key_factors: { field_multiplier: 1 },
+      buy_plan: {
+        package_label: "water-floor-moved",
+        package_size: 1,
+        packages_count: 0,
+        unit: "шт",
+      },
+    };
+    return acc;
+  }, {} as ScenarioBundle);
 
-function buildMaterialsCable(
-  heatingArea: number,
-  cableLinearPower: number,
-  cableLength: number,
-  mountingTapeRolls: number,
-  epsSheets: number,
-  screedBags: number,
-  screedThicknessM: number,
-  screedDensity: number,
-  screedBagKg: number,
-  epsSheetM2: number,
-  mountingTapeRollM: number,
-): CanonicalMaterialResult[] {
-  return [
-    {
-      name: `Двухжильный нагревательный кабель ${cableLinearPower} Вт/м`,
-      subtitle: "Кабель нельзя укорачивать: выбирайте ближайший заводской комплект по длине и мощности",
-      quantity: cableLength,
-      unit: "м",
-      withReserve: cableLength,
-      purchaseQty: cableLength,
-      category: "Основное",
+  return {
+    canonicalSpecId: spec.calculator_id,
+    formulaVersion: spec.formula_version,
+    materials: [],
+    totals: {
+      roomArea: roundDisplay(roomArea, 3),
+      heatingArea: 0,
+      systemType: 2,
+      kitCount: 0,
+      totalPowerW: 0,
+      totalPowerKW: 0,
+      circuitCurrentA: 0,
+      legacyWaterMode: 1,
     },
-    {
-      name: "Терморегулятор с выносным датчиком температуры пола",
-      subtitle: "Допустимый ток регулятора должен быть не ниже расчётной нагрузки системы",
-      quantity: 1,
-      unit: "шт",
-      withReserve: 1,
-      purchaseQty: 1,
-      category: "Управление",
-    },
-    {
-      name: `Металлическая монтажная лента для греющего кабеля, рулон ${mountingTapeRollM} м`,
-      quantity: mountingTapeRolls,
-      unit: "рулонов",
-      withReserve: mountingTapeRolls,
-      purchaseQty: mountingTapeRolls,
-      category: "Монтаж",
-    },
-    {
-      name: `Теплоизоляционные плиты для пола 1200×600 мм (${epsSheetM2} м²)`,
-      subtitle: "Толщину и прочность на сжатие выбирают по конструкции перекрытия и теплотехническому расчёту",
-      quantity: epsSheets,
-      unit: "листов",
-      withReserve: epsSheets,
-      purchaseQty: epsSheets,
-      category: "Утепление",
-    },
-    {
-      name: `Сухая смесь для стяжки тёплого пола, мешок ${screedBagKg} кг`,
-      subtitle: `Расчёт выполнен для слоя ${Math.round(screedThicknessM * 1000)} мм; допустимую толщину над кабелем сверяют с системой`,
-      quantity: roundDisplay(heatingArea * screedThicknessM * screedDensity, 3),
-      unit: "кг",
-      withReserve: screedBags * screedBagKg,
-      purchaseQty: screedBags * screedBagKg,
-      packageInfo: { count: screedBags, size: screedBagKg, packageUnit: "мешков" },
-      category: "Основное",
-    },
-  ];
+    warnings: [
+      "Водяной тёплый пол перенесён в отдельный калькулятор: здесь рассчитываются только электрические заводские комплекты.",
+    ],
+    practicalNotes: [
+      "Откройте калькулятор «Водяной тёплый пол» — он отдельно считает трубы и контуры и не смешивает их с электрической нагрузкой.",
+    ],
+    scenarios,
+  };
 }
-
-/* ─── type 2: Water pipes ─── */
-
-function buildMaterialsWaterPipes(
-  pipeLength: number,
-  circuits: number,
-  meshArea: number,
-): CanonicalMaterialResult[] {
-  return [
-    {
-      name: "Труба PE-Xa или PE-RT 16×2 мм для тёплого пола",
-      subtitle: "Каждый контур укладывают одним отрезком без соединений в стяжке; тип трубы выбирают по проекту",
-      quantity: pipeLength,
-      unit: "м",
-      withReserve: pipeLength,
-      purchaseQty: pipeLength,
-      category: "Основное",
-    },
-    {
-      name: `Коллекторная группа для тёплого пола на ${circuits} ${circuits === 1 ? "контур" : "контура"}`,
-      subtitle: "С расходомерами, регулирующими клапанами, воздухоотводчиком и сливными кранами",
-      quantity: 1,
-      unit: "шт",
-      withReserve: 1,
-      purchaseQty: 1,
-      category: "Управление",
-    },
-    {
-      name: "Евроконусы 3/4″×16 мм для подключения трубы к коллектору",
-      subtitle: "По два соединения на каждый контур: подача и обратная линия",
-      quantity: circuits * 2,
-      unit: "шт",
-      withReserve: circuits * 2,
-      purchaseQty: circuits * 2,
-      category: "Подключение",
-    },
-    {
-      name: "Стальная армирующая сетка для стяжки",
-      subtitle: "Размер ячейки и диаметр проволоки назначают по конструкции пола, а не только по площади",
-      quantity: roundDisplay(meshArea, 3),
-      unit: "м²",
-      withReserve: Math.ceil(meshArea),
-      purchaseQty: Math.ceil(meshArea),
-      category: "Армирование",
-    },
-  ];
-}
-
-/* ─── main ─── */
 
 export function computeCanonicalWarmFloor(
   spec: WarmFloorCanonicalSpec,
   inputs: WarmFloorInputs,
-  factorTable: FactorTable = WARM_FLOOR_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
-  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
-  const rules = spec.material_rules;
-
-  const roomArea = Math.max(1, Math.min(100, inputs.roomArea ?? getInputDefault(spec, "roomArea", 10)));
-  const furnitureArea = Math.max(0, Math.min(roomArea, inputs.furnitureArea ?? getInputDefault(spec, "furnitureArea", 2)));
-  const heatingType = Math.max(0, Math.min(2, Math.round(inputs.heatingType ?? getInputDefault(spec, "heatingType", 0))));
-  const powerDensity = Math.max(100, Math.min(200, inputs.powerDensity ?? getInputDefault(spec, "powerDensity", 150)));
-
-  const heatingArea = Math.max(0, roomArea - furnitureArea);
-  const totalPowerW = heatingArea * powerDensity;
-  const totalPowerKW = roundDisplay(totalPowerW / 1000, 3);
-
-  /* ─── per-type calculations ─── */
-  let basePrimary: number;
-  let materials: CanonicalMaterialResult[];
-  let mats = 0, cableLength = 0, mountingTapeRolls = 0, epsSheets = 0, screedBags = 0;
-  let pipeLength = 0, circuits = 0, meshArea = 0;
-  let substrateRolls = 0, adhesiveBags = 0;
-  let cableStepMm = 0;
-
-  if (heatingType === 0) {
-    // Mats
-    mats = Math.ceil(heatingArea / rules.mat_area);
-    const corrugatedTube = rules.corrugated_tube_m;
-    substrateRolls = Math.ceil(heatingArea * rules.substrate_reserve / rules.substrate_roll_m2);
-    adhesiveBags = Math.ceil(heatingArea * rules.tile_adhesive_kg_per_m2 / rules.tile_adhesive_bag_kg);
-
-    basePrimary = mats;
-    materials = buildMaterialsMats(
-      heatingArea,
-      powerDensity,
-      rules.mat_area,
-      mats,
-      corrugatedTube,
-      substrateRolls,
-      adhesiveBags,
-      rules.tile_adhesive_kg_per_m2,
-      rules.tile_adhesive_bag_kg,
-      rules.substrate_roll_m2,
-    );
-  } else if (heatingType === 1) {
-    // Cable in screed
-    cableLength = Math.ceil(totalPowerW / rules.cable_linear_power_w_per_m * rules.cable_reserve);
-    cableStepMm = cableLength > 0 ? roundDisplay(heatingArea / cableLength * 1000, 1) : 0;
-    mountingTapeRolls = Math.ceil(cableLength / rules.mounting_tape_roll_m);
-    epsSheets = Math.ceil(heatingArea * rules.eps_reserve / rules.eps_sheet_m2);
-    screedBags = Math.ceil(heatingArea * rules.screed_thickness_m * rules.screed_density / rules.screed_bag_kg);
-
-    basePrimary = cableLength;
-    materials = buildMaterialsCable(
-      heatingArea,
-      rules.cable_linear_power_w_per_m,
-      cableLength,
-      mountingTapeRolls,
-      epsSheets,
-      screedBags,
-      rules.screed_thickness_m,
-      rules.screed_density,
-      rules.screed_bag_kg,
-      rules.eps_sheet_m2,
-      rules.mounting_tape_roll_m,
-    );
-  } else {
-    // Water pipes
-    pipeLength = Math.ceil(heatingArea / rules.pipe_step_m * rules.pipe_reserve);
-    circuits = pipeLength > 0 ? Math.ceil(pipeLength / rules.max_circuit_m) : 0;
-    meshArea = heatingArea * rules.mesh_reserve;
-
-    basePrimary = pipeLength;
-    materials = buildMaterialsWaterPipes(pipeLength, circuits, meshArea);
+  const rawRoomArea = inputs.roomAreaM2 ?? inputs.roomArea ?? getInputDefault(spec, "roomAreaM2", 10);
+  const roomArea = clamp(rawRoomArea, 1, 500);
+  if (Math.round(inputs.heatingType ?? -1) === 2 && inputs.systemType == null) {
+    return movedWaterResult(spec, roomArea);
   }
 
-  /* ─── scenarios ─── */
-  const basePrimaryRaw = basePrimary;
-  basePrimary = Math.ceil(basePrimary * accuracyMult);
-  const packageSize = 1;
-  const packageUnit = heatingType === 0 ? "шт" : "м";
-  const packageLabel = heatingType === 0 ? "warm-floor-mat" : heatingType === 1 ? "warm-floor-cable-m" : "warm-floor-pipe-m";
+  const rawExcludedArea = inputs.excludedAreaM2
+    ?? inputs.furnitureArea
+    ?? getInputDefault(spec, "excludedAreaM2", 2);
+  const excludedArea = clamp(rawExcludedArea, 0, roomArea);
+  const availableArea = Math.max(0, roomArea - excludedArea);
+  const rawLayoutArea = inputs.layoutAreaM2 ?? getInputDefault(spec, "layoutAreaM2", 8);
+  const layoutArea = Math.min(clamp(rawLayoutArea, 0.1, 500), availableArea);
+  const legacySystemType = Math.round(inputs.heatingType ?? 0) === 1 ? 1 : 0;
+  const systemType = whole(
+    inputs.systemType ?? legacySystemType ?? getInputDefault(spec, "systemType", 0),
+    0,
+    1,
+  );
+  const kitCount = whole(inputs.kitCount ?? getInputDefault(spec, "kitCount", 1), 1, 100);
+  const kitCoverageAreaM2 = clamp(
+    inputs.kitCoverageAreaM2 ?? getInputDefault(spec, "kitCoverageAreaM2", 8),
+    0.1,
+    500,
+  );
+  const kitRatedPowerW = clamp(
+    inputs.kitRatedPowerW ?? getInputDefault(spec, "kitRatedPowerW", 1200),
+    10,
+    50000,
+  );
+  const cableLengthPerKitM = clamp(
+    inputs.cableLengthPerKitM ?? getInputDefault(spec, "cableLengthPerKitM", 60),
+    0.1,
+    5000,
+  );
+  const designHeatLoadW = clamp(
+    inputs.designHeatLoadW ?? getInputDefault(spec, "designHeatLoadW", 0),
+    0,
+    500000,
+  );
+  const supplyVoltageV = clamp(
+    inputs.supplyVoltageV ?? getInputDefault(spec, "supplyVoltageV", 230),
+    100,
+    500,
+  );
+  const thermostatRatedCurrentA = clamp(
+    inputs.thermostatRatedCurrentA ?? getInputDefault(spec, "thermostatRatedCurrentA", 0),
+    0,
+    100,
+  );
+  const thermostatCount = whole(
+    inputs.thermostatCount ?? getInputDefault(spec, "thermostatCount", 0),
+    0,
+    100,
+  );
+  const floorSensorCount = whole(
+    inputs.floorSensorCount ?? getInputDefault(spec, "floorSensorCount", 0),
+    0,
+    100,
+  );
+  const sensorConduitLengthM = clamp(
+    inputs.sensorConduitLengthM ?? getInputDefault(spec, "sensorConduitLengthM", 0),
+    0,
+    1000,
+  );
+  const sensorConduitStockLengthM = clamp(
+    inputs.sensorConduitStockLengthM ?? getInputDefault(spec, "sensorConduitStockLengthM", 1),
+    0.1,
+    100,
+  );
 
-  const packageOptions = [{ size: packageSize, label: packageLabel, unit: packageUnit }];
+  const selectedCoverageAreaM2 = kitCount * kitCoverageAreaM2;
+  const totalPowerW = kitCount * kitRatedPowerW;
+  const totalCableLengthM = systemType === 1 ? kitCount * cableLengthPerKitM : 0;
+  const installedPowerDensityWm2 = layoutArea > 0 ? totalPowerW / layoutArea : 0;
+  const circuitCurrentA = totalPowerW / supplyVoltageV;
+  const thermostatLoadPercent = thermostatRatedCurrentA > 0
+    ? circuitCurrentA / thermostatRatedCurrentA * 100
+    : 0;
+  const cableStepMm = totalCableLengthM > 0 ? layoutArea / totalCableLengthM * 1000 : 0;
+  const designPowerMarginW = designHeatLoadW > 0 ? totalPowerW - designHeatLoadW : 0;
+
+  const materials: CanonicalMaterialResult[] = [
+    {
+      name: systemType === 0
+        ? "Выбранный заводской комплект нагревательного мата"
+        : "Выбранный заводской комплект нагревательного кабеля",
+      subtitle: systemType === 0
+        ? "Сверьте площадь и мощность каждого комплекта с паспортом; мат нельзя накладывать сам на себя, а греющий кабель — резать"
+        : "Длина и мощность взяты из паспорта выбранного комплекта; нагревательный кабель нельзя укорачивать или наращивать",
+      quantity: kitCount,
+      unit: spec.packaging_rules.kit_unit,
+      withReserve: kitCount,
+      purchaseQty: kitCount,
+      packageInfo: { count: kitCount, size: 1, packageUnit: spec.packaging_rules.kit_unit },
+      category: "Основное",
+    },
+  ];
+  addPieceMaterial(materials, "Терморегулятор по проектной ведомости", thermostatCount, "Управление");
+  addPieceMaterial(materials, "Датчик температуры пола по проектной ведомости", floorSensorCount, "Управление");
+
+  const conduitStockCount = sensorConduitLengthM > 0
+    ? Math.ceil(sensorConduitLengthM / sensorConduitStockLengthM)
+    : 0;
+  const conduitPurchaseLengthM = conduitStockCount * sensorConduitStockLengthM;
+  if (sensorConduitLengthM > 0) {
+    materials.push({
+      name: "Защитная трубка датчика по проектной ведомости",
+      subtitle: "Диаметр, материал, радиус изгиба и расположение сверяют с инструкцией выбранной системы",
+      quantity: roundDisplay(sensorConduitLengthM, 6),
+      unit: "м",
+      withReserve: roundDisplay(sensorConduitLengthM, 6),
+      purchaseQty: roundDisplay(conduitPurchaseLengthM, 6),
+      packageInfo: {
+        count: conduitStockCount,
+        size: roundDisplay(sensorConduitStockLengthM, 6),
+        packageUnit: spec.packaging_rules.conduit_unit,
+      },
+      category: "Монтаж",
+    });
+  }
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
-
     acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
+      exact_need: kitCount,
+      purchase_quantity: kitCount,
+      leftover: 0,
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `heatingType:${heatingType}`,
-        `powerDensity:${powerDensity}`,
-        `packaging:${packaging.package.label}`,
+        `systemType:${systemType}`,
+        "factory_kit_passport",
+        "no_hidden_reserve",
       ],
-      key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
-      },
+      key_factors: { field_multiplier: 1 },
       buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
+        package_label: systemType === 0 ? "electric-floor-mat-kit" : "electric-floor-cable-kit",
+        package_size: 1,
+        packages_count: kitCount,
+        unit: spec.packaging_rules.kit_unit,
       },
     };
-
     return acc;
   }, {} as ScenarioBundle);
 
-  /* ─── totals ─── */
-  const recScenario = scenarios.REC;
-
-  /* ─── warnings ─── */
-  const warnings: string[] = [];
-  if (heatingType !== 2 && totalPowerKW > spec.warnings_rules.separate_breaker_kw_threshold) {
-    warnings.push("Электрическая мощность выше допустимой для типового терморегулятора — нужна отдельная линия и проверка схемы электриком");
+  const warnings: string[] = [
+    "Калькулятор проверяет выбранные заводские комплекты и раскладку, но не назначает мощность, кабель питания, автомат, коммутацию или способ управления.",
+    "Для цепи электрообогрева требуется защита УДТ с номинальным током срабатывания не более 30 мА; схему, заземление и уравнивание потенциалов проверяет проектировщик или электрик.",
+    "Сохраните план зон нагрева, свободных зон, соединений и номинальных мощностей рядом с документацией электроустановки.",
+  ];
+  if (rawExcludedArea > roomArea) {
+    warnings.push("Площадь зон без нагрева больше площади помещения: проверьте планировку и исходные размеры.");
   }
-  if (roomArea > 0 && heatingArea / roomArea < spec.warnings_rules.ineffective_coverage_ratio) {
-    warnings.push("Обогреваемая площадь менее 50% — неэффективное покрытие");
+  if (rawLayoutArea > availableArea) {
+    warnings.push("Площадь раскладки ограничена доступной площадью без мебели и оборудования; пересмотрите план зон нагрева.");
+  }
+  const coverageTolerance = spec.warnings_rules.coverage_tolerance_m2;
+  if (selectedCoverageAreaM2 > layoutArea + coverageTolerance) {
+    warnings.push("Паспортная площадь выбранных комплектов больше площади раскладки: нельзя перекрывать маты или произвольно уменьшать длину нагревательного кабеля.");
+  } else if (selectedCoverageAreaM2 < layoutArea - coverageTolerance) {
+    warnings.push("Выбранные комплекты покрывают не всю площадь раскладки; оставшуюся зону и требуемую мощность проверьте по плану и каталогу производителя.");
+  }
+  if (designHeatLoadW <= 0) {
+    warnings.push("Проектная тепловая нагрузка не введена: калькулятор не подтверждает, что система может быть основным отоплением.");
+  } else if (totalPowerW < designHeatLoadW * spec.warnings_rules.design_power_low_ratio) {
+    warnings.push("Паспортная мощность выбранных комплектов ниже введённой проектной тепловой нагрузки.");
+  } else if (totalPowerW > designHeatLoadW * spec.warnings_rules.design_power_high_ratio) {
+    warnings.push("Паспортная мощность заметно выше введённой проектной нагрузки: проверьте допустимую удельную мощность, покрытие и управление.");
+  }
+  if (thermostatRatedCurrentA <= 0) {
+    warnings.push("Допустимый ток терморегулятора не введён — прямое подключение нагрузки не проверено.");
+  } else if (circuitCurrentA > thermostatRatedCurrentA) {
+    warnings.push("Расчётный ток выбранных комплектов выше паспортного тока терморегулятора: нужна проектная схема коммутации, например через подходящий контактор.");
   }
 
-
-  const practicalNotes: string[] = [];
-  practicalNotes.push("Тёплый пол может быть основным отоплением только после расчёта теплопотерь и проверки, что установленной мощности достаточно");
-  if (heatingType !== 2) {
-    practicalNotes.push("Электрическую систему подключают через устройство защитного отключения и автоматический выключатель по проекту электроснабжения");
-  }
+  const practicalNotes = [
+    "Зоны под встроенной мебелью, оборудованием и другими предметами, полностью закрывающими пол, оставляйте без нагрева согласно плану и инструкции системы.",
+    "Проверьте совместимость нагревательной системы, основания, клея или стяжки и финишного покрытия по документации всех производителей.",
+    "Перед закрытием конструкции измерьте сопротивление нагревательного элемента и изоляции по инструкции, зафиксируйте результаты и фактическую раскладку.",
+    "Для водяной системы используйте отдельный калькулятор «Водяной тёплый пол».",
+  ];
 
   return {
     canonicalSpecId: spec.calculator_id,
@@ -351,35 +285,41 @@ export function computeCanonicalWarmFloor(
     materials,
     totals: {
       roomArea: roundDisplay(roomArea, 3),
-      furnitureArea: roundDisplay(furnitureArea, 3),
-      heatingArea: roundDisplay(heatingArea, 3),
-      heatingType,
-      powerDensity,
+      excludedAreaM2: roundDisplay(excludedArea, 3),
+      availableAreaM2: roundDisplay(availableArea, 3),
+      heatingArea: roundDisplay(layoutArea, 3),
+      systemType,
+      kitCount,
+      kitCoverageAreaM2: roundDisplay(kitCoverageAreaM2, 3),
+      selectedCoverageAreaM2: roundDisplay(selectedCoverageAreaM2, 3),
+      kitRatedPowerW: roundDisplay(kitRatedPowerW, 3),
       totalPowerW: roundDisplay(totalPowerW, 3),
-      totalPowerKW,
-      thermostat: heatingType === 2 ? 0 : 1,
-      mats,
-      cableLength,
-      mountingTapeRolls,
-      epsSheets,
-      screedBags,
-      pipeLength,
-      circuits,
-      cableStepMm,
-      meshArea: roundDisplay(meshArea, 3),
-      substrateRolls,
-      adhesiveBags,
-      minExactNeed: scenarios.MIN.exact_need,
-      recExactNeed: recScenario.exact_need,
-      maxExactNeed: scenarios.MAX.exact_need,
-      minPurchase: scenarios.MIN.purchase_quantity,
-      recPurchase: recScenario.purchase_quantity,
-      maxPurchase: scenarios.MAX.purchase_quantity,
+      totalPowerKW: roundDisplay(totalPowerW / 1000, 3),
+      installedPowerDensityWm2: roundDisplay(installedPowerDensityWm2, 3),
+      supplyVoltageV: roundDisplay(supplyVoltageV, 3),
+      circuitCurrentA: roundDisplay(circuitCurrentA, 3),
+      thermostatRatedCurrentA: roundDisplay(thermostatRatedCurrentA, 3),
+      thermostatLoadPercent: roundDisplay(thermostatLoadPercent, 3),
+      thermostatCount,
+      floorSensorCount,
+      cableLengthPerKitM: systemType === 1 ? roundDisplay(cableLengthPerKitM, 3) : 0,
+      cableLength: roundDisplay(totalCableLengthM, 3),
+      cableStepMm: roundDisplay(cableStepMm, 3),
+      designHeatLoadW: roundDisplay(designHeatLoadW, 3),
+      designPowerMarginW: roundDisplay(designPowerMarginW, 3),
+      sensorConduitLengthM: roundDisplay(sensorConduitLengthM, 3),
+      sensorConduitStockLengthM: roundDisplay(sensorConduitStockLengthM, 3),
+      conduitStockCount,
+      conduitPurchaseLengthM: roundDisplay(conduitPurchaseLengthM, 3),
+      minExactNeed: kitCount,
+      recExactNeed: kitCount,
+      maxExactNeed: kitCount,
+      minPurchase: kitCount,
+      recPurchase: kitCount,
+      maxPurchase: kitCount,
     },
     warnings,
     practicalNotes,
     scenarios,
-    accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

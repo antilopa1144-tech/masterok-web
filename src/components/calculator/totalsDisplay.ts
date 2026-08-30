@@ -4,13 +4,14 @@ export const TOTAL_LABELS: Record<string, string> = {
   wallArea: "Площадь стен", floorArea: "Площадь пола", roofArea: "Площадь кровли",
   facadeArea: "Площадь фасада", totalArea: "Общая площадь", usefulArea: "Полезная площадь",
   totalFinishArea: "Площадь отделки", roomArea: "Площадь комнаты", heatingArea: "Площадь обогрева",
+  availableAreaM2: "Доступная площадь", selectedCoverageAreaM2: "Паспортная площадь комплектов",
   totalSlopeArea: "Площадь откосов", areaWithWaste: "Площадь с запасом", tileArea: "Площадь одной плитки",
   // Объёмы
   volume: "Объём", totalVolume: "Объём с запасом", floorVolume: "Объём пола",
   wallVolume: "Объём стен", concreteM3: "Бетон",
   // Линейные
   perimeter: "Периметр", length: "Длина", height: "Высота", width: "Ширина",
-  cableLength: "Длина кабеля", pipeLength: "Длина трубы",
+  cableLength: "Суммарная длина кабеля", pipeLength: "Длина трубы", cableStepMm: "Ориентировочный шаг кабеля",
   totalPerimeter: "Общий периметр", netLength: "Чистая длина",
   horizontalLength: "Длина марша", stringerLength: "Длина косоура",
   totalLinearM: "Погонные метры", totalHeightM: "Общая высота",
@@ -40,7 +41,9 @@ export const TOTAL_LABELS: Record<string, string> = {
   litersNeeded: "Нужно литров", litersWithReserve: "Литров с запасом",
   lPerSqm: "Расход", totalL: "Всего литров",
   // Мощность
-  totalPowerW: "Мощность", totalPowerKW: "Мощность",
+  totalPowerW: "Установленная мощность", totalPowerKW: "Установленная мощность",
+  designHeatLoadW: "Мощность из проекта", installedPowerDensityWm2: "Установленная мощность на площадь",
+  circuitCurrentA: "Расчётный ток", thermostatLoadPercent: "Загрузка терморегулятора",
   // Кладка
   mortarVolume: "Раствор",
   // Ступени
@@ -101,14 +104,15 @@ export const TOTAL_UNITS: Record<string, string> = {
   // Площади
   area: "м²", realArea: "м²", netArea: "м²", wallArea: "м²", floorArea: "м²",
   roofArea: "м²", facadeArea: "м²", totalArea: "м²", usefulArea: "м²",
-  totalFinishArea: "м²", roomArea: "м²", heatingArea: "м²", totalSlopeArea: "м²",
+  totalFinishArea: "м²", roomArea: "м²", heatingArea: "м²", availableAreaM2: "м²",
+  selectedCoverageAreaM2: "м²", totalSlopeArea: "м²",
   areaWithWaste: "м²", tileArea: "м²", plateArea: "м²",
   // Объёмы
   volume: "м³", totalVolume: "м³", floorVolume: "м³", wallVolume: "м³",
   concreteM3: "м³", mortarVolume: "м³",
   // Линейные
   perimeter: "м.п.", length: "м", height: "м", width: "м",
-  cableLength: "м", pipeLength: "м", totalPerimeter: "м",
+  cableLength: "м", pipeLength: "м", cableStepMm: "мм", totalPerimeter: "м",
   netLength: "м", horizontalLength: "м", stringerLength: "м",
   totalLinearM: "м.п.", totalHeightM: "м",
   cable15length: "м", cable25length: "м",
@@ -121,7 +125,8 @@ export const TOTAL_UNITS: Record<string, string> = {
   // Жидкости
   litersNeeded: "л", litersWithReserve: "л", lPerSqm: "л/м²", totalL: "л",
   // Мощность
-  totalPowerW: "Вт", totalPowerKW: "кВт",
+  totalPowerW: "Вт", totalPowerKW: "кВт", designHeatLoadW: "Вт",
+  installedPowerDensityWm2: "Вт/м²", circuitCurrentA: "А", thermostatLoadPercent: "%",
   // Ступени
   realStepHeight: "м",
   // Вентиляция
