@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { SITE_URL } from "@/lib/site";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ReverseCalculator from "./ReverseCalculator";
@@ -58,7 +59,9 @@ export default function Page() {
         </div>
       </div>
       <div className="page-container py-4 sm:py-8">
-        <ReverseCalculator />
+        <Suspense fallback={<div className="card min-h-96 animate-pulse" aria-label="Загрузка обратного калькулятора" />}>
+          <ReverseCalculator />
+        </Suspense>
       </div>
       <ToolPageExtras slug="skolko-ostalos" />
     </>

@@ -72,6 +72,10 @@ import {
   buildMaterialComparisonHrefFromCalculator,
   MATERIAL_COMPARISON_TOOL_SLUG,
 } from "@/lib/tools/material-comparison-links";
+import {
+  buildReverseCoverageHrefFromCalculator,
+  REVERSE_COVERAGE_TOOL_SLUG,
+} from "@/lib/tools/reverse-coverage-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -294,6 +298,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const materialComparisonHref = useMemo(
     () => hasCalculated ? buildMaterialComparisonHrefFromCalculator(calculator.slug) : null,
     [calculator.slug, hasCalculated],
+  );
+  const reverseCoverageHref = useMemo(
+    () => hasCalculated ? buildReverseCoverageHrefFromCalculator(calculator.slug, values) : null,
+    [calculator.slug, hasCalculated, values],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -937,6 +945,24 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
                 </span>
               </span>
               <span className="shrink-0 text-violet-700 dark:text-violet-300" aria-hidden>→</span>
+            </Link>
+          )}
+          {reverseCoverageHref && (
+            <Link
+              href={reverseCoverageHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, REVERSE_COVERAGE_TOOL_SLUG)}
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm no-underline dark:border-blue-900/50 dark:bg-blue-950/20"
+              data-testid="calculator-reverse-coverage-link"
+            >
+              <span>
+                <span className="block font-semibold text-blue-900 dark:text-blue-200">
+                  Проверить, на какую площадь хватит фактического остатка
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-slate-600 dark:text-slate-400">
+                  Перенесём только тип материала. Остаток из расчёта покупки не подменяет реальное количество в открытой упаковке.
+                </span>
+              </span>
+              <span className="shrink-0 text-blue-700 dark:text-blue-300" aria-hidden>→</span>
             </Link>
           )}
         </section>

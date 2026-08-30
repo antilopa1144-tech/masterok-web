@@ -1,17 +1,38 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import {
+  trackToolModeChange,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 import {
   calculateReverseCoverage,
   COVERAGE_MATERIALS,
   formatCoverageArea,
   getCoverageMaterial,
 } from "@/lib/tools/reverse-coverage";
+import {
+  buildCalculatorHrefForCoverageMaterial,
+  getCalculatorLinkForCoverageMaterial,
+  isReverseCoverageMaterialId,
+  readReverseCoverageTransfer,
+  REVERSE_COVERAGE_TOOL_SLUG,
+} from "@/lib/tools/reverse-coverage-links";
 
 export default function ReverseCalculator() {
-  const [materialId, setMaterialId] = useState("paint-acrylic");
+  const searchParams = useSearchParams();
+  const requestedMaterialId = searchParams.get("material");
+  const initialMaterialId = isReverseCoverageMaterialId(requestedMaterialId)
+    ? requestedMaterialId
+    : "paint-acrylic";
+  const [materialId, setMaterialId] = useState(initialMaterialId);
   const [amountInput, setAmountInput] = useState("5");
   const [adjustmentInput, setAdjustmentInput] = useState<string | null>(null);
+  const resultRef = useRef<HTMLElement>(null);
 
   const material = getCoverageMaterial(materialId);
   const adjustment = material.adjustment;
@@ -38,6 +59,15 @@ export default function ReverseCalculator() {
       : calculateReverseCoverage({ material, amount, adjustmentValue: effectiveAdjustment }),
     [material, amount, effectiveAdjustment, hasInputError],
   );
+  const { markStarted, selectMode } = useToolAnalytics(
+    REVERSE_COVERAGE_TOOL_SLUG,
+    resultRef,
+    Boolean(result),
+  );
+  const transfer = readReverseCoverageTransfer(searchParams);
+  const hasActiveTransfer = transfer?.materialId === materialId;
+  const calculatorLink = getCalculatorLinkForCoverageMaterial(materialId);
+  const calculatorHref = buildCalculatorHrefForCoverageMaterial(materialId);
 
   const adjustmentSummary = adjustment.kind === "fixed"
     ? "Типовой расход материала уже учтён"
@@ -47,6 +77,14 @@ export default function ReverseCalculator() {
 
   return (
     <div className="max-w-5xl space-y-4">
+      {hasActiveTransfer && (
+        <div
+          className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300"
+          data-testid="reverse-coverage-transfer-banner"
+        >
+          Из калькулятора выбран только тип материала. Расчётный остаток упаковки не переносится: введите фактическое количество из открытой банки или мешка и проверьте расход, слои и толщину по этикетке именно вашего продукта.
+        </div>
+      )}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="card order-1 space-y-4 p-4 sm:space-y-5 sm:p-6 lg:order-1">
           <div>
@@ -71,6 +109,8 @@ export default function ReverseCalculator() {
               onChange={(event) => {
                 setMaterialId(event.target.value);
                 setAdjustmentInput(null);
+                markStarted("preset");
+                trackToolPresetSelect(REVERSE_COVERAGE_TOOL_SLUG, "material", event.target.value);
               }}
               className="input-field min-h-12 w-full"
             >
@@ -96,7 +136,10 @@ export default function ReverseCalculator() {
                   min={0.1}
                   step={0.1}
                   value={amountInput}
-                  onChange={(event) => setAmountInput(event.target.value)}
+                  onChange={(event) => {
+                    markStarted("material_size");
+                    setAmountInput(event.target.value);
+                  }}
                   aria-invalid={amountError ? true : undefined}
                   aria-describedby={amountError ? "coverage-amount-error" : undefined}
                   className="input-field min-h-12 w-full pr-10 text-lg font-semibold"
@@ -120,7 +163,11 @@ export default function ReverseCalculator() {
                   <button
                     type="button"
                     key={value}
-                    onClick={() => setAmountInput(String(value))}
+                    onClick={() => {
+                      markStarted("preset");
+                      trackToolModeChange(REVERSE_COVERAGE_TOOL_SLUG, `amount:${value}${material.unit}`);
+                      setAmountInput(String(value));
+                    }}
                     className={`min-h-12 shrink-0 rounded-lg border px-4 text-xs transition-colors sm:px-2 ${
                       !amountError && amount === value
                         ? "border-accent-400 bg-accent-50 font-semibold text-accent-700 dark:bg-accent-900/20 dark:text-accent-300"
@@ -149,7 +196,10 @@ export default function ReverseCalculator() {
                       max={adjustment.max}
                       step={adjustment.step}
                       value={effectiveAdjustmentInput}
-                      onChange={(event) => setAdjustmentInput(event.target.value)}
+                      onChange={(event) => {
+                        markStarted("material_size");
+                        setAdjustmentInput(event.target.value);
+                      }}
                       aria-invalid={adjustmentError ? true : undefined}
                       aria-describedby={adjustmentError ? "coverage-adjustment-error" : undefined}
                       className="input-field min-h-11 w-28 pr-10"
@@ -164,7 +214,10 @@ export default function ReverseCalculator() {
                   <button
                     type="button"
                     key={value}
-                    onClick={() => setAdjustmentInput(String(value))}
+                    onClick={() => {
+                      selectMode(`adjustment:${adjustment.kind}:${value}`);
+                      setAdjustmentInput(String(value));
+                    }}
                     className={`min-h-11 rounded-lg border px-4 text-sm transition-colors ${
                       effectiveAdjustment === value
                         ? "border-accent-400 bg-accent-50 font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-300"
@@ -184,7 +237,7 @@ export default function ReverseCalculator() {
           )}
         </section>
 
-        <section className="card order-2 overflow-hidden lg:sticky lg:top-20 lg:order-2">
+        <section ref={resultRef} className="card order-2 overflow-hidden lg:sticky lg:top-20 lg:order-2">
           <div className="border-b border-blue-200 bg-gradient-to-br from-blue-50 via-white to-accent-50 p-5 dark:border-blue-800/40 dark:from-blue-950/40 dark:via-slate-900 dark:to-accent-950/30 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -241,6 +294,25 @@ export default function ReverseCalculator() {
                   <span className="text-slate-500">Эквивалент объёма</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">{result.amountInLiters.toFixed(1)} л</span>
                 </div>
+              )}
+
+              {calculatorLink && calculatorHref && (
+                <Link
+                  href={calculatorHref}
+                  onClick={() => trackToolRelatedClick(REVERSE_COVERAGE_TOOL_SLUG, calculatorLink.calculatorSlug)}
+                  className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm no-underline transition-colors hover:border-blue-400 dark:border-blue-900/50 dark:bg-blue-950/20"
+                  data-testid="reverse-coverage-calculator-link"
+                >
+                  <span>
+                    <span className="block font-semibold text-blue-900 dark:text-blue-200">
+                      Рассчитать полную закупку материала
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-snug text-slate-600 dark:text-slate-400">
+                      {calculatorLink.calculatorTitle}: площадь, запас и количество к покупке.
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-blue-700 dark:text-blue-300" aria-hidden>→</span>
+                </Link>
               )}
             </div>
           )}
