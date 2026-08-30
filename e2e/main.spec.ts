@@ -682,6 +682,55 @@ test.describe("Мобильная адаптация", () => {
   });
 });
 
+test.describe("Калькулятор вентиляции", () => {
+  test("показывает расход без выдуманной закупки и считает явную трассу", async ({ page }) => {
+    await page.goto("/kalkulyatory/inzhenernye/ventilyaciya/");
+    await expect(page.locator("h1")).toContainText("вентиляции");
+    await expect(page.getByLabel("Высота помещений").first()).toHaveValue("2.7");
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Расчётный расход");
+    await expect(resultCard).toContainText("90");
+    await expect(resultCard).toContainText("Закупка трассы");
+    await expect(resultCard).toContainText("Не задана");
+    await expect(page.getByText(/внесите длину трассы из проекта/i).first()).toBeVisible();
+    await expect(resultCard).not.toContainText("Вентилятор канальный");
+
+    await page.getByRole("button", { name: "Готовый расход из проекта", exact: true }).click();
+    await page.getByLabel("Проектный расход воздуха").first().fill("720");
+    await page.getByRole("button", { name: "Прямоугольный", exact: true }).click();
+
+    const additionalFields = page.getByRole("button", { name: /Дополнительные параметры/ }).first();
+    if (await additionalFields.isVisible()) {
+      await additionalFields.click();
+    }
+
+    await page.getByLabel("Внутренняя ширина").first().fill("300");
+    await page.getByLabel("Внутренняя высота").first().fill("200");
+    await page.getByLabel("Паспортная производительность вентилятора").first().fill("900");
+    await page.getByLabel("Длина воздуховода по трассе").first().fill("10");
+    await page.getByLabel("Длина покупного отрезка").first().fill("3");
+    await page.getByLabel("Запас длины").first().fill("10");
+    await page.getByLabel("Фасонные элементы по ведомости").first().fill("4");
+    await page.getByLabel("Решётки и диффузоры по ведомости").first().fill("3");
+    await page.getByLabel("Хомуты и крепления по ведомости").first().fill("8");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    await expect(resultCard).toContainText("720");
+    await expect(resultCard).toContainText(/3[,.]33/);
+    await expect(resultCard).toContainText("Воздуховод прямоугольный 300×200 мм");
+    await expect(resultCard).toContainText(/4\s+отрез/);
+    await expect(resultCard).toContainText(/12\s*м/);
+    await expect(page.getByText(/рабочей точке/i).first()).toBeVisible();
+    await expect(resultCard).not.toContainText("Вентилятор канальный");
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("SEO", () => {
   test("страницы имеют правильные мета-теги", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");

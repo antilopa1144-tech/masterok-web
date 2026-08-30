@@ -352,6 +352,7 @@ export function pickWorkPriceBenchmarks(materials: CalculatorResult["materials"]
 }
 
 export function isResultEmpty(result: CalculatorResult): boolean {
+  if (result.summaryCards && result.summaryCards.length > 0) return false;
   return result.materials.length === 0 ||
     result.materials.every((m) => !m.quantity || isNaN(m.quantity) || m.quantity === 0);
 }

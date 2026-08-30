@@ -46,7 +46,11 @@ export const TOTAL_LABELS: Record<string, string> = {
   // Ступени
   realStepHeight: "Высота ступени",
   // Вентиляция
-  requiredAirflow: "Воздухообмен", exchangeRate: "Кратность",
+  requiredAirflow: "Расчётный расход", exchangeRate: "Кратность",
+  actualVelocityMps: "Скорость в выбранном канале",
+  requiredFreeAreaM2: "Сечение для целевой скорости",
+  requiredRoundDiameterMm: "Эквивалентный круглый диаметр",
+  selectedFanMarginM3h: "Запас паспортной производительности",
   // Кровля
   slope: "Уклон",
   // Бетон / фундамент
@@ -122,6 +126,8 @@ export const TOTAL_UNITS: Record<string, string> = {
   realStepHeight: "м",
   // Вентиляция
   requiredAirflow: "м³/ч", exchangeRate: "раз/ч",
+  actualVelocityMps: "м/с", requiredFreeAreaM2: "м²",
+  requiredRoundDiameterMm: "мм", selectedFanMarginM3h: "м³/ч",
   // Кровля
   slope: "°",
   // Бетон / фундамент

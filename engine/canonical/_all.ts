@@ -1452,52 +1452,25 @@ export interface WarmFloorPipesCanonicalSpec extends CanonicalCalculatorSpecBase
 
 /* ─── Ventilation (вентиляция) ─── */
 
-export interface VentilationBuildingTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-  exchange_rate: number;
-}
-
-export interface VentilationDuctTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-}
-
 export interface VentilationPackagingRules {
-  unit: string;
-  package_size: number;
+  duct_unit: string;
+  piece_unit: string;
 }
 
 export interface VentilationMaterialRules {
-  exchange_rates: number[];
-  air_per_person: number;
-  fan_reserve: number;
-  airflow_rounding: number;
-  main_duct_length_coeff: number;
-  main_duct_reserve: number;
-  duct_section_m: number;
-  flex_duct_coil_m: number;
-  fittings_per_section: number;
-  fittings_reserve: number;
-  grille_area_m2: number;
-  grille_base: number;
-  clamps_per_section: number;
-  clamps_reserve: number;
-  silencer_count: number;
+  residential_air_per_person_m3h: number;
+  residential_air_per_area_m3h_m2: number;
+  residential_min_air_change_per_h: number;
+  area_per_person_boundary_m2: number;
 }
 
 export interface VentilationWarningRules {
-  professional_airflow_threshold: number;
-  supply_exhaust_people_threshold: number;
+  velocity_attention_mps: number;
+  professional_airflow_threshold_m3h: number;
 }
 
 export interface VentilationCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: {
-    building_types: VentilationBuildingTypeSpec[];
-    duct_types: VentilationDuctTypeSpec[];
-  };
+  normative_formula: Record<string, string>;
   packaging_rules: VentilationPackagingRules;
   material_rules: VentilationMaterialRules;
   warnings_rules: VentilationWarningRules;

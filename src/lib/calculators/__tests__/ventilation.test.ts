@@ -1,78 +1,188 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ventilationDef } from "../formulas/ventilation";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(ventilationDef.calculate.bind(ventilationDef));
 
-describe("Вентиляция", () => {
-  describe("Квартира (buildingType=0)", () => {
-    it("80 м², 2.7 м, 3 чел, круглый воздуховод", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 3, ductType: 0 });
-      checkInvariants(r);
-      // Engine: volume=80*2.7=216, airByVolume=216*1.5=324
-      // airByPeople=3*30=90, required=max(324,90)=324→rounded=ceil(324/50)*50=350
-      expect(r.totals.requiredAirflowRounded).toBe(350);
+describe("Вентиляция — canonical v2", () => {
+  describe("предварительный жилой расход", () => {
+    it("при площади более 20 м²/чел берёт максимум по людям и 0,35 объёма", () => {
+      const result = calc({
+        calculationMode: 0,
+        totalArea: 80,
+        ceilingHeight: 2.7,
+        peopleCount: 3,
+      });
+
+      expect(result.totals.roomVolume).toBe(216);
+      expect(result.totals.airByPeople).toBe(90);
+      expect(result.totals.airByVolume).toBe(75.6);
+      expect(result.totals.requiredAirflow).toBe(90);
+    });
+
+    it("на границе 20 м²/чел применяет 3 м³/(ч·м²)", () => {
+      const result = calc({
+        calculationMode: 0,
+        totalArea: 60,
+        ceilingHeight: 2.7,
+        peopleCount: 3,
+      });
+
+      expect(result.totals.areaPerPerson).toBe(20);
+      expect(result.totals.airByArea).toBe(180);
+      expect(result.totals.requiredAirflow).toBe(180);
+    });
+
+    it("высоту 2,7 трактует как метры без прежнего зажима 270 → 3,5", () => {
+      const result = calc({
+        calculationMode: 0,
+        totalArea: 100,
+        ceilingHeight: 2.7,
+        peopleCount: 2,
+      });
+
+      expect(result.totals.ceilingHeight).toBe(2.7);
+      expect(result.totals.roomVolume).toBe(270);
+      expect(result.totals.airByVolume).toBe(94.5);
     });
   });
 
-  describe("Частный дом (buildingType=1)", () => {
-    it("кратность 2.0×", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 1, peopleCount: 3, ductType: 0 });
-      // volume=216, airByVolume=216*2.0=432, airByPeople=90, required=max(432,90)=432→450
-      expect(r.totals.requiredAirflowRounded).toBe(450);
+  describe("проектный режим и сечение", () => {
+    it("принимает готовый расход без выдуманной кратности", () => {
+      const result = calc({ calculationMode: 1, projectAirflowM3h: 720 });
+
+      expect(result.totals.requiredAirflow).toBe(720);
+      expect(result.warnings.some((warning) => warning.includes("готовое исходное"))).toBe(true);
+    });
+
+    it("считает скорость в круглом канале", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 360,
+        ductShape: 0,
+        roundDiameterMm: 200,
+        targetVelocityMps: 3,
+      });
+
+      expect(result.totals.selectedFreeAreaM2).toBeCloseTo(0.031416, 6);
+      expect(result.totals.actualVelocityMps).toBeCloseTo(3.183, 3);
+      expect(result.warnings.some((warning) => warning.includes("выше заданной цели"))).toBe(true);
+    });
+
+    it("считает скорость в прямоугольном канале", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 720,
+        ductShape: 1,
+        rectWidthMm: 300,
+        rectHeightMm: 200,
+      });
+
+      expect(result.totals.selectedFreeAreaM2).toBe(0.06);
+      expect(result.totals.actualVelocityMps).toBeCloseTo(3.333, 3);
+    });
+
+    it("показывает теоретическое сечение для целевой скорости", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 360,
+        targetVelocityMps: 2,
+      });
+
+      expect(result.totals.requiredFreeAreaM2).toBe(0.05);
+      expect(result.totals.requiredRoundDiameterMm).toBeCloseTo(252.3, 1);
     });
   });
 
-  describe("Офис (buildingType=2)", () => {
-    it("кратность 3.0×, больше людей", () => {
-      const r = calc({ totalArea: 100, ceilingHeight: 2.7, buildingType: 2, peopleCount: 15, ductType: 0 });
-      // volume=270, airByVolume=270*3=810, airByPeople=15*30=450, required=max(810,450)=810→850
-      expect(r.totals.requiredAirflowRounded).toBe(850);
+  describe("вентилятор", () => {
+    it("не добавляет вентилятор в закупку автоматически", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 500,
+        selectedFanCapacityM3h: 700,
+        ductLengthM: 6,
+      });
+
+      expect(findMaterial(result, "Вентилятор")).toBeUndefined();
+      expect(result.totals.selectedFanMarginM3h).toBe(200);
+      expect(result.warnings.some((warning) => warning.includes("рабочей точке"))).toBe(true);
+    });
+
+    it("предупреждает, если паспортная производительность ниже расхода", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 500,
+        selectedFanCapacityM3h: 400,
+      });
+
+      expect(result.totals.selectedFanMarginM3h).toBe(-100);
+      expect(result.warnings.some((warning) => warning.includes("ниже расчётного расхода"))).toBe(true);
     });
   });
 
-  describe("Материалы", () => {
-    it("вентилятор, воздуховод, фасонные элементы, решётки, хомуты", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 3, ductType: 0 });
-      // Engine names
-      expect(findMaterial(r, "Вентилятор канальный")).toBeDefined();
-      expect(findMaterial(r, "Воздуховод")).toBeDefined();
-      expect(findMaterial(r, "Фасонные элементы")).toBeDefined();
-      expect(findMaterial(r, "решётки")).toBeDefined();
-      expect(findMaterial(r, "Хомуты")).toBeDefined();
+  describe("закупка по проектной ведомости", () => {
+    it("округляет длину с явным запасом до покупных отрезков", () => {
+      const result = calc({
+        calculationMode: 1,
+        projectAirflowM3h: 300,
+        ductLengthM: 10,
+        stockLengthM: 3,
+        ductReservePercent: 10,
+        fittingCount: 4,
+        airTerminalCount: 3,
+        clampCount: 8,
+      });
+
+      checkInvariants(result);
+      expect(result.scenarios?.MIN.exact_need).toBe(10);
+      expect(result.scenarios?.MIN.purchase_quantity).toBe(12);
+      expect(result.scenarios?.REC.exact_need).toBe(11);
+      expect(result.scenarios?.REC.purchase_quantity).toBe(12);
+      expect(result.scenarios?.REC.leftover).toBe(1);
+      expect(result.scenarios?.MAX).toEqual(result.scenarios?.REC);
+
+      const duct = findMaterial(result, "Воздуховод");
+      expect(duct?.quantity).toBe(10);
+      expect(duct?.withReserve).toBe(11);
+      expect(duct?.purchaseQty).toBe(12);
+      expect(duct?.packageInfo).toEqual({ count: 4, size: 3, packageUnit: "отрезков" });
+      expect(findMaterial(result, "Фасонные")).toMatchObject({ purchaseQty: 4 });
+      expect(findMaterial(result, "Воздухораспределители")).toMatchObject({ purchaseQty: 3 });
+      expect(findMaterial(result, "Хомуты")).toMatchObject({ purchaseQty: 8 });
     });
 
-    it("шумоглушитель для жилых помещений (buildingType<=1)", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 3, ductType: 0 });
-      // Engine: "Шумоглушитель"
-      expect(findMaterial(r, "Шумоглушитель")).toBeDefined();
+    it("без длины не выдумывает трассу и показывает границу расчёта", () => {
+      const result = calc({ calculationMode: 0, totalArea: 80, ceilingHeight: 2.7, peopleCount: 3 });
+
+      expect(result.materials).toEqual([]);
+      expect(result.totals.mainDuctLength).toBe(0);
+      expect(result.scenarios?.REC.purchase_quantity).toBe(0);
+      expect(result.summaryCards?.[0]).toMatchObject({
+        label: "Расчётный расход",
+        value: "90",
+        unit: "м³/ч",
+      });
+      expect(result.summaryCards?.[2]).toMatchObject({
+        label: "Закупка трассы",
+        value: "Не задана",
+      });
+      expect(result.warnings.some((warning) => warning.includes("длину трассы"))).toBe(true);
     });
 
-    it("нет шумоглушителя для производства (buildingType=3)", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 3, peopleCount: 3, ductType: 0 });
-      expect(findMaterial(r, "Шумоглушитель")).toBeUndefined();
+    it("режим точности не добавляет скрытый запас", () => {
+      const basic = ventilationDef.calculate({ ductLengthM: 10, stockLengthM: 3, ductReservePercent: 10, accuracyMode: "basic" as unknown as number });
+      const professional = ventilationDef.calculate({ ductLengthM: 10, stockLengthM: 3, ductReservePercent: 10, accuracyMode: "professional" as unknown as number });
+
+      expect(professional.scenarios).toEqual(basic.scenarios);
+      expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
     });
   });
 
-  describe("Тип воздуховода", () => {
-    it("гибкий ø125 — ductType=2", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 3, ductType: 2 });
-      // Engine: "Воздуховод Гибкий ø125 (10 м)"
-      expect(findMaterial(r, "Гибкий")).toBeDefined();
-    });
+  it("всегда сообщает профессиональные границы применимости", () => {
+    const result = calc({ calculationMode: 1, projectAirflowM3h: 300, ductLengthM: 3 });
 
-    it("прямоугольный 200×100 — ductType=1", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 3, ductType: 1 });
-      // Engine: "Воздуховод Прямоугольный 200×100 (3 м)"
-      expect(findMaterial(r, "Прямоугольный")).toBeDefined();
-    });
-  });
-
-  describe("Предупреждения", () => {
-    it("квартира > 6 чел → приточно-вытяжная установка", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, buildingType: 0, peopleCount: 8, ductType: 0 });
-      // Engine: "Для квартиры с числом жильцов более 6 рекомендуется приточно-вытяжная установка"
-      expect(r.warnings.some(w => w.includes("приточно-вытяжная"))).toBe(true);
-    });
+    expect(result.warnings.some((warning) => warning.includes("потери давления"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("Противопожарные"))).toBe(true);
+    expect(result.practicalNotes?.some((note) => note.includes("не подбираются по площади"))).toBe(true);
   });
 });

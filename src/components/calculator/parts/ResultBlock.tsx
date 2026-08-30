@@ -351,36 +351,38 @@ export function ResultBlock({
         {/* Список материалов — на всю ширину; оценка стоимости идёт ОТДЕЛЬНЫМ
             блоком ниже (раньше висела сбоку и отвлекала от главного — списка
             к покупке). Так понятнее и на десктопе, и на смартфоне. */}
-        <div className="p-4 sm:p-5">
-          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>
-            {primaryMaterial && !result.hidePrimaryMaterialBadge && (
-              <span className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400 sm:max-w-[18rem]">
-                Основное: {primaryDisplay} {primaryUnit}
-              </span>
+        {result.materials.length > 0 && (
+          <div className="p-4 sm:p-5">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{CALCULATOR_UI_TEXT.materialsListTitle}</h4>
+              {primaryMaterial && !result.hidePrimaryMaterialBadge && (
+                <span className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400 sm:max-w-[18rem]">
+                  Основное: {primaryDisplay} {primaryUnit}
+                </span>
+              )}
+            </div>
+            {calculatorSlug === "uteplenie" ? (
+              <InsulationMaterialList
+                materials={result.materials}
+                banner={result.materialListBanner}
+              />
+            ) : (
+              <MaterialList materials={result.materials} />
             )}
-          </div>
-          {calculatorSlug === "uteplenie" ? (
-            <InsulationMaterialList
-              materials={result.materials}
-              banner={result.materialListBanner}
-            />
-          ) : (
-            <MaterialList materials={result.materials} />
-          )}
 
-          <div className="mt-4">
-            <PriceEstimate
-              materials={result.materials}
-              calculatorSlug={calculatorSlug}
-              prices={prices}
-              total={priceTotal}
-              filledCount={filledPriceCount}
-              onPriceChange={handlePriceChange}
-              onResetAll={handleResetAllPrices}
-            />
+            <div className="mt-4">
+              <PriceEstimate
+                materials={result.materials}
+                calculatorSlug={calculatorSlug}
+                prices={prices}
+                total={priceTotal}
+                filledCount={filledPriceCount}
+                onPriceChange={handlePriceChange}
+                onResetAll={handleResetAllPrices}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-2 dark:border-slate-700" data-print-hide>
           {projectSave && (

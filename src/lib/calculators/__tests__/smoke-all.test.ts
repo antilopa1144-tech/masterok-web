@@ -12,9 +12,15 @@ describe("Smoke test: all calculators execute without errors", () => {
 
       const result = calc.calculate(inputs);
 
-      // Must have materials
+      // Большинство калькуляторов всегда формируют закупку. Вентиляция намеренно
+      // ждёт явную длину трассы и ведомость, чтобы не выдумывать материалы по площади.
       expect(result.materials).toBeDefined();
-      expect(result.materials.length).toBeGreaterThan(0);
+      if (calc.id === "engineering_ventilation") {
+        expect(result.materials).toHaveLength(0);
+        expect(result.warnings.some((warning) => warning.includes("длину трассы"))).toBe(true);
+      } else {
+        expect(result.materials.length).toBeGreaterThan(0);
+      }
 
       // Must have totals
       expect(result.totals).toBeDefined();
