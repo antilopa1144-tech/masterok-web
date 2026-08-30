@@ -64,6 +64,10 @@ import {
   buildChecklistHrefForCalculator,
   getChecklistLinkForCalculator,
 } from "@/lib/tools/checklist-calculator-links";
+import {
+  buildCuringTimerHrefFromCalculator,
+  CURING_TIMER_TOOL_SLUG,
+} from "@/lib/tools/curing-timer-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -278,6 +282,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const checklistHref = useMemo(
     () => hasCalculated ? buildChecklistHrefForCalculator(calculator.slug) : null,
     [calculator.slug, hasCalculated],
+  );
+  const curingTimerHref = useMemo(
+    () => hasCalculated ? buildCuringTimerHrefFromCalculator(calculator.slug, values) : null,
+    [calculator.slug, hasCalculated, values],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -885,6 +893,24 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
                 </span>
               </span>
               <span className="shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden>→</span>
+            </Link>
+          )}
+          {curingTimerHref && (
+            <Link
+              href={curingTimerHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, CURING_TIMER_TOOL_SLUG)}
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm no-underline dark:border-amber-900/50 dark:bg-amber-950/20"
+              data-testid="calculator-curing-timer-link"
+            >
+              <span>
+                <span className="block font-semibold text-amber-900 dark:text-amber-200">
+                  Выбрать ориентир схватывания или высыхания
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-slate-600 dark:text-slate-400">
+                  Перенесём только тип материала. Срок нужно сверить с упаковкой, а таймер запустить вручную.
+                </span>
+              </span>
+              <span className="shrink-0 text-amber-700 dark:text-amber-300" aria-hidden>→</span>
             </Link>
           )}
         </section>

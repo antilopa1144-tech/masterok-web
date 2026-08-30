@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CURING_PRESETS, isCuringPresetId } from "@/lib/curing-timer/presets";
 import {
@@ -10,6 +11,17 @@ import {
   getTimerProgress,
   parseCustomMinutes,
 } from "@/lib/curing-timer/timing";
+import {
+  buildCalculatorHrefForCuringPreset,
+  CURING_TIMER_TOOL_SLUG,
+  getCalculatorLinkForCuringPreset,
+  readCuringTimerTransfer,
+} from "@/lib/tools/curing-timer-links";
+import {
+  trackToolModeChange,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 
 type TimerStatus = "setup" | "running" | "paused" | "completed";
 
@@ -46,6 +58,10 @@ export default function CuringTimer() {
   const selectedMinutes = selectedPreset.id === "custom" ? customDuration.minutes : selectedPreset.durationMinutes;
   const canStart = selectedMinutes !== null;
   const progress = getTimerProgress(timerTotalSeconds, secondsLeft);
+  const transfer = useMemo(() => readCuringTimerTransfer(searchParams), [searchParams]);
+  const relatedCalculator = getCalculatorLinkForCuringPreset(selectedPreset.id);
+  const relatedCalculatorHref = buildCalculatorHrefForCuringPreset(selectedPreset.id);
+  const hasActiveTransfer = transfer?.presetId === selectedPreset.id;
 
   useEffect(() => {
     const fromUrl = searchParams.get("preset");
@@ -96,6 +112,7 @@ export default function CuringTimer() {
 
   useEffect(() => {
     if (status !== "completed") return;
+    trackToolModeChange(CURING_TIMER_TOOL_SLUG, "completed");
     const originalTitle = document.title;
     let flash = true;
     const interval = window.setInterval(() => {
@@ -111,7 +128,16 @@ export default function CuringTimer() {
   const selectCategory = (category: string) => {
     setActiveCategory(category);
     const firstPreset = CURING_PRESETS.find((preset) => preset.category === category);
-    if (firstPreset) setSelectedId(firstPreset.id);
+    if (firstPreset) {
+      setSelectedId(firstPreset.id);
+      trackToolPresetSelect(CURING_TIMER_TOOL_SLUG, "material", firstPreset.id);
+    }
+    trackToolModeChange(CURING_TIMER_TOOL_SLUG, category);
+  };
+
+  const selectPreset = (presetId: string) => {
+    setSelectedId(presetId);
+    trackToolPresetSelect(CURING_TIMER_TOOL_SLUG, "material", presetId);
   };
 
   const startTimer = () => {
@@ -121,6 +147,7 @@ export default function CuringTimer() {
     setSecondsLeft(totalSeconds);
     setDeadlineMs(Date.now() + totalSeconds * 1000);
     setStatus("running");
+    trackToolModeChange(CURING_TIMER_TOOL_SLUG, "started");
   };
 
   const pauseTimer = () => {
@@ -170,6 +197,17 @@ export default function CuringTimer() {
 
       {status === "setup" && (
         <div className="space-y-4">
+          {hasActiveTransfer && relatedCalculator && (
+            <div
+              className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-200"
+              data-testid="curing-timer-transfer-banner"
+            >
+              <p className="font-semibold">Тип материала выбран из расчёта</p>
+              <p className="mt-1 text-xs leading-relaxed text-sky-800/80 dark:text-sky-300/80">
+                Из «{relatedCalculator.calculatorTitle}» перенесён только тип материала. Время не рассчитано по толщине, температуре или конкретному продукту, а таймер ещё не запущен.
+              </p>
+            </div>
+          )}
           <div className="no-scrollbar -mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" role="tablist" aria-label="Категория материала">
             <div className="flex min-w-max gap-2">
               {categories.map((category) => (
@@ -192,7 +230,7 @@ export default function CuringTimer() {
                 {visiblePresets.map((preset) => {
                   const selected = selectedId === preset.id;
                   return (
-                    <button key={preset.id} type="button" aria-pressed={selected} onClick={() => setSelectedId(preset.id)} className={`flex min-h-[76px] items-center gap-3 rounded-2xl border p-3 text-left transition-all ${selected ? "border-accent-400 bg-accent-50 shadow-sm ring-1 ring-accent-200 dark:border-accent-500 dark:!bg-slate-800 dark:ring-accent-800" : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900/30 dark:hover:border-slate-600"}`}>
+                    <button key={preset.id} type="button" aria-pressed={selected} onClick={() => selectPreset(preset.id)} className={`flex min-h-[76px] items-center gap-3 rounded-2xl border p-3 text-left transition-all ${selected ? "border-accent-400 bg-accent-50 shadow-sm ring-1 ring-accent-200 dark:border-accent-500 dark:!bg-slate-800 dark:ring-accent-800" : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900/30 dark:hover:border-slate-600"}`}>
                       <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-xl ${selected ? "bg-white shadow-sm dark:!bg-slate-900" : "bg-slate-100 dark:bg-slate-800"}`} aria-hidden="true">{preset.icon}</span>
                       <span className="min-w-0">
                         <span className="block text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{preset.name}</span>
@@ -239,6 +277,17 @@ export default function CuringTimer() {
                 )}
                 <button type="button" onClick={startTimer} disabled={!canStart} className="btn-primary min-h-12 w-full text-base">Запустить таймер →</button>
                 <p className="text-[11px] leading-relaxed text-slate-400">Время ориентировочное. Перед следующим этапом проверьте инструкцию производителя и состояние поверхности.</p>
+                {relatedCalculator && relatedCalculatorHref && (
+                  <Link
+                    href={relatedCalculatorHref}
+                    onClick={() => trackToolRelatedClick(CURING_TIMER_TOOL_SLUG, relatedCalculator.calculatorSlug)}
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 no-underline hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:text-slate-200"
+                    data-testid="curing-timer-calculator-link"
+                  >
+                    {hasActiveTransfer ? "Вернуться к расчёту материала" : "Рассчитать количество материала"}
+                    <span aria-hidden>→</span>
+                  </Link>
+                )}
               </div>
             </aside>
           </div>
