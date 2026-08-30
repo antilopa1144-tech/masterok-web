@@ -32,6 +32,14 @@ import {
   buildInsulationHrefFromFacadeResult,
   INSULATION_FACADE_TRANSFER_FROM,
 } from "@/lib/calculators/facade-system-links";
+import {
+  buildRoofingHrefFromGuttersResult,
+  buildRoofingLinksFromRoofingResult,
+  buildRoofingLinksFromSoftRoofingResult,
+  GUTTERS_TRANSFER_FROM,
+  ROOFING_TRANSFER_FROM,
+  SOFT_ROOFING_TRANSFER_FROM,
+} from "@/lib/calculators/roof-system-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -99,6 +107,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const transferredFinishingArea = Number(searchParams.get("area") ?? searchParams.get("facadeArea"));
+  const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -182,6 +191,33 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildInsulationHrefFromFacadeResult(calculator.slug, result?.totals)
       : null,
     [calculator.slug, result?.totals],
+  );
+  const roofSystemLinks = useMemo(() => {
+    if (!hasCalculated) return [];
+    if (calculator.slug === ROOFING_TRANSFER_FROM) {
+      return buildRoofingLinksFromRoofingResult(result?.totals, {
+        ridgeProjectM: values.ridgeProjectM,
+        eavesProjectM: values.eavesProjectM,
+        valleyProjectM: values.valleyProjectM,
+      });
+    }
+    if (calculator.slug === SOFT_ROOFING_TRANSFER_FROM) {
+      return buildRoofingLinksFromSoftRoofingResult(result?.totals);
+    }
+    return [];
+  }, [
+    calculator.slug,
+    hasCalculated,
+    result?.totals,
+    values.eavesProjectM,
+    values.ridgeProjectM,
+    values.valleyProjectM,
+  ]);
+  const roofingFromGuttersHref = useMemo(
+    () => calculator.slug === GUTTERS_TRANSFER_FROM && hasCalculated
+      ? buildRoofingHrefFromGuttersResult(result?.totals)
+      : null,
+    [calculator.slug, hasCalculated, result?.totals],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -373,6 +409,45 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
               : null}
             и выбрана каркасная система. Материал, форму, толщину, климатическую зону, запас и упаковку укажите для своего проекта.
+          </div>
+        )}
+        {calculator.slug === SOFT_ROOFING_TRANSFER_FROM && transferSource === ROOFING_TRANSFER_FROM && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+            data-testid="soft-roofing-transfer-banner"
+          >
+            Из общей ведомости перенесена площадь скатов
+            {Number.isFinite(transferredRoofArea) && transferredRoofArea > 0
+              ? <> — <strong>{transferredRoofArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            Уклон переносится только из явного расчёта по проекции; длины — только из проектных полей. Проверьте все значения перед расчётом системы мягкой кровли.
+          </div>
+        )}
+        {calculator.slug === ROOFING_TRANSFER_FROM
+          && (transferSource === SOFT_ROOFING_TRANSFER_FROM || transferSource === GUTTERS_TRANSFER_FROM) && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+            data-testid="roofing-transfer-banner"
+          >
+            Перенесена фактическая площадь скатов
+            {Number.isFinite(transferredRoofArea) && transferredRoofArea > 0
+              ? <> — <strong>{transferredRoofArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            {transferSource === SOFT_ROOFING_TRANSFER_FROM && " Тип мягкой черепицы и введённые проектные длины сохранены; полезную площадь товара, запасы и фасовки уточните."}
+            {transferSource === GUTTERS_TRANSFER_FROM && " Тип покрытия, раскладку, запасы, фасовки и проектные позиции выберите отдельно: водосток их не определяет."}
+          </div>
+        )}
+        {calculator.slug === GUTTERS_TRANSFER_FROM
+          && (transferSource === ROOFING_TRANSFER_FROM || transferSource === SOFT_ROOFING_TRANSFER_FROM) && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+            data-testid="gutters-transfer-banner"
+          >
+            Из кровельного расчёта перенесена только площадь скатов
+            {Number.isFinite(transferredRoofArea) && transferredRoofArea > 0
+              ? <> — <strong>{transferredRoofArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}
+            для проверки пропускной способности. Введите фактическую длину желобов, высоту стены, стояки, прямые участки, углы и заглушки по схеме дома.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -635,6 +710,38 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
             >
               Рассчитать утеплитель под вентфасад по чистой площади <span aria-hidden>→</span>
+            </Link>
+          )}
+          {roofSystemLinks.length > 0 && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-900/50 dark:bg-red-950/20">
+              <p className="px-1 text-sm font-semibold text-red-900 dark:text-red-200">
+                Продолжить расчёт кровельной системы
+              </p>
+              <p className="mt-1 px-1 text-xs leading-relaxed text-red-800/80 dark:text-red-300/80">
+                Площадь скатов сохраняется. Покрытие и водосток остаются разными расчётами со своими проектными входами.
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {roofSystemLinks.map((link) => (
+                  <Link
+                    key={link.target}
+                    href={link.href}
+                    onClick={() => trackCalculatorRelatedClick(calculator.slug, link.target)}
+                    className="rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-red-400 dark:border-red-900/70 dark:bg-slate-900"
+                  >
+                    <span className="block font-semibold text-red-900 dark:text-red-200">{link.title}</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">{link.description}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {roofingFromGuttersHref && (
+            <Link
+              href={roofingFromGuttersHref}
+              onClick={() => trackCalculatorRelatedClick(GUTTERS_TRANSFER_FROM, ROOFING_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 no-underline dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+            >
+              Рассчитать кровельное покрытие по площади скатов <span aria-hidden>→</span>
             </Link>
           )}
         </section>
