@@ -16,6 +16,7 @@ import {
 export function useToolAnalytics(
   tool: string,
   resultRef: RefObject<HTMLElement | null>,
+  resultReady = true,
 ) {
   const hasStartedRef = useRef(false);
   const hasTrackedResultRef = useRef(false);
@@ -40,7 +41,7 @@ export function useToolAnalytics(
   );
 
   useEffect(() => {
-    if (!hasStarted || hasTrackedResultRef.current) return;
+    if (!hasStarted || !resultReady || hasTrackedResultRef.current) return;
     const element = resultRef.current;
     if (!element) return;
 
@@ -65,7 +66,7 @@ export function useToolAnalytics(
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [hasStarted, resultRef, tool]);
+  }, [hasStarted, resultReady, resultRef, tool]);
 
   return { hasStarted, markStarted, selectMode };
 }

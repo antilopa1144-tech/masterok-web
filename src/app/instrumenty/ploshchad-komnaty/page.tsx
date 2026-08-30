@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import { trackToolRelatedClick } from "@/lib/analytics";
 import {
   calculateRoomArea,
   parseRoomDimension,
@@ -112,8 +114,14 @@ export default function PloshadKomnatyPage() {
     }),
     [a, b, c, d, shape, wallHeight],
   );
-  const selectedShape = SHAPES.find((item) => item.id === shape) ?? SHAPES[0];
   const hasInputError = isNegative(wallHeight) || result.error !== undefined;
+  const resultRef = useRef<HTMLDivElement>(null);
+  const { markStarted, selectMode } = useToolAnalytics(
+    "ploshchad-komnaty",
+    resultRef,
+    !hasInputError,
+  );
+  const selectedShape = SHAPES.find((item) => item.id === shape) ?? SHAPES[0];
   const roomMasterHref = useMemo(() => {
     const params = new URLSearchParams({ pack: "room" });
     if (shape === "rect" && !hasInputError) {
@@ -136,9 +144,9 @@ export default function PloshadKomnatyPage() {
 
       <div className="mb-4 max-w-3xl sm:mb-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Геометрия помещения</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Площадь комнаты</h1>
-        <p className="mt-2 hidden text-sm leading-relaxed text-slate-500 dark:text-slate-400 sm:block md:text-base">
-          Выберите форму и укажите размеры — план, площадь пола, стен и периметр обновятся сразу.
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Калькулятор площади комнаты</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+          Посчитайте площадь комнаты в м² по длине и ширине. Калькулятор также покажет периметр и площадь стен.
         </p>
       </div>
 
@@ -172,7 +180,11 @@ export default function PloshadKomnatyPage() {
                   type="button"
                   role="radio"
                   aria-checked={shape === item.id}
-                  onClick={() => setShape(item.id)}
+                  onClick={() => {
+                    if (shape === item.id) return;
+                    selectMode(item.id);
+                    setShape(item.id);
+                  }}
                   className={`min-h-14 rounded-xl border px-3 py-2 text-left transition ${
                     shape === item.id
                       ? "border-emerald-400 bg-emerald-50 text-emerald-950 shadow-sm dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-100"
@@ -190,14 +202,14 @@ export default function PloshadKomnatyPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">Шаг 2</p>
             <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Размеры в метрах</h2>
             <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-1 xl:grid-cols-2">
-              {shape === "rect" && <><NumInput label="Длина A" value={a} onChange={setA} /><NumInput label="Ширина B" value={b} onChange={setB} /></>}
-              {shape === "lshape" && <><NumInput label="Длина A" value={a} onChange={setA} /><NumInput label="Ширина B" value={b} onChange={setB} /><NumInput label="Вырез C" value={c} onChange={setC} /><NumInput label="Вырез D" value={d} onChange={setD} /></>}
-              {shape === "tshape" && <><NumInput label="Перекладина A" value={a} onChange={setA} /><NumInput label="Глубина B" value={b} onChange={setB} /><NumInput label="Стойка C" value={c} onChange={setC} /><NumInput label="Длина D" value={d} onChange={setD} /></>}
-              {shape === "trapezoid" && <><NumInput label="Основание A" value={a} onChange={setA} /><NumInput label="Основание B" value={b} onChange={setB} /><NumInput label="Высота C" value={c} onChange={setC} /></>}
-              {shape === "triangle" && <><NumInput label="Основание A" value={a} onChange={setA} /><NumInput label="Высота B" value={b} onChange={setB} /></>}
-              {shape === "circle" && <><NumInput label="Радиус" value={a} onChange={setA} /><NumInput label="Угол сектора" value={b} onChange={setB} unit="°" allowZero hint="0 или 360 — полный круг" /></>}
+              {shape === "rect" && <><NumInput label="Длина A" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Ширина B" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} /></>}
+              {shape === "lshape" && <><NumInput label="Длина A" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Ширина B" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} /><NumInput label="Вырез C" value={c} onChange={(value) => { markStarted("surface_size"); setC(value); }} /><NumInput label="Вырез D" value={d} onChange={(value) => { markStarted("surface_size"); setD(value); }} /></>}
+              {shape === "tshape" && <><NumInput label="Перекладина A" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Глубина B" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} /><NumInput label="Стойка C" value={c} onChange={(value) => { markStarted("surface_size"); setC(value); }} /><NumInput label="Длина D" value={d} onChange={(value) => { markStarted("surface_size"); setD(value); }} /></>}
+              {shape === "trapezoid" && <><NumInput label="Основание A" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Основание B" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} /><NumInput label="Высота C" value={c} onChange={(value) => { markStarted("surface_size"); setC(value); }} /></>}
+              {shape === "triangle" && <><NumInput label="Основание A" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Высота B" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} /></>}
+              {shape === "circle" && <><NumInput label="Радиус" value={a} onChange={(value) => { markStarted("surface_size"); setA(value); }} /><NumInput label="Угол сектора" value={b} onChange={(value) => { markStarted("surface_size"); setB(value); }} unit="°" allowZero hint="0 или 360 — полный круг" /></>}
               <div className="col-span-2 lg:col-span-1 xl:col-span-2">
-                <NumInput label="Высота стен" value={wallHeight} onChange={setWallHeight} allowZero hint="0 — если нужна только площадь пола" />
+                <NumInput label="Высота стен" value={wallHeight} onChange={(value) => { markStarted("surface_size"); setWallHeight(value); }} allowZero hint="0 — если нужна только площадь пола" />
               </div>
             </div>
             <p className="mt-3 flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400">
@@ -231,7 +243,7 @@ export default function PloshadKomnatyPage() {
           </div>
         </div>
 
-        <div className={`order-3 card overflow-hidden border-stone-200 bg-[#fffdf9] p-0 dark:border-slate-700 dark:bg-slate-900 lg:block ${activeStage === "result" ? "block" : "hidden"}`}>
+        <div ref={resultRef} className={`order-3 card overflow-hidden border-stone-200 bg-[#fffdf9] p-0 dark:border-slate-700 dark:bg-slate-900 lg:block ${activeStage === "result" ? "block" : "hidden"}`}>
           <div className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 to-amber-50 p-4 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:to-amber-950/10">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Паспорт помещения</p>
             <div className="mt-2 flex items-start justify-between gap-3 lg:block">
@@ -270,10 +282,10 @@ export default function PloshadKomnatyPage() {
               <p className="mt-2 rounded-xl bg-stone-100 px-3 py-3 text-xs leading-relaxed text-stone-500 dark:bg-slate-950 dark:text-slate-400">Исправьте размеры — после этого откроются калькуляторы закупки.</p>
             ) : (
               <div className="mt-2 grid gap-2">
-                <Link href={roomMasterHref} className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
+                <Link href={roomMasterHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "moy-remont")} className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href="/kalkulyatory/poly/laminat/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для пола</Link>
-                  <Link href="/kalkulyatory/otdelka/oboi/" className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для стен</Link>
+                  <Link href="/kalkulyatory/poly/laminat/" onClick={() => trackToolRelatedClick("ploshchad-komnaty", "laminat-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для пола</Link>
+                  <Link href="/kalkulyatory/otdelka/oboi/" onClick={() => trackToolRelatedClick("ploshchad-komnaty", "wallpaper-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для стен</Link>
                 </div>
               </div>
             )}
