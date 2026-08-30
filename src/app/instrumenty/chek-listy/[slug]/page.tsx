@@ -12,6 +12,7 @@ import {
   buildChecklistHowToJsonLd,
 } from "@/lib/tools/checklist-schema";
 import InteractiveChecklist from "./InteractiveChecklist";
+import ChecklistCalculatorLink from "./ChecklistCalculatorLink";
 
 const UI_TEXT = {
   notFoundTitle: "Чек-лист не найден",
@@ -121,6 +122,8 @@ export default async function ChecklistPage({ params }: Props) {
 
       <InteractiveChecklist checklist={cl} />
 
+      <ChecklistCalculatorLink checklistSlug={cl.slug} />
+
       {/* Нижние кнопки */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <ExportChecklistPDF checklist={cl} />
@@ -144,7 +147,6 @@ export default async function ChecklistPage({ params }: Props) {
     </>
   );
 }
-
 
 
 

@@ -60,6 +60,10 @@ import {
   buildConsumptionNormHref,
   CONSUMPTION_NORMS_TOOL_SLUG,
 } from "@/lib/tools/consumption-norm-links";
+import {
+  buildChecklistHrefForCalculator,
+  getChecklistLinkForCalculator,
+} from "@/lib/tools/checklist-calculator-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -265,6 +269,14 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   );
   const consumptionNormHref = useMemo(
     () => hasCalculated ? buildConsumptionNormHref(calculator.slug) : null,
+    [calculator.slug, hasCalculated],
+  );
+  const checklistLink = useMemo(
+    () => hasCalculated ? getChecklistLinkForCalculator(calculator.slug) : null,
+    [calculator.slug, hasCalculated],
+  );
+  const checklistHref = useMemo(
+    () => hasCalculated ? buildChecklistHrefForCalculator(calculator.slug) : null,
     [calculator.slug, hasCalculated],
   );
 
@@ -855,6 +867,24 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               data-testid="consumption-norms-link"
             >
               Сверить базовый расход с техкартами производителей <span aria-hidden>→</span>
+            </Link>
+          )}
+          {checklistLink && checklistHref && (
+            <Link
+              href={checklistHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, `chek-listy/${checklistLink.checklistSlug}`)}
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm no-underline dark:border-emerald-900/50 dark:bg-emerald-950/20"
+              data-testid="calculator-checklist-link"
+            >
+              <span>
+                <span className="block font-semibold text-emerald-900 dark:text-emerald-200">
+                  Перейти от расчёта к выполнению работ
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-slate-600 dark:text-slate-400">
+                  {checklistLink.checklistCta}: этапы, контроль и сохранение прогресса.
+                </span>
+              </span>
+              <span className="shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden>→</span>
             </Link>
           )}
         </section>
