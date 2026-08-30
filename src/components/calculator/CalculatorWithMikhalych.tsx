@@ -45,6 +45,11 @@ import {
   DECK_LAYOUT_TRANSFER_FROM,
   TERRACE_CALCULATOR_TRANSFER_FROM,
 } from "@/lib/tools/deck-layout-to-calc";
+import {
+  buildPaverLayoutHrefFromCalculatorResult,
+  PAVER_LAYOUT_TRANSFER_FROM,
+  PAVING_CALCULATOR_TRANSFER_FROM,
+} from "@/lib/tools/paver-layout-to-calc";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -114,6 +119,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const transferredFinishingArea = Number(searchParams.get("area") ?? searchParams.get("facadeArea"));
   const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
   const deckLayoutBoardsHint = Number(searchParams.get("layoutBoardsHint"));
+  const paverLayoutPiecesHint = Number(searchParams.get("layoutPaversHint"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -228,6 +234,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const deckLayoutHref = useMemo(
     () => calculator.slug === TERRACE_CALCULATOR_TRANSFER_FROM && hasCalculated
       ? buildDeckLayoutHrefFromTerraceResult(result?.totals)
+      : null,
+    [calculator.slug, hasCalculated, result?.totals],
+  );
+  const paverLayoutHref = useMemo(
+    () => calculator.slug === PAVING_CALCULATOR_TRANSFER_FROM && hasCalculated
+      ? buildPaverLayoutHrefFromCalculatorResult(result?.totals)
       : null,
     [calculator.slug, hasCalculated, result?.totals],
   );
@@ -472,6 +484,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               ? <> Визуальная схема дала <strong>{deckLayoutBoardsHint} {pluralizeRu(deckLayoutBoardsHint, ["доску", "доски", "досок"])} к покупке</strong>.</>
               : null}
             {" "}Для закупки доски сохраняйте результат раскладки: калькулятор ниже нужен прежде всего для лаг, клипс, крепежа, обработки и геотекстиля и не учитывает ширину пропила и разбежку стыков.
+          </div>
+        )}
+        {calculator.slug === PAVING_CALCULATOR_TRANSFER_FROM && transferSource === PAVER_LAYOUT_TRANSFER_FROM && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300" data-testid="paving-calculator-transfer-banner">
+            Из раскладки перенесены точные площадь прямоугольной площадки и периметр внутри бордюров.
+            {Number.isFinite(paverLayoutPiecesHint) && paverLayoutPiecesHint > 0
+              ? <> Схема дала <strong>{paverLayoutPiecesHint} {pluralizeRu(paverLayoutPiecesHint, ["элемент", "элемента", "элементов"])} плитки к покупке</strong>.</>
+              : null}
+            {" "}Этот штучный итог сохраняйте из раскладки; калькулятор ниже считает плитку в м², основание, песок для швов, бордюр и геотекстиль.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -775,6 +796,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 no-underline dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
             >
               Проверить направление, стыки и раскрой доски на схеме <span aria-hidden>→</span>
+            </Link>
+          )}
+          {paverLayoutHref && (
+            <Link
+              href={paverLayoutHref}
+              onClick={() => trackCalculatorRelatedClick(PAVING_CALCULATOR_TRANSFER_FROM, PAVER_LAYOUT_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 no-underline dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300"
+            >
+              Построить схему и уточнить количество плиток по формату <span aria-hidden>→</span>
             </Link>
           )}
         </section>
