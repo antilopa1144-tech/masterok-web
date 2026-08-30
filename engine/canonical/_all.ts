@@ -1374,64 +1374,30 @@ export interface WarmFloorCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 /* ─── Warm Floor Pipes (трубы тёплого пола) ─── */
 
-export interface WarmFloorPipesPipeTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-}
-
 export interface WarmFloorPipesPackagingRules {
-  unit: string;
-  coil_length_m: number;
+  meter_unit: string;
+  coil_unit: string;
+  piece_unit: string;
 }
 
-export interface WarmFloorPipesMaterialRules {
-  furniture_reduction: number;
-  collector_addition_m: number;
-  max_circuit_m: number;
-  pipe_reserve: number;
-  pipe_coil_m: number;
-  epps_sheet_m2: number;
-  epps_reserve: number;
-  damper_tape_roll_m: number;
-  damper_reserve: number;
-  anchor_step_m: number;
-  anchor_reserve: number;
-  anchor_pack: number;
-  screed_thickness_m: number;
-  screed_density: number;
-  screed_bag_kg: number;
-  /**
-   * Шаг трубы в зоне у окна (мм), при zonedLayoutEnabled=true.
-   * По СП 60.13330.2020 для тепловой завесы у окна: 100-150 мм.
-   * Default 120 мм. Опциональное поле для backward-compat.
-   */
-  window_zone_step_mm?: number;
-  /**
-   * Шаг трубы в центральной зоне (мм). Default 200 мм — та же норма,
-   * что в существующем общем pipeStep.
-   */
-  central_zone_step_mm?: number;
-  /**
-   * Доля площади, относящаяся к зоне у окна (0..0.5).
-   * Default 0.20 — типовая доля «холодной» зоны вдоль стены с окнами.
-   */
-  window_zone_fraction?: number;
+export interface WarmFloorPipesEvidenceSource {
+  code: string;
+  scope: string;
+  source: string;
 }
 
-export interface WarmFloorPipesWarningRules {
-  multiple_circuits_pipe_threshold_m: number;
-  professional_heat_loss_area_threshold_m2: number;
+export interface WarmFloorPipesEvidence {
+  reviewed_at: string;
+  standards: WarmFloorPipesEvidenceSource[];
+  project_assumptions: string[];
 }
 
 export interface WarmFloorPipesCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: {
-    pipe_types: WarmFloorPipesPipeTypeSpec[];
-    allowed_pipe_steps_mm: number[];
-  };
+  normative_formula: Record<string, string>;
   packaging_rules: WarmFloorPipesPackagingRules;
-  material_rules: WarmFloorPipesMaterialRules;
-  warnings_rules: WarmFloorPipesWarningRules;
+  material_rules: Record<string, never>;
+  warnings_rules: Record<string, never>;
+  evidence: WarmFloorPipesEvidence;
 }
 
 /* ─── Ventilation (вентиляция) ─── */

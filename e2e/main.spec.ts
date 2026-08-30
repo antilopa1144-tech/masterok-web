@@ -843,6 +843,67 @@ test.describe("Калькулятор электрического тёплог�
   });
 });
 
+test.describe("Калькулятор водяного тёплого пола", () => {
+  test("проверяет геометрию, проектные контуры и реальные бухты", async ({ page }) => {
+    await page.goto("/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/");
+    await expect(page.locator("h1")).toContainText("водяного тёплого пола");
+    await expect(page.getByLabel("Фактическая площадь раскладки").first()).toHaveValue("15");
+    await expect(page.getByLabel("Шаг трубы из проекта").first()).toHaveValue("150");
+    await expect(page.getByLabel("Подводки вне площади раскладки").first()).toHaveValue("0");
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Точная потребность");
+    await expect(resultCard).toContainText("100");
+    await expect(resultCard).toContainText("без округления до бухты");
+    await expect(resultCard).toContainText("Труба для водяного тёплого пола — предварительная геометрия");
+    await expect(resultCard).not.toContainText(/стяжка полусухая|якорные клипсы|демпферная лента \(рулоны\)/i);
+
+    await page.getByRole("button", { name: "По ведомости проекта", exact: true }).click();
+    await expect(page.getByLabel("Фактическая площадь раскладки")).toHaveCount(0);
+    await page.getByLabel("Суммарная длина контуров по проекту").first().fill("260");
+    await page.getByLabel("Количество контуров по проекту").first().fill("3");
+    await page.getByLabel("Самый длинный контур").first().fill("92");
+    await page.getByLabel("Предельная длина контура").first().fill("90");
+    await page.getByLabel("Длина фактической бухты").first().fill("200");
+    const projectAdditionalFields = page.getByRole("button", { name: /Дополнительные параметры/ }).first();
+    if (await projectAdditionalFields.isVisible()) await projectAdditionalFields.click();
+    await page.getByLabel("Коллекторы по ведомости").first().fill("1");
+    await page.getByLabel("Выходы коллекторов по ведомости").first().fill("3");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    await expect(resultCard).toContainText("260");
+    await expect(resultCard).toContainText("400");
+    await expect(resultCard).toContainText(/2\s+бухты по 200\s*м/);
+    await expect(resultCard).toContainText("Коллектор по проектной ведомости — всего 3 выходов");
+    await expect(page.getByText(/самый длинный контур превышает предел/i).first()).toBeVisible();
+    await expect(page.getByText(/не проверяет план раскроя/i).first()).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+
+  test("на mobile сохраняет читаемую форму и результат без переполнения", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/");
+
+    await expect(page.getByRole("button", { name: /Дополнительные параметры/ }).first()).toBeVisible();
+    await page.getByRole("button", { name: /Дополнительные параметры/ }).first().click();
+    await expect(page.getByLabel("Предельная длина контура").first()).toBeVisible();
+    await expect(page.getByLabel("Длина фактической бухты").first()).toBeVisible();
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Результат" })).toBeVisible();
+    await expect(page.getByText(/предварительный режим оценивает геометрическую длину/i).first()).toBeVisible();
+
+    const viewport = await page.locator("html").evaluate((element) => ({
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    }));
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+  });
+});
+
 test.describe("SEO", () => {
   test("страницы имеют правильные мета-теги", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");
