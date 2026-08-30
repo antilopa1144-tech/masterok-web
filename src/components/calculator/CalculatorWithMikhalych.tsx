@@ -56,6 +56,10 @@ import {
   LIGHTING_LAYOUT_TRANSFER_FROM,
   readLightingLayoutCeilingTransfer,
 } from "@/lib/tools/lighting-layout-to-ceiling";
+import {
+  buildConsumptionNormHref,
+  CONSUMPTION_NORMS_TOOL_SLUG,
+} from "@/lib/tools/consumption-norm-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -258,6 +262,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildLightingLayoutHrefFromCeilingCalculator({ area: values.area, fixtures: values.fixtures })
       : null,
     [calculator.slug, hasCalculated, values.area, values.fixtures],
+  );
+  const consumptionNormHref = useMemo(
+    () => hasCalculated ? buildConsumptionNormHref(calculator.slug) : null,
+    [calculator.slug, hasCalculated],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -837,6 +845,16 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-800 no-underline dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-300"
             >
               Расставить выбранные светильники на плане <span aria-hidden>→</span>
+            </Link>
+          )}
+          {consumptionNormHref && (
+            <Link
+              href={consumptionNormHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, CONSUMPTION_NORMS_TOOL_SLUG)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-800 no-underline dark:border-cyan-900/50 dark:bg-cyan-950/20 dark:text-cyan-300"
+              data-testid="consumption-norms-link"
+            >
+              Сверить базовый расход с техкартами производителей <span aria-hidden>→</span>
             </Link>
           )}
         </section>

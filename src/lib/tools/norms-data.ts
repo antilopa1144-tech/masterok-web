@@ -107,7 +107,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     id: "nalivnoy-pol",
     title: "Наливной пол",
     icon: "🏗️",
-    calculator: { slug: "styazhka", categorySlug: "poly" },
+    calculator: { slug: "nalivnoy-pol", categorySlug: "poly" },
     rows: [consumptionNormRow("self-leveling")],
   },
   {
@@ -121,7 +121,7 @@ export const CONSUMPTION_NORMS: NormCategory[] = [
     id: "kladochnyy-kley",
     title: "Клей для газобетона",
     icon: "🧱",
-    calculator: { slug: "kirpich", categorySlug: "steny" },
+    calculator: { slug: "gazobeton", categorySlug: "steny" },
     rows: [consumptionNormRow("gasblock-glue")],
   },
   {

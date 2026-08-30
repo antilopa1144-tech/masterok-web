@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CONSUMPTION_NORMS, type NormCategory, type NormRow } from "@/lib/tools/norms-data";
 import { calcHref } from "@/lib/tools/config";
+import { CONSUMPTION_NORMS_TOOL_SLUG } from "@/lib/tools/consumption-norm-links";
+import { trackToolRelatedClick } from "@/lib/analytics";
 
 function matchesQuery(row: NormRow, query: string) {
   if (!query) return true;
@@ -18,6 +20,7 @@ function NormTable({ category, rows }: { category: NormCategory; rows: NormRow[]
         <div className="flex justify-end bg-slate-50/70 px-3 py-2 dark:bg-slate-800/30 sm:px-4">
           <Link
             href={calcHref(category.calculator)}
+            onClick={() => trackToolRelatedClick(CONSUMPTION_NORMS_TOOL_SLUG, category.calculator!.slug)}
             className="inline-flex min-h-9 items-center text-xs font-semibold text-accent-700 hover:underline dark:text-accent-300"
           >
             Рассчитать количество и упаковки →
@@ -81,6 +84,25 @@ export default function ConsumptionNormsExplorer() {
     () => new Set(CONSUMPTION_NORMS[0] ? [CONSUMPTION_NORMS[0].id] : []),
   );
   const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+
+  useEffect(() => {
+    const openHashCategory = () => {
+      const prefix = "#norm-";
+      if (!window.location.hash.startsWith(prefix)) return;
+
+      const categoryId = decodeURIComponent(window.location.hash.slice(prefix.length));
+      if (!CONSUMPTION_NORMS.some((category) => category.id === categoryId)) return;
+
+      setOpenIds(new Set([categoryId]));
+      requestAnimationFrame(() => {
+        document.getElementById(`norm-${categoryId}`)?.scrollIntoView({ block: "start" });
+      });
+    };
+
+    openHashCategory();
+    window.addEventListener("hashchange", openHashCategory);
+    return () => window.removeEventListener("hashchange", openHashCategory);
+  }, []);
 
   const visibleCategories = useMemo(
     () =>
