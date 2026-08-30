@@ -68,6 +68,10 @@ import {
   buildCuringTimerHrefFromCalculator,
   CURING_TIMER_TOOL_SLUG,
 } from "@/lib/tools/curing-timer-links";
+import {
+  buildMaterialComparisonHrefFromCalculator,
+  MATERIAL_COMPARISON_TOOL_SLUG,
+} from "@/lib/tools/material-comparison-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -286,6 +290,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const curingTimerHref = useMemo(
     () => hasCalculated ? buildCuringTimerHrefFromCalculator(calculator.slug, values) : null,
     [calculator.slug, hasCalculated, values],
+  );
+  const materialComparisonHref = useMemo(
+    () => hasCalculated ? buildMaterialComparisonHrefFromCalculator(calculator.slug) : null,
+    [calculator.slug, hasCalculated],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -911,6 +919,24 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
                 </span>
               </span>
               <span className="shrink-0 text-amber-700 dark:text-amber-300" aria-hidden>→</span>
+            </Link>
+          )}
+          {materialComparisonHref && (
+            <Link
+              href={materialComparisonHref}
+              onClick={() => trackCalculatorRelatedClick(calculator.slug, MATERIAL_COMPARISON_TOOL_SLUG)}
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm no-underline dark:border-violet-900/50 dark:bg-violet-950/20"
+              data-testid="calculator-material-comparison-link"
+            >
+              <span>
+                <span className="block font-semibold text-violet-900 dark:text-violet-200">
+                  Сравнить этот тип материала с альтернативами
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-slate-600 dark:text-slate-400">
+                  Перенесём только категорию. Материалы, цены и главный приоритет останутся вашим выбором.
+                </span>
+              </span>
+              <span className="shrink-0 text-violet-700 dark:text-violet-300" aria-hidden>→</span>
             </Link>
           )}
         </section>

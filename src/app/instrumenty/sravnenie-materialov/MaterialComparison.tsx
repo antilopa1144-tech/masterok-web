@@ -1,11 +1,26 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import {
+  trackToolModeChange,
+  trackToolPresetSelect,
+  trackToolRelatedClick,
+} from "@/lib/analytics";
 import { getPrices, setPrice } from "@/lib/userPrices";
 import {
   getMaterialComparisonRecommendation,
   type MaterialComparisonPriority,
 } from "@/lib/tools/material-comparison";
+import {
+  buildCalculatorHrefForComparedMaterial,
+  getCalculatorLinkForComparedMaterial,
+  isMaterialComparisonCategoryId,
+  MATERIAL_COMPARISON_TOOL_SLUG,
+  readMaterialComparisonTransfer,
+  type MaterialComparisonCategoryId,
+} from "@/lib/tools/material-comparison-links";
 
 const COMPARISON_SCOPE = "comparison";
 
@@ -22,7 +37,7 @@ interface Material {
 }
 
 interface Category {
-  id: string;
+  id: MaterialComparisonCategoryId;
   label: string;
   icon: string;
   unit: string;
@@ -141,9 +156,17 @@ function ComparisonRow({ label, first, second }: { label: string; first: ReactNo
 }
 
 export default function MaterialComparison() {
-  const [categoryId, setCategoryId] = useState("flooring");
-  const [firstMaterialName, setFirstMaterialName] = useState(CATEGORIES[0].materials[0].name);
-  const [secondMaterialName, setSecondMaterialName] = useState(CATEGORIES[0].materials[1].name);
+  const searchParams = useSearchParams();
+  const requestedCategoryId = searchParams.get("category");
+  const initialCategoryId = isMaterialComparisonCategoryId(requestedCategoryId)
+    ? requestedCategoryId
+    : "flooring";
+  const initialCategory = CATEGORIES.find((item) => item.id === initialCategoryId) ?? CATEGORIES[0];
+  const [categoryId, setCategoryId] = useState<MaterialComparisonCategoryId>(initialCategory.id);
+  const [firstMaterialName, setFirstMaterialName] = useState(initialCategory.materials[0].name);
+  const [secondMaterialName, setSecondMaterialName] = useState(
+    initialCategory.materials[1]?.name ?? initialCategory.materials[0].name,
+  );
   const [priority, setPriority] = useState<MaterialComparisonPriority | null>(null);
   const [userPrices, setUserPrices] = useState<Record<string, number>>({});
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
@@ -151,6 +174,8 @@ export default function MaterialComparison() {
   const secondMaterial = category.materials.find((material) => material.name === secondMaterialName) ?? category.materials[1] ?? category.materials[0];
   const firstPrice = userPrices[firstMaterial.name] ?? 0;
   const secondPrice = userPrices[secondMaterial.name] ?? 0;
+  const transfer = readMaterialComparisonTransfer(searchParams);
+  const hasActiveTransfer = transfer?.categoryId === categoryId;
 
   useEffect(() => {
     let cancelled = false;
@@ -172,12 +197,28 @@ export default function MaterialComparison() {
     });
   };
 
-  const handleCategoryChange = (nextCategoryId: string) => {
+  const handleCategoryChange = (nextCategoryId: MaterialComparisonCategoryId) => {
     const nextCategory = CATEGORIES.find((item) => item.id === nextCategoryId) ?? CATEGORIES[0];
     setCategoryId(nextCategory.id);
     setFirstMaterialName(nextCategory.materials[0].name);
     setSecondMaterialName(nextCategory.materials[1]?.name ?? nextCategory.materials[0].name);
     setPriority(null);
+    trackToolModeChange(MATERIAL_COMPARISON_TOOL_SLUG, `category:${nextCategory.id}`);
+  };
+
+  const handleMaterialChange = (label: "A" | "B", name: string) => {
+    if (label === "A") setFirstMaterialName(name);
+    else setSecondMaterialName(name);
+    trackToolPresetSelect(MATERIAL_COMPARISON_TOOL_SLUG, "material", `${label}:${name}`);
+  };
+
+  const handlePriorityChange = (value: MaterialComparisonPriority) => {
+    const nextPriority = priority === value ? null : value;
+    setPriority(nextPriority);
+    trackToolModeChange(
+      MATERIAL_COMPARISON_TOOL_SLUG,
+      nextPriority ? `priority:${nextPriority}` : "priority:none",
+    );
   };
 
   const recommendation = getMaterialComparisonRecommendation({
@@ -189,6 +230,20 @@ export default function MaterialComparison() {
   });
   const firstWins = recommendation.kind === "winner" && recommendation.winnerName === firstMaterial.name;
   const secondWins = recommendation.kind === "winner" && recommendation.winnerName === secondMaterial.name;
+  const selectedCalculatorCandidates = [firstMaterial, secondMaterial]
+    .map((material) => {
+      const calculatorLink = getCalculatorLinkForComparedMaterial(material.name);
+      const href = buildCalculatorHrefForComparedMaterial(material.name);
+      return calculatorLink && href
+        ? { ...calculatorLink, href, materialName: material.name }
+        : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const selectedCalculatorLinks = Array.from(
+    new Map(
+      selectedCalculatorCandidates.map((item) => [item.calculatorSlug, item]),
+    ).values(),
+  );
 
   const renderPicker = (
     label: "A" | "B",
@@ -236,6 +291,14 @@ export default function MaterialComparison() {
 
   return (
     <div className="max-w-6xl space-y-4">
+      {hasActiveTransfer && (
+        <div
+          className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-300"
+          data-testid="material-comparison-transfer-banner"
+        >
+          Из калькулятора выбрана только подходящая категория. Два материала, ваши цены и главный приоритет нужно выбрать здесь — готовый победитель не переносится.
+        </div>
+      )}
       <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         <div className="flex min-w-max gap-2" role="group" aria-label="Категория материалов">
         {CATEGORIES.map((c) => (
@@ -265,8 +328,8 @@ export default function MaterialComparison() {
           </div>
 
           <div className="space-y-3">
-            {renderPicker("A", firstMaterial, firstPrice, secondMaterial.name, setFirstMaterialName)}
-            {renderPicker("B", secondMaterial, secondPrice, firstMaterial.name, setSecondMaterialName)}
+            {renderPicker("A", firstMaterial, firstPrice, secondMaterial.name, (name) => handleMaterialChange("A", name))}
+            {renderPicker("B", secondMaterial, secondPrice, firstMaterial.name, (name) => handleMaterialChange("B", name))}
           </div>
 
           <fieldset>
@@ -277,7 +340,7 @@ export default function MaterialComparison() {
                   type="button"
                   key={option.value}
                   aria-pressed={priority === option.value}
-                  onClick={() => setPriority(priority === option.value ? null : option.value)}
+                  onClick={() => handlePriorityChange(option.value)}
                   className={`min-h-16 rounded-xl border px-2 py-2 text-xs transition-colors ${
                     priority === option.value
                       ? "border-accent-400 bg-accent-50 font-semibold text-accent-700 dark:bg-accent-900/20 dark:text-accent-300"
@@ -346,6 +409,37 @@ export default function MaterialComparison() {
                 </details>
               ))}
             </div>
+
+            {selectedCalculatorLinks.length > 0 && (
+              <div
+                className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900/50 dark:bg-violet-950/20"
+                data-testid="material-comparison-calculator-links"
+              >
+                <p className="text-sm font-semibold text-violet-900 dark:text-violet-200">
+                  Рассчитать количество выбранного материала
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-violet-800/80 dark:text-violet-300/80">
+                  Сравнение помогает выбрать вариант, а калькулятор отдельно посчитает объём и количество к покупке.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {selectedCalculatorLinks.map((item) => (
+                    <Link
+                      key={item.calculatorSlug}
+                      href={item.href}
+                      onClick={() => trackToolRelatedClick(MATERIAL_COMPARISON_TOOL_SLUG, item.calculatorSlug)}
+                      className="rounded-lg border border-violet-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-violet-400 dark:border-violet-900/70 dark:bg-slate-900"
+                    >
+                      <span className="block font-semibold text-violet-900 dark:text-violet-200">
+                        {item.calculatorTitle}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">
+                        Для варианта «{item.materialName}»
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className="mt-4 text-[10px] leading-relaxed text-slate-400">Оценки характеристик — сравнительные ориентиры внутри выбранной категории. Цена вводится пользователем и не включает перечисленные сопутствующие материалы.</p>
           </div>
