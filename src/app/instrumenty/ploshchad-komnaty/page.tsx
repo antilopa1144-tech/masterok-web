@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { trackToolRelatedClick } from "@/lib/analytics";
 import { buildLaminateCalculatorHrefFromRoom } from "@/lib/tools/laminate-layout-to-calc";
+import { buildPlitkaCalculatorHrefFromRoom } from "@/lib/tools/tile-layout-to-calc";
 import { buildWallpaperCalculatorHrefFromRoom } from "@/lib/tools/wallpaper-layout-to-calc";
 import {
   calculateRoomArea,
@@ -147,6 +148,14 @@ export default function PloshadKomnatyPage() {
       height: parseRoomDimension(wallHeight),
     }),
     [result.perimeter, wallHeight],
+  );
+  const tileCalculatorHref = useMemo(
+    () => buildPlitkaCalculatorHrefFromRoom({
+      length: shape === "rect" ? parseRoomDimension(a) : undefined,
+      width: shape === "rect" ? parseRoomDimension(b) : undefined,
+      area: result.floorArea,
+    }),
+    [a, b, result.floorArea, shape],
   );
 
   return (
@@ -303,6 +312,7 @@ export default function PloshadKomnatyPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <Link href={laminateCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "laminat-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Рассчитать ламинат</Link>
                   <Link href={wallpaperCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "wallpaper-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Рассчитать обои</Link>
+                  <Link href={tileCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "plitka-calculator")} className="col-span-2 min-h-11 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-center text-xs font-semibold text-blue-800 no-underline hover:border-blue-400 dark:border-blue-900/60 dark:bg-blue-950/20 dark:text-blue-300">Рассчитать плитку для пола</Link>
                 </div>
               </div>
             )}

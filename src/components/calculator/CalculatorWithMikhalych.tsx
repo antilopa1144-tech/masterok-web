@@ -19,7 +19,10 @@ import {
   WALLPAPER_ROOM_TRANSFER_FROM,
 } from "@/lib/tools/wallpaper-layout-to-calc";
 import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
-import { buildTileLayoutHrefFromCalculatorValues } from "@/lib/tools/tile-layout-to-calc";
+import {
+  buildTileLayoutHrefFromCalculatorValues,
+  TILE_ROOM_TRANSFER_FROM,
+} from "@/lib/tools/tile-layout-to-calc";
 import {
   buildLaminateLayoutHref,
   LAMINATE_LAYOUT_TRANSFER_FROM,
@@ -173,6 +176,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     <div className="space-y-4">
       <div className="space-y-3" data-print-hide>
         <TileLayoutTransferBanner />
+        {calculator.slug === "plitka" && transferSource === TILE_ROOM_TRANSFER_FROM && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300">
+            Из расчёта комнаты перенесены {roomTransferValue}. Здесь уточните формат плитки, фасовку, схему укладки, ширину шва и запас.
+          </div>
+        )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
             Из схемы перенесены размеры комнаты и способ укладки. Здесь уточните площадь упаковки, подложку, плинтус и запас.

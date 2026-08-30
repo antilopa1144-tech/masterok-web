@@ -53,10 +53,50 @@ export interface TileCalculatorTransferInput {
   tilesPerPackage?: number;
 }
 
+interface TileRoomTransferInput {
+  length?: number;
+  width?: number;
+  area: number;
+}
+
 export const PLITKA_CALCULATOR_PATH = "/kalkulyatory/poly/plitka/";
 export const TILE_ADHESIVE_CALCULATOR_PATH = "/kalkulyatory/poly/klej-dlya-plitki/";
 export const TILE_GROUT_CALCULATOR_PATH = "/kalkulyatory/poly/zatirka/";
 export const TILE_LAYOUT_TRANSFER_FROM = "raskladka";
+export const TILE_ROOM_TRANSFER_FROM = "ploshchad-komnaty";
+
+function roundRoomTransferValue(value: number): number {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000;
+}
+
+/** Передача геометрии пола из инструмента площади без выдуманных габаритов. */
+export function buildPlitkaCalculatorHrefFromRoom(input: TileRoomTransferInput): string {
+  const length = Number(input.length);
+  const width = Number(input.width);
+  const area = Number(input.area);
+  const hasSupportedDimensions =
+    Number.isFinite(length) &&
+    length >= 0.5 &&
+    length <= 30 &&
+    Number.isFinite(width) &&
+    width >= 0.5 &&
+    width <= 30;
+
+  const params = new URLSearchParams();
+  params.set("from", TILE_ROOM_TRANSFER_FROM);
+  if (hasSupportedDimensions) {
+    params.set("inputMode", "0");
+    params.set("length", String(roundRoomTransferValue(length)));
+    params.set("width", String(roundRoomTransferValue(width)));
+  } else if (Number.isFinite(area) && area >= 1 && area <= 500) {
+    params.set("inputMode", "1");
+    params.set("area", String(roundRoomTransferValue(area)));
+  } else {
+    return PLITKA_CALCULATOR_PATH;
+  }
+
+  return `${PLITKA_CALCULATOR_PATH}?${params.toString()}`;
+}
 
 /** Способ укладки в калькуляторе: 0 прямая, 1 диагональ, 2 кирпичная. */
 export function mapLayoutModeToLayingMethod(mode: LayoutMode): number {

@@ -3,6 +3,7 @@ import {
   buildTileAdhesiveCalculatorHref,
   buildTileGroutCalculatorHref,
   buildPlitkaCalculatorHref,
+  buildPlitkaCalculatorHrefFromRoom,
   buildPlitkaTransferValues,
   buildTileLayoutHref,
   buildTileLayoutHrefFromCalculatorValues,
@@ -126,6 +127,40 @@ describe("buildPlitkaCalculatorHref", () => {
   it("не передаёт недопустимую площадь коробки", () => {
     const href = buildPlitkaCalculatorHref({ ...base, packAreaM2: 0.01 });
     expect(href).not.toContain("packArea=");
+  });
+});
+
+describe("buildPlitkaCalculatorHrefFromRoom", () => {
+  it("переносит прямоугольную комнату по точным размерам", () => {
+    const url = new URL(
+      buildPlitkaCalculatorHrefFromRoom({ length: 5, width: 3.6, area: 18 }),
+      "https://getmasterok.ru",
+    );
+
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      from: "ploshchad-komnaty",
+      inputMode: "0",
+      length: "5",
+      width: "3.6",
+    });
+  });
+
+  it("переносит площадь сложной комнаты без выдуманных габаритов", () => {
+    const url = new URL(
+      buildPlitkaCalculatorHrefFromRoom({ area: 16.875 }),
+      "https://getmasterok.ru",
+    );
+
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      from: "ploshchad-komnaty",
+      inputMode: "1",
+      area: "16.875",
+    });
+  });
+
+  it("не создаёт ссылку с параметрами вне диапазона калькулятора", () => {
+    expect(buildPlitkaCalculatorHrefFromRoom({ length: 0.4, width: 0.4, area: 0.16 }))
+      .toBe("/kalkulyatory/poly/plitka/");
   });
 });
 
