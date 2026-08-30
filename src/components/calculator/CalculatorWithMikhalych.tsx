@@ -17,6 +17,10 @@ import {
   ELECTRIC_FLOOR_TRANSFER_FROM,
   SCREED_TRANSFER_FROM,
 } from "@/lib/calculators/floor-system-cluster-links";
+import {
+  buildPartitionFinishingLinks,
+  PARTITION_FINISHING_TRANSFER_FROM,
+} from "@/lib/calculators/partition-finishing-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -83,6 +87,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
+  const partitionFinishingArea = Number(searchParams.get("area"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -136,6 +141,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildSheetLayoutHrefFromFasteners({ materialType: values.materialType })
       : null,
     [calculator.slug, values.materialType],
+  );
+  const partitionFinishingLinks = useMemo(
+    () => calculator.slug === PARTITION_FINISHING_TRANSFER_FROM && hasCalculated
+      ? buildPartitionFinishingLinks({ length: values.length, height: values.height })
+      : [],
+    [calculator.slug, hasCalculated, values.height, values.length],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -250,6 +261,21 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "krepezh" && transferSource === SHEET_LAYOUT_TRANSFER_FROM && (
           <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
             Из карты раскроя перенесено <strong>{values.sheetCount} {pluralizeRu(values.sheetCount, ["лист", "листа", "листов"])}</strong>, выбран материал и базовый шаг крепления. Проверьте шаг по системе производителя и условиям основания.
+          </div>
+        )}
+        {transferSource === PARTITION_FINISHING_TRANSFER_FROM
+          && ["gruntovka", "shtukaturka", "shpaklevka"].includes(calculator.slug) && (
+          <div
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
+            data-testid="partition-finishing-transfer-banner"
+          >
+            Перенесена площадь обеих сторон перегородки
+            {Number.isFinite(partitionFinishingArea) && partitionFinishingArea > 0
+              ? <> — <strong>{partitionFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            {calculator.slug === "gruntovka" && " Проверьте фактическую площадь, тип основания и число слоёв по инструкции состава."}
+            {calculator.slug === "shtukaturka" && " Проёмы не вычтены: уточните площадь, вид смеси и толщину выравнивания."}
+            {calculator.slug === "shpaklevka" && " Этот этап выполняют по уже выровненному основанию: выберите тип шпаклёвки и класс подготовки."}
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -426,6 +452,29 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             >
               Рассчитать стяжку по площади помещения <span aria-hidden>→</span>
             </Link>
+          )}
+          {partitionFinishingLinks.length > 0 && (
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+              <p className="px-1 text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                Продолжить отделку обеих сторон перегородки
+              </p>
+              <p className="mt-1 px-1 text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
+                Перенесём площадь без проёмов. На каждом этапе проверьте основание и систему материалов.
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {partitionFinishingLinks.map((link) => (
+                  <Link
+                    key={link.target}
+                    href={link.href}
+                    onClick={() => trackCalculatorRelatedClick(PARTITION_FINISHING_TRANSFER_FROM, link.target)}
+                    className="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-emerald-400 dark:border-emerald-900/70 dark:bg-slate-900"
+                  >
+                    <span className="block font-semibold text-emerald-900 dark:text-emerald-200">{link.title}</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">{link.description}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
         </section>
 
