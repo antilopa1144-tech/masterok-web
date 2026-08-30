@@ -731,6 +731,66 @@ test.describe("Калькулятор вентиляции", () => {
   });
 });
 
+test.describe("Калькулятор радиаторов отопления", () => {
+  test("считает по нагрузке помещения и не выдумывает проектную ведомость", async ({ page }) => {
+    await page.goto("/kalkulyatory/inzhenernye/otoplenie-radiatory/");
+    await expect(page.locator("h1")).toContainText("радиаторов");
+    await expect(page.getByLabel("Тепловая нагрузка помещения").first()).toHaveValue("8000");
+    await expect(page.getByLabel("Площадь помещения").first()).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Тепловая нагрузка");
+    await expect(resultCard).toContainText("8");
+    await expect(resultCard).toContainText("К покупке");
+    await expect(resultCard).toContainText("45");
+    await expect(resultCard).toContainText("Секции выбранного радиатора");
+    await expect(resultCard).not.toContainText("Труба отопления");
+    await expect(page.getByText(/сопутствующая закупка не рассчитана/i).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Предварительно по Вт/м²", exact: true }).click();
+    await page.getByLabel("Площадь помещения").first().fill("60");
+    await page.getByLabel("Удельная нагрузка из расчёта или допущения").first().fill("120");
+    await page.getByRole("button", { name: "Готовые приборы", exact: true }).click();
+    await page.getByRole("button", { name: "Пересчитать по ΔT и n", exact: true }).click();
+
+    const additionalFields = page.getByRole("button", { name: /Дополнительные параметры/ }).first();
+    await expect(additionalFields).toBeVisible();
+    await additionalFields.click();
+
+    await page.getByLabel("Номинальная теплоотдача").first().fill("1000");
+    await page.getByLabel("Номинальный температурный напор ΔT").first().fill("50");
+    await page.getByLabel("Расчётная температура подачи").first().fill("55");
+    await page.getByLabel("Расчётная температура обратки").first().fill("45");
+    await page.getByLabel("Расчётная температура помещения").first().fill("20");
+    await page.getByLabel("Паспортный показатель степени n").first().fill("1.3");
+    await page.getByLabel("Явный проектный запас мощности").first().fill("10");
+    await page.getByLabel("Длина труб по схеме").first().fill("10");
+    await page.getByLabel("Длина покупного отрезка трубы").first().fill("4");
+    await page.getByLabel("Запас длины труб").first().fill("10");
+    await page.getByLabel("Фитинги по ведомости").first().fill("8");
+    await page.getByLabel("Кронштейны по ведомости").first().fill("4");
+    await page.getByLabel("Комплекты арматуры по ведомости").first().fill("2");
+    await page.getByLabel("Воздухоотводчики по ведомости").first().fill("2");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    await expect(resultCard).toContainText("7,2");
+    await expect(resultCard).toContainText(/514[,.]8/);
+    await expect(resultCard).toContainText("16");
+    await expect(resultCard).toContainText("Выбранный отопительный прибор");
+    await expect(resultCard).toContainText("Труба отопления по проектной ведомости");
+    await expect(resultCard).toContainText(/3\s+отрез/);
+    await expect(resultCard).toContainText(/12\s*м/);
+    await expect(resultCard).toContainText("Фитинги по проектной ведомости");
+    await expect(page.getByText(/режим Вт\/м² — предварительная/i).first()).toBeVisible();
+    await expect(page.getByText(/гидравлический расчёт/i).first()).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("SEO", () => {
   test("страницы имеют правильные мета-теги", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");

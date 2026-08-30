@@ -1,130 +1,211 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { heatingDef } from "../formulas/heating";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(heatingDef.calculate.bind(heatingDef));
 
-describe("Отопление и радиаторы", () => {
-  describe("Секционный радиатор (radiatorType=0)", () => {
-    it("80 м², Москва (zone=1), угловая квартира (buildingType=0, coeff=1.3), 2.7 м, 4 комнаты", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 4 });
-      checkInvariants(r);
-      // Engine: powerPerM2=100, buildingCoeff=1.3, heightCoeff=2.7/2.7=1
-      // totalPowerW=80*100*1.3*1=10400
-      expect(r.totals.totalPowerW).toBeCloseTo(10400, 0);
-      const rad = findMaterial(r, "Биметаллический радиатор");
-      expect(rad).toBeDefined();
-      expect(rad!.quantity).toBeCloseTo(10400 / 180, 5);
-      expect(rad!.purchaseQty).toBe(58);
+describe("Радиаторное отопление v4", () => {
+  it("принимает готовую нагрузку и паспортную мощность для рабочего режима", () => {
+    const result = calc({
+      loadMode: 0,
+      designHeatLoadW: 8000,
+      deviceKind: 0,
+      devicePowerMode: 0,
+      deviceOutputAtDesignW: 180,
     });
 
-    it("radiatorType=1 — 200 Вт/секция", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 1, roomCount: 4 });
-      // totalPower=10400, sections=ceil(10400/200)=52
-      const rad = findMaterial(r, "Алюминиевый радиатор");
-      expect(rad).toBeDefined();
-      expect(rad!.quantity).toBe(52);
-    });
+    checkInvariants(result);
+    expect(result.formulaVersion).toBe("heating-canonical-v4");
+    expect(result.totals.heatLoadW).toBe(8000);
+    expect(result.totals.effectiveDeviceOutputW).toBe(180);
+    expect(result.scenarios?.MIN.exact_need).toBeCloseTo(8000 / 180, 6);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(45);
+    expect(result.materials[0].unit).toBe("секций");
   });
 
-  describe("Панельные радиаторы (radiatorType>=2)", () => {
-    it("radiatorType=2 — 700 Вт/панель", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType: 2, roomCount: 4 });
-      const rad = findMaterial(r, "Чугунный радиатор");
-      expect(rad).toBeDefined();
-      expect(rad!.quantity).toBeCloseTo(8000 / 700, 5);
-      expect(rad!.purchaseQty).toBe(12);
-      expect(r.totals.radiatorCount).toBe(12);
-      expect(findMaterial(r, "термоголовкой")?.purchaseQty).toBe(12);
-    });
-  });
-
-  describe("Климатические зоны", () => {
-    it("юг (zone=0) — 80 Вт/м²", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 0, buildingType: 1, radiatorType: 0, roomCount: 4 });
-      // 80*80*1.0*1=6400
-      expect(r.totals.totalPowerW).toBeCloseTo(6400, 0);
+  it("предварительный режим использует только явно введённые площадь и Вт/м²", () => {
+    const result = calc({
+      loadMode: 1,
+      heatedAreaM2: 60,
+      specificHeatLoadWm2: 120,
+      deviceOutputAtDesignW: 200,
     });
 
-    it("Сибирь (zone=2) — 130 Вт/м²", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 1, radiatorType: 0, roomCount: 4 });
-      // 80*130*1.0=10400
-      expect(r.totals.totalPowerW).toBeCloseTo(10400, 0);
+    expect(result.totals.heatLoadW).toBe(7200);
+    expect(result.totals.totalPowerW).toBe(7200);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(36);
+    expect(result.warnings.some((warning) => warning.includes("Вт/м²"))).toBe(true);
+  });
+
+  it("старый URL с totalArea открывается как предварительная оценка, а не как ложный проект", () => {
+    const result = calc({ totalArea: 60 });
+
+    expect(result.totals.loadMode).toBe(1);
+    expect(result.totals.heatedAreaM2).toBe(60);
+    expect(result.totals.heatLoadW).toBe(6000);
+  });
+
+  it("для готового прибора округляет покупку в штуках", () => {
+    const result = calc({
+      designHeatLoadW: 8000,
+      deviceKind: 1,
+      deviceOutputAtDesignW: 1500,
     });
+
+    expect(result.scenarios?.MIN.exact_need).toBeCloseTo(8000 / 1500, 6);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(6);
+    expect(result.materials[0].unit).toBe("шт");
+    expect(result.scenarios?.REC.buy_plan.unit).toBe("шт");
   });
 
-  describe("Сопутствующие материалы", () => {
-    it("трубы PP-R, фитинги, кронштейны, термостатические клапаны и краны Маевского", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 4 });
-      expect(findMaterial(r, "труба PP-R")).toBeDefined();
-      expect(findMaterial(r, "Фитинги")).toBeDefined();
-      expect(findMaterial(r, "Кронштейны")).toBeDefined();
-      expect(findMaterial(r, "термоголовкой")).toBeDefined();
-      expect(findMaterial(r, "Маевского")).toBeDefined();
+  it("пересчитывает паспортную теплоотдачу по ΔT и показателю n", () => {
+    const result = calc({
+      designHeatLoadW: 8000,
+      devicePowerMode: 1,
+      nominalDeviceOutputW: 1000,
+      ratedDeltaTK: 50,
+      supplyTempC: 55,
+      returnTempC: 45,
+      roomTempC: 20,
+      temperatureExponent: 1.3,
     });
+    const expectedOutput = 1000 * (30 / 50) ** 1.3;
+
+    expect(result.totals.designDeltaTK).toBe(30);
+    expect(result.totals.effectiveDeviceOutputW).toBeCloseTo(expectedOutput, 3);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(Math.ceil(8000 / expectedOutput));
   });
 
-  it.each([
-    [0, "Биметаллический радиатор", "секций", 8000 / 180, 45],
-    [1, "Алюминиевый радиатор", "секций", 40, 40],
-    [2, "Чугунный радиатор", "шт", 8000 / 700, 12],
-    [3, "Стальной панельный радиатор", "шт", 8000 / 700, 12],
-  ])("тип %i: отделяет точную потребность от покупки и сохраняет единицу", (radiatorType, name, unit, exactNeed, purchase) => {
-    const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType, roomCount: 4 });
-    const radiator = findMaterial(r, name);
+  it("при совпадающем ΔT сохраняет номинальную мощность", () => {
+    const result = calc({
+      devicePowerMode: 1,
+      nominalDeviceOutputW: 180,
+      ratedDeltaTK: 50,
+      supplyTempC: 75,
+      returnTempC: 65,
+      roomTempC: 20,
+      temperatureExponent: 1.3,
+    });
 
-    expect(radiator?.quantity).toBeCloseTo(exactNeed, 5);
-    expect(radiator?.withReserve).toBeCloseTo(exactNeed, 5);
-    expect(radiator?.purchaseQty).toBe(purchase);
-    expect(radiator?.unit).toBe(unit);
-    expect(r.scenarios?.REC.exact_need).toBeCloseTo(exactNeed, 5);
-    expect(r.scenarios?.REC.purchase_quantity).toBe(purchase);
-    expect(r.scenarios?.REC.buy_plan.unit).toBe(unit);
+    expect(result.totals.designDeltaTK).toBe(50);
+    expect(result.totals.effectiveDeviceOutputW).toBe(180);
   });
 
-  it("не применяет отходы и навык мастера к тепловой мощности", () => {
-    const inputs = { totalArea: 80, ceilingHeight: 2.7, climateZone: 1, buildingType: 1, radiatorType: 0, roomCount: 4 };
+  it("предупреждает о некорректном температурном режиме", () => {
+    const result = calc({
+      devicePowerMode: 1,
+      supplyTempC: 30,
+      returnTempC: 40,
+      roomTempC: 35,
+    });
+
+    expect(result.warnings.some((warning) => warning.includes("заданы некорректно"))).toBe(true);
+  });
+
+  it("предупреждает при сильном падении температурного напора", () => {
+    const result = calc({
+      devicePowerMode: 1,
+      nominalDeviceOutputW: 180,
+      ratedDeltaTK: 70,
+      supplyTempC: 45,
+      returnTempC: 35,
+      roomTempC: 20,
+    });
+
+    expect(result.totals.temperatureRatio).toBeCloseTo(20 / 70, 6);
+    expect(result.warnings.some((warning) => warning.includes("сильно уменьшится"))).toBe(true);
+  });
+
+  it("MIN не использует запас, REC и MAX используют только явный запас", () => {
+    const result = calc({
+      designHeatLoadW: 8000,
+      deviceOutputAtDesignW: 200,
+      designReservePercent: 10,
+    });
+
+    expect(result.scenarios?.MIN.exact_need).toBe(40);
+    expect(result.scenarios?.MIN.purchase_quantity).toBe(40);
+    expect(result.scenarios?.REC.exact_need).toBe(44);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(44);
+    expect(result.scenarios?.MAX.exact_need).toBe(44);
+    expect(result.materials[0].quantity).toBe(40);
+    expect(result.materials[0].withReserve).toBe(44);
+  });
+
+  it("режим точности не добавляет скрытый запас", () => {
+    const inputs = {
+      designHeatLoadW: 8000,
+      deviceOutputAtDesignW: 180,
+      designReservePercent: 0,
+    };
     const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
       heatingDef.calculate({ ...inputs, accuracyMode }),
     );
 
-    for (const r of results) {
-      expect(r.scenarios?.MIN.exact_need).toBeCloseTo(8000 / 180, 5);
-      expect(r.scenarios?.REC.exact_need).toBeCloseTo(8000 / 180, 5);
-      expect(r.scenarios?.MAX.exact_need).toBeCloseTo(8000 / 180, 5);
-      expect(r.scenarios?.REC.purchase_quantity).toBe(45);
-      expect(r.accuracyExplanation?.combinedMultiplier).toBe(1);
+    for (const result of results) {
+      expect(result.scenarios?.REC.exact_need).toBeCloseTo(8000 / 180, 6);
+      expect(result.scenarios?.REC.purchase_quantity).toBe(45);
+      expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
     }
   });
 
-  it("использует нейтральный canonical-дефолт: квартира на среднем этаже", () => {
-    const r = heatingDef.calculate({});
+  it("не придумывает трубы, фитинги и арматуру по тепловой нагрузке", () => {
+    const result = calc({ designHeatLoadW: 8000, deviceOutputAtDesignW: 180 });
 
-    expect(r.totals.buildingType).toBe(1);
-    expect(r.totals.totalPowerW).toBe(8000);
-    expect(r.totals.totalUnits).toBe(45);
+    expect(result.materials).toHaveLength(1);
+    expect(findMaterial(result, "Труба")).toBeUndefined();
+    expect(findMaterial(result, "Фитинги")).toBeUndefined();
+    expect(findMaterial(result, "Кронштейны")).toBeUndefined();
+    expect(result.warnings.some((warning) => warning.includes("ведомости"))).toBe(true);
   });
 
-  it("понимает старое значение высоты 270 см и не зажимает его до 3,5 м", () => {
-    const r = calc({ totalArea: 80, ceilingHeight: 270, climateZone: 1, buildingType: 1, radiatorType: 0, roomCount: 4 });
-    expect(r.totals.ceilingHeight).toBe(2.7);
-    expect(r.totals.totalPowerW).toBeCloseTo(8000, 0);
+  it("округляет явную длину трубы до покупных отрезков", () => {
+    const result = calc({
+      pipeLengthM: 10,
+      pipeStockLengthM: 4,
+      pipeReservePercent: 10,
+    });
+    const pipe = findMaterial(result, "Труба отопления");
+
+    expect(pipe?.quantity).toBe(10);
+    expect(pipe?.withReserve).toBe(11);
+    expect(pipe?.purchaseQty).toBe(12);
+    expect(pipe?.packageInfo).toEqual({ count: 3, size: 4, packageUnit: "отрезков" });
   });
 
-  describe("Предупреждения", () => {
-    it("> 20 кВт → требуется расчёт теплопотерь и подбор источника тепла", () => {
-      const r = calc({ totalArea: 200, ceilingHeight: 2.7, climateZone: 1, buildingType: 0, radiatorType: 0, roomCount: 8 });
-      expect(r.warnings.some(w => w.includes("источника тепла"))).toBe(true);
+  it("добавляет только явно заданные штучные позиции", () => {
+    const result = calc({
+      fittingCount: 8,
+      bracketCount: 4,
+      valveSetCount: 2,
+      airVentCount: 2,
     });
 
-    it("слабая изоляция + холодная зона → теплотехнический расчёт", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 3, radiatorType: 0, roomCount: 4 });
-      expect(r.warnings.some(w => w.includes("теплотехнический"))).toBe(true);
+    expect(findMaterial(result, "Фитинги")?.purchaseQty).toBe(8);
+    expect(findMaterial(result, "Кронштейны")?.purchaseQty).toBe(4);
+    expect(findMaterial(result, "регулирующей")?.purchaseQty).toBe(2);
+    expect(findMaterial(result, "Воздухоотводчики")?.purchaseQty).toBe(2);
+  });
+
+  it("фиксирует расчёт по одному помещению и границы гидравлики", () => {
+    const result = calc({});
+
+    expect(result.warnings.some((warning) => warning.includes("одного помещения"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("Гидравлический"))).toBe(true);
+    expect(result.practicalNotes?.some((note) => note.includes("каждое помещение"))).toBe(true);
+  });
+
+  it("ограничивает входы canonical-диапазонами", () => {
+    const result = calc({
+      designHeatLoadW: -1,
+      deviceOutputAtDesignW: 999999,
+      designReservePercent: 90,
+      fittingCount: 2.6,
     });
 
-    it("хорошее утепление не называется слабым", () => {
-      const r = calc({ totalArea: 80, ceilingHeight: 2.7, climateZone: 2, buildingType: 2, radiatorType: 0, roomCount: 4 });
-      expect(r.warnings.some(w => w.includes("Слабая изоляция"))).toBe(false);
-    });
+    expect(result.totals.heatLoadW).toBe(100);
+    expect(result.totals.effectiveDeviceOutputW).toBe(50000);
+    expect(result.totals.designReservePercent).toBe(30);
+    expect(result.totals.fittings).toBe(3);
   });
 });

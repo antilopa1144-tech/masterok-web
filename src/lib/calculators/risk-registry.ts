@@ -206,7 +206,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "web/mobile parity и фактический Flutter ProCalculator flow",
     ],
   ),
-  pending("otoplenie-radiatory", "heating", "P0", ["engineering_safety", "building_physics", "field_factors"]),
+  implementationAudited(
+    "otoplenie-radiatory",
+    "heating",
+    "P0",
+    ["engineering_safety", "building_physics", "field_factors"],
+    [
+      "canonical heating-canonical-v4",
+      "официальные карточки СП 60.13330.2020 с изменениями 1–6, СП 50.13330.2024, СП 131.13330.2025, ГОСТ 31311-2022 и ГОСТ Р 53583-2009",
+      "точный режим принимает готовую тепловую нагрузку одного помещения или независимо рассчитанной зоны, а режим Вт/м² оставлен только как явная предварительная сметная оценка",
+      "теплоотдача принимается из паспорта для рабочего режима либо пересчитывается по фактическому температурному напору и показателю n изготовителя без климатических ярлыков и скрытого запаса",
+      "число секций или приборов округляется вверх, а трубы, фитинги, кронштейны и арматура появляются только из проектной ведомости; web/mobile parity, CalculatorEngine и фактический desktop/mobile ProCalculator flow",
+    ],
+  ),
   implementationAudited(
     "ventilyaciya",
     "ventilation",

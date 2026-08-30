@@ -1565,58 +1565,36 @@ export interface ElectricCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 /* ─── Heating (отопление) ─── */
 
-export interface HeatingClimateZoneSpec {
-  id: number;
-  key: string;
-  label: string;
-  power_per_m2: number;
-}
-
-export interface HeatingBuildingTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-  coefficient: number;
-}
-
-export interface HeatingRadiatorTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-  watt_per_unit: number;
-}
-
 export interface HeatingPackagingRules {
-  unit: string;
-  package_size: number;
-}
-
-export interface HeatingMaterialRules {
-  power_per_m2_base: number[];
-  building_coeff: number[];
-  radiator_power: number[];
-  pp_pipe_stick_m: number;
-  pipe_rate: number;
-  pipe_reserve: number;
-  fittings_per_room: number;
-  fittings_reserve: number;
-  brackets_per_room: number;
-  brackets_reserve: number;
+  section_unit: string;
+  device_unit: string;
+  pipe_unit: string;
+  piece_unit: string;
 }
 
 export interface HeatingWarningRules {
-  gas_boiler_power_threshold_kw: number;
+  low_temperature_ratio: number;
+  high_temperature_ratio: number;
+}
+
+export interface HeatingEvidenceSource {
+  code: string;
+  scope: string;
+  source: string;
+}
+
+export interface HeatingEvidence {
+  reviewed_at: string;
+  standards: HeatingEvidenceSource[];
+  project_assumptions: string[];
 }
 
 export interface HeatingCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: {
-    climate_zones: HeatingClimateZoneSpec[];
-    building_types: HeatingBuildingTypeSpec[];
-    radiator_types: HeatingRadiatorTypeSpec[];
-  };
+  normative_formula: Record<string, string>;
   packaging_rules: HeatingPackagingRules;
-  material_rules: HeatingMaterialRules;
+  material_rules: Record<string, never>;
   warnings_rules: HeatingWarningRules;
+  evidence: HeatingEvidence;
 }
 
 /* ─── Sewage (канализация) ─── */
