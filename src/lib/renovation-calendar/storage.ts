@@ -43,6 +43,25 @@ export function saveCalendarState(state: RenovationCalendarState): void {
   }
 }
 
+/**
+ * URL-сценарий важнее сохранённого выбора. Прогресс нельзя переносить между
+ * комнатами: у разных планов есть одинаковые id этапов (`prep`, `finish`).
+ * Без параметра восстанавливаем последний выбранный пользователем сценарий.
+ */
+export function resolveCalendarState(
+  saved: RenovationCalendarState,
+  requestedScenario: RenovationScenarioId | null,
+): RenovationCalendarState {
+  if (!requestedScenario || requestedScenario === saved.scenarioId) return saved;
+
+  return {
+    scenarioId: requestedScenario,
+    startDate: saved.startDate,
+    completedStageIds: [],
+    completedTaskKeys: [],
+  };
+}
+
 export function formatStageDateRange(
   startDateIso: string | null,
   dayFrom: number,

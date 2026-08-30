@@ -92,7 +92,7 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
         dayTo: 36,
         links: [
           { type: "layout", label: "Раскладка плитки", href: "/instrumenty/raskladka-plitki/" },
-          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/" },
+          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/?pack=bathroom" },
           { type: "calc", label: "Калькулятор ванной", href: calcHref({ slug: "vannaya-komnata", categorySlug: "otdelka" }) },
         ],
       },
@@ -162,7 +162,7 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
         dayFrom: 30,
         dayTo: 35,
         links: [
-          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/" },
+          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/?pack=kitchen" },
           { type: "calc", label: "Калькулятор ламината", href: calcHref({ slug: "laminat", categorySlug: "poly" }) },
         ],
       },
@@ -225,7 +225,7 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
         dayFrom: 28,
         dayTo: 32,
         links: [
-          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/" },
+          { type: "master", label: "Мастер «Мой ремонт»", href: "/instrumenty/moy-remont/?pack=room" },
           { type: "calc", label: "Калькулятор ламината", href: calcHref({ slug: "laminat", categorySlug: "poly" }) },
         ],
       },

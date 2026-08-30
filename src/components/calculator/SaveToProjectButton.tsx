@@ -6,7 +6,7 @@ import { createProject, getProjects, saveEntryToProject } from "@/lib/storage/pr
 import type { ProjectWithEntries } from "@/lib/storage/types";
 import { calendarHref } from "@/lib/renovation-hub/context";
 import type { RenovationScenarioId } from "@/lib/renovation-calendar/scenarios";
-import { trackProjectSave } from "@/lib/analytics";
+import { trackCalculatorRelatedClick, trackProjectSave } from "@/lib/analytics";
 
 interface Props {
   calcId: string;
@@ -179,7 +179,10 @@ export default function SaveToProjectButton({
               <Link
                 href={calendarHref(calendarScenarioId)}
                 className="text-[11px] font-medium text-sky-700 hover:text-sky-900 dark:text-sky-300 no-underline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  trackCalculatorRelatedClick(slug, "kalendar-remonta");
+                  setOpen(false);
+                }}
               >
                 📅 Календарь этапов →
               </Link>

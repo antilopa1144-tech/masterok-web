@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getScenarioList,
   RENOVATION_SCENARIOS,
@@ -14,6 +14,7 @@ import {
   DEFAULT_CALENDAR_STATE,
   formatStageDateRange,
   loadCalendarState,
+  resolveCalendarState,
   saveCalendarState,
   type RenovationCalendarState,
 } from "@/lib/renovation-calendar/storage";
@@ -22,6 +23,10 @@ import {
   renovationTaskKey,
 } from "@/lib/renovation-calendar/stage-tasks";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
+import { trackToolModeChange, trackToolRelatedClick } from "@/lib/analytics";
+import { calendarHref } from "@/lib/renovation-hub/context";
+
+const CALENDAR_TOOL_SLUG = "kalendar-remonta";
 
 const LINK_STYLE: Record<RenovationStageLink["type"], string> = {
   checklist: "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200",
@@ -32,6 +37,7 @@ const LINK_STYLE: Record<RenovationStageLink["type"], string> = {
 };
 
 export default function RenovationCalendar() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialScenario = parseScenarioId(searchParams.get("scenario"));
 
@@ -46,12 +52,16 @@ export default function RenovationCalendar() {
 
   useEffect(() => {
     const saved = loadCalendarState();
-    const fromUrl = parseScenarioId(searchParams.get("scenario"));
-    setState({ ...saved, scenarioId: fromUrl });
-    const scenarioFromUrl = RENOVATION_SCENARIOS[fromUrl];
+    const scenarioParam = searchParams.get("scenario");
+    const next = resolveCalendarState(
+      saved,
+      scenarioParam === null ? null : parseScenarioId(scenarioParam),
+    );
+    setState(next);
+    const resolvedScenario = RENOVATION_SCENARIOS[next.scenarioId];
     setExpandedStageId(
-      scenarioFromUrl.stages.find((stage) => !saved.completedStageIds.includes(stage.id))?.id
-        ?? scenarioFromUrl.stages[0]?.id
+      resolvedScenario.stages.find((stage) => !next.completedStageIds.includes(stage.id))?.id
+        ?? resolvedScenario.stages[0]?.id
         ?? null,
     );
     setHydrated(true);
@@ -79,6 +89,10 @@ export default function RenovationCalendar() {
       ? state.completedStageIds.filter((id) => id !== stageId)
       : [...state.completedStageIds, stageId];
     persist({ ...state, completedStageIds: next });
+    trackToolModeChange(
+      CALENDAR_TOOL_SLUG,
+      `stage:${state.scenarioId}:${stageId}:${wasCompleted ? "reopened" : "completed"}`,
+    );
     if (wasCompleted) {
       setExpandedStageId(stageId);
       return;
@@ -92,6 +106,7 @@ export default function RenovationCalendar() {
   };
 
   const changeScenario = (id: RenovationScenarioId) => {
+    if (id === state.scenarioId) return;
     persist({
       scenarioId: id,
       startDate: state.startDate,
@@ -99,14 +114,26 @@ export default function RenovationCalendar() {
       completedTaskKeys: [],
     });
     setExpandedStageId(RENOVATION_SCENARIOS[id].stages[0]?.id ?? null);
+    trackToolModeChange(CALENDAR_TOOL_SLUG, `scenario:${id}`);
+    router.replace(calendarHref(id), { scroll: false });
   };
 
   const toggleTask = (stageId: string, index: number) => {
     const key = renovationTaskKey(state.scenarioId, stageId, index);
-    const next = completedTasksSet.has(key)
+    const wasCompleted = completedTasksSet.has(key);
+    const next = wasCompleted
       ? state.completedTaskKeys.filter((k) => k !== key)
       : [...state.completedTaskKeys, key];
     persist({ ...state, completedTaskKeys: next });
+    trackToolModeChange(
+      CALENDAR_TOOL_SLUG,
+      `task:${state.scenarioId}:${stageId}:${index}:${wasCompleted ? "reopened" : "completed"}`,
+    );
+  };
+
+  const changeStartDate = (value: string) => {
+    persist({ ...state, startDate: value || null });
+    trackToolModeChange(CALENDAR_TOOL_SLUG, value ? "start-date:set" : "start-date:cleared");
   };
 
   if (!hydrated) {
@@ -157,7 +184,7 @@ export default function RenovationCalendar() {
         <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_220px] sm:p-5">
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Дата начала работ</span>
-            <input type="date" value={state.startDate ?? ""} onChange={(event) => persist({ ...state, startDate: event.target.value || null })} className="input-field mt-2 min-h-12 w-full" />
+            <input type="date" value={state.startDate ?? ""} onChange={(event) => changeStartDate(event.target.value)} className="input-field mt-2 min-h-12 w-full" />
           </label>
           <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{nextStage ? "Следующий этап" : "План завершён"}</p>
@@ -230,6 +257,7 @@ export default function RenovationCalendar() {
                         <Link
                           key={`${stage.id}-${link.href}-${link.label}`}
                           href={link.href}
+                          onClick={() => trackToolRelatedClick(CALENDAR_TOOL_SLUG, `${link.type}:${link.href}`)}
                           className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold no-underline hover:opacity-90 ${LINK_STYLE[link.type]}`}
                         >
                           {link.label}
@@ -244,7 +272,13 @@ export default function RenovationCalendar() {
         })}
       </ol>
 
-      <RenovationHubStrip scenarioId={state.scenarioId} showTileLayout packId={state.scenarioId === "apartment" ? null : state.scenarioId} />
+      <RenovationHubStrip
+        scenarioId={state.scenarioId}
+        showTileLayout={state.scenarioId !== "room"}
+        showCalendar={false}
+        packId={state.scenarioId === "apartment" ? null : state.scenarioId}
+        analyticsSource={CALENDAR_TOOL_SLUG}
+      />
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
         Сроки ориентировочные: зависят от смеси, температуры и толщины слоя. Таймеры и чек-листы открываются
@@ -252,13 +286,13 @@ export default function RenovationCalendar() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Link href="/instrumenty/chek-listy/" className="btn-secondary text-sm no-underline">
+        <Link href="/instrumenty/chek-listy/" onClick={() => trackToolRelatedClick(CALENDAR_TOOL_SLUG, "chek-listy")} className="btn-secondary text-sm no-underline">
           Все чек-листы
         </Link>
-        <Link href="/instrumenty/tajmer-skhvatyvaniya/" className="btn-secondary text-sm no-underline">
+        <Link href="/instrumenty/tajmer-skhvatyvaniya/" onClick={() => trackToolRelatedClick(CALENDAR_TOOL_SLUG, "tajmer-skhvatyvaniya")} className="btn-secondary text-sm no-underline">
           Таймер схватывания
         </Link>
-        <Link href="/proekty/" className="btn-primary text-sm no-underline">
+        <Link href="/proekty/" onClick={() => trackToolRelatedClick(CALENDAR_TOOL_SLUG, "proekty")} className="btn-primary text-sm no-underline">
           Мой ремонт — смета
         </Link>
       </div>

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import { formatNumber } from "@/components/calculator/useCalculator";
-import { packIdToScenario } from "@/lib/renovation-hub/context";
+import { calendarHref, packIdToScenario } from "@/lib/renovation-hub/context";
 import {
   DEFAULT_ROOM_DIMENSIONS,
   ROOM_MEASURE_LIMITS,
@@ -350,7 +350,13 @@ export default function RoomMasterWizard() {
               <section className="mt-4 card border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-sm font-bold text-slate-950 dark:text-white">Соседние этапы</h3>
-                  <Link href="/instrumenty/kalendar-remonta/" className="text-xs font-semibold text-accent-700 no-underline dark:text-accent-300">Календарь →</Link>
+                  <Link
+                    href={calendarHref(scenarioId)}
+                    onClick={() => trackToolRelatedClick(ROOM_MASTER_TOOL_SLUG, "kalendar-remonta")}
+                    className="text-xs font-semibold text-accent-700 no-underline dark:text-accent-300"
+                  >
+                    Календарь →
+                  </Link>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {renovationCostHref && (
