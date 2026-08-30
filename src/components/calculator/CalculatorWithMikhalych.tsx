@@ -21,6 +21,12 @@ import {
   buildPartitionFinishingLinks,
   PARTITION_FINISHING_TRANSFER_FROM,
 } from "@/lib/calculators/partition-finishing-links";
+import {
+  buildFinishLinksFromPuttyResult,
+  buildPuttyHrefFromPlasterResult,
+  PLASTER_FINISHING_TRANSFER_FROM,
+  PUTTY_FINISHING_TRANSFER_FROM,
+} from "@/lib/calculators/finishing-stage-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -87,7 +93,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
-  const partitionFinishingArea = Number(searchParams.get("area"));
+  const transferredFinishingArea = Number(searchParams.get("area"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -147,6 +153,18 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       ? buildPartitionFinishingLinks({ length: values.length, height: values.height })
       : [],
     [calculator.slug, hasCalculated, values.height, values.length],
+  );
+  const puttyFromPlasterHref = useMemo(
+    () => calculator.slug === PLASTER_FINISHING_TRANSFER_FROM && hasCalculated
+      ? buildPuttyHrefFromPlasterResult(result?.totals)
+      : null,
+    [calculator.slug, hasCalculated, result?.totals],
+  );
+  const puttyFinishLinks = useMemo(
+    () => calculator.slug === PUTTY_FINISHING_TRANSFER_FROM && hasCalculated
+      ? buildFinishLinksFromPuttyResult(result?.totals, values.surface)
+      : [],
+    [calculator.slug, hasCalculated, result?.totals, values.surface],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -270,12 +288,39 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             data-testid="partition-finishing-transfer-banner"
           >
             Перенесена площадь обеих сторон перегородки
-            {Number.isFinite(partitionFinishingArea) && partitionFinishingArea > 0
-              ? <> — <strong>{partitionFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+            {Number.isFinite(transferredFinishingArea) && transferredFinishingArea > 0
+              ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
               : null}.
             {calculator.slug === "gruntovka" && " Проверьте фактическую площадь, тип основания и число слоёв по инструкции состава."}
             {calculator.slug === "shtukaturka" && " Проёмы не вычтены: уточните площадь, вид смеси и толщину выравнивания."}
             {calculator.slug === "shpaklevka" && " Этот этап выполняют по уже выровненному основанию: выберите тип шпаклёвки и класс подготовки."}
+          </div>
+        )}
+        {calculator.slug === "shpaklevka" && transferSource === PLASTER_FINISHING_TRANSFER_FROM && (
+          <div
+            className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-300"
+            data-testid="plaster-putty-transfer-banner"
+          >
+            Из штукатурки перенесена чистая площадь после вычета проёмов
+            {Number.isFinite(transferredFinishingArea) && transferredFinishingArea > 0
+              ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            Выберите тип шпаклёвки и класс подготовки под краску или обои.
+          </div>
+        )}
+        {transferSource === PUTTY_FINISHING_TRANSFER_FROM
+          && ["gruntovka", "kraska", "oboi"].includes(calculator.slug) && (
+          <div
+            className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-300"
+            data-testid="putty-finish-transfer-banner"
+          >
+            Из шпаклёвки перенесена площадь подготовленных стен
+            {Number.isFinite(transferredFinishingArea) && transferredFinishingArea > 0
+              ? <> — <strong>{transferredFinishingArea.toLocaleString("ru-RU")} м²</strong></>
+              : null}.
+            {calculator.slug === "gruntovka" && " Уточните тип основания и необходимое число слоёв по инструкции грунта."}
+            {calculator.slug === "kraska" && " Переход предполагает уже загрунтованное основание: уточните число слоёв и укрывистость выбранной краски."}
+            {calculator.slug === "oboi" && " Укажите фактическую высоту, площадь проёмов, размер рулона и раппорт: эти параметры нельзя восстановить из площади шпаклевания."}
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -470,6 +515,38 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
                     className="rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-emerald-400 dark:border-emerald-900/70 dark:bg-slate-900"
                   >
                     <span className="block font-semibold text-emerald-900 dark:text-emerald-200">{link.title}</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">{link.description}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {puttyFromPlasterHref && (
+            <Link
+              href={puttyFromPlasterHref}
+              onClick={() => trackCalculatorRelatedClick(PLASTER_FINISHING_TRANSFER_FROM, PUTTY_FINISHING_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-800 no-underline dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-300"
+            >
+              После высыхания рассчитать шпаклёвку по чистой площади <span aria-hidden>→</span>
+            </Link>
+          )}
+          {puttyFinishLinks.length > 0 && (
+            <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:border-violet-900/50 dark:bg-violet-950/20">
+              <p className="px-1 text-sm font-semibold text-violet-900 dark:text-violet-200">
+                Выбрать финиш для подготовленных стен
+              </p>
+              <p className="mt-1 px-1 text-xs leading-relaxed text-violet-800/80 dark:text-violet-300/80">
+                Перенесём только площадь. Слои, проёмы и параметры покрытия остаются вашим выбором.
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {puttyFinishLinks.map((link) => (
+                  <Link
+                    key={link.target}
+                    href={link.href}
+                    onClick={() => trackCalculatorRelatedClick(PUTTY_FINISHING_TRANSFER_FROM, link.target)}
+                    className="rounded-lg border border-violet-200 bg-white px-3 py-2.5 text-sm no-underline transition-colors hover:border-violet-400 dark:border-violet-900/70 dark:bg-slate-900"
+                  >
+                    <span className="block font-semibold text-violet-900 dark:text-violet-200">{link.title}</span>
                     <span className="mt-0.5 block text-xs leading-snug text-slate-500 dark:text-slate-400">{link.description}</span>
                   </Link>
                 ))}
