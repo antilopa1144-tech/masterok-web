@@ -3,6 +3,7 @@ import type { LaminateMode } from "./laminate-layout";
 export const LAMINATE_CALCULATOR_PATH = "/kalkulyatory/poly/laminat/";
 export const LAMINATE_LAYOUT_PATH = "/instrumenty/raskladka-laminata/";
 export const LAMINATE_LAYOUT_TRANSFER_FROM = "raskladka-laminata";
+export const LAMINATE_ROOM_TRANSFER_FROM = "ploshchad-komnaty";
 
 interface LaminateLayoutTransferInput {
   surfaceW: number;
@@ -16,6 +17,12 @@ interface LaminateCalculatorValues {
   width?: number;
   layingMethod?: number;
   offsetMode?: number;
+}
+
+interface LaminateRoomTransferInput {
+  length?: number;
+  width?: number;
+  area: number;
 }
 
 function round(value: number, digits = 3): number {
@@ -50,6 +57,34 @@ export function buildLaminateCalculatorHref(input: LaminateLayoutTransferInput):
   params.set("width", String(round(input.surfaceW / 1000)));
   params.set("layingMethod", String(layout.layingMethod));
   params.set("offsetMode", String(layout.offsetMode));
+
+  return `${LAMINATE_CALCULATOR_PATH}?${params.toString()}`;
+}
+
+export function buildLaminateCalculatorHrefFromRoom(input: LaminateRoomTransferInput): string {
+  const params = new URLSearchParams();
+  const length = Number(input.length);
+  const width = Number(input.width);
+  const area = Number(input.area);
+  const hasSupportedDimensions =
+    Number.isFinite(length) &&
+    length >= 1 &&
+    length <= 30 &&
+    Number.isFinite(width) &&
+    width >= 1 &&
+    width <= 30;
+
+  params.set("from", LAMINATE_ROOM_TRANSFER_FROM);
+  if (hasSupportedDimensions) {
+    params.set("inputMode", "0");
+    params.set("length", String(round(length)));
+    params.set("width", String(round(width)));
+  } else if (Number.isFinite(area) && area >= 1 && area <= 500) {
+    params.set("inputMode", "1");
+    params.set("area", String(round(area)));
+  } else {
+    return LAMINATE_CALCULATOR_PATH;
+  }
 
   return `${LAMINATE_CALCULATOR_PATH}?${params.toString()}`;
 }

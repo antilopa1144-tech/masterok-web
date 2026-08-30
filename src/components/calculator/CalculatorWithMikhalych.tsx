@@ -20,6 +20,7 @@ import { buildTileLayoutHrefFromCalculatorValues } from "@/lib/tools/tile-layout
 import {
   buildLaminateLayoutHref,
   LAMINATE_LAYOUT_TRANSFER_FROM,
+  LAMINATE_ROOM_TRANSFER_FROM,
 } from "@/lib/tools/laminate-layout-to-calc";
 import {
   trackCalculatorRelatedClick,
@@ -52,7 +53,10 @@ function getCompanionSlugs(slug: string): string[] {
 
 export default function CalculatorWithMikhalych({ calculator }: { calculator: CalculatorWidgetProps }) {
   const searchParams = useSearchParams();
-  const fromLayout = searchParams.get("from");
+  const transferSource = searchParams.get("from");
+  const roomTransferValue = searchParams.get("inputMode") === "1"
+    ? "площадь пола"
+    : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const formRef = useRef<HTMLDivElement>(null);
@@ -166,9 +170,14 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     <div className="space-y-4">
       <div className="space-y-3" data-print-hide>
         <TileLayoutTransferBanner />
-        {calculator.slug === "laminat" && fromLayout === LAMINATE_LAYOUT_TRANSFER_FROM && (
+        {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
             Из схемы перенесены размеры комнаты и способ укладки. Здесь уточните площадь упаковки, подложку, плинтус и запас.
+          </div>
+        )}
+        {calculator.slug === "laminat" && transferSource === LAMINATE_ROOM_TRANSFER_FROM && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+            Из расчёта комнаты перенесены {roomTransferValue}. Здесь уточните упаковку, способ укладки, запас, подложку и плинтус.
           </div>
         )}
         {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (

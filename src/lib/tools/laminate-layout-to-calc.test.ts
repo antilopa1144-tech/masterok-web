@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildLaminateCalculatorHref,
+  buildLaminateCalculatorHrefFromRoom,
   buildLaminateLayoutHref,
   parseLaminateLayoutSearchParams,
 } from "./laminate-layout-to-calc";
@@ -39,6 +40,38 @@ describe("laminate layout transfer", () => {
 
     expect(url.searchParams.get("layingMethod")).toBe("2");
     expect(url.searchParams.get("offsetMode")).toBe("0");
+  });
+
+  it("переносит прямоугольную комнату в калькулятор ламината по размерам", () => {
+    const url = new URL(
+      buildLaminateCalculatorHrefFromRoom({ length: 5, width: 4, area: 20 }),
+      "https://getmasterok.ru",
+    );
+
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      from: "ploshchad-komnaty",
+      inputMode: "0",
+      length: "5",
+      width: "4",
+    });
+  });
+
+  it("переносит площадь сложной комнаты без выдуманных габаритов", () => {
+    const url = new URL(
+      buildLaminateCalculatorHrefFromRoom({ area: 16.875 }),
+      "https://getmasterok.ru",
+    );
+
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      from: "ploshchad-komnaty",
+      inputMode: "1",
+      area: "16.875",
+    });
+  });
+
+  it("не создаёт ссылку с параметрами вне диапазона калькулятора", () => {
+    expect(buildLaminateCalculatorHrefFromRoom({ length: 0.5, width: 0.5, area: 0.25 }))
+      .toBe("/kalkulyatory/poly/laminat/");
   });
 
   it("строит ссылку из калькулятора с размерами и схемой", () => {

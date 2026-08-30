@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { trackToolRelatedClick } from "@/lib/analytics";
+import { buildLaminateCalculatorHrefFromRoom } from "@/lib/tools/laminate-layout-to-calc";
 import {
   calculateRoomArea,
   parseRoomDimension,
@@ -131,6 +132,14 @@ export default function PloshadKomnatyPage() {
     }
     return `/instrumenty/moy-remont/?${params}`;
   }, [a, b, hasInputError, shape, wallHeight]);
+  const laminateCalculatorHref = useMemo(
+    () => buildLaminateCalculatorHrefFromRoom({
+      length: shape === "rect" ? parseRoomDimension(a) : undefined,
+      width: shape === "rect" ? parseRoomDimension(b) : undefined,
+      area: result.floorArea,
+    }),
+    [a, b, result.floorArea, shape],
+  );
 
   return (
     <div className="page-container max-w-6xl py-4 sm:py-6 md:py-8">
@@ -284,7 +293,7 @@ export default function PloshadKomnatyPage() {
               <div className="mt-2 grid gap-2">
                 <Link href={roomMasterHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "moy-remont")} className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
                 <div className="grid grid-cols-2 gap-2">
-                  <Link href="/kalkulyatory/poly/laminat/" onClick={() => trackToolRelatedClick("ploshchad-komnaty", "laminat-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для пола</Link>
+                  <Link href={laminateCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "laminat-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Рассчитать ламинат</Link>
                   <Link href="/kalkulyatory/otdelka/oboi/" onClick={() => trackToolRelatedClick("ploshchad-komnaty", "wallpaper-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Для стен</Link>
                 </div>
               </div>
