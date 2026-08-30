@@ -238,6 +238,45 @@ test.describe("Калькулятор материалов кровли", () => 
   });
 });
 
+test.describe("Калькулятор прямой лестницы", () => {
+  test("v2 считает геометрию и закупку только по проектной ведомости", async ({ page }) => {
+    await page.goto("/kalkulyatory/otdelka/kalkulyator-lestnicy/");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1")).toContainText("Прямая лестница");
+    await expect(page.getByLabel("Высота от чистого пола до чистого пола").first()).toHaveValue("2.8");
+    await expect(page.getByLabel("Как задано число подъёмов").first()).toHaveValue("0");
+
+    const mobileAdditionalFields = page.getByRole("button", {
+      name: /Дополнительные параметры/,
+    });
+    if (await mobileAdditionalFields.isVisible()) {
+      await mobileAdditionalFields.click();
+    }
+
+    await page.getByLabel("Запас чистовых ступеней").first().fill("10");
+    await page.getByLabel("Ступеней в одной покупной упаковке").first().fill("4");
+    await page.getByLabel("Косоуры или тетивы одной проектной позиции").first().fill("4");
+    await page.getByLabel("Длина одной проектной детали").first().fill("2.5");
+    await page.getByLabel("Длина покупной заготовки").first().fill("6");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Чистовые заготовки ступеней по геометрии");
+    await expect(resultCard).toContainText(/20\s*шт/);
+    await expect(resultCard).toContainText("Косоур/тетива — одна проектная позиция");
+    await expect(resultCard).toContainText(/2\s*заготов/);
+    await expect(resultCard).not.toContainText("Бетон из проектной ведомости");
+    await expect(resultCard).not.toContainText("Арматура по проектной массе");
+    await expect(resultCard).not.toContainText("Стойки/заполнение ограждения");
+    await expect(page.getByText(/Это геометрия одного прямого марша и закупка по проектной ведомости/i).first()).toBeVisible();
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+});
+
 test.describe("Калькулятор арматуры", () => {
   test("v2 считает проектную сетку и отдельно закупает элементы каркаса", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/armatura/");

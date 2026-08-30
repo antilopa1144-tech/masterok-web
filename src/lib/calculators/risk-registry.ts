@@ -169,7 +169,19 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "удалены квадратная аппроксимация периметра, скрытый коэффициент сложности и автоматическое назначение элементов кровельной системы; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
     ],
   ),
-  pending("kalkulyator-lestnicy", "stairs", "P0", ["structural_safety", "complex_geometry"]),
+  implementationAudited(
+    "kalkulyator-lestnicy",
+    "stairs",
+    "P0",
+    ["structural_safety", "complex_geometry"],
+    [
+      "canonical stairs-canonical-v2",
+      "официальные карточки СП 55.13330.2016, СП 1.13130.2020, СП 64.13330.2017, СП 16.13330.2017, СП 63.13330.2018 и ГОСТ 25772-2025",
+      "геометрия ограничена одним прямым маршем, число подъёмов определяется по целевой высоте либо принимается из проекта, а результат отдельно показывает подъёмы, проступи, длину марша, угол, формулу шага и приближённый габарит прохода",
+      "калькулятор не назначает несущую схему, косоуры, армирование, площадки, ограждения или крепёж",
+      "закупка появляется только из явной проектной ведомости и фактических фасовок, MIN/REC/MAX применяется только к заготовкам ступеней без скрытого запаса; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
+    ],
+  ),
   implementationAudited(
     "elektrika",
     "electric",

@@ -1770,30 +1770,37 @@ export interface StripFoundationCanonicalSpec extends CanonicalCalculatorSpecBas
 /* ─── Stairs (лестница) ─── */
 
 export interface StairsPackagingRules {
-  unit: string;
-  package_size: number;
+  count_package_unit: string;
+  stock_piece_unit: string;
+  concrete_order_unit: string;
 }
 
 export interface StairsMaterialRules {
-  stringer_board: string;
-  tread_board: string;
-  riser_board: string;
-  stringers_count: number;
-  railing_spacing: number;
-  concrete_density_for_stairs: number;
-  rebar_kg_per_step_width: number;
+  geometry_mode_codes: {
+    target_riser_height: number;
+    project_riser_count: number;
+  };
 }
 
 export interface StairsWarningRules {
-  steep_step_threshold_mm: number;
-  max_steps_per_flight: number;
+  comfort_step_min_mm: number;
+  comfort_step_max_mm: number;
+  headroom_attention_m: number;
+  steep_angle_attention_deg: number;
 }
 
 export interface StairsCanonicalSpec extends CanonicalCalculatorSpecBase {
-  normative_formula: Record<string, never>;
+  normative_formula: {
+    riser_count: string;
+    tread_count: string;
+    straight_run: string;
+    incline_length: string;
+    headroom_estimate: string;
+  };
   packaging_rules: StairsPackagingRules;
   material_rules: StairsMaterialRules;
   warnings_rules: StairsWarningRules;
+  evidence: ConcreteEvidenceSpec;
 }
 
 /* ─── Balcony (балкон) ─── */
