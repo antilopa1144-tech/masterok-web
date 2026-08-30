@@ -11,6 +11,12 @@ import {
   buildConcreteCalculatorHrefFromFoundationResult,
   getFoundationConcreteSourceLabel,
 } from "@/lib/calculators/foundation-cluster-links";
+import {
+  buildElectricFloorHrefFromScreedResult,
+  buildScreedHrefFromElectricFloorResult,
+  ELECTRIC_FLOOR_TRANSFER_FROM,
+  SCREED_TRANSFER_FROM,
+} from "@/lib/calculators/floor-system-cluster-links";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -99,6 +105,18 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
 
   const concreteCalculatorHref = useMemo(
     () => buildConcreteCalculatorHrefFromFoundationResult(calculator.slug, result?.totals),
+    [calculator.slug, result?.totals],
+  );
+  const electricFloorHref = useMemo(
+    () => calculator.slug === "styazhka"
+      ? buildElectricFloorHrefFromScreedResult(result?.totals)
+      : null,
+    [calculator.slug, result?.totals],
+  );
+  const screedHref = useMemo(
+    () => calculator.slug === "teplyy-pol"
+      ? buildScreedHrefFromElectricFloorResult(result?.totals)
+      : null,
     [calculator.slug, result?.totals],
   );
 
@@ -194,6 +212,16 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "beton" && foundationConcreteSourceLabel && (
           <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
             Из расчёта {foundationConcreteSourceLabel} перенесены чистый объём бетона и запас. Здесь выберите класс бетона и способ закупки: готовая смесь или самостоятельный замес.
+          </div>
+        )}
+        {calculator.slug === "teplyy-pol" && transferSource === ELECTRIC_FLOOR_TRANSFER_FROM && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+            Из расчёта стяжки перенесена общая площадь помещения. Отдельно вычтите стационарную мебель и сантехнику, укажите фактическую площадь раскладки и паспортные данные выбранного комплекта.
+          </div>
+        )}
+        {calculator.slug === "styazhka" && transferSource === SCREED_TRANSFER_FROM && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
+            Из электрического тёплого пола перенесена площадь всего помещения, а не только зона нагрева. Толщину и конструкцию стяжки укажите по проекту пола.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -333,6 +361,24 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-medium text-stone-700 no-underline hover:border-stone-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
             >
               Уточнить марку, заказ миксера или состав замеса <span aria-hidden>→</span>
+            </Link>
+          )}
+          {electricFloorHref && (
+            <Link
+              href={electricFloorHref}
+              onClick={() => trackCalculatorRelatedClick("styazhka", "teplyy-pol")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 no-underline dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+            >
+              Спланировать электрический тёплый пол <span aria-hidden>→</span>
+            </Link>
+          )}
+          {screedHref && (
+            <Link
+              href={screedHref}
+              onClick={() => trackCalculatorRelatedClick("teplyy-pol", "styazhka")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 no-underline dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300"
+            >
+              Рассчитать стяжку по площади помещения <span aria-hidden>→</span>
             </Link>
           )}
         </section>
