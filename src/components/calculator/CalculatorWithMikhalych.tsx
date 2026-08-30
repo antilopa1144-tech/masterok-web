@@ -294,12 +294,20 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             </Link>
           )}
           {calculator.slug === "oboi" && (
-            <Link href={buildWallpaperLayoutHref({ perimeter: values.perimeter, height: values.height, rollLength: values.rollLength, rollWidth: values.rollWidth, rapport: values.rapport, reserveRolls: values.reserveRolls })} className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
+            <Link
+              href={buildWallpaperLayoutHref({ perimeter: values.perimeter, height: values.height, rollLength: values.rollLength, rollWidth: values.rollWidth, rapport: values.rapport, reserveRolls: values.reserveRolls })}
+              onClick={() => trackCalculatorRelatedClick("oboi", "raskladka-oboev")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800 no-underline dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            >
               Разложить полосы и увидеть раскрой рулонов <span aria-hidden>→</span>
             </Link>
           )}
           {calculator.slug === "gipsokarton" && (
-            <Link href={buildSheetLayoutHrefFromDrywall({ length: values.length, height: values.height, layers: values.layers, sheetSize: values.sheetSize })} className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+            <Link
+              href={buildSheetLayoutHrefFromDrywall({ length: values.length, height: values.height, layers: values.layers, sheetSize: values.sheetSize })}
+              onClick={() => trackCalculatorRelatedClick("gipsokarton", "raskladka-listov")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
+            >
               Разложить листы и увидеть карту раскроя <span aria-hidden>→</span>
             </Link>
           )}

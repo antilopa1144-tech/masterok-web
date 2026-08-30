@@ -8,6 +8,7 @@ import {
 } from "@/lib/tools/tile-layout-to-calc";
 import type { LayoutMode } from "@/lib/tools/tile-layout";
 import { getScenarioForCalculator } from "@/lib/renovation-hub/context";
+import { trackCalculatorRelatedClick } from "@/lib/analytics";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 
 export default function TileLayoutTransferBanner() {
@@ -62,6 +63,7 @@ export default function TileLayoutTransferBanner() {
             Параметры из{" "}
             <Link
               href={returnHref}
+              onClick={() => trackCalculatorRelatedClick("plitka", "raskladka-plitki")}
               className="font-semibold underline hover:text-blue-800 dark:hover:text-blue-200"
             >
               раскладки плитки
