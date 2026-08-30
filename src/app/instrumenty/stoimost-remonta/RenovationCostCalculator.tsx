@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import { getPrices as getUserPrices, setPrices as setUserPrices, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import {
@@ -11,6 +13,13 @@ import {
   RENOVATION_TYPES,
   ROOM_PRESETS,
 } from "@/lib/tools/renovation-cost";
+import {
+  buildRoomMasterHrefFromRenovationCost,
+  readRenovationCostRoomTransfer,
+  RENOVATION_COST_TOOL_SLUG,
+  ROOM_MASTER_TOOL_SLUG,
+} from "@/lib/tools/room-master-to-renovation-cost";
+import { trackToolRelatedClick } from "@/lib/analytics";
 
 type RenovationCostStage = "parameters" | "prices" | "result";
 const RENOVATION_COST_STAGES = [
@@ -22,6 +31,7 @@ const RENOVATION_COST_STAGES = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function RenovationCostCalculator() {
+  const searchParams = useSearchParams();
   const [activeStage, setActiveStage] = useState<RenovationCostStage>("parameters");
   const [areaInput, setAreaInput] = useState("55");
   const [typeId, setTypeId] = useState("standard");
@@ -29,6 +39,14 @@ export default function RenovationCostCalculator() {
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const scopeKey = `${PRICE_SCOPES.renovation}:${typeId}`;
+  const roomTransfer = useMemo(
+    () => readRenovationCostRoomTransfer(searchParams),
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (roomTransfer) setAreaInput(String(roomTransfer.areaM2));
+  }, [roomTransfer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +99,11 @@ export default function RenovationCostCalculator() {
 
   return (
     <div ref={workspaceTopRef} className="max-w-6xl space-y-4 scroll-mt-24">
+      {roomTransfer && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200" data-testid="renovation-cost-transfer-banner">
+          Из «Моего ремонта» перенесена только площадь пола одного помещения: <strong>{roomTransfer.areaM2.toLocaleString("ru-RU")} м²</strong>. Тип ремонта, участие мастеров и цены выберите здесь; количества ниже остаются укрупнённой сметой и не заменяют полученную закупочную ведомость.
+        </div>
+      )}
       <div className="xl:hidden">
         <CompactToolWorkspaceNav activeStage={activeStage} ariaLabel="Этапы сметы ремонта" stages={RENOVATION_COST_STAGES} onChange={changeStage} metrics={[
           { label: "Площадь", value: areaError ? "Исправьте" : `${area} м²` },
@@ -94,7 +117,7 @@ export default function RenovationCostCalculator() {
         <section className={`card min-w-0 space-y-4 p-4 sm:space-y-5 sm:p-5 xl:sticky xl:top-20 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto ${activeStage === "parameters" ? "block" : "hidden xl:block"}`}>
           <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Шаг 1</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Параметры ремонта</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Площадь, уровень отделки и участие мастеров.</p></div>
           <div>
-            <label htmlFor="renovation-area" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Площадь квартиры, м²</label>
+            <label htmlFor="renovation-area" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{roomTransfer ? "Площадь помещения, м²" : "Площадь квартиры, м²"}</label>
             <input id="renovation-area" type="number" inputMode="decimal" min={5} max={500} value={areaInput} onChange={(e) => setAreaInput(e.target.value)} aria-invalid={areaError ? true : undefined} aria-describedby={areaError ? "renovation-area-error" : undefined} className="input-field w-32 text-lg" />
             {areaError && <p id="renovation-area-error" role="alert" className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{areaError}</p>}
             <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{ROOM_PRESETS.map((preset) => <button type="button" key={preset.area} onClick={() => setAreaInput(String(preset.area))} className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs transition-colors ${!areaError && area === preset.area ? "border-accent-300 bg-accent-50 font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-300" : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
@@ -138,6 +161,16 @@ export default function RenovationCostCalculator() {
         </section>
       </div>
 
+      {!areaError && (
+        <Link
+          href={buildRoomMasterHrefFromRenovationCost()}
+          onClick={() => trackToolRelatedClick(RENOVATION_COST_TOOL_SLUG, ROOM_MASTER_TOOL_SLUG)}
+          className="flex min-h-12 items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-900 no-underline hover:border-orange-400 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-200"
+          data-testid="room-master-link"
+        >
+          Собрать точную закупку для одной комнаты <span aria-hidden>→</span>
+        </Link>
+      )}
       <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-400">* Цены вводите сами — так смета остаётся честной для вашего региона и поставщиков. Итог показан в диапазоне ±15%. Расходы материалов рассчитаны по типовым нормативам на м² пола; для точного расчёта отдельных материалов используйте профильные калькуляторы.</p>
     </div>
   );

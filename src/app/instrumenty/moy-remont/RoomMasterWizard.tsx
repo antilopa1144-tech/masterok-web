@@ -26,6 +26,12 @@ import { runRoomPack, type PackRunResult } from "@/lib/room-master/run-pack";
 import { roomFloorLayoutHref } from "@/lib/room-master/tile-layout-link";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import type { MaterialResult } from "@/lib/calculators/types";
+import {
+  buildRenovationCostHrefFromRoom,
+  RENOVATION_COST_TOOL_SLUG,
+  ROOM_MASTER_TOOL_SLUG,
+} from "@/lib/tools/room-master-to-renovation-cost";
+import { trackToolRelatedClick } from "@/lib/analytics";
 
 const TILE_FLOOR_OPTIONS = [
   { value: 0, label: "300×300" },
@@ -130,6 +136,9 @@ export default function RoomMasterWizard() {
   const primaryMeta = getCalculatorMetaBySlug(pack.primarySteps[0]?.slug ?? "vannaya-komnata");
   const scenarioId = packIdToScenario(packId);
   const layoutHref = isValid ? roomFloorLayoutHref(dims) : "/instrumenty/raskladka-plitki/";
+  const renovationCostHref = floorM2 === null
+    ? null
+    : buildRenovationCostHrefFromRoom({ areaM2: floorM2, packId });
   const primaryMaterials = useMemo(() => (run ? getPrimaryMaterials(run) : []), [run]);
 
   const resetResult = () => {
@@ -344,6 +353,16 @@ export default function RoomMasterWizard() {
                   <Link href="/instrumenty/kalendar-remonta/" className="text-xs font-semibold text-accent-700 no-underline dark:text-accent-300">Календарь →</Link>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {renovationCostHref && (
+                    <Link
+                      href={renovationCostHref}
+                      onClick={() => trackToolRelatedClick(ROOM_MASTER_TOOL_SLUG, RENOVATION_COST_TOOL_SLUG)}
+                      className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-sm font-semibold text-emerald-900 no-underline hover:border-emerald-400 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200"
+                      data-testid="renovation-cost-link"
+                    >
+                      💰 Черновая стоимость<span className="mt-0.5 block text-[11px] font-normal text-emerald-700/80 dark:text-emerald-300/80">По площади пола; тип и цены выберете отдельно</span>
+                    </Link>
+                  )}
                   {(packId === "bathroom" || packId === "kitchen") && (
                     <Link href={layoutHref} className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-sm font-semibold text-stone-800 no-underline hover:border-orange-300 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-slate-200">🔲 Раскладка пола<span className="mt-0.5 block text-[11px] font-normal text-stone-500 dark:text-slate-400">По размерам помещения</span></Link>
                   )}

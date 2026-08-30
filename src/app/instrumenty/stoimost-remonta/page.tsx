@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -64,7 +65,9 @@ export default function Page() {
       </div>
 
       <div className="page-container py-4 sm:py-8">
-        <RenovationCostCalculator />
+        <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка сметы…</div>}>
+          <RenovationCostCalculator />
+        </Suspense>
       </div>
       <ToolPageExtras slug="stoimost-remonta" />
     </>
