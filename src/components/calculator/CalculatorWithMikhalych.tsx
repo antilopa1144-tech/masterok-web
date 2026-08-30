@@ -40,6 +40,11 @@ import {
   ROOFING_TRANSFER_FROM,
   SOFT_ROOFING_TRANSFER_FROM,
 } from "@/lib/calculators/roof-system-links";
+import {
+  buildDeckLayoutHrefFromTerraceResult,
+  DECK_LAYOUT_TRANSFER_FROM,
+  TERRACE_CALCULATOR_TRANSFER_FROM,
+} from "@/lib/tools/deck-layout-to-calc";
 import { buildMikhalychCalcContext } from "@/lib/mikhalych/calc-context";
 import { FieldInput, HistoryPanel, ResultBlock } from "./CalculatorParts";
 import { CALCULATOR_UI_TEXT } from "./uiText";
@@ -108,6 +113,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
   const transferredFinishingArea = Number(searchParams.get("area") ?? searchParams.get("facadeArea"));
   const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
+  const deckLayoutBoardsHint = Number(searchParams.get("layoutBoardsHint"));
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -216,6 +222,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const roofingFromGuttersHref = useMemo(
     () => calculator.slug === GUTTERS_TRANSFER_FROM && hasCalculated
       ? buildRoofingHrefFromGuttersResult(result?.totals)
+      : null,
+    [calculator.slug, hasCalculated, result?.totals],
+  );
+  const deckLayoutHref = useMemo(
+    () => calculator.slug === TERRACE_CALCULATOR_TRANSFER_FROM && hasCalculated
+      ? buildDeckLayoutHrefFromTerraceResult(result?.totals)
       : null,
     [calculator.slug, hasCalculated, result?.totals],
   );
@@ -448,6 +460,18 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               ? <> — <strong>{transferredRoofArea.toLocaleString("ru-RU")} м²</strong></>
               : null}
             для проверки пропускной способности. Введите фактическую длину желобов, высоту стены, стояки, прямые участки, углы и заглушки по схеме дома.
+          </div>
+        )}
+        {calculator.slug === TERRACE_CALCULATOR_TRANSFER_FROM && transferSource === DECK_LAYOUT_TRANSFER_FROM && (
+          <div
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
+            data-testid="deck-calculator-transfer-banner"
+          >
+            Из раскладки перенесены размеры площадки с учётом направления настила, формат доски, зазор и запас.
+            {Number.isFinite(deckLayoutBoardsHint) && deckLayoutBoardsHint > 0
+              ? <> Визуальная схема дала <strong>{deckLayoutBoardsHint} {pluralizeRu(deckLayoutBoardsHint, ["доску", "доски", "досок"])} к покупке</strong>.</>
+              : null}
+            {" "}Для закупки доски сохраняйте результат раскладки: калькулятор ниже нужен прежде всего для лаг, клипс, крепежа, обработки и геотекстиля и не учитывает ширину пропила и разбежку стыков.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -742,6 +766,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 no-underline dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
             >
               Рассчитать кровельное покрытие по площади скатов <span aria-hidden>→</span>
+            </Link>
+          )}
+          {deckLayoutHref && (
+            <Link
+              href={deckLayoutHref}
+              onClick={() => trackCalculatorRelatedClick(TERRACE_CALCULATOR_TRANSFER_FROM, DECK_LAYOUT_TRANSFER_FROM)}
+              className="mt-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 no-underline dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
+            >
+              Проверить направление, стыки и раскрой доски на схеме <span aria-hidden>→</span>
             </Link>
           )}
         </section>
