@@ -458,6 +458,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
     bg: "#F0FDFA",
     relatedCalculators: [
       { slug: "gipsokarton", categorySlug: "steny" },
+      { slug: "krepezh", categorySlug: "otdelka" },
       { slug: "podvesnoy-potolok-gkl", categorySlug: "potolki" },
       { slug: "myagkaya-krovlya", categorySlug: "krovlya" },
     ],

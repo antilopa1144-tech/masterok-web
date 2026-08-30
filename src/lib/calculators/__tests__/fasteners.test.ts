@@ -41,6 +41,11 @@ describe("Калькулятор крепежа", () => {
       expect(result.totals.totalScrews).toBeGreaterThan(0);
     });
 
+    it("совет относится к крепежу ГКЛ", () => {
+      expect(result.practicalNotes?.[0]).toContain("гипсокартона");
+      expect(result.practicalNotes?.[0]).toContain("металлическому профилю");
+    });
+
     it("инварианты", () => {
       checkInvariants(result);
     });
@@ -66,6 +71,12 @@ describe("Калькулятор крепежа", () => {
       const dowels = findMaterial(result, "Дюбель-гвозди 6×40");
       expect(dowels).toBeDefined();
       expect(dowels?.subtitle).toContain("газобетона");
+    });
+
+    it("совет относится к ОСП, а не к гипсокартону", () => {
+      expect(result.practicalNotes?.[0]).toContain("ОСП");
+      expect(result.practicalNotes?.[0]).toContain("деревянному каркасу");
+      expect(result.practicalNotes?.[0]).not.toContain("гипсокартона");
     });
 
     it("инварианты", () => {
@@ -94,6 +105,11 @@ describe("Калькулятор крепежа", () => {
       expect(findMaterial(result, "Саморезы-клопы")).toBeUndefined();
     });
 
+    it("совет относится к кровельному профлисту", () => {
+      expect(result.practicalNotes?.[0]).toContain("EPDM");
+      expect(result.practicalNotes?.[0]).toContain("ветровой зоной");
+    });
+
     it("инварианты", () => {
       checkInvariants(result);
     });
@@ -117,6 +133,11 @@ describe("Калькулятор крепежа", () => {
     it("предупреждение о кляймерах", () => {
       // Engine: "Для вагонки используются кляймеры вместо саморезов"
       expect(result.warnings.some((w) => w.includes("кляймеры"))).toBe(true);
+    });
+
+    it("совет относится к подбору кляймера", () => {
+      expect(result.practicalNotes?.[0]).toContain("кляймера");
+      expect(result.practicalNotes?.[0]).toContain("обрешётки");
     });
 
     it("инварианты", () => {

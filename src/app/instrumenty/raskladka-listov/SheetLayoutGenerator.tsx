@@ -19,7 +19,11 @@ import {
   type SheetStagger,
   type SheetSurface,
 } from "@/lib/tools/sheet-layout";
-import { buildDrywallCalculatorHref } from "@/lib/tools/sheet-layout-to-calc";
+import {
+  buildDrywallCalculatorHref,
+  buildFastenersCalculatorHref,
+  FASTENERS_TRANSFER_FROM,
+} from "@/lib/tools/sheet-layout-to-calc";
 
 const SURFACE_PRESETS = [
   { label: "Стена 3 × 2,7 м", width: 3000, height: 2700, surface: "wall" as const },
@@ -214,6 +218,7 @@ function orientationLabel(surface: SheetSurface, orientation: ResolvedSheetOrien
 
 export default function SheetLayoutGenerator() {
   const searchParams = useSearchParams();
+  const transferSource = searchParams.get("from");
   const [activeStage, setActiveStage] = useState<SheetWorkspaceStage>("layout");
   const [surfaceWidth, setSurfaceWidth] = useState(5000);
   const [surfaceHeight, setSurfaceHeight] = useState(2700);
@@ -291,6 +296,10 @@ export default function SheetLayoutGenerator() {
   }), [jointGap, layers, material, orientation, reservePercent, sheetLength, sheetWidth, stagger, surface, surfaceHeight, surfaceWidth]);
 
   const drywallHref = useMemo(() => buildDrywallCalculatorHref(result.input, result.purchaseSheets), [result]);
+  const fastenersHref = useMemo(
+    () => buildFastenersCalculatorHref(result.input, result.purchaseSheets),
+    [result],
+  );
   const projectMaterials = useMemo(() => [
     { name: `${material === "drywall" ? "Гипсокартон" : material === "osb" ? "Ориентированно-стружечная плита (ОСП)" : "Листовой материал"} к покупке`, quantity: result.purchaseSheets, unit: "листов", category: "Листовые материалы" },
     { name: "Площадь обшивки", quantity: result.coveredAreaM2, unit: "м²", category: "Листовые материалы" },
@@ -377,6 +386,16 @@ export default function SheetLayoutGenerator() {
 
   return (
     <div ref={workspaceTopRef} className="max-w-5xl space-y-4 scroll-mt-24">
+      {transferSource === "gipsokarton" && (
+        <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+          Из калькулятора гипсокартона перенесены размеры участка, формат листа и число слоёв. Проверьте ориентацию, положение каркаса и фактические проёмы перед раскроем.
+        </div>
+      )}
+      {transferSource === FASTENERS_TRANSFER_FROM && (
+        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-800 dark:border-cyan-900/50 dark:bg-cyan-950/20 dark:text-cyan-300">
+          Из калькулятора крепежа выбран материал и безопасный стартовый формат листа. Размеры поверхности и фактический формат укажите здесь: количество листов само по себе не восстанавливает геометрию раскладки.
+        </div>
+      )}
       <CompactToolWorkspaceNav
         activeStage={activeStage}
         ariaLabel="Этапы раскладки листов"
@@ -457,7 +476,25 @@ export default function SheetLayoutGenerator() {
         <div className="mt-5 grid gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:bg-slate-900"><p className="flex justify-between gap-3"><span className="text-slate-500">Поверхность</span><strong>{result.surfaceAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Обшивка со слоями</span><strong>{result.coveredAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Материал без зазоров</span><strong>{result.netMaterialAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Ориентация</span><strong>{orientationLabel(surface, result.orientation)}</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Межлистовой зазор</span><strong>{result.input.jointGapMm} мм</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Остаток открытых листов</span><strong>{result.offcutAreaM2} м²</strong></p></div>
         {result.warnings.length > 0 && <div className="mt-4 space-y-2">{result.warnings.map((warning) => <p key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">⚠ {warning}</p>)}</div>}
         <details className="group mt-4 rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden"><span>Монтажные условия · {result.notes.length}</span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><ul className="list-disc space-y-1 border-t border-stone-100 px-8 pb-4 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">{result.notes.map((note) => <li key={note}>{note}</li>)}</ul></details>
-        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800"><p className="text-xs text-slate-500 dark:text-slate-400">Раскладка даёт листы и карту реза. Профиль, крепёж, ленту и шпаклёвку считайте комплектно в калькуляторе гипсокартона.</p><div className="grid gap-2 sm:grid-cols-3">{material === "drywall" && surface !== "floor" && <Link href={drywallHref} onClick={() => trackToolRelatedClick("raskladka-listov", "drywall-calculator")} className="btn-primary min-h-11 justify-center text-sm no-underline">Профиль и крепёж →</Link>}<button type="button" onClick={shareLayout} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}</button><SaveToProjectButton calcId="instrument-raskladka-listov" calcTitle="Раскладка листов" slug="gipsokarton" categorySlug="steny" materials={projectMaterials} calendarScenarioId="room" /></div></div>
+        <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Раскладка даёт точное число листов и карту реза. Для ГКЛ комплектный профиль, ленту и шпаклёвку считайте в калькуляторе гипсокартона; саморезы для ГКЛ и ОСП — по фактическому числу листов в калькуляторе крепежа.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {material === "drywall" && surface !== "floor" && (
+              <Link href={drywallHref} onClick={() => trackToolRelatedClick("raskladka-listov", "drywall-calculator")} className="btn-primary min-h-11 justify-center text-sm no-underline">
+                Комплект ГКЛ →
+              </Link>
+            )}
+            {fastenersHref && (
+              <Link href={fastenersHref} onClick={() => trackToolRelatedClick("raskladka-listov", "krepezh")} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-teal-200 bg-teal-50 px-4 text-sm font-semibold text-teal-800 no-underline hover:border-teal-400 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+                Рассчитать крепёж →
+              </Link>
+            )}
+            <button type="button" onClick={shareLayout} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">{shareState === "copied" ? "Ссылка скопирована" : "Поделиться раскладкой"}</button>
+            <SaveToProjectButton calcId="instrument-raskladka-listov" calcTitle="Раскладка листов" slug="gipsokarton" categorySlug="steny" materials={projectMaterials} calendarScenarioId="room" />
+          </div>
+        </div>
         <button type="button" onClick={() => changeStage("layout")} className="mt-4 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">← Вернуться к схеме</button>
       </div>
       <RenovationHubStrip scenarioId="room" compact />

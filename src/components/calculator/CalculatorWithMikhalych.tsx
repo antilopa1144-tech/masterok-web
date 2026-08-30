@@ -32,7 +32,11 @@ import {
   BRICK_LAYOUT_TRANSFER_FROM,
   buildBrickworkLayoutHrefFromCalculatorResult,
 } from "@/lib/tools/brickwork-layout-to-calc";
-import { buildSheetLayoutHrefFromDrywall } from "@/lib/tools/sheet-layout-to-calc";
+import {
+  buildSheetLayoutHrefFromDrywall,
+  buildSheetLayoutHrefFromFasteners,
+  SHEET_LAYOUT_TRANSFER_FROM,
+} from "@/lib/tools/sheet-layout-to-calc";
 import {
   buildTileLayoutHrefFromCalculatorValues,
   TILE_ROOM_TRANSFER_FROM,
@@ -126,6 +130,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const brickworkLayoutHref = useMemo(
     () => buildBrickworkLayoutHrefFromCalculatorResult(calculator.slug, result?.totals),
     [calculator.slug, result?.totals],
+  );
+  const fastenersLayoutHref = useMemo(
+    () => calculator.slug === "krepezh"
+      ? buildSheetLayoutHrefFromFasteners({ materialType: values.materialType })
+      : null,
+    [calculator.slug, values.materialType],
   );
 
   const accentColor = category?.color ?? "#f97316";
@@ -235,6 +245,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         {calculator.slug === "kladka-kirpicha" && transferSource === BRICK_LAYOUT_TRANSFER_FROM && (
           <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
             Из раскладки перенесены размеры одного непрерывного участка, нулевая площадь проёмов, формат кирпича и допустимый шов. Толщину стены и реальные проёмы укажите по проекту.
+          </div>
+        )}
+        {calculator.slug === "krepezh" && transferSource === SHEET_LAYOUT_TRANSFER_FROM && (
+          <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+            Из карты раскроя перенесено <strong>{values.sheetCount} {pluralizeRu(values.sheetCount, ["лист", "листа", "листов"])}</strong>, выбран материал и базовый шаг крепления. Проверьте шаг по системе производителя и условиям основания.
           </div>
         )}
         {calculator.slug === "laminat" && transferSource === LAMINATE_LAYOUT_TRANSFER_FROM && (
@@ -365,6 +380,15 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
               className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
             >
               Разложить листы и увидеть карту раскроя <span aria-hidden>→</span>
+            </Link>
+          )}
+          {fastenersLayoutHref && (
+            <Link
+              href={fastenersLayoutHref}
+              onClick={() => trackCalculatorRelatedClick("krepezh", "raskladka-listov")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-800 no-underline dark:border-cyan-900/50 dark:bg-cyan-950/20 dark:text-cyan-300"
+            >
+              Разложить листы и сверить количество <span aria-hidden>→</span>
             </Link>
           )}
           {brickworkLayoutHref && (
