@@ -163,7 +163,7 @@ export function computeCanonicalAeratedConcrete(
     },
     {
       name: `Клей для тонкошовной кладки газобетона, мешок ${spec.material_rules.glue_bag_kg} кг`,
-      subtitle: "Расчёт для минерального клея и шва 2–3 мм. Первый ряд на выравнивающем растворе сюда не входит.",
+      subtitle: `Предварительная оценка по фиксированному расходу модели ${spec.material_rules.glue_kg_per_m3} кг/м³ и мешку ${spec.material_rules.glue_bag_kg} кг; фактический расход берут из техкарты выбранного клея. Первый ряд и выравнивающий состав не рассчитаны.`,
       quantity: glueBags,
       unit: "мешков",
       withReserve: glueBags,
@@ -172,7 +172,7 @@ export function computeCanonicalAeratedConcrete(
     },
     {
       name: "Арматура класса А500С Ø8 мм для штроб",
-      subtitle: `Предварительный расход одной продольной линии через каждые ${spec.material_rules.rebar_armoring_interval} ряда. Число стержней, зоны усиления и диаметр задаёт проект или альбом решений производителя блоков.`,
+      subtitle: `Справочная позиция текущей модели: одна продольная линия через каждые ${spec.material_rules.rebar_armoring_interval} ряда. Необходимость, число стержней, диаметр, нахлёсты и зоны усиления задаёт проект; это не готовая ведомость к покупке.`,
       quantity: rebarLength,
       unit: "п.м",
       withReserve: rebarLength,
@@ -186,7 +186,8 @@ export function computeCanonicalAeratedConcrete(
     practicalNotes.push(`Блок ${blockThickness} мм обычно используют для перегородок; несущую способность нельзя определять только по толщине`);
   }
   practicalNotes.push("Перемычки, армопояс и усиление под окнами заказывайте только после проверки проекта или технического решения производителя");
-  practicalNotes.push("Газобетон любит влагу — защитите кладку плёнкой в дождь и зимой");
+  practicalNotes.push("Хранение блоков и защиту незавершённой кладки от осадков выполняйте по техкарте производителя и проекту производства работ");
+  practicalNotes.push("Фиксированные 5% на блоки, 28 кг клея на 1 м³ и одна линия Ø8 через каждый 4-й ряд — допущения текущей модели, а не универсальные нормы");
 
   return {
     canonicalSpecId: spec.calculator_id,

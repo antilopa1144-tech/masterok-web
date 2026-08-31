@@ -5,6 +5,37 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(aeratedConcreteDef.calculate.bind(aeratedConcreteDef));
 
 describe("Калькулятор газобетона", () => {
+  describe("Поля и пользовательские границы", () => {
+    it("показывает высоту и в режиме ввода по площади", () => {
+      const wallHeight = aeratedConcreteDef.fields.find((field) => field.key === "wallHeight");
+      expect(wallHeight?.group).toBeUndefined();
+      expect(wallHeight?.hint).toContain("вводе по площади");
+    });
+
+    it("не назначает наружную стену по одной толщине", () => {
+      const thickness = aeratedConcreteDef.fields.find((field) => field.key === "blockThickness");
+      const labels = thickness?.options?.map((option) => option.label).join(" ") ?? "";
+      expect(labels).not.toContain("наружные стены");
+      expect(thickness?.hint).toContain("не определяет несущую способность");
+    });
+
+    it("объясняет фактические допущения и действующие нормы", () => {
+      const seo = aeratedConcreteDef.seoContent?.descriptionHtml ?? "";
+      const formula = aeratedConcreteDef.formulaDescription ?? "";
+
+      expect(formula).toContain("5% на подрезку и бой — фиксированное допущение");
+      expect(formula).toContain("режим MIN/REC/MAX");
+      expect(formula).not.toContain("через 5 блоков");
+      expect(seo).toContain("ГОСТ 31360-2024");
+      expect(seo).toContain("СП 50.13330.2024");
+      expect(seo).toContain("не выбирает плотность");
+      expect(seo).not.toContain("ГОСТ 31360-2007</strong>");
+      expect(seo).not.toContain("СП 50.13330.2012");
+      expect(seo).not.toContain("Ceresit");
+      expect(seo).not.toContain("Ytong");
+    });
+  });
+
   describe("По размерам: 10×2.7 м, проёмы 5 м², блок 200×200×600, толщина 200 мм", () => {
     // wallArea = 27, netArea = 22
     // blockFaceArea = 0.2*0.6 = 0.12, blocksPerSqm = 8.333
@@ -38,10 +69,14 @@ describe("Калькулятор газобетона", () => {
     it("клей для газобетона 5 мешков", () => {
       const glue = findMaterial(result, "Клей для тонкошовной кладки");
       expect(glue?.purchaseQty).toBe(5);
+      expect(glue?.subtitle).toContain("фиксированному расходу модели 28 кг/м³");
+      expect(glue?.subtitle).toContain("Первый ряд и выравнивающий состав не рассчитаны");
     });
 
     it("арматура Ø8 присутствует", () => {
-      expect(findMaterial(result, "Ø8")).toBeDefined();
+      const rebar = findMaterial(result, "Ø8");
+      expect(rebar).toBeDefined();
+      expect(rebar?.subtitle).toContain("не готовая ведомость к покупке");
     });
 
     it("не добавляет отделочную грунтовку без выбора отделки", () => {
@@ -56,6 +91,11 @@ describe("Калькулятор газобетона", () => {
 
     it("инварианты", () => {
       checkInvariants(result);
+    });
+
+    it("не выдаёт фиксированные коэффициенты за универсальные нормы", () => {
+      expect(result.practicalNotes?.some((note) => note.includes("допущения текущей модели"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("техкарте производителя"))).toBe(true);
     });
   });
 
