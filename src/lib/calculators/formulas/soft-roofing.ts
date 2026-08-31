@@ -189,7 +189,10 @@ export const softRoofingDef: CalculatorDefinition = {
         : note);
     practicalNotes.unshift("Подкладочный ковёр в web-результате принят сплошным по всей площади независимо от уклона; тип ковра и схему нахлёстов выбирают по инструкции системы.");
 
-    const totals = { ...canonical.totals, underlaymentRolls: fullUnderlaymentRolls };
+    const totals: Record<string, number> = {
+      ...canonical.totals,
+      underlaymentRolls: fullUnderlaymentRolls,
+    };
     delete totals.masticKg;
     delete totals.masticBuckets;
     delete totals.windStrips;
