@@ -244,9 +244,19 @@ describe("Калькулятор кровли v3", () => {
   });
 
   it("контент не обещает автопроектирование кровли", () => {
+    expect(roofingDef.metaTitle).toBe("Калькулятор кровли: материалы по проекту");
+    expect(roofingDef.h1).toContain("Калькулятор кровли");
     expect(roofingDef.h1).toContain("по проекту");
     expect(roofingDef.formulaDescription).toContain("готовой проектной ведомости");
     expect(roofingDef.seoContent?.descriptionHtml).toContain("не назначает стропила");
+    expect(roofingDef.seoContent?.descriptionHtml).toContain("односкатной или двухскатной кровли");
+    expect(roofingDef.seoContent?.descriptionHtml).toContain("S<sub>скатов</sub> = S<sub>проекции</sub> / cos");
+    expect(roofingDef.seoContent?.descriptionHtml).toContain("не строит чертёж");
+    expect(roofingDef.seoContent?.faq).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        question: "Рассчитает ли калькулятор двухскатную или вальмовую крышу по длине и ширине?",
+      }),
+    ]));
     expect(roofingDef.seoContent?.descriptionHtml).not.toContain("1 элемент / 3 м");
   });
 });
