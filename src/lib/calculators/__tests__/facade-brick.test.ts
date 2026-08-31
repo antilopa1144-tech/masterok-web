@@ -55,7 +55,6 @@ describe("Облицовочный кирпич", () => {
   describe("Клинкерный кирпич, шов 12 мм", () => {
     it("предупреждение о толстом шве для клинкера", () => {
       const r = calc({ area: 80, brickType: 3, jointThickness: 12, withTie: 1 });
-      // Engine: "Клинкерный кирпич обычно кладётся с швом 8–10 мм"
       expect(r.warnings.some(w => w.includes("8–10 мм"))).toBe(true);
     });
 
@@ -85,8 +84,8 @@ describe("Облицовочный кирпич", () => {
     it("без связей: withTie=0 → предупреждение + крепёж отсутствует", () => {
       const r = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 0 });
       expect(findMaterial(r, "Связи")).toBeUndefined();
-      // Engine: "Облицовочная кладка должна иметь конструктивное крепление к основной стене (гибкие связи)"
       expect(r.warnings.some(w => w.includes("конструктивное крепление"))).toBe(true);
+      expect(r.practicalNotes?.join(" ")).not.toContain("со временем отойдёт");
     });
   });
 
@@ -125,9 +124,10 @@ describe("Облицовочный кирпич", () => {
   });
 
   describe("Предупреждения", () => {
-    it("всегда содержит предупреждение о вентиляционном зазоре СП 15.13330", () => {
+    it("сохраняет canonical-предупреждение и добавляет проектную границу в примечания", () => {
       const r = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1 });
       expect(r.warnings.some(w => w.includes("СП 15.13330"))).toBe(true);
+      expect(r.practicalNotes?.some((note) => note.includes("не проектирует воздушную прослойку"))).toBe(true);
     });
   });
 
@@ -148,7 +148,7 @@ describe("Облицовочный кирпич", () => {
     // 20 окон: добавочная = 20 * 2.1 * 0.3 = 12.6 → hydroArea = 23.33 * 1.15 = 26.83 → 3 рулона
     const twentyWindows = calc({ area: 80, brickType: 0, jointThickness: 10, withTie: 1, windowCount: 20, avgWindowWidth: 1.5 });
 
-    it("без окон: warning рекомендует указать windowCount", () => {
+    it("без окон: сохраняет canonical-напоминание о полосе", () => {
       const hasReminderWarning = noWindows.warnings.some((w) =>
         w.includes("СП 15.13330.2020") && w.includes("windowCount"),
       );
@@ -177,9 +177,69 @@ describe("Облицовочный кирпич", () => {
 
     it("с окнами: practicalNote упоминает добавленную полосу", () => {
       const hasNote = fiveWindows.practicalNotes?.some((n) =>
-        n.includes("Гидроизоляция над 5 оконными проёмами"),
+        n.includes("Для 5 окон модель добавила условные"),
       ) ?? false;
       expect(hasNote).toBe(true);
+    });
+  });
+
+  describe("Прозрачные границы предварительной модели", () => {
+    const result = calc({
+      area: 80,
+      brickType: 0,
+      jointThickness: 10,
+      withTie: 1,
+      windowCount: 5,
+      avgWindowWidth: 1.5,
+    });
+
+    it("раскрывает геометрию кирпича и последовательные поправки", () => {
+      const brick = findMaterial(result, "облицовочный одинарный");
+
+      expect(brick?.subtitle).toContain("51.282 шт/м²");
+      expect(brick?.subtitle).toContain("базовые 10%");
+      expect(brick?.subtitle).toContain("режим точности и MIN/REC/MAX");
+      expect(result.practicalNotes?.some((note) => note.includes("последовательно включает базовые 10%"))).toBe(true);
+    });
+
+    it("показывает все фиксированные нормы связанных материалов", () => {
+      expect(findMaterial(result, "Цемент")?.subtitle).toContain("0,23 м³");
+      expect(findMaterial(result, "Цемент")?.subtitle).toContain("430 кг");
+      expect(findMaterial(result, "Песок")?.subtitle).toContain("1,4 м³");
+      expect(findMaterial(result, "Связи")?.subtitle).toContain("5 шт/м² +5%");
+      expect(findMaterial(result, "Гидроизоляция")?.subtitle).toContain("4 × √S");
+      expect(findMaterial(result, "Гидроизоляция")?.subtitle).toContain("+15%");
+      expect(findMaterial(result, "Вентиляционные коробки")?.subtitle).toContain("1 шт. на 2 м");
+      expect(findMaterial(result, "Затирка")?.subtitle).toContain("0,35 кг/м²");
+      expect(findMaterial(result, "Гидрофобизатор")?.subtitle).toContain("0,2 л/м² +10%");
+    });
+
+    it("нейтрально показывает шов, связи и оконную полосу", () => {
+      const joint = facadeBrickDef.fields.find((field) => field.key === "jointThickness");
+      const ties = facadeBrickDef.fields.find((field) => field.key === "withTie");
+      const windows = facadeBrickDef.fields.find((field) => field.key === "windowCount");
+
+      expect(joint?.options?.map((option) => option.label)).toEqual(["8 мм", "10 мм", "12 мм"]);
+      expect(joint?.hint).toContain("не назначает допустимую толщину");
+      expect(ties?.options?.[0].label).toBe("Не включать в ведомость");
+      expect(ties?.hint).toContain("5 шт/м² +5%");
+      expect(windows?.hint).toContain("Фактический водоотвод");
+    });
+
+    it("описание совпадает с движком и использует действующие нормативы", () => {
+      const formula = facadeBrickDef.formulaDescription ?? "";
+      const content = facadeBrickDef.seoContent?.descriptionHtml ?? "";
+
+      expect(formula).toContain("одинарный и клинкерный ~51,282 шт/м²");
+      expect(formula).toContain("площадь × 0,12 м × 0,23");
+      expect(content).toContain("Клинкерный</td><td>250&times;85&times;65</td><td>51,282");
+      expect(content).not.toContain("<strong>64 шт/м&sup2;</strong>");
+      expect(content).not.toContain("ГОСТ 7484-78</strong>");
+      expect(content).toContain("ГОСТ 530-2012");
+      expect(content).toContain("СП 15.13330.2020 с изменением № 1");
+      expect(content).toContain("СП 70.13330.2012 с изменениями № 1, 3&ndash;8");
+      expect(content).toContain("ГОСТ Р 58766-2019");
+      expect(content).not.toContain("30&ndash;50 мм</strong>");
     });
   });
 });

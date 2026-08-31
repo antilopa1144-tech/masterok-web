@@ -174,6 +174,7 @@ export function computeCanonicalFacadeBrick(
   const materials: CanonicalMaterialResult[] = [
     {
       name: BRICK_TYPE_LABELS[brickType] ?? "Кирпич облицовочный",
+      subtitle: `Чистая геометрия: 1 / ((${dim.l} + ${jointMm}) × (${dim.h} + ${jointMm})) = ${bricksPerM2} шт/м². Затем модель последовательно применяет базовые 10%, режим точности и MIN/REC/MAX — эти поправки могут складываться и требуют проверки перед крупной закупкой.`,
       quantity: roundDisplay(totalBricks, 3),
       unit: "шт",
       withReserve: bricksWithReserve,
@@ -182,6 +183,7 @@ export function computeCanonicalFacadeBrick(
     },
     {
       name: `Цемент М400 (${CEMENT_BAG_KG} кг)`,
+      subtitle: "Предварительная модель облицовки толщиной 120 мм: раствор 0,23 м³ на 1 м³ кладки, цемент 430 кг на 1 м³ раствора, мешок 50 кг. Марку и рецептуру раствора калькулятор не подтверждает.",
       quantity: cementBags,
       unit: "мешков",
       withReserve: cementBags,
@@ -190,6 +192,7 @@ export function computeCanonicalFacadeBrick(
     },
     {
       name: "Песок строительный",
+      subtitle: "Предварительная модель: 1,4 м³ песка на 1 м³ рассчитанного раствора; потребность округляется до 0,1 м³, а покупка — вверх до целого м³. Фактическую поставку и влажность сверяйте с составом раствора.",
       quantity: sandM3,
       unit: "м³",
       withReserve: sandM3,
@@ -201,6 +204,7 @@ export function computeCanonicalFacadeBrick(
   if (withTie > 0) {
     materials.push({
       name: TIE_TYPE_LABELS[withTie] ?? "Связи гибкие",
+      subtitle: "Условно 5 шт/м² +5%. Материал, длину, диаметр, шаг, заделку и усиление у проёмов/углов задаёт проект фасадной системы; площадь не заменяет ведомость связей.",
       quantity: tiesCount,
       unit: "шт",
       withReserve: tiesCount,
@@ -212,6 +216,7 @@ export function computeCanonicalFacadeBrick(
   materials.push(
     {
       name: "Гидроизоляция рулонная",
+      subtitle: `Предварительная модель: цокольная полоса 0,3 м по условному периметру 4 × √S, плюс по ${lintelBandHeight} м высоты над каждым указанным окном с выпуском ${lintelSideExt} м по сторонам; затем +15% и рулоны 10 м². Материал и узлы задаёт проект.`,
       quantity: roundDisplay(hydroArea, 3),
       unit: "м²",
       withReserve: hydroRolls * HYDRO_ROLL_M2,
@@ -221,6 +226,7 @@ export function computeCanonicalFacadeBrick(
     },
     {
       name: "Вентиляционные коробки",
+      subtitle: "Условно 1 шт. на 2 м оценочного периметра 4 × √S. Реальные приточные/вытяжные отверстия, их площадь, расположение и защиту определяет проект фасада.",
       quantity: ventBoxes,
       unit: "шт",
       withReserve: ventBoxes,
@@ -229,6 +235,7 @@ export function computeCanonicalFacadeBrick(
     },
     {
       name: `Затирка для швов (${GROUT_BAG_KG} кг)`,
+      subtitle: "Предварительно 0,35 кг/м², округление до мешков 25 кг. Вид расшивки, цвет, совместимость и фактический расход берите из техкарты выбранного состава.",
       quantity: groutBags,
       unit: "мешков",
       withReserve: groutBags,
@@ -237,6 +244,7 @@ export function computeCanonicalFacadeBrick(
     },
     {
       name: `Гидрофобизатор (${HYDROPHOB_CAN_L} л)`,
+      subtitle: "Автоматическая предварительная позиция: 0,2 л/м² +10%, канистра 5 л. Необходимость, совместимость, подготовку и расход проверяйте по кирпичу, швам и техкарте продукта.",
       quantity: hydrophobCans,
       unit: "канистр",
       withReserve: hydrophobCans,
@@ -263,15 +271,16 @@ export function computeCanonicalFacadeBrick(
 
   const practicalNotes: string[] = [];
   if (withTie === 0) {
-    practicalNotes.push("Без гибких связей облицовка со временем отойдёт от несущей стены");
+    practicalNotes.push("Отсутствие связей в расчёте означает только исключение позиции из списка, а не подтверждение допустимости конструкции без крепления");
   }
   if (windowCount > 0) {
     practicalNotes.push(
-      `Гидроизоляция над ${windowCount} оконными проёмами добавлена (~${roundDisplay(windowHydroArea, 1)} м² поверх цоколя). ` +
-        `Без неё вода по швам идёт в проём — ремонт откосов через 1-2 сезона.`,
+      `Для ${windowCount} окон модель добавила условные ${roundDisplay(windowHydroArea, 1)} м² полосы поверх цокольной оценки; это не заменяет проект узлов над проёмами и водоотвода.`,
     );
   }
-  practicalNotes.push("Вентзазор 20-40 мм между облицовкой и стеной — иначе влага разрушит утеплитель");
+  practicalNotes.push("Калькулятор не проектирует воздушную прослойку, продухи, водоотвод и примыкания облицовки. Их размеры и расположение принимают по проекту фасадной системы");
+  practicalNotes.push("Итог кирпича последовательно включает базовые 10%, режим точности и сценарный коэффициент. До исправления общего canonical-контракта сравнивайте закупку с чистой геометрией и согласованным запасом");
+  practicalNotes.push(`Периметр для гидроизоляции и вентиляционных коробок оценён как 4 × √${roundDisplay(area, 1)} = ${perimeterEst} м; фактическая геометрия фасада в форме отсутствует`);
 
   return {
     canonicalSpecId: spec.calculator_id,
