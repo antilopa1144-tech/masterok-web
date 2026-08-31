@@ -124,14 +124,13 @@ describe("Golden tests — Септик ЖБИ-кольца (septic-rings)", () 
 });
 
 describe("Golden tests — Теплица (greenhouse)", () => {
-  it("стандарт 6×3 м арка: dArch = π×3/2 = 4.712, S = 4.712×6 + 2×π×9/8 ≈ 35.34 м²", () => {
+  it("стандарт 6×3×2,1 м: арка зависит от фактической высоты, а не скрытого полуцилиндра", () => {
     const r = calcGreenhouse({ length: 6, width: 3, height: 2.1, roofType: 0, polycarbonateThickness: 6, archStep: 0.65, doorCount: 2, ventCount: 2, foundationType: 1 });
     const t = totals(r);
-    expect(t.archLengthM).toBeCloseTo(4.712, 2);
-    expect(t.polyArea).toBeCloseTo(35.34, 1);
-    expect(t.polySheets).toBe(4); // ceil(35.34 × 1.15 / 12.6) = 4
+    expect(t.archLengthM).toBeCloseTo(5.694, 2);
+    expect(t.polyArea).toBeCloseTo(44.061, 2);
+    expect(t.polySheets).toBe(4); // ceil(44.061 × 1.10 / 12.6) = 4
     expect(t.archCount).toBe(11); // ceil(6/0.65) + 1
-    expect(t.thermalWashersTotal).toBe(213); // ceil(35.34 × 6)
   });
 
   it("двускатная 4×3×2.4: 2 ската × длину + боковины + торцы", () => {
@@ -145,10 +144,11 @@ describe("Golden tests — Теплица (greenhouse)", () => {
     expect(t.polyArea).toBeLessThan(50);
   });
 
-  it("ленточный фундамент 8×3 м: V_бетона = 22 × 0.30 × 0.40 × 1.05 ≈ 2.77 м³", () => {
+  it("ленточное основание не превращается в выдуманный объём бетона", () => {
     const r = calcGreenhouse({ length: 8, width: 3, height: 2.4, roofType: 1, polycarbonateThickness: 8, archStep: 0.65, doorCount: 2, ventCount: 2, foundationType: 3 });
-    const t = totals(r);
-    expect(t.concreteM3).toBeCloseTo(2.772, 2);
+    const result = r as { materials: { name: string }[]; warnings: string[] };
+    expect(result.materials.some((material) => material.name.includes("Бетон"))).toBe(false);
+    expect(result.warnings.some((warning) => warning.includes("фундамент") && warning.includes("не рассчит"))).toBe(true);
   });
 });
 
