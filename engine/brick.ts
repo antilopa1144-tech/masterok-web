@@ -68,14 +68,21 @@ function buildMaterials(
   bricksNet: number,
   bricksWithWaste: number,
   bricksPurchase: number,
+  bricksPerSqm: number,
+  wasteCoeff: number,
+  mortarPerSqm: number,
+  conditionsMultiplier: number,
   cementBags: number,
   sandM3: number,
   meshLengthM: number,
+  meshInterval: number,
 ): CanonicalMaterialResult[] {
+  const wastePercent = roundDisplay((wasteCoeff - 1) * 100, 1);
+  const conditionsPercent = roundDisplay((conditionsMultiplier - 1) * 100, 1);
   const materials: CanonicalMaterialResult[] = [
     {
       name: BRICK_TYPE_LABELS[brickType] ?? "Кирпич",
-      subtitle: "Чистая потребность рассчитана по площади и толщине стены; выбранный запас на бой и подрезку показан отдельно, покупка округлена вверх до целого кирпича.",
+      subtitle: `Табличная модель ${bricksPerSqm} шт/м²; чистая потребность отделена от выбранного запаса ${wastePercent}%, покупка округлена вверх до целого кирпича. Формат, марку, пустотность и партию сверяйте с проектом и поставщиком.`,
       quantity: roundDisplay(bricksNet, 6),
       unit: "шт",
       withReserve: roundDisplay(bricksWithWaste, 6),
@@ -84,7 +91,7 @@ function buildMaterials(
     },
     {
       name: `Цемент ЦЕМ I/II 32,5 (М400), мешок ${spec.material_rules.cement_bag_kg} кг`,
-      subtitle: "Для расчётного цементно-песчаного кладочного раствора. Для лицевой кладки лучше применять готовую цветную смесь.",
+      subtitle: `Предварительная модель раствора: ${mortarPerSqm} м³/м² × 1,12 × поправка условий ${conditionsMultiplier} (+${conditionsPercent}%); цемент 400 кг/м³, мешок ${spec.material_rules.cement_bag_kg} кг. Это не подбор марки или состава раствора.`,
       quantity: cementBags,
       unit: "мешков",
       withReserve: cementBags,
@@ -93,7 +100,7 @@ function buildMaterials(
     },
     {
       name: "Песок для кладочного раствора, фракция 0–2 мм",
-      subtitle: "Чистый мытый или сеяный песок без глины и органических примесей.",
+      subtitle: "Предварительная модель: 1,2 м³ песка на 1 м³ рассчитанного раствора; покупка округлена вверх до 0,1 м³. Фракцию, влажность и состав принимают по рецептуре раствора.",
       quantity: roundDisplay(sandM3, 3),
       unit: "м³",
       withReserve: roundDisplay(Math.ceil(sandM3 * 10) / 10, 3),
@@ -102,7 +109,7 @@ function buildMaterials(
     },
     {
       name: "Кладочная сетка Ø3–4 мм, ячейка 50×50 мм",
-      subtitle: "Погонная длина рядов армирования с нахлёстом 10%. Ширину сетки выбирайте по толщине стены; окончательный шаг армирования задаёт проект.",
+      subtitle: `Условная полоса по введённой длине через каждые ${meshInterval} рядов, +10% к длине. Диаметр, ширину, необходимость, шаг и зоны армирования задаёт проект; это не готовая ведомость.`,
       quantity: roundDisplay(meshLengthM, 3),
       unit: "п.м.",
       withReserve: roundDisplay(Math.ceil(meshLengthM * 10) / 10, 3),
@@ -112,6 +119,42 @@ function buildMaterials(
   ];
 
   return materials;
+}
+
+function clarifyBrickCompanions(materials: CanonicalMaterialResult[]): CanonicalMaterialResult[] {
+  return materials.map((material) => {
+    if (material.name.startsWith("Известь гашёная")) {
+      return {
+        ...material,
+        subtitle: "Предварительная альтернатива модели: 150 кг на 1 м³ рассчитанного раствора +10%, мешок 25 кг. Необходимость и дозировку принимают по утверждённому составу раствора.",
+      };
+    }
+    if (material.name.startsWith("Пластификатор")) {
+      return {
+        ...material,
+        subtitle: "Предварительная альтернатива модели: 0,5 л на 1 м³ рассчитанного раствора +10%, покупка округляется до целого литра. Тип и дозировку берут из рецептуры и техкарты продукта.",
+      };
+    }
+    if (material.name.startsWith("Рубероид")) {
+      return {
+        ...material,
+        subtitle: "Предварительная позиция только для стены, опирающейся на фундамент: введённая длина × выбранная толщина кладки +10%, рулон 15 м². Материал и узел гидроизоляции задаёт проект.",
+      };
+    }
+    if (material.name.startsWith("Шнур-причалка")) {
+      return {
+        ...material,
+        subtitle: "Условная длина текущей модели: 1,5 × периметр прямоугольника из введённой длины стены и её толщины. Это справочная позиция, а не обязательная покупка.",
+      };
+    }
+    if (material.category === "Инструмент") {
+      return {
+        ...material,
+        subtitle: "Справочный пункт комплекта инструмента: модель показывает 1 шт. и не проверяет, что уже есть у бригады. В закупку включайте только при необходимости.",
+      };
+    }
+    return material;
+  });
 }
 
 export function computeCanonicalBrick(
@@ -204,10 +247,10 @@ export function computeCanonicalBrick(
 
   const warnings: string[] = [];
   if (wallThickness === spec.warnings_rules.non_load_bearing_wall_thickness) {
-    warnings.push("Толщина стены в 0.5 кирпича (120 мм) — только для ненесущих перегородок");
+    warnings.push("Выбрана толщина 120 мм: она сама по себе не определяет назначение, устойчивость или несущую способность кладки. Конструкцию, связи и примыкания проверяют по проекту");
   }
   if (cementBags >= spec.warnings_rules.manual_mix_grade_threshold) {
-    warnings.push("Большой объём раствора — ручное замешивание будет затруднено, рекомендуется бетономешалка");
+    warnings.push("Получился крупный предварительный объём раствора. Готовую смесь, замес на объекте, подачу и производительность выбирают по проекту производства работ и возможностям площадки");
   }
   if (wallThickness >= spec.material_rules.flexible_ties_wall_thickness_threshold) {
     warnings.push("Гибкие связи не включены в покупку: они нужны для многослойной стены или кирпичной облицовки, а не определяются только толщиной кладки");
@@ -215,12 +258,12 @@ export function computeCanonicalBrick(
 
   const practicalNotes: string[] = [];
   if (wallThickness === 0) {
-    practicalNotes.push("Кладку в полкирпича обычно применяют для ненесущих перегородок; несущую способность подтверждают расчётом");
+    practicalNotes.push("Калькулятор использует для 120 мм только табличный расход материалов и не подтверждает назначение или допустимые размеры стены");
   }
   if (recScenario.exact_need > 5000) {
-    practicalNotes.push(`При объёме ${Math.round(recScenario.exact_need)} кирпичей заказывайте с 7-10% запасом — бой при разгрузке неизбежен`);
+    practicalNotes.push(`Для партии около ${Math.round(recScenario.exact_need)} кирпичей проверьте фактическую упаковку, кратность поддона, одну производственную партию и условия разгрузки; калькулятор сохраняет выбранный вами запас`);
   }
-  practicalNotes.push("Кладку начинайте с углов, проверяйте горизонт каждые 3-4 ряда");
+  practicalNotes.push("Последовательность работ, контроль геометрии, перевязку, швы и допустимые перерывы выполняйте по проекту производства работ и технологии выбранной кладки");
 
   const baseMaterials = buildMaterials(
     spec,
@@ -228,9 +271,14 @@ export function computeCanonicalBrick(
     bricksNet,
     recScenario.exact_need,
     recScenario.purchase_quantity,
+    bricksPerSqm,
+    wasteCoeff,
+    mortarPerSqm,
+    conditionsMultiplier,
     cementBags,
     sandM3,
     meshLengthM,
+    meshInterval,
   );
 
   const companionInputs = {
@@ -254,7 +302,7 @@ export function computeCanonicalBrick(
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: [...baseMaterials, ...companions],
+    materials: [...baseMaterials, ...clarifyBrickCompanions(companions)],
     totals: {
       area: area,
       inputMode: areaInfo.inputMode,

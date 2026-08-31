@@ -65,13 +65,13 @@ describe("Калькулятор кирпича", () => {
       expect(brick?.purchaseQty).toBe(819);
     });
 
-    it("wallThickness=0 → предупреждение о ненесущих перегородках", () => {
-      expect(result.warnings.some((w) => w.includes("ненесущих перегородок"))).toBe(true);
+    it("wallThickness=0 → предупреждение о проектной проверке 120 мм", () => {
+      expect(result.warnings.some((w) => w.includes("не определяет назначение"))).toBe(true);
     });
   });
 
   describe("Предупреждения", () => {
-    it("wallThickness=0 → толщина 0.5 кирпича только для перегородок", () => {
+    it("wallThickness=0 не назначает автоматически перегородку", () => {
       const result = calc({
         inputMode: 1,
         area: 10,
@@ -79,10 +79,11 @@ describe("Калькулятор кирпича", () => {
         wallThickness: 0,
         workingConditions: 1,
       });
-      expect(result.warnings.some((w) => w.includes("ненесущих перегородок"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("120 мм"))).toBe(true);
+      expect(result.warnings.join(" ")).not.toContain("только для ненесущих перегородок");
     });
 
-    it("большой объём раствора → предупреждение о бетономешалке", () => {
+    it("большой объём раствора не назначает конкретное оборудование", () => {
       const result = calc({
         inputMode: 1,
         area: 40,
@@ -90,7 +91,8 @@ describe("Калькулятор кирпича", () => {
         wallThickness: 1,
         workingConditions: 1,
       });
-      expect(result.warnings.some((w) => w.includes("бетономешалка"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("крупный предварительный объём"))).toBe(true);
+      expect(result.warnings.join(" ")).not.toContain("рекомендуется бетономешалка");
     });
   });
 
@@ -149,6 +151,84 @@ describe("Калькулятор кирпича", () => {
       expect(minimal.scenarios.MAX.exact_need).toBe(1683);
       expect(reinforced.scenarios.REC.exact_need).toBe(1683);
       expect(reinforced.scenarios.MAX.exact_need).toBe(1683);
+    });
+  });
+
+  describe("Прозрачная закупочная модель", () => {
+    const result = calc({
+      inputMode: 0,
+      wallWidth: 6,
+      wallHeight: 2.7,
+      brickType: 0,
+      wallThickness: 1,
+      workingConditions: 2,
+      wasteMode: 0,
+      mortarAdditive: 0,
+    });
+
+    it("показывает табличный расход, запас и фиксированную модель раствора", () => {
+      expect(findMaterial(result, "Кирпич")?.subtitle).toContain("102 шт/м²");
+      expect(findMaterial(result, "Кирпич")?.subtitle).toContain("запаса 5%");
+      expect(findMaterial(result, "Цемент")?.subtitle).toContain("0.023 м³/м² × 1,12");
+      expect(findMaterial(result, "Цемент")?.subtitle).toContain("поправка условий 1.05 (+5%)");
+      expect(findMaterial(result, "Песок")?.subtitle).toContain("1,2 м³ песка");
+      expect(findMaterial(result, "Кладочная сетка")?.subtitle).toContain("каждые 5 рядов");
+      expect(findMaterial(result, "Кладочная сетка")?.subtitle).toContain("не готовая ведомость");
+    });
+
+    it("раскрывает добавку, гидроизоляцию и инструменты как предварительные позиции", () => {
+      expect(findMaterial(result, "Известь")?.subtitle).toContain("150 кг");
+      expect(findMaterial(result, "Известь")?.subtitle).toContain("+10%");
+      expect(findMaterial(result, "Рубероид")?.subtitle).toContain("введённая длина × выбранная толщина");
+      expect(findMaterial(result, "Рубероид")?.subtitle).toContain("задаёт проект");
+      expect(findMaterial(result, "Кельма")?.subtitle).toContain("не проверяет, что уже есть у бригады");
+      expect(findMaterial(result, "Шнур-причалка")?.subtitle).toContain("справочная позиция");
+    });
+
+    it("оставляет длину и высоту видимыми в режиме площади", () => {
+      const lengthField = brickDef.fields.find((field) => field.key === "wallWidth");
+      const heightField = brickDef.fields.find((field) => field.key === "wallHeight");
+      const areaField = brickDef.fields.find((field) => field.key === "area");
+
+      expect(lengthField?.group).toBeUndefined();
+      expect(heightField?.group).toBeUndefined();
+      expect(lengthField?.hint).toContain("полный прямоугольник без вычета проёмов");
+      expect(lengthField?.hint).toContain("предварительной сетки");
+      expect(heightField?.hint).toContain("полос сетки");
+      expect(areaField?.hint).toContain("без окон и дверей");
+    });
+
+    it("нейтрально показывает толщину, погодные множители, запас и добавку", () => {
+      const thickness = brickDef.fields.find((field) => field.key === "wallThickness");
+      const conditions = brickDef.fields.find((field) => field.key === "workingConditions");
+      const waste = brickDef.fields.find((field) => field.key === "wasteMode");
+      const additive = brickDef.fields.find((field) => field.key === "mortarAdditive");
+
+      expect(thickness?.options?.[0].label).toBe("0,5 кирпича (120 мм)");
+      expect(thickness?.hint).toContain("несущую способность");
+      expect(conditions?.options?.map((option) => option.label)).toEqual([
+        "Без поправки (×1,00)",
+        "Ветер: +5% (×1,05)",
+        "Ниже +5°C: +10% (×1,10)",
+        "Выше +30°C: +8% (×1,08)",
+      ]);
+      expect(conditions?.hint).toContain("плановые коэффициенты");
+      expect(waste?.options?.map((option) => option.label)).toEqual(["5%", "10%", "3%"]);
+      expect(additive?.hint).toContain("Не покупайте добавку");
+    });
+
+    it("ссылается на действующие нормы и не выдаёт модель за рецепт М150", () => {
+      const content = brickDef.seoContent?.descriptionHtml ?? "";
+      const formula = brickDef.formulaDescription ?? "";
+
+      expect(content).toContain("protect.gost.ru/gost/details/e3f3ca57-13cb-493c-a047-21814635e7fc");
+      expect(content).toContain("СП 15.13330.2020 с изменением № 1");
+      expect(content).toContain("СП 70.13330.2012 с изменениями № 1, 3&ndash;8");
+      expect(content).toContain("ГОСТ Р 58766-2019");
+      expect(content).toContain("не подтверждает эту таблицу");
+      expect(content).not.toContain("Расход раствора М150");
+      expect(formula).not.toContain("Пропорции раствора М150");
+      expect(formula).not.toContain("Обязательная гидроизоляция");
     });
   });
 });

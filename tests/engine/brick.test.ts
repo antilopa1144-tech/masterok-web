@@ -41,10 +41,11 @@ describe("computeCanonicalBrick — golden snapshot (basic mode)", () => {
     expect(professional.scenarios.REC.purchase_quantity).toBe(1607);
   });
 
-  it("полкирпича (wallThickness=0) даёт предупреждение про ненесущую перегородку", () => {
+  it("полкирпича (wallThickness=0) требует проектной проверки назначения", () => {
     const r = calc({ accuracyMode: "basic", wallThickness: 0 });
     expect(r.totals.wallThickness).toBe(0);
-    expect(r.warnings.some((w) => w.includes("ненесущ"))).toBe(true);
+    expect(r.warnings.some((w) => w.includes("не определяет назначение"))).toBe(true);
+    expect(r.warnings.join(" ")).not.toContain("только для ненесущих перегородок");
   });
 
   it("не добавляет гибкие связи только из-за толщины кладки", () => {
