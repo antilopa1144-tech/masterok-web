@@ -40,13 +40,13 @@ describe("computeCanonicalLaminate — golden snapshot (basic mode)", () => {
     expect(real.scenarios.REC.exact_need).toBeGreaterThan(basic.scenarios.REC.exact_need);
   });
 
-  it("площадь >50 м² добавляет компенсационный шов (СП 71.13330)", () => {
+  it("площадь >50 м² добавляет предварительный профиль по текущей модели", () => {
     const r = calc({ accuracyMode: "basic", inputMode: 1, area: 60, perimeter: 32 });
 
     expect(r.totals.expansionJointPieces).toBe(8);
     expect(r.totals.expansionJointLengthM).toBeCloseTo(7.746, 3);
     expect(r.materials.some((m) => m.name.includes("компенсационный"))).toBe(true);
-    expect(r.warnings.some((w) => w.includes("компенсационный"))).toBe(true);
+    expect(r.warnings.some((w) => w.includes("предварительно добавил профиль"))).toBe(true);
   });
 
   it("площадь ≤50 м² не требует компенсационного шва", () => {

@@ -70,6 +70,7 @@ function buildMaterials(
   packArea: number,
   packsNeeded: number,
   hasUnderlayment: boolean,
+  underlaymentIsRoll: boolean,
   underlaymentArea: number,
   underlaymentRolls: number,
   plinthLength: number,
@@ -134,7 +135,7 @@ function buildMaterials(
     materials.splice(1, 0, {
       name: "Подложка под ламинат",
       quantity: roundDisplay(underlaymentArea / spec.packaging_rules.underlayment_roll_area_m2, 6),
-      unit: "рулонов",
+      unit: underlaymentIsRoll ? "рулонов" : "упаковок",
       withReserve: underlaymentRolls,
       purchaseQty: underlaymentRolls,
       category: "Подложка",
@@ -203,6 +204,7 @@ export function computeCanonicalLaminate(
 
   const hasUnderlayment = (inputs.hasUnderlayment ?? getInputDefault(spec, "hasUnderlayment", 1)) > 0;
   const underlaymentRollArea = Math.max(5, Math.min(20, inputs.underlaymentRollArea ?? getInputDefault(spec, "underlaymentRollArea", spec.packaging_rules.underlayment_roll_area_m2)));
+  const underlayType = Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3))));
   const underlaymentArea = hasUnderlayment ? roundDisplay(geometry.area * (1 + spec.material_rules.underlayment_overlap_percent / 100), 6) : 0;
   const underlaymentRolls = hasUnderlayment ? Math.ceil(underlaymentArea / underlaymentRollArea) : 0;
   const doorThresholds = Math.max(0, Math.round(inputs.doorThresholds ?? getInputDefault(spec, "doorThresholds", 1)));
@@ -231,18 +233,29 @@ export function computeCanonicalLaminate(
     warnings.push("Диагональная укладка требует более высокого запаса и аккуратной раскладки");
   }
   if (spec.warnings_rules.herringbone_warning_profile_ids.includes(layoutProfile.id)) {
-    warnings.push("Укладка ёлочкой требует идеально ровного основания и высокой квалификации");
+    warnings.push("Для укладки ёлочкой проверьте совместимость конкретной коллекции, геометрию помещения и требования к основанию");
   }
   if (spec.warnings_rules.half_shift_warning_profile_ids.includes(layoutProfile.id)) {
-    warnings.push("Смещение досок на 1/2 увеличивает количество коротких обрезков");
+    warnings.push("Смещение на 1/2 может быть ограничено изготовителем из-за геометрии доски; сверьте схему укладки выбранной коллекции");
   }
 
   const recScenario = scenarios.REC;
 
   const practicalNotes: string[] = [];
-  practicalNotes.push("Ламинат должен акклиматизироваться в комнате минимум 48 часов перед укладкой");
+  practicalNotes.push("Срок и условия акклиматизации, допустимую влажность основания, подложку и технологические зазоры берите из инструкции выбранной коллекции");
+  if (geometry.inputMode === 1 && !(inputs.perimeter && inputs.perimeter > 0)) {
+    practicalNotes.push("При вводе только площади периметр оценён как 4 × √S. Для плинтуса и клиньев измерьте фактические стены, ниши, колонны и проёмы");
+  }
+  practicalNotes.push(
+    `Плинтус рассчитан от периметра с условным вычетом ${spec.material_rules.default_door_opening_width_m} м на каждый указанный проём; внутренних углов принято ${spec.material_rules.rectangle_inner_corners}. Сверьте фактический контур и комплектующие`,
+  );
+  if (hasUnderlayment) {
+    practicalNotes.push(
+      `Подложка посчитана с плановым добавлением ${spec.material_rules.underlayment_overlap_percent}% и округлением по введённой площади упаковки. Способ стыковки берите из инструкции продукта`,
+    );
+  }
   if (layoutProfile.id === 4) {
-    practicalNotes.push("Диагональная укладка добавит 15% отходов — не экономьте на запасе");
+    practicalNotes.push("Для диагональной схемы базовый профиль отходов равен 15% до сценарных поправок и округления упаковок; сложный контур может потребовать отдельной раскладки");
   }
 
   const materials = buildMaterials(
@@ -252,6 +265,7 @@ export function computeCanonicalLaminate(
     packArea,
     recScenario.buy_plan.packages_count,
     hasUnderlayment,
+    underlayType <= 3,
     underlaymentArea,
     underlaymentRolls,
     plinthLength,
@@ -269,7 +283,7 @@ export function computeCanonicalLaminate(
   if (spec.companion_materials && spec.companion_materials.length > 0) {
     const companionInputs = {
       hasUnderlayment: hasUnderlayment ? 1 : 0,
-      underlayType: Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3)))),
+      underlayType,
       doorThresholds,
       floorBase,
       outerCorners,
@@ -282,12 +296,33 @@ export function computeCanonicalLaminate(
       inputs: companionInputs,
       totals: companionTotals,
     });
-    materials.push(...companions);
+    materials.push(...companions.map((material) => {
+      if (material.name === "Пароизоляционная плёнка") {
+        return {
+          ...material,
+          subtitle: "Предварительная позиция для бетонного варианта; необходимость и схему определяют по влажности основания и инструкции покрытия",
+        };
+      }
+      if (material.name === "Скотч для стыков подложки") {
+        return {
+          ...material,
+          subtitle: "Справочная позиция для рулонной подложки; фактический способ соединения и расход берите из инструкции продукта",
+        };
+      }
+      return material;
+    }));
   }
+
+  practicalNotes.push(
+    floorBase === 0
+      ? "Для варианта «бетонная стяжка» калькулятор добавляет 10% пароизоляционной плёнки как предварительную позицию. Необходимость и схему определяют по влажности основания и инструкции покрытия"
+      : "Для варианта «деревянный пол» пароизоляция автоматически не добавляется. Фактический состав пола определяют по состоянию основания и инструкции покрытия",
+  );
 
   if (expansionJointPieces > 0) {
     materials.push({
       name: `Профиль компенсационный (${expansionJointPieceLengthM} м)`,
+      subtitle: "Предварительная позиция по порогу площади и линии √S; фактические швы определяют по размерам помещения и инструкции покрытия",
       quantity: expansionJointPieces,
       unit: "шт",
       withReserve: expansionJointPieces,
@@ -295,7 +330,7 @@ export function computeCanonicalLaminate(
       category: "Монтаж",
     });
     warnings.push(
-      `Площадь ${geometry.area} м² больше ${expansionJointThresholdM2} м² — требуется компенсационный шов с профилем (СП 71.13330).`,
+      `Площадь ${geometry.area} м² больше внутреннего порога ${expansionJointThresholdM2} м² — калькулятор предварительно добавил профиль длиной √S. Фактическую необходимость и расположение швов проверьте по размерам помещения и инструкции покрытия.`,
     );
   }
 
@@ -325,7 +360,7 @@ export function computeCanonicalLaminate(
       doorThresholds: doorThresholds,
       expansionJointPieces,
       expansionJointLengthM: roundDisplay(expansionJointLengthM, 3),
-      underlayType: Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3)))),
+      underlayType,
       laminateClass: Math.max(31, Math.min(34, Math.round(inputs.laminateClass ?? getInputDefault(spec, "laminateClass", 32)))),
       laminateThickness: Math.max(6, Math.min(14, Math.round(inputs.laminateThickness ?? getInputDefault(spec, "laminateThickness", 8)))),
       minExactNeedArea: scenarios.MIN.exact_need,
