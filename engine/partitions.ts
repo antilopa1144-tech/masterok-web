@@ -120,8 +120,8 @@ export function computeCanonicalPartitions(
     {
       name: blockNames[blockType],
       subtitle: blockType === 2
-        ? "Для влажных помещений выбирайте гидрофобизированные плиты"
-        : "Расчёт выполнен по указанному формату лицевой грани; для другого размера количество нужно пересчитать",
+        ? "Для влажного режима выбирайте гидрофобизированные ПГП по паспорту изделия. Прочность, огнестойкость, звукоизоляцию и допустимые размеры перегородки калькулятор не определяет."
+        : `Обозначение ${blockType === 0 ? "D500" : "D600"} — фиксированный ярлык текущей модели, а не подтверждение свойства выбранного товара. Расчёт использует лицевую грань 625×250 мм; плотность, класс прочности, влажностный режим и допустимые размеры выбирайте по проекту и паспорту блока.`,
       quantity: roundDisplay(recScenario.exact_need, 6),
       unit: "шт",
       withReserve: Math.ceil(recScenario.exact_need),
@@ -133,7 +133,7 @@ export function computeCanonicalPartitions(
   if (glueBags > 0) {
     materials.push({
       name: `Клей для тонкошовной кладки ячеистых блоков, мешок ${rules.glue_bag} кг`,
-      subtitle: "Фактический расход уточняют по толщине шва и инструкции выбранной сухой смеси",
+      subtitle: `Предварительная оценка по фиксированным ${rules.glue_rate[String(blockType)] ?? 0} кг/м² и мешку ${rules.glue_bag} кг. Толщина перегородки и шва расход не меняет; фактическое значение берите из техкарты выбранной смеси.`,
       quantity: glueBags,
       unit: "мешков",
       withReserve: glueBags,
@@ -145,7 +145,7 @@ export function computeCanonicalPartitions(
   if (gypsumBags > 0) {
     materials.push({
       name: `Гипсовый монтажный клей для пазогребневых плит, мешок ${rules.gypsum_bag} кг`,
-      subtitle: "Клей должен быть предназначен производителем для монтажа гипсовых пазогребневых плит",
+      subtitle: `Предварительная оценка по фиксированным ${rules.gypsum_milk_rate} кг/м² и мешку ${rules.gypsum_bag} кг. Фактический расход и пригодность состава берите из инструкции системы ПГП.`,
       quantity: gypsumBags,
       unit: "мешков",
       withReserve: gypsumBags,
@@ -157,7 +157,7 @@ export function computeCanonicalPartitions(
   if (meshRolls > 0) {
     materials.push({
       name: `Армирующая лента для кладки ячеистых блоков, рулон ${rules.mesh_roll} м`,
-      subtitle: "Тип ленты и схему армирования выбирают по проекту и техническим решениям производителя блоков",
+      subtitle: `Справочная позиция модели: одна линия через ${rules.mesh_interval} м по высоте, 5% к длине и рулон ${rules.mesh_roll} м. Необходимость, материал, сечение, шаг и зоны усиления задаёт проект или техническое решение производителя.`,
       quantity: meshRolls,
       unit: "рулонов",
       withReserve: meshRolls,
@@ -169,17 +169,20 @@ export function computeCanonicalPartitions(
   materials.push(
     {
       name: `Профессиональная полиуретановая монтажная пена, баллон ${rules.foam_can} мл`,
-      subtitle: "Для заполнения верхнего деформационного зазора; размер зазора задаёт проект",
+      subtitle: `Справочная позиция модели: один баллон на каждые ${rules.foam_per_perim} м суммы верха и двух боковых примыканий. Тип узла, размер зазора, допустимый материал заполнения и фактический выход пены задают проект и инструкция системы.`,
       quantity: foamBottles,
       unit: "шт",
       withReserve: foamBottles,
       purchaseQty: foamBottles,
       category: "Монтаж",
     },
-    buildPrimerMaterial(wallArea * 2 * rules.primer_l_per_m2, { reserveFactor: rules.primer_reserve, category: "Грунтовка" }),
+    {
+      ...buildPrimerMaterial(wallArea * 2 * rules.primer_l_per_m2, { reserveFactor: rules.primer_reserve, category: "Грунтовка" }),
+      subtitle: `Предварительная оценка для двух сторон по ${rules.primer_l_per_m2} л/м² и запасу 15%. Необходимость, число слоёв, совместимость и паспортный расход зависят от основания и последующей отделки.`,
+    },
     {
       name: "Упругая лента для примыкания перегородки",
-      subtitle: "Материал и необходимость ленты зависят от узла примыкания и требований по звукоизоляции",
+      subtitle: "Справочная длина по полному периметру перегородки с 10% запаса. Материал, расположение и необходимость ленты зависят от проектного узла примыкания и требований к звукоизоляции.",
       quantity: sealTape,
       unit: "м",
       withReserve: sealTape,
@@ -199,6 +202,8 @@ export function computeCanonicalPartitions(
   warnings.push("Калькулятор предназначен только для ненесущих межкомнатных перегородок");
 
   const practicalNotes: string[] = [];
+  practicalNotes.push("Площадь считается как длина × высота без вычета дверей и других проёмов: их геометрия в форме отсутствует");
+  practicalNotes.push("Фиксированные 5% на блоки, расходы клея и грунтовки, лента через 0,75 м, пена и упругая лента — допущения текущей модели, а не универсальные нормы");
   practicalNotes.push("Связи со стенами, армирование зон проёмов и верхний деформационный зазор выполняют по проекту и альбому решений производителя");
 
   return {
