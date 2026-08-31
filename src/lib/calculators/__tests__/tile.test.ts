@@ -19,7 +19,8 @@ describe("Калькулятор плитки", () => {
         expect(result.formulaVersion).toBe(expected.formulaVersion);
         expect(result.totals.area).toBeCloseTo(expected.area, 2);
         expect(result.totals.wastePercent).toBeCloseTo(expected.wastePercent, 2);
-        expect(result.warnings).toHaveLength(expected.warningsCount);
+        expect(result.warnings).toHaveLength(expected.warningsCount + 1);
+        expect(result.warnings.some((warning) => warning.includes("предварительные позиции общей модели"))).toBe(true);
 
         const recScenario = result.scenarios!.REC;
         expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
@@ -120,6 +121,23 @@ describe("Калькулятор плитки", () => {
     expect(result.warnings.some((warning) => warning.includes("Диагональная"))).toBe(true);
   });
 
+  it("показывает поддерживаемую canonical-раскладку ёлочкой в web-форме", () => {
+    const method = tileDef.fields.find((field) => field.key === "layingMethod");
+    const result = calc({
+      inputMode: 1,
+      area: 40,
+      tileWidth: 200,
+      tileHeight: 600,
+      layingMethod: 3,
+      roomComplexity: 0,
+    });
+
+    expect(method?.options?.some((option) => option.value === 3 && option.label.includes("Ёлочка"))).toBe(true);
+    expect(result.totals.layoutPattern).toBe(4);
+    expect(result.totals.wastePercent).toBe(20);
+    expect(result.warnings.some((warning) => warning.toLowerCase().includes("ёлоч"))).toBe(true);
+  });
+
   it("добавляет предупреждение для крупного формата", () => {
     const result = calc({
       inputMode: 1,
@@ -134,6 +152,8 @@ describe("Калькулятор плитки", () => {
     const glue = findMaterial(result, "Плиточный клей усиленный для крупного формата");
     expect(glue?.subtitle).toContain("800×800 мм");
     expect(findMaterial(result, "Система выравнивания плитки (СВП), клипса 3 мм")).toBeDefined();
+    expect(result.warnings.some((warning) => warning.includes("двойного нанесения клея"))).toBe(false);
+    expect(result.practicalNotes?.some((note) => note.includes("обязательно"))).toBe(false);
   });
 
   it("конкретизирует затирку, крестики и герметик по введённому шву", () => {
@@ -148,5 +168,57 @@ describe("Калькулятор плитки", () => {
     expect(findMaterial(result, "Затирка цементная для шва 2 мм")?.subtitle).toContain("влажных зон");
     expect(findMaterial(result, "Крестики для плитки 2 мм")?.subtitle).toContain("ширине шва");
     expect(findMaterial(result, "силиконовый герметик")?.name).toContain("280–310 мл");
+  });
+
+  it("не приписывает бренд плитки клею и расходникам", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 12,
+      tileWidth: 300,
+      tileHeight: 300,
+      layingMethod: 0,
+      roomComplexity: 0,
+      manufacturer: 1,
+    });
+
+    expect(findMaterial(result, "Плитка")?.name).toContain("Kerama Marazzi");
+    expect(findMaterial(result, "Плиточный клей")?.name).not.toContain("Kerama Marazzi");
+    expect(findMaterial(result, "Крестики")?.name).not.toContain("Kerama Marazzi");
+    expect(result.warnings.some((warning) => warning.includes("не загружает его конкретную коллекцию"))).toBe(true);
+    expect(tileDef.fields.find((field) => field.key === "manufacturer")?.hint).toContain("бренд только к названию");
+  });
+
+  it("раскрывает коэффициенты условной сопутствующей ведомости", () => {
+    const result = calc({
+      inputMode: 1,
+      area: 12,
+      tileWidth: 300,
+      tileHeight: 300,
+      jointWidth: 2,
+      jointDepth: 6,
+      layingMethod: 0,
+      roomComplexity: 0,
+    });
+
+    expect(findMaterial(result, "Плитка")?.subtitle).toContain("базовый запас раскладки 10%");
+    expect(findMaterial(result, "Плиточный клей")?.subtitle).toContain("4 кг/м²");
+    expect(findMaterial(result, "Затирка")?.subtitle).toContain("1600 кг/м³ × 1,10");
+    expect(findMaterial(result, "Грунтовка")?.subtitle).toContain("0,15 л/м²");
+    expect(findMaterial(result, "Крестики")?.subtitle).toContain("1 элемент на каждую плитку");
+    expect(findMaterial(result, "герметик")?.subtitle).toContain("1 туба на 15 м²");
+    expect(result.warnings.some((warning) => warning.includes("предварительные позиции общей модели"))).toBe(true);
+  });
+
+  it("использует текущие стандарты и первичные карточки без универсальных обещаний СВП", () => {
+    const html = tileDef.seoContent?.descriptionHtml ?? "";
+    const faq = tileDef.seoContent?.faq.map((item) => item.answer).join(" ") ?? "";
+
+    expect(html).toContain("ГОСТ 13996-2019 с поправкой 2023 года");
+    expect(html).toContain("ГОСТ Р 56387-2018");
+    expect(html).toContain("ceresit.ru/ru/products/tiling/tile-adhesives/cm-16");
+    expect(html).toContain("ceresit.ru/ru/products/tiling/grouts-and-sealants/ce_40_aquastatic");
+    expect(html).not.toContain("снижает перепады между плитками на 50");
+    expect(faq).not.toContain("6&ndash;8 шт/м&sup2;");
+    expect(faq).not.toContain("толщина клеевого слоя после прижатия");
   });
 });
