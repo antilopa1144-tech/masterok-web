@@ -5,6 +5,49 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(wallPanelsDef.calculate.bind(wallPanelsDef));
 
 describe("Калькулятор панелей для стен", () => {
+  it("синхронизирует web-дефолты с canonical и открывает высоту для обрешётки", () => {
+    const areaField = wallPanelsDef.fields.find((field) => field.key === "area");
+    const heightField = wallPanelsDef.fields.find((field) => field.key === "height");
+
+    expect(areaField?.defaultValue).toBe(20);
+    expect(heightField?.defaultValue).toBe(2.7);
+    expect(heightField?.hideIf).toEqual({ key: "mountMethod", op: "eq", value: 0 });
+  });
+
+  it("называет пятый пресет каменным шпоном, а не упаковкой декоративного камня", () => {
+    const panelTypeField = wallPanelsDef.fields.find((field) => field.key === "panelType");
+
+    expect(panelTypeField?.options?.find((option) => option.value === 4)?.label)
+      .toBe("Каменный шпон, лист 0,5 м²");
+  });
+
+  it("показывает границы геометрии и разные подсказки способов монтажа", () => {
+    const glueResult = calc({ area: 20, panelType: 0, mountMethod: 0, height: 2.7 });
+    const frameResult = calc({ area: 20, panelType: 1, mountMethod: 1, height: 3.2 });
+
+    expect(glueResult.practicalNotes[0]).toContain("эквивалентного квадрата");
+    expect(glueResult.practicalNotes.some((note) => note.includes("1 флакон на 4 м²"))).toBe(true);
+    expect(glueResult.practicalNotes.some((note) => note.includes("Обрешётку проверяйте"))).toBe(false);
+    expect(frameResult.practicalNotes.some((note) => note.includes("введённой высоте 3,2 м"))).toBe(true);
+    expect(frameResult.practicalNotes.some((note) => note.includes("Обрешётку проверяйте"))).toBe(true);
+  });
+
+  it("изменяет ведомость обрешётки при изменении введённой высоты", () => {
+    const lowWall = calc({ area: 20, panelType: 1, mountMethod: 1, height: 2 });
+    const highWall = calc({ area: 20, panelType: 1, mountMethod: 1, height: 4 });
+
+    expect(highWall.totals.battenRows).toBeGreaterThan(lowWall.totals.battenRows as number);
+    expect(highWall.totals.battenPcs).not.toBe(lowWall.totals.battenPcs);
+  });
+
+  it("не обещает точный контур или неподдерживаемую норму кляймеров", () => {
+    const seoHtml = wallPanelsDef.seoContent?.descriptionHtml ?? "";
+
+    expect(seoHtml).toContain("5 шт/м²");
+    expect(seoHtml).toContain("эквивалентного квадрата");
+    expect(seoHtml).not.toContain("2–3 шт на каждую панель");
+  });
+
   it("позиционируется под подтверждённый спрос ПВХ-панелей", () => {
     expect(wallPanelsDef.metaTitle).toContain("Калькулятор ПВХ-панелей");
     expect(wallPanelsDef.metaDescription).toContain("количество с запасом");
