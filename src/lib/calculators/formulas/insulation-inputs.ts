@@ -11,9 +11,8 @@ import {
 
 export { INSULATION_APPLICATION } from "../insulation-application";
 
-const WET_FACADE_MIN_DENSITY = 80;
-const WET_FACADE_MAX_DENSITY = 95;
-const FRAME_OVERKILL_DENSITY = 80;
+const WET_FACADE_REFERENCE_DENSITY = 80;
+const FRAME_REFERENCE_DENSITY = 80;
 
 export interface EnrichInsulationInputsResult {
   enriched: Record<string, unknown>;
@@ -47,8 +46,7 @@ export function enrichInsulationInputs(
     application === INSULATION_APPLICATION.FOUNDATION
   ) {
     warnings.push(
-      "Для цоколя и фундамента чаще берут ЭППС (пеноплекс): он не впитывает воду. " +
-        "Минвата возможна, но нужна гидроизоляция и правильный пирог.",
+      "Для цоколя и фундамента выбран ручной расчёт минваты. Калькулятор не проверяет воздействие воды, нагрузки, гидроизоляцию, пожарные ограничения и совместимость слоёв — материал задают проектом и документацией системы.",
     );
   }
 
@@ -56,12 +54,12 @@ export function enrichInsulationInputs(
     const d = catalogDensityKgM3 ?? Number(enriched.density ?? inputs.density ?? 0);
     if (d > 0 && d < 100) {
       warnings.push(
-        `Плотность ${d} кг/м³ слишком мала для пола под стяжку. ` +
-          "Между лагами без стяжки — рулон или лёгкая минвата; под стяжку — ЭППС (пеноплекс) или плотная минвата от 100–150 кг/м³.",
+        `Для пола выбрана минвата ${d} кг/м³. Одной плотности недостаточно, чтобы подтвердить работу под нагрузкой или стяжкой: ` +
+          "проверьте назначение, прочность и схему пола по документации материала и проекту.",
       );
     } else {
       warnings.push(
-        "Пол по лагам — рулонная минвата; под стяжку на грунте — обычно ЭППС (не боится влаги и нагрузки).",
+        "Для пола калькулятор считает только количество. Схему по лагам или под стяжку, воздействие влаги и допустимую нагрузку нужно подтвердить проектом и характеристиками выбранного материала.",
       );
     }
   }
@@ -88,7 +86,7 @@ export interface DensityCheckResult {
   practicalNotes: string[];
 }
 
-/** Проверка плотности минваты vs система монтажа (СП 293 / практика СФТК). */
+/** Справочный флаг плотности: не заменяет проверку назначения продукта и системы. */
 export function checkMineralWoolDensity(
   effectiveDensity: number,
   mountSystem: number,
@@ -104,18 +102,10 @@ export function checkMineralWoolDensity(
   const isWetFacadeContext =
     application === INSULATION_APPLICATION.FACADE && mountSystem === 0;
 
-  if (isWetFacadeContext && effectiveDensity < WET_FACADE_MIN_DENSITY) {
+  if (isWetFacadeContext && effectiveDensity < WET_FACADE_REFERENCE_DENSITY) {
     warnings.push(
-      `Плотность ${effectiveDensity} кг/м³ слишком низкая для мокрого штукатурного фасада. ` +
-        `Под штукатуркой плита просядет — нужна фасадная минвата минимум ${WET_FACADE_MIN_DENSITY} кг/м³ ` +
-        `(Rockwool Фасад Баттс, Технониколь Технофас 80, Knauf Insulation FKD-S Thermal).`,
-    );
-  }
-
-  if (isWetFacadeContext && effectiveDensity > WET_FACADE_MAX_DENSITY) {
-    warnings.push(
-      `Плотность ${effectiveDensity} кг/м³ — материал для вентилируемого фасада. ` +
-        `Для мокрого штукатурного фасада оптимально ${WET_FACADE_MIN_DENSITY}–${WET_FACADE_MAX_DENSITY} кг/м³.`,
+      `Плотность ${effectiveDensity} кг/м³ ниже встроенного справочного порога ${WET_FACADE_REFERENCE_DENSITY} кг/м³ для штукатурного фасада. ` +
+        "Пригодность нельзя определять только по плотности: выберите плиту, прямо разрешённую документацией конкретной СФТК.",
     );
   }
 
@@ -126,27 +116,26 @@ export function checkMineralWoolDensity(
     effectiveDensity < 100
   ) {
     warnings.push(
-      `Для пола под нагрузку плотность ${effectiveDensity} кг/м³ недостаточна — риск просадки. ` +
-        "Под стяжку выберите ЭППС или минвату от 100 кг/м³.",
+      `Для пола выбрана минвата ${effectiveDensity} кг/м³. Калькулятор не проверяет прочность на сжатие и расчётную нагрузку; ` +
+        "допустимость материала под стяжкой или между лагами подтвердите по документации и проекту.",
     );
   }
 
   if (
     mountSystem === 1 &&
     application !== INSULATION_APPLICATION.FLOOR &&
-    effectiveDensity >= FRAME_OVERKILL_DENSITY &&
+    effectiveDensity >= FRAME_REFERENCE_DENSITY &&
     application !== INSULATION_APPLICATION.FOUNDATION
   ) {
     practicalNotes.push(
-      `Плотность ${effectiveDensity} кг/м³ избыточна для каркасной стены/кровли: ` +
-        `для стоек и стропил достаточно 35–45 кг/м³. Для пола под стяжку — 100–150 кг/м³.`,
+      `Для каркасной конструкции выбрана минвата ${effectiveDensity} кг/м³. Плотность показана справочно и сама по себе не подтверждает удержание в каркасе, прочность, теплотехнику или пригодность изделия; проверьте назначение продукта.`,
     );
   }
 
   return { warnings, practicalNotes };
 }
 
-/** Длина тарельчатого дюбеля: толщина утепления + 50 мм в несущее основание (СП 293.1325800). */
+/** Предварительная длина для ведомости: толщина утепления + 50 мм. Не проектный подбор анкера. */
 export function dowelLengthMm(insulationThicknessMm: number): number {
   return Math.round(insulationThicknessMm + 50);
 }

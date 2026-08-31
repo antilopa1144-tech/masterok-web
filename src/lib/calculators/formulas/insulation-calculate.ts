@@ -8,7 +8,6 @@ import { getRecommendedThicknessMm } from "../insulation-smart";
 import {
   applyCatalogProductToInputs,
   getInsulationProduct,
-  getProductCostPerM2,
   getProductDisplayName,
   INSULATION_FORM_ROLLS,
   INSULATION_FORM_SLABS,
@@ -41,6 +40,18 @@ const LAYER_SPLIT: Record<number, [number, number]> = {
   250: [100, 150],
   300: [150, 150],
 };
+
+const THERMAL_BOUNDARY_NOTE =
+  "Региональная шкала — только встроенный ориентир. Калькулятор не определяет требуемое сопротивление теплопередаче, влажностный режим и проектную толщину по СП 50.13330.2024: для этого нужны город, назначение здания и полный состав ограждения.";
+
+function isLegacyThermalClaim(message: string): boolean {
+  return (
+    message.includes("нормы СП 50.13330") ||
+    message.includes("минимуму СП 50.13330") ||
+    message.includes("рекомендации СП 50.13330") ||
+    message.includes("для средней полосы России минимум")
+  );
+}
 
 function isMainInsulationCategory(category?: string): boolean {
   if (!category) return false;
@@ -102,8 +113,8 @@ export function runInsulationCalculate(
   let product = getInsulationProduct(productId);
   if (product && !productMatchesApplication(product, application)) {
     brandWarnings.push(
-      `Линейка «${product.manufacturer} ${product.lineName}» не рассчитана для выбранного назначения. ` +
-        "Выберите материал из списка для этой зоны утепления.",
+      `Линейка «${product.manufacturer} ${product.lineName}» не входит в справочный список для выбранного назначения. ` +
+        "Верните подходящую позицию из списка или ручной ввод и проверьте область применения по документации производителя.",
     );
     product = null;
   }
@@ -115,8 +126,11 @@ export function runInsulationCalculate(
   }
   const hasCatalogProduct = product != null;
 
+  const inputsForEnrichment: Record<string, unknown> = product
+    ? { ...inputs, insulationType: product.insulationTypeId }
+    : inputs;
   const { enriched: enrichedFromApp, warnings: applicationWarnings } = enrichInsulationInputs(
-    inputs as Record<string, unknown>,
+    inputsForEnrichment,
     hasCatalogProduct,
     product?.densityKgM3,
   );
@@ -139,6 +153,10 @@ export function runInsulationCalculate(
     if (product.note) {
       enrichedInputs._productNote = product.note;
     }
+    brandWarnings.push(
+      `Размер, толщина, плотность и фасовка «${product.manufacturer} ${product.lineName}» взяты из справочного каталога. ` +
+        "Перед заказом сверьте их с этикеткой конкретной партии; при расхождении используйте ручной ввод.",
+    );
   } else {
     enrichedInputs.productForm = Math.round(
       inputs.materialForm ?? INSULATION_FORM_SLABS,
@@ -189,7 +207,9 @@ export function runInsulationCalculate(
       const totalThickness = t1 + t2;
       merged.push({
         ...layerADowels,
-        name: `Дюбели тарельчатые 10×${dowelLengthMm(totalThickness)} мм (сквозные, ${totalThickness} мм)`,
+        name: `Дюбели тарельчатые, расчётная длина ${dowelLengthMm(totalThickness)} мм`,
+        subtitle:
+          `Предварительная длина: слой ${totalThickness} мм + 50 мм. Фактические тип, распорную зону, длину и схему крепления определяют по основанию, проекту и документации СФТК`,
       });
     }
     merged.push(...otherCompanions);
@@ -198,7 +218,7 @@ export function runInsulationCalculate(
       materials: merged,
       practicalNotes: [
         ...(canonical.practicalNotes ?? []),
-        `Двухслойная укладка: ${t1}+${t2} мм (СП 23-101-2004).`,
+        `Выбранная двухслойная раскладка: ${t1}+${t2} мм. Смещение стыков, крепёж и допустимость сочетания толщин проверьте по проекту и документации выбранной системы.`,
       ],
     };
   }
@@ -217,7 +237,8 @@ export function runInsulationCalculate(
         : "стен";
   if (thickness < recThickness - 1) {
     brandWarnings.push(
-      `Толщина ${thickness} мм меньше рекомендуемой для ${thicknessContext} в выбранном регионе (${recThickness} мм).`,
+      `Толщина ${thickness} мм ниже встроенного ориентира для ${thicknessContext} и выбранной зоны (${recThickness} мм). ` +
+        "Это справочный флаг, а не проверка нормы или проектной достаточности.",
     );
   }
 
@@ -268,30 +289,6 @@ export function runInsulationCalculate(
     canonical.practicalNotes = [`${product.manufacturer} ${product.lineName}: ${product.note}`, ...(canonical.practicalNotes ?? [])];
   }
 
-  if (area > 0 && thickness > 0 && !product) {
-    const types = spec.normative_formula.insulation_types;
-    const densityPresets = spec.normative_formula.density_presets ?? [];
-    const densityCostMult = (() => {
-      if (effectiveDensity <= 0 || densityPresets.length === 0) return 1;
-      const closest = densityPresets.reduce<typeof densityPresets[number] | null>((best, p) => {
-        if (!best) return p;
-        return Math.abs(p.value - effectiveDensity) < Math.abs(best.value - effectiveDensity) ? p : best;
-      }, null);
-      return closest?.cost_multiplier ?? 1;
-    })();
-    const lines: string[] = [];
-    lines.push(`Примерная стоимость для ${area} м² × ${thickness} мм (справочно, 2026):`);
-    for (const t of types ?? []) {
-      const base = Number(t.cost_estimate_per_m2_at_100mm_rub ?? 0);
-      if (!(base > 0)) continue;
-      const tId = Number(t.id ?? -1);
-      const mult = tId === 0 ? densityCostMult : 1;
-      const totalRub = Math.round((area * base * mult * (thickness / 100)) / 100) * 100;
-      lines.push(`• ${t.label}: ~${totalRub.toLocaleString("ru-RU")} ₽`);
-    }
-    canonical.practicalNotes = [...(canonical.practicalNotes ?? []), lines.join("\n")];
-  }
-
   const summaryCards = buildSummaryCards({
     materials,
     product,
@@ -305,14 +302,22 @@ export function runInsulationCalculate(
     isTwoLayer: !!isTwoLayer,
   });
 
+  const practicalNotes = [
+    THERMAL_BOUNDARY_NOTE,
+    ...(canonical.practicalNotes ?? []).filter((note) => !isLegacyThermalClaim(note)),
+  ];
+
   return {
     materials,
     totals,
-    warnings: [...brandWarnings, ...canonical.warnings],
+    warnings: [
+      ...brandWarnings,
+      ...canonical.warnings.filter((warning) => !isLegacyThermalClaim(warning)),
+    ],
     scenarios: canonical.scenarios,
     formulaVersion: canonical.formulaVersion,
     canonicalSpecId: canonical.canonicalSpecId,
-    practicalNotes: canonical.practicalNotes ?? [],
+    practicalNotes,
     summaryCards,
     materialListBanner,
   };
@@ -371,25 +376,14 @@ function buildSummaryCards(ctx: {
     }
   }
 
-  let costStr = "—";
-  let costHint = "справочно, 2026";
-  if (area > 0 && thickness > 0) {
-    let totalRub = 0;
-    if (product) {
-      const base = getProductCostPerM2(product);
-      totalRub = Math.round((area * base * (thickness / 100)) / 100) * 100;
-    } else {
-      const insType = Number(ctx.enrichedInputs.insulationType ?? 0);
-      const t = spec.normative_formula.insulation_types.find((x) => x.id === insType);
-      const base = t?.cost_estimate_per_m2_at_100mm_rub ?? 0;
-      if (base > 0) totalRub = Math.round((area * base * (thickness / 100)) / 100) * 100;
-    }
-    if (totalRub > 0) {
-      costStr = `~${totalRub.toLocaleString("ru-RU")}`;
-      const buyN = Number(card1Value);
-      if (buyN > 0) costHint = `~${Math.round(totalRub / buyN).toLocaleString("ru-RU")} ₽ за ${card1Unit.replace(/ов$/, "")}`;
-    }
-  }
+  const exactNeed = mainMats.reduce((sum, material) => sum + material.quantity, 0);
+  const exactUnit = mainMats[0]?.unit ?? "";
+  const exactHint =
+    materialForm === INSULATION_FORM_SPRAY
+      ? "до округления массы к полным мешкам"
+      : materialForm === INSULATION_FORM_ROLLS
+        ? "до округления к целым рулонам"
+        : "до округления к полным упаковкам";
 
   const layerHint = isTwoLayer ? " · в 2 слоя" : "";
   const formHint =
@@ -402,7 +396,14 @@ function buildSummaryCards(ctx: {
 
   return [
     { icon: "📦", label: "К покупке", value: card1Value, unit: card1Unit, hint: card1Hint, tone: "violet" },
-    { icon: "💰", label: "Примерная стоимость", value: costStr, unit: "₽", hint: costHint, tone: "emerald" },
+    {
+      icon: "📋",
+      label: "Расчётная потребность",
+      value: Number.isInteger(exactNeed) ? String(exactNeed) : exactNeed.toLocaleString("ru-RU", { maximumFractionDigits: 2 }),
+      unit: exactUnit,
+      hint: exactHint,
+      tone: "emerald",
+    },
     {
       icon: "📐",
       label: "На задачу",

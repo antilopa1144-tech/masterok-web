@@ -27,7 +27,6 @@ export interface InsulationCatalogProduct {
   packPieces?: Record<string, number>;
   ecowoolBagKg?: number;
   ecowoolDensityKgM3?: number;
-  costPerM2At100mm?: number;
   note?: string;
   /** INSULATION_APPLICATION ids; без поля — доступна везде (обратная совместимость) */
   applications?: number[];
@@ -199,8 +198,4 @@ export function applyCatalogProductToInputs(
 
 export function getProductDisplayName(product: InsulationCatalogProduct): string {
   return `${product.manufacturer} ${product.lineName}`;
-}
-
-export function getProductCostPerM2(product: InsulationCatalogProduct): number {
-  return product.costPerM2At100mm ?? 0;
 }

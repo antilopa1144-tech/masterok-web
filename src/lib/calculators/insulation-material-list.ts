@@ -44,17 +44,26 @@ function categorySortKey(category?: string): number {
 
 function companionSubtitle(m: MaterialResult): string | undefined {
   const n = m.name.toLowerCase();
-  if (n.includes("дюбел")) return "Тарельчатые, норма расхода зависит от типа плиты (СФТК)";
-  if (n.includes("клей фасад")) return "Приклеивание плит к основанию, ~5 кг/м²";
-  if (n.includes("стеклосетк")) return "Армирующий слой базовой штукатурки, нахлёст ~10%";
-  if (n.includes("штукатур") && n.includes("базов")) return "Армирующий слой 3–4 мм поверх сетки";
-  if (n.includes("грунтовк")) return "Перед нанесением базового слоя на основание";
-  if (n.includes("пароизоляц")) return "Изнутри помещения, нахлёст полос 10–15 см";
+  if (n.includes("дюбел"))
+    return "Тарельчатые анкеры: справочная норма движка +5%; тип, длину, основание и раскладку задают проект и документация СФТК";
+  if (n.includes("клей фасад"))
+    return "Предварительно 5 кг/м², мешки 25 кг; фактический расход и совместимость — по техкарте системы";
+  if (n.includes("стеклосетк"))
+    return "Предварительно площадь ×1,10, рулоны 50 м²; усиления и нахлёсты — по проекту системы";
+  if (n.includes("штукатур") && n.includes("базов"))
+    return "Предварительно 5 кг/м², мешки 25 кг; толщина слоя и расход — по техкарте";
+  if (n.includes("грунтовк"))
+    return "Предварительно 0,15 л/м² ×1,15, канистры 10 л; продукт и расход — по основанию и техкарте";
+  if (n.includes("пароизоляц"))
+    return "Предварительно площадь ×1,15, рулоны 30 м²; необходимость и положение слоя определяют по всему пирогу";
   if (n.includes("ветрозащит") || n.includes("гидроветрозащит"))
-    return "Снаружи утеплителя, нахлёст 10–15 см";
-  if (n.includes("скотч") && n.includes("пароизоляц")) return "Проклейка стыков мембраны";
-  if (n.includes("брус")) return "Каркас под утеплитель, шаг ~600 мм";
-  if (n.includes("саморез")) return "Крепление бруса к основанию";
+    return "Предварительно площадь ×1,15, рулоны 30 м²; тип и положение мембраны — по проекту конструкции";
+  if (n.includes("скотч") && n.includes("пароизоляц"))
+    return "Условная оценка по площади; длину стыков и совместимую ленту калькулятор не запрашивает";
+  if (n.includes("брус"))
+    return "Предварительно 2,2 пог.м/м² ×1,05; сечение, шаг и несущую схему калькулятор не проектирует";
+  if (n.includes("саморез"))
+    return "Предварительно 6 шт/м² ×1,10, упаковки 200 шт; крепёж подбирают по основанию и схеме каркаса";
   return undefined;
 }
 
@@ -77,7 +86,7 @@ function buildMainSubtitle(
     } else if (product.form === "spray") {
       parts.push(`Напыление · ~${product.ecowoolDensityKgM3 ?? 35} кг/м³ укладки`);
     }
-    if (product.densityKgM3) parts.push(`${product.densityKgM3} кг/м³`);
+    if (product.densityKgM3) parts.push(`${product.densityKgM3} кг/м³ (справочно)`);
   } else if (materialForm === INSULATION_FORM_ROLLS) {
     parts.push("Рулон (размер задайте по этикетке)");
   }
@@ -87,6 +96,7 @@ function buildMainSubtitle(
       `${m.packageInfo.count} ${m.packageInfo.packageUnit} × ${m.packageInfo.size} ${m.unit}`,
     );
   }
+  if (product) parts.push("сверьте этикетку партии");
   return parts.join(" · ");
 }
 
@@ -148,7 +158,7 @@ export function organizeInsulationMaterials(
     const main = isMainInsulationCategory(m.category);
     const subtitle = main
       ? buildMainSubtitle(m, ctx.product, ctx.materialForm, ctx.thickness)
-      : m.subtitle ?? companionSubtitle(m);
+      : companionSubtitle(m) ?? m.subtitle;
 
     return {
       ...m,

@@ -11,7 +11,7 @@ import {
 import { INSULATION_APPLICATION } from "./insulation-application";
 import type { CalculatorField } from "./types";
 
-/** Рекомендуемая толщина стен, мм — зоны 0..4 (СП 50.13330). */
+/** Встроенный справочный ориентир стен, мм — не результат расчёта по СП 50.13330. */
 const ZONE_REC_WALLS_MM = [100, 150, 150, 200, 250] as const;
 /** Пол / перекрытие по грунту или лагам — меньше, чем наружная стена. */
 const ZONE_REC_FLOOR_MM = [80, 100, 100, 150, 150] as const;
@@ -76,7 +76,7 @@ export function defaultThicknessOptionsFromField(
   return f?.options?.map((o) => o.value) ?? [50, 80, 100, 150, 200, 250, 300];
 }
 
-/** Подбор толщины под климат и выбранную линейку. */
+/** Legacy-подбор ближайшей толщины к справочному ориентиру. UI его автоматически не применяет. */
 export function thicknessForClimateAndProduct(
   climateZone: number,
   productId: number,

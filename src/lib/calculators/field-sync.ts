@@ -5,14 +5,14 @@ import {
   getDefaultProductIdForApplication,
 } from "./insulation-catalog";
 import { syncFieldsForApplicationChange } from "./insulation-application";
-import { fieldUsesDynamicOptions, thicknessForClimateAndProduct } from "./insulation-smart";
+import { fieldUsesDynamicOptions } from "./insulation-smart";
 
 /**
  * Синхронизация зависимых полей после изменения одного поля формы.
  *
  * Мутирует `next` (черновик нового состояния значений) и возвращает его же.
  * Вынесено из useCalculator.handleChange: это доменные правила (каталог
- * утеплителя, толщина по климату, дефолтные линейки), а не UI-состояние.
+ * утеплителя, совместимые толщины товара, дефолтные линейки), а не UI-состояние.
  */
 export function syncDependentFields(
   calculator: { id: string; fields: CalculatorField[] },
@@ -56,25 +56,19 @@ export function syncDependentFields(
       );
     }
 
-    if (key === "application" || key === "climateZone" || key === "materialForm") {
-      next.thickness = thicknessForClimateAndProduct(
-        Math.round(next.climateZone ?? 1),
-        Math.round(next.productId ?? 0),
-        calculator.fields,
-        Math.round(next.application ?? 0),
-      );
-    } else if (key === "productId") {
+    if (key === "application" || key === "materialForm" || key === "productId") {
       const thicknessOpts = resolveFieldOptions(
         calculator.fields.find((f) => f.key === "thickness")!,
         next,
       );
       if (thicknessOpts?.length && !thicknessOpts.some((o) => o.value === next.thickness)) {
-        next.thickness = thicknessForClimateAndProduct(
-          Math.round(next.climateZone ?? 1),
-          Math.round(next.productId ?? 0),
-          calculator.fields,
-          Math.round(next.application ?? 0),
+        const currentThickness = Number(next.thickness ?? 100);
+        const closest = thicknessOpts.reduce((best, option) =>
+          Math.abs(option.value - currentThickness) < Math.abs(best.value - currentThickness)
+            ? option
+            : best,
         );
+        next.thickness = closest.value;
       }
     }
   } else if (key === "materialForm") {
