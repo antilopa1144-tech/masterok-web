@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import { formatNumber } from "@/components/calculator/useCalculator";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { calendarHref, packIdToScenario } from "@/lib/renovation-hub/context";
 import {
   DEFAULT_ROOM_DIMENSIONS,
@@ -31,7 +32,7 @@ import {
   RENOVATION_COST_TOOL_SLUG,
   ROOM_MASTER_TOOL_SLUG,
 } from "@/lib/tools/room-master-to-renovation-cost";
-import { trackToolRelatedClick } from "@/lib/analytics";
+import { trackToolModeChange, trackToolRelatedClick } from "@/lib/analytics";
 
 const TILE_FLOOR_OPTIONS = [
   { value: 0, label: "300×300" },
@@ -85,8 +86,10 @@ function purchaseValue(material: MaterialResult): string {
 }
 
 export default function RoomMasterWizard() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLElement>(null);
   const [packId, setPackId] = useState<RoomPackId>("bathroom");
   const [drafts, setDrafts] = useState<MeasureDrafts>(defaultDrafts);
   const [floorTileSize, setFloorTileSize] = useState(DEFAULT_ROOM_DIMENSIONS.floorTileSize);
@@ -140,6 +143,11 @@ export default function RoomMasterWizard() {
     ? null
     : buildRenovationCostHrefFromRoom({ areaM2: floorM2, packId });
   const primaryMaterials = useMemo(() => (run ? getPrimaryMaterials(run) : []), [run]);
+  const { markStarted, selectMode } = useToolAnalytics(
+    ROOM_MASTER_TOOL_SLUG,
+    resultRef,
+    Boolean(run),
+  );
 
   const resetResult = () => {
     setRun(null);
@@ -148,16 +156,23 @@ export default function RoomMasterWizard() {
   };
 
   const setDraft = (key: RoomMeasureKey, value: string) => {
+    markStarted("surface_size");
     setDrafts((current) => ({ ...current, [key]: value }));
     resetResult();
   };
 
   const choosePack = (nextPack: RoomPackId) => {
+    if (nextPack === packId) return;
+    selectMode(`pack:${nextPack}`);
     setPackId(nextPack);
     resetResult();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("pack", nextPack);
+    router.replace(`/instrumenty/${ROOM_MASTER_TOOL_SLUG}/?${params}`, { scroll: false });
   };
 
   const handleCalculate = async () => {
+    markStarted("surface_size");
     if (!isValid) {
       setError("Проверьте размеры помещения перед расчётом.");
       return;
@@ -245,18 +260,18 @@ export default function RoomMasterWizard() {
             <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 dark:border-slate-800">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-slate-300">Плитка пола</span>
-                <select className="input-field w-full" value={floorTileSize} onChange={(event) => { setFloorTileSize(Number(event.target.value)); resetResult(); }}>
+                <select className="input-field w-full" value={floorTileSize} onChange={(event) => { const value = Number(event.target.value); markStarted("material_size"); trackToolModeChange(ROOM_MASTER_TOOL_SLUG, `floor-tile:${value}`); setFloorTileSize(value); resetResult(); }}>
                   {TILE_FLOOR_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-slate-300">Плитка стен</span>
-                <select className="input-field w-full" value={wallTileSize} onChange={(event) => { setWallTileSize(Number(event.target.value)); resetResult(); }}>
+                <select className="input-field w-full" value={wallTileSize} onChange={(event) => { const value = Number(event.target.value); markStarted("material_size"); trackToolModeChange(ROOM_MASTER_TOOL_SLUG, `wall-tile:${value}`); setWallTileSize(value); resetResult(); }}>
                   {TILE_WALL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
               <label className="col-span-2 flex min-h-11 items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-                <input type="checkbox" checked={hasWaterproofing === 1} onChange={(event) => { setHasWaterproofing(event.target.checked ? 1 : 0); resetResult(); }} className="size-4 rounded border-slate-300" />
+                <input type="checkbox" checked={hasWaterproofing === 1} onChange={(event) => { const enabled = event.target.checked; markStarted("preset"); trackToolModeChange(ROOM_MASTER_TOOL_SLUG, `waterproofing:${enabled ? "on" : "off"}`); setHasWaterproofing(enabled ? 1 : 0); resetResult(); }} className="size-4 rounded border-slate-300" />
                 Гидроизоляция пола
               </label>
             </div>
@@ -277,7 +292,7 @@ export default function RoomMasterWizard() {
 
           {run && (
             <div className={`${mobileStage === "parameters" ? "hidden" : "block"} min-w-0 lg:block`}>
-              <section className="overflow-hidden rounded-3xl border border-stone-200 bg-[#fffdf9] shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-live="polite">
+              <section ref={resultRef} className="overflow-hidden rounded-3xl border border-stone-200 bg-[#fffdf9] shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-live="polite">
                 <div className="border-b border-accent-100 bg-gradient-to-br from-orange-50 via-amber-50 to-emerald-50 p-4 dark:border-accent-900/40 dark:from-orange-950/20 dark:via-amber-950/10 dark:to-emerald-950/20 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -342,7 +357,7 @@ export default function RoomMasterWizard() {
                         category: material.category,
                       }))}
                     />
-                    <Link href={pack.fullCalculatorHref(dims)} className="min-h-11 rounded-xl border border-stone-200 bg-white px-4 py-3 text-center text-sm font-semibold text-stone-700 no-underline hover:border-accent-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Уточнить расчёт →</Link>
+                    <Link href={pack.fullCalculatorHref(dims)} onClick={() => trackToolRelatedClick(ROOM_MASTER_TOOL_SLUG, `calculator:${pack.primarySteps[0]?.slug ?? packId}`)} className="min-h-11 rounded-xl border border-stone-200 bg-white px-4 py-3 text-center text-sm font-semibold text-stone-700 no-underline hover:border-accent-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Уточнить расчёт →</Link>
                   </div>
                 </div>
               </section>
@@ -370,10 +385,10 @@ export default function RoomMasterWizard() {
                     </Link>
                   )}
                   {(packId === "bathroom" || packId === "kitchen") && (
-                    <Link href={layoutHref} className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-sm font-semibold text-stone-800 no-underline hover:border-orange-300 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-slate-200">🔲 Раскладка пола<span className="mt-0.5 block text-[11px] font-normal text-stone-500 dark:text-slate-400">По размерам помещения</span></Link>
+                    <Link href={layoutHref} onClick={() => trackToolRelatedClick(ROOM_MASTER_TOOL_SLUG, "raskladka-plitki")} className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-sm font-semibold text-stone-800 no-underline hover:border-orange-300 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-slate-200">🔲 Раскладка пола<span className="mt-0.5 block text-[11px] font-normal text-stone-500 dark:text-slate-400">По размерам помещения</span></Link>
                   )}
                   {pack.extraLinks.filter((link) => link.ref.slug !== "raskladka-plitki").map((link) => (
-                    <Link key={link.label} href={extraLinkHref(link, dims)} className="rounded-xl border border-stone-200 bg-white p-3 text-sm font-semibold text-stone-800 no-underline hover:border-accent-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{link.label}<span className="mt-0.5 block text-[11px] font-normal text-stone-500 dark:text-slate-400">{link.reason}</span></Link>
+                    <Link key={link.label} href={extraLinkHref(link, dims)} onClick={() => trackToolRelatedClick(ROOM_MASTER_TOOL_SLUG, `calculator:${link.ref.slug}`)} className="rounded-xl border border-stone-200 bg-white p-3 text-sm font-semibold text-stone-800 no-underline hover:border-accent-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">{link.label}<span className="mt-0.5 block text-[11px] font-normal text-stone-500 dark:text-slate-400">{link.reason}</span></Link>
                   ))}
                 </div>
                 <button type="button" onClick={() => setMobileStage("parameters")} className="mt-3 min-h-11 w-full rounded-xl border border-stone-200 bg-white text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 lg:hidden">← Изменить параметры</button>
