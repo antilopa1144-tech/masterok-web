@@ -29,10 +29,10 @@ describe("Затирка для плитки", () => {
       expect(findMaterial(r, "эпоксидная")).toBeDefined();
     });
 
-    it("предупреждение о быстром нанесении", () => {
+    it("оставляет время работы и очистку техкарте продукта", () => {
       const r = calc({ area: 20, tileWidth: 300, tileHeight: 300, tileThickness: 8, jointWidth: 3, groutType: 1, bagSize: 2 });
-      // Engine: "Эпоксидная затирка требует быстрого нанесения — готовьте небольшими порциями"
-      expect(r.warnings.some(w => w.includes("быстрого нанесения"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("жизнеспособность") && w.includes("техкарты"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("требует быстрого нанесения"))).toBe(false);
     });
   });
 
@@ -53,11 +53,11 @@ describe("Затирка для плитки", () => {
     });
   });
 
-  describe("Широкие швы → предупреждение", () => {
-    it("jointWidth >= 10 → крупнозернистая затирка", () => {
+  describe("Широкие швы → проверка продукта", () => {
+    it("jointWidth >= 10 → допустимый диапазон из техкарты", () => {
       const r = calc({ area: 20, tileWidth: 300, tileHeight: 300, tileThickness: 8, jointWidth: 10, groutType: 0, bagSize: 2 });
-      // Engine: "Широкие швы — рекомендуется крупнозернистая затирка"
-      expect(r.warnings.some(w => w.includes("крупнозернистая"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("допустимый диапазон ширины"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("крупнозернистая"))).toBe(false);
     });
   });
 
@@ -67,6 +67,70 @@ describe("Затирка для плитки", () => {
       checkInvariants(r);
       // area clamped to 1
       expect(r.totals.area).toBe(1);
+    });
+  });
+
+  describe("Глубина, ширина и товарные границы", () => {
+    it("помечает толщину плитки как справочную: масса от неё не меняется", () => {
+      const thin = calc({ area: 20, tileWidth: 300, tileHeight: 300, tileThickness: 6, jointWidth: 3, groutType: 0, bagSize: 2 });
+      const thick = calc({ area: 20, tileWidth: 300, tileHeight: 300, tileThickness: 25, jointWidth: 3, groutType: 0, bagSize: 2 });
+      const field = tileGroutDef.fields.find((item) => item.key === "tileThickness");
+
+      expect(thin.totals.groutDepth).toBe(6);
+      expect(thick.totals.groutDepth).toBe(6);
+      expect(thin.totals.totalKg).toBe(thick.totals.totalKg);
+      expect(field?.label).toContain("справочно");
+      expect(field?.hint).toContain("не использует это поле в массе");
+      expect(thick.warnings.some((warning) => warning.includes("толщина 25 мм") && warning.includes("не влияет"))).toBe(true);
+    });
+
+    it("раскрывает автоматические пороги глубины 4 / 6 / 8 / 10 мм", () => {
+      const depthFor = (side: number) => calc({
+        area: 20,
+        tileWidth: side,
+        tileHeight: side,
+        tileThickness: 8,
+        jointWidth: 3,
+        groutType: 0,
+        bagSize: 2,
+      }).totals.groutDepth;
+
+      expect(depthFor(100)).toBe(4);
+      expect(depthFor(300)).toBe(6);
+      expect(depthFor(600)).toBe(8);
+      expect(depthFor(1200)).toBe(10);
+    });
+
+    it("не предлагает дробный шаг, который canonical всё равно округляет", () => {
+      const field = tileGroutDef.fields.find((item) => item.key === "jointWidth");
+      const r = calc({ area: 20, tileWidth: 300, tileHeight: 300, tileThickness: 8, jointWidth: 2.5, groutType: 0, bagSize: 2 });
+
+      expect(field?.step).toBe(1);
+      expect(r.totals.jointWidth).toBe(3);
+    });
+
+    it("показывает геометрию, автоглубину, плотность и явный запас рядом с основной позицией", () => {
+      const r = calc({ area: 20, tileWidth: 300, tileHeight: 600, tileThickness: 12, jointWidth: 4, groutType: 1, bagSize: 2 });
+      const grout = findMaterial(r, "Затирка эпоксидная");
+
+      expect(grout?.subtitle).toContain("300×600 мм");
+      expect(grout?.subtitle).toContain("автоглубина 8 мм");
+      expect(grout?.subtitle).toContain("1400 кг/м³");
+      expect(grout?.subtitle).toContain("запас ×1,10");
+      expect(r.warnings.some((warning) => warning.includes("не паспорт Ceresit, Mapei, Litokol"))).toBe(true);
+    });
+
+    it("ссылается на действующий ГОСТ и первичные карточки без универсальных цен и швов", () => {
+      const html = tileGroutDef.seoContent?.descriptionHtml ?? "";
+      const faq = tileGroutDef.seoContent?.faq.map((item) => item.answer).join(" ") ?? "";
+
+      expect(html).toContain("ГОСТ Р 58271-2018");
+      expect(html).toContain("protect.gost.ru/gost/details/ae484785-89b8-46bb-9f1b-d570493706ef");
+      expect(html).toContain("ceresit.ru/ru/products/tiling/grouts-and-sealants/ce_40_aquastatic");
+      expect(html).toContain("ceresit.ru/ru/products/tiling/grouts-and-sealants/ce-89-epoxy-grout");
+      expect(html).not.toContain("для малого формата — <strong>2–3 мм</strong>");
+      expect(faq).not.toContain("800–1500 руб.");
+      expect(faq).not.toContain("минимальный шов");
     });
   });
 });
