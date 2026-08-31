@@ -7,17 +7,12 @@ const calc = withBasicAccuracy(softRoofingDef.calculate.bind(softRoofingDef));
 describe("Калькулятор мягкой кровли", () => {
   describe("80 м², уклон 30°, конёк 8 м, карниз 20 м, без ендов", () => {
     // packs = ceil(80/3.0 * 1.05) = ceil(28.000...) = 29 (floating point: 80/3 * 1.05 > 28)
-    // slope >= 18 → подкладочный ковёр только в критических зонах
-    //   criticalArea = (20 + 0 + 8) * 1.0 * 1.15 = 32.2
-    //   underlaymentRolls = ceil(32.2/15) = 3
+    // underlaymentRolls = ceil(80*1.15/15) = 7 по всей площади
     // valleyRolls = 0 (нет ендов)
-    // masticKg = (8+20+0)*0.1 + 80*0.1 = 2.8 + 8 = 10.8 → masticBuckets = ceil(10.8/3) = 4
     // nails: 80*0.10 = 8 кг точно; 8*1.05 = 8.4 кг с запасом; к покупке 2 коробки = 10 кг
     // eaveStrips = ceil(20/2 * 1.05) = ceil(10.5) = 11
-    // windStrips = ceil(20*0.4/2 * 1.05) = ceil(4.2) = 5
     // ridgeShingles = ceil(8/0.5 * 1.05) = ceil(16.8) = 17
-    // osbSheets = ceil(80/3.125 * 1.05) = ceil(26.88) = 27
-    // ventOutputs = ceil(80/25) = 4
+    // OSB is opt-in; mastic, wind strips and aerators require missing project inputs
     const result = calc({
       roofArea: 80,
       slope: 30,
@@ -32,17 +27,17 @@ describe("Калькулятор мягкой кровли", () => {
       expect(result.totals.packs).toBe(29);
     });
 
-    it("гибкая черепица purchaseQty = ceil(recExactNeed)", () => {
+    it("гибкая черепица показывает выбранный режим без скрытого REC поверх", () => {
       const shingles = findMaterial(result, "Гибкая черепица");
       expect(shingles).toBeDefined();
-      // purchaseQty = ceil(recScenario.exact_need) which includes ~1.06 factor
-      expect(shingles!.purchaseQty).toBeGreaterThanOrEqual(29);
+      expect(shingles!.purchaseQty).toBe(29);
+      expect(shingles!.subtitle).toContain("ceil(80 м² / 3 м²/уп × 1,05)");
+      expect(shingles!.subtitle).toContain("режим точности = 29 уп.");
     });
 
-    it("ОСП основание = 27 листов", () => {
-      // Engine: "ОСП (3.125 м²)"
-      const osb = findMaterial(result, "ОСП");
-      expect(osb?.purchaseQty).toBe(27);
+    it("не добавляет скрытое новое основание ОСП", () => {
+      expect(findMaterial(result, "ОСП")).toBeUndefined();
+      expect(result.totals.osbSheets).toBeUndefined();
     });
 
     it("гвозди ершёные 3,2×30 мм в коробках по 5 кг", () => {
@@ -61,10 +56,9 @@ describe("Калькулятор мягкой кровли", () => {
       expect(eave?.purchaseQty).toBe(11);
     });
 
-    it("ветровые планки = 5 шт", () => {
-      // Engine: "Ветровые планки (2 м)"
-      const wind = findMaterial(result, "Ветровые планки");
-      expect(wind?.purchaseQty).toBe(5);
+    it("не выдумывает ветровые планки из 40% длины карнизов", () => {
+      expect(findMaterial(result, "Ветровые планки")).toBeUndefined();
+      expect(result.totals.windStrips).toBeUndefined();
     });
 
     it("коньково-карнизная черепица = 17 шт", () => {
@@ -73,16 +67,17 @@ describe("Калькулятор мягкой кровли", () => {
       expect(ridge?.purchaseQty).toBe(17);
     });
 
-    it("мастика = 4 ведра", () => {
-      // Engine: "Мастика (ведро 3 кг)"
-      const mastic = findMaterial(result, "Мастика");
-      expect(mastic?.purchaseQty).toBe(4);
+    it("не выдаёт универсальную мастику без продукта и зон приклейки", () => {
+      expect(findMaterial(result, "Мастика")).toBeUndefined();
+      expect(result.totals.masticKg).toBeUndefined();
+      expect(result.totals.masticBuckets).toBeUndefined();
     });
 
-    it("подкладочный ковёр = 3 рулона (только критические зоны)", () => {
-      // Engine: "Подкладочный ковёр (15 м²)"
+    it("подкладочный ковёр = 7 рулонов по всей площади", () => {
       const underlayment = findMaterial(result, "Подкладочный ковёр");
-      expect(underlayment?.purchaseQty).toBe(3);
+      expect(underlayment?.purchaseQty).toBe(7);
+      expect(underlayment?.subtitle).toContain("80 м² × 1,15 / 15 м²");
+      expect(underlayment?.subtitle).toContain("по всей площади");
     });
 
     it("ендовного ковра нет (valleyLength = 0)", () => {
@@ -90,26 +85,43 @@ describe("Калькулятор мягкой кровли", () => {
       expect(valley).toBeUndefined();
     });
 
-    it("вентиляционные выходы = 4 шт", () => {
-      // Engine: "Вентиляционные выходы"
-      const vent = findMaterial(result, "Вентиляционные выходы");
-      expect(vent?.purchaseQty).toBe(4);
+    it("не назначает точечные аэраторы только по площади", () => {
+      expect(findMaterial(result, "Вентиляционные выходы")).toBeUndefined();
+      expect(result.totals.ventOutputs).toBeUndefined();
     });
 
-    it("totals содержат roofArea, packs, osbSheets", () => {
+    it("totals содержат только показанные основные итоги", () => {
       expect(result.totals.roofArea).toBe(80);
       expect(result.totals.packs).toBe(29);
-      expect(result.totals.osbSheets).toBe(27);
-      expect(result.totals.underlaymentRolls).toBe(3);
+      expect(result.totals.underlaymentRolls).toBe(7);
+      expect(result.totals.osbSheets).toBeUndefined();
     });
 
-    it("нет предупреждений при уклоне 30° и без ендов", () => {
-      expect(result.warnings.length).toBe(0);
+    it("показывает постоянные границы системной ведомости", () => {
+      expect(result.warnings).toEqual(expect.arrayContaining([
+        expect.stringContaining("Подкладочный ковёр посчитан по всей площади"),
+        expect.stringContaining("Мастика исключена"),
+        expect.stringContaining("Ветровые планки не рассчитаны"),
+        expect.stringContaining("Точечные аэраторы не рассчитаны"),
+        expect.stringContaining("MIN/REC/MAX ниже меняют только упаковки черепицы"),
+        expect.stringContaining("Новое основание ОСП не включено"),
+      ]));
     });
 
     it("инварианты", () => {
       checkInvariants(result);
     });
+  });
+
+  it("default realistic mode показывает 34 упаковки, а basic — 29", () => {
+    const inputs = { roofArea: 80, slope: 30, ridgeLength: 8, eaveLength: 20, valleyLength: 0 };
+    const realResult = softRoofingDef.calculate(inputs);
+    const basicResult = calc(inputs);
+
+    expect(realResult.accuracyMode).toBe("realistic");
+    expect(realResult.totals.packs).toBe(34);
+    expect(findMaterial(realResult, "Гибкая черепица")?.purchaseQty).toBe(34);
+    expect(basicResult.totals.packs).toBe(29);
   });
 
   describe("Расход гвоздей зависит от уклона", () => {
@@ -148,9 +160,8 @@ describe("Калькулятор мягкой кровли", () => {
       expect(underlayment?.purchaseQty).toBe(7);
     });
 
-    it("предупреждение о сплошном подкладочном ковре", () => {
-      // Engine: "Уклон менее 18° — подкладочный ковёр укладывается по всей площади"
-      expect(result.warnings.some((w) => w.includes("18°") || w.includes("подкладочный ковёр"))).toBe(true);
+    it("предупреждение объясняет сплошной расчёт без пороговой лазейки", () => {
+      expect(result.warnings.some((w) => w.includes("Подкладочный ковёр посчитан по всей площади"))).toBe(true);
     });
 
     it("инварианты", () => {
@@ -175,17 +186,13 @@ describe("Калькулятор мягкой кровли", () => {
       expect(valley!.purchaseQty).toBe(1);
     });
 
-    it("подкладочный ковёр учитывает ендовы в критических зонах", () => {
-      // criticalArea = (20 + 5 + 8) * 1.0 * 1.15 = 37.95
-      // underlaymentRolls = ceil(37.95/15) = ceil(2.53) = 3
+    it("общий подкладочный ковёр остаётся сплошным, а ендовный считается отдельно", () => {
       const underlayment = findMaterial(result, "Подкладочный ковёр");
-      expect(underlayment?.purchaseQty).toBe(3);
+      expect(underlayment?.purchaseQty).toBe(7);
     });
 
-    it("мастика учитывает ендовы", () => {
-      // masticKg = (8 + 20 + 5)*0.1 + 80*0.1 = 3.3 + 8 = 11.3 → ceil(11.3/3) = 4
-      const mastic = findMaterial(result, "Мастика");
-      expect(mastic?.purchaseQty).toBe(4);
+    it("не возвращает старую мастику даже при наличии ендовы", () => {
+      expect(findMaterial(result, "Мастика")).toBeUndefined();
     });
 
     it("предупреждение об ендовах", () => {
@@ -198,7 +205,7 @@ describe("Калькулятор мягкой кровли", () => {
     });
   });
 
-  describe("Уклон < 18° → предупреждение", () => {
+  describe("Сплошной ковёр не выключается при смене уклона", () => {
     const result = calc({
       roofArea: 80,
       slope: 15,
@@ -207,13 +214,8 @@ describe("Калькулятор мягкой кровли", () => {
       valleyLength: 0,
     });
 
-    it("предупреждение об уклоне < 18°", () => {
-      expect(result.warnings.some((w) => w.includes("18°"))).toBe(true);
-    });
-
-    it("сплошной подкладочный ковёр (уклон < 18°)", () => {
+    it("при 15° остаётся 7 рулонов", () => {
       const underlayment = findMaterial(result, "Подкладочный ковёр");
-      // ceil(80*1.15/15) = ceil(6.133) = 7
       expect(underlayment?.purchaseQty).toBe(7);
     });
 
@@ -222,10 +224,7 @@ describe("Калькулятор мягкой кровли", () => {
     });
   });
 
-  describe("Различные ширины полос подкладочного ковра по СП 17.13330.2017", () => {
-    // Двускатная без ендов: подкладка считается по eave + ridge с ширинами 1.0 / 1.0.
-    // Default: eave=20, ridge=8, valley=0, slope=30
-    // criticalArea = (20*1.0 + 0*1.5 + 8*1.0) * 1.15 = 32.2 м² → ceil(32.2/15) = 3 рулона
+  describe("Сплошной подкладочный ковёр зависит от площади, а не скрытой суммы зон", () => {
     const noValleys = calc({
       roofArea: 80,
       slope: 30,
@@ -234,14 +233,11 @@ describe("Калькулятор мягкой кровли", () => {
       valleyLength: 0,
     });
 
-    it("двускатная без ендов: 3 рулона подкладки (как раньше)", () => {
+    it("двускатная без ендов: 7 рулонов", () => {
       const underlayment = findMaterial(noValleys, "Подкладочный ковёр");
-      expect(underlayment?.purchaseQty).toBe(3);
+      expect(underlayment?.purchaseQty).toBe(7);
     });
 
-    // С ендовой: valley_band_width_m = 1.5, что больше старой 1.0 → больше подкладки
-    // criticalArea = (20*1.0 + 6*1.5 + 8*1.0) * 1.15 = (20+9+8)*1.15 = 42.55 → ceil(42.55/15) = 3
-    // Прежняя формула: (20+6+8)*1.0*1.15 = 39.1 → 3 рулона. Граничный случай.
     const withSmallValley = calc({
       roofArea: 80,
       slope: 30,
@@ -250,31 +246,73 @@ describe("Калькулятор мягкой кровли", () => {
       valleyLength: 6,
     });
 
-    it("с ендовой 6 м: 3 рулона (учёт ширины полосы 1.5 м)", () => {
+    it("ендова не уменьшает и не дублирует сплошной ковёр", () => {
       const underlayment = findMaterial(withSmallValley, "Подкладочный ковёр");
-      expect(underlayment?.purchaseQty).toBe(3);
+      expect(underlayment?.purchaseQty).toBe(7);
     });
 
-    // С большой ендовой 20 м: разница становится заметной
-    // Новая: (20*1.0 + 20*1.5 + 8*1.0) * 1.15 = 58 * 1.15 = 66.7 → 5 рулонов
-    // Старая: (20+20+8)*1.0*1.15 = 55.2 → 4 рулона
-    const withBigValley = calc({
-      roofArea: 80,
+    const largerRoof = calc({
+      roofArea: 160,
       slope: 30,
       ridgeLength: 8,
       eaveLength: 20,
-      valleyLength: 20,
+      valleyLength: 0,
     });
 
-    it("с ендовой 20 м: 5 рулонов (новая формула учитывает 1.5 м для ендовы)", () => {
-      const underlayment = findMaterial(withBigValley, "Подкладочный ковёр");
-      expect(underlayment?.purchaseQty).toBe(5);
+    it("160 м² дают 13 рулонов по полной площади", () => {
+      const underlayment = findMaterial(largerRoof, "Подкладочный ковёр");
+      expect(underlayment?.purchaseQty).toBe(13);
     });
 
-    it("больше ендов → больше подкладки (монотонность)", () => {
-      const small = findMaterial(withSmallValley, "Подкладочный ковёр")!.purchaseQty as number;
-      const big = findMaterial(withBigValley, "Подкладочный ковёр")!.purchaseQty as number;
+    it("больше площадь → больше подкладки", () => {
+      const small = findMaterial(noValleys, "Подкладочный ковёр")!.purchaseQty as number;
+      const big = findMaterial(largerRoof, "Подкладочный ковёр")!.purchaseQty as number;
       expect(big).toBeGreaterThan(small);
     });
+  });
+
+  it("добавляет ОСП только по явному выбору", () => {
+    const result = calc({ roofArea: 80, slope: 30, ridgeLength: 8, eaveLength: 20, valleyLength: 0, includeOsb: 1 });
+    const osb = findMaterial(result, "ОСП-3");
+
+    expect(osb?.purchaseQty).toBe(27);
+    expect(osb?.subtitle).toContain("Толщина, раскрой, швы по опорам и крепёж не рассчитаны");
+    expect(result.totals.osbSheets).toBe(27);
+    expect(result.warnings.some((warning) => warning.includes("ОСП включена только как предварительный лист"))).toBe(true);
+  });
+
+  it("объясняет проектные границы в полях", () => {
+    expect(softRoofingDef.fields.find((field) => field.key === "ridgeLength")?.label).toContain("коньков и рёбер");
+    expect(softRoofingDef.fields.find((field) => field.key === "eaveLength")?.hint).toContain("фронтонных свесов отдельно не вводится");
+    expect(softRoofingDef.fields.find((field) => field.key === "includeOsb")?.defaultValue).toBe(0);
+  });
+
+  it("не обещает в лиде и сниппете исключённую мастику", () => {
+    expect(softRoofingDef.title).toBe("Калькулятор мягкой кровли");
+    expect(softRoofingDef.h1).toBe("Калькулятор мягкой кровли онлайн — расчёт гибкой черепицы");
+    expect(softRoofingDef.description).toContain("ОСП — только по явному выбору");
+    expect(softRoofingDef.description).not.toContain("мастику");
+    expect(softRoofingDef.metaDescription).toMatch(/^Бесплатный калькулятор мягкой кровли: рассчитайте/);
+    expect(softRoofingDef.metaDescription).not.toContain("мастику");
+  });
+
+  it("ссылается на действующий СП и первичные инструкции системы", () => {
+    const html = softRoofingDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain("https://protect.gost.ru/sp/details/844352c5-dda6-4006-acd8-b6875d1ed6a8");
+    expect(html).toContain("shinglas_instructions_Web_Russian_ru_RU");
+    expect(html).toContain("ast_anderep_install_instr");
+    expect(html).toContain("mozhno-li-ne-montirovat-podkladochnye-kovry-na-vsyu-ploshchad-krovli");
+  });
+
+  it("SEO-пояснение фиксирует web-границы без старых скрытых формул", () => {
+    const html = softRoofingDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain("7 рулонов");
+    expect(html).toContain("MIN/REC/MAX");
+    expect(html).toContain("прежняя формула ставила один точечный элемент на 25 м&sup2;");
+    expect(html).toContain("прежняя формула принимала длину фронтонов равной 40% длины карнизов");
+    expect(html).not.toContain("ОСП-3 (сплошное основание)");
+    expect(html).not.toContain("Сплошь при уклоне &lt;18&deg;; по критическим зонам");
   });
 });
