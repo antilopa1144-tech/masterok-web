@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 
 type HistoryItem = { expr: string; result: string };
 
 const MAX_HISTORY = 8;
+const QUICK_CALCULATOR_TOOL_SLUG = "kalkulyator";
 
 const UI_TEXT = {
   error: "Ошибка",
@@ -81,8 +83,16 @@ export default function QuickCalculator({
   const [expression, setExpression] = useState("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [justCalculated, setJustCalculated] = useState(false);
+  const [hasCalculated, setHasCalculated] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const { markStarted } = useToolAnalytics(
+    QUICK_CALCULATOR_TOOL_SLUG,
+    resultRef,
+    hasCalculated,
+  );
 
   const append = useCallback((char: string) => {
+    markStarted("value_input");
     setDisplay((prev) => {
       if (justCalculated) {
         setJustCalculated(false);
@@ -93,7 +103,7 @@ export default function QuickCalculator({
       if (char === "." && prev.split(/[+\-×÷]/).pop()?.includes(".")) return prev;
       return prev + char;
     });
-  }, [justCalculated]);
+  }, [justCalculated, markStarted]);
 
   const clear = useCallback(() => {
     setDisplay("0");
@@ -128,6 +138,7 @@ export default function QuickCalculator({
   }, []);
 
   const calculate = useCallback(() => {
+    markStarted("calculation");
     const expr = display;
     try {
       const safeExpr = expr
@@ -149,6 +160,7 @@ export default function QuickCalculator({
       setExpression(`${expr} =`);
       setDisplay(resultStr);
       setJustCalculated(true);
+      setHasCalculated(true);
       setHistory((h) => [
         { expr: `${expr} = ${resultStr}`, result: resultStr },
         ...h.slice(0, MAX_HISTORY - 1),
@@ -156,7 +168,7 @@ export default function QuickCalculator({
     } catch {
       setDisplay(UI_TEXT.error);
     }
-  }, [display]);
+  }, [display, markStarted]);
 
   useEffect(() => {
     if (!enableKeyboard) return;
@@ -195,7 +207,10 @@ export default function QuickCalculator({
 
   const calculator = (
     <div className="card overflow-hidden w-full">
-      <div className={`${compact ? "px-4 pt-4 pb-3" : "px-5 pt-5 pb-4"} bg-slate-800`}>
+      <div
+        ref={resultRef}
+        className={`${compact ? "px-4 pt-4 pb-3" : "px-5 pt-5 pb-4"} bg-slate-800`}
+      >
         <div className="min-h-5 text-sm text-slate-400 text-right truncate">
           {expression || "\u00a0"}
         </div>

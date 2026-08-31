@@ -10,7 +10,10 @@ export type ToolInteractionSource =
   | "opening"
   | "preset"
   | "search"
-  | "category";
+  | "category"
+  | "unit"
+  | "value_input"
+  | "calculation";
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";

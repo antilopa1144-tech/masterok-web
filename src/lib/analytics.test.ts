@@ -94,6 +94,25 @@ describe("tool analytics", () => {
     ]);
   });
 
+  it("измеряет утилиты без выражений и числовых значений", () => {
+    trackToolStart("kalkulyator", "calculation");
+    trackToolResultView("kalkulyator");
+    trackToolStart("konverter", "unit");
+    trackToolModeChange("konverter", "group:area");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_start", { tool: "kalkulyator", source: "calculation" }],
+      ["tool_result_view", { tool: "kalkulyator" }],
+      ["tool_start", { tool: "konverter", source: "unit" }],
+      ["tool_mode_change", { tool: "konverter", mode: "group:area" }],
+    ]);
+
+    const serializedCalls = JSON.stringify(ym.mock.calls);
+    expect(serializedCalls).not.toContain("expression");
+    expect(serializedCalls).not.toContain("input_value");
+    expect(serializedCalls).not.toContain("density");
+  });
+
   it("фиксирует выбор только известного назначения каталога инструментов", () => {
     trackToolCatalogSelect("tool:moy-remont", "tool_grid");
     trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");
