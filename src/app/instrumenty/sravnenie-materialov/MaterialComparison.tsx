@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolModeChange,
   trackToolPresetSelect,
@@ -169,6 +170,11 @@ export default function MaterialComparison() {
   );
   const [priority, setPriority] = useState<MaterialComparisonPriority | null>(null);
   const [userPrices, setUserPrices] = useState<Record<string, number>>({});
+  const resultRef = useRef<HTMLElement>(null);
+  const { markStarted } = useToolAnalytics(
+    MATERIAL_COMPARISON_TOOL_SLUG,
+    resultRef,
+  );
   const category = CATEGORIES.find((c) => c.id === categoryId)!;
   const firstMaterial = category.materials.find((material) => material.name === firstMaterialName) ?? category.materials[0];
   const secondMaterial = category.materials.find((material) => material.name === secondMaterialName) ?? category.materials[1] ?? category.materials[0];
@@ -188,6 +194,7 @@ export default function MaterialComparison() {
   }, []);
 
   const handlePriceChange = (name: string, value: number) => {
+    markStarted("value_input");
     void setPrice(COMPARISON_SCOPE, name, value);
     setUserPrices((prev) => {
       const next = { ...prev };
@@ -198,6 +205,8 @@ export default function MaterialComparison() {
   };
 
   const handleCategoryChange = (nextCategoryId: MaterialComparisonCategoryId) => {
+    if (nextCategoryId === categoryId) return;
+    markStarted("category");
     const nextCategory = CATEGORIES.find((item) => item.id === nextCategoryId) ?? CATEGORIES[0];
     setCategoryId(nextCategory.id);
     setFirstMaterialName(nextCategory.materials[0].name);
@@ -207,12 +216,14 @@ export default function MaterialComparison() {
   };
 
   const handleMaterialChange = (label: "A" | "B", name: string) => {
+    markStarted("preset");
     if (label === "A") setFirstMaterialName(name);
     else setSecondMaterialName(name);
     trackToolPresetSelect(MATERIAL_COMPARISON_TOOL_SLUG, "material", `${label}:${name}`);
   };
 
   const handlePriorityChange = (value: MaterialComparisonPriority) => {
+    markStarted("priority");
     const nextPriority = priority === value ? null : value;
     setPriority(nextPriority);
     trackToolModeChange(
@@ -355,7 +366,7 @@ export default function MaterialComparison() {
           </fieldset>
         </section>
 
-        <section className="card order-1 overflow-hidden lg:order-2">
+        <section ref={resultRef} className="card order-1 overflow-hidden lg:order-2">
           <div className={`border-b p-4 sm:p-5 ${recommendation.kind === "winner" ? "border-accent-200 bg-accent-50 dark:border-accent-800 dark:bg-accent-950/20" : "border-violet-200 bg-violet-50 dark:border-violet-800/50 dark:bg-violet-950/20"}`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700 dark:text-violet-300">
               {recommendation.kind === "winner" ? "Рекомендация по выбранному критерию" : recommendation.kind === "tie" ? "Результат: паритет" : "Сравнение A ↔ B"}

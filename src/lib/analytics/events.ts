@@ -15,7 +15,8 @@ export type ToolInteractionSource =
   | "value_input"
   | "calculation"
   | "timer_start"
-  | "progress";
+  | "progress"
+  | "priority";
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";

@@ -141,6 +141,20 @@ describe("tool analytics", () => {
     expect(serializedCalls).not.toContain("completed_count");
   });
 
+  it("измеряет сравнение материалов без пользовательских цен", () => {
+    trackToolStart("sravnenie-materialov", "priority");
+    trackToolResultView("sravnenie-materialov");
+    trackToolModeChange("sravnenie-materialov", "priority:durability");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_start", { tool: "sravnenie-materialov", source: "priority" }],
+      ["tool_result_view", { tool: "sravnenie-materialov" }],
+      ["tool_mode_change", { tool: "sravnenie-materialov", mode: "priority:durability" }],
+    ]);
+
+    expect(JSON.stringify(ym.mock.calls)).not.toContain("price");
+  });
+
   it("фиксирует выбор только известного назначения каталога инструментов", () => {
     trackToolCatalogSelect("tool:moy-remont", "tool_grid");
     trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");
