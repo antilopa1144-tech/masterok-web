@@ -203,6 +203,8 @@ describe("Калькулятор гипсокартона", () => {
 
     it("предупреждение о смещении стыков", () => {
       expect(result.warnings.some((w) => w.includes("смещением"))).toBe(true);
+      expect(result.warnings.join(" ")).not.toContain("600 мм");
+      expect(result.practicalNotes?.join(" ")).not.toContain("минимум на 400 мм");
     });
 
     it("для второго слоя отдельно указан саморез 3,5×35 мм", () => {
@@ -213,8 +215,8 @@ describe("Калькулятор гипсокартона", () => {
     });
   });
 
-  describe("Высота > 3.5 м → профили 100 мм", () => {
-    it("предупреждение о широких профилях", () => {
+  describe("Высота > 3.5 м → проектная проверка каркаса", () => {
+    it("не назначает профиль 100 мм без проекта и раскрывает фиксированный ПС 50×50", () => {
       const result = calc({
         workType: 0,
         length: 5,
@@ -222,7 +224,48 @@ describe("Калькулятор гипсокартона", () => {
         layers: 1,
         profileStep: 0.6,
       });
-      expect(result.warnings.some((w) => w.includes("профили шириной 100"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("ПС 50×50"))).toBe(true);
+      expect(result.warnings.join(" ")).not.toContain("требуются профили шириной 100");
+    });
+  });
+
+  describe("Прозрачные границы закупочной модели", () => {
+    const result = calc({
+      workType: 0,
+      length: 5,
+      height: 2.7,
+      layers: 2,
+      profileStep: 0.6,
+    });
+
+    it("показывает фиксированные нормы и упаковки рядом с материалами", () => {
+      expect(findMaterial(result, "ГКЛ")?.subtitle).toContain("базовым запасом 10%");
+      expect(findMaterial(result, "ПС 50×50")?.subtitle).toContain("+5%");
+      expect(findMaterial(result, "3,5×25")?.subtitle).toContain("30 шт/м²");
+      expect(findMaterial(result, "стартовая")?.subtitle).toContain("0,8 кг/м²");
+      expect(findMaterial(result, "финишная")?.subtitle).toContain("1,0 кг/м²");
+      expect(findMaterial(result, "Серпянка")?.subtitle).toContain("2,5 м");
+      expect(findMaterial(result, "Грунтовка")?.subtitle).toContain("0,3 л/м²");
+    });
+
+    it("не обещает свойства конструкции по числу слоёв или шагу", () => {
+      const layersField = drywallDef.fields.find((field) => field.key === "layers");
+      const stepField = drywallDef.fields.find((field) => field.key === "profileStep");
+
+      expect(layersField?.options?.map((option) => option.label)).toEqual(["1 слой", "2 слоя"]);
+      expect(layersField?.hint).toContain("не подтверждают огнестойкость или звукоизоляцию");
+      expect(stepField?.options?.map((option) => option.label)).toEqual(["400 мм", "600 мм"]);
+      expect(stepField?.hint).toContain("альбому выбранной системы");
+    });
+
+    it("ссылается на действующие карточки Росстандарта и раскрывает непроверяемые параметры", () => {
+      const content = drywallDef.seoContent?.descriptionHtml ?? "";
+
+      expect(content).toContain("protect.gost.ru/sp/details/92439dea-05ad-4cfe-9dc4-c1bddcdb8c55");
+      expect(content).toContain("изменением № 1");
+      expect(content).toContain("protect.gost.ru/gost/details/2bab5670-8967-4962-94cb-4e15a4d15f4b");
+      expect(content).toContain("не проверяет предельную высоту");
+      expect(content).toContain("по площади всех слоёв");
     });
   });
 });
