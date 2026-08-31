@@ -13,7 +13,8 @@ export type ToolInteractionSource =
   | "category"
   | "unit"
   | "value_input"
-  | "calculation";
+  | "calculation"
+  | "timer_start";
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";

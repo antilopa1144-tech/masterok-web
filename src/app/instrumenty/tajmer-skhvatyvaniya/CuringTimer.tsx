@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { CURING_PRESETS, isCuringPresetId } from "@/lib/curing-timer/presets";
 import {
   formatTimerCountdown,
@@ -50,6 +51,7 @@ export default function CuringTimer() {
   const [deadlineMs, setDeadlineMs] = useState<number | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const resultRef = useRef<HTMLElement>(null);
 
   const categories = useMemo(() => Array.from(new Set(CURING_PRESETS.map((preset) => preset.category))), []);
   const selectedPreset = CURING_PRESETS.find((preset) => preset.id === selectedId) ?? CURING_PRESETS[0];
@@ -62,6 +64,11 @@ export default function CuringTimer() {
   const relatedCalculator = getCalculatorLinkForCuringPreset(selectedPreset.id);
   const relatedCalculatorHref = buildCalculatorHrefForCuringPreset(selectedPreset.id);
   const hasActiveTransfer = transfer?.presetId === selectedPreset.id;
+  const { markStarted } = useToolAnalytics(
+    CURING_TIMER_TOOL_SLUG,
+    resultRef,
+    status !== "setup",
+  );
 
   useEffect(() => {
     const fromUrl = searchParams.get("preset");
@@ -126,6 +133,7 @@ export default function CuringTimer() {
   }, [status]);
 
   const selectCategory = (category: string) => {
+    markStarted("category");
     setActiveCategory(category);
     const firstPreset = CURING_PRESETS.find((preset) => preset.category === category);
     if (firstPreset) {
@@ -136,12 +144,14 @@ export default function CuringTimer() {
   };
 
   const selectPreset = (presetId: string) => {
+    markStarted("preset");
     setSelectedId(presetId);
     trackToolPresetSelect(CURING_TIMER_TOOL_SLUG, "material", presetId);
   };
 
   const startTimer = () => {
     if (selectedMinutes === null) return;
+    markStarted("timer_start");
     const totalSeconds = selectedMinutes * 60;
     setTimerTotalSeconds(totalSeconds);
     setSecondsLeft(totalSeconds);
@@ -245,7 +255,7 @@ export default function CuringTimer() {
                 <label className="mt-4 block rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
                   <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Продолжительность в минутах</span>
                   <div className="mt-2 flex items-center gap-3">
-                    <input type="number" inputMode="numeric" min={1} max={14400} step={1} value={customMinutesInput} onChange={(event) => setCustomMinutesInput(event.target.value)} aria-invalid={customDuration.error !== null} aria-describedby={customDuration.error ? "custom-duration-error" : "custom-duration-hint"} className="input-field min-h-12 w-32" />
+                    <input type="number" inputMode="numeric" min={1} max={14400} step={1} value={customMinutesInput} onChange={(event) => { markStarted("value_input"); setCustomMinutesInput(event.target.value); }} aria-invalid={customDuration.error !== null} aria-describedby={customDuration.error ? "custom-duration-error" : "custom-duration-hint"} className="input-field min-h-12 w-32" />
                     {customDuration.minutes !== null && <span id="custom-duration-hint" className="text-sm font-semibold text-slate-600 dark:text-slate-300">{formatTimerDuration(customDuration.minutes)}</span>}
                   </div>
                   {customDuration.error && <span id="custom-duration-error" className="mt-2 block text-xs font-medium text-red-600 dark:text-red-400">{customDuration.error}</span>}
@@ -295,7 +305,7 @@ export default function CuringTimer() {
       )}
 
       {(status === "running" || status === "paused") && (
-        <section className="card overflow-hidden">
+        <section ref={resultRef} className="card overflow-hidden">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]">
             <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 p-5 text-white sm:p-8">
               <div className="flex items-start justify-between gap-4">
@@ -340,7 +350,7 @@ export default function CuringTimer() {
       )}
 
       {status === "completed" && (
-        <section className="card overflow-hidden" role="status">
+        <section ref={resultRef} className="card overflow-hidden" role="status">
           <div className="bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 text-center dark:from-emerald-950/30 dark:via-slate-900 dark:to-amber-950/20 sm:p-8">
             <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-emerald-500 text-3xl text-white shadow-lg shadow-emerald-500/20">✓</div>
             <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Выдержка завершена</p>

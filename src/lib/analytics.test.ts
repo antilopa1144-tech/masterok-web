@@ -113,6 +113,18 @@ describe("tool analytics", () => {
     expect(serializedCalls).not.toContain("density");
   });
 
+  it("отделяет запуск таймера от просмотра запущенного отсчёта", () => {
+    trackToolStart("tajmer-skhvatyvaniya", "timer_start");
+    trackToolResultView("tajmer-skhvatyvaniya");
+    trackToolModeChange("tajmer-skhvatyvaniya", "completed");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_start", { tool: "tajmer-skhvatyvaniya", source: "timer_start" }],
+      ["tool_result_view", { tool: "tajmer-skhvatyvaniya" }],
+      ["tool_mode_change", { tool: "tajmer-skhvatyvaniya", mode: "completed" }],
+    ]);
+  });
+
   it("фиксирует выбор только известного назначения каталога инструментов", () => {
     trackToolCatalogSelect("tool:moy-remont", "tool_grid");
     trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");
