@@ -40,12 +40,29 @@ describe("Плиточный клей", () => {
       // adjustedRate=5*1.3=6.5
       expect(r.totals.adjustedRate).toBeCloseTo(6.5, 2);
     });
+
+    it("передаёт публичное web-поле layingType в canonical laying", () => {
+      const wall = calc({ area: 20, tileSize: 1, layingType: 1, baseType: 0, bagWeight: 25 });
+      const street = calc({ area: 20, tileSize: 1, layingType: 2, baseType: 0, bagWeight: 25 });
+
+      expect(wall.totals.laying).toBe(1);
+      expect(wall.totals.adjustedRate).toBeCloseTo(4.25, 2);
+      expect(street.totals.laying).toBe(2);
+      expect(street.totals.adjustedRate).toBeCloseTo(6.5, 2);
+    });
   });
 
   describe("Основание (base)", () => {
     it("старая плитка (base=2) → расход *1.2", () => {
       const r = calc({ area: 20, tileSize: 1, laying: 0, base: 2, bagWeight: 25 });
       // adjustedRate=5*1.2=6.0
+      expect(r.totals.adjustedRate).toBeCloseTo(6.0, 2);
+    });
+
+    it("передаёт публичное web-поле baseType в canonical base", () => {
+      const r = calc({ area: 20, tileSize: 1, layingType: 0, baseType: 2, bagWeight: 25 });
+
+      expect(r.totals.base).toBe(2);
       expect(r.totals.adjustedRate).toBeCloseTo(6.0, 2);
     });
   });
@@ -60,16 +77,16 @@ describe("Плиточный клей", () => {
   });
 
   describe("Предупреждения", () => {
-    it("крупная плитка → гребёнка 10-12 мм", () => {
+    it("крупная плитка → честная граница паспортного расхода", () => {
       const r = calc({ area: 20, tileSize: 2, laying: 0, base: 0, bagWeight: 25 });
-      // Engine: "Крупная плитка (60 см) — рекомендуется гребёнка 10-12 мм"
-      expect(r.warnings.some(w => w.includes("10-12 мм"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("техкарте конкретного клея"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("10-12 мм"))).toBe(false);
     });
 
-    it("старая плитка → контактный грунт", () => {
+    it("старая плитка → проверка основания вместо универсального назначения грунта", () => {
       const r = calc({ area: 20, tileSize: 1, laying: 0, base: 2, bagWeight: 25 });
-      // Engine: "Укладка на старую плитку — обязателен контактный грунт"
-      expect(r.warnings.some(w => w.includes("контактный грунт"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("Допустимость облицовки"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("обязателен контактный грунт"))).toBe(false);
     });
   });
 
@@ -91,9 +108,9 @@ describe("Плиточный клей", () => {
       expect(largeFormat.totals.adjustedRate).toBeCloseTo(12.75, 1);
     });
 
-    it("tileSize=3: warning о СП 71.13330.2017 и двойном нанесении", () => {
+    it("tileSize=3: warning раскрывает коэффициент и оставляет технологию техкарте", () => {
       const hasWarning = largeFormat.warnings.some((w) =>
-        w.includes("Крупноформат") && w.includes("СП 71.13330"),
+        w.includes("60×120 см") && w.includes("×1,70") && w.includes("техкарте"),
       );
       expect(hasWarning).toBe(true);
     });
@@ -118,6 +135,55 @@ describe("Плиточный клей", () => {
       const r = calc({ area: 20, tileSize: 3, laying: 2, base: 0, bagWeight: 25 });
       // 7.5 * 1.3 (street) * 1.7 (double) = 16.575
       expect(r.totals.adjustedRate).toBeCloseTo(16.575, 1);
+    });
+
+    it("скрывает ручной переключатель там, где canonical включает ×1,70 автоматически", () => {
+      const field = tileAdhesiveDef.fields.find((item) => item.key === "doubleApplicationRequired");
+
+      expect(field?.hideIf).toEqual({ key: "tileSize", op: "gte", value: 3 });
+      expect(field?.hint).toContain("×1,70");
+    });
+  });
+
+  describe("Границы товарной и сопутствующей модели", () => {
+    it("бренд используется только как подпись и не отменяет фасовку 5 кг", () => {
+      const r = calc({
+        area: 20,
+        tileSize: 1,
+        layingType: 0,
+        baseType: 0,
+        bagWeight: 5,
+        manufacturer: 1,
+      });
+      const glue = findMaterial(r, "Плиточный клей");
+
+      expect(r.totals.bagWeight).toBe(5);
+      expect(glue?.name).toContain("Церезит CM 11");
+      expect(glue?.packageInfo?.size).toBe(5);
+      expect(r.warnings.some((warning) => warning.includes("название используется только как подпись"))).toBe(true);
+      expect(tileAdhesiveDef.fields.find((field) => field.key === "manufacturer")?.hint).toContain("автоматически не загружаются");
+    });
+
+    it("раскрывает коэффициенты клея, грунтовки и крестиков", () => {
+      const r = calc({ area: 20, tileSize: 1, layingType: 2, baseType: 2, bagWeight: 25 });
+
+      expect(findMaterial(r, "Плиточный клей")?.subtitle).toContain("улица/тёплый пол ×1,30");
+      expect(findMaterial(r, "Плиточный клей")?.subtitle).toContain("старая плитка ×1,20");
+      expect(findMaterial(r, "Грунтовка")?.subtitle).toContain("0,15 л/м² ×1,15");
+      expect(findMaterial(r, "Крестики")?.subtitle).toContain("× 4 точки × 1,10");
+      expect(r.warnings.some((warning) => warning.includes("предварительные позиции общей модели"))).toBe(true);
+    });
+
+    it("использует действующие документы и первичную карточку продукта без универсальных назначений", () => {
+      const html = tileAdhesiveDef.seoContent?.descriptionHtml ?? "";
+      const faq = tileAdhesiveDef.seoContent?.faq.map((item) => item.answer).join(" ") ?? "";
+
+      expect(html).toContain("ГОСТ Р 56387-2018");
+      expect(html).toContain("protect.gost.ru/sp/details/ca915ed9-5bce-4de4-94af-debfd041a939");
+      expect(html).toContain("ceresit.ru/ru/products/tiling/tile-adhesives/cm-16");
+      expect(html).not.toContain("C1T (с увеличенным временем открытого слоя)");
+      expect(faq).not.toContain("СП 41-102-98");
+      expect(faq).not.toContain("обязательно в следующих случаях");
     });
   });
 });
