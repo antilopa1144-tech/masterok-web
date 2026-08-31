@@ -1,7 +1,7 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalSepticRings } from "../../../../engine/septic-rings";
-import { DEFAULT_ACCURACY_MODE } from "../../../../engine/accuracy";
+import { ACCURACY_MODE_LABELS, DEFAULT_ACCURACY_MODE } from "../../../../engine/accuracy";
 import septicRingsSpec from "../../../../configs/calculators/septic-rings-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
 
@@ -279,7 +279,7 @@ export const septicRingsDef: CalculatorDefinition = {
       accuracyMode,
       accuracyExplanation: {
         mode: accuracyMode,
-        modeLabel: canonical.accuracyExplanation.modeLabel,
+        modeLabel: canonical.accuracyExplanation?.modeLabel ?? ACCURACY_MODE_LABELS[accuracyMode],
         combinedMultiplier: 1,
         appliedModifiers: [],
         notes: ["Режим точности не меняет число колец, днищ, перекрытий и прямых отрезков трубы."],
