@@ -95,31 +95,31 @@ describe("Golden tests — Дренаж (drainage)", () => {
 });
 
 describe("Golden tests — Септик ЖБИ-кольца (septic-rings)", () => {
-  it("семья 4 чел, 3 камеры Ø1000: V_septika = 4 × 200 × 3 = 2400 л = 2.4 м³", () => {
-    // Колец на камеру = max(2, ceil(0.8/0.71)) = 2
-    // Всего колец 6
-    // Sealed surface = π × 1.0 × 0.9 × 2 × 2 = 11.31
-    // Mastic = 11.31 × 0.7 × 2 = 15.83 кг
+  it("семья 4 чел, 3 герметичные камеры Ø1000: V_min = max(4 × 200 × 3, 2400) = 2400 л", () => {
+    // Геометрический минимум: ceil((2.4 / 3) / 0.71) = 2 кольца на камеру.
+    // Фильтрующий колодец — отдельное сооружение, поэтому все три камеры имеют днища.
     const r = calcSeptic({ residents: 4, chambersCount: 3, ringDiameter: 1000, groundType: 1, withFilterWell: 1, pipeLengthFromHouse: 8 });
     const t = totals(r);
     expect(t.totalVolume).toBeCloseTo(2.4, 2);
     expect(t.totalRings).toBe(6);
-    expect(t.sealedSurfaceM2).toBeCloseTo(11.31, 1);
-    expect(t.masticKg).toBeCloseTo(15.83, 1);
+    expect(t.bottomPlates).toBe(3);
+    expect(r.materials.some((material) => material.name.includes("Мастика"))).toBe(false);
   });
 
-  it("семья 8 чел: запас 2.5 дня (>5 чел) → 8 × 200 × 2.5 = 4000 л", () => {
+  it("семья 8 чел: до 5 м³/сут сохраняется трёхкратный приток → 8 × 200 × 3 = 4800 л", () => {
     const r = calcSeptic({ residents: 8, chambersCount: 3, ringDiameter: 1000, groundType: 1, withFilterWell: 1, pipeLengthFromHouse: 10 });
     const t = totals(r);
-    expect(t.totalVolumeLiters).toBe(4000);
+    expect(t.totalVolumeLiters).toBe(4800);
+    expect(t.totalRings).toBe(9);
   });
 
-  it("Ø1500: меньше колец нужно (V_кольца = 1.59 м³), но min 2 на камеру", () => {
+  it("Ø1500: не добавляет выдуманный минимум два кольца на камеру", () => {
     const r = calcSeptic({ residents: 6, chambersCount: 3, ringDiameter: 1500, groundType: 1, withFilterWell: 1, pipeLengthFromHouse: 8 });
     const t = totals(r);
     expect(t.ringDiameter).toBe(1500);
-    // V_камеры = 6 × 200 × 3 / 1000 / 3 = 1.2; ceil(1.2/1.59)=1, но min=2
-    expect(t.ringsPerChamber).toBe(2);
+    // V_камеры = 6 × 200 × 3 / 1000 / 3 = 1.2; ceil(1.2 / 1.59) = 1.
+    expect(t.ringsPerChamber).toBe(1);
+    expect(t.totalRings).toBe(3);
   });
 });
 
