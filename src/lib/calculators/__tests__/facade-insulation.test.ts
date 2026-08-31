@@ -60,6 +60,7 @@ describe("Утепление фасада", () => {
       const r = calc({ area: 100, thickness: 100, insulationType: 0, finishType: 0 });
       // Engine: "Стартовый профиль (2 м)"
       expect(findMaterial(r, "Стартовый профиль")).toBeDefined();
+      expect(r.practicalNotes?.some(note => note.includes("4 × √S"))).toBe(true);
     });
 
     it("округляет плиты до полных упаковок", () => {
@@ -100,10 +101,11 @@ describe("Утепление фасада", () => {
       expect(dubels!.quantity).toBe(Math.ceil(100 * 4 * 1.05));
     });
 
-    it("ЭППС + не тонкослойная → предупреждение об адгезии", () => {
+    it("ЭППС → предупреждение о проектной зоне и документации СФТК", () => {
       const r = calc({ area: 100, thickness: 100, insulationType: 1, finishType: 0 });
-      // Engine: "ЭППС — обязательна обработка поверхности для адгезии штукатурки"
-      expect(r.warnings.some(w => w.includes("сцепления со штукатуркой"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("предусмотренной проектом зоне"))).toBe(true);
+      expect(r.practicalNotes?.some(note => note.includes("4 тарельчатых дюбеля"))).toBe(true);
+      expect(r.practicalNotes?.some(note => note.includes("ножовк"))).toBe(false);
     });
   });
 
@@ -126,10 +128,10 @@ describe("Утепление фасада", () => {
   });
 
   describe("Толщина утеплителя >= 150 → предупреждение", () => {
-    it("150 мм → двухслойная укладка", () => {
+    it("150 мм → проверка одно- или двухслойной схемы по проекту", () => {
       const r = calc({ area: 100, thickness: 150, insulationType: 0, finishType: 0 });
-      // Engine: "Толстый утеплитель — рекомендуется двухслойная укладка"
-      expect(r.warnings.some(w => w.includes("двухслойная"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("двухслойн"))).toBe(true);
+      expect(r.warnings.some(w => w.includes("Калькулятор считает один слой"))).toBe(true);
     });
   });
 
@@ -139,6 +141,37 @@ describe("Утепление фасада", () => {
       // Engine: "Грунтовка (канистра 10 л)"
       const primer = findMaterial(r, "Грунтовка");
       expect(primer).toBeDefined();
+    });
+  });
+
+  describe("Пользовательские границы расчёта", () => {
+    it("не связывает варианты толщины с регионом или рекомендацией", () => {
+      const thickness = facadeInsulationDef.fields.find(field => field.key === "thickness")!;
+      const labels = thickness.options?.map(option => option.label).join(" ") ?? "";
+
+      expect(labels).not.toContain("Московская");
+      expect(labels).not.toContain("Сибирь");
+      expect(labels).not.toContain("крайний север");
+      expect(labels).not.toContain("рекомендуется");
+      expect(thickness.hint).toContain("не рассчитывает сопротивление теплопередаче");
+    });
+
+    it("помечает ограничения ЭППС и тонкослойной отделки", () => {
+      const insulation = facadeInsulationDef.fields.find(field => field.key === "insulationType")!;
+      const finish = facadeInsulationDef.fields.find(field => field.key === "finishType")!;
+
+      expect(insulation.options?.find(option => option.value === 1)?.label).toContain("проектом");
+      expect(finish.options?.find(option => option.value === 2)?.label).toContain("без фасадной краски");
+      expect(finish.hint).toContain("краска в ведомость не входит");
+    });
+
+    it("SEO-текст использует актуальную редакцию СП и не содержит старых ценовых обещаний", () => {
+      const content = `${facadeInsulationDef.seoContent?.descriptionHtml ?? ""} ${JSON.stringify(facadeInsulationDef.seoContent?.faq ?? [])}`;
+
+      expect(content).toContain("СП 50.13330.2024");
+      expect(content).not.toContain("СП 50.13330.2012");
+      expect(content).not.toContain("230 000");
+      expect(content).not.toContain("ножовк");
     });
   });
 });
