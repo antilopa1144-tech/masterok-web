@@ -84,6 +84,16 @@ describe("tool analytics", () => {
     ]);
   });
 
+  it("передаёт поиск и категорию справочника без текста запроса", () => {
+    trackToolStart("normy-raskhoda", "search");
+    trackToolModeChange("normy-raskhoda", "category:kraska");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_start", { tool: "normy-raskhoda", source: "search" }],
+      ["tool_mode_change", { tool: "normy-raskhoda", mode: "category:kraska" }],
+    ]);
+  });
+
   it("фиксирует выбор только известного назначения каталога инструментов", () => {
     trackToolCatalogSelect("tool:moy-remont", "tool_grid");
     trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");

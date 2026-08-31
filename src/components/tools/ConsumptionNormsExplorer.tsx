@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CONSUMPTION_NORMS, type NormCategory, type NormRow } from "@/lib/tools/norms-data";
 import { calcHref } from "@/lib/tools/config";
 import { CONSUMPTION_NORMS_TOOL_SLUG } from "@/lib/tools/consumption-norm-links";
-import { trackToolRelatedClick } from "@/lib/analytics";
+import { trackToolModeChange, trackToolRelatedClick } from "@/lib/analytics";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 
 function matchesQuery(row: NormRow, query: string) {
   if (!query) return true;
@@ -79,9 +80,13 @@ function NormTable({ category, rows }: { category: NormCategory; rows: NormRow[]
 }
 
 export default function ConsumptionNormsExplorer() {
+  const resultRef = useRef<HTMLElement>(null);
   const [query, setQuery] = useState("");
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(CONSUMPTION_NORMS[0] ? [CONSUMPTION_NORMS[0].id] : []),
+  );
+  const [resultCategoryId, setResultCategoryId] = useState(
+    () => CONSUMPTION_NORMS[0]?.id ?? "",
   );
   const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
 
@@ -120,8 +125,25 @@ export default function ConsumptionNormsExplorer() {
 
   const totalRows = CONSUMPTION_NORMS.reduce((sum, category) => sum + category.rows.length, 0);
   const shownRows = visibleCategories.reduce((sum, item) => sum + item.rows.length, 0);
+  const { markStarted } = useToolAnalytics(
+    CONSUMPTION_NORMS_TOOL_SLUG,
+    resultRef,
+    shownRows > 0,
+  );
+
+  const trackCategoryOpen = (id: string) => {
+    setResultCategoryId(id);
+    markStarted("category");
+    trackToolModeChange(CONSUMPTION_NORMS_TOOL_SLUG, `category:${id}`);
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (value.trim()) markStarted("search");
+  };
 
   const openCategory = (id: string) => {
+    trackCategoryOpen(id);
     setQuery("");
     setOpenIds(new Set([id]));
     requestAnimationFrame(() => {
@@ -147,7 +169,7 @@ export default function ConsumptionNormsExplorer() {
             <input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => handleQueryChange(event.target.value)}
               placeholder="Например, Ротбанд или грунтовка"
               className="input-field min-h-12 w-full pr-10"
             />
@@ -209,7 +231,21 @@ export default function ConsumptionNormsExplorer() {
               }}
               className="card group scroll-mt-24 overflow-hidden"
             >
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <summary
+                ref={
+                  category.id ===
+                  (normalizedQuery ? visibleCategories[0]?.category.id : resultCategoryId)
+                    ? resultRef
+                    : undefined
+                }
+                onClick={(event) => {
+                  const details = event.currentTarget.closest("details");
+                  if (!normalizedQuery && details && !details.open) {
+                    trackCategoryOpen(category.id);
+                  }
+                }}
+                className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"
+              >
                 <span className="flex min-w-0 items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
                   <span aria-hidden>{category.icon}</span>
                   <span className="truncate">{category.title}</span>

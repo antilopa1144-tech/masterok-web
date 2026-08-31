@@ -8,7 +8,9 @@ export type ToolInteractionSource =
   | "material_reserve"
   | "material_packaging"
   | "opening"
-  | "preset";
+  | "preset"
+  | "search"
+  | "category";
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";
