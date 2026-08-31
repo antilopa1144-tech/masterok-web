@@ -29,6 +29,7 @@ interface PlasterInputs {
   bagWeight?: number;
   substrateType?: number;
   wallEvenness?: number;
+  productConsumptionKgPerM2PerMm?: number;
   accuracyMode?: AccuracyMode;
 }
 
@@ -119,11 +120,15 @@ function buildMaterials(
   spec: PlasterCanonicalSpec,
   plasterType: PlasterTypeSpec,
   substrate: PlasterSubstrateSpec,
+  evenness: PlasterEvennessSpec,
   work: WorkAreaResolution,
   thickness: number,
   totalKg: number,
   bagWeight: number,
   bags: number,
+  baseKgPerM2At10Mm: number,
+  accuracyMultiplier: number,
+  usesProductRate: boolean,
 ): CanonicalMaterialResult[] {
   const primerRate = substrate.primer_type === 2 ? spec.material_rules.contact_primer_kg_per_m2 : spec.material_rules.deep_primer_l_per_m2;
   const primerNeed = roundDisplay(work.netArea * primerRate * spec.material_rules.reserve_factor, 3);
@@ -138,6 +143,7 @@ function buildMaterials(
   return [
     {
       name: `${plasterType.label} (мешки ${bagWeight} кг)`,
+      subtitle: `${usesProductRate ? "Расход выбранного товара" : "Базовая норма выбранного типа"}: ${roundDisplay(baseKgPerM2At10Mm, 3)} кг/м² при 10 мм. REC: ${roundDisplay(work.netArea, 3)} м² × ${roundDisplay(thickness, 3)} мм × ${roundDisplay(baseKgPerM2At10Mm / 10, 3)} кг/м²/мм × основание ${substrate.multiplier} × кривизна ${evenness.multiplier} × запас ${spec.material_rules.reserve_factor} × режим точности ${roundDisplay(accuracyMultiplier, 3)}; покупка округлена вверх до мешков.`,
       quantity: roundDisplay(totalKg / bagWeight, 3),
       unit: "мешков",
       withReserve: bags,
@@ -146,6 +152,9 @@ function buildMaterials(
     },
     {
       name: substrate.primer_type === 2 ? `Грунтовка бетоноконтакт (${spec.material_rules.primer_package_size} кг)` : `Грунтовка (${spec.material_rules.primer_package_size} л)`,
+      subtitle: substrate.primer_type === 2
+        ? `Предварительно ${spec.material_rules.contact_primer_kg_per_m2} кг/м² × ${spec.material_rules.reserve_factor}, вёдра по ${spec.material_rules.primer_package_size} кг. Тип и расход грунта сверяйте с основанием и техкартой штукатурки.`
+        : `Предварительно ${spec.material_rules.deep_primer_l_per_m2} л/м² × ${spec.material_rules.reserve_factor}, канистры по ${spec.material_rules.primer_package_size} л. Впитываемость, число проходов и совместимость проверяйте по основанию и техкарте.`,
       quantity: primerNeed,
       unit: substrate.primer_type === 2 ? "кг" : "л",
       withReserve: roundDisplay(primerPackages * spec.material_rules.primer_package_size, 3),
@@ -155,6 +164,7 @@ function buildMaterials(
     },
     ...(meshArea > 0 ? [{
       name: "Стеклосетка армировочная (50×50 мм)",
+      subtitle: `Автоматическая предварительная позиция при слое более ${spec.warnings_rules.mesh_threshold_mm} мм: чистая площадь × ${spec.material_rules.mesh_overlap_factor}. Необходимость, тип, плотность, щёлочестойкость и схему армирования определяют по основанию и техкарте выбранной смеси.`,
       quantity: meshArea,
       unit: "м²",
       withReserve: Math.ceil(meshArea),
@@ -163,6 +173,7 @@ function buildMaterials(
     } satisfies CanonicalMaterialResult] : []),
     {
       name: `Маяки штукатурные (${beaconSize} мм)`,
+      subtitle: `Условно не менее 2 шт., далее 1 шт. на ${spec.material_rules.beacons_area_m2_per_piece} м² чистой площади. Фактическое число зависит от геометрии стен, длины правила, шага установки и решения оставлять или удалять маяки.`,
       quantity: beacons,
       unit: "шт",
       withReserve: beacons,
@@ -171,6 +182,7 @@ function buildMaterials(
     },
     {
       name: `Правило алюминиевое (${spec.material_rules.rule_size_m} м)`,
+      subtitle: "Инвентарная позиция: 1 шт. длиной 1,5 м. Проверьте, подходит ли она под высоту, шаг маяков и уже имеющийся инструмент.",
       quantity: spec.material_rules.rule_count,
       unit: "шт",
       withReserve: spec.material_rules.rule_count,
@@ -179,6 +191,7 @@ function buildMaterials(
     },
     {
       name: "Шпатель фасадный (450-600 мм)",
+      subtitle: "Инвентарная позиция: 1 шт. Ширину и набор инструмента выбирают по технологии нанесения и площади захватки.",
       quantity: spec.material_rules.spatulas_count,
       unit: "шт",
       withReserve: spec.material_rules.spatulas_count,
@@ -187,6 +200,7 @@ function buildMaterials(
     },
     {
       name: "Ведро строительное (20 л)",
+      subtitle: "Инвентарная позиция: 2 шт. Это чек-лист организации замеса, а не расходная норма на площадь.",
       quantity: spec.material_rules.buckets_count,
       unit: "шт",
       withReserve: spec.material_rules.buckets_count,
@@ -195,6 +209,7 @@ function buildMaterials(
     },
     {
       name: "Миксер для дрели (насадка)",
+      subtitle: "Инвентарная позиция: 1 шт. Обороты, форму насадки и объём замеса сверяйте с инструкцией смеси.",
       quantity: spec.material_rules.mixer_count,
       unit: "шт",
       withReserve: spec.material_rules.mixer_count,
@@ -203,6 +218,7 @@ function buildMaterials(
     },
     {
       name: "Перчатки прорезиненные",
+      subtitle: "Предварительный чек-лист: 3 пары без привязки к площади или длительности работ.",
       quantity: spec.material_rules.gloves_pairs,
       unit: "пары",
       withReserve: spec.material_rules.gloves_pairs,
@@ -211,6 +227,7 @@ function buildMaterials(
     },
     ...(cornerProfiles > 0 ? [{
       name: "Угловой профиль перфорированный 25×25 мм (3 м)",
+      subtitle: `Только для режима помещения: условно 4 вертикальных угла высотой ${roundDisplay(work.roomHeight, 3)} м, +10%, профиль 3 м. Реальные наружные углы, проёмы и решение по профилю нужно измерить отдельно.`,
       quantity: cornerProfiles,
       unit: "шт",
       withReserve: cornerProfiles,
@@ -232,8 +249,12 @@ export function computeCanonicalPlaster(
   const evenness = resolveEvenness(spec, inputs.wallEvenness);
   const thickness = resolveThickness(spec, inputs.thickness);
   const bagWeight = resolveBagWeight(spec, plasterType, inputs.bagWeight);
-  const consumptionKgPerM2Mm = (plasterType.base_kg_per_m2_10mm / 10) * substrate.multiplier * evenness.multiplier * spec.material_rules.reserve_factor;
+  const requestedProductRate = inputs.productConsumptionKgPerM2PerMm;
+  const usesProductRate = typeof requestedProductRate === "number" && Number.isFinite(requestedProductRate) && requestedProductRate > 0;
+  const baseKgPerM2At10Mm = usesProductRate ? requestedProductRate * 10 : plasterType.base_kg_per_m2_10mm;
+  const consumptionKgPerM2Mm = (baseKgPerM2At10Mm / 10) * substrate.multiplier * evenness.multiplier * spec.material_rules.reserve_factor;
   const accuracyOpt: AccuracyModeOption = { mode: accuracyMode, materialCategory: "plaster" };
+  const accuracyMultiplier = getPrimaryMultiplier("plaster", accuracyMode);
   const scenarios = computeEstimate(
     toEngineConfig(spec, bagWeight, consumptionKgPerM2Mm),
     {
@@ -269,7 +290,9 @@ export function computeCanonicalPlaster(
   if (thickness > 30) {
     practicalNotes.push(`Слой ${roundDisplay(thickness, 0)} мм — ставьте маяки и наносите в 2-3 захода с просушкой`);
   }
-  practicalNotes.push("На стыке разных материалов (кирпич/бетон) — обязательно армирующая сетка");
+  practicalNotes.push("Стыки разных материалов нужно оценить отдельно: локальное армирование, подготовка и совместимость определяются основанием и техкартой выбранной смеси");
+  practicalNotes.push(`Основание «${substrate.label}» и кривизна «${evenness.label}» применены отдельными множителями ${substrate.multiplier} и ${evenness.multiplier}; это полевые допущения, а не паспорт конкретного товара`);
+  practicalNotes.push("Грунт, сетка, маяки, профили и инструмент — предварительный закупочный чек-лист; перед заказом сверьте систему с основанием и техкартой выбранной смеси");
 
   // Build accuracy explanation
   const { explanation } = applyAccuracyMode(work.netArea * consumptionKgPerM2Mm * thickness, "plaster", accuracyMode);
@@ -277,7 +300,7 @@ export function computeCanonicalPlaster(
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
-    materials: buildMaterials(spec, plasterType, substrate, work, thickness, totalKg, bagWeight, recScenario.buy_plan.packages_count),
+    materials: buildMaterials(spec, plasterType, substrate, evenness, work, thickness, totalKg, bagWeight, recScenario.buy_plan.packages_count, baseKgPerM2At10Mm, accuracyMultiplier, usesProductRate),
     totals: {
       wallArea: roundDisplay(work.wallArea, 3),
       netArea: roundDisplay(work.netArea, 3),
@@ -287,6 +310,12 @@ export function computeCanonicalPlaster(
       substrateType: substrate.id,
       wallEvenness: evenness.id,
       bagWeight,
+      baseKgPerM2At10Mm: roundDisplay(baseKgPerM2At10Mm, 3),
+      substrateMultiplier: substrate.multiplier,
+      evennessMultiplier: evenness.multiplier,
+      reserveFactor: spec.material_rules.reserve_factor,
+      accuracyMultiplier: roundDisplay(accuracyMultiplier, 6),
+      usesProductRate: usesProductRate ? 1 : 0,
       primerNeed,
       primerType: substrate.primer_type,
       meshArea,

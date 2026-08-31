@@ -278,9 +278,9 @@
   "plaster": {
     "label": "Производитель штукатурки",
     "items": [
-      { "name": "Knauf Ротбанд", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 0.88, "packKg": 30, "type": "гипсовая" }, "notes": "Эталон гипсовой штукатурки, заводы в РФ." },
+      { "name": "Knauf Ротбанд", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 0.85, "packKg": 30, "type": "гипсовая", "productSpecific": true, "sourceUrl": "https://www.knauf.ru/catalog/sukhie-stroitelnye-smesi-i-gotovye-sostavy/shtukaturki/shtukaturki-gipsovye/knauf-rotband/" }, "notes": "Конкретный продукт: около 8,5 кг/м² при слое 10 мм; доступно несколько фасовок, в калькуляторе используется 30 кг." },
       { "name": "Knauf Гольдбанд", "country": "РФ/Германия", "specs": { "consumptionKgPerM2PerMm": 0.88, "packKg": 30, "type": "гипсовая" }, "notes": "Ручное нанесение." },
-      { "name": "Волма Слой", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.85, "packKg": 30, "type": "гипсовая" }, "notes": "Крупнейший РФ-производитель." },
+      { "name": "Волма Слой", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.85, "packKg": 30, "type": "гипсовая", "productSpecific": true, "sourceUrl": "https://www.volma.ru/production/catalog/plaster/volma-sloy/" }, "notes": "Конкретный продукт: диапазон 8–9 кг/м² при слое 10 мм, для расчёта принято среднее 8,5; фасовка 30 кг." },
       { "name": "Bergauf (Бергауф)", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 25, "type": "гипсовая/цементная" }, "notes": "Российско-Германское предприятие (с 2003)." },
       { "name": "Основит", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 30, "type": "гипсовая" }, "notes": "Крупный РФ-производитель сухих смесей." },
       { "name": "Старатели", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 0.90, "packKg": 30, "type": "гипсовая" }, "notes": "Штукатурки машинного нанесения." },
@@ -288,7 +288,7 @@
       { "name": "Petromix", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.50, "packKg": 25, "type": "цементная" }, "notes": "СПб, цементные штукатурки." },
       { "name": "Unis (Юнис)", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.00, "packKg": 25, "type": "гипсовая" }, "notes": "Массовый сегмент." },
       { "name": "Weber.Vetonit", "country": "РФ/Saint-Gobain", "specs": { "consumptionKgPerM2PerMm": 1.20, "packKg": 25, "type": "цементная" }, "notes": "Saint-Gobain, локальное производство." },
-      { "name": "Церезит CT 29", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.50, "packKg": 25, "type": "цементная" }, "notes": "ООО «ЛАБ Индастриз» (бывший Henkel)." }
+      { "name": "Церезит CT 29", "country": "Россия", "specs": { "consumptionKgPerM2PerMm": 1.50, "packKg": 25, "type": "цементная", "productSpecific": true, "sourceUrl": "https://www.ceresit.ru/ru/products/etics/prepare-and-repair/ct-29-plaster-and-repair-filler" }, "notes": "Конкретный продукт: около 1,5 кг/м² на 1 мм слоя; фасовка 25 кг." }
     ]
   },
   "tile_adhesive": {
