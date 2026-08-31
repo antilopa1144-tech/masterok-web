@@ -18,6 +18,21 @@ describe("Калькулятор отмостки", () => {
       const thickness = blindAreaDef.fields.find((field) => field.key === "thickness");
       expect(thickness?.hideIf).toEqual({ key: "materialType", op: "ne", value: 0 });
     });
+
+    it("не выдаёт класс бетона, утепление и фиксированные слои за проект", () => {
+      const materialType = blindAreaDef.fields.find((field) => field.key === "materialType");
+      const insulation = blindAreaDef.fields.find((field) => field.key === "withInsulation");
+      const insulationFaq = blindAreaDef.faq?.find((item) => item.question === "Нужно ли утеплять отмостку?");
+
+      expect(materialType?.options?.find((option) => option.value === 0)?.label).toBe("Бетонная");
+      expect(materialType?.options?.find((option) => option.value === 2)?.label).toContain("профилированная мембрана");
+      expect(materialType?.hint).toContain("не проектирует");
+      expect(insulation?.hint).toContain("только подсчёт плит");
+      expect(insulationFaq?.answer).toContain("По одному типу дома это решить нельзя");
+      expect(blindAreaDef.seoContent?.descriptionHtml).toContain("предварительные позиции");
+      expect(blindAreaDef.seoContent?.descriptionHtml).toContain("ГОСТ 7473-2026");
+      expect(blindAreaDef.seoContent?.descriptionHtml).toContain("01.11.2026");
+    });
   });
 
   describe("Бетонная отмостка: периметр 40 м, ширина 1.0 м, толщина 100 мм", () => {
@@ -45,6 +60,7 @@ describe("Калькулятор отмостки", () => {
       expect(concrete?.withReserve).toBeCloseTo(4.4, 6);
       expect(concrete?.purchaseQty).toBeCloseTo(4.4, 6);
       expect(concrete?.packageInfo).toMatchObject({ size: 0.1, count: 44 });
+      expect(concrete?.subtitle).toContain("по одному объёму бетон не заказывают");
     });
 
     it("армосетка при толщине ≥ 100 мм", () => {
@@ -55,29 +71,31 @@ describe("Калькулятор отмостки", () => {
       expect(mesh?.withReserve).toBeCloseTo(48.4, 6);
       expect(mesh?.purchaseQty).toBe(49);
       expect(mesh?.unit).toBe("м²");
-      expect(mesh?.subtitle).toContain("формату поставщика");
+      expect(mesh?.subtitle).toContain("не является готовой ведомостью армирования");
     });
 
     it("демпферная лента присутствует для бетонной", () => {
       // Engine: "Демпферная лента"
       const tape = findMaterial(result, "Демпферная разделительная лента");
-      expect(tape?.subtitle).toContain("деформационного шва");
+      expect(tape?.subtitle).toContain("не готовая позиция к покупке");
     });
 
     it("щебень подготовка = 44 × 0,15 = 6,6 м³", () => {
       const gravel = findMaterial(result, "Щебень");
       expect(gravel?.quantity).toBeCloseTo(6.6, 2);
+      expect(gravel?.subtitle).toContain("Предварительный геометрический объём");
     });
 
     it("песок подсыпка = 44 × 0,1 = 4,4 м³", () => {
       const sand = findMaterial(result, "Песок");
       expect(sand?.quantity).toBeCloseTo(4.4, 2);
-      expect(sand?.subtitle).toContain("уплотнённого слоя");
+      expect(sand?.subtitle).toContain("коэффициент поставки рыхлого материала");
     });
 
     it("геотекстиль присутствует", () => {
       // Engine: "Геотекстиль (50 м²)"
       expect(findMaterial(result, "Геотекстиль")).toBeDefined();
+      expect(findMaterial(result, "Геотекстиль")?.subtitle).toContain("Справочная позиция");
     });
 
     it("без утепления — нет ЭППС", () => {
@@ -138,6 +156,7 @@ describe("Калькулятор отмостки", () => {
       const border = findMaterial(result, "Бордюр");
       expect(result.totals.outerEdgeLength).toBeCloseTo(36.4, 6);
       expect(border?.purchaseQty).toBe(73);
+      expect(border?.subtitle).toContain("нужен не в каждом узле");
     });
 
     it("нет бетона для плиточной отмостки", () => {
@@ -169,6 +188,7 @@ describe("Калькулятор отмостки", () => {
       expect(membrane?.quantity).toBeCloseTo(44, 6);
       expect(membrane?.withReserve).toBeCloseTo(50.6, 6);
       expect(membrane?.purchaseQty).toBe(51);
+      expect(membrane?.subtitle).toContain("отвод воды задаёт проект");
     });
 
     it("декоративный щебень = 44 × 0,1 = 4,4 м³", () => {
@@ -208,6 +228,7 @@ describe("Калькулятор отмостки", () => {
       const epps = findMaterial(result, "ЭППС");
       expect(epps).toBeDefined();
       expect(epps?.subtitle).toContain("0,72 м²");
+      expect(result.practicalNotes?.some((note) => note.includes("не подтверждает теплотехнический расчёт"))).toBe(true);
     });
 
     it("ЭППС плит = ceil(44 × 1,05 / 0,72) = 65", () => {
@@ -259,6 +280,8 @@ describe("Калькулятор отмостки", () => {
       const result = calc({ perimeter: 40, width: 1.0, thickness: 100, materialType: 0, withInsulation: 0 });
       expect(result.practicalNotes?.some((note) => note.includes("от 1% до 10%"))).toBe(true);
       expect(result.practicalNotes?.some((note) => note.includes("по покрытию и схеме водоотвода"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("не готовая ведомость закупки"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("В15 (М200) — допущение"))).toBe(true);
     });
   });
 });
