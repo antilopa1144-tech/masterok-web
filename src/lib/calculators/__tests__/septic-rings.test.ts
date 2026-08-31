@@ -219,6 +219,7 @@ describe("Калькулятор септика из ЖБИ-колец", () => {
     it("не обещает автоматический заказ скрытых материалов в metadata", () => {
       expect(septicRingsDef.description).toContain("Фильтрация и узлы — только по проекту");
       expect(septicRingsDef.metaDescription).toMatch(/^Бесплатный калькулятор/);
+      expect(septicRingsDef.metaDescription).toContain("рассчитайте");
       expect(septicRingsDef.metaDescription).toContain("без подмены проекта фильтрации");
     });
 
