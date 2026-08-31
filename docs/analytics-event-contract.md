@@ -32,6 +32,10 @@
 | `calculator_calculate` | Driver | Успешное явное нажатие «Рассчитать» | `calculator`, `accuracy_mode` | Каждое успешное нажатие |
 | `calculator_export` | Driver | Выбран формат экспорта | `calculator`, `format` | Каждое действие |
 | `calculator_share` | Driver | Ссылка скопирована или передана | `calculator`, `method` | Только успешные действия |
+| `project_create` | Driver | Проект успешно создан | `source` | Только успешные создания |
+| `project_open` | Primary | Смета открыта из каталога проектов | `source`, `entry_count_bucket` | Каждый явный переход |
+| `project_export` | Driver | Запрошена печать/CSV или успешно скопирована смета | `format` | Каждое явное действие |
+| `project_related_click` | Driver | Переход из проекта в известный калькулятор или инструмент | `target` | Каждый переход |
 | `project_save_calculation` | Driver | Запись сохранена в проект | `calculator`, `created_project` | Только успешные сохранения |
 | `calculator_related_click` | Driver | Переход к связанной раскладке | `calculator`, `target` | Каждый переход |
 | `accuracy_mode_change` | Diagnostic | Изменён режим точности | `calculator`, `from`, `to` | Каждое изменение |
@@ -90,7 +94,8 @@ baseline. До этого ворота качества инструментац
 ## Настройка систем и период проверки
 
 - В GA4 зарегистрировать event-scoped custom dimensions: `calculator`, `tool`,
-  `source`, `format`, `result_type`, `result_id`, `first_invalid_field`.
+  `source`, `format`, `target`, `entry_count_bucket`, `result_type`, `result_id`,
+  `first_invalid_field`.
 - В Метрике создать цели для primary и downstream событий; диагностические
   события не объявлять конверсиями без отдельного решения.
 - Сравнивать равные полные окна, отдельно по mobile/desktop и шаблону страницы.

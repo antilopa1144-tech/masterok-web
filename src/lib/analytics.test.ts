@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 import {
   trackCalculatorRelatedClick,
+  trackProjectCreate,
+  trackProjectExport,
+  trackProjectOpen,
+  trackProjectRelatedClick,
   trackSearchNoResults,
   trackSearchSelection,
   trackToolExport,
@@ -85,6 +89,29 @@ describe("tool analytics", () => {
       "calculator_related_click",
       { calculator: "laminat", target: "raskladka-laminata" },
     );
+  });
+
+  it("отправляет воронку проектов только с агрегированными параметрами", () => {
+    trackProjectCreate("empty");
+    trackProjectOpen(0);
+    trackProjectOpen(2);
+    trackProjectOpen(8);
+    trackProjectRelatedClick("calculator:plitka");
+    trackProjectExport("csv");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["project_create", { source: "empty" }],
+      ["project_open", { source: "catalog", entry_count_bucket: "0" }],
+      ["project_open", { source: "catalog", entry_count_bucket: "1-3" }],
+      ["project_open", { source: "catalog", entry_count_bucket: "4+" }],
+      ["project_related_click", { target: "calculator:plitka" }],
+      ["project_export", { format: "csv" }],
+    ]);
+
+    const serializedCalls = JSON.stringify(ym.mock.calls);
+    expect(serializedCalls).not.toContain("project_id");
+    expect(serializedCalls).not.toContain("project_name");
+    expect(serializedCalls).not.toContain("price");
   });
 
   it("не загрязняет production-счётчики с localhost", () => {

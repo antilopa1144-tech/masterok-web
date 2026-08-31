@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { trackProjectExport } from "@/lib/analytics";
 import {
   deleteEntryFromProject,
   deleteProject,
@@ -142,10 +143,14 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
     saveCheckedKeys(projectId, next);
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    trackProjectExport("print");
+    window.print();
+  };
 
   const handleCsv = () => {
     if (!project || !view || !totals) return;
+    trackProjectExport("csv");
     const csv = buildProcurementCsv(project.name, view.procurement, view.resolvedPrices, totals);
     const safeName = project.name.replace(/[^\wа-яА-ЯёЁ\d]+/gi, "_").slice(0, 40);
     downloadCsv(`smeta_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`, csv);
@@ -169,6 +174,7 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
     }
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
+      trackProjectExport("clipboard");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

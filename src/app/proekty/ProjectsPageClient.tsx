@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import {
+  trackProjectCreate,
+  trackProjectOpen,
+  trackProjectRelatedClick,
+} from "@/lib/analytics";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { createProject, deleteProject, getProjects } from "@/lib/storage/projects";
 import { buildProjectEstimates, type ProjectEstimate } from "@/lib/projects/estimate";
 import type { ProjectWithEntries } from "@/lib/storage/types";
@@ -108,6 +114,11 @@ function ProjectCard({ project, estimate, onDelete }: {
               <div key={entry.id} className="flex items-center justify-between gap-2">
                 <Link
                   href={`/kalkulyatory/${entry.categorySlug}/${entry.slug}/`}
+                  onClick={() => {
+                    if (getCalculatorMetaBySlug(entry.slug)) {
+                      trackProjectRelatedClick(`calculator:${entry.slug}`);
+                    }
+                  }}
                   className="min-w-0 truncate text-sm text-slate-600 hover:text-accent-700 dark:text-slate-400 dark:hover:text-accent-400 no-underline"
                 >
                   {entry.calcTitle}
@@ -150,6 +161,7 @@ function ProjectCard({ project, estimate, onDelete }: {
       <div className="flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">
         <Link
           href={`/proekty/${project.id}`}
+          onClick={() => trackProjectOpen(project.entries.length)}
           className="inline-flex items-center gap-1.5 rounded-xl bg-accent-50 px-3 py-1.5 text-xs font-semibold text-accent-700 hover:bg-accent-100 dark:bg-accent-900/20 dark:text-accent-400 dark:hover:bg-accent-900/30 no-underline transition-colors"
         >
           Открыть смету
@@ -191,7 +203,9 @@ export default function ProjectsPageClient() {
     if (!name || creating) return;
     setCreating(true);
     try {
+      const source = projects.length === 0 ? "empty" : "list";
       await createProject(name);
+      trackProjectCreate(source);
       setNewName("");
       await refresh();
     } finally {
@@ -248,10 +262,18 @@ export default function ProjectsPageClient() {
               />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <Link href="/instrumenty/moy-remont/" className="font-semibold text-accent-700 no-underline hover:text-accent-800 dark:text-accent-300">
+              <Link
+                href="/instrumenty/moy-remont/"
+                onClick={() => trackProjectRelatedClick("moy-remont")}
+                className="font-semibold text-accent-700 no-underline hover:text-accent-800 dark:text-accent-300"
+              >
                 Сначала рассчитать комнату →
               </Link>
-              <Link href="/kalkulyatory/" className="font-medium text-slate-500 no-underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+              <Link
+                href="/kalkulyatory/"
+                onClick={() => trackProjectRelatedClick("kalkulyatory")}
+                className="font-medium text-slate-500 no-underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
                 Выбрать калькулятор
               </Link>
             </div>
@@ -297,13 +319,25 @@ export default function ProjectsPageClient() {
                 Добавьте новый расчёт — сохранённые материалы попадут в выбранную смету.
               </p>
               <div className="mt-4 grid gap-2">
-                <Link href="/instrumenty/moy-remont/" className="btn-primary min-h-11 justify-center text-sm no-underline">
+                <Link
+                  href="/instrumenty/moy-remont/"
+                  onClick={() => trackProjectRelatedClick("moy-remont")}
+                  className="btn-primary min-h-11 justify-center text-sm no-underline"
+                >
                   Рассчитать комнату →
                 </Link>
-                <Link href="/kalkulyatory/" className="btn-secondary min-h-11 justify-center text-sm no-underline">
+                <Link
+                  href="/kalkulyatory/"
+                  onClick={() => trackProjectRelatedClick("kalkulyatory")}
+                  className="btn-secondary min-h-11 justify-center text-sm no-underline"
+                >
                   Выбрать калькулятор
                 </Link>
-                <Link href="/instrumenty/kalendar-remonta/" className="mt-1 text-center text-xs font-semibold text-slate-500 no-underline hover:text-accent-700 dark:text-slate-400 dark:hover:text-accent-300">
+                <Link
+                  href="/instrumenty/kalendar-remonta/"
+                  onClick={() => trackProjectRelatedClick("kalendar-remonta")}
+                  className="mt-1 text-center text-xs font-semibold text-slate-500 no-underline hover:text-accent-700 dark:text-slate-400 dark:hover:text-accent-300"
+                >
                   Открыть календарь этапов
                 </Link>
               </div>

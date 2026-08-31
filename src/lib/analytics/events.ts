@@ -9,6 +9,9 @@ export type ToolInteractionSource =
   | "material_packaging"
   | "opening"
   | "preset";
+export type ProjectCreateSource = "empty" | "list";
+export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
+export type ProjectExportFormat = "csv" | "print" | "clipboard";
 
 export interface AnalyticsEventParams {
   accuracy_comparison_open: { calculator: string };
@@ -24,6 +27,13 @@ export interface AnalyticsEventParams {
     invalid_field_count: number;
     first_invalid_field: string;
   };
+  project_create: { source: ProjectCreateSource };
+  project_export: { format: ProjectExportFormat };
+  project_open: {
+    source: "catalog";
+    entry_count_bucket: ProjectEntryCountBucket;
+  };
+  project_related_click: { target: string };
   project_save_calculation: { calculator: string; created_project: boolean };
   rustore_click: { placement: string };
   site_search_empty: SearchQueryMetrics;
@@ -98,6 +108,26 @@ export const ANALYTICS_EVENT_DEFINITIONS = {
     owner: "product", kpiRole: "guardrail", pii: "none",
     trigger: "Явная попытка расчёта с невалидными полями.",
     dedupe: "Один раз для неизменившегося набора ошибочных полей.",
+  },
+  project_create: {
+    owner: "product", kpiRole: "driver", pii: "none",
+    trigger: "Проект успешно создан из пустого состояния или списка.",
+    dedupe: "Каждое успешное создание проекта.",
+  },
+  project_export: {
+    owner: "product", kpiRole: "driver", pii: "none",
+    trigger: "Пользователь запрашивает печать, CSV или успешно копирует смету.",
+    dedupe: "Каждое явное действие экспорта.",
+  },
+  project_open: {
+    owner: "product", kpiRole: "primary", pii: "none",
+    trigger: "Пользователь явно открывает смету из каталога проектов.",
+    dedupe: "Каждый явный переход в смету.",
+  },
+  project_related_click: {
+    owner: "product", kpiRole: "driver", pii: "none",
+    trigger: "Переход из проекта в известный калькулятор или инструмент.",
+    dedupe: "Каждый явный переход по ссылке.",
   },
   project_save_calculation: {
     owner: "product", kpiRole: "driver", pii: "none",

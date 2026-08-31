@@ -8,10 +8,18 @@ import {
   getSearchQueryMetrics,
   type AnalyticsEventName,
   type AnalyticsEventParams,
+  type ProjectCreateSource,
+  type ProjectEntryCountBucket,
+  type ProjectExportFormat,
   type SearchResultType,
   type ToolInteractionSource,
 } from "@/lib/analytics/events";
-export type { ToolInteractionSource } from "@/lib/analytics/events";
+export type {
+  ProjectCreateSource,
+  ProjectEntryCountBucket,
+  ProjectExportFormat,
+  ToolInteractionSource,
+} from "@/lib/analytics/events";
 import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 
 export function trackEvent<EventName extends AnalyticsEventName>(
@@ -113,6 +121,31 @@ export function trackProjectSave(calculatorId: string, createdProject: boolean):
     calculator: calculatorId,
     created_project: createdProject,
   });
+}
+
+export function trackProjectCreate(source: ProjectCreateSource): void {
+  trackEvent("project_create", { source });
+}
+
+export function getProjectEntryCountBucket(entryCount: number): ProjectEntryCountBucket {
+  if (entryCount <= 0) return "0";
+  if (entryCount <= 3) return "1-3";
+  return "4+";
+}
+
+export function trackProjectOpen(entryCount: number): void {
+  trackEvent("project_open", {
+    source: "catalog",
+    entry_count_bucket: getProjectEntryCountBucket(entryCount),
+  });
+}
+
+export function trackProjectRelatedClick(target: string): void {
+  trackEvent("project_related_click", { target });
+}
+
+export function trackProjectExport(format: ProjectExportFormat): void {
+  trackEvent("project_export", { format });
 }
 
 export function trackRuStoreClick(placement: string): void {

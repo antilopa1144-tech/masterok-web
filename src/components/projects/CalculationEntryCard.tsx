@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { trackProjectRelatedClick } from "@/lib/analytics";
+import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { formatCost, formatQuantity } from "@/lib/projects/format";
 import { groupMaterialsForEntry } from "@/lib/projects/procurement-stats";
 import type { ProjectEstimateLine } from "@/lib/projects/build-estimate";
@@ -12,6 +14,11 @@ interface Props {
 
 export default function CalculationEntryCard({ line, onDelete }: Props) {
   const groups = groupMaterialsForEntry(line.materials);
+  const trackCalculatorClick = () => {
+    if (getCalculatorMetaBySlug(line.slug)) {
+      trackProjectRelatedClick(`calculator:${line.slug}`);
+    }
+  };
 
   return (
     <article className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
@@ -19,6 +26,7 @@ export default function CalculationEntryCard({ line, onDelete }: Props) {
         <div className="min-w-0">
           <Link
             href={`/kalkulyatory/${line.categorySlug}/${line.slug}/`}
+            onClick={trackCalculatorClick}
             className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-accent-600 no-underline"
           >
             {line.calcTitle}
@@ -85,6 +93,7 @@ export default function CalculationEntryCard({ line, onDelete }: Props) {
         <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-100 dark:border-amber-900/40">
           <Link
             href={`/kalkulyatory/${line.categorySlug}/${line.slug}/`}
+            onClick={trackCalculatorClick}
             className="text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline"
           >
             Ввести недостающие цены в калькуляторе →
