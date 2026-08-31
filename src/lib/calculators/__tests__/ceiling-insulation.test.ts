@@ -5,6 +5,31 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(ceilingInsulationDef.calculate.bind(ceilingInsulationDef));
 
 describe("Утепление потолка", () => {
+  it("синхронизирует web-дефолт площади с canonical-спекой", () => {
+    expect(ceilingInsulationDef.fields.find((field) => field.key === "area")?.defaultValue).toBe(40);
+  });
+
+  it("объясняет толщину слоя и не обещает отсутствующий крепёж", () => {
+    const thicknessField = ceilingInsulationDef.fields.find((field) => field.key === "thickness");
+    const seoHtml = ceilingInsulationDef.seoContent?.descriptionHtml ?? "";
+
+    expect(thicknessField?.label).toBe("Толщина одного слоя");
+    expect(thicknessField?.hint).toContain("Общая толщина");
+    expect(ceilingInsulationDef.description).not.toContain("крепежа");
+    expect(seoHtml).not.toContain("Тарельчатые дюбели");
+    expect(seoHtml).toContain("СП 50.13330.2024");
+  });
+
+  it("фиксирует пользовательские границы теплотехнического расчёта", () => {
+    const r = calc({ area: 40, thickness: 100, insulationType: 0, layers: 1 });
+
+    expect(r.practicalNotes).toContain(
+      "Толщину и состав перекрытия назначают по теплотехническому и влажностному расчёту; калькулятор считает количество по уже выбранной схеме.",
+    );
+    expect(r.practicalNotes.some((note) => note.includes("Площади упаковок"))).toBe(true);
+    expect(r.practicalNotes.some((note) => note.includes("пароизоляционного слоя"))).toBe(true);
+  });
+
   describe("Минераловатные плиты (insulationType=0)", () => {
     it("40 м², 100 мм, 1 слой", () => {
       const r = calc({ area: 40, thickness: 100, insulationType: 0, layers: 1 });
