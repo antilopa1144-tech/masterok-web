@@ -1,11 +1,15 @@
 "use client";
 
 import type { Checklist } from "@/lib/checklists";
+import { trackChecklistExport } from "@/lib/analytics";
 
-export default function PrintButton() {
+export default function PrintButton({ checklistSlug }: { checklistSlug: string }) {
   return (
     <button
-      onClick={() => window.print()}
+      onClick={() => {
+        trackChecklistExport(checklistSlug, "print");
+        window.print();
+      }}
       className="btn-secondary flex-1 text-center"
     >
       🖨 Распечатать
@@ -65,6 +69,7 @@ export function ExportChecklistPDF({ checklist }: { checklist: Checklist }) {
     }
 
     doc.save(`checklist-${checklist.slug}.pdf`);
+    trackChecklistExport(checklist.slug, "pdf");
   };
 
   return (

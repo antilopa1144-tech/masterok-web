@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  trackChecklistProgress,
+  trackChecklistStart,
+  type ChecklistProgressMilestone,
+} from "@/lib/analytics";
 import type { Checklist } from "@/lib/checklists";
 import {
   checklistItemKey,
+  getChecklistMilestonesToReport,
   getChecklistItemKeys,
   loadChecklistProgress,
   saveChecklistProgress,
@@ -15,16 +21,22 @@ export default function InteractiveChecklist({ checklist }: { checklist: Checkli
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(new Set());
   const [expandedStep, setExpandedStep] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+  const startedRef = useRef(false);
+  const reportedMilestonesRef = useRef<Set<ChecklistProgressMilestone>>(new Set());
 
   useEffect(() => {
     const saved = loadChecklistProgress(checklist.slug, validKeys);
+    startedRef.current = false;
+    reportedMilestonesRef.current = new Set(
+      getChecklistMilestonesToReport(saved.size, allKeys.length, new Set()),
+    );
     setCheckedKeys(saved);
     const firstIncomplete = checklist.steps.findIndex((step, stepIndex) =>
       step.items.some((_, itemIndex) => !saved.has(checklistItemKey(stepIndex, itemIndex))),
     );
     setExpandedStep(firstIncomplete >= 0 ? firstIncomplete : Math.max(0, checklist.steps.length - 1));
     setHydrated(true);
-  }, [checklist, validKeys]);
+  }, [allKeys.length, checklist, validKeys]);
 
   const totalItems = allKeys.length;
   const completedItems = checkedKeys.size;
@@ -38,6 +50,18 @@ export default function InteractiveChecklist({ checklist }: { checklist: Checkli
     else next.add(key);
     setCheckedKeys(next);
     saveChecklistProgress(checklist.slug, next);
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackChecklistStart(checklist.slug);
+    }
+    for (const milestone of getChecklistMilestonesToReport(
+      next.size,
+      totalItems,
+      reportedMilestonesRef.current,
+    )) {
+      reportedMilestonesRef.current.add(milestone);
+      trackChecklistProgress(checklist.slug, milestone);
+    }
 
     const stepComplete = checklist.steps[stepIndex].items.every((_, index) =>
       next.has(checklistItemKey(stepIndex, index)),

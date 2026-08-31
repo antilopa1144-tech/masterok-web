@@ -127,7 +127,7 @@ export default async function ChecklistPage({ params }: Props) {
       {/* Нижние кнопки */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <ExportChecklistPDF checklist={cl} />
-        <PrintButton />
+        <PrintButton checklistSlug={cl.slug} />
         <Link
           href="/instrumenty/chek-listy/"
           className="btn-secondary flex-1 text-center no-underline"
@@ -147,6 +147,5 @@ export default async function ChecklistPage({ params }: Props) {
     </>
   );
 }
-
 
 

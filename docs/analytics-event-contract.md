@@ -38,6 +38,9 @@
 | `project_related_click` | Driver | Переход из проекта в известный калькулятор или инструмент | `target` | Каждый переход |
 | `project_save_calculation` | Driver | Запись сохранена в проект | `calculator`, `created_project` | Только успешные сохранения |
 | `calculator_related_click` | Driver | Переход к связанной раскладке | `calculator`, `target` | Каждый переход |
+| `checklist_start` | Primary | Первый пункт отмечен или снят | `checklist` | Один раз за mount |
+| `checklist_progress` | Primary | Впервые пересечены 25/50/75/100% | `checklist`, `milestone` | Каждая отметка один раз за mount |
+| `checklist_export` | Driver | Запрошена печать или успешно сохранён PDF | `checklist`, `format` | Каждое явное действие |
 | `accuracy_mode_change` | Diagnostic | Изменён режим точности | `calculator`, `from`, `to` | Каждое изменение |
 | `accuracy_comparison_open` | Diagnostic | Открыто сравнение режимов | `calculator` | Каждое открытие |
 | `tool_start` | Primary | Первое осмысленное действие | `tool`, `source` | Один раз за mount |
@@ -95,8 +98,8 @@ baseline. До этого ворота качества инструментац
 ## Настройка систем и период проверки
 
 - В GA4 зарегистрировать event-scoped custom dimensions: `calculator`, `tool`,
-  `source`, `format`, `target`, `placement`, `entry_count_bucket`, `result_type`,
-  `result_id`, `first_invalid_field`.
+  `source`, `format`, `target`, `placement`, `checklist`, `milestone`,
+  `entry_count_bucket`, `result_type`, `result_id`, `first_invalid_field`.
 - В Метрике создать цели для primary и downstream событий; диагностические
   события не объявлять конверсиями без отдельного решения.
 - Сравнивать равные полные окна, отдельно по mobile/desktop и шаблону страницы.

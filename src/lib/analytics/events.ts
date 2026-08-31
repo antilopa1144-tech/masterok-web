@@ -12,7 +12,13 @@ export type ToolInteractionSource =
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";
-export type ToolCatalogPlacement = "tool_grid" | "checklist_all" | "checklist_preview";
+export type ToolCatalogPlacement =
+  | "tool_grid"
+  | "checklist_all"
+  | "checklist_preview"
+  | "checklist_grid";
+export type ChecklistProgressMilestone = 25 | 50 | 75 | 100;
+export type ChecklistExportFormat = "pdf" | "print";
 
 export interface AnalyticsEventParams {
   accuracy_comparison_open: { calculator: string };
@@ -28,6 +34,9 @@ export interface AnalyticsEventParams {
     invalid_field_count: number;
     first_invalid_field: string;
   };
+  checklist_export: { checklist: string; format: ChecklistExportFormat };
+  checklist_progress: { checklist: string; milestone: ChecklistProgressMilestone };
+  checklist_start: { checklist: string };
   project_create: { source: ProjectCreateSource };
   project_export: { format: ProjectExportFormat };
   project_open: {
@@ -110,6 +119,21 @@ export const ANALYTICS_EVENT_DEFINITIONS = {
     owner: "product", kpiRole: "guardrail", pii: "none",
     trigger: "Явная попытка расчёта с невалидными полями.",
     dedupe: "Один раз для неизменившегося набора ошибочных полей.",
+  },
+  checklist_export: {
+    owner: "product", kpiRole: "driver", pii: "none",
+    trigger: "Пользователь запрашивает печать или успешно сохраняет PDF чек-листа.",
+    dedupe: "Каждое явное действие экспорта.",
+  },
+  checklist_progress: {
+    owner: "product", kpiRole: "primary", pii: "none",
+    trigger: "Прогресс чек-листа впервые пересекает контрольную отметку.",
+    dedupe: "Каждая отметка 25, 50, 75 или 100 процентов один раз за mount.",
+  },
+  checklist_start: {
+    owner: "product", kpiRole: "primary", pii: "none",
+    trigger: "Первое изменение пункта чек-листа пользователем.",
+    dedupe: "Один раз за mount чек-листа.",
   },
   project_create: {
     owner: "product", kpiRole: "driver", pii: "none",

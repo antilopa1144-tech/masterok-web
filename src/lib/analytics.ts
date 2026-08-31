@@ -8,6 +8,8 @@ import {
   getSearchQueryMetrics,
   type AnalyticsEventName,
   type AnalyticsEventParams,
+  type ChecklistExportFormat,
+  type ChecklistProgressMilestone,
   type ProjectCreateSource,
   type ProjectEntryCountBucket,
   type ProjectExportFormat,
@@ -16,6 +18,8 @@ import {
   type ToolInteractionSource,
 } from "@/lib/analytics/events";
 export type {
+  ChecklistExportFormat,
+  ChecklistProgressMilestone,
   ProjectCreateSource,
   ProjectEntryCountBucket,
   ProjectExportFormat,
@@ -89,6 +93,24 @@ export function trackCalculatorValidationError(
     invalid_field_count: invalidFieldCount,
     first_invalid_field: firstInvalidField,
   });
+}
+
+export function trackChecklistStart(checklist: string): void {
+  trackEvent("checklist_start", { checklist });
+}
+
+export function trackChecklistProgress(
+  checklist: string,
+  milestone: ChecklistProgressMilestone,
+): void {
+  trackEvent("checklist_progress", { checklist, milestone });
+}
+
+export function trackChecklistExport(
+  checklist: string,
+  format: ChecklistExportFormat,
+): void {
+  trackEvent("checklist_export", { checklist, format });
 }
 
 export function trackCalculatorShare(

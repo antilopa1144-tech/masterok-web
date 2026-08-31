@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";
 import {
   trackCalculatorRelatedClick,
+  trackChecklistExport,
+  trackChecklistProgress,
+  trackChecklistStart,
   trackProjectCreate,
   trackProjectExport,
   trackProjectOpen,
@@ -126,6 +129,20 @@ describe("tool analytics", () => {
     expect(serializedCalls).not.toContain("project_id");
     expect(serializedCalls).not.toContain("project_name");
     expect(serializedCalls).not.toContain("price");
+  });
+
+  it("отправляет воронку чек-листа без текста пунктов и прогресса пользователя", () => {
+    trackChecklistStart("ukladka-plitki");
+    trackChecklistProgress("ukladka-plitki", 25);
+    trackChecklistProgress("ukladka-plitki", 100);
+    trackChecklistExport("ukladka-plitki", "pdf");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["checklist_start", { checklist: "ukladka-plitki" }],
+      ["checklist_progress", { checklist: "ukladka-plitki", milestone: 25 }],
+      ["checklist_progress", { checklist: "ukladka-plitki", milestone: 100 }],
+      ["checklist_export", { checklist: "ukladka-plitki", format: "pdf" }],
+    ]);
   });
 
   it("не загрязняет production-счётчики с localhost", () => {

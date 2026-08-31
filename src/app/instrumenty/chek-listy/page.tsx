@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import TrackedCatalogLink from "@/components/tools/TrackedCatalogLink";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { CHECKLIST_COMPLEXITY_LABELS } from "@/lib/checklistsDisplay";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -102,9 +103,11 @@ export default function ChekListyPage() {
           {ALL_CHECKLISTS.map((cl) => {
             const colors = COMPLEXITY_COLORS[cl.complexity];
             return (
-              <Link
+              <TrackedCatalogLink
                 key={cl.slug}
                 href={`/instrumenty/chek-listy/${cl.slug}/`}
+                analyticsTarget={`checklist:${cl.slug}`}
+                analyticsPlacement="checklist_grid"
                 className="card-hover p-5 block no-underline group"
               >
                 {/* Категория */}
@@ -138,7 +141,7 @@ export default function ChekListyPage() {
                 <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
                   <p className="text-xs text-slate-400 dark:text-slate-400">{cl.steps.length} {UI_TEXT.checklistStepsSuffix}</p>
                 </div>
-              </Link>
+              </TrackedCatalogLink>
             );
           })}
         </div>
@@ -161,7 +164,6 @@ export default function ChekListyPage() {
     </>
   );
 }
-
 
 
 

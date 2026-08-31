@@ -1,6 +1,8 @@
 import type { Checklist } from "@/lib/checklists";
+import type { ChecklistProgressMilestone } from "@/lib/analytics/events";
 
 const STORAGE_PREFIX = "masterok:checklist-progress:v1:";
+export const CHECKLIST_PROGRESS_MILESTONES = [25, 50, 75, 100] as const;
 
 export function checklistItemKey(stepIndex: number, itemIndex: number): string {
   return `${stepIndex}:${itemIndex}`;
@@ -15,6 +17,17 @@ export function getChecklistItemKeys(checklist: Checklist): string[] {
 export function sanitizeChecklistProgress(value: unknown, validKeys: ReadonlySet<string>): Set<string> {
   if (!Array.isArray(value)) return new Set();
   return new Set(value.filter((key): key is string => typeof key === "string" && validKeys.has(key)));
+}
+
+export function getChecklistMilestonesToReport(
+  completedItems: number,
+  totalItems: number,
+  reported: ReadonlySet<ChecklistProgressMilestone>,
+): ChecklistProgressMilestone[] {
+  if (totalItems <= 0) return [];
+  return CHECKLIST_PROGRESS_MILESTONES.filter(
+    (milestone) => completedItems * 100 >= totalItems * milestone && !reported.has(milestone),
+  );
 }
 
 export function loadChecklistProgress(slug: string, validKeys: ReadonlySet<string>): Set<string> {
