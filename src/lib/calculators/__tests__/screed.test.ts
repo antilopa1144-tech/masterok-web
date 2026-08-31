@@ -55,13 +55,15 @@ describe("Калькулятор стяжки пола", () => {
       expect(result.totals.area).toBe(20);
     });
 
-    it("объём с усадкой 15% = 1.15 м³", () => {
+    it("плановый объём с коэффициентом модели 1,15 = 1,15 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.15, 3);
     });
 
     it("цемент 8 мешков × 50 кг = 400 кг", () => {
       const cement = findMaterial(result, "Цемент");
       expect(cement?.purchaseQty).toBe(400);
+      expect(cement?.subtitle).toContain("марка раствора требует подбора состава");
+      expect(cement?.subtitle).not.toContain("Раствор М150");
     });
 
     it("песок присутствует", () => {
@@ -97,7 +99,7 @@ describe("Калькулятор стяжки пола", () => {
       expect(findMaterial(result, "Пескобетон М300")).toBeDefined();
     });
 
-    it("объём с усадкой 10% = 1.10 м³", () => {
+    it("плановый объём с коэффициентом модели 1,10 = 1,10 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.10, 3);
     });
 
@@ -126,7 +128,7 @@ describe("Калькулятор стяжки пола", () => {
       expect(findMaterial(result, "Сухие компоненты для полусухой")).toBeDefined();
     });
 
-    it("объём с усадкой 7% = 1.07 м³", () => {
+    it("плановый объём с коэффициентом модели 1,07 = 1,07 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.07, 3);
     });
 
@@ -231,14 +233,60 @@ describe("Калькулятор стяжки пола", () => {
   });
 
   describe("Предупреждения", () => {
-    it("толщина > 100 мм → укладка слоями", () => {
+    it("толщина > 100 мм → проектная проверка без назначения слоёв", () => {
       const result = calc({ inputMode: 1, area: 20, thickness: 120, screedType: 0 });
-      expect(result.warnings.some((w) => w.includes("слои"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("нагрузку на перекрытие"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("рекомендуется разделить"))).toBe(false);
     });
 
-    it("площадь > 50 м² → рекомендация готовой цементно-песчаной смеси", () => {
+    it("площадь > 50 м² → проверка организации работ без выбора смеси", () => {
       const result = calc({ inputMode: 1, area: 60, thickness: 50, screedType: 0 });
-      expect(result.warnings.some((w) => w.includes("готовую цементно-песчаную смесь"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("карты заливки"))).toBe(true);
+      expect(result.warnings.some((w) => w.includes("рекомендуется использовать"))).toBe(false);
+    });
+  });
+
+  describe("Пользовательские границы расчёта", () => {
+    it("помечает сетку, плёнку, маяки и периметр как предварительные", () => {
+      const result = calc({ inputMode: 1, area: 60, thickness: 80, screedType: 0 });
+      const notes = result.practicalNotes?.join(" ") ?? "";
+
+      expect(findMaterial(result, "Сетка")?.subtitle).toContain("внутреннему порогу толщины");
+      expect(findMaterial(result, "Полиэтиленовая плёнка")?.subtitle).toContain("Нужна не для каждой конструкции");
+      expect(notes).toContain("4 × √S");
+      expect(notes).toContain("один профиль на 2 м²");
+      expect(notes).not.toContain("обязательно армирование");
+    });
+
+    it("не обещает назначение марки цемента и пропорции по типу помещения", () => {
+      const cement = screedDef.fields.find((field) => field.key === "cementGrade")!;
+      const proportion = screedDef.fields.find((field) => field.key === "mixProportion")!;
+      const labels = `${cement.options?.map((option) => option.label).join(" ")} ${proportion.options?.map((option) => option.label).join(" ")}`;
+
+      expect(labels).not.toContain("гараж");
+      expect(labels).not.toContain("жилые комнаты");
+      expect(labels).not.toContain("нежилые");
+      expect(cement.hint).toContain("не задаёт марку раствора");
+      expect(proportion.hint).toContain("не подбор марки раствора");
+    });
+
+    it("использует действующие профильные ссылки и не обещает универсальные сроки", () => {
+      const content = `${screedDef.seoContent?.descriptionHtml ?? ""} ${JSON.stringify(screedDef.seoContent?.faq ?? [])}`;
+
+      expect(content).toContain("СП 71.13330.2017");
+      expect(content).toContain("ГОСТ 31358-2019");
+      expect(content).not.toContain("СНиП 3.04.01-87");
+      expect(content).not.toContain("ГОСТ 28013-98");
+      expect(content).not.toContain("28&ndash;35");
+      expect(content).not.toContain("не более <strong>2%");
+    });
+
+    it("полусухая ведомость требует согласовать рецептуру без категоричного оборудования", () => {
+      const result = calc({ inputMode: 0, length: 5, width: 4, thickness: 50, screedType: 2 });
+      const notes = result.practicalNotes?.join(" ") ?? "";
+
+      expect(notes).toContain("рецептуру");
+      expect(notes).not.toContain("затирочная машина обязательна");
     });
   });
 });

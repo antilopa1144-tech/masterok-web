@@ -11,11 +11,10 @@
  * для дефолтного сценария М400 1:3). Корректируем массу цемента/песка
  * множителями относительно базы и переименовываем позиции.
  *
- * Источники коэффициентов — справочная практика расхода цемента на 1 м³
- * раствора (kvartirnyj-remont.com, udarnik.spb.ru, rusean.ru, 2026):
- * М400 1:3 → раствор М150 (~490 кг/м³ цемента), М400 1:4 → М100,
- * М500 1:3 → М200, М500 1:4 → М150. Множители заданы ОТНОСИТЕЛЬНО
- * текущей базы движка (М400 1:3), поэтому дефолт даёт прежние цифры.
+ * Множители вариантов заданы ОТНОСИТЕЛЬНО текущей базы движка
+ * (М400 1:3), поэтому дефолт даёт прежние цифры. Это legacy web-модель
+ * закупки, а не подтверждённый подбор марки раствора; перенос вариантов и
+ * их доказательной базы в canonical остаётся отдельной parity-задачей.
  */
 
 import type { CalculatorResult, MaterialResult } from "../types";
@@ -37,8 +36,6 @@ interface ManualMixVariant {
   cementFactor: number;
   /** Множитель массы песка относительно базы. */
   sandFactor: number;
-  /** Марка готового раствора (для подписи). */
-  mortarGrade: string;
   cementLabel: string;
 }
 
@@ -48,11 +45,11 @@ interface ManualMixVariant {
  */
 const MANUAL_MIX: Record<string, ManualMixVariant> = {
   // М400
-  [`${CEMENT_GRADE_M400}-${PROPORTION_1_3}`]: { cementFactor: 1.0, sandFactor: 1.0, mortarGrade: "М150", cementLabel: "М400" },
-  [`${CEMENT_GRADE_M400}-${PROPORTION_1_4}`]: { cementFactor: 0.82, sandFactor: 1.1, mortarGrade: "М100", cementLabel: "М400" },
+  [`${CEMENT_GRADE_M400}-${PROPORTION_1_3}`]: { cementFactor: 1.0, sandFactor: 1.0, cementLabel: "М400" },
+  [`${CEMENT_GRADE_M400}-${PROPORTION_1_4}`]: { cementFactor: 0.82, sandFactor: 1.1, cementLabel: "М400" },
   // М500 — крепче, на ту же марку раствора цемента нужно меньше
-  [`${CEMENT_GRADE_M500}-${PROPORTION_1_3}`]: { cementFactor: 0.92, sandFactor: 1.0, mortarGrade: "М200", cementLabel: "М500" },
-  [`${CEMENT_GRADE_M500}-${PROPORTION_1_4}`]: { cementFactor: 0.75, sandFactor: 1.1, mortarGrade: "М150", cementLabel: "М500" },
+  [`${CEMENT_GRADE_M500}-${PROPORTION_1_3}`]: { cementFactor: 0.92, sandFactor: 1.0, cementLabel: "М500" },
+  [`${CEMENT_GRADE_M500}-${PROPORTION_1_4}`]: { cementFactor: 0.75, sandFactor: 1.1, cementLabel: "М500" },
 };
 
 export function getManualMixVariant(cementGrade: number, proportion: number): ManualMixVariant {
@@ -139,7 +136,7 @@ function applyManualMix(
         withReserve: bags * bagWeight,
         purchaseQty: bags * bagWeight,
         packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
-        subtitle: `Раствор ${variant.mortarGrade} · пропорция ${inputs.mixProportion === PROPORTION_1_4 ? "1:4" : "1:3"}`,
+        subtitle: `Справочный расчёт для пропорции ${inputs.mixProportion === PROPORTION_1_4 ? "1:4" : "1:3"}; марка раствора требует подбора состава`,
       };
     }
     if (m.name.startsWith("Песок")) {
