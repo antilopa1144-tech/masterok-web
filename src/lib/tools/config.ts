@@ -783,6 +783,7 @@ export function getToolConfig(slug: string): ToolConfig | undefined {
 
 /** Карточки для хаба и главной (без дублирования полей) */
 export const TOOL_CARDS = TOOL_CONFIGS.map((t) => ({
+  slug: t.slug,
   href: toolHref(t.slug),
   icon: t.icon,
   title: t.cardTitle,

@@ -12,6 +12,7 @@ export type ToolInteractionSource =
 export type ProjectCreateSource = "empty" | "list";
 export type ProjectEntryCountBucket = "0" | "1-3" | "4+";
 export type ProjectExportFormat = "csv" | "print" | "clipboard";
+export type ToolCatalogPlacement = "tool_grid" | "checklist_all" | "checklist_preview";
 
 export interface AnalyticsEventParams {
   accuracy_comparison_open: { calculator: string };
@@ -42,6 +43,7 @@ export interface AnalyticsEventParams {
     result_id: string;
   };
   tool_export: { tool: string; format: "png" | "pdf" | "share" };
+  tool_catalog_select: { target: string; placement: ToolCatalogPlacement };
   tool_mode_change: { tool: string; mode: string };
   tool_preset_select: {
     tool: string;
@@ -153,6 +155,11 @@ export const ANALYTICS_EVENT_DEFINITIONS = {
     owner: "product", kpiRole: "driver", pii: "none",
     trigger: "Пользователь запрашивает экспорт или копирование схемы.",
     dedupe: "Каждый явный запрос экспорта.",
+  },
+  tool_catalog_select: {
+    owner: "product", kpiRole: "driver", pii: "none",
+    trigger: "Пользователь выбирает известную карточку в каталоге инструментов.",
+    dedupe: "Каждый явный переход по карточке или ссылке.",
   },
   tool_mode_change: {
     owner: "product", kpiRole: "diagnostic", pii: "none",

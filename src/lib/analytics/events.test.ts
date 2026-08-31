@@ -22,6 +22,7 @@ const EXPECTED_EVENTS = [
   "site_search_empty",
   "site_search_select",
   "tool_export",
+  "tool_catalog_select",
   "tool_mode_change",
   "tool_preset_select",
   "tool_related_click",

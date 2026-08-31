@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import TrackedCatalogLink from "@/components/tools/TrackedCatalogLink";
 import { SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { ALL_TOOLS, HUB_META, TOOL_CARDS, toolHref } from "@/lib/tools/config";
@@ -84,9 +84,11 @@ export default function InstrumentyPage() {
                 ? `${ALL_CHECKLISTS.length} шаблонов`
                 : tool.badge;
             return (
-            <Link
+            <TrackedCatalogLink
               key={tool.href}
               href={tool.href}
+              analyticsTarget={`tool:${tool.slug}`}
+              analyticsPlacement="tool_grid"
               className="card-hover p-6 block no-underline group"
             >
               <div className="flex items-start gap-4">
@@ -111,7 +113,7 @@ export default function InstrumentyPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{tool.desc}</p>
                 </div>
               </div>
-            </Link>
+            </TrackedCatalogLink>
             );
           })}
         </div>
@@ -120,15 +122,22 @@ export default function InstrumentyPage() {
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{UI_TEXT.previewTitle}</h2>
-          <Link href="/instrumenty/chek-listy/" className="text-sm text-accent-700 hover:text-accent-800 font-medium">
+          <TrackedCatalogLink
+            href="/instrumenty/chek-listy/"
+            analyticsTarget="checklist-catalog"
+            analyticsPlacement="checklist_all"
+            className="text-sm text-accent-700 hover:text-accent-800 font-medium"
+          >
             {UI_TEXT.previewLink}
-          </Link>
+          </TrackedCatalogLink>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {checklistPreview.map((cl) => (
-            <Link
+            <TrackedCatalogLink
               key={cl.slug}
               href={`/instrumenty/chek-listy/${cl.slug}/`}
+              analyticsTarget={`checklist:${cl.slug}`}
+              analyticsPlacement="checklist_preview"
               className="card-hover p-5 block no-underline group"
             >
               <div className="flex items-center gap-2 mb-2">
@@ -144,7 +153,7 @@ export default function InstrumentyPage() {
               <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-full">
                 {cl.totalItems} {UI_TEXT.checklistItemsSuffix}
               </span>
-            </Link>
+            </TrackedCatalogLink>
           ))}
         </div>
       </section>

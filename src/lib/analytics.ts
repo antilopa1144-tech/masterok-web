@@ -12,12 +12,14 @@ import {
   type ProjectEntryCountBucket,
   type ProjectExportFormat,
   type SearchResultType,
+  type ToolCatalogPlacement,
   type ToolInteractionSource,
 } from "@/lib/analytics/events";
 export type {
   ProjectCreateSource,
   ProjectEntryCountBucket,
   ProjectExportFormat,
+  ToolCatalogPlacement,
   ToolInteractionSource,
 } from "@/lib/analytics/events";
 import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
@@ -178,6 +180,13 @@ export function trackToolPresetSelect(
 
 export function trackToolExport(tool: string, format: "png" | "pdf" | "share"): void {
   trackEvent("tool_export", { tool, format });
+}
+
+export function trackToolCatalogSelect(
+  target: string,
+  placement: ToolCatalogPlacement,
+): void {
+  trackEvent("tool_catalog_select", { target, placement });
 }
 
 export function trackToolRelatedClick(tool: string, target: string): void {

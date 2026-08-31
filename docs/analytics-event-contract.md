@@ -45,6 +45,7 @@
 | `tool_mode_change` | Diagnostic | Изменён режим раскладки | `tool`, `mode` | Каждое изменение |
 | `tool_preset_select` | Diagnostic | Выбран встроенный пресет | `tool`, `preset_group`, `preset` | Каждый выбор |
 | `tool_export` | Driver | Запрошен экспорт или копирование схемы | `tool`, `format` | Каждый явный запрос |
+| `tool_catalog_select` | Driver | Выбрана карточка в каталоге инструментов | `target`, `placement` | Каждый явный переход |
 | `tool_related_click` | Driver | Переход к связанному калькулятору | `tool`, `target` | Каждый переход |
 | `site_search_select` | Driver | Выбран результат поиска | `query_length`, `query_word_count`, `result_type`, `result_id` | Каждый выбор |
 | `site_search_empty` | Guardrail | Запрос от трёх символов без результатов | `query_length`, `query_word_count` | Один раз на нормализованный запрос за mount |
@@ -94,8 +95,8 @@ baseline. До этого ворота качества инструментац
 ## Настройка систем и период проверки
 
 - В GA4 зарегистрировать event-scoped custom dimensions: `calculator`, `tool`,
-  `source`, `format`, `target`, `entry_count_bucket`, `result_type`, `result_id`,
-  `first_invalid_field`.
+  `source`, `format`, `target`, `placement`, `entry_count_bucket`, `result_type`,
+  `result_id`, `first_invalid_field`.
 - В Метрике создать цели для primary и downstream событий; диагностические
   события не объявлять конверсиями без отдельного решения.
 - Сравнивать равные полные окна, отдельно по mobile/desktop и шаблону страницы.

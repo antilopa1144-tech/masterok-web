@@ -9,6 +9,7 @@ import {
   trackSearchNoResults,
   trackSearchSelection,
   trackToolExport,
+  trackToolCatalogSelect,
   trackToolModeChange,
   trackToolPresetSelect,
   trackToolRelatedClick,
@@ -77,6 +78,19 @@ describe("tool analytics", () => {
       "tool_preset_select",
       "tool_export",
       "tool_related_click",
+    ]);
+  });
+
+  it("фиксирует выбор только известного назначения каталога инструментов", () => {
+    trackToolCatalogSelect("tool:moy-remont", "tool_grid");
+    trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_catalog_select", { target: "tool:moy-remont", placement: "tool_grid" }],
+      [
+        "tool_catalog_select",
+        { target: "checklist:ukladka-plitki", placement: "checklist_preview" },
+      ],
     ]);
   });
 
