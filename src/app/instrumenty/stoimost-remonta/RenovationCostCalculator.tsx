@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { getPrices as getUserPrices, setPrices as setUserPrices, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
 import {
   calculateRenovationCost,
@@ -19,7 +20,7 @@ import {
   RENOVATION_COST_TOOL_SLUG,
   ROOM_MASTER_TOOL_SLUG,
 } from "@/lib/tools/room-master-to-renovation-cost";
-import { trackToolRelatedClick } from "@/lib/analytics";
+import { trackToolModeChange, trackToolRelatedClick } from "@/lib/analytics";
 
 type RenovationCostStage = "parameters" | "prices" | "result";
 const RENOVATION_COST_STAGES = [
@@ -38,6 +39,7 @@ export default function RenovationCostCalculator() {
   const [withWork, setWithWork] = useState(true);
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const workspaceTopRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLElement>(null);
   const scopeKey = `${PRICE_SCOPES.renovation}:${typeId}`;
   const roomTransfer = useMemo(
     () => readRenovationCostRoomTransfer(searchParams),
@@ -77,6 +79,8 @@ export default function RenovationCostCalculator() {
   }, [customPrices, hasInvalidPrice, scopeKey]);
 
   const handleResetPrices = () => {
+    markStarted("material_packaging");
+    trackToolModeChange(RENOVATION_COST_TOOL_SLUG, "price:reset");
     void resetScope(scopeKey);
     setCustomPrices({});
   };
@@ -85,13 +89,54 @@ export default function RenovationCostCalculator() {
     () => calculateRenovationCost({ area: areaError ? 0 : area, typeId, withWork, prices: customPrices }),
     [area, areaError, typeId, withWork, customPrices],
   );
+  const { markStarted, selectMode } = useToolAnalytics(
+    RENOVATION_COST_TOOL_SLUG,
+    resultRef,
+    !areaError && !hasInvalidPrice && result.hasAnyPrice,
+  );
+
+  const changeArea = (value: string) => {
+    markStarted("surface_size");
+    setAreaInput(value);
+  };
+
+  const chooseAreaPreset = (value: number) => {
+    markStarted("preset");
+    trackToolModeChange(RENOVATION_COST_TOOL_SLUG, `area-preset:${value}`);
+    setAreaInput(String(value));
+  };
+
+  const chooseType = (id: string) => {
+    if (id === typeId) return;
+    selectMode(`type:${id}`);
+    setTypeId(id);
+  };
+
+  const toggleWork = (enabled: boolean) => {
+    selectMode(`work:${enabled ? "on" : "off"}`);
+    setWithWork(enabled);
+  };
+
+  const changePrice = (key: string, rawValue: string, kind: "material" | "work") => {
+    markStarted("material_packaging");
+    const previous = customPrices[key] ?? 0;
+    const next = Number(rawValue) || 0;
+    if (previous <= 0 && next > 0) {
+      trackToolModeChange(RENOVATION_COST_TOOL_SLUG, `price:${kind}:set`);
+    } else if (previous > 0 && next <= 0) {
+      trackToolModeChange(RENOVATION_COST_TOOL_SLUG, `price:${kind}:cleared`);
+    }
+    setCustomPrices((prices) => ({ ...prices, [key]: next }));
+  };
 
   const changeStage = useCallback((stage: RenovationCostStage) => {
+    if (stage === activeStage) return;
     if (areaError && stage !== "parameters") return;
     if (hasInvalidPrice && stage === "result") return;
+    selectMode(`stage:${stage}`);
     setActiveStage(stage);
     window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }, [areaError, hasInvalidPrice]);
+  }, [activeStage, areaError, hasInvalidPrice, selectMode]);
 
   const totalRange = !areaError && !hasInvalidPrice && result.hasAnyPrice
     ? formatRenovationPriceRange(result.total)
@@ -118,12 +163,12 @@ export default function RenovationCostCalculator() {
           <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Шаг 1</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Параметры ремонта</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Площадь, уровень отделки и участие мастеров.</p></div>
           <div>
             <label htmlFor="renovation-area" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{roomTransfer ? "Площадь помещения, м²" : "Площадь квартиры, м²"}</label>
-            <input id="renovation-area" type="number" inputMode="decimal" min={5} max={500} value={areaInput} onChange={(e) => setAreaInput(e.target.value)} aria-invalid={areaError ? true : undefined} aria-describedby={areaError ? "renovation-area-error" : undefined} className="input-field w-32 text-lg" />
+            <input id="renovation-area" type="number" inputMode="decimal" min={5} max={500} value={areaInput} onChange={(e) => changeArea(e.target.value)} aria-invalid={areaError ? true : undefined} aria-describedby={areaError ? "renovation-area-error" : undefined} className="input-field w-32 text-lg" />
             {areaError && <p id="renovation-area-error" role="alert" className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{areaError}</p>}
-            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{ROOM_PRESETS.map((preset) => <button type="button" key={preset.area} onClick={() => setAreaInput(String(preset.area))} className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs transition-colors ${!areaError && area === preset.area ? "border-accent-300 bg-accent-50 font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-300" : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{ROOM_PRESETS.map((preset) => <button type="button" key={preset.area} onClick={() => chooseAreaPreset(preset.area)} className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs transition-colors ${!areaError && area === preset.area ? "border-accent-300 bg-accent-50 font-medium text-accent-700 dark:bg-accent-900/20 dark:text-accent-300" : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"}`}>{preset.label}</button>)}</div>
           </div>
-          <fieldset><legend className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Тип ремонта</legend><div className="grid grid-cols-3 gap-2 xl:grid-cols-1">{RENOVATION_TYPES.map((renovationType) => <button type="button" key={renovationType.id} aria-pressed={typeId === renovationType.id} onClick={() => setTypeId(renovationType.id)} className={`flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border-2 p-2 text-center transition-all sm:block sm:p-3 sm:text-left xl:flex xl:flex-row xl:items-center xl:justify-start xl:gap-3 ${typeId === renovationType.id ? "border-accent-400 bg-accent-50 shadow-sm dark:bg-accent-900/20" : "border-slate-200 hover:border-slate-300 dark:border-slate-700"}`}><span className="text-xl sm:text-2xl" aria-hidden="true">{renovationType.icon}</span><span><span className="block text-[11px] font-semibold text-slate-900 dark:text-slate-100 sm:text-sm">{renovationType.label}</span><span className="mt-0.5 hidden text-[11px] leading-snug text-slate-500 dark:text-slate-400 sm:block">{renovationType.description}</span></span></button>)}</div></fieldset>
-          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-3 dark:border-slate-700"><input type="checkbox" checked={withWork} onChange={(e) => setWithWork(e.target.checked)} className="size-5 rounded border-slate-300 text-accent-500 focus:ring-accent-500" /><span className="text-sm text-slate-700 dark:text-slate-300">Включить стоимость работ</span></label>
+          <fieldset><legend className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Тип ремонта</legend><div className="grid grid-cols-3 gap-2 xl:grid-cols-1">{RENOVATION_TYPES.map((renovationType) => <button type="button" key={renovationType.id} aria-pressed={typeId === renovationType.id} onClick={() => chooseType(renovationType.id)} className={`flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border-2 p-2 text-center transition-all sm:block sm:p-3 sm:text-left xl:flex xl:flex-row xl:items-center xl:justify-start xl:gap-3 ${typeId === renovationType.id ? "border-accent-400 bg-accent-50 shadow-sm dark:bg-accent-900/20" : "border-slate-200 hover:border-slate-300 dark:border-slate-700"}`}><span className="text-xl sm:text-2xl" aria-hidden="true">{renovationType.icon}</span><span><span className="block text-[11px] font-semibold text-slate-900 dark:text-slate-100 sm:text-sm">{renovationType.label}</span><span className="mt-0.5 hidden text-[11px] leading-snug text-slate-500 dark:text-slate-400 sm:block">{renovationType.description}</span></span></button>)}</div></fieldset>
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-3 dark:border-slate-700"><input type="checkbox" checked={withWork} onChange={(e) => toggleWork(e.target.checked)} className="size-5 rounded border-slate-300 text-accent-500 focus:ring-accent-500" /><span className="text-sm text-slate-700 dark:text-slate-300">Включить стоимость работ</span></label>
           <button type="button" onClick={() => changeStage("prices")} disabled={Boolean(areaError)} className="btn-primary min-h-12 w-full justify-center text-sm disabled:cursor-not-allowed disabled:opacity-50 xl:hidden">Указать цены →</button>
         </section>
 
@@ -137,13 +182,13 @@ export default function RenovationCostCalculator() {
           ) : <>
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Шаг 2</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">Цены и объёмы</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Введите известные цены за единицу — частичный итог обновится сразу.</p></div>{Object.values(customPrices).some((value) => value !== 0) && <button type="button" onClick={handleResetPrices} className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 hover:border-rose-300 hover:text-rose-600 dark:border-slate-700">Сбросить цены</button>}</div>
           {hasInvalidPrice && <p role="alert" className="border-b border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">Цена не может быть отрицательной. Исправьте отмеченное поле.</p>}
-          <details open className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Материалы</span><span className="text-[10px] text-slate-400">{result.materialLines.length} позиций · {result.materialTotal > 0 ? `${formatRenovationPrice(result.materialTotal)} ₽` : "цены не заполнены"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Материал и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.materialLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за единицу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[line.name] || ""} placeholder="₽" onChange={(e) => setCustomPrices((prices) => ({ ...prices, [line.name]: Number(e.target.value) || 0 }))} aria-invalid={customPrices[line.name] < 0 ? true : undefined} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${customPrices[line.name] < 0 ? "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20" : line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.materialTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Материалы</span><span>{formatRenovationPrice(result.materialTotal)} ₽</span></div>}</div></details>
-          {withWork && result.workLines.length > 0 && <details className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Работы</span><span className="text-[10px] text-slate-400">{result.workLines.length} позиций · {result.workTotal > 0 ? `${formatRenovationPrice(result.workTotal)} ₽` : "откройте и заполните при необходимости"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Работа и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.workLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за работу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[`work:${line.name}`] || ""} placeholder="₽" onChange={(e) => setCustomPrices((prices) => ({ ...prices, [`work:${line.name}`]: Number(e.target.value) || 0 }))} aria-invalid={customPrices[`work:${line.name}`] < 0 ? true : undefined} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${customPrices[`work:${line.name}`] < 0 ? "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20" : line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.workTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Работы</span><span>{formatRenovationPrice(result.workTotal)} ₽</span></div>}</div></details>}
+          <details open className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Материалы</span><span className="text-[10px] text-slate-400">{result.materialLines.length} позиций · {result.materialTotal > 0 ? `${formatRenovationPrice(result.materialTotal)} ₽` : "цены не заполнены"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Материал и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.materialLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за единицу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[line.name] || ""} placeholder="₽" onChange={(e) => changePrice(line.name, e.target.value, "material")} aria-invalid={customPrices[line.name] < 0 ? true : undefined} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${customPrices[line.name] < 0 ? "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20" : line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.materialTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Материалы</span><span>{formatRenovationPrice(result.materialTotal)} ₽</span></div>}</div></details>
+          {withWork && result.workLines.length > 0 && <details className="group border-b border-slate-100 dark:border-slate-800"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5"><span><span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">Работы</span><span className="text-[10px] text-slate-400">{result.workLines.length} позиций · {result.workTotal > 0 ? `${formatRenovationPrice(result.workTotal)} ₽` : "откройте и заполните при необходимости"}</span></span><span aria-hidden="true" className="text-lg text-slate-400 transition-transform group-open:rotate-45">＋</span></summary><div className="px-4 pb-4 sm:px-5 sm:pb-5"><div className="mb-3 grid grid-cols-[minmax(0,1fr)_76px_88px] gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><span>Работа и объём</span><span className="text-right">Цена ед.</span><span className="text-right">Сумма</span></div><div>{result.workLines.map((line) => <div key={line.name} className="grid grid-cols-[minmax(0,1fr)_76px_88px] items-center gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800"><div className="min-w-0"><p className="break-words text-sm font-medium text-slate-700 dark:text-slate-200">{line.name}</p><p className="mt-0.5 text-[10px] text-slate-400">{line.qty} {line.unit}</p></div><label><span className="sr-only">Цена за работу: {line.name}</span><input type="number" inputMode="numeric" min={0} value={customPrices[`work:${line.name}`] || ""} placeholder="₽" onChange={(e) => changePrice(`work:${line.name}`, e.target.value, "work")} aria-invalid={customPrices[`work:${line.name}`] < 0 ? true : undefined} className={`min-h-10 w-full rounded-lg border px-2 text-right text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:text-slate-200 ${customPrices[`work:${line.name}`] < 0 ? "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20" : line.price > 0 ? "border-accent-300 bg-accent-50/50 dark:border-accent-600 dark:bg-accent-900/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`} /></label><span className="text-right text-xs font-semibold text-slate-900 dark:text-slate-100">{line.cost > 0 ? `${formatRenovationPrice(line.cost)} ₽` : "—"}</span></div>)}</div>{result.workTotal > 0 && <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-950 dark:border-slate-700 dark:text-white"><span>Работы</span><span>{formatRenovationPrice(result.workTotal)} ₽</span></div>}</div></details>}
           <div className="grid gap-2 border-t border-slate-100 p-4 dark:border-slate-800 sm:grid-cols-2 sm:p-5 xl:hidden"><button type="button" onClick={() => changeStage("parameters")} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">← Параметры</button><button type="button" onClick={() => changeStage("result")} disabled={hasInvalidPrice} className="btn-primary min-h-12 w-full justify-center text-sm disabled:cursor-not-allowed disabled:opacity-50">Посмотреть смету →</button></div>
           </>}
         </section>
 
-        <section className={`card min-w-0 overflow-hidden xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden xl:block"}`}>
+        <section ref={resultRef} className={`card min-w-0 overflow-hidden xl:sticky xl:top-20 ${activeStage === "result" ? "block" : "hidden xl:block"}`}>
           {areaError || hasInvalidPrice ? (
             <div className="p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-red-600 dark:text-red-400">Смета приостановлена</p>
