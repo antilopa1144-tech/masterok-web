@@ -97,7 +97,7 @@ export const facadePanelsDef: CalculatorDefinition = {
     const starterPieceLength = Number(inputs.starterPieceLength ?? getSpecDefault("starterPieceLength", 3));
 
     const materials = canonical.materials
-      .filter((material) => inputMode === 0 || !["Подсистема", "Доборные элементы"].includes(material.category))
+      .filter((material) => inputMode === 0 || !["Подсистема", "Доборные элементы"].includes(material.category ?? ""))
       .map((material) => {
         if (material.category === "Облицовка") {
           return {
