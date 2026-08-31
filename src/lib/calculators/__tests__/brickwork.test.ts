@@ -5,6 +5,75 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(brickworkDef.calculate.bind(brickworkDef));
 
 describe("Калькулятор кладки кирпича", () => {
+  describe("Входы и проектные границы", () => {
+    it("показывает длину и высоту в обоих режимах, потому что они нужны для справочной сетки", () => {
+      const wallLength = brickworkDef.fields.find((field) => field.key === "wallLength");
+      const wallHeight = brickworkDef.fields.find((field) => field.key === "wallHeight");
+
+      expect(wallLength?.group).toBeUndefined();
+      expect(wallHeight?.group).toBeUndefined();
+      expect(wallLength?.hint).toContain("в режиме по площади");
+      expect(wallHeight?.hint).toContain("предварительного числа рядов");
+    });
+
+    it("не назначает несущую или наружную стену только по толщине", () => {
+      const thickness = brickworkDef.fields.find((field) => field.key === "wallThickness");
+      const labels = thickness?.options?.map((option) => option.label).join(" ") ?? "";
+
+      expect(labels).not.toContain("несущие стены");
+      expect(labels).not.toContain("наружные стены");
+      expect(thickness?.hint).toContain("не определяет назначение");
+    });
+
+    it("раскрывает фиксированные коэффициенты и актуальную нормативную базу", () => {
+      const formula = brickworkDef.formulaDescription ?? "";
+      const seo = brickworkDef.seoContent?.descriptionHtml ?? "";
+
+      expect(formula).toContain("фиксированные 5%");
+      expect(formula).toContain("Поле шва этот расход не меняет");
+      expect(formula).toContain("один проём на каждые 2 м²");
+      expect(seo).toContain("ГОСТ Р 58766-2019");
+      expect(seo).toContain("СП 15.13330.2020 с изменением № 1");
+      expect(seo).toContain("СП 70.13330.2012 с изменениями № 1, 3–8");
+      expect(seo).toContain("утратившего силу в РФ ГОСТ 28013-98");
+    });
+
+    it("маркирует раствор, поддоны, сетку и перемычки как предварительные позиции", () => {
+      const result = calc({
+        inputMode: 0,
+        wallLength: 10,
+        wallHeight: 2.7,
+        openingsArea: 5,
+        brickFormat: 0,
+        wallThickness: 1,
+        mortarJoint: 10,
+      });
+
+      expect(findMaterial(result, "Кирпич одинарный")?.subtitle).toContain("Базовые 5%");
+      expect(findMaterial(result, "Поддоны")?.subtitle).toContain("480 шт. на поддоне");
+      expect(findMaterial(result, "Раствор кладочный")?.subtitle).toContain("Поле шва не изменяет");
+      expect(findMaterial(result, "Кладочная сетка")?.subtitle).toContain("не готовая ведомость");
+      expect(findMaterial(result, "Железобетонные перемычки")?.subtitle).toContain("один проём на каждые 2 м²");
+      expect(result.practicalNotes?.some((note) => note.includes("допущения текущей модели"))).toBe(true);
+    });
+
+    it("не обещает армопояс без проектной проверки", () => {
+      const result = calc({
+        inputMode: 0,
+        wallLength: 10,
+        wallHeight: 4,
+        openingsArea: 0,
+        brickFormat: 0,
+        wallThickness: 2,
+        mortarJoint: 10,
+      });
+
+      expect(result.warnings.some((warning) => warning.includes("проверьте по проекту"))).toBe(true);
+      expect(result.practicalNotes?.some((note) => note.includes("требует проектной проверки"))).toBe(true);
+      expect([...result.warnings, ...(result.practicalNotes ?? [])].join(" ")).not.toContain("армопояс по верху обязателен");
+    });
+  });
+
   describe("Одинарный кирпич, в кирпич (250 мм), 10×2.7 м, проёмы 5 м²", () => {
     // netArea = 22 м²
     // bricksPerSqm = 102 (одинарный, в кирпич, шов 10мм)
@@ -73,8 +142,8 @@ describe("Калькулятор кладки кирпича", () => {
       expect(bricks!.purchaseQty).toBe(565);
     });
 
-    it("предупреждение о ненесущих перегородках", () => {
-      expect(result.warnings.some((w) => w.includes("ненесущих"))).toBe(true);
+    it("предупреждение о проектной проверке тонкой стены", () => {
+      expect(result.warnings.some((w) => w.includes("несущую способность") && w.includes("по проекту"))).toBe(true);
     });
 
     it("инварианты", () => {

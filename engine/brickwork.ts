@@ -165,6 +165,7 @@ export function computeCanonicalBrickwork(
   const materials: CanonicalMaterialResult[] = [
     {
       name: BRICK_FORMAT_LABELS[brickFormat] ?? "Кирпич",
+      subtitle: "Марку, пустотность, морозостойкость, назначение и фактическую кратность поставки выбирайте по проекту и паспорту изделия. Базовые 5% на бой и подрезку — допущение модели.",
       quantity: roundDisplay(totalBricks, 3),
       unit: "шт",
       withReserve: bricksWithReserve,
@@ -173,6 +174,7 @@ export function computeCanonicalBrickwork(
     },
     {
       name: "Поддоны кирпича",
+      subtitle: `Справочный пересчёт по ${BRICKS_PER_PALLET[brickFormat] ?? 480} шт. на поддоне. Фактическая упаковка зависит от завода, формата и конкретного изделия — сверяйте перед заказом.`,
       quantity: pallets,
       unit: "шт",
       withReserve: pallets,
@@ -181,6 +183,7 @@ export function computeCanonicalBrickwork(
     },
     {
       name: `Раствор кладочный (${MORTAR_BAG_KG} кг)`,
+      subtitle: `Предварительная оценка по фиксированным ${mortarCoeff} м³ раствора на 1 м³ кладки, плотности ${MORTAR_DENSITY} кг/м³ и мешку ${MORTAR_BAG_KG} кг. Поле шва не изменяет этот коэффициент; фактический расход и фасовку берите из техкарты смеси.`,
       quantity: mortarBags,
       unit: "мешков",
       withReserve: mortarBags,
@@ -189,6 +192,7 @@ export function computeCanonicalBrickwork(
     },
     {
       name: "Кладочная сетка",
+      subtitle: `Справочная позиция текущей модели: полоса по длине стены через каждые 5 рядов. Необходимость, материал, сечение, шаг, нахлёсты и зоны усиления задаёт проект; это не готовая ведомость к покупке.`,
       quantity: roundDisplay(meshArea, 3),
       unit: "м²",
       withReserve: Math.ceil(meshArea),
@@ -197,6 +201,7 @@ export function computeCanonicalBrickwork(
     },
     {
       name: "Железобетонные перемычки",
+      subtitle: `Грубый ориентир модели: один проём на каждые 2 м² их суммарной площади и ${lintelsPerOpening} перемыч${lintelsPerOpening === 1 ? "ка" : "ки"} на проём. Тип, длину, опирание и фактическое количество определяют по каждому проёму и проекту.`,
       quantity: totalLintels,
       unit: "шт",
       withReserve: totalLintels,
@@ -208,10 +213,10 @@ export function computeCanonicalBrickwork(
   /* ─── warnings ─── */
   const warnings: string[] = [];
   if (wallThicknessIdx === 0) {
-    warnings.push("Толщина стены в 0.5 кирпича (120 мм) — только для ненесущих перегородок");
+    warnings.push("Толщина 120 мм сама по себе не подтверждает назначение и устойчивость стены; несущую способность и крепление проверяют по проекту");
   }
   if (wallThicknessIdx >= 2 && wallHeight > 3) {
-    warnings.push("При толщине стены 1.5+ кирпича и высоте более 3 м необходим армопояс");
+    warnings.push("Для высокой стены проверьте по проекту устойчивость, связи, армирование и необходимость поясов; калькулятор их не подбирает");
   }
   if (brickFormat === 2 && wallThicknessIdx === 0) {
     warnings.push("Двойной кирпич в полкирпича (120 мм) — нестандартное решение, проверьте проект");
@@ -219,12 +224,13 @@ export function computeCanonicalBrickwork(
 
   const practicalNotes: string[] = [];
   if (wallThicknessIdx >= 2 && wallHeight > 3) {
-    practicalNotes.push(`Стена в ${wallThicknessIdx === 2 ? "1.5" : "2"} кирпича высотой ${roundDisplay(wallHeight, 1)} м — армопояс по верху обязателен`);
+    practicalNotes.push(`Стена в ${wallThicknessIdx === 2 ? "1.5" : "2"} кирпича высотой ${roundDisplay(wallHeight, 1)} м требует проектной проверки устойчивости, связей, армирования и поясов`);
   }
   if (mortarBags > 50) {
     practicalNotes.push(`Раствора ${mortarBags} мешков — замешивайте порциями, не давайте схватываться в корыте`);
   }
-  practicalNotes.push("Кладку начинайте с углов, проверяйте горизонт каждые 3-4 ряда");
+  practicalNotes.push("Фиксированные 5% на кирпич, расход раствора, сетка через 5 рядов и число перемычек по площади проёмов — допущения текущей модели, а не универсальные нормы");
+  practicalNotes.push("Разбивку, перевязку, контроль геометрии и последовательность работ выполняйте по проекту и проекту производства работ");
 
   return {
     canonicalSpecId: spec.calculator_id,
