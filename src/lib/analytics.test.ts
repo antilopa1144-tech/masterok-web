@@ -125,6 +125,22 @@ describe("tool analytics", () => {
     ]);
   });
 
+  it("измеряет работу с календарём без даты и пользовательского прогресса", () => {
+    trackToolStart("kalendar-remonta", "progress");
+    trackToolResultView("kalendar-remonta");
+    trackToolModeChange("kalendar-remonta", "scenario:room");
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["tool_start", { tool: "kalendar-remonta", source: "progress" }],
+      ["tool_result_view", { tool: "kalendar-remonta" }],
+      ["tool_mode_change", { tool: "kalendar-remonta", mode: "scenario:room" }],
+    ]);
+
+    const serializedCalls = JSON.stringify(ym.mock.calls);
+    expect(serializedCalls).not.toContain("start_date");
+    expect(serializedCalls).not.toContain("completed_count");
+  });
+
   it("фиксирует выбор только известного назначения каталога инструментов", () => {
     trackToolCatalogSelect("tool:moy-remont", "tool_grid");
     trackToolCatalogSelect("checklist:ukladka-plitki", "checklist_preview");

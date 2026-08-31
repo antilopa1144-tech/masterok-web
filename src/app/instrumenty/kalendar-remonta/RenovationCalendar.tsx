@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   getScenarioList,
   RENOVATION_SCENARIOS,
@@ -49,6 +50,12 @@ export default function RenovationCalendar() {
   const [expandedStageId, setExpandedStageId] = useState<string | null>(
     RENOVATION_SCENARIOS[initialScenario].stages[0]?.id ?? null,
   );
+  const resultRef = useRef<HTMLElement>(null);
+  const { markStarted } = useToolAnalytics(
+    CALENDAR_TOOL_SLUG,
+    resultRef,
+    hydrated,
+  );
 
   useEffect(() => {
     const saved = loadCalendarState();
@@ -84,6 +91,7 @@ export default function RenovationCalendar() {
   const nextStage = scenario.stages.find((stage) => !completedSet.has(stage.id)) ?? null;
 
   const toggleStage = (stageId: string) => {
+    markStarted("progress");
     const wasCompleted = completedSet.has(stageId);
     const next = wasCompleted
       ? state.completedStageIds.filter((id) => id !== stageId)
@@ -107,6 +115,7 @@ export default function RenovationCalendar() {
 
   const changeScenario = (id: RenovationScenarioId) => {
     if (id === state.scenarioId) return;
+    markStarted("category");
     persist({
       scenarioId: id,
       startDate: state.startDate,
@@ -119,6 +128,7 @@ export default function RenovationCalendar() {
   };
 
   const toggleTask = (stageId: string, index: number) => {
+    markStarted("progress");
     const key = renovationTaskKey(state.scenarioId, stageId, index);
     const wasCompleted = completedTasksSet.has(key);
     const next = wasCompleted
@@ -132,6 +142,7 @@ export default function RenovationCalendar() {
   };
 
   const changeStartDate = (value: string) => {
+    markStarted("value_input");
     persist({ ...state, startDate: value || null });
     trackToolModeChange(CALENDAR_TOOL_SLUG, value ? "start-date:set" : "start-date:cleared");
   };
@@ -164,7 +175,7 @@ export default function RenovationCalendar() {
         </div>
       </div>
 
-      <section className="card overflow-hidden">
+      <section ref={resultRef} className="card overflow-hidden">
         <div className="border-b border-sky-200 bg-gradient-to-br from-sky-50 via-white to-accent-50 p-4 dark:border-sky-800/50 dark:from-sky-950/30 dark:via-slate-900 dark:to-accent-950/20 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
