@@ -1,6 +1,7 @@
 import type { CalculatorDefinition } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalSepticRings } from "../../../../engine/septic-rings";
+import { DEFAULT_ACCURACY_MODE } from "../../../../engine/accuracy";
 import septicRingsSpec from "../../../../configs/calculators/septic-rings-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
 
@@ -115,6 +116,7 @@ export const septicRingsDef: CalculatorDefinition = {
     const spec = septicRingsSpec as any;
     const factorTable = defaultFactorTables.factors as any;
     const canonical = computeCanonicalSepticRings(spec, inputs, factorTable);
+    const accuracyMode = canonical.accuracyMode ?? DEFAULT_ACCURACY_MODE;
 
     const residents = clampInteger(Number(inputs.residents ?? 4), 1, 20);
     const chambersCount = clampInteger(Number(inputs.chambersCount ?? 3), 1, 3);
@@ -274,9 +276,9 @@ export const septicRingsDef: CalculatorDefinition = {
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
       practicalNotes,
-      accuracyMode: canonical.accuracyMode,
+      accuracyMode,
       accuracyExplanation: {
-        mode: canonical.accuracyMode,
+        mode: accuracyMode,
         modeLabel: canonical.accuracyExplanation.modeLabel,
         combinedMultiplier: 1,
         appliedModifiers: [],
