@@ -1,178 +1,187 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { soundInsulationDef } from "../formulas/sound-insulation";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(soundInsulationDef.calculate.bind(soundInsulationDef));
 
-describe("Звукоизоляция", () => {
-  describe("Базовая система ГКЛ + Минераловатные (system=0)", () => {
-    it("30 м²", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      checkInvariants(r);
-      // Engine: "Минераловатные плиты", "ГКЛ листы", "Профиль ПП 3м", "Виброподвесы", "Вибролента"
-      expect(findMaterial(r, "Акустическая минеральная")).toBeDefined();
-      expect(findMaterial(r, "ГКЛ")).toBeDefined();
-      expect(findMaterial(r, "Потолочный профиль ПП")).toBeDefined();
-      expect(findMaterial(r, "Виброподвес")).toBeDefined();
-      expect(findMaterial(r, "Вибролента")).toBeDefined();
-    });
+describe("Звукоизоляция — web product contract", () => {
+  it("default считает только акустический материал по видимой фасовке", () => {
+    const result = calc({});
 
-    it("отделяет точную потребность плит от сценарного запаса", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      expect(r.totals.primaryQty).toBe(50);
-      expect(r.scenarios?.REC.exact_need).toBe(53);
-    });
+    checkInvariants(result);
+    expect(result.formulaVersion).toBe("sound-insulation-web-product-v1");
+    expect(result.materials).toHaveLength(1);
+    expect(result.totals.area).toBe(25);
+    expect(result.totals.primaryNeedM2).toBe(25);
+    expect(result.totals.primaryReservedM2).toBe(25);
+    expect(result.totals.primaryPurchasePackages).toBe(5);
+    expect(result.totals.primaryPurchasedM2).toBe(30);
+    expect(result.totals.primaryLeftoverM2).toBe(5);
 
-    it("округляет акустические плиты до полных упаковок", () => {
-      const r = calc({
-        area: 30,
-        surfaceType: 0,
-        system: 0,
-        acousticPlatesPerPack: 6,
-      });
-      const insulation = findMaterial(r, "Акустическая минеральная")!;
-
-      expect(r.scenarios?.REC.exact_need).toBe(53);
-      expect(r.scenarios?.REC.buy_plan.package_size).toBe(6);
-      expect(r.scenarios?.REC.buy_plan.packages_count).toBe(9);
-      expect(r.scenarios?.REC.purchase_quantity).toBe(54);
-      expect(insulation.packageInfo).toEqual({
-        count: 9,
-        size: 6,
-        packageUnit: "упаковок",
-      });
-      expect(insulation.purchaseQty).toBe(54);
-    });
-
-    it("ГКЛ 2 слоя: area*1.1*2/3 листов", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      // sheets=ceil(33*2/3)=ceil(22)=22
-      expect(findMaterial(r, "ГКЛ")!.quantity).toBe(22);
-    });
-
-    it("саморезы первого и второго слоя округляются отдельными упаковками", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      const screws = findMaterial(r, "саморезы для гипсокартона по металлу 3,5×25 и 3,5×35")!;
-      expect(screws.purchaseQty).toBe(4);
-      expect(screws.subtitle).toContain("2 уп. 3,5×25 мм");
-      expect(screws.subtitle).toContain("2 уп. 3,5×35 мм");
-      expect(screws.subtitle).toContain("275 шт");
-    });
+    const material = result.materials[0];
+    expect(material.name).toContain("Акустический материал");
+    expect(material.quantity).toBe(25);
+    expect(material.withReserve).toBe(25);
+    expect(material.purchaseQty).toBe(30);
+    expect(material.packageInfo).toEqual({ count: 5, size: 6, packageUnit: "упаковок" });
   });
 
-  describe("ЗИПС панели (system=1)", () => {
-    it("30 м²", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 1 });
-      checkInvariants(r);
-      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
-      expect(panels.quantity).toBeCloseTo(44.166667, 5);
-      expect(panels.purchaseQty).toBe(45);
-    });
+  it("применяет число слоёв и явный запас ровно один раз", () => {
+    const result = calc({ area: 25, systemType: 0, acousticLayers: 2, reservePercent: 10, acousticPackCoverageM2: 6 });
 
-    it("не предлагает покупать штатный крепёж ЗИПС отдельно", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 1 });
-      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
-      const fastener = findMaterial(r, "Комплект крепежа, поставляемый")!;
-      expect(fastener.subtitle).toContain("Отдельно не прибавляется");
-      expect(fastener.unit).toBe("комплектов");
-      expect(fastener.purchaseQty).toBe(panels.purchaseQty);
-    });
-
-    it("оставляет ЗИПС поштучным товаром", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 1, acousticPlatesPerPack: 6 });
-      const panels = findMaterial(r, "Звукоизоляционные сэндвич-панели (ЗИПС)")!;
-
-      expect(r.scenarios?.REC.buy_plan.package_size).toBe(1);
-      expect(panels.packageInfo).toBeUndefined();
-    });
-
-    it("направляет к инструкции конкретной системы", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 1 });
-      expect(r.warnings.some(w => w.includes("инструкции выбранной модели"))).toBe(true);
-    });
+    expect(result.totals.primaryNeedM2).toBe(50);
+    expect(result.totals.primaryReservedM2).toBe(55);
+    expect(result.totals.primaryPurchasePackages).toBe(10);
+    expect(result.totals.primaryPurchasedM2).toBe(60);
+    expect(result.totals.primaryLeftoverM2).toBe(5);
   });
 
-  describe("Плавающий пол (system=2)", () => {
-    it("30 м²", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 2 });
-      checkInvariants(r);
-      // Engine: "Звукоизоляционные маты", "Демпферная лента", "Стяжка 50 кг"
-      expect(findMaterial(r, "Рулонный звукоизоляционный материал")).toBeDefined();
-      expect(findMaterial(r, "Кромочная демпферная")).toBeDefined();
-      expect(findMaterial(r, "Сухая смесь для стяжки")).toBeDefined();
-    });
+  it("использует фактическую площадь упаковки акустического материала", () => {
+    const result = calc({ area: 25, systemType: 3, acousticLayers: 1, reservePercent: 0, acousticPackCoverageM2: 12 });
+
+    expect(result.totals.primaryPurchasePackages).toBe(3);
+    expect(result.totals.primaryPurchasedM2).toBe(36);
+    expect(result.materials[0].name).toContain("потолка");
   });
 
-  describe("Акустический потолок (system=3)", () => {
-    it("30 м²", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 3 });
-      checkInvariants(r);
-      // Engine: "Минераловатные плиты", "ГКЛ листы", "Виброподвесы"
-      expect(findMaterial(r, "Акустическая минеральная")).toBeDefined();
-      expect(findMaterial(r, "ГКЛ")).toBeDefined();
-      expect(findMaterial(r, "Виброподвес")).toBeDefined();
-      expect(findMaterial(r, "саморезы для гипсокартона по металлу 3,5×25 и 3,5×35")).toBeDefined();
-    });
+  it("панельную систему считает по рабочим размерам и упаковке", () => {
+    const result = calc({ area: 30, systemType: 1, reservePercent: 0, panelWidthMm: 600, panelHeightMm: 1200, panelsPerPack: 4 });
+
+    checkInvariants(result);
+    expect(result.totals.panelWorkingAreaM2).toBe(0.72);
+    expect(result.totals.primaryCleanItems).toBeCloseTo(41.666667, 5);
+    expect(result.totals.primaryReservedItems).toBeCloseTo(41.666667, 5);
+    expect(result.totals.primaryPurchasePackages).toBe(11);
+    expect(result.totals.primaryPurchaseItems).toBe(44);
+    expect(result.totals.primaryLeftoverItems).toBeCloseTo(2.333333, 5);
+
+    const panels = findMaterial(result, "Панели выбранной системы")!;
+    expect(panels.purchaseQty).toBe(44);
+    expect(panels.packageInfo).toEqual({ count: 11, size: 4, packageUnit: "упаковок" });
   });
 
-  describe("Общие материалы", () => {
-    it("герметик во всех системах", () => {
-      for (const system of [0, 1, 2, 3]) {
-        const r = calc({ area: 30, surfaceType: 0, system });
-        // Engine: "Герметик"
-        expect(findMaterial(r, "акустический герметик")).toBeDefined();
-      }
-    });
+  it("плавающий пол считает только фактическую площадь рулона", () => {
+    const result = calc({ area: 30, systemType: 2, reservePercent: 10, floorRollCoverageM2: 12.5 });
 
-    it("уплотнительная лента во всех системах", () => {
-      const r = calc({ area: 30, surfaceType: 0, system: 0 });
-      // Engine: "Уплотнительная лента 30м"
-      expect(findMaterial(r, "Уплотнительная виброизоляционная лента")).toBeDefined();
-    });
-
-    it("использует введённый периметр вместо оценки по квадрату", () => {
-      const r = calc({ area: 30, system: 0, perimeter: 100 });
-      expect(r.totals.perim).toBe(100);
-      expect(r.totals.perimeterEstimated).toBe(0);
-      expect(r.totals.sealTape).toBe(8);
-    });
-
-    it("явно отмечает оценочный периметр", () => {
-      const r = calc({ area: 25, system: 0, perimeter: 0 });
-      expect(r.totals.perim).toBe(20);
-      expect(r.totals.perimeterEstimated).toBe(1);
-      expect(r.practicalNotes?.some(note => note.includes("Периметр не задан"))).toBe(true);
-    });
+    checkInvariants(result);
+    expect(result.materials).toHaveLength(1);
+    expect(result.totals.primaryReservedM2).toBe(33);
+    expect(result.totals.primaryPurchasePackages).toBe(3);
+    expect(result.totals.primaryPurchasedM2).toBe(37.5);
+    expect(result.totals.primaryLeftoverM2).toBe(4.5);
+    expect(result.materials[0].name).toContain("плавающего пола");
   });
 
-  it("считает смесь по заданной толщине плавающей стяжки", () => {
-    const r = calc({ area: 30, system: 2, screedThicknessMm: 70 });
-    expect(r.totals.screedThicknessMm).toBe(70);
-    expect(findMaterial(r, "Сухая смесь для стяжки")!.quantity).toBe(76);
+  it("добавляет обшивочные листы только после явного включения", () => {
+    const result = calc({ area: 30, systemType: 0, sheetEnabled: 1, sheetLayers: 2, sheetLengthM: 2.5, sheetWidthM: 1.2, sheetReservePercent: 5 });
+
+    const sheets = findMaterial(result, "Обшивочный лист")!;
+    expect(sheets.quantity).toBe(20);
+    expect(sheets.withReserve).toBe(21);
+    expect(sheets.purchaseQty).toBe(21);
   });
 
-  describe("Предупреждения", () => {
-    it("большая площадь → профессиональный монтаж", () => {
-      const r = calc({ area: 250, surfaceType: 0, system: 0 });
-      // Engine: "Большая площадь — рекомендуется профессиональный монтаж"
-      expect(r.warnings.some(w => w.includes("профессиональный монтаж"))).toBe(true);
+  it("добавляет только введённые проектные позиции", () => {
+    const result = calc({
+      area: 25,
+      systemType: 0,
+      projectItemsEnabled: 1,
+      projectProfileLengthM: 90,
+      profileBarLengthM: 3,
+      projectMountCount: 50,
+      projectFastenerCount: 275,
+      fastenersPerPack: 200,
+      projectTapeLengthM: 43,
+      tapeRollLengthM: 30,
+      projectSealantCartridges: 6,
     });
+
+    expect(findMaterial(result, "Профиль по проектной ведомости")!.purchaseQty).toBe(30);
+    expect(findMaterial(result, "Виброузлы по проектной ведомости")!.purchaseQty).toBe(50);
+
+    const fasteners = findMaterial(result, "Крепёж по проектной ведомости")!;
+    expect(fasteners.quantity).toBe(275);
+    expect(fasteners.purchaseQty).toBe(400);
+    expect(fasteners.packageInfo?.count).toBe(2);
+
+    const tape = findMaterial(result, "Лента по проектной ведомости")!;
+    expect(tape.quantity).toBe(43);
+    expect(tape.purchaseQty).toBe(60);
+    expect(tape.packageInfo?.count).toBe(2);
+    expect(findMaterial(result, "Герметик по проектной ведомости")!.purchaseQty).toBe(6);
   });
 
-  it("определяет поверхность по выбранной конструкции", () => {
-    const r = soundInsulationDef.calculate({
-      area: 30,
-      systemType: 3,
-      acousticPlatesPerPack: 6,
-    });
+  it("не добавляет нулевые проектные позиции", () => {
+    const result = calc({ area: 25, systemType: 0, projectItemsEnabled: 1 });
 
-    expect(r.totals.surfaceType).toBe(2);
-    expect(r.totals.system).toBe(3);
-    expect(findMaterial(r, "Виброподвес для акустического потолка")).toBeDefined();
+    expect(result.materials).toHaveLength(1);
+    expect(findMaterial(result, "Профиль по проектной ведомости")).toBeUndefined();
+    expect(findMaterial(result, "Герметик по проектной ведомости")).toBeUndefined();
   });
 
-  it("не показывает отдельный выбор поверхности с несовместимыми комбинациями", () => {
-    expect(soundInsulationDef.fields.some(field => field.key === "surface")).toBe(false);
-    expect(soundInsulationDef.fields.some(field => field.key === "systemType")).toBe(true);
+  it("смесь плавающего пола считает только по паспортному расходу", () => {
+    const result = calc({ area: 30, systemType: 2, screedEnabled: 1, screedConsumptionKgM2: 20, screedReservePercent: 5, screedBagKg: 25 });
+
+    const screed = findMaterial(result, "Смесь по паспортному расходу")!;
+    expect(screed.quantity).toBe(600);
+    expect(screed.withReserve).toBe(630);
+    expect(screed.purchaseQty).toBe(650);
+    expect(screed.packageInfo).toEqual({ count: 26, size: 25, packageUnit: "мешков" });
+  });
+
+  it("не подставляет старую универсальную систему материалов", () => {
+    const result = calc({ area: 30, systemType: 0 });
+    const names = result.materials.map((material) => material.name).join(" | ");
+
+    expect(names).not.toContain("Потолочный профиль ПП");
+    expect(names).not.toContain("Виброподвес");
+    expect(names).not.toContain("саморезы для гипсокартона");
+    expect(names).not.toContain("акустический герметик");
+    expect(names).not.toContain("Уплотнительная виброизоляционная лента");
+  });
+
+  it("MIN/REC/MAX и режим точности не добавляют скрытый множитель", () => {
+    const basic = soundInsulationDef.calculate({ area: 25, systemType: 0, acousticLayers: 1, reservePercent: 10, acousticPackCoverageM2: 6, accuracyMode: "basic" as unknown as number });
+    const professional = soundInsulationDef.calculate({ area: 25, systemType: 0, acousticLayers: 1, reservePercent: 10, acousticPackCoverageM2: 6, accuracyMode: "professional" as unknown as number });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(professional.scenarios).toEqual(basic.scenarios);
+    expect(professional.totals.primaryReservedM2).toBe(27.5);
+  });
+
+  it("скрывает поля чужих товарных моделей", () => {
+    const field = (key: string) => soundInsulationDef.fields.find((item) => item.key === key);
+
+    expect(field("acousticPackCoverageM2")?.hideIf).toEqual([
+      { key: "systemType", op: "eq", value: 1 },
+      { key: "systemType", op: "eq", value: 2 },
+    ]);
+    expect(field("panelWidthMm")?.hideIf).toEqual({ key: "systemType", op: "ne", value: 1 });
+    expect(field("floorRollCoverageM2")?.hideIf).toEqual({ key: "systemType", op: "ne", value: 2 });
+    expect(field("sheetEnabled")?.hideIf).toEqual({ key: "systemType", op: "eq", value: 2 });
+  });
+
+  it("предупреждает о границах акустики, основания и монтажа", () => {
+    const result = calc({ area: 25, systemType: 1 });
+    const warnings = result.warnings.join(" ");
+
+    expect(warnings).toContain("Rw");
+    expect(warnings).toContain("основан");
+    expect(warnings).toContain("MIN/REC/MAX");
+    expect(warnings).toContain("комплектной системы");
+  });
+
+  it("SEO-контент ведёт на первичные источники и не обещает акустический результат", () => {
+    const seo = soundInsulationDef.seoContent?.descriptionHtml ?? "";
+
+    expect(soundInsulationDef.h1).toContain("фактической фасовке");
+    expect(soundInsulationDef.metaDescription.startsWith("Бесплатный калькулятор")).toBe(true);
+    expect(soundInsulationDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+    expect(seo).toContain("https://protect.gost.ru/sp/details/04d467f1-c956-4238-8bc6-a066ecb17990");
+    expect(seo).toContain("https://protect.gost.ru/gost/details/1e7aea97-2a9d-4647-9ddc-7e466b85724a");
+    expect(seo).toContain("https://www.knauf.ru/systems/peregorodki/s-112-dfh3ir/");
+    expect(seo).toContain("https://www.acoustic.ru/productions/zips/zips_z4/");
+    expect(seo).toContain("https://www.acoustic.ru/albom_solutions/flats/zvukoizolyaciya_pola_kvartiry/");
   });
 });
