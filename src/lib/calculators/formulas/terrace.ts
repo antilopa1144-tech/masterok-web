@@ -744,7 +744,7 @@ export const terraceDef: CalculatorDefinition = {
       });
     }
 
-    const requestedAccuracyMode = inputs.accuracyMode as
+    const requestedAccuracyMode = inputs.accuracyMode as unknown as
       | AccuracyMode
       | undefined;
     const accuracyMode =
