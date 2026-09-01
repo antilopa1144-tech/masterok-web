@@ -46,8 +46,8 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
     { label: "Квартира 60м²", values: { inputMode: 1, area: 60, thickness: 40, mixtureType: 0 } },
   ],
   linoleum: [
-    { label: "Кухня 3×4", values: { length: 4, width: 3, rollWidth: 3, hasPattern: 0 } },
-    { label: "Зал 5×4", values: { length: 5, width: 4, rollWidth: 4, hasPattern: 0 } },
+    { label: "Кухня 3×4", values: { roomLength: 4, roomWidth: 3, rollWidth: 3, stripDirection: 0, trimAllowanceCm: 10, hasPattern: 0, purchaseStepM: 0.1 } },
+    { label: "Зал 5×4", values: { roomLength: 5, roomWidth: 4, rollWidth: 4, stripDirection: 0, trimAllowanceCm: 10, hasPattern: 0, purchaseStepM: 0.1 } },
   ],
 
   // ── Кровля ─────────────────────────────────────
