@@ -208,6 +208,7 @@ describe("Обои — полотна, раскрой и целые рулоны
     );
     expect(wallpaperDef.description).toContain("полотен");
     expect(wallpaperDef.description).not.toMatch(/клея|грунтовки|расходник/i);
+    expect(wallpaperDef.metaDescription.toLowerCase()).toContain("рассчитайте");
     expect(wallpaperDef.metaDescription.toLowerCase()).not.toContain("точн");
   });
 
