@@ -1,96 +1,229 @@
 import { describe, expect, it } from "vitest";
+import { CATEGORY_INTRO } from "../category-intro";
 import { primerDef } from "../formulas/primer";
-import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
-import parityFixture from "../../../../tests/fixtures/primer-canonical-parity.json";
 
-const calc = withBasicAccuracy(primerDef.calculate.bind(primerDef));
+const calc = primerDef.calculate.bind(primerDef);
 
-describe("Грунтовка", () => {
-  it("позиционируется под расход грунтовки для стен", () => {
-    expect(primerDef.metaTitle).toContain("грунтовки для стен");
-    expect(primerDef.metaTitle).toContain("1 м²");
-    expect(primerDef.metaDescription).toContain("канистры к покупке");
-  });
+const directInputs = {
+  inputMode: 0,
+  primerPurpose: 0,
+  projectAreaM2: 50,
+  passportConsumptionPerM2: 0.1,
+  coatCount: 1,
+  allowancePercent: 0,
+  packageSize: 5,
+  quantityUnit: 0,
+};
 
-  it("SEO-пример показывает точную потребность и упаковку canonical", () => {
-    const result = calc({ area: 20, surfaceType: 0, primerType: 0, coats: 2, canSize: 5 });
-    const material = findMaterial(result, "Грунтовка глубокого проникновения");
-    const example = primerDef.seoContent?.faq?.find((item) =>
-      item.question.includes("на 1 м²"),
-    );
+describe("Грунтовка — паспортный расход и фактическая упаковка", () => {
+  it("по умолчанию считает один выбранный продукт без скрытых добавок", () => {
+    const result = calc(directInputs);
 
-    expect(result.scenarios?.REC.exact_need).toBe(6.552);
-    expect(material?.purchaseQty).toBe(10);
-    expect(example?.answer).toContain("6,552 л");
-    expect(example?.answer).toContain("две канистры");
-    expect(result.practicalNotes?.join(" ")).not.toContain("отвалятся");
-  });
-
-  it("декларирует formulaVersion для canonical primer", () => {
-    expect(primerDef.formulaVersion).toBe("primer-canonical-v1");
-  });
-
-  it("считает глубокое проникновение по впитывающей поверхности", () => {
-    const result = calc({ area: 50, surfaceType: 0, primerType: 0, coats: 1, canSize: 5 });
-    checkInvariants(result);
-
-    expect(result.formulaVersion).toBe("primer-canonical-v1");
-    expect(result.totals.lPerSqm).toBeCloseTo(0.15, 3);
-    expect(findMaterial(result, "Грунтовка")?.purchaseQty).toBe(10);
-    expect(result.warnings.some((warning) => warning.includes("2 слоя"))).toBe(true);
-  });
-
-  it("считает бетон-контакт с упаковкой по 10 л", () => {
-    const result = calc({ area: 50, surfaceType: 0, primerType: 1, coats: 1, canSize: 10 });
-
-    expect(result.totals.lPerSqm).toBeCloseTo(0.525, 3);
-    expect(findMaterial(result, "контакт")?.purchaseQty).toBe(30);
-    expect(result.warnings).toHaveLength(3);
-  });
-
-  it("поддерживает room-dimensions вход в canonical engine", () => {
-    const result = calc({ inputMode: 0, roomWidth: 4, roomLength: 5, roomHeight: 2.7, surfaceType: 1, primerType: 2, coats: 2, canSize: 15 });
-
-    expect(result.totals.area).toBeCloseTo(48.6, 2);
-    expect(findMaterial(result, "ГКЛ")?.purchaseQty).toBe(15);
-  });
-});
-
-describe("Canonical primer fixture parity", () => {
-  const cases = parityFixture.cases as unknown as Array<{
-    id: string;
-    inputs: Record<string, number>;
-    expected: {
-      area: number;
-      formulaVersion: string;
-      materials: {
-        primerCans: number;
-        rollers: number;
-        brushes: number;
-        trays: number;
-      };
-      warningsCount: number;
-      recScenario: {
-        packageSize: number;
-        exactNeed: number;
-        purchaseQuantity: number;
-      };
-    };
-  }>;
-
-  for (const fixtureCase of cases) {
-    it(fixtureCase.id, () => {
-      const result = calc(fixtureCase.inputs);
-      expect(result.formulaVersion).toBe(fixtureCase.expected.formulaVersion);
-      expect(result.totals.area).toBeCloseTo(fixtureCase.expected.area, 2);
-      expect(result.warnings).toHaveLength(fixtureCase.expected.warningsCount);
-      expect(result.scenarios?.REC.buy_plan.package_size).toBe(fixtureCase.expected.recScenario.packageSize);
-      expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.exactNeed, 2);
-      expect(result.scenarios?.REC.purchase_quantity ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.purchaseQuantity, 3);
-      expect(findMaterial(result, "Валик")?.purchaseQty).toBe(fixtureCase.expected.materials.rollers);
-      expect(findMaterial(result, "Кисть")?.purchaseQty).toBe(fixtureCase.expected.materials.brushes);
-      expect(findMaterial(result, "Кювета")?.purchaseQty).toBe(fixtureCase.expected.materials.trays);
-      const _pm = result.materials.find((m) => m.category === 'Основное'); expect(_pm).toBeTruthy(); expect(_pm!.purchaseQty).toBeGreaterThan(0);
+    expect(result.formulaVersion).toBe("primer-web-passport-v1");
+    expect(result.canonicalSpecId).toBe("primer");
+    expect(result.materials).toHaveLength(1);
+    expect(result.materials[0]).toMatchObject({
+      name: "Грунтовка выбранного продукта",
+      quantity: 5,
+      unit: "л",
+      withReserve: 5,
+      purchaseQty: 5,
+      packageInfo: { count: 1, size: 5, packageUnit: "упаковок" },
     });
-  }
+    expect(result.totals).toMatchObject({
+      workAreaM2: 50,
+      basePrimerNeed: 5,
+      requiredPrimerNeed: 5,
+      primerPackages: 1,
+      purchasePrimerQuantity: 5,
+    });
+  });
+
+  it("умножает площадь на паспортный расход и явное число слоёв", () => {
+    const result = calc({
+      ...directInputs,
+      projectAreaM2: 20,
+      passportConsumptionPerM2: 0.15,
+      coatCount: 2,
+    });
+
+    expect(result.totals.basePrimerNeed).toBe(6);
+    expect(result.materials[0].quantity).toBe(6);
+  });
+
+  it("применяет явную надбавку один раз и округляет по фактической упаковке", () => {
+    const result = calc({
+      ...directInputs,
+      projectAreaM2: 20,
+      passportConsumptionPerM2: 0.15,
+      coatCount: 2,
+      allowancePercent: 5,
+      packageSize: 5,
+    });
+
+    expect(result.totals.basePrimerNeed).toBe(6);
+    expect(result.totals.requiredPrimerNeed).toBe(6.3);
+    expect(result.totals.primerPackages).toBe(2);
+    expect(result.totals.purchasePrimerQuantity).toBe(10);
+    expect(result.totals.packageLeftoverQuantity).toBe(3.7);
+  });
+
+  it("считает стены прямоугольной комнаты с явным вычетом проёмов", () => {
+    const result = calc({
+      ...directInputs,
+      inputMode: 1,
+      roomWidthM: 4,
+      roomLengthM: 5,
+      roomHeightM: 2.7,
+      openingAreaM2: 3.6,
+      surfaceScope: 0,
+    });
+
+    expect(result.totals.grossWallAreaM2).toBe(48.6);
+    expect(result.totals.workAreaM2).toBe(45);
+    expect(result.totals.basePrimerNeed).toBe(4.5);
+  });
+
+  it("может явно добавить потолок к стенам той же однородной позиции", () => {
+    const result = calc({
+      ...directInputs,
+      inputMode: 1,
+      roomWidthM: 4,
+      roomLengthM: 5,
+      roomHeightM: 2.7,
+      openingAreaM2: 3.6,
+      surfaceScope: 3,
+    });
+
+    expect(result.totals.netWallAreaM2).toBe(45);
+    expect(result.totals.ceilingAreaM2).toBe(20);
+    expect(result.totals.workAreaM2).toBe(65);
+  });
+
+  it("не даёт площади проёмов сделать площадь стен отрицательной", () => {
+    const result = calc({
+      ...directInputs,
+      inputMode: 1,
+      roomWidthM: 4,
+      roomLengthM: 5,
+      roomHeightM: 2.7,
+      openingAreaM2: 100,
+      surfaceScope: 0,
+    });
+
+    expect(result.totals.netWallAreaM2).toBe(0);
+    expect(result.totals.workAreaM2).toBe(0);
+    expect(result.totals.purchasePrimerQuantity).toBe(0);
+  });
+
+  it("поддерживает килограммы без пересчёта через условную плотность", () => {
+    const result = calc({
+      ...directInputs,
+      projectAreaM2: 20,
+      passportConsumptionPerM2: 0.25,
+      packageSize: 5,
+      quantityUnit: 1,
+    });
+
+    expect(result.materials[0]).toMatchObject({
+      quantity: 5,
+      unit: "кг",
+      purchaseQty: 5,
+    });
+    expect(result.totals.basePrimerNeed).toBe(5);
+  });
+
+  it("назначение меняет только подпись, а не скрытый расход", () => {
+    const generic = calc(directInputs);
+    const adhesion = calc({ ...directInputs, primerPurpose: 2 });
+
+    expect(generic.totals.basePrimerNeed).toBe(5);
+    expect(adhesion.totals.basePrimerNeed).toBe(5);
+    expect(adhesion.materials[0].name).toBe(
+      "Адгезионная грунтовка по техкарте",
+    );
+  });
+
+  it("не добавляет валик, кисть и кювету автоматически", () => {
+    const result = calc(directInputs);
+    const names = result.materials.map((material) => material.name).join(" ");
+
+    expect(result.materials).toHaveLength(1);
+    expect(names).not.toMatch(/Валик|Кисть|Кювета/);
+  });
+
+  it("не добавляет скрытые сценарные и accuracy-множители", () => {
+    const result = calc({
+      ...directInputs,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);
+    expect(result.scenarios?.REC).toEqual(result.scenarios?.MAX);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+    expect(result.scenarios?.REC.key_factors.hidden_multiplier).toBe(1);
+  });
+
+  it("скрывает геометрию комнаты и готовую площадь в противоположных режимах", () => {
+    const field = (key: string) =>
+      primerDef.fields.find((item) => item.key === key);
+
+    expect(field("projectAreaM2")?.hideIf).toEqual({
+      key: "inputMode",
+      op: "ne",
+      value: 0,
+    });
+    expect(field("roomWidthM")?.hideIf).toEqual({
+      key: "inputMode",
+      op: "ne",
+      value: 1,
+    });
+    expect(field("openingAreaM2")?.hideIf).toEqual({
+      key: "inputMode",
+      op: "ne",
+      value: 1,
+    });
+  });
+
+  it("удаляет старые поля условного типа и фиксированных канистр", () => {
+    const keys = primerDef.fields.map((field) => field.key);
+
+    expect(keys).not.toContain("area");
+    expect(keys).not.toContain("surfaceType");
+    expect(keys).not.toContain("primerType");
+    expect(keys).not.toContain("coats");
+    expect(keys).not.toContain("canSize");
+    expect(keys).toContain("passportConsumptionPerM2");
+    expect(keys).toContain("allowancePercent");
+    expect(keys).toContain("packageSize");
+  });
+
+  it("не обещает универсальный расход, бренд и готовый подбор", () => {
+    expect(primerDef.h1).toBe(
+      "Калькулятор грунтовки — расход по техкарте и упаковка",
+    );
+    expect(primerDef.description).not.toMatch(/0[,.](1|12|15|35|42)/i);
+    expect(primerDef.description).not.toMatch(/Ceresit|Knauf/i);
+    expect(primerDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+  });
+
+  it("ссылается на СП и техдокументацию разных продуктов", () => {
+    const html = primerDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain(
+      "https://protect.gost.ru/sp/details/ca915ed9-5bce-4de4-94af-debfd041a939",
+    );
+    expect(html).toContain(
+      "https://www.ceresit.ru/ru/products/tiling/supplementary-materials/ct_17_pro",
+    );
+    expect(html).toContain(
+      "https://www.knauf.ru/catalog/sukhie-stroitelnye-smesi-i-gotovye-sostavy/gruntovki/knauf-tifengrund/",
+    );
+    expect(html).toContain(
+      "https://www.knauf.ru/catalog/sukhie-stroitelnye-smesi-i-gotovye-sostavy/gruntovki/knauf-betogrund/",
+    );
+    expect(CATEGORY_INTRO.interior.standards.join(" ")).toContain(
+      "СП 71.13330",
+    );
+  });
 });
