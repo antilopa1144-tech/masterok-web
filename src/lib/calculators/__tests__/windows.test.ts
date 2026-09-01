@@ -1,175 +1,222 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { windowsDef } from "../formulas/windows";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(windowsDef.calculate.bind(windowsDef));
 
-describe("Калькулятор установки окон", () => {
-  describe("5 окон 1200×1400, стена 500 мм, сэндвич-панели ПВХ откосы", () => {
-    // perimM = 2*(1.2+1.4) = 5.2
-    // psulRolls = ceil(5.2 * 5 * 1.1 / 5.6) = ceil(5.107) = 6
-    // iflulRolls = ceil(5.2 * 5 * 1.1 / 8.5) = ceil(3.365) = 4
-    // foamCans = ceil(5.2/3 * 5 * 1.1) = ceil(9.533) = 10
-    // anchorsPerWindow = ceil(5.2/0.7) = 8
-    // totalAnchors = ceil(8*5*1.05) = 42
-    // screws = ceil(42*2*1.05) = ceil(88.2) = 89
-    // sillWidth = 0.5 + 0.15 = 0.65
-    // sillPcs = 5
-    // totalSlopeArea = (2*1.4*0.5 + 1.2*0.5) * 5 = (1.4+0.6)*5 = 10.0
-    // sandwichPcs = ceil(10.0*1.1/3.6) = ceil(3.056) = 4
-    // fProfileLen = 5.2*0.75*5*1.1 = 21.45 → fProfilePcs = ceil(21.45/3) = 8
-    const result = calc({
-      windowCount: 5,
-      windowWidth: 1200,
-      windowHeight: 1400,
-      wallThickness: 500,
-      slopeType: 0,
-    });
+describe("Монтаж окон — web joint contract", () => {
+  it("default считает только пену по геометрии шва и полезному выходу баллона", () => {
+    const result = calc({});
 
-    it("ПСУЛ = 6 рулонов", () => {
-      // Engine: "ПСУЛ (рулон 5.6 м)"
-      const psul = findMaterial(result, "ПСУЛ");
-      expect(psul?.purchaseQty).toBe(6);
-    });
+    checkInvariants(result);
+    expect(result.formulaVersion).toBe("windows-web-joint-v1");
+    expect(result.materials).toHaveLength(1);
+    expect(result.totals.windowCount).toBe(5);
+    expect(result.totals.perimeterPerWindowM).toBe(5.2);
+    expect(result.totals.totalJointLengthM).toBe(26);
+    expect(result.totals.foamJointVolumeL).toBe(36.4);
+    expect(result.totals.foamCleanCans).toBe(1.04);
+    expect(result.totals.foamReservedCans).toBe(1.04);
+    expect(result.totals.foamPurchaseCans).toBe(2);
 
-    it("монтажная пена = 10 баллонов", () => {
-      // Engine: "Монтажная пена" — quantity = recScenario.exact_need
-      const foam = findMaterial(result, "Монтажная пена");
-      expect(foam).toBeDefined();
-      // purchaseQty = ceil(recScenario.exact_need) including scenario multiplier
-      // Base is 10, with REC multiplier ~1.06 → ceil(10.6) = 11
-      expect(foam!.purchaseQty).toBeGreaterThanOrEqual(10);
-    });
-
-    it("внутренняя лента = 4 рулона", () => {
-      // Engine: "Внутренняя лента (рулон 8.5 м)"
-      const iful = findMaterial(result, "Внутренняя лента");
-      expect(iful?.purchaseQty).toBe(4);
-    });
-
-    it("анкерные пластины = 42 шт", () => {
-      // Engine: "Анкерные пластины"
-      const anchors = findMaterial(result, "Анкерные пластины");
-      expect(anchors?.purchaseQty).toBe(42);
-    });
-
-    it("указаны саморезы для анкерных пластин", () => {
-      const screws = findMaterial(result, "Саморезы по металлу для анкерных пластин");
-      expect(screws?.unit).toBe("кг");
-      expect(screws?.purchaseQty).toBe(1);
-      expect(screws?.subtitle).toContain("армированию рамы");
-    });
-
-    it("подоконник ширина 650 мм", () => {
-      // Engine: "Подоконник (ширина 650 мм)"
-      const sill = findMaterial(result, "Подоконник");
-      expect(sill).toBeDefined();
-      expect(sill!.name).toContain("650");
-      expect(sill!.purchaseQty).toBe(5);
-    });
-
-    it("сэндвич-панели ПВХ для откосов = 4", () => {
-      // Engine: "Сэндвич-панели ПВХ"
-      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
-      expect(panels?.purchaseQty).toBe(4);
-    });
-
-    it("F-образный профиль = 8 шт", () => {
-      const fProfile = findMaterial(result, "F-образный");
-      expect(fProfile?.purchaseQty).toBe(8);
-    });
-
-    it("предупреждение о толстых стенах", () => {
-      // Engine: "Толстые стены — проверьте глубину подоконника"
-      expect(result.warnings.some((w) => w.includes("Толстые стены"))).toBe(true);
-    });
-
-    it("totals содержат windowCount и perimM", () => {
-      expect(result.totals.windowCount).toBe(5);
-      expect(result.totals.perimM).toBeCloseTo(5.2, 2);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    const foam = result.materials[0];
+    expect(foam.name).toContain("Монтажная пена выбранного типа");
+    expect(foam.quantity).toBe(1.04);
+    expect(foam.withReserve).toBe(1.04);
+    expect(foam.purchaseQty).toBe(2);
   });
 
-  describe("Штукатурные откосы (slopeType=1)", () => {
+  it("применяет явный запас пены ровно один раз", () => {
+    const result = calc({ foamReservePercent: 10 });
+
+    expect(result.totals.foamCleanCans).toBe(1.04);
+    expect(result.totals.foamReservedCans).toBe(1.144);
+    expect(result.totals.foamPurchaseCans).toBe(2);
+  });
+
+  it("использует фактические ширину, глубину шва и полезный выход продукта", () => {
     const result = calc({
       windowCount: 3,
       windowWidth: 900,
       windowHeight: 1200,
-      wallThickness: 380,
-      slopeType: 1,
+      jointGapWidthMm: 30,
+      foamLayerDepthMm: 80,
+      foamUsableYieldLPerCan: 60,
+      foamReservePercent: 20,
     });
 
-    it("штукатурка присутствует", () => {
-      // Engine: "Штукатурка (мешки 25 кг)"
-      const plaster = findMaterial(result, "Штукатурка");
-      expect(plaster).toBeDefined();
-    });
-
-    it("уголок перфорированный присутствует", () => {
-      // Engine: "Уголок перфорированный"
-      const corner = findMaterial(result, "Уголок перфорированный");
-      expect(corner).toBeDefined();
-    });
-
-    it("сэндвич-панели отсутствуют", () => {
-      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
-      expect(panels).toBeUndefined();
-    });
+    expect(result.totals.totalJointLengthM).toBe(12.6);
+    expect(result.totals.foamJointVolumeL).toBe(30.24);
+    expect(result.totals.foamCleanCans).toBe(0.504);
+    expect(result.totals.foamReservedCans).toBe(0.6048);
+    expect(result.totals.foamPurchaseCans).toBe(1);
+    expect(result.materials[0].subtitle).toContain(
+      "к расчёту с запасом 0,6 баллона (20%)",
+    );
   });
 
-  describe("ГКЛ откосы (slopeType=2)", () => {
+  it("наружный и внутренний слои считает только по проектной длине и рулону", () => {
     const result = calc({
-      windowCount: 2,
-      windowWidth: 1500,
-      windowHeight: 1600,
-      wallThickness: 300,
-      slopeType: 2,
+      outerSealEnabled: 1,
+      projectOuterSealLengthM: 28,
+      outerSealReservePercent: 10,
+      outerSealRollLengthM: 5.6,
+      innerSealEnabled: 1,
+      projectInnerSealLengthM: 26,
+      innerSealReservePercent: 5,
+      innerSealRollLengthM: 8.5,
     });
 
-    it("ГКЛ для откосов присутствует", () => {
-      // Engine: "ГКЛ для откосов"
-      expect(findMaterial(result, "Влагостойкий гипсокартон (ГКЛВ) для откосов")).toBeDefined();
-    });
+    const outer = findMaterial(result, "Наружный материал монтажного шва")!;
+    expect(outer.quantity).toBe(28);
+    expect(outer.withReserve).toBe(30.8);
+    expect(outer.purchaseQty).toBe(33.6);
+    expect(outer.packageInfo).toEqual({ count: 6, size: 5.6, packageUnit: "рулонов" });
 
-    it("саморезы для ГКЛ присутствуют", () => {
-      expect(findMaterial(result, "Чёрные саморезы для гипсокартона по металлу 3,5×25 мм")).toBeDefined();
-    });
-
-    it("шпаклёвка присутствует", () => {
-      // Engine: "Шпаклёвка (мешки 25 кг)"
-      expect(findMaterial(result, "Шпаклёвка")).toBeDefined();
-    });
-
-    it("нет сэндвич-панелей и штукатурки", () => {
-      expect(findMaterial(result, "Сэндвич-панели ПВХ")).toBeUndefined();
-    });
-
-    it("основные материалы (ПСУЛ, пена) присутствуют", () => {
-      expect(findMaterial(result, "ПСУЛ")).toBeDefined();
-      expect(findMaterial(result, "Монтажная пена")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    const inner = findMaterial(result, "Внутренний материал монтажного шва")!;
+    expect(inner.quantity).toBe(26);
+    expect(inner.withReserve).toBe(27.3);
+    expect(inner.purchaseQty).toBe(34);
+    expect(inner.packageInfo).toEqual({ count: 4, size: 8.5, packageUnit: "рулонов" });
   });
 
-  describe("Широкие окна >= 1800 мм → предупреждение", () => {
+  it("крепёж добавляет только по готовому проектному количеству", () => {
     const result = calc({
-      windowCount: 1,
-      windowWidth: 1800,
+      fastenersEnabled: 1,
+      projectFastenerCount: 42,
+      fastenersPerPack: 50,
+    });
+
+    const fasteners = findMaterial(result, "Крепёж по проектной ведомости")!;
+    expect(fasteners.quantity).toBe(42);
+    expect(fasteners.purchaseQty).toBe(50);
+    expect(fasteners.packageInfo).toEqual({ count: 1, size: 50, packageUnit: "упаковок" });
+  });
+
+  it("панели откосов считает по готовой площади и площади упаковки", () => {
+    const result = calc({
+      slopeFinishType: 1,
+      projectSlopeAreaM2: 10,
+      slopeReservePercent: 10,
+      slopePanelPackCoverageM2: 3.6,
+    });
+
+    const slopes = findMaterial(result, "Панели для откосов")!;
+    expect(slopes.quantity).toBe(10);
+    expect(slopes.withReserve).toBe(11);
+    expect(slopes.purchaseQty).toBe(14.4);
+    expect(slopes.packageInfo).toEqual({ count: 4, size: 3.6, packageUnit: "упаковок" });
+  });
+
+  it("листовые откосы считает по фактическим размерам листа", () => {
+    const result = calc({
+      slopeFinishType: 2,
+      projectSlopeAreaM2: 10,
+      slopeReservePercent: 10,
+      slopeSheetLengthM: 2.5,
+      slopeSheetWidthM: 1.2,
+    });
+
+    const slopes = findMaterial(result, "Листы для откосов")!;
+    expect(slopes.quantity).toBeCloseTo(3.333333, 5);
+    expect(slopes.withReserve).toBeCloseTo(3.666667, 5);
+    expect(slopes.purchaseQty).toBe(4);
+  });
+
+  it("штукатурку откосов считает только по паспортному расходу", () => {
+    const result = calc({
+      slopeFinishType: 3,
+      projectSlopeAreaM2: 10,
+      slopePlasterConsumptionKgM2: 8,
+      slopeReservePercent: 5,
+      slopePlasterBagKg: 25,
+    });
+
+    const plaster = findMaterial(result, "Штукатурка по паспортному расходу")!;
+    expect(plaster.quantity).toBe(80);
+    expect(plaster.withReserve).toBe(84);
+    expect(plaster.purchaseQty).toBe(100);
+    expect(plaster.packageInfo).toEqual({ count: 4, size: 25, packageUnit: "мешков" });
+  });
+
+  it("не добавляет старую универсальную оконную систему", () => {
+    const result = calc({});
+    const names = result.materials.map((material) => material.name).join(" | ");
+
+    expect(names).not.toContain("ПСУЛ");
+    expect(names).not.toContain("Внутренняя лента");
+    expect(names).not.toContain("Анкерные пластины");
+    expect(names).not.toContain("Саморезы");
+    expect(names).not.toContain("Подоконник");
+    expect(names).not.toContain("Сэндвич-панели");
+    expect(names).not.toContain("F-образный");
+  });
+
+  it("MIN/REC/MAX и режим точности не добавляют скрытый множитель", () => {
+    const basic = windowsDef.calculate({
+      windowCount: 5,
+      windowWidth: 1200,
       windowHeight: 1400,
-      wallThickness: 500,
-      slopeType: 0,
+      jointGapWidthMm: 20,
+      foamLayerDepthMm: 70,
+      foamUsableYieldLPerCan: 35,
+      foamReservePercent: 10,
+      accuracyMode: "basic" as unknown as number,
+    });
+    const professional = windowsDef.calculate({
+      windowCount: 5,
+      windowWidth: 1200,
+      windowHeight: 1400,
+      jointGapWidthMm: 20,
+      foamLayerDepthMm: 70,
+      foamUsableYieldLPerCan: 35,
+      foamReservePercent: 10,
+      accuracyMode: "professional" as unknown as number,
     });
 
-    it("предупреждение о широких окнах", () => {
-      // Engine: "Для широких окон рекомендуется усиленный монтаж"
-      expect(result.warnings.some((w) => w.includes("широких окон"))).toBe(true);
-    });
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(professional.scenarios).toEqual(basic.scenarios);
+    expect(professional.totals.foamReservedCans).toBe(1.144);
+  });
+
+  it("скрывает поля выключенных проектных блоков", () => {
+    const field = (key: string) => windowsDef.fields.find((item) => item.key === key);
+
+    expect(field("projectOuterSealLengthM")?.hideIf).toEqual({ key: "outerSealEnabled", op: "eq", value: 0 });
+    expect(field("projectInnerSealLengthM")?.hideIf).toEqual({ key: "innerSealEnabled", op: "eq", value: 0 });
+    expect(field("projectFastenerCount")?.hideIf).toEqual({ key: "fastenersEnabled", op: "eq", value: 0 });
+    expect(field("slopePanelPackCoverageM2")?.hideIf).toEqual({ key: "slopeFinishType", op: "ne", value: 1 });
+    expect(field("slopeSheetLengthM")?.hideIf).toEqual({ key: "slopeFinishType", op: "ne", value: 2 });
+    expect(field("slopePlasterConsumptionKgM2")?.hideIf).toEqual({ key: "slopeFinishType", op: "ne", value: 3 });
+  });
+
+  it("удаляет поля, которые восстанавливали проект из толщины стены и типа откоса", () => {
+    const keys = windowsDef.fields.map((field) => field.key);
+
+    expect(keys).not.toContain("wallThickness");
+    expect(keys).not.toContain("slopeType");
+  });
+
+  it("предупреждает о границах узла, пены, крепления и отделки", () => {
+    const warnings = calc({ slopeFinishType: 2, projectSlopeAreaM2: 10 }).warnings.join(" ");
+
+    expect(warnings).toContain("эквивалентный прямоугольный объём");
+    expect(warnings).toContain("Полезный выход");
+    expect(warnings).toContain("крепления");
+    expect(warnings).toContain("раскладк");
+    expect(warnings).toContain("MIN/REC/MAX");
+  });
+
+  it("SEO-контент ведёт на первичные источники и не обещает монтаж по одному периметру", () => {
+    const seo = windowsDef.seoContent?.descriptionHtml ?? "";
+
+    expect(windowsDef.h1).toContain("фактическому шву");
+    expect(windowsDef.metaDescription.startsWith("Бесплатный калькулятор")).toBe(true);
+    expect(windowsDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+    expect(seo).toContain("https://protect.gost.ru/gost/details/09b731bf-531e-428b-8ef9-556ed2d1c110");
+    expect(seo).toContain("https://protect.gost.ru/gost/details/a64d7437-05ff-4621-8339-53cd7418810d");
+    expect(seo).toContain("https://protect.gost.ru/gost/details/dd2cf1c8-2634-46e7-8349-4a08ca4597f2");
+    expect(seo).toContain("https://soudal.ru/images/stories/soudal/tds-profi/soudafoam-professional-60_tds_ru.pdf");
   });
 });
