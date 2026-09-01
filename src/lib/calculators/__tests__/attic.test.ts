@@ -1,256 +1,225 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { atticDef } from "../formulas/attic";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(atticDef.calculate.bind(atticDef));
 
-describe("Калькулятор мансарды", () => {
-  describe("Стандарт: 60 м², 200 мм, минвата плиты, вагонка, стандартная пароизоляция", () => {
-    // plateThickness = 100 (минвата плиты), layerCount = ceil(200/100) = 2
-    const result = calc({
-      roofArea: 60,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 0,
-      withVapourBarrier: 1,
-    });
+describe("Мансарда — web product contract", () => {
+  it("default считает только утеплитель по проектной толщине и площади упаковки", () => {
+    const result = calc({});
 
-    it("totals.roofArea = 60", () => {
-      expect(result.totals.roofArea).toBe(60);
-    });
+    checkInvariants(result);
+    expect(result.formulaVersion).toBe("attic-web-product-v1");
+    expect(result.materials).toHaveLength(1);
+    expect(result.totals.roofArea).toBe(60);
+    expect(result.totals.insulationLayerCount).toBe(2);
+    expect(result.totals.installedInsulationThicknessMm).toBe(200);
+    expect(result.totals.insulationCleanLayerAreaM2).toBe(120);
+    expect(result.totals.insulationReservedLayerAreaM2).toBe(120);
+    expect(result.totals.insulationPurchasePackages).toBe(40);
+    expect(result.totals.insulationPurchasedLayerAreaM2).toBe(120);
+    expect(result.totals.insulationLeftoverLayerAreaM2).toBe(0);
 
-    it("totals.layerCount = 2", () => {
-      expect(result.totals.layerCount).toBe(2);
-    });
-
-    it("ветрозащитная мембрана: rolls = ceil(60*1.15/70) = 1", () => {
-      // Engine: "Ветрозащитная мембрана (70 м²)"
-      const membrane = findMaterial(result, "Ветрозащитная мембрана");
-      expect(membrane).toBeDefined();
-      expect(membrane?.purchaseQty).toBe(1);
-    });
-
-    it("минвата плиты (200 мм, 2 сл.) purchaseQty = ceil(recExactNeed)", () => {
-      // Engine: "Минвата плиты (200 мм, 2 сл.)"
-      // insPlates = ceil(60*1.05/0.6)*2 = 210, then REC scenario multiplier ~1.06
-      // purchaseQty = ceil(recScenario.exact_need)
-      const insulation = findMaterial(result, "Минвата плиты");
-      expect(insulation).toBeDefined();
-      // 210 * ~1.06 ≈ 222.6 → ceil = 223
-      expect(insulation?.purchaseQty).toBeGreaterThanOrEqual(210);
-      expect(insulation?.purchaseQty).toBeLessThanOrEqual(230);
-    });
-
-    it("пароизоляция Стандартная: rolls = ceil(60*1.15/70) = 1", () => {
-      // Engine: "Пароизоляция Стандартная (70 м²)"
-      const vb = findMaterial(result, "Пароизоляция Стандартная");
-      expect(vb).toBeDefined();
-      expect(vb?.purchaseQty).toBe(1);
-    });
-
-    it("скотч соединительный: rolls = ceil(60/40) = 2", () => {
-      // Engine: "Скотч соединительный (25 м)"
-      const tape = findMaterial(result, "Скотч соединительный");
-      expect(tape).toBeDefined();
-      expect(tape?.purchaseQty).toBe(2);
-    });
-
-    it("вагонка деревянная присутствует", () => {
-      // Engine: "Вагонка деревянная"
-      const panel = findMaterial(result, "Вагонка деревянная");
-      expect(panel).toBeDefined();
-      // panels = ceil(60*1.12/0.288) = ceil(233.33) = 234
-      expect(panel?.purchaseQty).toBe(Math.ceil(60 * 1.12 / 0.288));
-    });
-
-    it("обрешётка (рейки) присутствует", () => {
-      // Engine: "Обрешётка (рейки)"
-      const lathen = findMaterial(result, "Обрешётка (рейки)");
-      expect(lathen).toBeDefined();
-      // battenPcs = ceil(60/0.4) = 150
-      expect(lathen?.purchaseQty).toBe(150);
-    });
-
-    it("антисептик (5 л) присутствует", () => {
-      // Engine: "Антисептик (5 л)"
-      const anti = findMaterial(result, "Антисептик");
-      expect(anti).toBeDefined();
-      // antisepticCans = ceil(60 * 0.15 * 1.1 / 5) = ceil(1.98) = 2
-      expect(anti?.purchaseQty).toBe(2);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    const insulation = result.materials[0];
+    expect(insulation.name).toContain("Утеплитель выбранной марки");
+    expect(insulation.quantity).toBe(120);
+    expect(insulation.withReserve).toBe(120);
+    expect(insulation.purchaseQty).toBe(120);
+    expect(insulation.packageInfo).toEqual({ count: 40, size: 3, packageUnit: "упаковок" });
   });
 
-  describe("Минвата рулоны, insulationThickness 150 мм", () => {
-    // plateThickness = 150 (рулоны), layerCount = ceil(150/150) = 1
+  it("применяет число слоёв и явный запас ровно один раз", () => {
     const result = calc({
-      roofArea: 60,
+      roofArea: 55,
       insulationThickness: 150,
-      insulationType: 1,
-      finishType: 0,
-      withVapourBarrier: 1,
+      insulationProductThicknessMm: 50,
+      insulationPackCoverageM2: 6,
+      insulationReservePercent: 10,
     });
 
-    it("layerCount = 1 (150/150)", () => {
-      expect(result.totals.layerCount).toBe(1);
-    });
-
-    it("минвата рулоны: purchaseQty = ceil(recExactNeed)", () => {
-      // Engine: "Минвата рулоны (150 мм, 1 сл.)"
-      // insPlates = 105, then REC scenario multiplier ~1.06 → ceil(105*1.06) ≈ 112
-      const insulation = findMaterial(result, "Минвата рулоны");
-      expect(insulation).toBeDefined();
-      expect(insulation?.purchaseQty).toBeGreaterThanOrEqual(105);
-      expect(insulation?.purchaseQty).toBeLessThanOrEqual(115);
-    });
-
-    it("предупреждение о толщине < 200 мм", () => {
-      // Engine: "Толщина утеплителя менее 200 мм — рекомендуется увеличить для средней полосы России"
-      expect(result.warnings.some((w) => w.includes("менее 200 мм"))).toBe(true);
-    });
+    expect(result.totals.insulationLayerCount).toBe(3);
+    expect(result.totals.insulationCleanLayerAreaM2).toBe(165);
+    expect(result.totals.insulationReservedLayerAreaM2).toBe(181.5);
+    expect(result.totals.insulationPurchasePackages).toBe(31);
+    expect(result.totals.insulationPurchasedLayerAreaM2).toBe(186);
+    expect(result.totals.insulationLeftoverLayerAreaM2).toBe(4.5);
   });
 
-  describe("ЭППС, толщина 250 мм", () => {
-    // plateThickness = 100, layerCount = ceil(250/100) = 3
+  it("показывает фактическую набранную толщину без подмены теплотехнического проекта", () => {
+    const result = calc({
+      roofArea: 40,
+      insulationThickness: 180,
+      insulationProductThicknessMm: 100,
+      insulationPackCoverageM2: 4,
+    });
+
+    expect(result.totals.insulationLayerCount).toBe(2);
+    expect(result.totals.installedInsulationThicknessMm).toBe(200);
+    expect(result.warnings.join(" ")).toContain("20 мм");
+  });
+
+  it("добавляет мембраны только после явного включения и по фактическим рулонам", () => {
     const result = calc({
       roofArea: 60,
-      insulationThickness: 250,
-      insulationType: 2,
-      finishType: 0,
-      withVapourBarrier: 1,
+      windMembraneEnabled: 1,
+      windMembraneRollCoverageM2: 75,
+      windMembraneReservePercent: 15,
+      vapourBarrierEnabled: 1,
+      vapourBarrierRollCoverageM2: 70,
+      vapourBarrierReservePercent: 10,
     });
 
-    it("layerCount = 3 (250/100)", () => {
-      expect(result.totals.layerCount).toBe(3);
-    });
+    const wind = findMaterial(result, "Гидроветрозащитная мембрана")!;
+    expect(wind.quantity).toBe(60);
+    expect(wind.withReserve).toBe(69);
+    expect(wind.purchaseQty).toBe(75);
+    expect(wind.packageInfo).toEqual({ count: 1, size: 75, packageUnit: "рулонов" });
 
-    it("ЭППС: purchaseQty = ceil(recExactNeed)", () => {
-      // Engine: "ЭППС (250 мм, 3 сл.)"
-      // insPlates = ceil(60*1.05/0.72)*3 = 264, then REC multiplier ~1.06 → ceil(264*1.06) ≈ 280
-      const insulation = findMaterial(result, "ЭППС");
-      expect(insulation).toBeDefined();
-      expect(insulation?.purchaseQty).toBeGreaterThanOrEqual(264);
-      expect(insulation?.purchaseQty).toBeLessThanOrEqual(285);
-    });
+    const vapour = findMaterial(result, "Пароизоляция по проекту")!;
+    expect(vapour.quantity).toBe(60);
+    expect(vapour.withReserve).toBe(66);
+    expect(vapour.purchaseQty).toBe(70);
   });
 
-  describe("ГКЛ отделка (finishType = 1)", () => {
+  it("ленту считает только по проектной длине стыков", () => {
+    const result = calc({
+      jointTapeEnabled: 1,
+      projectJointLengthM: 43,
+      jointTapeReservePercent: 10,
+      jointTapeRollLengthM: 25,
+    });
+
+    const tape = findMaterial(result, "Лента для стыков по проекту")!;
+    expect(tape.quantity).toBe(43);
+    expect(tape.withReserve).toBe(47.3);
+    expect(tape.purchaseQty).toBe(50);
+    expect(tape.packageInfo).toEqual({ count: 2, size: 25, packageUnit: "рулонов" });
+  });
+
+  it("деревянную отделку считает по площади одной товарной упаковки", () => {
     const result = calc({
       roofArea: 60,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 1,
-      withVapourBarrier: 1,
+      atticFinishType: 1,
+      finishLayers: 1,
+      finishReservePercent: 10,
+      woodFinishPackCoverageM2: 2.88,
     });
 
-    it("ГКЛ (3 м²) присутствует", () => {
-      // Engine: "ГКЛ (3 м²)"
-      const gkl = findMaterial(result, "ГКЛ");
-      expect(gkl).toBeDefined();
-      // gklSheets = ceil(60*1.1/3) = ceil(22) = 22
-      expect(gkl?.purchaseQty).toBe(Math.ceil(60 * 1.1 / 3));
-    });
-
-    it("профиль направляющий присутствует", () => {
-      // Engine: "Профиль направляющий"
-      const profile = findMaterial(result, "Профиль направляющий");
-      expect(profile).toBeDefined();
-      // profilePcs = ceil(60/0.6/3) = ceil(33.33) = 34
-      expect(profile?.purchaseQty).toBe(Math.ceil(60 / 0.6 / 3));
-    });
-
-    it("шпаклёвка (25 кг) присутствует", () => {
-      // Engine: "Шпаклёвка (25 кг)"
-      const putty = findMaterial(result, "Шпаклёвка");
-      expect(putty).toBeDefined();
-      // puttyBags = ceil(60*0.5/25) = ceil(1.2) = 2
-      expect(putty?.purchaseQty).toBe(Math.ceil(60 * 0.5 / 25));
-    });
-
-    it("нет вагонки и антисептика", () => {
-      expect(findMaterial(result, "Вагонка деревянная")).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    const finish = findMaterial(result, "Деревянная отделка")!;
+    expect(finish.quantity).toBe(60);
+    expect(finish.withReserve).toBe(66);
+    expect(finish.purchaseQty).toBe(66.24);
+    expect(finish.packageInfo).toEqual({ count: 23, size: 2.88, packageUnit: "упаковок" });
   });
 
-  describe("Без отделки (finishType = 2)", () => {
+  it("листовую отделку считает по фактическим размерам и числу слоёв", () => {
     const result = calc({
       roofArea: 60,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 2,
-      withVapourBarrier: 1,
+      atticFinishType: 2,
+      finishLayers: 2,
+      finishReservePercent: 10,
+      finishSheetLengthM: 2.5,
+      finishSheetWidthM: 1.2,
     });
 
-    it("нет вагонки, ГКЛ и обрешётки", () => {
-      expect(findMaterial(result, "Вагонка деревянная")).toBeUndefined();
-      expect(findMaterial(result, "ГКЛ")).toBeUndefined();
-      expect(findMaterial(result, "Обрешётка")).toBeUndefined();
-    });
+    const finish = findMaterial(result, "Листовая отделка")!;
+    expect(finish.quantity).toBe(40);
+    expect(finish.withReserve).toBe(44);
+    expect(finish.purchaseQty).toBe(44);
   });
 
-  describe("Без пароизоляции (withVapourBarrier = 0)", () => {
+  it("добавляет только введённые позиции каркаса и крепежа", () => {
     const result = calc({
-      roofArea: 60,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 0,
-      withVapourBarrier: 0,
+      projectItemsEnabled: 1,
+      projectBattenLengthM: 92,
+      battenBarLengthM: 3,
+      projectFastenerCount: 275,
+      fastenersPerPack: 200,
     });
 
-    it("нет пароизоляции", () => {
-      expect(findMaterial(result, "Пароизоляция")).toBeUndefined();
-    });
+    const battens = findMaterial(result, "Рейки или профиль по проекту")!;
+    expect(battens.quantity).toBe(92);
+    expect(battens.purchaseQty).toBe(93);
+    expect(battens.packageInfo).toEqual({ count: 31, size: 3, packageUnit: "шт" });
 
-    it("предупреждение о пароизоляции", () => {
-      // Engine: "Без пароизоляции утеплитель подвержен намоканию и потере свойств"
-      expect(result.warnings.some((w) => w.includes("Без пароизоляции"))).toBe(true);
-    });
+    const fasteners = findMaterial(result, "Крепёж по проекту")!;
+    expect(fasteners.quantity).toBe(275);
+    expect(fasteners.purchaseQty).toBe(400);
+    expect(fasteners.packageInfo).toEqual({ count: 2, size: 200, packageUnit: "упаковок" });
   });
 
-  describe("Армированная пароизоляция (withVapourBarrier = 2)", () => {
-    const result = calc({
-      roofArea: 60,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 0,
-      withVapourBarrier: 2,
-    });
+  it("не добавляет старую универсальную ведомость", () => {
+    const result = calc({});
+    const names = result.materials.map((material) => material.name).join(" | ");
 
-    it("пароизоляция Армированная присутствует", () => {
-      // Engine: "Пароизоляция Армированная (70 м²)"
-      expect(findMaterial(result, "Пароизоляция Армированная")).toBeDefined();
-    });
+    expect(names).not.toContain("Ветрозащитная мембрана");
+    expect(names).not.toContain("Пароизоляция");
+    expect(names).not.toContain("Скотч");
+    expect(names).not.toContain("Обрешётка");
+    expect(names).not.toContain("Антисептик");
+    expect(names).not.toContain("Шпаклёвка");
   });
 
-  describe("Предупреждения", () => {
-    it("толщина < 200 мм → предупреждение", () => {
-      const result = calc({ roofArea: 60, insulationThickness: 150, insulationType: 0, finishType: 0, withVapourBarrier: 1 });
-      expect(result.warnings.some((w) => w.includes("менее 200 мм"))).toBe(true);
+  it("MIN/REC/MAX и режим точности не добавляют скрытый множитель", () => {
+    const basic = atticDef.calculate({
+      roofArea: 55,
+      insulationThickness: 150,
+      insulationProductThicknessMm: 50,
+      insulationPackCoverageM2: 6,
+      insulationReservePercent: 10,
+      accuracyMode: "basic" as unknown as number,
     });
+    const professional = atticDef.calculate({
+      roofArea: 55,
+      insulationThickness: 150,
+      insulationProductThicknessMm: 50,
+      insulationPackCoverageM2: 6,
+      insulationReservePercent: 10,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(professional.scenarios).toEqual(basic.scenarios);
+    expect(professional.totals.insulationReservedLayerAreaM2).toBe(181.5);
   });
 
-  describe("Минимальная площадь (clamped to 10)", () => {
-    const result = calc({
-      roofArea: 5,
-      insulationThickness: 200,
-      insulationType: 0,
-      finishType: 0,
-      withVapourBarrier: 1,
-    });
+  it("скрывает поля выключенных товарных блоков", () => {
+    const field = (key: string) => atticDef.fields.find((item) => item.key === key);
 
-    it("roofArea clamped to 10", () => {
-      expect(result.totals.roofArea).toBe(10);
-    });
+    expect(field("windMembraneRollCoverageM2")?.hideIf).toEqual({ key: "windMembraneEnabled", op: "eq", value: 0 });
+    expect(field("vapourBarrierRollCoverageM2")?.hideIf).toEqual({ key: "vapourBarrierEnabled", op: "eq", value: 0 });
+    expect(field("woodFinishPackCoverageM2")?.hideIf).toEqual({ key: "atticFinishType", op: "ne", value: 1 });
+    expect(field("finishSheetLengthM")?.hideIf).toEqual({ key: "atticFinishType", op: "ne", value: 2 });
+    expect(field("projectBattenLengthM")?.hideIf).toEqual({ key: "projectItemsEnabled", op: "eq", value: 0 });
+  });
 
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+  it("удаляет поля, которые выдавали внутренние константы за товарные характеристики", () => {
+    const keys = atticDef.fields.map((field) => field.key);
+
+    expect(keys).not.toContain("insulationType");
+    expect(keys).not.toContain("finishType");
+    expect(keys).not.toContain("withVapourBarrier");
+  });
+
+  it("предупреждает о границах теплотехники, кровельного пирога и раскладки", () => {
+    const warnings = calc({ atticFinishType: 2 }).warnings.join(" ");
+
+    expect(warnings).toContain("теплотехнический расчёт");
+    expect(warnings).toContain("кровельного пирога");
+    expect(warnings).toContain("раскладк");
+    expect(warnings).toContain("MIN/REC/MAX");
+  });
+
+  it("SEO-контент ведёт на первичные источники и не обещает универсальную толщину", () => {
+    const seo = atticDef.seoContent?.descriptionHtml ?? "";
+
+    expect(atticDef.h1).toContain("проектной толщине");
+    expect(atticDef.metaDescription.startsWith("Бесплатный калькулятор")).toBe(true);
+    expect(atticDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+    expect(seo).toContain("https://protect.gost.ru/sp/details/5081dae9-9ee9-455f-80e8-d093d495361c");
+    expect(seo).toContain("https://protect.gost.ru/sp/details/844352c5-dda6-4006-acd8-b6875d1ed6a8");
+    expect(seo).toContain("https://www.knauf.ru/upload/iblock/c98/lnrplqjdz57umpmclo8h517o49ckylz9/Knauf-Insulation_Professionalnyy-segment_Instruktsiya-po-primeneniyu-v-konstruktsii-skatnoy-krovli.pdf");
+    expect(seo).toContain("https://nav.tn.ru/knowledge-base/materialy/gidro-vetrozashchita-i-paroizolyatsiya/paroizolyatsionnye-materialy-dlya-skatnoy-krovli-i-sten/montazh-paroizolyatsionnykh-membran-tekhnonikol/");
   });
 });
