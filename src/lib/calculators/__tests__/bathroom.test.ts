@@ -186,6 +186,7 @@ describe("Калькулятор плитки для ванной", () => {
     const html = bathroomDef.seoContent?.descriptionHtml ?? "";
 
     expect(bathroomDef.h1).toContain("плитки для ванной");
+    expect(bathroomDef.metaDescription).toContain("рассчитайте");
     expect(html).toContain("ГОСТ 13996-2019");
     expect(html).toContain("СП 71.13330.2017");
     expect(html).toContain("kerama-marazzi.com/catalog/ceramic_tile/8376/");
