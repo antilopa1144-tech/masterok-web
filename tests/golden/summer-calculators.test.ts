@@ -77,32 +77,47 @@ describe("Golden tests — Тротуарная плитка (paving-tiles)", ()
 });
 
 describe("Golden tests — Дренаж (drainage)", () => {
-  it("ёлочка 40 м, Ø110: суммарная траншея = 60 м (length × 1.5)", () => {
-    // pipe = 60 × 1.05 = 63 м
-    // sand = 60 × 0.30 × 0.10 × 1.20 = 2.16 м³
-    // gravel = 60 × 0.30 × 0.40 × 1.25 = 9.0 м³
-    const r = calcDrainage({ length: 40, pipeDiameter: 110, drainageType: 1, groundwaterRisk: 1, withCollector: 1 });
+  it("проектная трасса 40 м: явный запас 5% и продажа по 1 м", () => {
+    const r = calcDrainage({
+      pipeLengthM: 40,
+      pipeDiameterMm: 110,
+      pipeReservePercent: 5,
+      pipeSaleStepM: 1,
+    });
     const t = totals(r);
-    expect(t.totalTrenchLength).toBeCloseTo(60, 2);
-    expect(t.pipeWithReserveM).toBeCloseTo(63, 2);
-    expect(t.sandM3).toBeCloseTo(2.16, 2);
-    expect(t.gravelM3).toBeCloseTo(9.0, 2);
+    expect(t.pipeLengthM).toBeCloseTo(40, 2);
+    expect(t.pipeReservedM).toBeCloseTo(42, 2);
+    expect(t.pipePurchaseM).toBeCloseTo(42, 2);
+    expect(r.materials).toHaveLength(1);
   });
 
-  it("линейный 25 м, Ø110: труба = 25 × 1.05 = 26.25 м, без тройников", () => {
-    const r = calcDrainage({ length: 25, pipeDiameter: 110, drainageType: 2, groundwaterRisk: 0, withCollector: 0 });
+  it("проектная трасса 25 м: явный запас 5% и шаг 0,25 м", () => {
+    const r = calcDrainage({
+      pipeLengthM: 25,
+      pipeDiameterMm: 110,
+      pipeReservePercent: 5,
+      pipeSaleStepM: 0.25,
+    });
     const t = totals(r);
-    expect(t.totalTrenchLength).toBeCloseTo(25, 2);
-    expect(t.pipeWithReserveM).toBeCloseTo(26.25, 2);
+    expect(t.pipeLengthM).toBeCloseTo(25, 2);
+    expect(t.pipeReservedM).toBeCloseTo(26.25, 2);
+    expect(t.pipePurchaseM).toBeCloseTo(26.25, 2);
     expect(t.teeCount).toBe(0);
-    expect(t.collectorCount).toBe(0);
+    expect(t.collectorWellCount).toBe(0);
   });
 
-  it("высокий УГВ: геотекстиль ×1.30 на глине", () => {
-    // base = 40 × 1.61 × 1.30 × 1.15 ≈ 96.28
-    const r = calcDrainage({ length: 40, pipeDiameter: 110, drainageType: 2, groundwaterRisk: 2, withCollector: 1 });
+  it("геотекстиль: введённая развёртка 1,61 м и явный запас 15%", () => {
+    const r = calcDrainage({
+      pipeLengthM: 40,
+      geotextileEnabled: 1,
+      geotextileDevelopedWidthM: 1.61,
+      geotextileReservePercent: 15,
+      geotextileRollM2: 50,
+    });
     const t = totals(r);
-    expect(t.geotextileM2).toBeCloseTo(40 * 1.61 * 1.30 * 1.15, 1);
+    expect(t.geotextileCleanM2).toBeCloseTo(64.4, 2);
+    expect(t.geotextileReservedM2).toBeCloseTo(74.06, 2);
+    expect(t.geotextileRolls).toBe(2);
   });
 });
 

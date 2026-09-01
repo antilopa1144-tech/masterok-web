@@ -1,218 +1,169 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { drainageDef } from "../formulas/drainage";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(drainageDef.calculate.bind(drainageDef));
 
-describe("Калькулятор дренажа участка", () => {
-  describe("Defaults: 40 м, Ø110, ёлочка, средний УГВ, с накопителем", () => {
-    const result = calc({
-      length: 40,
-      pipeDiameter: 110,
-      drainageType: 1,
-      groundwaterRisk: 1,
-      withCollector: 1,
-    });
+describe("Калькулятор дренажа — ведомость по проектной трассе", () => {
+  it("default считает только фактическую длину трубы без выдуманной ёлочки", () => {
+    const result = calc({});
+    const pipe = findMaterial(result, "Дренажная труба");
 
-    it("суммарная длина траншеи (ёлочка ×1.5) = 60 м", () => {
-      expect(result.totals.totalTrenchLength).toBeCloseTo(60, 2);
-    });
-
-    it("труба с запасом 5% от длины траншеи = 60 × 1.05 = 63 м", () => {
-      expect(result.totals.pipeWithReserveM).toBeCloseTo(63, 2);
-    });
-
-    it("песок подсыпки = 60 × 0.30 × 0.10 × 1.20 = 2.16 м³", () => {
-      expect(result.totals.sandM3).toBeCloseTo(2.16, 2);
-    });
-
-    it("щебень обсыпки = 60 × 0.30 × 0.40 × 1.25 = 9 м³", () => {
-      expect(result.totals.gravelM3).toBeCloseTo(9, 2);
-    });
-
-    it("геотекстиль = 60 × 1.61 × 1.15 = 111.09 м²", () => {
-      expect(result.totals.geotextileM2).toBeCloseTo(111.09, 2);
-    });
-
-    it("геотекстиль рулонов = ceil(111.09 / 50) = 3", () => {
-      expect(result.totals.geotextileRolls).toBe(3);
-    });
-
-    it("колодцы = max(1, ceil(40/50)) + ceil(20/30) = 1 + 1 = 2", () => {
-      expect(result.totals.wellCount).toBe(2);
-    });
-
-    it("приёмный накопитель присутствует (длина ≥ 20 м)", () => {
-      expect(result.totals.collectorCount).toBe(1);
-      expect(findMaterial(result, "Приёмный колодец")).toBeDefined();
-    });
-
-    it("отводы для ёлочки = 2", () => {
-      expect(result.totals.elbowCount).toBe(2);
-    });
-
-    it("тройники для ёлочки = 4", () => {
-      expect(result.totals.teeCount).toBe(4);
-      expect(findMaterial(result, "Тройники")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.formulaVersion).toBe("drainage-web-route-v1");
+    expect(result.totals.pipeLengthM).toBe(40);
+    expect(result.totals.pipeReservedM).toBe(40);
+    expect(result.totals.pipePurchaseM).toBe(40);
+    expect(result.totals.pipePurchaseLots).toBe(40);
+    expect(pipe?.quantity).toBe(40);
+    expect(pipe?.withReserve).toBe(40);
+    expect(pipe?.purchaseQty).toBe(40);
+    expect(result.materials).toHaveLength(1);
+    expect(result.summaryCards?.map((card) => card.value)).toEqual(["40", "40", "40"]);
+    checkInvariants(result);
   });
 
-  describe("Линейный дренаж: 25 м, Ø110, без накопителя", () => {
-    const result = calc({
-      length: 25,
-      pipeDiameter: 110,
-      drainageType: 2,
-      groundwaterRisk: 0,
-      withCollector: 0,
-    });
+  it("явный запас применяется один раз", () => {
+    const result = calc({ pipeReservePercent: 5, pipeSaleStepM: 1 });
 
-    it("длина траншеи = длине трассы (нет ёлочки)", () => {
-      expect(result.totals.totalTrenchLength).toBeCloseTo(25, 2);
-    });
-
-    it("без тройников (только линейный)", () => {
-      expect(result.totals.teeCount).toBe(0);
-      expect(findMaterial(result, "Тройники")).toBeUndefined();
-    });
-
-    it("без накопителя", () => {
-      expect(result.totals.collectorCount).toBe(0);
-      expect(findMaterial(result, "Приёмный колодец")).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.pipeLengthM).toBe(40);
+    expect(result.totals.pipeReservedM).toBe(42);
+    expect(result.totals.pipePurchaseM).toBe(42);
+    expect(result.scenarios?.REC.exact_need).toBe(42);
   });
 
-  describe("Высокий УГВ: дополнительная обмотка геотекстилем ×1.30", () => {
-    const result = calc({
-      length: 40,
-      pipeDiameter: 110,
-      drainageType: 2,
-      groundwaterRisk: 2,
-      withCollector: 1,
-    });
+  it("округляет трубу по фактической длине неделимой бухты", () => {
+    const result = calc({ pipeReservePercent: 5, pipeSaleStepM: 50 });
+    const pipe = findMaterial(result, "Дренажная труба");
 
-    it("геотекстиль увеличен в 1.30 раза", () => {
-      // base = 40 × 1.61 × 1.30 × 1.15 = 96.278
-      expect(result.totals.geotextileM2).toBeCloseTo(40 * 1.61 * 1.30 * 1.15, 1);
-    });
-
-    it("предупреждение про высокий УГВ", () => {
-      expect(result.warnings.some((w) => w.includes("грунтовых вод") || w.includes("УГВ"))).toBe(true);
-    });
+    expect(result.totals.pipeReservedM).toBe(42);
+    expect(result.totals.pipePurchaseLots).toBe(1);
+    expect(result.totals.pipePurchaseM).toBe(50);
+    expect(result.totals.pipeLeftoverM).toBe(8);
+    expect(pipe?.subtitle).toContain("1 неделимая");
   });
 
-  describe("Длинная трасса Ø110 — предупреждение про лимит 80 м", () => {
-    const result = calc({
-      length: 100,
-      pipeDiameter: 110,
-      drainageType: 2,
-      groundwaterRisk: 1,
-      withCollector: 1,
-    });
+  it("диаметр меняет подпись товара, но не подменяет гидравлический подбор", () => {
+    const d110 = calc({ pipeDiameterMm: 110 });
+    const d160 = calc({ pipeDiameterMm: 160 });
 
-    it("предупреждение про превышение 80 м для Ø110", () => {
-      expect(result.warnings.some((w) => w.includes("Ø110") && w.includes("80"))).toBe(true);
-    });
-
-    it("колодцев минимум 2 на 100 м", () => {
-      // ceil(100/50) = 2, ёлочки нет — только base
-      expect(result.totals.wellCount).toBeGreaterThanOrEqual(2);
-    });
+    expect(findMaterial(d110, "Ø110")).toBeDefined();
+    expect(findMaterial(d160, "Ø160")).toBeDefined();
+    expect(d110.totals.pipePurchaseM).toBe(d160.totals.pipePurchaseM);
+    expect(d160.warnings.some((warning) => warning.includes("не подбирается"))).toBe(true);
   });
 
-  describe("Накопитель на короткой трассе — предупреждение", () => {
+  it("считает песчаный слой и щебёночную обсыпку только по заданному сечению", () => {
     const result = calc({
-      length: 10,
-      pipeDiameter: 110,
-      drainageType: 2,
-      groundwaterRisk: 0,
-      withCollector: 1,
+      layersEnabled: 1,
+      sandLayerWidthM: 0.3,
+      sandLayerThicknessMm: 100,
+      sandPurchaseFactor: 1.2,
+      gravelEnvelopeWidthM: 0.3,
+      gravelEnvelopeHeightM: 0.4,
+      gravelPurchaseFactor: 1.25,
+      bulkSaleStepM3: 0.1,
     });
 
-    it("накопитель не считается (длина < 20 м)", () => {
-      expect(result.totals.collectorCount).toBe(0);
-    });
-
-    it("предупреждение про лишний накопитель", () => {
-      expect(result.warnings.some((w) => w.includes("накопит"))).toBe(true);
-    });
+    expect(result.totals.sandGeometricM3).toBeCloseTo(1.2, 6);
+    expect(result.totals.sandPurchaseNeedM3).toBeCloseTo(1.44, 6);
+    expect(result.totals.sandPurchaseM3).toBe(1.5);
+    expect(result.totals.pipeCrossSectionM2).toBeCloseTo(Math.PI * 0.11 ** 2 / 4, 6);
+    expect(result.totals.gravelGeometricM3).toBeCloseTo((0.3 * 0.4 - Math.PI * 0.11 ** 2 / 4) * 40, 6);
+    expect(result.totals.gravelPurchaseM3).toBe(5.6);
+    expect(findMaterial(result, "Песок — заданный слой")?.purchaseQty).toBe(1.5);
+    expect(findMaterial(result, "Щебень — заданная обсыпка")?.purchaseQty).toBe(5.6);
+    checkInvariants(result);
   });
 
-  describe("Ø160 — другой минимальный уклон", () => {
-    const result = calc({
-      length: 80,
-      pipeDiameter: 160,
-      drainageType: 2,
-      groundwaterRisk: 1,
-      withCollector: 1,
-    });
+  it("не назначает слои при включённом блоке с нулевыми размерами", () => {
+    const result = calc({ layersEnabled: 1 });
 
-    it("выбран диаметр 160", () => {
-      expect(result.totals.pipeDiameter).toBe(160);
-    });
-
-    it("в материалах указан Ø160", () => {
-      expect(findMaterial(result, "Ø160")).toBeDefined();
-    });
-
-    it("нет предупреждения про лимит 80 м (Ø160 справляется)", () => {
-      expect(result.warnings.some((w) => w.includes("Ø110") && w.includes("80"))).toBe(false);
-    });
-
-    it("в practicalNotes указан минимальный уклон 3 мм/м", () => {
-      expect(result.practicalNotes!.some((n) => n.includes("3 мм") || n.includes("3 мм"))).toBe(true);
-    });
+    expect(result.totals.sandPurchaseM3).toBe(0);
+    expect(result.totals.gravelPurchaseM3).toBe(0);
+    expect(findMaterial(result, "Песок — заданный слой")).toBeUndefined();
+    expect(findMaterial(result, "Щебень — заданная обсыпка")).toBeUndefined();
+    expect(result.warnings.some((warning) => warning.includes("размеры слоёв не заданы"))).toBe(true);
   });
 
-  describe("Сценарии MIN ≤ REC ≤ MAX", () => {
+  it("считает геотекстиль по развёрнутой ширине и фактическому рулону", () => {
     const result = calc({
-      length: 40,
-      pipeDiameter: 110,
-      drainageType: 1,
-      groundwaterRisk: 1,
-      withCollector: 1,
+      geotextileEnabled: 1,
+      geotextileDevelopedWidthM: 1.61,
+      geotextileReservePercent: 15,
+      geotextileRollM2: 50,
     });
 
-    it("MIN ≤ REC ≤ MAX по exact_need", () => {
-      expect(result.scenarios!.MIN.exact_need).toBeLessThanOrEqual(result.scenarios!.REC.exact_need);
-      expect(result.scenarios!.REC.exact_need).toBeLessThanOrEqual(result.scenarios!.MAX.exact_need);
-    });
-
-    it("REC покупка ≥ exact_need (упаковка)", () => {
-      expect(result.scenarios!.REC.purchase_quantity).toBeGreaterThanOrEqual(result.scenarios!.REC.exact_need);
-    });
+    expect(result.totals.geotextileCleanM2).toBeCloseTo(64.4, 6);
+    expect(result.totals.geotextileReservedM2).toBeCloseTo(74.06, 6);
+    expect(result.totals.geotextileRolls).toBe(2);
+    expect(findMaterial(result, "Геотекстиль")?.unit).toBe("рулонов");
+    expect(findMaterial(result, "Геотекстиль")?.purchaseQty).toBe(2);
   });
 
-  describe("Граничные значения", () => {
-    it("минимум 5 м — расчёт работает", () => {
-      const result = calc({
-        length: 5,
-        pipeDiameter: 110,
-        drainageType: 2,
-        groundwaterRisk: 0,
-        withCollector: 0,
-      });
-      checkInvariants(result);
-      expect(result.totals.wellCount).toBeGreaterThanOrEqual(1);
+  it("добавляет колодцы и фитинги только по введённой проектной ведомости", () => {
+    const result = calc({
+      projectItemsEnabled: 1,
+      inspectionWellCount: 3,
+      collectorWellCount: 1,
+      teeCount: 4,
+      elbowCount: 2,
     });
 
-    it("максимум 500 м — расчёт работает (с предупреждением для Ø110)", () => {
-      const result = calc({
-        length: 500,
-        pipeDiameter: 160,
-        drainageType: 2,
-        groundwaterRisk: 1,
-        withCollector: 1,
-      });
-      checkInvariants(result);
-      expect(result.totals.wellCount).toBeGreaterThanOrEqual(10);
-    });
+    expect(findMaterial(result, "Смотровые колодцы")?.purchaseQty).toBe(3);
+    expect(findMaterial(result, "Приёмные или коллекторные колодцы")?.purchaseQty).toBe(1);
+    expect(findMaterial(result, "Тройники")?.purchaseQty).toBe(4);
+    expect(findMaterial(result, "Отводы")?.purchaseQty).toBe(2);
+  });
+
+  it("по умолчанию не назначает колодцы, фитинги, слои и геотекстиль", () => {
+    const serialized = JSON.stringify(calc({}));
+
+    for (const forbidden of ["Песок", "Щебень", "Геотекстиль", "Смотровые колодцы", "Тройники", "Отводы"]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
+
+  it("MIN/REC/MAX и режим точности не добавляют скрытые множители", () => {
+    const result = calc({ pipeReservePercent: 5, accuracyMode: "detailed" as never });
+
+    expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);
+    expect(result.scenarios?.REC).toEqual(result.scenarios?.MAX);
+    expect(result.scenarios?.REC.key_factors).toEqual({ field_multiplier: 1, reserve_percent: 5 });
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("форма не содержит универсальных проектных пресетов", () => {
+    const keys = drainageDef.fields.map((field) => field.key);
+    const field = (key: string) => drainageDef.fields.find((item) => item.key === key);
+
+    expect(keys).not.toContain("drainageType");
+    expect(keys).not.toContain("groundwaterRisk");
+    expect(keys).not.toContain("withCollector");
+    expect(keys).toContain("pipeSaleStepM");
+    expect(keys).toContain("gravelEnvelopeWidthM");
+    expect(field("sandLayerWidthM")?.hideIf).toEqual({ key: "layersEnabled", op: "eq", value: 0 });
+    expect(field("geotextileDevelopedWidthM")?.hideIf).toEqual({ key: "geotextileEnabled", op: "eq", value: 0 });
+    expect(field("inspectionWellCount")?.hideIf).toEqual({ key: "projectItemsEnabled", op: "eq", value: 0 });
+  });
+
+  it("SEO отделяет геометрию закупки от проекта и ведёт на первичные источники", () => {
+    const html = drainageDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).not.toContain("до 80 м трассы");
+    expect(html).not.toContain("шаг 5-7 м");
+    expect(html).not.toContain("типичная глубина");
+    expect(html).not.toContain("раз в 3&ndash;5 лет");
+    expect(html).toContain("https://protect.gost.ru/sp/details/e1b05b3c-a2e5-419b-b4c1-d7e07aa7e3ce");
+    expect(html).toContain("https://protect.gost.ru/sp/details/cf3b6ea5-c63b-4aa4-9dd3-4295fcaef945");
+    expect(html).toContain("https://protect.gost.ru/gost/details/a1c13ac5-d59f-4397-b221-634f686375f3");
+    expect(html).toContain("https://protect.gost.ru/sp/details/990885bc-664d-4329-b54c-5aa3d581c20d");
+  });
+
+  it("метаданные обещают только поддерживаемую ведомость", () => {
+    expect(drainageDef.h1).toBe("Калькулятор дренажа — материалы по проектной трассе");
+    expect(drainageDef.metaTitle).toContain("Калькулятор дренажа: труба и материалы");
+    expect(drainageDef.metaDescription.startsWith("Бесплатный калькулятор")).toBe(true);
+    expect(drainageDef.metaDescription).toContain("рассчитайте");
+    expect(drainageDef.metaDescription).not.toContain("уровню грунтовых вод");
   });
 });
