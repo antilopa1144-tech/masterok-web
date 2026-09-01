@@ -67,7 +67,7 @@ function getCuringPresetForCalculator(
     case "zatirka":
       return values.groutType === 0 ? "grout" : null;
     case "gidroizolyaciya-vlagozaschita":
-      return values.masticType === 0 ? "waterproof" : null;
+      return null;
     default:
       return null;
   }

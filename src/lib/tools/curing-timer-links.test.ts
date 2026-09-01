@@ -34,6 +34,7 @@ describe("связка калькуляторов с таймером схват
     expect(buildCuringTimerHrefFromCalculator("zatirka", { groutType: 1 })).toBeNull();
     expect(buildCuringTimerHrefFromCalculator("kraska", {})).toBeNull();
     expect(buildCuringTimerHrefFromCalculator("nalivnoy-pol", {})).toBeNull();
+    expect(buildCuringTimerHrefFromCalculator("gidroizolyaciya-vlagozaschita", {})).toBeNull();
   });
 
   it("принимает только согласованную пару source и preset", () => {

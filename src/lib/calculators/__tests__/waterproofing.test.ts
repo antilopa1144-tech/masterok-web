@@ -1,236 +1,218 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { waterproofingDef } from "../formulas/waterproofing";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(waterproofingDef.calculate.bind(waterproofingDef)) as (
-  inputs: Record<string, any>,
-) => ReturnType<typeof waterproofingDef.calculate>;
+const calc = withBasicAccuracy(
+  waterproofingDef.calculate.bind(waterproofingDef),
+) as (inputs: Record<string, number>) => ReturnType<typeof waterproofingDef.calculate>;
 
 describe("Гидроизоляция", () => {
-  it("описывает поисковый интент и типовой пример так же, как canonical-расчёт", () => {
-    expect(waterproofingDef.metaTitle).toContain("расход мастики на м²");
-    expect(waterproofingDef.metaDescription).toContain("количество вёдер к покупке");
+  it("описывает паспортный расчёт и опирается на первичные источники", () => {
+    expect(waterproofingDef.formulaVersion).toBe("waterproofing-web-passport-v1");
+    expect(waterproofingDef.metaTitle).toContain("расход по техкарте");
+    expect(waterproofingDef.metaDescription).toContain("рассчитайте");
+    expect(waterproofingDef.metaDescription).toContain("упаков");
 
-    const consumptionFaq = waterproofingDef.seoContent?.faq?.find((item) =>
-      item.question.includes("получается 16 кг"),
-    );
-    expect(consumptionFaq?.answer).toContain("16 кг");
-    expect(consumptionFaq?.answer).toContain("двух вёдер, то есть 30 кг");
-    expect(waterproofingDef.seoContent?.descriptionHtml).not.toContain("Цементная мастика (Ceresit CL 51)");
-    expect(waterproofingDef.seoContent?.descriptionHtml).not.toContain("Пункт 4.11");
-    expect(waterproofingDef.seoContent?.descriptionHtml).toContain("около 1,4 кг/м&sup2; суммарно за два слоя");
-    expect(waterproofingDef.seoContent?.descriptionHtml).toContain("https://ceresit.ru/ru/products/waterproofing/waterproofing-materials/cl_51_combo");
-    expect(waterproofingDef.seoContent?.descriptionHtml).toContain("https://protect.gost.ru/sp/details/a2711156-c40f-4d0f-89f1-7e3c366bc430");
-    expect(waterproofingDef.seoContent?.descriptionHtml).toContain("https://protect.gost.ru/sp/details/ca915ed9-5bce-4de4-94af-debfd041a939");
+    const html = waterproofingDef.seoContent?.descriptionHtml ?? "";
+    expect(html).toContain("www.knauf.ru/catalog");
+    expect(html).toContain("cdnmedia.mapei.com");
+    expect(html).toContain("https://protect.gost.ru/sp/details/a2711156-c40f-4d0f-89f1-7e3c366bc430");
+    expect(html).toContain("https://protect.gost.ru/sp/details/ca915ed9-5bce-4de4-94af-debfd041a939");
+    expect(html).not.toMatch(/Ceresit CL 51|Профиль A|жидкая резина/i);
   });
 
-  it("показывает профили как коэффициенты, а не марки или химические типы", () => {
-    const profileField = waterproofingDef.fields.find((field) => field.key === "masticType");
-    const optionText = profileField?.options?.map((option) => option.label).join(" ") ?? "";
-
-    expect(profileField?.label).toBe("Расчётный профиль мастики");
-    expect(profileField?.hint).toContain("не марки и не химические типы");
-    expect(optionText).not.toMatch(/Ceresit|жидкая резина|полимерная обмазочная/i);
+  it("не предлагает фиктивные типы мастики и автоматические узлы", () => {
+    const keys = waterproofingDef.fields.map((field) => field.key);
+    expect(keys).toEqual(expect.arrayContaining([
+      "inputMode",
+      "projectAreaM2",
+      "consumptionBasis",
+      "passportConsumptionKgM2",
+      "allowancePercent",
+      "packageWeightKg",
+    ]));
+    expect(keys).not.toEqual(expect.arrayContaining([
+      "masticType",
+      "pipePenetrations",
+      "insetCount",
+      "floorCurvatureClass",
+      "roomPerimeter",
+      "wallHeight",
+    ]));
   });
 
-  describe("Расчётный профиль A (masticType=0)", () => {
-    it("6 м² пол, 200 мм стены, периметр 10 м, 2 слоя", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      checkInvariants(r);
-      // wallArea=10*0.2=2, totalArea=8
-      // masticKg=8*1.0*2=16, buckets=ceil(16/15)=2
-      expect(r.totals.totalArea).toBeCloseTo(8, 1);
-      const mastic = findMaterial(r, "Расчётный профиль A");
-      expect(mastic).toBeDefined();
-      expect(mastic?.quantity).toBe(16);
-      expect(mastic?.purchaseQty).toBe(30);
-      expect(mastic?.subtitle).toContain("Это не паспорт продукта");
-      expect(mastic?.subtitle).toContain("8 м² × 1 кг/м² × 2 сл.");
-      expect(r.accuracyMode).toBe("basic");
-      expect(r.warnings).toEqual(expect.arrayContaining([
-        expect.stringContaining("только коэффициент 1 кг/м² за слой"),
-        expect.stringContaining("предварительные независимые позиции"),
-        expect.stringContaining("уже округлённому числу вёдер"),
-      ]));
-      expect(r.scenarios.MIN.exact_need).toBeLessThan(r.scenarios.REC.exact_need);
-      expect(r.scenarios.REC.exact_need).toBeLessThan(r.scenarios.MAX.exact_need);
+  it("считает готовую площадь по суммарному расходу на весь цикл", () => {
+    const result = calc({
+      inputMode: 0,
+      projectAreaM2: 8,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1.2,
+      allowancePercent: 5,
+      packageWeightKg: 5,
     });
 
-    it("условная грунтовка профиля A", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      const primer = findMaterial(r, "Грунтовка (условная позиция");
-      expect(primer).toBeDefined();
-      expect(primer?.subtitle).toContain("0,15 кг/м²");
-      expect(primer?.subtitle).toContain("совместимость системы");
-    });
+    checkInvariants(result);
+    const material = findMaterial(result, "Гидроизоляционный состав");
+    expect(result.totals.workAreaM2).toBe(8);
+    expect(result.totals.baseNeedKg).toBeCloseTo(9.6, 6);
+    expect(result.totals.requiredNeedKg).toBeCloseTo(10.08, 6);
+    expect(result.totals.packages).toBe(3);
+    expect(result.totals.purchaseKg).toBe(15);
+    expect(result.totals.leftoverKg).toBeCloseTo(4.92, 6);
+    expect(result.scenarios?.REC.leftover).toBeCloseTo(5.4, 6);
+    expect(material?.quantity).toBeCloseTo(9.6, 6);
+    expect(material?.withReserve).toBeCloseTo(10.08, 6);
+    expect(material?.purchaseQty).toBe(15);
+    expect(result.materials).toHaveLength(1);
   });
 
-  describe("Расчётный профиль B (masticType=1)", () => {
-    it("расход 1.2 кг/м², ведро 20 кг", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 1, layers: 2 });
-      // totalArea=8, masticKg=8*1.2*2=19.2, buckets=ceil(19.2/20)=1
-      const mastic = findMaterial(r, "Расчётный профиль B");
-      expect(mastic).toBeDefined();
+  it("в режиме расхода на слой применяет только явное число слоёв", () => {
+    const result = calc({
+      inputMode: 0,
+      projectAreaM2: 12,
+      consumptionBasis: 1,
+      passportConsumptionKgM2: 0.7,
+      coatCount: 2,
+      allowancePercent: 0,
+      packageWeightKg: 5,
     });
 
-    it("условный праймер профиля B", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 1, layers: 2 });
-      const primer = findMaterial(r, "Праймер (условная позиция");
-      expect(primer).toBeDefined();
-      expect(primer?.subtitle).toContain("0,30 л/м²");
-      expect(primer?.subtitle).toContain("покупайте только");
-    });
+    expect(result.totals.baseNeedKg).toBeCloseTo(16.8, 6);
+    expect(result.totals.requiredNeedKg).toBeCloseTo(16.8, 6);
+    expect(result.totals.packages).toBe(4);
+    expect(result.totals.purchaseKg).toBe(20);
+    expect(result.practicalNotes?.join(" ")).toContain("на слой");
+    expect(result.practicalNotes?.join(" ")).toContain("2 слоя");
   });
 
-  describe("Расчётный профиль C (masticType=2)", () => {
-    it("расход 0.8 кг/м², ведро 15 кг", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 2, layers: 2 });
-      // totalArea=8, masticKg=8*0.8*2=12.8, buckets=ceil(12.8/15)=1
-      const mastic = findMaterial(r, "Расчётный профиль C");
-      expect(mastic).toBeDefined();
+  it("не умножает суммарный паспортный расход на скрытое число слоёв", () => {
+    const one = calc({
+      inputMode: 0,
+      projectAreaM2: 10,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1.4,
+      coatCount: 1,
+      allowancePercent: 0,
+      packageWeightKg: 5,
     });
+    const three = calc({
+      inputMode: 0,
+      projectAreaM2: 10,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1.4,
+      coatCount: 3,
+      allowancePercent: 0,
+      packageWeightKg: 5,
+    });
+
+    expect(one.totals.baseNeedKg).toBe(14);
+    expect(three.totals.baseNeedKg).toBe(14);
   });
 
-  describe("Высота обработки стен", () => {
-    it("только пол — wallHeight=0", () => {
-      const r = calc({ floorArea: 6, wallHeight: 0, roomPerimeter: 10, masticType: 0, layers: 2 });
-      expect(r.totals.wallArea).toBeCloseTo(0, 1);
-      expect(r.totals.totalArea).toBeCloseTo(6, 1);
-      expect(r.warnings.some(w => w.includes("Стены не включены") && w.includes("проекту помещения"))).toBe(true);
-      expect(r.warnings.every(w => !w.includes("обязательна минимум"))).toBe(true);
+  it("считает пол и фактическую полосу стен без скрытого полного периметра", () => {
+    const result = calc({
+      inputMode: 1,
+      roomLengthM: 3,
+      roomWidthM: 2,
+      includeFloor: 1,
+      wallCoverageLengthM: 10,
+      wallCoverageHeightM: 0.2,
+      wallOpeningAreaM2: 0,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1,
+      allowancePercent: 0,
+      packageWeightKg: 5,
     });
+
+    expect(result.totals.floorAreaM2).toBe(6);
+    expect(result.totals.grossWallAreaM2).toBe(2);
+    expect(result.totals.netWallAreaM2).toBe(2);
+    expect(result.totals.workAreaM2).toBe(8);
+    expect(result.practicalNotes?.join(" ")).toContain("10 м фактической длины");
   });
 
-  describe("Количество слоёв", () => {
-    it("1 слой → предупреждение о границе техкарты", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 1 });
-      expect(r.warnings.some(w => w.includes("множитель ×1 слой") && w.includes("техкарта"))).toBe(true);
-      expect(r.warnings.every(w => !w.includes("нежилых помещений"))).toBe(true);
+  it("позволяет считать только выбранные стены", () => {
+    const result = calc({
+      inputMode: 1,
+      roomLengthM: 3,
+      roomWidthM: 2,
+      includeFloor: 0,
+      wallCoverageLengthM: 2.5,
+      wallCoverageHeightM: 2,
+      wallOpeningAreaM2: 1,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1,
+      allowancePercent: 0,
+      packageWeightKg: 5,
     });
+
+    expect(result.totals.floorAreaM2).toBe(0);
+    expect(result.totals.grossWallAreaM2).toBe(5);
+    expect(result.totals.appliedWallOpeningAreaM2).toBe(1);
+    expect(result.totals.workAreaM2).toBe(4);
   });
 
-  describe("Сопутствующие материалы", () => {
-    it("лента гидроизоляционная", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      const systemTape = findMaterial(r, "Гидроизоляционная лента (условная позиция");
-      expect(systemTape?.quantity).toBeCloseTo(24.2, 3);
-      expect(systemTape?.purchaseQty).toBe(30);
-      expect(systemTape?.subtitle).toContain("периметр × 1,2");
-      expect(systemTape?.subtitle).toContain("Реальные углы, швы и манжеты не измерены");
+  it("ограничивает вычет проёмов площадью покрываемых стен", () => {
+    const result = calc({
+      inputMode: 1,
+      includeFloor: 0,
+      wallCoverageLengthM: 2,
+      wallCoverageHeightM: 2,
+      wallOpeningAreaM2: 10,
     });
 
-    it("силиконовый герметик", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      // Engine: "Силиконовый герметик"
-      const sealant = findMaterial(r, "Силиконовый герметик (условная позиция");
-      expect(sealant).toBeDefined();
-      expect(sealant?.name).toContain("280–310 мл");
-    });
-
-    it("герметик для стыков", () => {
-      const r = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-      const joint = findMaterial(r, "Герметик для примыканий (условная позиция");
-      expect(joint).toBeDefined();
-      expect(joint?.subtitle).toContain("× 0,5 / 10");
-    });
+    expect(result.totals.appliedWallOpeningAreaM2).toBe(4);
+    expect(result.totals.workAreaM2).toBe(0);
+    expect(result.warnings.join(" ")).toContain("введённый вычет ограничен");
   });
 
-  describe("Условные надбавки на трубы и дополнительные узлы", () => {
-    // Базовый кейс: 6 м² + 0.2 м стены, totalArea=8, masticKg = 8*1.0*2 = 16
-    const noPenetrations = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2 });
-
-    // С 4 примыканиями: +4 кг → masticKg = 20, buckets = ceil(20/15) = 2 (граница)
-    const fourPipes = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, pipePenetrations: 4 });
-
-    // С 1 инсталляцией: +1.5 кг → masticKg = 17.5, buckets = ceil(17.5/15) = 2
-    const withInset = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, insetCount: 1 });
-
-    // Полный санузел: 4 трубы + 1 инсталляция → +5.5 кг доп. мастики
-    const fullRoom = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, pipePenetrations: 4, insetCount: 1 });
-
-    it("без примыканий: предупреждение без выдуманного процента", () => {
-      const hasReminder = noPenetrations.warnings.some((w) =>
-        w.includes("фиксированные надбавки не применены") && w.includes("не добавляет типовые 3–5 узлов"),
-      );
-      expect(hasReminder).toBe(true);
-      expect(noPenetrations.warnings.every((w) => !w.includes("15-25%"))).toBe(true);
+  it("применяет надбавку один раз и округляет только до фактической фасовки", () => {
+    const result = calc({
+      inputMode: 0,
+      projectAreaM2: 20,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1.1,
+      allowancePercent: 10,
+      packageWeightKg: 7.5,
     });
 
-    it("без примыканий: extraMasticKg = 0 (backward-compat)", () => {
-      expect(noPenetrations.totals.extraMasticKg).toBe(0);
-    });
-
-    it("4 примыкания труб: extraMasticKg = 4.0", () => {
-      expect(fourPipes.totals.extraMasticKg).toBeCloseTo(4.0, 1);
-    });
-
-    it("4 примыкания труб: penetrationTapeM = 2.0 (4 × 0.5 м манжеты)", () => {
-      expect(fourPipes.totals.penetrationTapeM).toBeCloseTo(2.0, 1);
-    });
-
-    it("1 инсталляция: extraMasticKg = 1.5, penetrationTapeM = 2.0", () => {
-      expect(withInset.totals.extraMasticKg).toBeCloseTo(1.5, 1);
-      expect(withInset.totals.penetrationTapeM).toBeCloseTo(2.0, 1);
-    });
-
-    it("полный санузел (4 трубы + 1 инст): extraMasticKg = 5.5", () => {
-      expect(fullRoom.totals.extraMasticKg).toBeCloseTo(5.5, 1);
-    });
-
-    it("полный санузел: больше мастики чем без примыканий", () => {
-      const noPenMastic = noPenetrations.totals.masticKg as number;
-      const fullMastic = fullRoom.totals.masticKg as number;
-      expect(fullMastic).toBeGreaterThan(noPenMastic);
-    });
-
-    it("полный санузел: practicalNote упоминает примыкания", () => {
-      const hasNote = fullRoom.practicalNotes?.some((n) =>
-        n.includes("4 труб") && n.includes("1 дополнительных узлов") && n.includes("фиксированные надбавки"),
-      ) ?? false;
-      expect(hasNote).toBe(true);
-    });
+    expect(result.totals.baseNeedKg).toBe(22);
+    expect(result.totals.requiredNeedKg).toBeCloseTo(24.2, 6);
+    expect(result.totals.packages).toBe(4);
+    expect(result.totals.purchaseKg).toBe(30);
+    expect(result.totals.leftoverKg).toBeCloseTo(5.8, 6);
   });
 
-  describe("Класс кривизны пола", () => {
-    const flat = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, floorCurvatureClass: 0 });
-    const medium = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, floorCurvatureClass: 1 });
-    const high = calc({ floorArea: 6, wallHeight: 200, roomPerimeter: 10, masticType: 0, layers: 2, floorCurvatureClass: 2 });
+  it("не добавляет ленту, грунт, герметик, манжеты или инструмент", () => {
+    const result = calc({ inputMode: 0, projectAreaM2: 8 });
+    const text = result.materials.map((material) => material.name).join(" ");
 
-    it("класс 0 (ровный): множитель 1.0, backward-compat", () => {
-      expect(flat.totals.curvatureMult).toBe(1.0);
-      expect(flat.totals.masticKg).toBe(16);
-    });
-
-    it("класс 1 (средний): +10% мастики", () => {
-      // 16 * 1.1 = 17.6
-      expect(medium.totals.masticKg).toBeCloseTo(17.6, 1);
-    });
-
-    it("класс 2 (сильный): +20% мастики", () => {
-      // 16 * 1.2 = 19.2
-      expect(high.totals.masticKg).toBeCloseTo(19.2, 1);
-    });
-
-    it("монотонность: ровный < средний < сильный", () => {
-      expect(flat.totals.masticKg).toBeLessThan(medium.totals.masticKg as number);
-      expect(medium.totals.masticKg).toBeLessThan(high.totals.masticKg as number);
-    });
+    expect(result.materials).toHaveLength(1);
+    expect(text).not.toMatch(/лент|грунт|праймер|герметик|манжет|валик|кист/i);
+    expect(result.warnings.join(" ")).toContain("не добавляются автоматически");
   });
 
-  it("явно сохраняет отличие базового примера от дефолтного реалистичного режима", () => {
-    const realistic = waterproofingDef.calculate({
-      floorArea: 6,
-      wallHeight: 200,
-      roomPerimeter: 10,
-      masticType: 0,
-      layers: 2,
-      accuracyMode: "realistic",
+  it("не скрывает надбавки в MIN, REC, MAX и режиме точности", () => {
+    const result = waterproofingDef.calculate({
+      inputMode: 0,
+      projectAreaM2: 8,
+      consumptionBasis: 0,
+      passportConsumptionKgM2: 1.2,
+      allowancePercent: 5,
+      packageWeightKg: 5,
+      accuracyMode: "professional",
     });
-    const mastic = findMaterial(realistic, "Расчётный профиль A");
 
-    expect(realistic.accuracyMode).toBe("realistic");
-    expect(mastic?.quantity).toBeCloseTo(19.281, 3);
-    expect(mastic?.purchaseQty).toBe(30);
-    expect(mastic?.subtitle).toContain("19,281 кг");
+    expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);
+    expect(result.scenarios?.REC).toEqual(result.scenarios?.MAX);
+    expect(result.accuracyMode).toBe("professional");
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+    expect(result.accuracyExplanation?.notes.join(" ")).toContain("не меняет расход");
+  });
+
+  it("сохраняет canonical id, но явно маркирует отдельный web-контракт", () => {
+    const result = calc({ inputMode: 0, projectAreaM2: 8 });
+    expect(result.canonicalSpecId).toBe("waterproofing");
+    expect(result.formulaVersion).toBe("waterproofing-web-passport-v1");
   });
 });

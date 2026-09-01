@@ -20,6 +20,9 @@ describe("связка обратного расчёта остатка с ка�
     expect(buildReverseCoverageHrefFromCalculator("shpaklevka", { puttyType: 2 })).toContain(
       "material=putty-start",
     );
+    expect(buildReverseCoverageHrefFromCalculator("gidroizolyaciya-vlagozaschita", {})).toBe(
+      "/instrumenty/skolko-ostalos/?material=waterproof&from=gidroizolyaciya-vlagozaschita",
+    );
   });
 
   it("не угадывает продукт или несовместимый состав", () => {
@@ -27,7 +30,6 @@ describe("связка обратного расчёта остатка с ка�
     expect(buildReverseCoverageHrefFromCalculator("shtukaturka", { plasterType: 2 })).toBeNull();
     expect(buildReverseCoverageHrefFromCalculator("shpaklevka", { puttyType: 1 })).toBeNull();
     expect(buildReverseCoverageHrefFromCalculator("zatirka", { groutType: 1 })).toBeNull();
-    expect(buildReverseCoverageHrefFromCalculator("gidroizolyaciya-vlagozaschita", { masticType: 2 })).toBeNull();
     expect(buildReverseCoverageHrefFromCalculator("kraska", {})).toBeNull();
     expect(buildReverseCoverageHrefFromCalculator("klej-dlya-plitki", { tileSize: 0 })).toBeNull();
     expect(buildReverseCoverageHrefFromCalculator("nalivnoy-pol", { mixtureType: 1 })).toBeNull();
