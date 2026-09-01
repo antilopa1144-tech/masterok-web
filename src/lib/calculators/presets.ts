@@ -88,9 +88,9 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
     { label: "Профлист 50 м²", values: { materialType: 2, sheetCount: 50, fastenerStep: 300, withFrameScrews: 0, withDubels: 0 } },
   ],
   penobloki: [
-    { label: "Дом 10×2.7 м", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, blockSize: 0, mortarType: 0 } },
-    { label: "Перегородка 5×2.7", values: { inputMode: 0, wallLength: 5, wallHeight: 2.7, openingsArea: 1, blockSize: 1, mortarType: 0 } },
-    { label: "Керамзитоблок 30 м²", values: { inputMode: 1, area: 30, openingsArea: 3, blockSize: 2, mortarType: 1 } },
+    { label: "Стены 10×2.7 м", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, blockSize: 0, reservePct: 5, blocksPerPallet: 0 } },
+    { label: "Тонкий блок 5×2.7", values: { inputMode: 0, wallLength: 5, wallHeight: 2.7, openingsArea: 1, blockSize: 1, reservePct: 5, blocksPerPallet: 0 } },
+    { label: "Керамзитоблок 30 м²", values: { inputMode: 1, area: 30, openingsArea: 3, blockSize: 2, reservePct: 10, blocksPerPallet: 0 } },
   ],
   "kladka-kirpicha": [
     { label: "Стена дома 10×2.7", values: { inputMode: 0, wallLength: 10, wallHeight: 2.7, openingsArea: 5, brickFormat: 0, wallThickness: 1, mortarJoint: 10 } },

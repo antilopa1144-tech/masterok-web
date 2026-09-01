@@ -1,28 +1,60 @@
-import type { CalculatorDefinition } from "../types";
+import type { CalculatorDefinition, CalculatorScenario, MaterialResult } from "../types";
 import { withSiteMetaTitle } from "../meta";
 import { computeCanonicalFoamBlocks } from "../../../../engine/foam-blocks";
+import { ACCURACY_MODE_LABELS, DEFAULT_ACCURACY_MODE } from "../../../../engine/accuracy";
 import foamblocksSpec from "../../../../configs/calculators/foam-blocks-canonical.v1.json";
 import defaultFactorTables from "../../../../configs/factor-tables.json";
 
-// Размеры блоков [длина мм, высота мм, толщина мм]
-const BLOCK_SIZES: Record<number, [number, number, number, string]> = {
-  0: [600, 300, 200, "Пеноблок 600×300×200 мм"],
-  1: [600, 300, 100, "Пеноблок 600×300×100 мм (перегородки)"],
-  2: [390, 190, 188, "Керамзитоблок 390×190×188 мм"],
-  3: [390, 190, 90, "Керамзитоблок 390×190×90 мм (перегородки)"],
+interface BlockSizeDefinition {
+  lengthMm: number;
+  heightMm: number;
+  thicknessMm: number;
+  label: string;
+}
+
+const BLOCK_SIZES: Record<number, BlockSizeDefinition> = {
+  0: { lengthMm: 600, heightMm: 300, thicknessMm: 200, label: "Пенобетонный блок 600×300×200 мм" },
+  1: { lengthMm: 600, heightMm: 300, thicknessMm: 100, label: "Пенобетонный блок 600×300×100 мм" },
+  2: { lengthMm: 390, heightMm: 190, thicknessMm: 188, label: "Керамзитобетонный стеновой камень 390×190×188 мм" },
+  3: { lengthMm: 390, heightMm: 190, thicknessMm: 90, label: "Керамзитобетонный стеновой камень 390×190×90 мм" },
+};
+
+const WEB_FORMULA_VERSION = "foam-blocks-web-geometry-v2";
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
+const clampInteger = (value: number, min: number, max: number): number =>
+  Math.round(clamp(value, min, max));
+
+const round = (value: number, digits = 3): number => {
+  const factor = 10 ** digits;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};
+
+const formatRuNumber = (value: number, maximumFractionDigits = 3): string =>
+  new Intl.NumberFormat("ru-RU", { maximumFractionDigits }).format(value);
+
+const pluralRu = (count: number, one: string, few: string, many: string): string => {
+  const lastTwo = Math.abs(count) % 100;
+  const last = lastTwo % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
 };
 
 export const foamBlocksDef: CalculatorDefinition = {
   id: "foam_blocks",
   slug: "penobloki",
   title: "Калькулятор пеноблоков и керамзитоблоков",
-  h1: "Калькулятор пеноблоков онлайн — расчёт блоков, клея и арматуры",
-  description: "Рассчитайте количество пеноблоков или керамзитоблоков, клея и армирования для стен и перегородок.",
+  h1: "Калькулятор пеноблоков онлайн — расчёт количества блоков",
+  description: "Рассчитайте предварительное количество пеноблоков или керамзитобетонных стеновых камней по площади стены, проёмам, размеру и явному запасу.",
   metaTitle: withSiteMetaTitle("Калькулятор пеноблоков и керамзитоблоков"),
-  metaDescription: "Бесплатный калькулятор пеноблоков: рассчитайте пеноблоки D600/D800, керамзитоблоки, клей и сетку для стен и перегородок. По ГОСТ 21520-89.",
+  metaDescription: "Бесплатный калькулятор пеноблоков и керамзитоблоков: рассчитайте количество блоков по площади стены, проёмам, размеру и выбранному запасу.",
   category: "walls",
   categorySlug: "steny",
-  tags: ["пеноблок", "керамзитоблок", "кладка", "блоки", "перегородки", "D600", "D800"],
+  tags: ["пеноблок", "керамзитоблок", "кладка", "стеновые блоки", "расчёт блоков"],
   popularity: 76,
   complexity: 2,
   fields: [
@@ -38,7 +70,7 @@ export const foamBlocksDef: CalculatorDefinition = {
     },
     {
       key: "wallLength",
-      label: "Длина стены (периметр)",
+      label: "Суммарная длина стен",
       type: "slider",
       unit: "м",
       min: 1,
@@ -46,6 +78,7 @@ export const foamBlocksDef: CalculatorDefinition = {
       step: 0.5,
       defaultValue: 10,
       group: "bySize",
+      hint: "Сложите длины всех участков, которые будут выполнены выбранным блоком.",
     },
     {
       key: "wallHeight",
@@ -60,7 +93,7 @@ export const foamBlocksDef: CalculatorDefinition = {
     },
     {
       key: "area",
-      label: "Площадь стен",
+      label: "Площадь стен до вычета проёмов",
       type: "slider",
       unit: "м²",
       min: 1,
@@ -71,136 +104,326 @@ export const foamBlocksDef: CalculatorDefinition = {
     },
     {
       key: "openingsArea",
-      label: "Площадь проёмов (окна, двери)",
+      label: "Суммарная площадь проёмов",
       type: "slider",
       unit: "м²",
       min: 0,
       max: 50,
       step: 0.5,
       defaultValue: 5,
+      hint: "Вычитается только площадь. Количество, ширина и опирание перемычек по этой величине не определяются.",
+      fullWidth: true,
     },
     {
       key: "blockSize",
-      label: "Размер блока",
+      label: "Фактический размер выбранного блока",
       type: "select",
       defaultValue: 0,
       options: [
-        { value: 0, label: "Пеноблок 600×300×200 мм (несущие)" },
-        { value: 1, label: "Пеноблок 600×300×100 мм (перегородки)" },
-        { value: 2, label: "Керамзитоблок 390×190×188 мм (несущие)" },
-        { value: 3, label: "Керамзитоблок 390×190×90 мм (перегородки)" },
+        { value: 0, label: "Пенобетонный 600×300×200 мм" },
+        { value: 1, label: "Пенобетонный 600×300×100 мм" },
+        { value: 2, label: "Керамзитобетонный 390×190×188 мм" },
+        { value: 3, label: "Керамзитобетонный 390×190×90 мм" },
       ],
+      hint: "Размер не определяет несущую способность, теплоизоляцию или область применения. Сверьте тип, размеры, класс прочности и паспорт фактического изделия.",
+      fullWidth: true,
     },
     {
-      key: "mortarType",
-      label: "Тип раствора",
+      key: "reservePct",
+      label: "Ваш запас на подрезку и бой",
       type: "select",
-      defaultValue: 0,
+      unit: "%",
+      defaultValue: 5,
       options: [
-        { value: 0, label: "Клей для блоков (шов 2–3 мм)" },
-        { value: 1, label: "Цементно-песчаная смесь (шов 10 мм)" },
+        { value: 0, label: "0% — чистая геометрия" },
+        { value: 5, label: "5%" },
+        { value: 10, label: "10%" },
+        { value: 15, label: "15%" },
       ],
+      hint: "Это явное пользовательское допущение, а не обязательная норма. Скрытый дополнительный коэффициент не применяется.",
+    },
+    {
+      key: "blocksPerPallet",
+      label: "Блоков на поддоне у поставщика",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 500,
+      step: 1,
+      integerOnly: true,
+      defaultValue: 0,
+      hint: "Введите фактическую кратность упаковки из предложения поставщика. Оставьте 0, чтобы получить закупку только в штуках.",
+      fullWidth: true,
     },
   ],
   calculate(inputs) {
-    const spec = foamblocksSpec as any;
-    const factorTable = defaultFactorTables.factors as any;
-    const canonical = computeCanonicalFoamBlocks(spec, inputs, factorTable);
+    const canonical = computeCanonicalFoamBlocks(
+      foamblocksSpec as any,
+      inputs,
+      defaultFactorTables.factors as any,
+    );
+    const accuracyMode = canonical.accuracyMode ?? DEFAULT_ACCURACY_MODE;
+
+    const inputMode = clampInteger(Number(inputs.inputMode ?? 0), 0, 1);
+    const wallLength = clamp(Number(inputs.wallLength ?? 10), 1, 100);
+    const wallHeight = clamp(Number(inputs.wallHeight ?? 2.7), 1, 5);
+    const enteredArea = clamp(Number(inputs.area ?? 27), 1, 500);
+    const openingsArea = clamp(Number(inputs.openingsArea ?? 5), 0, 500);
+    const blockSize = clampInteger(Number(inputs.blockSize ?? 0), 0, 3);
+    const reservePct = clamp(Number(inputs.reservePct ?? 5), 0, 20);
+    const blocksPerPallet = clampInteger(Number(inputs.blocksPerPallet ?? 0), 0, 500);
+
+    const block = BLOCK_SIZES[blockSize] ?? BLOCK_SIZES[0];
+    const wallArea = inputMode === 0 ? wallLength * wallHeight : enteredArea;
+    const openingsAreaUsed = Math.min(openingsArea, wallArea);
+    const netArea = Math.max(0, wallArea - openingsAreaUsed);
+    const blockFaceArea = (block.lengthMm / 1000) * (block.heightMm / 1000);
+    const cleanBlockNeed = blockFaceArea > 0 ? netArea / blockFaceArea : 0;
+    const reservedBlockNeed = cleanBlockNeed * (1 + reservePct / 100);
+    const piecesWithoutPackaging = Math.ceil(reservedBlockNeed);
+    const palletsToBuy = blocksPerPallet > 0 && reservedBlockNeed > 0
+      ? Math.ceil(reservedBlockNeed / blocksPerPallet)
+      : 0;
+    const blocksToBuy = blocksPerPallet > 0
+      ? palletsToBuy * blocksPerPallet
+      : piecesWithoutPackaging;
+    const leftoverBlocks = Math.max(0, blocksToBuy - reservedBlockNeed);
+    const cleanWallVolume = netArea * block.thicknessMm / 1000;
+
+    const materials: MaterialResult[] = [
+      {
+        name: `${block.label} — предварительно по площади`,
+        quantity: round(cleanBlockNeed),
+        unit: "шт",
+        withReserve: round(reservedBlockNeed),
+        purchaseQty: blocksToBuy,
+        category: "Блоки",
+        packageInfo: blocksPerPallet > 0
+          ? { count: palletsToBuy, size: blocksPerPallet, packageUnit: "поддонов" }
+          : undefined,
+        subtitle: blocksPerPallet > 0
+          ? `${formatRuNumber(netArea)} м² / ${formatRuNumber(blockFaceArea, 4)} м² × ${formatRuNumber(1 + reservePct / 100, 2)} = ${formatRuNumber(reservedBlockNeed)} шт; ${palletsToBuy} ${pluralRu(palletsToBuy, "поддон", "поддона", "поддонов")} × ${blocksPerPallet} = ${blocksToBuy} шт. Швы и порядная раскладка не моделируются`
+          : `${formatRuNumber(netArea)} м² / ${formatRuNumber(blockFaceArea, 4)} м² × ${formatRuNumber(1 + reservePct / 100, 2)} = ${formatRuNumber(reservedBlockNeed)} шт; округление вверх даёт ${blocksToBuy}. Швы и порядная раскладка не моделируются`,
+        highlight: true,
+      },
+    ];
+
+    const scenarioExactNeed = blocksPerPallet > 0
+      ? reservedBlockNeed / blocksPerPallet
+      : reservedBlockNeed;
+    const scenarioPurchaseQuantity = blocksPerPallet > 0 ? palletsToBuy : blocksToBuy;
+    const scenarioLeftover = Math.max(0, scenarioPurchaseQuantity - scenarioExactNeed);
+
+    const scenario: CalculatorScenario = {
+      exact_need: round(scenarioExactNeed, 6),
+      purchase_quantity: scenarioPurchaseQuantity,
+      leftover: round(scenarioLeftover, 6),
+      assumptions: [
+        `formula_version:${WEB_FORMULA_VERSION}`,
+        `block_size:${blockSize}`,
+        `reserve_pct:${reservePct}`,
+        `blocks_per_pallet:${blocksPerPallet}`,
+        "joints_not_modelled:true",
+        "layout_not_calculated:true",
+      ],
+      key_factors: { field_multiplier: 1 },
+      buy_plan: {
+        package_label: blocksPerPallet > 0 ? `pallet-${blocksPerPallet}-blocks` : "block-piece",
+        package_size: blocksPerPallet > 0 ? blocksPerPallet : 1,
+        packages_count: blocksPerPallet > 0 ? palletsToBuy : blocksToBuy,
+        unit: blocksPerPallet > 0 ? "поддонов" : "шт",
+      },
+    };
+
+    const warnings = [
+      `Расчёт выполнен делением чистой площади кладки на площадь лицевой грани блока ${block.lengthMm}×${block.heightMm} мм. Толщина и рисунок швов, перевязка, доборные элементы и порядная раскладка не моделируются.`,
+      `Запас ${formatRuNumber(reservePct)}% выбран пользователем и не является нормативом. MIN/REC/MAX и режим точности не добавляют поверх него скрытые коэффициенты.`,
+      "Кладочный состав не рассчитан: тип смеси, допустимая толщина шва, фактический расход и фасовка зависят от геометрии блока, основания, температуры и техкарты конкретного продукта.",
+      "Армирование, кладочная сетка, перемычки и U-блоки, анкеровка, связи и армопояса не рассчитаны. Их необходимость, материал, сечение, шаг, длину и опирание назначают по проекту и техническому решению для конкретной стены и проёмов.",
+      "Размер блока сам по себе не подтверждает несущую способность, этажность или теплозащиту. Нужны фактический класс прочности и плотность изделия, нагрузки, конструктивная схема, климат, влажностный режим и расчёт стены.",
+    ];
+
+    if (openingsArea >= wallArea) {
+      warnings.push("Площадь проёмов не меньше площади стены, поэтому чистая площадь кладки принята равной 0. Проверьте исходные размеры.");
+    }
+
+    if (blocksPerPallet === 0) {
+      warnings.push("Кратность поддона не введена: итог округлён только до целого блока. Перед заказом уточните фактическую упаковку, минимальную партию, повреждённые блоки и условия возврата у поставщика.");
+    }
+
+    const practicalNotes = [
+      `Чистая площадь кладки: ${formatRuNumber(netArea)} м²; чистая потребность по лицевой грани: ${formatRuNumber(cleanBlockNeed)} шт.`,
+      `Явный запас ${formatRuNumber(reservePct)}% даёт ${formatRuNumber(reservedBlockNeed)} шт до товарного округления. Этот процент не является нормативом.`,
+      `Геометрический объём блоков без учёта швов: ${formatRuNumber(cleanWallVolume)} м³ при толщине ${block.thicknessMm} мм.`,
+      "Кладочную систему, первый ряд, швы, армирование, перемычки, связи, опирание и теплозащиту проверяют по проекту и документации фактических изделий.",
+    ];
 
     return {
-      materials: canonical.materials,
-      totals: canonical.totals,
-      warnings: canonical.warnings,
-      scenarios: canonical.scenarios,
-      formulaVersion: canonical.formulaVersion,
+      materials,
+      totals: {
+        inputMode,
+        wallLength: round(wallLength),
+        wallHeight: round(wallHeight),
+        wallArea: round(wallArea),
+        openingsArea: round(openingsArea),
+        openingsAreaUsed: round(openingsAreaUsed),
+        netArea: round(netArea),
+        blockSize,
+        blockL: block.lengthMm,
+        blockH: block.heightMm,
+        blockT: block.thicknessMm,
+        blockFaceArea: round(blockFaceArea, 6),
+        cleanWallVolume: round(cleanWallVolume, 6),
+        cleanBlockNeed: round(cleanBlockNeed, 6),
+        reservePct: round(reservePct),
+        reservedBlockNeed: round(reservedBlockNeed, 6),
+        blocksPerPallet,
+        palletsToBuy,
+        blocksToBuy,
+        leftoverBlocks: round(leftoverBlocks, 6),
+        minExactNeedBlocks: round(reservedBlockNeed, 6),
+        recExactNeedBlocks: round(reservedBlockNeed, 6),
+        maxExactNeedBlocks: round(reservedBlockNeed, 6),
+        minPurchaseBlocks: blocksToBuy,
+        recPurchaseBlocks: blocksToBuy,
+        maxPurchaseBlocks: blocksToBuy,
+      },
+      warnings,
+      scenarios: { MIN: scenario, REC: scenario, MAX: scenario },
+      formulaVersion: WEB_FORMULA_VERSION,
       canonicalSpecId: canonical.canonicalSpecId,
-      practicalNotes: canonical.practicalNotes ?? [],
-      accuracyMode: canonical.accuracyMode,
-      accuracyExplanation: canonical.accuracyExplanation,
+      practicalNotes,
+      accuracyMode,
+      accuracyExplanation: {
+        mode: accuracyMode,
+        modeLabel: canonical.accuracyExplanation?.modeLabel ?? ACCURACY_MODE_LABELS[accuracyMode],
+        combinedMultiplier: 1,
+        appliedModifiers: [],
+        notes: ["Режим точности не меняет число блоков; применяется только явно выбранный запас и введённая кратность поддона."],
+      },
+      summaryCards: [
+        {
+          icon: "▦",
+          label: "Чистая площадь",
+          value: formatRuNumber(netArea),
+          unit: "м²",
+          hint: `за вычетом ${formatRuNumber(openingsAreaUsed)} м² проёмов`,
+          tone: "violet",
+        },
+        {
+          icon: "▣",
+          label: "К покупке",
+          value: blocksPerPallet > 0 ? String(palletsToBuy) : String(blocksToBuy),
+          unit: blocksPerPallet > 0
+            ? pluralRu(palletsToBuy, "поддон", "поддона", "поддонов")
+            : pluralRu(blocksToBuy, "блок", "блока", "блоков"),
+          hint: blocksPerPallet > 0
+            ? `${blocksToBuy} блоков, по ${blocksPerPallet} на поддоне; запас ${formatRuNumber(reservePct)}%`
+            : `${formatRuNumber(reservedBlockNeed)} шт с запасом ${formatRuNumber(reservePct)}%, округлено вверх`,
+          tone: "amber",
+        },
+        {
+          icon: "⚠",
+          label: "Система кладки",
+          value: "По проекту",
+          hint: "смесь, армирование, перемычки и теплозащита не рассчитаны",
+          tone: "slate",
+        },
+      ],
+      materialListBanner: "Ведомость содержит только блоки по геометрии стены и введённой кратности поддона. Кладочный состав и конструктивные элементы в неё не входят.",
     };
   },
   formulaDescription: `
-**Расчёт блоков:**
-Количество = Площадь_нетто / (Длина_блока × Высота_блока) × 1.05
-
-**Расход раствора:**
-- Клей: 25 кг/м³ кладки (шов 2–3 мм)
-- Цементно-песчаная смесь (ЦПС): 0.25 м³/м³ кладки (шов 10 мм)
-
-По ГОСТ 21520-89: армирование каждые 3–4 ряда.
+**Предварительный расчёт пеноблоков и бетонных стеновых камней:**
+- Чистая площадь = площадь стен − площадь проёмов, но не меньше 0.
+- Чистая потребность = чистая площадь / (длина блока × высота блока).
+- Потребность с запасом = чистая потребность × (1 + выбранный запас / 100).
+- К покупке = округление вверх до целого блока либо до введённой пользователем кратности поддона.
+- MIN/REC/MAX совпадают: поверх явного запаса скрытые полевые множители не применяются.
+- ГОСТ 21520-89 и ГОСТ 6133-2026 устанавливают требования к соответствующим изделиям, а не универсальный шаг армирования кладки.
+- СП 15.13330.2020 регулирует расчёт и конструирование каменных и армокаменных конструкций; текущий калькулятор такой проектный расчёт не выполняет.
   `,
   howToUse: [
-    "Введите размеры стен или общую площадь",
-    "Укажите площадь оконных и дверных проёмов",
-    "Выберите тип и размер блока",
-    "Выберите тип раствора: клей или цементно-песчаная смесь",
-    "Нажмите «Рассчитать» — получите блоки, раствор и армирование",
+    "Введите суммарную длину и высоту стен либо площадь до вычета проёмов",
+    "Укажите суммарную площадь оконных и дверных проёмов",
+    "Выберите фактический размер блока по паспорту или предложению поставщика",
+    "Выберите свой запас на подрезку и бой — скрытый процент не добавляется",
+    "При покупке поддонами введите фактическое число блоков на поддоне; 0 оставит результат в штуках",
+    "Используйте итог как предварительное количество блоков и отдельно определите по проекту смесь, швы, армирование, перемычки и теплозащиту",
   ],
-faq: [
+  expertTips: [
     {
-      question: "Что выбрать для кладки блоков: клей или цементно-песчаную смесь?",
-      answer:
-        "Для ровных блоков (пеноблок, газобетон) обычно берут тонкошовный клей: тонкий шов меньше мостиков холода и даёт ровную кладку. Цементно-песчаную смесь чаще используют в первом ряду по неровному основанию или при «гуляющей» геометрии, но шов получается толще и расход выше. Согласуйте решение с типом блока и СП 15.13330.",
+      title: "Проверяйте партию, а не только название",
+      content: "До заказа сверьте размеры, класс прочности, плотность, морозостойкость, геометрию, число блоков на поддоне и допустимые повреждения по документам фактической партии.",
+      author: "Мастерок",
     },
     {
-      question: "Нужно ли армировать кладку из блоков?",
-      answer:
-        "Да: типово каждые 3–4 ряда, усиление в первом и верхнем рядах, под и над проёмами и в зонах опирания плит и перемычек — по ГОСТ 21520-89 и СП 15.13330. На длинных стенах и с жёсткими вставками пропуск армирования быстро даёт трещины.",
+      title: "Сделайте порядную раскладку",
+      content: "Площадной расчёт не показывает перевязку, углы, доборы, простенки и остатки. Для крупных стен разложите ряды по фактическим длинам до оплаты всей партии.",
+      author: "Прораб",
+    },
+  ],
+  faq: [
+    {
+      question: "Почему калькулятор не считает клей или цементно-песчаную смесь?",
+      answer: "Расход зависит от типа и геометрии конкретного блока, толщины горизонтальных и вертикальных швов, способа заполнения пустот, ровности первого ряда, температуры и техкарты продукта. Без этих данных фиксированное число мешков создаёт ложную точность.",
+    },
+    {
+      question: "Нужно ли армировать кладку каждые 3–4 ряда?",
+      answer: "Универсального ответа по одному размеру блока нет. Схема зависит от материала и характеристик изделия, назначения и длины стены, нагрузок, проёмов, примыканий, основания и конструктивной схемы. Армирование, связи, перемычки и армопояса назначают проектом или принятым техническим решением.",
+    },
+    {
+      question: "Можно ли считать выбранный блок несущим по толщине?",
+      answer: "Нет. Размер не заменяет сведения о классе прочности, плотности, пустотности, растворе, расчётных нагрузках, опирании и устойчивости стены. Область применения подтверждают проектом и документами фактического изделия.",
     },
   ],
   seoContent: {
     descriptionHtml: `
-<h2>Формула расчёта пеноблоков и керамзитоблоков</h2>
-<p>Количество блоков для стены рассчитывается по формуле:</p>
-<p><strong>N = S<sub>нетто</sub> / (L<sub>бл</sub> &times; H<sub>бл</sub>) &times; 1.05</strong></p>
+<h2>Как калькулятор считает пеноблоки и керамзитоблоки</h2>
+<p>Сначала определяется чистая площадь кладки за вычетом проёмов. Затем она делится на площадь лицевой грани выбранного блока:</p>
+<p><strong>N<sub>чист</sub> = S<sub>нетто</sub> / (L<sub>бл</sub> &times; H<sub>бл</sub>)</strong></p>
+<p><strong>N<sub>запас</sub> = N<sub>чист</sub> &times; (1 + R / 100)</strong></p>
 <ul>
-  <li><strong>S<sub>нетто</sub></strong> — площадь стены за вычетом проёмов (м&sup2;)</li>
-  <li><strong>L<sub>бл</sub></strong> — длина блока (м)</li>
-  <li><strong>H<sub>бл</sub></strong> — высота блока (м)</li>
-  <li><strong>1.05</strong> — запас 5% на подрезку и бой</li>
+  <li><strong>S<sub>нетто</sub></strong> — площадь стен за вычетом проёмов, м&sup2;;</li>
+  <li><strong>L<sub>бл</sub></strong> и <strong>H<sub>бл</sub></strong> — фактические длина и высота блока, м;</li>
+  <li><strong>R</strong> — выбранный пользователем запас на подрезку и бой, %.</li>
 </ul>
+<p>Швы в площадь лицевой грани не добавляются. Поэтому это предварительный площадной расчёт, а не порядная раскладка: он не знает перевязку, углы, простенки, доборные элементы и полезность остатков.</p>
 
-<h2>Размеры и расход блоков на 1 м&sup2; стены</h2>
-<table>
-  <thead>
-    <tr><th>Тип блока</th><th>Размер, мм</th><th>Блоков на 1 м&sup2;</th><th>Блоков в 1 м&sup3;</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Пеноблок несущий</td><td>600&times;300&times;200</td><td>5.6</td><td>27.8</td></tr>
-    <tr><td>Пеноблок перегородочный</td><td>600&times;300&times;100</td><td>5.6</td><td>55.6</td></tr>
-    <tr><td>Керамзитоблок несущий</td><td>390&times;190&times;188</td><td>13.5</td><td>71.8</td></tr>
-    <tr><td>Керамзитоблок перегородочный</td><td>390&times;190&times;90</td><td>13.5</td><td>149.9</td></tr>
-  </tbody>
-</table>
+<h2>Округление до блоков и поддонов</h2>
+<p>Без кратности упаковки потребность с запасом округляется вверх до целого блока. Если пользователь вводит фактическое число блоков на поддоне, калькулятор округляет вверх число поддонов и показывает общее число поставляемых блоков и остаток относительно расчётной потребности.</p>
+<p>Кратность берут из предложения конкретного поставщика: она зависит от размера, производителя и схемы упаковки. Калькулятор не подставляет универсальный поддон автоматически.</p>
 
-<h2>Расход раствора и армирование</h2>
+<h2>Что не входит в расчёт</h2>
 <ul>
-  <li><strong>Клей для блоков:</strong> 25 кг/м&sup3; кладки при толщине шва 2&ndash;3 мм</li>
-  <li><strong>Цементно-песчаная смесь:</strong> 0.25 м&sup3;/м&sup3; кладки при толщине шва 10 мм</li>
-  <li><strong>Армирование:</strong> каждые 3&ndash;4 ряда (по ГОСТ 21520-89)</li>
+  <li>кладочный клей, раствор или пена и выравнивающий слой первого ряда;</li>
+  <li>армирование, кладочная сетка, связи, анкеры и армопояса;</li>
+  <li>перемычки, U-блоки, зоны опирания и усиление проёмов;</li>
+  <li>несущая способность, устойчивость, этажность и допустимые нагрузки;</li>
+  <li>сопротивление теплопередаче, влажностный режим и отделочные слои.</li>
 </ul>
+<p>Эти решения нельзя достоверно получить из одной площади и размера блока. Нужны характеристики фактического изделия, конструктивная схема, нагрузки, геометрия каждого проёма, климат и принятые проектные узлы.</p>
 
-<h2>Нормативная база</h2>
+<h2>Действующие документы</h2>
 <ul>
-  <li><strong>ГОСТ 21520-89</strong> &laquo;Блоки из ячеистых бетонов стеновые мелкие&raquo;</li>
-  <li><strong>ГОСТ 6133-99</strong> &laquo;Камни бетонные стеновые&raquo; (керамзитоблоки)</li>
-  <li><strong>СП 15.13330.2020</strong> &laquo;Каменные и армокаменные конструкции&raquo;</li>
+  <li><a href="https://protect.gost.ru/gost/details/5438d707-5f1a-4384-8542-9a31abdd1751" rel="noopener noreferrer">ГОСТ 21520-89 &laquo;Блоки из ячеистых бетонов стеновые мелкие&raquo;</a> — стандарт на соответствующие изделия; он не задаёт универсальную схему армирования стены.</li>
+  <li><a href="https://protect.gost.ru/gost/details/8035fb27-188b-444f-87d5-a88423420dfe" rel="noopener noreferrer">ГОСТ 6133-2026 &laquo;Камни бетонные стеновые. Технические условия&raquo;</a> — действует с 1 июля 2026 года и заменяет ГОСТ 6133-2019.</li>
+  <li><a href="https://protect.gost.ru/sp/details/88d859d2-0687-4825-9d5a-004160dce187" rel="noopener noreferrer">СП 15.13330.2020 &laquo;Каменные и армокаменные конструкции&raquo;</a> — расчёт и конструирование кладки.</li>
 </ul>
-<p>Пеноблоки D600&ndash;D800 используются для несущих стен, D400&ndash;D500 &mdash; для перегородок и утепления. Керамзитоблоки M50&ndash;M75 &mdash; для несущих стен малоэтажных зданий.</p>
+<p>Название «керамзитоблок» используется в поиске и торговле, но применимость ГОСТ 6133-2026 к конкретному изделию подтверждают его паспортом и областью применения стандарта. Плотность или марка без класса прочности, конструкции стены и расчётных нагрузок не подтверждают, что стена будет несущей.</p>
 `,
     faq: [
       {
-        question: "Чем пеноблок отличается от газоблока?",
-        answer: "<p>Основные различия между пеноблоком и газоблоком:</p><table><thead><tr><th>Параметр</th><th>Пеноблок</th><th>Газоблок</th></tr></thead><tbody><tr><td>Производство</td><td>Неавтоклавный</td><td>Автоклавный</td></tr><tr><td>Геометрия</td><td>&plusmn;3&ndash;5 мм</td><td>&plusmn;1&ndash;2 мм</td></tr><tr><td>Прочность (D500)</td><td>B1.5&ndash;B2.5</td><td>B2.5&ndash;B3.5</td></tr><tr><td>Тип кладки</td><td>На клей или цементно-песчаную смесь</td><td>Только на клей</td></tr></tbody></table><p>Газобетон обычно прочнее при той же плотности и имеет лучшую геометрию, что позволяет вести тонкошовную кладку. Пеноблок дешевле, но чаще требует более толстого шва.</p>",
+        question: "Сколько пеноблоков 600×300 нужно на 1 м² стены?",
+        answer: "<p>По чистой площади лицевой грани: 1 / (0,6 × 0,3) = 5,56 блока на 1 м&sup2;. Это геометрический эквивалент без учёта швов, перевязки и раскладки. Итог к покупке зависит от явно выбранного запаса и кратности поддона.</p>",
       },
       {
-        question: "Нужно ли армировать кладку из пеноблоков?",
-        answer: "<p>Да, по <strong>ГОСТ 21520-89</strong> и <strong>СП 15.13330</strong> армирование кладки из пеноблоков обязательно:</p><ul><li>Каждые <strong>3&ndash;4 ряда</strong> по всей длине стены</li><li>Под и над <strong>оконными проёмами</strong> (на 900 мм в стороны)</li><li>В <strong>первом и последнем</strong> рядах кладки</li><li>В зонах опирания <strong>перемычек и плит перекрытия</strong></li></ul><p>Для армирования используют арматуру &Oslash;8&ndash;10 мм в штробах или кладочную сетку 50&times;50&times;4 мм.</p>",
+        question: "Сколько керамзитоблоков 390×190 нужно на 1 м² стены?",
+        answer: "<p>По чистой площади лицевой грани: 1 / (0,39 × 0,19) = 13,50 камня на 1 м&sup2;. Толщина 90 или 188 мм меняет объём стены, но не число камней на квадратный метр при одинаковых длине и высоте. Порядная раскладка и швы считаются отдельно.</p>",
       },
       {
-        question: "Какой керамзитоблок лучше: полнотелый или пустотелый?",
-        answer:
-          "<p>По назначению и марке (ориентир, <strong>ГОСТ 6133-99</strong>):</p><ul><li><strong>Полнотелый</strong> (M75&ndash;M100) &mdash; несущие стены, цоколь, столбы (~17 кг).</li><li><strong>Двухпустотный</strong> (M50&ndash;M75) &mdash; несущие 1&ndash;2 этажа, лучше теплоизоляция (~14 кг).</li><li><strong>Многопустотный</strong> (M35&ndash;M50) &mdash; перегородки и ненагруженные стены (~10 кг).</li></ul><p>В пустотелых блоках раствор не должен заполнять пустоты.</p>",
+        question: "Какой запас блоков выбрать?",
+        answer: "<p>Единого обязательного процента нет. Оцените раскладку, число углов и коротких простенков, качество геометрии и поставки, повторное использование обрезков, риск повреждений и возможность докупить ту же партию. Выбранные 0%, 5%, 10% или 15% — явное пользовательское допущение.</p>",
       },
     ],
   },
