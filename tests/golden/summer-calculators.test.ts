@@ -2,8 +2,8 @@
  * Golden-тесты для 5 летних калькуляторов (Спринт 8 плана rosy-pondering-lovelace).
  *
  * Эти тесты — самостоятельная защита формул от регрессий, независимая
- * от parity-фикстур. Числа проверены вручную против нормативов (СП/ГОСТ/СНиП)
- * и тех. листов производителей. Допуск ±2% (Math.toBeCloseTo с 2-3 значащими).
+ * от parity-фикстур. Каждый блок фиксирует принятые входы и ожидаемую математику;
+ * проектные параметры не считаются универсальной нормативной рекомендацией.
  *
  * Если parity-фикстура была случайно перегенерирована вместе с регрессией формулы —
  * golden-тесты упадут и поймают изменение.
@@ -31,36 +31,48 @@ const calcLawn = calc(lawnDef);
 const totals = (r: unknown) => (r as { totals: Record<string, number> }).totals;
 
 describe("Golden tests — Тротуарная плитка (paving-tiles)", () => {
-  it("дворик 50 м²: ЦПС основание, плитка 60 мм — типовая частная задача", () => {
-    // Площадь = 50, периметр = 30, тип ЦПС, толщина 60, бордюр
-    // Плитка 50 × 1.07 = 53.5 → 54 м²
-    // Щебень 50 × 0.15 × 1.25 = 9.375 м³
-    // ЦПС 50 × 0.03 × 1.10 = 1.65 м³ (12 мешков цемента)
-    // Кварцевый песок 50 × 5 × 1.10 / 25 = 11 мешков
-    const r = calcPaving({ area: 50, perimeter: 30, foundationType: 1, tileThickness: 60, borderEnabled: 1 });
+  it("50 м²: явный запас 7%, продажа по 0,1 м² и бордюр по 1 м", () => {
+    const r = calcPaving({
+      area: 50,
+      tileReservePercent: 7,
+      tileSaleStepM2: 0.1,
+      perimeter: 30,
+      borderEnabled: 1,
+      borderPieceLengthM: 1,
+      borderReservePercent: 0,
+    });
     const t = totals(r);
-    expect(t.tileM2).toBe(54);
-    expect(t.gravelM3).toBeCloseTo(9.375, 2);
-    expect(t.cementSandMixM3).toBeCloseTo(1.65, 2);
-    expect(t.cementBags).toBe(12);
-    expect(t.borderPcs).toBe(32);
+    expect(t.tileReservedM2).toBe(53.5);
+    expect(t.tilePurchaseM2).toBe(53.5);
+    expect(t.borderPurchasePcs).toBe(30);
   });
 
-  it("парковка 80 м²: бетонное основание, плитка 80 мм — типовой въезд", () => {
-    // Бетон М200 = 80 × 0.10 × 1.05 = 8.4 м³
-    // Щебень = 80 × 0.15 × 1.25 = 15 м³
-    const r = calcPaving({ area: 80, perimeter: 36, foundationType: 2, tileThickness: 80, borderEnabled: 1 });
+  it("80 м²: введённый щебёночный слой 150 мм и коэффициент 1,25", () => {
+    const r = calcPaving({
+      area: 80,
+      layersEnabled: 1,
+      gravelLayerThicknessMm: 150,
+      gravelPurchaseFactor: 1.25,
+      bulkSaleStepM3: 0.1,
+    });
     const t = totals(r);
-    expect(t.concreteM3).toBeCloseTo(8.4, 2);
-    expect(t.gravelM3).toBeCloseTo(15.0, 2);
+    expect(t.gravelGeometricM3).toBeCloseTo(12, 2);
+    expect(t.gravelPurchaseNeedM3).toBeCloseTo(15, 2);
+    expect(t.gravelPurchaseM3).toBeCloseTo(15, 2);
   });
 
-  it("дорожка 30 м² на песке: тонкая плитка 40 мм", () => {
-    // Без щебня. Песок подушки увеличен (100 мм × 1.20).
-    const r = calcPaving({ area: 30, perimeter: 22, foundationType: 0, tileThickness: 40, borderEnabled: 1 });
+  it("30 м²: введённый песчаный слой 100 мм и коэффициент 1,20", () => {
+    const r = calcPaving({
+      area: 30,
+      layersEnabled: 1,
+      sandLayerThicknessMm: 100,
+      sandPurchaseFactor: 1.2,
+      bulkSaleStepM3: 0.1,
+    });
     const t = totals(r);
-    expect(t.gravelM3).toBe(0);
-    expect(t.sandBeddingM3).toBeCloseTo(3.6, 2);
+    expect(t.gravelGeometricM3).toBe(0);
+    expect(t.sandGeometricM3).toBeCloseTo(3, 2);
+    expect(t.sandPurchaseM3).toBeCloseTo(3.6, 2);
   });
 });
 

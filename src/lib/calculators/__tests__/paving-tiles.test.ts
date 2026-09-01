@@ -1,185 +1,169 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { pavingTilesDef } from "../formulas/paving-tiles";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(pavingTilesDef.calculate.bind(pavingTilesDef));
 
-describe("Калькулятор тротуарной плитки", () => {
-  describe("ЦПС основание (defaults): 50 м², 30 м, 60 мм, с бордюром", () => {
+describe("Калькулятор тротуарной плитки — явная закупочная модель", () => {
+  it("default считает только плитку и бордюр без скрытого основания", () => {
+    const result = calc({});
+    const tile = findMaterial(result, "Тротуарная плитка");
+    const border = findMaterial(result, "Бордюр");
+
+    expect(result.formulaVersion).toBe("paving-tiles-web-purchase-v1");
+    expect(result.totals.area).toBe(50);
+    expect(result.totals.tileCleanM2).toBe(50);
+    expect(result.totals.tileReservedM2).toBe(50);
+    expect(result.totals.tilePurchaseM2).toBe(50);
+    expect(result.totals.tilePurchaseLots).toBe(500);
+    expect(tile?.quantity).toBe(50);
+    expect(tile?.withReserve).toBe(50);
+    expect(tile?.purchaseQty).toBe(50);
+    expect(border?.purchaseQty).toBe(30);
+    expect(result.materials.map((material) => material.name)).toEqual([
+      expect.stringContaining("Тротуарная плитка"),
+      expect.stringContaining("Бордюр"),
+    ]);
+    expect(result.summaryCards?.map((card) => card.value)).toEqual(["50", "50", "50"]);
+    checkInvariants(result);
+  });
+
+  it("явный запас применяется один раз и не округляется заранее до целого м²", () => {
+    const result = calc({ tileReservePercent: 7, tileSaleStepM2: 0.1 });
+
+    expect(result.totals.tileCleanM2).toBe(50);
+    expect(result.totals.tileReservedM2).toBe(53.5);
+    expect(result.totals.tilePurchaseM2).toBe(53.5);
+    expect(result.totals.tilePurchaseLots).toBe(535);
+    expect(result.scenarios?.REC.exact_need).toBe(53.5);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(53.5);
+  });
+
+  it("округляет плитку вверх по фактической площади неделимой упаковки или поддона", () => {
+    const result = calc({ tileReservePercent: 7, tileSaleStepM2: 12.96 });
+    const tile = findMaterial(result, "Тротуарная плитка");
+
+    expect(result.totals.tileReservedM2).toBe(53.5);
+    expect(result.totals.tilePurchaseLots).toBe(5);
+    expect(result.totals.tilePurchaseM2).toBe(64.8);
+    expect(result.totals.tileLeftoverM2).toBe(11.3);
+    expect(tile?.subtitle).toContain("5 неделимых");
+  });
+
+  it("считает бордюр по фактической длине изделия и отдельному запасу", () => {
     const result = calc({
-      area: 50,
       perimeter: 30,
-      foundationType: 1,
-      tileThickness: 60,
-      borderEnabled: 1,
+      borderPieceLengthM: 0.5,
+      borderReservePercent: 5,
     });
+    const border = findMaterial(result, "Бордюр");
 
-    it("плитка tileM2 = ceil(50 × 1.07) = 54 м²", () => {
-      expect(result.totals.tileM2).toBe(54);
-    });
-
-    it("щебень = 50 × 0.15 × 1.25 = 9.375 м³", () => {
-      expect(result.totals.gravelM3).toBeCloseTo(9.375, 3);
-    });
-
-    it("ЦПС объём = 50 × 0.03 × 1.10 = 1.65 м³", () => {
-      expect(result.totals.cementSandMixM3).toBeCloseTo(1.65, 3);
-    });
-
-    it("цемент мешков = ceil(1.65 × 1800 × 0.2 / 50) = 12", () => {
-      expect(result.totals.cementBags).toBe(12);
-    });
-
-    it("кварцевый песок для швов = ceil(50 × 5 × 1.1 / 25) = 11 мешков", () => {
-      const sand = findMaterial(result, "Кварцевый песок");
-      expect(sand?.purchaseQty).toBe(11);
-    });
-
-    it("бордюр = ceil(30 / 1.0 × 1.05) = 32 шт", () => {
-      const border = findMaterial(result, "Бордюрный камень");
-      expect(border?.purchaseQty).toBe(32);
-    });
-
-    it("геотекстиль = ceil(50 × 1.15 / 50) = 2 рулона", () => {
-      const geo = findMaterial(result, "Геотекстиль");
-      expect(geo?.purchaseQty).toBe(2);
-    });
-
-    it("нет бетона при ЦПС основании", () => {
-      expect(result.totals.concreteM3).toBe(0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.borderCleanPcs).toBe(60);
+    expect(result.totals.borderReservedPcs).toBe(63);
+    expect(result.totals.borderPurchasePcs).toBe(63);
+    expect(border?.purchaseQty).toBe(63);
   });
 
-  describe("Песчаное основание: 30 м² пешеходная дорожка, 40 мм", () => {
+  it("не считает бордюр, когда пользователь его выключил", () => {
+    const result = calc({ borderEnabled: 0 });
+
+    expect(result.totals.borderPurchasePcs).toBe(0);
+    expect(findMaterial(result, "Бордюр")).toBeUndefined();
+  });
+
+  it("считает песок и щебень только по явно заданным проектным слоям", () => {
     const result = calc({
-      area: 30,
-      perimeter: 22,
-      foundationType: 0,
-      tileThickness: 40,
-      borderEnabled: 1,
+      layersEnabled: 1,
+      sandLayerThicknessMm: 50,
+      sandPurchaseFactor: 1.2,
+      gravelLayerThicknessMm: 100,
+      gravelPurchaseFactor: 1.25,
+      bulkSaleStepM3: 0.1,
     });
 
-    it("плитка = ceil(30 × 1.07) = 33 м²", () => {
-      expect(result.totals.tileM2).toBe(33);
-    });
-
-    it("без щебня (только песчаная подушка)", () => {
-      expect(result.totals.gravelM3).toBe(0);
-    });
-
-    it("песок подушки увеличен (100 мм × 1.20) = 3.6 м³", () => {
-      expect(result.totals.sandBeddingM3).toBeCloseTo(3.6, 2);
-    });
-
-    it("без ЦПС и бетона", () => {
-      expect(result.totals.cementSandMixM3).toBe(0);
-      expect(result.totals.concreteM3).toBe(0);
-      expect(result.totals.cementBags).toBe(0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.sandGeometricM3).toBe(2.5);
+    expect(result.totals.sandPurchaseNeedM3).toBe(3);
+    expect(result.totals.sandPurchaseM3).toBe(3);
+    expect(result.totals.gravelGeometricM3).toBe(5);
+    expect(result.totals.gravelPurchaseNeedM3).toBe(6.25);
+    expect(result.totals.gravelPurchaseM3).toBe(6.3);
+    expect(findMaterial(result, "Песок — заданный слой")?.purchaseQty).toBe(3);
+    expect(findMaterial(result, "Щебень — заданный слой")?.purchaseQty).toBe(6.3);
+    checkInvariants(result);
   });
 
-  describe("Бетонное основание под автомобиль: 80 м², 80 мм", () => {
+  it("не подставляет толщины и коэффициенты основания при включённом пустом блоке", () => {
+    const result = calc({ layersEnabled: 1 });
+
+    expect(result.totals.sandGeometricM3).toBe(0);
+    expect(result.totals.gravelGeometricM3).toBe(0);
+    expect(findMaterial(result, "Песок — заданный слой")).toBeUndefined();
+    expect(findMaterial(result, "Щебень — заданный слой")).toBeUndefined();
+    expect(result.warnings.some((warning) => warning.includes("не заданы"))).toBe(true);
+  });
+
+  it("считает шовный материал и геотекстиль только по паспортным входам пользователя", () => {
     const result = calc({
-      area: 80,
-      perimeter: 36,
-      foundationType: 2,
-      tileThickness: 80,
-      borderEnabled: 1,
+      jointSandEnabled: 1,
+      jointSandRateKgM2: 5,
+      jointSandBagKg: 25,
+      geotextileEnabled: 1,
+      geotextileReservePercent: 10,
+      geotextileRollM2: 50,
     });
 
-    it("плитка = ceil(80 × 1.07) = 86 м²", () => {
-      expect(result.totals.tileM2).toBe(86);
-    });
-
-    it("бетон М200 плита = 80 × 0.10 × 1.05 = 8.4 м³", () => {
-      expect(result.totals.concreteM3).toBeCloseTo(8.4, 2);
-    });
-
-    it("щебневая подушка 80 × 0.15 × 1.25 = 15 м³", () => {
-      expect(result.totals.gravelM3).toBeCloseTo(15, 2);
-    });
-
-    it("нет ЦПС в материалах при бетонном основании (отдельный слой не считается)", () => {
-      expect(result.totals.cementSandMixM3).toBe(0);
-    });
-
-    it("бетон М200 присутствует среди материалов", () => {
-      expect(findMaterial(result, "Бетон М200 (плита")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.jointSandKg).toBe(250);
+    expect(result.totals.jointSandBags).toBe(10);
+    expect(findMaterial(result, "Материал для заполнения швов")?.purchaseQty).toBe(10);
+    expect(result.totals.geotextileReservedM2).toBe(55);
+    expect(result.totals.geotextileRolls).toBe(2);
+    expect(findMaterial(result, "Геотекстиль")?.purchaseQty).toBe(2);
   });
 
-  describe("Без бордюра: borderEnabled=0", () => {
-    const result = calc({
-      area: 50,
-      perimeter: 30,
-      foundationType: 1,
-      tileThickness: 60,
-      borderEnabled: 0,
-    });
+  it("MIN/REC/MAX и режим точности не добавляют скрытые множители", () => {
+    const result = calc({ tileReservePercent: 10, accuracyMode: "detailed" as never });
 
-    it("бордюр не считается", () => {
-      expect(result.totals.borderPcs).toBe(0);
-      expect(result.totals.borderConcreteM3).toBe(0);
-      expect(findMaterial(result, "Бордюрный")).toBeUndefined();
-    });
-
-    it("предупреждение про бордюр", () => {
-      expect(result.warnings.some((w) => w.includes("без бордюра") || w.includes("Без бордюра"))).toBe(true);
-    });
+    expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);
+    expect(result.scenarios?.REC).toEqual(result.scenarios?.MAX);
+    expect(result.scenarios?.REC.key_factors).toEqual({ field_multiplier: 1, reserve_percent: 10 });
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
   });
 
-  describe("Предупреждения", () => {
-    it("тонкая плитка под авто → предупреждение", () => {
-      const result = calc({
-        area: 60,
-        perimeter: 32,
-        foundationType: 2,
-        tileThickness: 40,
-        borderEnabled: 1,
-      });
-      expect(result.warnings.some((w) => w.includes("автомобильной"))).toBe(true);
-    });
+  it("форма убирает универсальные пресеты основания и раскрывает фактические входы", () => {
+    const keys = pavingTilesDef.fields.map((field) => field.key);
+    const field = (key: string) => pavingTilesDef.fields.find((item) => item.key === key);
 
-    it("толстая плитка на песчаном основании → предупреждение", () => {
-      const result = calc({
-        area: 30,
-        perimeter: 22,
-        foundationType: 0,
-        tileThickness: 60,
-        borderEnabled: 1,
-      });
-      expect(result.warnings.some((w) => w.includes("песчаная подушка"))).toBe(true);
-    });
+    expect(keys).not.toContain("foundationType");
+    expect(keys).not.toContain("tileThickness");
+    expect(keys).toContain("tileReservePercent");
+    expect(keys).toContain("tileSaleStepM2");
+    expect(keys).toContain("sandLayerThicknessMm");
+    expect(keys).toContain("gravelLayerThicknessMm");
+    expect(field("perimeter")?.hideIf).toEqual({ key: "borderEnabled", op: "eq", value: 0 });
+    expect(field("sandLayerThicknessMm")?.hideIf).toEqual({ key: "layersEnabled", op: "eq", value: 0 });
+    expect(field("jointSandRateKgM2")?.hideIf).toEqual({ key: "jointSandEnabled", op: "eq", value: 0 });
+    expect(field("geotextileRollM2")?.hideIf).toEqual({ key: "geotextileEnabled", op: "eq", value: 0 });
   });
 
-  describe("Сценарии MIN ≤ REC ≤ MAX", () => {
-    const result = calc({
-      area: 50,
-      perimeter: 30,
-      foundationType: 1,
-      tileThickness: 60,
-      borderEnabled: 1,
-    });
+  it("не выдаёт проект основания и универсальные нормы за нормативный результат", () => {
+    const serialized = JSON.stringify(calc({}));
+    const html = pavingTilesDef.seoContent?.descriptionHtml ?? "";
 
-    it("MIN ≤ REC ≤ MAX по exact_need", () => {
-      expect(result.scenarios!.MIN.exact_need).toBeLessThanOrEqual(result.scenarios!.REC.exact_need);
-      expect(result.scenarios!.REC.exact_need).toBeLessThanOrEqual(result.scenarios!.MAX.exact_need);
-    });
+    expect(serialized).not.toContain("Цемент М400");
+    expect(serialized).not.toContain("Бетон М200");
+    expect(html).not.toContain("5 кг/м² по СП");
+    expect(html).not.toContain("бетонная плита 100 мм");
+    expect(html).not.toContain("обязательно для парковок");
+    expect(html).toContain("https://protect.gost.ru/gost/details/acb7d009-5d1c-45bd-8ab4-d3591ad19972");
+    expect(html).toContain("https://protect.gost.ru/sp/details/8d5a8ef5-f450-4356-ac88-72cd17c416cf");
+    expect(html).toContain("https://protect.gost.ru/gost/details/683a4426-dd5d-431d-a83f-6208cf3667aa");
+  });
 
-    it("REC примерно совпадает с покупкой плитки (целое число м²)", () => {
-      expect(result.scenarios!.REC.purchase_quantity).toBeGreaterThanOrEqual(result.totals.tileM2);
-    });
+  it("метаданные обещают только поддерживаемый расчёт", () => {
+    expect(pavingTilesDef.h1).toBe("Калькулятор тротуарной плитки — закупка покрытия и заданных слоёв");
+    expect(pavingTilesDef.metaTitle).toContain("Калькулятор тротуарной плитки: закупка материалов");
+    expect(pavingTilesDef.metaDescription.startsWith("Бесплатный калькулятор")).toBe(true);
+    expect(pavingTilesDef.metaDescription).toContain("рассчитайте");
+    expect(pavingTilesDef.metaDescription).not.toContain("под автомобиль");
   });
 });
