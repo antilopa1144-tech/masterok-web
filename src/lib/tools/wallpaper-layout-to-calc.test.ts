@@ -39,6 +39,8 @@ describe("wallpaper-layout-to-calc", () => {
 
     expect(url.pathname).toBe("/kalkulyatory/otdelka/oboi/");
     expect(url.searchParams.get("from")).toBe("raskladka-oboev");
+    expect(url.searchParams.get("inputMode")).toBe("2");
+    expect(url.searchParams.get("projectRolls")).toBe("12");
     expect(url.searchParams.get("rollWidth")).toBe("530");
     expect(url.searchParams.get("rollsHint")).toBe("13");
   });

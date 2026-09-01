@@ -574,12 +574,12 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         )}
         {calculator.slug === "oboi" && transferSource === WALLPAPER_ROOM_TRANSFER_FROM && (
           <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
-            Из расчёта комнаты перенесены периметр и высота стен. Укажите площадь окон и дверей, параметры рулона, раппорт и запас.
+            Из расчёта комнаты перенесены периметр и высота стен. Укажите параметры рулона, способ определения длины полотна, раппорт и явный запас.
           </div>
         )}
         {Number.isFinite(wallpaperRollsHint) && wallpaperRollsHint > 0 && (
           <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
-            Из раскладки перенесено: <strong>{wallpaperRollsHint} {pluralizeRu(wallpaperRollsHint, ["рулон", "рулона", "рулонов"])}</strong>. Здесь уточняются клей, грунтовка и расходники.
+            Точная раскладка перенесена: <strong>{wallpaperRollsHint} {pluralizeRu(wallpaperRollsHint, ["рулон", "рулона", "рулонов"])}</strong>. В форме уже разделены чистый итог раскроя и закрытый резерв; параметры рулона сохранены для возврата к схеме.
           </div>
         )}
         {Number.isFinite(sheetLayoutHint) && sheetLayoutHint > 0 && (

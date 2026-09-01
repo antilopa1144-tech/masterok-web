@@ -77,7 +77,13 @@ export function buildWallpaperCalculatorHref(
   params.set("rollWidth", String(values.rollWidth));
   params.set("rapport", String(values.rapport));
   params.set("reserveRolls", String(values.reserveRolls));
-  if (rollsHint != null && rollsHint > 0) params.set("rollsHint", String(Math.round(rollsHint)));
+  if (rollsHint != null && rollsHint > 0) {
+    const roundedRollsHint = Math.round(rollsHint);
+    const projectRolls = Math.max(0, roundedRollsHint - values.reserveRolls);
+    params.set("inputMode", "2");
+    params.set("projectRolls", String(projectRolls));
+    params.set("rollsHint", String(roundedRollsHint));
+  }
   return `${WALLPAPER_CALCULATOR_PATH}?${params.toString()}`;
 }
 

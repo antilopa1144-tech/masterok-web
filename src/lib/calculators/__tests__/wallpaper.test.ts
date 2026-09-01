@@ -1,200 +1,234 @@
 import { describe, expect, it } from "vitest";
-import wallpaperFixture from "../../../../tests/fixtures/wallpaper-canonical-parity.json";
 import { wallpaperDef } from "../formulas/wallpaper";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
-const calc = withBasicAccuracy(wallpaperDef.calculate.bind(wallpaperDef));
+const calc = wallpaperDef.calculate.bind(wallpaperDef);
 
-describe("Калькулятор обоев", () => {
-  it("декларирует formulaVersion для canonical wallpaper", () => {
-    expect(wallpaperDef.formulaVersion).toBe("wallpaper-canonical-v4");
-  });
+const perimeterInputs = {
+  inputMode: 0,
+  perimeter: 14,
+  area: 40,
+  height: 2.7,
+  rollLength: 10.05,
+  rollWidth: 530,
+  cutLengthMode: 0,
+  rapport: 0,
+  patternShift: 0,
+  trimAllowanceCm: 10,
+  manualStripLengthM: 2.8,
+  projectRolls: 1,
+  reservePercent: 0,
+  reserveRolls: 0,
+};
 
-  it("web-дефолты длины рулона и запаса совпадают с canonical и Flutter", () => {
-    const rollLengthField = wallpaperDef.fields.find((field) => field.key === "rollLength");
-    const reserveRollsField = wallpaperDef.fields.find((field) => field.key === "reserveRolls");
+describe("Обои — полотна, раскрой и целые рулоны", () => {
+  it("по умолчанию считает полный периметр без скрытых материалов", () => {
+    const result = calc(perimeterInputs);
 
-    expect(rollLengthField?.defaultValue).toBe(10.05);
-    expect(rollLengthField?.step).toBe(0.05);
-    expect(reserveRollsField?.defaultValue).toBe(0);
-  });
-
-  it("не добавляет скрытый запасной рулон, если поле запаса не передано", () => {
-    const withoutReserve = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
-      rapport: 0,
-      doors: 1,
-      windows: 1,
+    expect(result.formulaVersion).toBe("wallpaper-web-roll-layout-v1");
+    expect(result.canonicalSpecId).toBe("wallpaper");
+    expect(result.materials).toHaveLength(1);
+    expect(result.materials[0]).toMatchObject({
+      quantity: 9,
+      unit: "рулонов",
+      withReserve: 9,
+      purchaseQty: 9,
     });
-    const explicitZeroReserve = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
-      rapport: 0,
-      doors: 1,
-      windows: 1,
-      reserveRolls: 0,
+    expect(result.totals).toMatchObject({
+      stripsNeeded: 27,
+      stripLength: 2.8,
+      stripsPerRoll: 3,
+      baseExactRolls: 9,
+      purchaseRolls: 9,
     });
-
-    expect(withoutReserve.totals.reserveRolls).toBe(0);
-    expect(withoutReserve.totals.recPurchaseRolls).toBe(9);
-    expect(withoutReserve.totals.recPurchaseRolls).toBe(explicitZeroReserve.totals.recPurchaseRolls);
   });
 
-  it("не занижает MIN и применяет явный запас к чистой потребности только один раз", () => {
+  it("не добавляет скрытый рулон в MAX или режиме точности", () => {
     const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
-      rapport: 0,
-      doors: 0,
-      windows: 0,
+      ...perimeterInputs,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);
+    expect(result.scenarios?.REC).toEqual(result.scenarios?.MAX);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(9);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("применяет процент и закрытые рулоны ровно один раз", () => {
+    const result = calc({
+      ...perimeterInputs,
       reservePercent: 15,
-      reserveRolls: 0,
+      reserveRolls: 1,
     });
 
     expect(result.totals.baseExactRolls).toBe(9);
-    expect(result.scenarios?.MIN.exact_need).toBe(9);
-    expect(result.scenarios?.REC.exact_need).toBeCloseTo(10.35, 6);
-    expect(result.scenarios?.REC.purchase_quantity).toBe(11);
-    expect(result.scenarios?.MAX.exact_need).toBeCloseTo(11.35, 6);
-    expect(result.scenarios?.MAX.purchase_quantity).toBe(12);
+    expect(result.totals.requiredRolls).toBe(11.35);
+    expect(result.totals.purchaseRolls).toBe(12);
+    expect(result.scenarios?.REC.exact_need).toBe(11.35);
+    expect(result.scenarios?.REC.leftover).toBe(0.65);
   });
 
-  it("разделяет чистую потребность, рабочий запас и покупку упаковок", () => {
-    const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
-      rapport: 0,
-      doors: 0,
-      windows: 0,
-      reservePercent: 0,
-      reserveRolls: 0,
-    });
+  it("округляет длину полотна вверх до прямого раппорта", () => {
+    const result = calc({ ...perimeterInputs, rapport: 64 });
 
-    const wallpaper = findMaterial(result, "Обои");
-    const paste = findMaterial(result, "Клей");
-    const primer = findMaterial(result, "Грунтовка");
-
-    expect(wallpaper?.quantity).toBe(9);
-    expect(wallpaper?.withReserve).toBe(9);
-    expect(wallpaper?.purchaseQty).toBe(9);
-
-    expect(paste?.quantity).toBeCloseTo(0.315, 6);
-    expect(paste?.withReserve).toBeCloseTo(0.315, 6);
-    expect(paste?.purchaseQty).toBe(0.5);
-
-    expect(primer?.quantity).toBeCloseTo(5.67, 6);
-    expect(primer?.withReserve).toBeCloseTo(5.67, 6);
-    expect(primer?.purchaseQty).toBe(10);
-  });
-
-  describe("Canonical wallpaper fixture parity", () => {
-    for (const fixtureCase of wallpaperFixture.cases) {
-      it(fixtureCase.id, () => {
-        const result = calc(fixtureCase.inputs as unknown as Record<string, number>);
-        const expected = fixtureCase.expected;
-
-        expect(result.formulaVersion).toBe(expected.formulaVersion);
-        expect(result.totals.wallArea).toBeCloseTo(expected.wallArea, 1);
-        expect(result.totals.netArea).toBeCloseTo(expected.netArea, 1);
-        expect(result.warnings).toHaveLength(expected.warningsCount);
-
-        const recScenario = result.scenarios!.REC;
-        expect(recScenario.buy_plan.package_size).toBe(expected.recScenario.packageSize);
-        expect(recScenario.exact_need).toBeCloseTo(expected.recScenario.exactNeed, 5);
-        expect(recScenario.purchase_quantity).toBeCloseTo(expected.recScenario.purchaseQuantity, 5);
-
-        expect(findMaterial(result, "Обои")?.purchaseQty).toBe(expected.materials.rolls);
-        expect(findMaterial(result, "Клей")?.purchaseQty).toBe(expected.materials.pastePacks);
-        const _wpm = findMaterial(result, "Грунтовка");
-        expect(_wpm).toBeTruthy();
-        expect(_wpm!.unit).toBe("л");
-        expect(_wpm!.purchaseQty).toBeGreaterThan(0);
-
-        checkInvariants(result);
-      });
-    }
-  });
-
-  it("добавляет предупреждение для большого раппорта", () => {
-    const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10,
-      rollWidth: 530,
-      rapport: 40,
-      doors: 1,
-      windows: 1,
-    });
-
-    expect(result.warnings.some((warning) => warning.includes("раппорт"))).toBe(true);
-  });
-
-  it("добавляет предупреждение для широких рулонов", () => {
-    const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10,
-      rollWidth: 1060,
-      rapport: 0,
-      doors: 1,
-      windows: 1,
-    });
-
-    expect(result.warnings.some((warning) => warning.includes("Широкие") || warning.includes("метровых"))).toBe(true);
-  });
-
-  it("добавляет припуск 10 см к однотонной полосе", () => {
-    const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
-      rapport: 0,
-      reserveRolls: 0,
-    });
-
-    expect(result.totals.stripLength).toBeCloseTo(2.8, 3);
+    expect(result.totals.stripLength).toBe(3.2);
     expect(result.totals.stripsPerRoll).toBe(3);
+    expect(result.totals.purchaseRolls).toBe(9);
   });
 
-  it("округляет высоту с припуском вверх до целого раппорта", () => {
+  it("учитывает только явно введённый дополнительный припуск совмещения", () => {
     const result = calc({
-      perimeter: 14,
-      height: 2.7,
-      rollLength: 10.05,
-      rollWidth: 530,
+      ...perimeterInputs,
       rapport: 64,
-      reserveRolls: 0,
+      patternShift: 48,
     });
 
-    expect(result.totals.stripLength).toBeCloseTo(3.2, 3);
-    expect((result.totals.stripLength * 100) % 64).toBeCloseTo(0, 6);
+    expect(result.totals.stripLength).toBe(3.84);
+    expect(result.totals.stripsPerRoll).toBe(2);
+    expect(result.totals.purchaseRolls).toBe(14);
+    expect(result.warnings.join(" ")).toContain("смещённой подгонки");
   });
 
-  it("по умолчанию не заменяет целые полосы площадью проёмов", () => {
-    const safe = calc({ perimeter: 14, height: 2.7, openingsArea: 10, rollLength: 10.05, rollWidth: 530 });
-    const optimistic = calc({ perimeter: 14, height: 2.7, openingsArea: 10, openingDeductionMode: 1, rollLength: 10.05, rollWidth: 530 });
+  it("принимает готовую длину полотна из карты раскроя", () => {
+    const result = calc({
+      ...perimeterInputs,
+      cutLengthMode: 1,
+      manualStripLengthM: 3.4,
+      rapport: 64,
+      patternShift: 32,
+    });
 
-    expect(safe.totals.stripsNeeded).toBe(27);
-    expect(optimistic.totals.stripsNeeded).toBe(20);
-    expect(safe.totals.rollsNeeded).toBeGreaterThan(optimistic.totals.rollsNeeded);
+    expect(result.totals.stripLength).toBe(3.4);
+    expect(result.totals.stripsPerRoll).toBe(2);
+    expect(result.totals.purchaseRolls).toBe(14);
   });
 
-  it("учитывает смещение рисунка до округления по раппорту", () => {
-    const straight = calc({ perimeter: 14, height: 2.7, rapport: 64, patternShift: 0, rollLength: 10.05, rollWidth: 530 });
-    const shifted = calc({ perimeter: 14, height: 2.7, rapport: 64, patternShift: 48, rollLength: 10.05, rollWidth: 530 });
+  it("помечает расчёт по площади как предварительный", () => {
+    const result = calc({
+      ...perimeterInputs,
+      inputMode: 1,
+      area: 40,
+    });
 
-    expect(straight.totals.stripLength).toBeCloseTo(3.2, 3);
-    expect(shifted.totals.stripLength).toBeCloseTo(3.84, 3);
-    expect(shifted.totals.rollsNeeded).toBeGreaterThan(straight.totals.rollsNeeded);
+    expect(result.totals.stripsNeeded).toBe(28);
+    expect(result.totals.purchaseRolls).toBe(10);
+    expect(result.warnings.join(" ")).toContain("площадь стен до вычета проёмов");
+  });
+
+  it("использует готовое число рулонов из точной раскладки", () => {
+    const result = calc({
+      ...perimeterInputs,
+      inputMode: 2,
+      projectRolls: 12,
+      reserveRolls: 1,
+    });
+
+    expect(result.totals.baseExactRolls).toBe(12);
+    expect(result.totals.requiredRolls).toBe(13);
+    expect(result.totals.purchaseRolls).toBe(13);
+    expect(result.materials[0].purchaseQty).toBe(13);
+  });
+
+  it("понимает ширину рулона и в миллиметрах, и в метрах", () => {
+    const millimeters = calc({ ...perimeterInputs, rollWidth: 1060 });
+    const meters = calc({ ...perimeterInputs, rollWidth: 1.06 });
+
+    expect(millimeters.totals.rollWidthM).toBe(1.06);
+    expect(millimeters.totals.stripsNeeded).toBe(14);
+    expect(millimeters.totals.purchaseRolls).toBe(5);
+    expect(meters.totals.purchaseRolls).toBe(5);
+  });
+
+  it("не выдаёт рулоны, если из выбранной длины рулона не выходит полотно", () => {
+    const result = calc({
+      ...perimeterInputs,
+      cutLengthMode: 1,
+      manualStripLengthM: 12,
+      rollLength: 10.05,
+      reserveRolls: 1,
+    });
+
+    expect(result.totals.stripsPerRoll).toBe(0);
+    expect(result.totals.requiredRolls).toBe(0);
+    expect(result.totals.purchaseRolls).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBeGreaterThanOrEqual(
+      result.scenarios?.REC.exact_need ?? 0,
+    );
+    expect(result.warnings.join(" ")).toContain("не помещается");
+  });
+
+  it("не добавляет клей, грунтовку и инструменты автоматически", () => {
+    const result = calc(perimeterInputs);
+    const names = result.materials.map((material) => material.name).join(" ");
+
+    expect(result.materials).toHaveLength(1);
+    expect(names).not.toMatch(/Клей|Грунтов|Валик|Шпатель|Нож|Лезв|Ведро|Губк/i);
+  });
+
+  it("удаляет оптимистичный вычет проёмов и фиктивные товарные профили", () => {
+    const keys = wallpaperDef.fields.map((field) => field.key);
+
+    expect(keys).not.toContain("openingsArea");
+    expect(keys).not.toContain("openingDeductionMode");
+    expect(keys).not.toContain("pasteCoverageM2");
+    expect(keys).not.toContain("pastePackKg");
+    expect(keys).not.toContain("primerRate");
+    expect(keys).not.toContain("primerLayers");
+    expect(keys).not.toContain("primerCanL");
+    expect(keys).not.toContain("manufacturer");
+    expect(keys).not.toContain("wallpaperType");
+    expect(keys).toContain("projectRolls");
+    expect(keys).toContain("manualStripLengthM");
+  });
+
+  it("скрывает взаимоисключающие параметры трёх режимов", () => {
+    const field = (key: string) =>
+      wallpaperDef.fields.find((item) => item.key === key);
+
+    expect(field("perimeter")?.group).toBe("bySize");
+    expect(field("area")?.group).toBe("byArea");
+    expect(field("projectRolls")?.hideIf).toEqual({
+      key: "inputMode",
+      op: "ne",
+      value: 2,
+    });
+    expect(field("manualStripLengthM")?.hideIf).toEqual([
+      { key: "inputMode", op: "eq", value: 2 },
+      { key: "cutLengthMode", op: "ne", value: 1 },
+    ]);
+    expect(field("rapport")?.hideIf).toEqual([
+      { key: "inputMode", op: "eq", value: 2 },
+      { key: "cutLengthMode", op: "ne", value: 0 },
+    ]);
+  });
+
+  it("не обещает точность по одной площади и автоматический комплект", () => {
+    expect(wallpaperDef.h1).toBe(
+      "Калькулятор обоев — расчёт полотен и рулонов",
+    );
+    expect(wallpaperDef.description).toContain("полотен");
+    expect(wallpaperDef.description).not.toMatch(/клея|грунтовки|расходник/i);
+    expect(wallpaperDef.metaDescription.toLowerCase()).not.toContain("точн");
+  });
+
+  it("ссылается на действующий и будущий ГОСТ и маркировку производителей", () => {
+    const html = wallpaperDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain(
+      "https://protect.gost.ru/gost/details/0d517194-e3f9-4143-9550-34afcb44a0a4",
+    );
+    expect(html).toContain(
+      "https://protect.gost.ru/gost/details/3fe0ec03-d9be-45bd-8718-0ca4118df9be",
+    );
+    expect(html).toContain(
+      "https://marburg.com/en/wallpaper-consultation/",
+    );
+    expect(html).toContain(
+      "https://marburg.com/en/city-glow-subpage-2/",
+    );
+    expect(html).toContain(
+      "https://www.as-creation.com/fileadmin/02_Tapeten_Highlights/Kollektionsbroschuren/Pint_Walls_DE-EN.pdf",
+    );
+    expect(html).toContain("/instrumenty/raskladka-oboev/");
   });
 });

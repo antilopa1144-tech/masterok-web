@@ -1,319 +1,605 @@
-import type { CalculatorDefinition } from "../types";
+import type {
+  CalculatorDefinition,
+  CalculatorScenario,
+} from "../types";
 import { withSiteMetaTitle } from "../meta";
-import factorTables from "../../../../configs/factor-tables.json";
-import wallpaperCanonicalSpecJson from "../../../../configs/calculators/wallpaper-canonical.v1.json";
-import { computeCanonicalWallpaper } from "../../../../engine/wallpaper";
-import type { WallpaperCanonicalSpec } from "../../../../engine/canonical";
-import { buildManufacturerField, getManufacturerByIndex } from "../manufacturerField";
+import {
+  ACCURACY_MODE_LABELS,
+  DEFAULT_ACCURACY_MODE,
+  type AccuracyMode,
+} from "../../../../engine/accuracy";
+import wallpaperSpec from "../../../../configs/calculators/wallpaper-canonical.v1.json";
 
-const wallpaperCanonicalSpec = wallpaperCanonicalSpecJson as WallpaperCanonicalSpec;
-const manufacturerField = buildManufacturerField("wallpaper");
+const WEB_FORMULA_VERSION = "wallpaper-web-roll-layout-v1";
+
+const RESERVE_OPTIONS = [0, 3, 5, 7, 10, 15, 20, 25, 30].map(
+  (value) => ({
+    value,
+    label: value === 0 ? "0% — без процентного запаса" : `${value}%`,
+  }),
+);
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
+const readNumber = (value: unknown, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const round = (value: number, digits = 6): number => {
+  const factor = 10 ** digits;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};
+
+const ceilPositive = (value: number): number =>
+  value > 0 ? Math.ceil(value - 1e-9) : 0;
+
+const formatRuNumber = (value: number): string =>
+  new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 3 }).format(value);
+
+const plural = (
+  value: number,
+  one: string,
+  few: string,
+  many: string,
+): string => {
+  const absolute = Math.abs(value) % 100;
+  const last = absolute % 10;
+  if (absolute > 10 && absolute < 20) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+};
 
 export const wallpaperDef: CalculatorDefinition = {
   id: "wallpaper",
   slug: "oboi",
-  formulaVersion: wallpaperCanonicalSpec.formula_version,
+  formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор обоев",
-  h1: "Калькулятор обоев онлайн — расчёт количества рулонов",
-  description: "Рассчитайте количество рулонов обоев с учётом высоты комнаты, дверей, окон и раппорта.",
-  metaTitle: withSiteMetaTitle("Калькулятор обоев: расчёт материалов онлайн"),
-  metaDescription: "Бесплатный калькулятор обоев: рассчитайте количество рулонов, полос, клея и грунтовки с учётом высоты комнаты, окон, дверей и раппорта узора.",
+  h1: "Калькулятор обоев — расчёт полотен и рулонов",
+  description:
+    "Рассчитайте число целых полотен и рулонов по периметру, параметрам выбранного артикула и способу совмещения рисунка или перенесите готовый итог из карты раскроя.",
+  metaTitle: withSiteMetaTitle(
+    "Калькулятор обоев: расчёт полотен и рулонов",
+  ),
+  metaDescription:
+    "Бесплатный калькулятор обоев: число полотен, выход из рулона и итог к покупке по периметру, высоте, размеру рулона, раппорту и явному запасу.",
   category: "interior",
   categorySlug: "otdelka",
-  tags: ["обои", "рулоны", "оклейка", "ремонт", "стены"],
+  tags: [
+    "калькулятор обоев",
+    "сколько рулонов обоев",
+    "расчёт обоев по периметру",
+    "раппорт обоев",
+    "длина полотна",
+    "раскладка обоев",
+  ],
   popularity: 78,
   complexity: 1,
   fields: [
     {
       key: "inputMode",
-      label: "Способ ввода",
+      label: "Исходные данные",
       type: "radio",
       defaultValue: 0,
       options: [
-        { value: 0, label: "По периметру" },
-        { value: 1, label: "По площади стен" },
+        { value: 0, label: "Периметр — быстрый расчёт" },
+        { value: 1, label: "Площадь стен — предварительно" },
+        { value: 2, label: "Готовый итог раскладки" },
       ],
+      hint:
+        "Для стен с проёмами, простенками и смещённым рисунком точнее сначала построить карту раскроя.",
+      fullWidth: true,
+    },
+    {
+      key: "perimeter",
+      label: "Периметр оклеиваемых стен",
+      type: "number",
+      unit: "м",
+      min: 1,
+      max: 100000,
+      step: 0.01,
+      defaultValue: 14,
+      hint:
+        "Сумма длин стен. Проёмы автоматически не вычитаются: пригодность подрезок зависит от раскладки.",
+      group: "bySize",
     },
     {
       key: "area",
       label: "Площадь стен до вычета проёмов",
       type: "number",
       unit: "м²",
-      min: 1,
-      max: 1000,
+      min: 0.01,
+      max: 100000,
       step: 0.1,
       defaultValue: 40,
+      hint:
+        "Предварительный режим: площадь преобразуется в эквивалентную длину стены по высоте помещения.",
       group: "byArea",
     },
     {
-      key: "perimeter",
-      label: "Периметр комнаты",
-      type: "slider",
-      unit: "м",
-      min: 5,
-      max: 60,
-      step: 0.5,
-      defaultValue: 14,
-      hint: "Сумма длин всех стен",
-      group: "bySize",
+      key: "projectRolls",
+      label: "Рулонов по карте раскроя",
+      type: "number",
+      unit: "шт",
+      min: 0,
+      max: 100000,
+      step: 1,
+      integerOnly: true,
+      defaultValue: 1,
+      hint:
+        "Введите итог раскроя без закрытого резерва. Резерв задаётся отдельно ниже и применяется один раз.",
+      hideIf: { key: "inputMode", op: "ne", value: 2 },
     },
     {
       key: "height",
-      label: "Высота помещения",
-      type: "slider",
-      unit: "м",
-      min: 2.0,
-      max: 5.0,
-      step: 0.05,
-      defaultValue: 2.7,
-    },
-    {
-      key: "openingsArea",
-      label: "Площадь окон и дверей",
+      label: "Высота полотна по стене",
       type: "number",
-      unit: "м²",
-      min: 0,
-      max: 500,
-      step: 0.1,
-      defaultValue: 0,
-      hint: "Всегда вычитается из площади для клея; влияние на полосы выбирается ниже",
-    },
-    {
-      key: "openingDeductionMode",
-      label: "Уменьшать полосы на площадь проёмов",
-      type: "switch",
-      defaultValue: 0,
-      hint: "По умолчанию выключено: безопасный расчёт целых полос по периметру. Включайте только если подрезки над и под проёмами точно заменят целые полотна",
+      unit: "м",
+      min: 0.1,
+      max: 100,
+      step: 0.01,
+      defaultValue: 2.7,
+      hint: "Высота от линии начала оклейки до линии подрезки.",
+      hideIf: { key: "inputMode", op: "eq", value: 2 },
     },
     {
       key: "rollLength",
-      label: "Длина рулона",
-      type: "slider",
+      label: "Длина выбранного рулона",
+      type: "number",
       unit: "м",
-      min: 5,
-      max: 25,
-      step: 0.05,
+      min: 0.1,
+      max: 1000,
+      step: 0.01,
       defaultValue: 10.05,
-      hint: "Стандарт — 10 м, европейский — 10.05 м",
+      hint: "Перенесите размер с этикетки конкретного артикула.",
+      hideIf: { key: "inputMode", op: "eq", value: 2 },
     },
     {
       key: "rollWidth",
-      label: "Ширина рулона",
-      type: "slider",
+      label: "Ширина выбранного рулона",
+      type: "number",
       unit: "мм",
-      min: 530,
-      max: 1060,
-      step: 10,
+      min: 100,
+      max: 10000,
+      step: 1,
       defaultValue: 530,
-      hint: "Стандарт: 530 мм (0.53 м) или 1060 мм",
+      hint:
+        "Можно передать 530 мм или 0,53 м по ссылке — расчёт нормализует обе записи.",
+      hideIf: { key: "inputMode", op: "eq", value: 2 },
+    },
+    {
+      key: "cutLengthMode",
+      label: "Как определить длину полотна",
+      type: "radio",
+      defaultValue: 0,
+      options: [
+        { value: 0, label: "Посчитать по высоте и раппорту" },
+        { value: 1, label: "Ввести готовую длину" },
+      ],
+      hint:
+        "Готовая длина подходит для пробного раскроя или карты, где совмещение уже учтено.",
+      hideIf: { key: "inputMode", op: "eq", value: 2 },
+      fullWidth: true,
     },
     {
       key: "rapport",
-      label: "Раппорт (подгонка узора)",
-      type: "slider",
+      label: "Вертикальный раппорт",
+      type: "number",
       unit: "см",
       min: 0,
-      max: 64,
-      step: 1,
+      max: 1000,
+      step: 0.1,
       defaultValue: 0,
-      hint: "Если рисунок без подгонки — 0",
+      hint:
+        "Шаг повторения рисунка. Для свободной стыковки укажите 0.",
+      hideIf: [
+        { key: "inputMode", op: "eq", value: 2 },
+        { key: "cutLengthMode", op: "ne", value: 0 },
+      ],
     },
     {
       key: "patternShift",
-      label: "Смещение рисунка",
+      label: "Дополнительный припуск совмещения",
       type: "number",
       unit: "см",
       min: 0,
-      max: 100,
-      step: 1,
+      max: 1000,
+      step: 0.1,
       defaultValue: 0,
-      hint: "Второе число на этикетке для смещённой стыковки; добавляется как безопасный припуск перед округлением по раппорту",
-      hideIf: { key: "rapport", op: "eq", value: 0 },
+      hint:
+        "Только явно проверенная добавка к каждому полотну. Второе число маркировки 64/32 нельзя автоматически считать такой добавкой.",
+      hideIf: [
+        { key: "inputMode", op: "eq", value: 2 },
+        { key: "cutLengthMode", op: "ne", value: 0 },
+        { key: "rapport", op: "eq", value: 0 },
+      ],
     },
     {
       key: "trimAllowanceCm",
-      label: "Припуск на подрезку",
+      label: "Общий припуск на подрезку",
       type: "number",
       unit: "см",
       min: 0,
-      max: 50,
-      step: 1,
+      max: 1000,
+      step: 0.1,
       defaultValue: 10,
+      hint: "Суммарная добавка сверху и снизу одного полотна.",
+      hideIf: [
+        { key: "inputMode", op: "eq", value: 2 },
+        { key: "cutLengthMode", op: "ne", value: 0 },
+      ],
+    },
+    {
+      key: "manualStripLengthM",
+      label: "Готовая длина одного полотна",
+      type: "number",
+      unit: "м",
+      min: 0.1,
+      max: 1000,
+      step: 0.01,
+      defaultValue: 2.8,
+      hint:
+        "Длина после всех припусков и совмещения, полученная по пробному раскрою или карте.",
+      hideIf: [
+        { key: "inputMode", op: "eq", value: 2 },
+        { key: "cutLengthMode", op: "ne", value: 1 },
+      ],
     },
     {
       key: "reservePercent",
-      label: "Запас к расчётным рулонам",
-      type: "slider",
-      unit: "%",
-      min: 0,
-      max: 30,
-      step: 1,
+      label: "Явный процентный запас",
+      type: "select",
       defaultValue: 0,
-      hint: "Применяется один раз до округления",
+      options: RESERVE_OPTIONS,
+      hint:
+        "Не обязателен. Применяется один раз к чистому числу рулонов до округления.",
     },
     {
       key: "reserveRolls",
-      label: "Запас рулонов",
-      type: "slider",
+      label: "Закрытый запас рулонов",
+      type: "number",
       unit: "шт",
       min: 0,
-      max: 5,
+      max: 100,
       step: 1,
+      integerOnly: true,
       defaultValue: 0,
-      hint: "Дополнительные целые рулоны сверх чистой потребности по полосам",
+      hint:
+        "Дополнительные целые рулоны для ремонта или сложных участков. Скрытого запаса нет.",
     },
-    { key: "pasteCoverageM2", label: "Покрытие упаковки клея", type: "number", unit: "м²", min: 1, max: 200, step: 1, defaultValue: 30, hint: "Перенесите с этикетки выбранного клея" },
-    { key: "pastePackKg", label: "Масса упаковки клея", type: "number", unit: "кг", min: 0.05, max: 20, step: 0.05, defaultValue: 0.25 },
-    { key: "primerRate", label: "Расход грунтовки на слой", type: "number", unit: "л/м²", min: 0.01, max: 1, step: 0.01, defaultValue: 0.15, hint: "По паспорту грунтовки и впитываемости основания" },
-    { key: "primerLayers", label: "Слоёв грунтовки", type: "number", min: 1, max: 3, step: 1, integerOnly: true, defaultValue: 1 },
-    { key: "primerCanL", label: "Объём канистры грунтовки", type: "number", unit: "л", min: 0.5, max: 20, step: 0.5, defaultValue: 5 },
-    ...(manufacturerField ? [manufacturerField] : []),
   ],
   calculate(inputs) {
-    const manufacturer = getManufacturerByIndex("wallpaper", inputs.manufacturer);
-    const inputRollWidth = inputs.rollWidth !== undefined
-      ? (inputs.rollWidth > 10 ? inputs.rollWidth / 1000 : inputs.rollWidth)
-      : undefined;
-    const rollWidth = inputRollWidth;
-    const rollLength = inputs.rollLength;
-
-    const result = computeCanonicalWallpaper(
-      wallpaperCanonicalSpec,
-      {
-        inputMode: inputs.inputMode,
-        perimeter: inputs.perimeter,
-        area: inputs.area,
-        roomWidth: inputs.roomWidth,
-        roomLength: inputs.roomLength,
-        roomHeight: inputs.roomHeight,
-        length: inputs.length,
-        width: inputs.width,
-        height: inputs.height,
-        wallHeight: inputs.wallHeight ?? inputs.height,
-        openingsArea: inputs.openingsArea,
-        openingDeductionMode: inputs.openingDeductionMode,
-        doorsCount: inputs.doorsCount ?? inputs.doors,
-        windowsCount: inputs.windowsCount ?? inputs.windows,
-        rollLength,
-        rollWidth,
-        rapport: inputs.rapport,
-        patternShift: inputs.patternShift,
-        trimAllowanceCm: inputs.trimAllowanceCm,
-        wallpaperType: inputs.wallpaperType ?? 1,
-        reserveRolls: inputs.reserveRolls ?? 0,
-        reservePercent: inputs.reservePercent ?? 0,
-        pasteCoverageM2: inputs.pasteCoverageM2,
-        pastePackKg: inputs.pastePackKg,
-        primerRate: inputs.primerRate,
-        primerLayers: inputs.primerLayers,
-        primerCanL: inputs.primerCanL,
-        accuracyMode: inputs.accuracyMode as any,
-      },
-      factorTables.factors,
+    const inputMode = Math.round(clamp(readNumber(inputs.inputMode, 0), 0, 2));
+    const perimeter = clamp(readNumber(inputs.perimeter, 14), 1, 100000);
+    const area = clamp(readNumber(inputs.area, 40), 0.01, 100000);
+    const height = clamp(readNumber(inputs.height, 2.7), 0.1, 100);
+    const rollLength = clamp(
+      readNumber(inputs.rollLength, 10.05),
+      0.1,
+      1000,
+    );
+    const rawRollWidth = readNumber(inputs.rollWidth, 530);
+    const rollWidthM = clamp(
+      rawRollWidth > 10 ? rawRollWidth / 1000 : rawRollWidth,
+      0.1,
+      10,
+    );
+    const cutLengthMode = Math.round(
+      clamp(readNumber(inputs.cutLengthMode, 0), 0, 1),
+    );
+    const rapportM = clamp(readNumber(inputs.rapport, 0), 0, 1000) / 100;
+    const alignmentAllowanceM =
+      clamp(readNumber(inputs.patternShift, 0), 0, 1000) / 100;
+    const trimAllowanceM =
+      clamp(readNumber(inputs.trimAllowanceCm, 10), 0, 1000) / 100;
+    const manualStripLengthM = clamp(
+      readNumber(inputs.manualStripLengthM, height + trimAllowanceM),
+      0.1,
+      1000,
+    );
+    const projectRolls = Math.round(
+      clamp(readNumber(inputs.projectRolls, 1), 0, 100000),
+    );
+    const reservePercent = clamp(
+      readNumber(inputs.reservePercent, 0),
+      0,
+      100,
+    );
+    const reserveRolls = Math.round(
+      clamp(readNumber(inputs.reserveRolls, 0), 0, 100),
     );
 
-    if (manufacturer) {
-      result.materials = result.materials.map((m) =>
-        m.name.toLowerCase().includes("обои") || m.name.toLowerCase().includes("рулон")
-          ? { ...m, name: `${m.name} — ${manufacturer.name}` }
-          : m
+    const wallArea =
+      inputMode === 0 ? perimeter * height : inputMode === 1 ? area : 0;
+    const equivalentWallRun =
+      inputMode === 0 ? perimeter : inputMode === 1 ? area / height : 0;
+    const calculatedStripLength = (() => {
+      const baseLength = height + trimAllowanceM;
+      if (rapportM <= 0) return baseLength;
+      return (
+        ceilPositive((baseLength + alignmentAllowanceM) / rapportM) * rapportM
       );
-      result.practicalNotes = [
-        ...(result.practicalNotes ?? []),
-        `Производитель выбран только для подписи. Размеры рулона не подменяются скрытно: в расчёте использованы значения из полей формы.`,
-      ];
+    })();
+    const stripLength = round(
+      cutLengthMode === 1 ? manualStripLengthM : calculatedStripLength,
+      6,
+    );
+    const stripsNeeded =
+      inputMode === 2 ? 0 : ceilPositive(equivalentWallRun / rollWidthM);
+    const stripsPerRoll =
+      inputMode === 2
+        ? 0
+        : Math.max(0, Math.floor((rollLength + 1e-9) / stripLength));
+    const canCutStrips = inputMode === 2 || stripsPerRoll > 0;
+    const baseExactRolls = round(
+      inputMode === 2
+        ? projectRolls
+        : canCutStrips
+          ? stripsNeeded / stripsPerRoll
+          : 0,
+      6,
+    );
+    const requiredRolls = canCutStrips
+      ? round(
+          baseExactRolls * (1 + reservePercent / 100) + reserveRolls,
+          6,
+        )
+      : 0;
+    const purchaseRolls = canCutStrips ? ceilPositive(requiredRolls) : 0;
+    const leftoverRolls = round(
+      Math.max(0, purchaseRolls - requiredRolls),
+      6,
+    );
+
+    const assumptions = [
+      inputMode === 2
+        ? `Чистая потребность ${formatRuNumber(projectRolls)} ${plural(projectRolls, "рулон", "рулона", "рулонов")} взята из карты раскроя.`
+        : `${stripsNeeded} ${plural(stripsNeeded, "полотно", "полотна", "полотен")} по ${formatRuNumber(stripLength)} м; из рулона ${formatRuNumber(rollLength)} м выходит ${stripsPerRoll} ${plural(stripsPerRoll, "полотно", "полотна", "полотен")}.`,
+      `Явный запас: ${formatRuNumber(reservePercent)}% и ${reserveRolls} ${plural(reserveRolls, "закрытый рулон", "закрытых рулона", "закрытых рулонов")}; скрытых надбавок нет.`,
+    ];
+    const scenario: CalculatorScenario = {
+      exact_need: requiredRolls,
+      purchase_quantity: purchaseRolls,
+      leftover: leftoverRolls,
+      assumptions,
+      key_factors: {
+        hidden_multiplier: 1,
+        reserve_factor: round(1 + reservePercent / 100, 6),
+        reserve_rolls: reserveRolls,
+      },
+      buy_plan: {
+        package_label: "рулон выбранного артикула",
+        package_size: 1,
+        packages_count: purchaseRolls,
+        unit: "рулонов",
+      },
+    };
+
+    const warnings: string[] = [];
+    if (inputMode === 1) {
+      warnings.push(
+        "Предварительный режим использует площадь стен до вычета проёмов и эквивалентную длину стены. Для окон, дверей, простенков и остатков между полотнами постройте точную раскладку.",
+      );
     }
-    return result;
+    if (
+      inputMode !== 2 &&
+      cutLengthMode === 0 &&
+      rapportM > 0 &&
+      alignmentAllowanceM > 0
+    ) {
+      warnings.push(
+        "Для смещённой подгонки дополнительный припуск применён к каждому полотну ровно как введено. Маркировка вида 64/32 описывает чередование полотен и сама по себе не означает универсальную добавку 32 см; точнее использовать карту раскроя или готовую длину полотна.",
+      );
+    }
+    if (inputMode !== 2 && stripsPerRoll === 0) {
+      warnings.push(
+        "Полотно выбранной длины не помещается в рулоне. Проверьте длину рулона и готовую длину полотна — итог к покупке до исправления не выдаётся.",
+      );
+    }
+    if (inputMode === 2) {
+      warnings.push(
+        "Геометрия и совмещение рисунка считаются уже закрытыми картой раскроя; калькулятор добавляет только явно выбранный резерв.",
+      );
+    }
+
+    const accuracyMode = (
+      typeof inputs.accuracyMode === "string"
+        ? inputs.accuracyMode
+        : DEFAULT_ACCURACY_MODE
+    ) as AccuracyMode;
+    const materialName =
+      inputMode === 2
+        ? "Обои выбранного артикула — по карте раскроя"
+        : `Обои выбранного артикула — рулон ${formatRuNumber(rollWidthM)} × ${formatRuNumber(rollLength)} м`;
+
+    return {
+      formulaVersion: WEB_FORMULA_VERSION,
+      canonicalSpecId: wallpaperSpec.calculator_id,
+      materials: [
+        {
+          name: materialName,
+          quantity: baseExactRolls,
+          unit: "рулонов",
+          withReserve: requiredRolls,
+          purchaseQty: purchaseRolls,
+          category: "Обои",
+        },
+      ],
+      totals: {
+        inputMode,
+        wallArea: round(wallArea, 6),
+        perimeter: round(equivalentWallRun, 6),
+        height: round(height, 6),
+        rollLength: round(rollLength, 6),
+        rollWidthM: round(rollWidthM, 6),
+        cutLengthMode,
+        rapport: round(rapportM * 100, 6),
+        patternShift: round(alignmentAllowanceM * 100, 6),
+        trimAllowanceCm: round(trimAllowanceM * 100, 6),
+        manualStripLengthM: round(manualStripLengthM, 6),
+        projectRolls,
+        stripsNeeded,
+        stripLength,
+        stripsPerRoll,
+        baseExactRolls,
+        reservePercent: round(reservePercent, 6),
+        reserveRolls,
+        requiredRolls,
+        purchaseRolls,
+        rollsNeeded: purchaseRolls,
+        minExactNeed: requiredRolls,
+        recExactNeed: requiredRolls,
+        maxExactNeed: requiredRolls,
+        minPurchase: purchaseRolls,
+        recPurchase: purchaseRolls,
+        maxPurchase: purchaseRolls,
+      },
+      warnings,
+      practicalNotes: [
+        inputMode === 2
+          ? `Карта раскроя дала ${formatRuNumber(baseExactRolls)} ${plural(baseExactRolls, "рулон", "рулона", "рулонов")}; после явного резерва требуется ${formatRuNumber(requiredRolls)}, к покупке ${purchaseRolls}.`
+          : `${stripsNeeded} ${plural(stripsNeeded, "полотно", "полотна", "полотен")} ÷ ${stripsPerRoll} ${plural(stripsPerRoll, "полотно", "полотна", "полотен")} из рулона = ${formatRuNumber(baseExactRolls)} ${plural(baseExactRolls, "рулон", "рулона", "рулонов")} до запаса; после явного резерва требуется ${formatRuNumber(requiredRolls)}, к покупке ${purchaseRolls}.`,
+        "Клей, грунтовка и инструменты не добавляются: их выбирают по основанию и инструкции производителя конкретных обоев и состава.",
+        "Перед оплатой сверьте артикул, размеры, символ совмещения, раппорт, номер партии и оттенок на этикетках всех рулонов.",
+      ],
+      scenarios: { MIN: scenario, REC: scenario, MAX: scenario },
+      accuracyMode,
+      accuracyExplanation: {
+        mode: accuracyMode,
+        modeLabel:
+          ACCURACY_MODE_LABELS[accuracyMode] ??
+          ACCURACY_MODE_LABELS[DEFAULT_ACCURACY_MODE],
+        combinedMultiplier: 1,
+        appliedModifiers: [],
+        notes: [
+          "Режим точности не меняет результат: учитываются только выбранная геометрия или карта раскроя и явно заданный резерв.",
+        ],
+      },
+      summaryCards: [
+        {
+          icon: "▥",
+          label: inputMode === 2 ? "По раскладке" : "Полотен",
+          value: formatRuNumber(
+            inputMode === 2 ? baseExactRolls : stripsNeeded,
+          ),
+          unit: inputMode === 2 ? "рул." : "шт",
+          hint:
+            inputMode === 2
+              ? "до закрытого резерва"
+              : `${stripsPerRoll} из одного рулона`,
+          tone: "slate",
+        },
+        {
+          icon: "↕",
+          label: "Длина полотна",
+          value: inputMode === 2 ? "по карте" : formatRuNumber(stripLength),
+          unit: inputMode === 2 ? undefined : "м",
+          hint:
+            inputMode === 2
+              ? "совмещение уже учтено"
+              : cutLengthMode === 1
+                ? "введена вручную"
+                : "с припуском и раппортом",
+          tone: "amber",
+        },
+        {
+          icon: "▤",
+          label: "К покупке",
+          value: String(purchaseRolls),
+          unit: plural(purchaseRolls, "рулон", "рулона", "рулонов"),
+          hint:
+            reservePercent > 0 || reserveRolls > 0
+              ? "явный резерв учтён один раз"
+              : "без скрытого резерва",
+          tone: "emerald",
+        },
+      ],
+    };
   },
   formulaDescription: `
-**Расчёт обоев:**
-Рулоны считаются по целым полотнам, а клей и грунтовка — по полезной площади стен.
+**Расчёт рулонов по целым полотнам:**
 
-По умолчанию проёмы не уменьшают число целых полотен: их подрезки нельзя заранее считать полной заменой полосы.
-Длина полотна включает припуск и смещение рисунка, после чего округляется вверх до целого раппорта.
-MIN показывает чистую потребность, REC применяет выбранный запас один раз, а MAX предусматривает минимум
-один запасной рулон на будущий ремонт.
+1. Полотна = округление вверх (периметр / ширина рулона).
+2. Длина полотна = высота + общий припуск; при прямом раппорте результат округляется вверх до целого шага рисунка.
+3. Полотен из рулона = целая часть (длина рулона / длина полотна).
+4. Чистые рулоны = полотна / полотен из рулона.
+5. Требуется = чистые рулоны × (1 + явный запас, %) + закрытые запасные рулоны; итог к покупке округляется вверх.
+
+Режим готовой раскладки пропускает приближённую геометрию и принимает её чистый итог. MIN, REC и MAX одинаковы: скрытых коэффициентов и автоматического запасного рулона нет.
   `,
   howToUse: [
-    "Измерьте периметр комнаты и высоту потолков",
-    "Укажите параметры рулона и раппорт (шаг рисунка)",
-    "Нажмите «Рассчитать» — получите рулоны, клей, грунтовку и расходники",
+    "Для простой комнаты укажите полный периметр и высоту стен; проёмы автоматически не вычитаются.",
+    "Перенесите длину и ширину конкретного рулона и выберите расчётную или готовую длину полотна.",
+    "Если есть рисунок, укажите вертикальный раппорт. Для смещённой подгонки используйте карту раскроя или проверенную длину полотна.",
+    "Задайте запас явно — процентом и/или закрытыми целыми рулонами — и получите итог к покупке.",
   ],
   expertTips: [
     {
-      title: "Партия обоев",
-      content: "При покупке обязательно проверяйте номер партии (Batch No) на всех рулонах. Обои из разных партий могут отличаться по оттенку, что будет заметно на стене.",
-      author: "Мастер-отделочник"
+      title: "Одна партия и оттенок",
+      content:
+        "Проверьте артикул, номер партии и обозначение оттенка на каждом рулоне до начала работ. Внешне одинаковые рулоны из разных партий могут отличаться.",
+      author: "Мастер-отделочник",
     },
     {
-      title: "Сквозняки",
-      content: "После оклейки обоев окна и двери должны быть закрыты минимум 24 часа. Сквозняк приведет к неравномерному высыханию и расхождению швов.",
-      author: "Прораб"
-    }
+      title: "Сначала пробное полотно",
+      content:
+        "При смещённой стыковке разложите два-три соседних полотна и измерьте фактический шаг раскроя. Это надёжнее универсальной надбавки по второму числу маркировки.",
+      author: "Прораб",
+    },
   ],
   faq: [
     {
-      question: "Нужно ли мазать клеем сами обои?",
+      question: "Почему калькулятор не вычитает окна и двери?",
       answer:
-        "Зависит от типа обоев и инструкции производителя. Флизелин чаще клеят «клей на стену», а бумажные и часть виниловых — с нанесением на полотно (иногда с выдержкой). Ошибка даёт пузыри и слабый шов, поэтому лучше свериться с этикеткой рулона.",
+        "Площадь проёма не равна гарантированной экономии целого полотна. Короткие остатки можно использовать только при подходящем расположении проёмов и рисунка, поэтому быстрый режим считает полный ряд полотен, а точный учёт выполняет карта раскроя.",
     },
     {
-      question: "Почему калькулятор показывает три сценария?",
+      question: "Почему MIN, REC и MAX одинаковы?",
       answer:
-        "MIN — чистая потребность по полосам и раппорту. REC добавляет только указанный вами процент и запасные рулоны. MAX сохраняет выбранный запас и предусматривает минимум один целый рулон на будущий ремонт.",
-    }
+        "Калькулятор не придумывает разные запасы. Процент и дополнительные рулоны задаются пользователем и применяются один раз; режим точности итог не увеличивает.",
+    },
   ],
   seoContent: {
     descriptionHtml: `
-<h2>Формула расчёта обоев</h2>
-<p>Количество рулонов рассчитывается по формуле:</p>
-<p><strong>Рулоны = &lceil;(Полосы / Полос_из_рулона) &times; (1 + Запас, %) + Запасные_рулоны&rceil;</strong></p>
-<ul>
-  <li><strong>Полосы, безопасный режим</strong> = &lceil;Периметр / Ширина_рулона&rceil;</li>
-  <li><strong>Полосы с использованием подрезок</strong> = &lceil;(Полезная_площадь / Высота) / Ширина_рулона&rceil;</li>
-  <li><strong>Длина полосы</strong> = &lceil;(Высота + припуск + смещение) / Раппорт&rceil; &times; Раппорт; без рисунка — Высота + припуск</li>
-  <li><strong>Полос_из_рулона</strong> = &lfloor;Длина_рулона / Длина_полосы&rfloor;</li>
-  <li><strong>Раппорт</strong> — шаг повтора рисунка (0 — без подгонки)</li>
-</ul>
-<p>Проёмы всегда уменьшают площадь для клея и грунтовки. Уменьшать по ним число полотен безопасно только тогда, когда размеры и расположение проёмов действительно позволяют использовать короткие подрезки.</p>
+<h2>Как рассчитать обои по полотнам</h2>
+<p>Для простой комнаты калькулятор делит полный периметр оклеиваемых стен на ширину рулона и округляет число полотен вверх. Затем определяет длину одного полотна, число целых полотен из рулона и только в конце — число рулонов к покупке. Так площадь рулона не подменяет реальный раскрой.</p>
+<p><strong>Рулоны к покупке = &lceil;(Полотна / Полотен из рулона) &times; (1 + явный запас, %) + закрытые запасные рулоны&rceil;.</strong> Процент и запасные рулоны применяются ровно один раз. MIN, REC и MAX не содержат скрытой надбавки.</p>
 
-<h2>Стандартные размеры рулонов</h2>
-<table>
-  <thead>
-    <tr><th>Тип обоев</th><th>Ширина, м</th><th>Длина, м</th><th>Площадь рулона, м&sup2;</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Бумажные, виниловые (стандарт)</td><td>0.53</td><td>10.05</td><td>5.3</td></tr>
-    <tr><td>Флизелиновые (широкие)</td><td>1.06</td><td>10.05</td><td>10.7</td></tr>
-    <tr><td>Под покраску</td><td>1.06</td><td>25.0</td><td>26.5</td></tr>
-  </tbody>
-</table>
-<p>При наличии раппорта выход полотен из рулона может снизиться. Расход меняется ступенчато, поэтому калькулятор сначала определяет длину одного полотна, а затем считает, сколько целых полотен помещается в рулоне.</p>
+<h2>Почему окна и двери не вычитаются автоматически</h2>
+<p>Проём уменьшает оклеиваемую площадь, но не всегда уменьшает количество полноразмерных полотен: всё зависит от ширины простенков, положения рисунка и пригодности остатков. Режим по площади стен до вычета проёмов поэтому помечен как предварительный. Для проекта с окнами, дверями, отдельными стенами и остатками используйте <a href="/instrumenty/raskladka-oboev/">точную раскладку обоев</a>, а её итог перенесите в калькулятор.</p>
 
-<h2>Нормативная база</h2>
-<p>Оклеечные работы регламентируются <strong>СП 71.13330.2017</strong> «Изоляционные и отделочные покрытия». Раздел 7.4 определяет требования к подготовке основания: ровность, влажность, грунтование. Основание должно быть сухим (влажность &lt; 8%), ровным и загрунтованным.</p>
+<h2>Раппорт, прямая и смещённая стыковка</h2>
+<p>При прямом совпадении длина полотна после подрезочного припуска округляется вверх до полного раппорта. При смещённом совпадении соседние полотна чередуются, поэтому второе число в маркировке вида 64/32 нельзя без проверки прибавлять к каждому полотну. В консультации <a href="https://marburg.com/en/wallpaper-consultation/" rel="noopener noreferrer">Marburg по символам обоев</a> свободное, прямое и смещённое совпадение описаны как разные способы стыковки. Реальный артикул Marburg имеет размер 10,05 × 0,53 м и маркировку 64/32 — это видно в <a href="https://marburg.com/en/city-glow-subpage-2/" rel="noopener noreferrer">карточке City Glow</a>. Такой же формат 10,05 × 0,53 м и 64/32 встречается в <a href="https://www.as-creation.com/fileadmin/02_Tapeten_Highlights/Kollektionsbroschuren/Pint_Walls_DE-EN.pdf" rel="noopener noreferrer">официальном каталоге A.S. Création</a>. Для смещённого рисунка надёжнее карта раскроя или измеренная готовая длина полотна.</p>
+
+<h2>Что регулирует стандарт</h2>
+<p><a href="https://protect.gost.ru/gost/details/0d517194-e3f9-4143-9550-34afcb44a0a4" rel="noopener noreferrer">ГОСТ 6810-2002</a> — действующий на дату проверки стандарт на обои, включая технические требования и маркировку. <a href="https://protect.gost.ru/gost/details/3fe0ec03-d9be-45bd-8718-0ca4118df9be" rel="noopener noreferrer">ГОСТ 6810-2026</a> принят, но его основная дата введения — 1 июля 2027 года; поэтому он не представлен как уже действующая замена. Стандарт не задаёт универсальное число рулонов для комнаты: размеры, раппорт и символ стыковки нужно брать с этикетки выбранного артикула.</p>
 
 <h2>Что проверить перед покупкой</h2>
 <ul>
-  <li><strong>Периметр комнаты</strong> = 2 &times; (длина + ширина)</li>
-  <li><strong>Раппорт и смещение</strong> — перенесите оба значения с этикетки рулона</li>
-  <li><strong>Покрытие клея</strong> — укажите площадь, заявленную для выбранного типа обоев</li>
-  <li><strong>Расход грунтовки</strong> — возьмите из паспорта материала с учётом числа слоёв</li>
-  <li><strong>Партия</strong> — все рулоны должны иметь один номер партии и оттенка</li>
+  <li>полный артикул, ширину и длину рулона;</li>
+  <li>символ стыковки, вертикальный раппорт и правила чередования полотен;</li>
+  <li>номер партии и оттенок на каждом рулоне;</li>
+  <li>возможность вернуть нераспечатанный запас;</li>
+  <li>тип клея и подготовку основания по инструкциям производителей — калькулятор не добавляет их автоматически.</li>
 </ul>
 `,
     faq: [
       {
-        question: "Сколько рулонов нужно для комнаты 5 × 3 м?",
-        answer: "<p>При высоте 2.7 м, рулоне 0.53 &times; 10.05 м и обоях без рисунка безопасный расчёт такой:</p><ul><li>Периметр = 2 &times; (5 + 3) = 16 м</li><li>Полосы = &lceil;16 / 0.53&rceil; = <strong>31 полоса</strong></li><li>Длина полосы с припуском 10 см = 2.8 м</li><li>Из рулона выходит &lfloor;10.05 / 2.8&rfloor; = <strong>3 полосы</strong></li><li>Рулоны = &lceil;31 / 3&rceil; = <strong>11 рулонов</strong></li></ul><p>Дверь и окна по умолчанию уменьшают расход клея, но не число целых полотен. Включайте вычет проёмов из полотен только если уверены, что подрезки можно использовать.</p>",
+        question: "Сколько рулонов нужно на комнату с периметром 14 м?",
+        answer:
+          "<p>При высоте 2,7 м, общем припуске 10 см и рулоне 10,05 × 0,53 м без рисунка нужно 27 полотен длиной 2,8 м. Из рулона выходит 3 полотна, поэтому чистый итог — 9 рулонов. Проёмы и сложный рисунок требуют отдельной раскладки.</p>",
       },
       {
-        question: "Как учитывать раппорт при расчёте обоев?",
-        answer: "<p>Раппорт — шаг повторения рисунка на этикетке рулона. К высоте стены добавляются припуск на подрезку и указанное смещение, затем длина полотна округляется вверх до ближайшего целого раппорта:</p><p><strong>Длина_полосы = &lceil;(Высота + припуск + смещение) / Раппорт&rceil; &times; Раппорт</strong></p><p>Расход меняется ступенчато: пока из рулона выходит прежнее число полотен, покупка не увеличивается. Перенесите с этикетки и раппорт, и смещение рисунка.</p>",
+        question: "Что означает маркировка раппорта 64/32?",
+        answer:
+          "<p>Первое число обычно обозначает вертикальный шаг повторения, а второе связано со смещением соседнего полотна. Это не универсальная команда прибавить 32 см к каждой полосе. Сверьте символ и инструкцию артикула, затем используйте карту раскроя или готовую длину полотна.</p>",
       },
       {
-        question: "Какой клей выбрать для обоев и сколько его нужно?",
-        answer: "<p>Выберите клей, который производитель разрешает для вашего типа и массы обоев. В калькулятор перенесите с упаковки две величины: площадь покрытия одной упаковки и её массу.</p><p>Калькулятор делит полезную площадь стен на заявленное покрытие и округляет число упаковок вверх. Универсальная норма «упаковок на рулон» не используется, потому что концентрация и покрытие у составов различаются.</p>",
+        question: "Нужно ли покупать запасной рулон?",
+        answer:
+          "<p>Это проектное решение, а не скрытая норма калькулятора. Укажите дополнительный рулон явно, если он нужен для сложных участков, брака, будущего ремонта или если выбранный артикул может исчезнуть из продажи.</p>",
       },
     ],
   },

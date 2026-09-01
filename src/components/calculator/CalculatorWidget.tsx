@@ -112,8 +112,8 @@ export default function CalculatorWidget({ calculator }: Props) {
         <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300">
           <span aria-hidden>🧻</span>
           <p>
-            Размеры перенесены из раскладки обоев — по плану раскроя нужно <strong>{wallpaperRollsHint} рулонов</strong>.
-            {" "}Здесь рассчитайте клей, грунтовку и расходники; количество рулонов сверяйте с планом раскроя.
+            Точная раскладка перенесена — по плану нужно <strong>{wallpaperRollsHint} рулонов</strong>.
+            {" "}В форме уже разделены чистый итог раскроя и закрытый резерв; параметры рулона сохранены для возврата к схеме.
           </p>
         </div>
       )}
