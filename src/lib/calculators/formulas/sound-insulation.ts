@@ -779,7 +779,7 @@ export const soundInsulationDef: CalculatorDefinition = {
           value: formatRuNumber(systemType === 1 ? primaryReservedItems : primaryReservedM2),
           unit: systemType === 1 ? "шт" : "м²",
           hint: `${formatRuNumber(reservePercent)}%, применяется один раз`,
-          tone: "blue",
+          tone: "slate",
         },
         {
           icon: "◉",
