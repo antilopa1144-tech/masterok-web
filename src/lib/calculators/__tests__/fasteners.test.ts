@@ -225,6 +225,7 @@ describe("Крепёж — подтверждённые точки, шаг и у
     );
     expect(fastenersDef.description).not.toMatch(/3[,.]5|4[,.]8|килограмм/i);
     expect(fastenersDef.metaDescription).not.toMatch(/3[,.]5|4[,.]8|килограмм/i);
+    expect(fastenersDef.metaDescription.toLowerCase()).toContain("рассчитайте");
   });
 
   it("ссылается на профильный ГОСТ и документацию разных систем", () => {
