@@ -191,8 +191,34 @@ export const CALCULATOR_PRESETS: Record<string, CalcPreset[]> = {
     { label: "Дом 10×12 м (двухэтажный)", values: { eaveLength: 24, gutterType: 1, stories: 2 } },
   ],
   "otdelka-balkona": [
-    { label: "Балкон 3×1 м", values: { length: 3, width: 1, height: 2.5, wallType: 0, floorType: 0, ceilingType: 0 } },
-    { label: "Лоджия 6×1.2 м", values: { length: 6, width: 1.2, height: 2.5, wallType: 1, floorType: 1, ceilingType: 1 } },
+    {
+      label: "Обшивка 12 м²",
+      values: {
+        inputMode: 0,
+        areaM2: 12,
+        usableWidthMm: 96,
+        pieceLengthM: 3,
+        allowancePercent: 10,
+        packagingMode: 0,
+      },
+    },
+    {
+      label: "Лоджия по обмеру",
+      values: {
+        inputMode: 1,
+        wallRunM: 5.2,
+        claddingHeightM: 2.5,
+        includeCeiling: 1,
+        ceilingLengthM: 3,
+        ceilingWidthM: 1.2,
+        openingAreaM2: 4.6,
+        usableWidthMm: 96,
+        pieceLengthM: 3,
+        allowancePercent: 10,
+        packagingMode: 1,
+        piecesPerPack: 6,
+      },
+    },
   ],
   "kalkulyator-lestnicy": [
     { label: "Этаж 2.8 м", values: { floorHeight: 2800, stairWidth: 1000, stepWidth: 280, materialType: 0 } },

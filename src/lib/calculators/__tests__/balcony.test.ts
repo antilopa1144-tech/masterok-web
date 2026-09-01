@@ -1,159 +1,222 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { balconyDef } from "../formulas/balcony";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(balconyDef.calculate.bind(balconyDef));
 
-describe("Калькулятор отделки балкона", () => {
-  describe("Стандарт: 3×1.2 м, высота 2.5 м, вагонка, ПСБ (insulationType=1)", () => {
-    // floorArea = 3 * 1.2 = 3.6
-    // wallArea = (2*1.2 + 2*3) * 2.5 = 8.4 * 2.5 = 21
-    // ceilingArea = 3 * 1.2 = 3.6
-    // totalFinishArea = 21 + 3.6 = 24.6
+const defaults = Object.fromEntries(
+  balconyDef.fields.map((field) => [field.key, field.defaultValue]),
+);
+
+describe("Калькулятор обшивки балкона", () => {
+  it("считает одну позицию по чистой площади и рабочей ширине", () => {
+    const result = calc(defaults);
+    const cladding = findMaterial(result, "Панели / вагонка");
+
+    expect(result.formulaVersion).toBe("balcony-web-cladding-purchase-v1");
+    expect(result.totals.selectedAreaM2).toBe(12);
+    expect(result.totals.pieceCoverageM2).toBeCloseTo(0.288, 6);
+    expect(result.totals.theoreticalPieces).toBeCloseTo(41.666667, 6);
+    expect(cladding?.quantity).toBe(42);
+    expect(cladding?.withReserve).toBe(46);
+    expect(cladding?.purchaseQty).toBe(46);
+    checkInvariants(result);
+  });
+
+  it("не выдумывает фасовку по умолчанию", () => {
+    const result = calc(defaults);
+    const cladding = findMaterial(result, "Панели / вагонка");
+
+    expect(cladding?.packageInfo).toBeUndefined();
+    expect(cladding?.subtitle).toContain("фасовка не задана");
+    expect(result.totals.packs).toBe(0);
+  });
+
+  it("округляет закупку по фактическому числу деталей в упаковке", () => {
     const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 0,
-      insulationType: 1,
+      ...defaults,
+      packagingMode: 1,
+      piecesPerPack: 6,
+    });
+    const cladding = findMaterial(result, "Панели / вагонка");
+
+    expect(cladding?.packageInfo).toEqual({
+      count: 8,
+      size: 6,
+      packageUnit: "упаковок",
+    });
+    expect(cladding?.purchaseQty).toBe(48);
+    expect(result.totals.purchasedSurplusPieces).toBe(2);
+    checkInvariants(result);
+  });
+
+  it("простой обмер складывает только выбранные стены и потолок и вычитает проёмы", () => {
+    const result = calc({
+      ...defaults,
+      inputMode: 1,
+      wallRunM: 5.2,
+      claddingHeightM: 2.5,
+      includeCeiling: 1,
+      ceilingLengthM: 3,
+      ceilingWidthM: 1.2,
+      openingAreaM2: 4.6,
     });
 
-    it("totals.floorArea = 3.6", () => {
-      expect(result.totals.floorArea).toBeCloseTo(3.6, 2);
+    expect(result.totals.wallAreaM2).toBeCloseTo(13, 6);
+    expect(result.totals.ceilingAreaM2).toBeCloseTo(3.6, 6);
+    expect(result.totals.grossAreaM2).toBeCloseTo(16.6, 6);
+    expect(result.totals.selectedAreaM2).toBeCloseTo(12, 6);
+    expect(result.totals.requiredPieces).toBe(46);
+  });
+
+  it("позволяет исключить потолок из простого обмера", () => {
+    const result = calc({
+      ...defaults,
+      inputMode: 1,
+      wallRunM: 4,
+      claddingHeightM: 2.5,
+      includeCeiling: 0,
+      openingAreaM2: 2,
+      usableWidthMm: 100,
+      pieceLengthM: 2.5,
+      allowancePercent: 0,
     });
 
-    it("totals.wallArea = 21", () => {
-      expect(result.totals.wallArea).toBeCloseTo(21, 2);
+    expect(result.totals.wallAreaM2).toBe(10);
+    expect(result.totals.ceilingAreaM2).toBe(0);
+    expect(result.totals.selectedAreaM2).toBe(8);
+    expect(result.totals.basePieces).toBe(32);
+  });
+
+  it("ограничивает вычет площадью выбранных плоскостей и объясняет это", () => {
+    const result = calc({
+      ...defaults,
+      inputMode: 1,
+      wallRunM: 2,
+      claddingHeightM: 2,
+      includeCeiling: 0,
+      openingAreaM2: 100,
     });
 
-    it("totals.totalFinishArea = 24.6", () => {
-      expect(result.totals.totalFinishArea).toBeCloseTo(24.6, 2);
+    expect(result.totals.grossAreaM2).toBe(4);
+    expect(result.totals.appliedOpeningAreaM2).toBe(4);
+    expect(result.totals.selectedAreaM2).toBe(0);
+    expect(result.warnings.some((warning) => warning.includes("вырез ограничен") || warning.includes("вычет ограничен"))).toBe(true);
+  });
+
+  it("принимает готовое число целых деталей из раскладки", () => {
+    const result = calc({
+      ...defaults,
+      inputMode: 2,
+      projectPieceCount: 46,
+      allowancePercent: 10,
+      packagingMode: 1,
+      piecesPerPack: 6,
     });
 
-    it("ПСБ (пенопласт) присутствует (insulationType=1)", () => {
-      // Engine: INSULATION_LABELS[1] = "ПСБ (пенопласт)"
-      const ps = findMaterial(result, "ПСБ");
-      expect(ps).toBeDefined();
+    expect(result.totals.selectedAreaM2).toBe(0);
+    expect(result.totals.basePieces).toBe(46);
+    expect(result.totals.requiredPieces).toBe(51);
+    expect(result.totals.packs).toBe(9);
+    expect(result.totals.purchasePieces).toBe(54);
+    expect(findMaterial(result, "по раскладке")).toBeDefined();
+  });
+
+  it("применяет явный запас ровно один раз до упаковочного округления", () => {
+    const result = calc({
+      ...defaults,
+      areaM2: 12,
+      usableWidthMm: 96,
+      pieceLengthM: 3,
+      allowancePercent: 10,
+      packagingMode: 1,
+      piecesPerPack: 6,
     });
 
-    it("вагонка присутствует (finishType=0)", () => {
-      // Engine: FINISH_LABELS[0] = "Вагонка"
-      const panel = findMaterial(result, "Вагонка");
-      expect(panel).toBeDefined();
-    });
+    expect(result.totals.theoreticalPieces).toBeCloseTo(41.666667, 6);
+    expect(result.totals.basePieces).toBe(42);
+    expect(result.totals.requiredPieces).toBe(46);
+    expect(result.totals.purchasePieces).toBe(48);
+    expect(result.scenarios?.REC.key_factors.hidden_multiplier).toBe(1);
+  });
 
-    it("обрешётка (брусок 20×40) присутствует", () => {
-      // Engine: "Обрешётка (брусок 20×40)"
-      expect(findMaterial(result, "Обрешётка")).toBeDefined();
+  it("не назначает утеплитель, каркас, крепёж и доборные элементы", () => {
+    const result = calc({
+      ...defaults,
+      packagingMode: 1,
     });
+    const names = result.materials.map((material) => material.name).join(" ");
 
-    it("кляймеры присутствуют", () => {
-      // Engine: "Кляймеры"
-      expect(findMaterial(result, "Кляймеры")).toBeDefined();
-    });
+    expect(result.materials).toHaveLength(1);
+    expect(names).not.toMatch(/утепл|пенопол|пенофол|обреш|брус|кляймер|креп|профил|подокон/i);
+    expect(result.warnings.some((warning) => warning.includes("автоматически не добавляются"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("не подбирает утепление"))).toBe(true);
+  });
 
-    it("инварианты", () => {
-      checkInvariants(result);
+  it("не скрывает множители в MIN/REC/MAX и режимах точности", () => {
+    const basic = balconyDef.calculate({ ...defaults, accuracyMode: "basic" as unknown as number });
+    const realistic = balconyDef.calculate({ ...defaults, accuracyMode: "realistic" as unknown as number });
+    const professional = balconyDef.calculate({ ...defaults, accuracyMode: "professional" as unknown as number });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(realistic.totals.purchasePieces).toBe(basic.totals.purchasePieces);
+    expect(professional.totals.purchasePieces).toBe(basic.totals.purchasePieces);
+    expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("соблюдает сценарный контракт exact_need → purchase_quantity → leftover", () => {
+    const result = calc(defaults);
+    const scenario = result.scenarios?.REC;
+
+    expect(scenario?.exact_need).toBe(42);
+    expect(scenario?.purchase_quantity).toBe(46);
+    expect(scenario?.leftover).toBe(4);
+    expect(scenario?.purchase_quantity).toBe(
+      (scenario?.exact_need ?? 0) + (scenario?.leftover ?? 0),
+    );
+    expect(scenario?.buy_plan).toEqual({
+      package_label: "balcony-cladding-pieces",
+      package_size: 1,
+      packages_count: 46,
+      unit: "шт",
     });
   });
 
-  describe("Панели ПВХ + пенофол (finishType=1, insulationType=2)", () => {
+  it("возвращает валидный нулевой результат", () => {
     const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 1,
-      insulationType: 2,
+      ...defaults,
+      areaM2: 0,
     });
 
-    it("ПВХ-панели присутствуют", () => {
-      // Engine: FINISH_LABELS[1] = "ПВХ-панели"
-      expect(findMaterial(result, "Пластиковые панели (ПВХ)")).toBeDefined();
-    });
-
-    it("пенофол присутствует (insulationType=2)", () => {
-      // Engine: INSULATION_LABELS[2] = "Пенофол"
-      expect(findMaterial(result, "Пенофол")).toBeDefined();
-    });
-
-    it("нет ПСБ (insulationType = 2 — только пенофол)", () => {
-      expect(findMaterial(result, "ПСБ")).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.materials).toHaveLength(0);
+    expect(result.totals.basePieces).toBe(0);
+    expect(result.scenarios?.REC.exact_need).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(0);
+    expect(result.warnings.some((warning) => warning.includes("нулевой результат"))).toBe(true);
   });
 
-  describe("ПСБ + пенофол (insulationType = 3)", () => {
-    const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 0,
-      insulationType: 3,
-    });
+  it("объявляет условные поля для трёх способов ввода и фасовки", () => {
+    const byKey = new Map(balconyDef.fields.map((field) => [field.key, field]));
 
-    it("ПСБ + пенофол присутствует (insulationType=3)", () => {
-      // Engine: INSULATION_LABELS[3] = "ПСБ + пенофол"
-      expect(findMaterial(result, "Пенопласт (ПСБ) + пенофол")).toBeDefined();
-    });
+    expect(byKey.get("areaM2")?.hideIf).toEqual({ key: "inputMode", op: "ne", value: 0 });
+    expect(byKey.get("wallRunM")?.hideIf).toEqual({ key: "inputMode", op: "ne", value: 1 });
+    expect(byKey.get("projectPieceCount")?.hideIf).toEqual({ key: "inputMode", op: "ne", value: 2 });
+    expect(byKey.get("usableWidthMm")?.hideIf).toEqual({ key: "inputMode", op: "eq", value: 2 });
+    expect(byKey.get("piecesPerPack")?.hideIf).toEqual({ key: "packagingMode", op: "ne", value: 1 });
   });
 
-  describe("Без утепления (insulationType = 0)", () => {
-    const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 0,
-      insulationType: 0,
-    });
+  it("публикует границы расчёта, внутренние ссылки и проверяемые источники", () => {
+    const html = balconyDef.seoContent?.descriptionHtml ?? "";
 
-    it("нет утеплителя", () => {
-      expect(result.totals.insPlates).toBe(0);
-    });
-
-    it("предупреждение о температурном перепаде", () => {
-      // Engine: "Без утепления — на балконе будет значительный перепад температур"
-      expect(result.warnings.some((w) => w.includes("Без утепления"))).toBe(true);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Имитация бруса (finishType = 2)", () => {
-    const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 2,
-      insulationType: 1,
-    });
-
-    it("имитация бруса присутствует", () => {
-      // Engine: FINISH_LABELS[2] = "Имитация бруса"
-      expect(findMaterial(result, "Имитация бруса")).toBeDefined();
-    });
-  });
-
-  describe("МДФ панели (finishType = 3)", () => {
-    const result = calc({
-      length: 3.0,
-      width: 1.2,
-      height: 2.5,
-      finishType: 3,
-      insulationType: 1,
-    });
-
-    it("МДФ-панели присутствуют", () => {
-      // Engine: FINISH_LABELS[3] = "МДФ-панели"
-      expect(findMaterial(result, "Древесноволокнистые панели (МДФ)")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(balconyDef.h1).toContain("обшивки балкона");
+    expect(balconyDef.metaDescription).toContain("рассчитайте");
+    expect(html).toContain("СП 50.13330.2024");
+    expect(html).toContain("spb.lesobirzha.ru/articles/skolko-vagonki-v-m2");
+    expect(html).toContain("/kalkulyatory/steny/paneli-dlya-sten/");
+    expect(html).toContain("/instrumenty/lineynyy-raskroy/");
+    expect(html).toContain("/kalkulyatory/steny/uteplenie/");
+    expect(html).not.toContain("до 20%");
+    expect(html).not.toContain("R ≈");
   });
 });
