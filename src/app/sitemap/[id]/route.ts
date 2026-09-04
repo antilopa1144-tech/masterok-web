@@ -21,7 +21,7 @@ export async function GET(
   const { id } = await params;
   const chunkId = parseSitemapChunkId(id);
 
-  if (chunkId === null) {
+  if (chunkId === null || id !== `${chunkId}.xml`) {
     return new Response("Sitemap chunk not found", {
       status: 404,
       headers: { "Content-Type": "text/plain; charset=utf-8" },

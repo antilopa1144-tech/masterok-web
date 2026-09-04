@@ -19,8 +19,8 @@ export type SitemapChunkName = (typeof SITEMAP_CHUNKS)[number];
 export type SitemapChunkId = number;
 
 /**
- * Next.js передаёт `id` из URL `/sitemap/{id}.xml` как строку (`"0"`, не `0`).
- * `switch (id) { case 0: }` при строке всегда уходит в default → пустой sitemap.
+ * Принимает числовой id или его точную строковую форму с необязательным `.xml`.
+ * Числовой префикс, пробелы и ведущие нули не должны создавать копии карты.
  */
 export function parseSitemapChunkId(
   id: SitemapChunkId | string | undefined,
@@ -30,9 +30,10 @@ export function parseSitemapChunkId(
   const n =
     typeof id === "number"
       ? id
-      : Number.parseInt(String(id).replace(/\.xml$/i, ""), 10);
+      : Number(id.replace(/\.xml$/, ""));
 
   if (!Number.isInteger(n) || n < 0 || n >= SITEMAP_CHUNKS.length) return null;
+  if (typeof id === "string" && id !== String(n) && id !== `${n}.xml`) return null;
   return n;
 }
 

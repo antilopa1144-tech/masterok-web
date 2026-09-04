@@ -8,7 +8,7 @@ import {
   parseSitemapChunkId,
 } from "@/lib/sitemap/chunks";
 import { buildSitemapChunk } from "@/lib/sitemap/build";
-import { GET as getSitemapChunk } from "@/app/sitemap/[id]/route";
+import { GET as getSitemapChunk, generateStaticParams } from "@/app/sitemap/[id]/route";
 import { GET as getSitemapIndex } from "@/app/sitemap.xml/route";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
 import { SITE_URL } from "@/lib/site";
@@ -49,6 +49,29 @@ describe("sitemap chunks", () => {
     const locCount = (xml.match(/<loc>/g) ?? []).length;
     expect(locCount).toBe(SITEMAP_CHUNKS.length);
   });
+
+  it.each(["2junk.xml", "2.5.xml", "2.xml.xml", "02.xml", " 2.xml", "+2.xml", "2.XML", "2\n", "99.xml", "-1.xml"])(
+    "парсер не принимает некорректный id %j за существующую часть",
+    (id) => {
+      expect(parseSitemapChunkId(id)).toBeNull();
+    },
+  );
+
+  it.each([0, 1, 2, 3, 4])("статические адреса и парсер согласованы для части %i", (id) => {
+    expect(parseSitemapChunkId(`${id}.xml`)).toBe(id);
+    expect(generateStaticParams()).toContainEqual({ id: `${id}.xml` });
+  });
+
+  it.each(["2", "2junk.xml", "2.5.xml", "2.xml.xml", "02.xml", "2.XML", "99.xml", "-1.xml"])(
+    "route отклоняет неканонический адрес /sitemap/%s",
+    async (id) => {
+      const response = await getSitemapChunk(new Request(`https://example.test/sitemap/${id}`), {
+        params: Promise.resolve({ id }),
+      });
+      expect(response.status).toBe(404);
+      expect(await response.text()).not.toContain("<urlset");
+    },
+  );
 
   it("корневой route отдаёт sitemapindex, а не пустой urlset", async () => {
     const response = await getSitemapIndex();
