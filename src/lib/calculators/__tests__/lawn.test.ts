@@ -1,249 +1,223 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { lawnDef } from "../formulas/lawn";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(lawnDef.calculate.bind(lawnDef));
+const defaults = Object.fromEntries(
+  lawnDef.fields.map((field) => [field.key, field.defaultValue]),
+);
 
-describe("Калькулятор газона", () => {
-  describe("Defaults: 50 м² посевной обычный, суглинок, 12 см грунта", () => {
-    const result = calc({
-      area: 50,
-      lawnType: 0,
-      soilThickness: 12,
-      groundType: 1,
-      usageIntensity: 1,
-      withDrainage: 0,
-      withGeotextile: 0,
-    });
+describe("Калькулятор газона — закупочная модель", () => {
+  it("считает семена по норме и фасовке выбранной смеси", () => {
+    const result = calc(defaults);
+    const seeds = findMaterial(result, "Семена газона");
 
-    it("норма посева для обычного газона = 40 г/м²", () => {
-      expect(result.totals.seedRatePerM2).toBe(40);
+    expect(result.formulaVersion).toBe("lawn-web-purchase-v1");
+    expect(result.totals.exactNeed).toBe(2);
+    expect(result.totals.needWithReserve).toBe(2);
+    expect(result.totals.packagesCount).toBe(2);
+    expect(result.totals.purchaseQuantity).toBe(2);
+    expect(seeds?.quantity).toBe(2);
+    expect(seeds?.purchaseQty).toBe(2);
+    expect(seeds?.packageInfo).toEqual({
+      count: 2,
+      size: 1,
+      packageUnit: "упаковок",
     });
-
-    it("семян = 50 × 40 × 1.10 / 1000 = 2.2 кг", () => {
-      expect(result.totals.seedKg).toBeCloseTo(2.2, 2);
-    });
-
-    it("пачек семян = ceil(2.2) = 3 (по 1 кг)", () => {
-      expect(result.totals.seedPacks).toBe(3);
-    });
-
-    it("плодородный грунт = 50 × 0.12 × 1.20 = 7.2 м³", () => {
-      expect(result.totals.topsoilM3).toBeCloseTo(7.2, 2);
-    });
-
-    it("удобрение = 50 × 40 × 1.05 / 1000 = 2.1 кг, 1 пачка по 5 кг", () => {
-      expect(result.totals.fertilizerKg).toBeCloseTo(2.1, 2);
-      expect(result.totals.fertilizerPacks).toBe(1);
-    });
-
-    it("без рулонов / стимулятора / геотекстиля / дренажа", () => {
-      expect(result.totals.rollsCount).toBe(0);
-      expect(result.totals.stimulatorCans).toBe(0);
-      expect(result.totals.geotextileRolls).toBe(0);
-      expect(result.totals.drainageSandM3).toBe(0);
-    });
-
-    it("в материалах семена, грунт, удобрение, каток", () => {
-      expect(findMaterial(result, "Семена газона")).toBeDefined();
-      expect(findMaterial(result, "Плодородный грунт")).toBeDefined();
-      expect(findMaterial(result, "Удобрение")).toBeDefined();
-      expect(findMaterial(result, "Каток")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    checkInvariants(result);
   });
 
-  describe("Декоративный газон (партер) — норма 30 г/м²", () => {
+  it("не добавляет к паспортной норме семян скрытый запас", () => {
     const result = calc({
-      area: 100,
-      lawnType: 0,
-      soilThickness: 10,
-      groundType: 0,
-      usageIntensity: 0,
-      withDrainage: 0,
-      withGeotextile: 0,
+      ...defaults,
+      areaM2: 100,
+      seedRateGm2: 40,
+      seedReservePercent: 0,
+      seedPackKg: 2,
     });
 
-    it("норма = 30 г/м²", () => {
-      expect(result.totals.seedRatePerM2).toBe(30);
-    });
-
-    it("семян = 100 × 30 × 1.10 / 1000 = 3.3 кг", () => {
-      expect(result.totals.seedKg).toBeCloseTo(3.3, 2);
-    });
+    expect(result.totals.exactNeed).toBe(4);
+    expect(result.totals.needWithReserve).toBe(4);
+    expect(result.totals.purchaseQuantity).toBe(4);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
   });
 
-  describe("Спортивный газон — норма 50 г/м²", () => {
+  it("применяет явный запас семян один раз до упаковочного округления", () => {
     const result = calc({
-      area: 100,
-      lawnType: 0,
-      soilThickness: 15,
-      groundType: 1,
-      usageIntensity: 2,
-      withDrainage: 0,
-      withGeotextile: 0,
+      ...defaults,
+      areaM2: 100,
+      seedRateGm2: 40,
+      seedReservePercent: 10,
+      seedPackKg: 2,
     });
 
-    it("норма = 50 г/м²", () => {
-      expect(result.totals.seedRatePerM2).toBe(50);
-    });
-
-    it("семян = 100 × 50 × 1.10 / 1000 = 5.5 кг", () => {
-      expect(result.totals.seedKg).toBeCloseTo(5.5, 2);
-    });
-
-    it("предупреждение: спортивный из семян долго формируется", () => {
-      expect(result.warnings.some((w) => w.includes("Спортивный") || w.includes("1.5-2 года"))).toBe(true);
-    });
+    expect(result.totals.exactNeed).toBe(4);
+    expect(result.totals.needWithReserve).toBeCloseTo(4.4, 6);
+    expect(result.totals.packagesCount).toBe(3);
+    expect(result.totals.purchaseQuantity).toBe(6);
+    expect(result.totals.packagingSurplus).toBeCloseTo(1.6, 6);
   });
 
-  describe("Рулонный газон 100 м²", () => {
+  it("не покупает лишнюю упаковку на точной границе и округляет превышение вверх", () => {
+    const exact = calc({
+      ...defaults,
+      areaM2: 250,
+      seedRateGm2: 40,
+      seedPackKg: 5,
+    });
+    const above = calc({
+      ...defaults,
+      areaM2: 252.5,
+      seedRateGm2: 40,
+      seedPackKg: 5,
+    });
+
+    expect(exact.totals.exactNeed).toBe(10);
+    expect(exact.totals.packagesCount).toBe(2);
+    expect(above.totals.exactNeed).toBeCloseTo(10.1, 6);
+    expect(above.totals.packagesCount).toBe(3);
+    expect(above.totals.purchaseQuantity).toBe(15);
+  });
+
+  it("считает рулонный газон по фактической площади рулона", () => {
     const result = calc({
-      area: 100,
+      ...defaults,
       lawnType: 1,
-      soilThickness: 12,
-      groundType: 1,
-      usageIntensity: 1,
-      withDrainage: 0,
-      withGeotextile: 0,
+      areaM2: 50,
+      rollAreaM2: 0.8,
+      rollReservePercent: 5,
     });
+    const turf = findMaterial(result, "Рулонный газон");
 
-    it("рулонов = ceil(100 × 1.07 / 0.8) = 134", () => {
-      expect(result.totals.rollsCount).toBe(134);
+    expect(result.totals.exactNeed).toBe(50);
+    expect(result.totals.needWithReserve).toBe(52.5);
+    expect(result.totals.packagesCount).toBe(66);
+    expect(result.totals.purchaseQuantity).toBeCloseTo(52.8, 6);
+    expect(result.totals.packagingSurplus).toBeCloseTo(0.3, 6);
+    expect(turf?.packageInfo).toEqual({
+      count: 66,
+      size: 0.8,
+      packageUnit: "рулонов",
     });
-
-    it("без семян (только рулоны)", () => {
-      expect(result.totals.seedKg).toBe(0);
-      expect(result.totals.seedPacks).toBe(0);
-    });
-
-    it("стимулятор укоренения = 1 канистра 5 л (100 × 25 = 2500 мл < 5000)", () => {
-      expect(result.totals.stimulatorMl).toBe(2500);
-      expect(result.totals.stimulatorCans).toBe(1);
-    });
-
-    it("в материалах рулоны и стимулятор", () => {
-      expect(findMaterial(result, "Рулонный газон")).toBeDefined();
-      expect(findMaterial(result, "Стимулятор укоренения")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    checkInvariants(result);
   });
 
-  describe("С дренажом и геотекстилем", () => {
+  it("позволяет заменить пример 0,8 м² площадью рулона поставщика", () => {
     const result = calc({
-      area: 50,
-      lawnType: 0,
-      soilThickness: 12,
-      groundType: 2,
-      usageIntensity: 1,
-      withDrainage: 1,
-      withGeotextile: 1,
+      ...defaults,
+      lawnType: 1,
+      areaM2: 40,
+      rollAreaM2: 0.75,
+      rollReservePercent: 0,
     });
 
-    it("дренажный песок = 50 × 0.10 × 1.20 = 6 м³", () => {
-      expect(result.totals.drainageSandM3).toBeCloseTo(6, 2);
-    });
-
-    it("геотекстиль = ceil(50 × 1.10 / 50) = 2 рулона", () => {
-      expect(result.totals.geotextileRolls).toBe(2);
-    });
-
-    it("в материалах дренаж и геотекстиль", () => {
-      expect(findMaterial(result, "Песок дренажный")).toBeDefined();
-      expect(findMaterial(result, "Геотекстиль")).toBeDefined();
-    });
+    expect(result.totals.packagesCount).toBe(54);
+    expect(result.totals.purchaseQuantity).toBe(40.5);
   });
 
-  describe("Предупреждения", () => {
-    it("глина без дренажа → предупреждение", () => {
-      const result = calc({
-        area: 50,
-        lawnType: 0,
-        soilThickness: 12,
-        groundType: 2,
-        usageIntensity: 1,
-        withDrainage: 0,
-        withGeotextile: 0,
-      });
-      expect(result.warnings.some((w) => w.includes("Глинист") || w.includes("дренаж"))).toBe(true);
-    });
+  it("не добавляет грунт, песок, геотекстиль, удобрения и инструменты", () => {
+    const seedResult = calc(defaults);
+    const rollResult = calc({ ...defaults, lawnType: 1 });
 
-    it("спортивный + тонкий грунт (12 см) → предупреждение", () => {
-      const result = calc({
-        area: 50,
-        lawnType: 0,
-        soilThickness: 12,
-        groundType: 1,
-        usageIntensity: 2,
-        withDrainage: 0,
-        withGeotextile: 0,
-      });
-      expect(result.warnings.some((w) => w.includes("спортивн") || w.includes("15"))).toBe(true);
-    });
-
-    it("большая площадь > 200 м² → предупреждение про автополив", () => {
-      const result = calc({
-        area: 300,
-        lawnType: 0,
-        soilThickness: 12,
-        groundType: 1,
-        usageIntensity: 1,
-        withDrainage: 0,
-        withGeotextile: 0,
-      });
-      expect(result.warnings.some((w) => w.includes("полив") || w.includes("дождеватели"))).toBe(true);
-    });
+    for (const result of [seedResult, rollResult]) {
+      expect(result.materials).toHaveLength(1);
+      expect(result.materials.map((item) => item.name).join(" ")).not.toMatch(
+        /грунт|песок|геотекст|удобрен|стимулятор|каток|полив/i,
+      );
+      expect(
+        result.warnings.some((warning) =>
+          warning.includes("автоматически не добавляются"),
+        ),
+      ).toBe(true);
+    }
   });
 
-  describe("Сценарии MIN ≤ REC ≤ MAX", () => {
+  it("не скрывает множители в MIN/REC/MAX и режимах точности", () => {
+    const basic = lawnDef.calculate({
+      ...defaults,
+      accuracyMode: "basic" as unknown as number,
+    });
+    const realistic = lawnDef.calculate({
+      ...defaults,
+      accuracyMode: "realistic" as unknown as number,
+    });
+    const professional = lawnDef.calculate({
+      ...defaults,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(realistic.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("соблюдает контракт exact_need → purchase_quantity → leftover", () => {
     const result = calc({
-      area: 50,
-      lawnType: 0,
-      soilThickness: 12,
-      groundType: 1,
-      usageIntensity: 1,
-      withDrainage: 0,
-      withGeotextile: 0,
+      ...defaults,
+      lawnType: 1,
+      areaM2: 50,
+      rollAreaM2: 0.8,
+      rollReservePercent: 5,
     });
+    const scenario = result.scenarios?.REC;
 
-    it("MIN ≤ REC ≤ MAX", () => {
-      expect(result.scenarios!.MIN.exact_need).toBeLessThanOrEqual(result.scenarios!.REC.exact_need);
-      expect(result.scenarios!.REC.exact_need).toBeLessThanOrEqual(result.scenarios!.MAX.exact_need);
+    expect(scenario?.exact_need).toBe(50);
+    expect(scenario?.purchase_quantity).toBeCloseTo(52.8, 6);
+    expect(scenario?.leftover).toBeCloseTo(2.8, 6);
+    expect(scenario?.purchase_quantity).toBeCloseTo(
+      (scenario?.exact_need ?? 0) + (scenario?.leftover ?? 0),
+      6,
+    );
+    expect(scenario?.buy_plan).toEqual({
+      package_label: "lawn-roll-user-area",
+      package_size: 0.8,
+      packages_count: 66,
+      unit: "м²",
     });
   });
 
-  describe("Граничные значения", () => {
-    it("малый газон 5 м² работает", () => {
-      const result = calc({
-        area: 5,
-        lawnType: 0,
-        soilThickness: 10,
-        groundType: 0,
-        usageIntensity: 0,
-        withDrainage: 0,
-        withGeotextile: 0,
-      });
-      checkInvariants(result);
-    });
+  it("возвращает валидный нулевой результат", () => {
+    const result = calc({ ...defaults, areaM2: 0 });
 
-    it("большой 2000 м² работает", () => {
-      const result = calc({
-        area: 2000,
-        lawnType: 1,
-        soilThickness: 15,
-        groundType: 1,
-        usageIntensity: 2,
-        withDrainage: 1,
-        withGeotextile: 1,
-      });
-      checkInvariants(result);
-      expect(result.totals.rollsCount).toBeGreaterThan(2500);
+    expect(result.materials).toHaveLength(0);
+    expect(result.totals.exactNeed).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(0);
+    expect(
+      result.warnings.some((warning) => warning.includes("нулевой результат")),
+    ).toBe(true);
+  });
+
+  it("объявляет условные поля для двух видов закупки", () => {
+    const byKey = new Map(lawnDef.fields.map((field) => [field.key, field]));
+
+    expect(byKey.get("seedRateGm2")?.hideIf).toEqual({
+      key: "lawnType",
+      op: "ne",
+      value: 0,
     });
+    expect(byKey.get("rollAreaM2")?.hideIf).toEqual({
+      key: "lawnType",
+      op: "ne",
+      value: 1,
+    });
+  });
+
+  it("публикует границы, внутреннюю ссылку и проверяемые источники", () => {
+    const html = lawnDef.seoContent?.descriptionHtml ?? "";
+
+    expect(lawnDef.h1).toContain("к покупке");
+    expect(lawnDef.metaDescription).toContain("по норме с упаковки");
+    expect(html).toContain("www.mos.ru");
+    expect(html).toContain("fertika.com");
+    expect(html).toContain("gazony.com/ukladka-rulonnogo-gazona");
+    expect(html).toContain("/kalkulyatory/inzhenernye/drenazh-uchastka/");
+    expect(html).not.toContain("коэф. 1.20");
+    expect(html).not.toContain("стимулятор укоренения");
   });
 });
