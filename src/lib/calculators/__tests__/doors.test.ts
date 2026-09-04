@@ -1,163 +1,267 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { doorsDef } from "../formulas/doors";
 import { CALCULATOR_COMPANIONS } from "../companions";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(doorsDef.calculate.bind(doorsDef));
+const defaults = Object.fromEntries(
+  doorsDef.fields.map((field) => [field.key, field.defaultValue]),
+);
 
-describe("Калькулятор установки дверей", () => {
-  it("честно описывает расчёт монтажных материалов в сниппете", () => {
-    expect(doorsDef.metaTitle).toContain("пена, доборы, наличники");
-    expect(doorsDef.metaDescription).toContain("установки 1–20 дверей");
-    expect(doorsDef.seoContent?.descriptionHtml).toContain("не подбирает размер полотна");
+describe("Калькулятор установки дверей — закупочная модель", () => {
+  it("считает монтажную пену по явному расходу выбранного продукта", () => {
+    const result = calc({
+      ...defaults,
+      doorCount: 3,
+      foamCanEquivalentPerBlock: 0.7,
+      foamReservePercent: 0,
+    });
+    const foam = findMaterial(result, "Монтажная пена");
+
+    expect(result.formulaVersion).toBe("doors-web-purchase-v1");
+    expect(result.totals.exactNeed).toBeCloseTo(2.1, 6);
+    expect(result.totals.needWithReserve).toBeCloseTo(2.1, 6);
+    expect(result.totals.packagesCount).toBe(3);
+    expect(result.totals.purchaseQuantity).toBe(3);
+    expect(foam?.packageInfo).toBeUndefined();
+    checkInvariants(result);
   });
 
-  it("связан с отделкой дверного проёма", () => {
+  it("применяет запас пены один раз до округления баллонов", () => {
+    const result = calc({
+      ...defaults,
+      doorCount: 3,
+      foamCanEquivalentPerBlock: 0.7,
+      foamReservePercent: 10,
+    });
+
+    expect(result.totals.exactNeed).toBeCloseTo(2.1, 6);
+    expect(result.totals.needWithReserve).toBeCloseTo(2.31, 6);
+    expect(result.totals.purchaseQuantity).toBe(3);
+    expect(result.totals.packagingSurplus).toBeCloseTo(0.69, 6);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("не добавляет баллон на точной границе и округляет превышение вверх", () => {
+    const exact = calc({
+      ...defaults,
+      doorCount: 2,
+      foamCanEquivalentPerBlock: 1,
+    });
+    const above = calc({
+      ...defaults,
+      doorCount: 3,
+      foamCanEquivalentPerBlock: 0.67,
+    });
+
+    expect(exact.totals.exactNeed).toBe(2);
+    expect(exact.totals.packagesCount).toBe(2);
+    expect(above.totals.exactNeed).toBeCloseTo(2.01, 6);
+    expect(above.totals.packagesCount).toBe(3);
+  });
+
+  it("считает наличник по обмеру и фактической длине планки", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      linearMaterialType: 0,
+      measuredLengthM: 15,
+      linearReservePercent: 0,
+      pieceLengthM: 2.2,
+    });
+    const trim = findMaterial(result, "Наличник");
+
+    expect(result.totals.exactNeed).toBe(15);
+    expect(result.totals.packagesCount).toBe(7);
+    expect(result.totals.purchaseQuantity).toBeCloseTo(15.4, 6);
+    expect(trim?.packageInfo).toEqual({
+      count: 7,
+      size: 2.2,
+      packageUnit: "планок",
+    });
+    checkInvariants(result);
+  });
+
+  it("применяет явный запас погонажа до округления целых планок", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      measuredLengthM: 15,
+      linearReservePercent: 10,
+      pieceLengthM: 2.2,
+    });
+
+    expect(result.totals.needWithReserve).toBeCloseTo(16.5, 6);
+    expect(result.totals.packagesCount).toBe(8);
+    expect(result.totals.purchaseQuantity).toBeCloseTo(17.6, 6);
+    expect(result.totals.packagingSurplus).toBeCloseTo(1.1, 6);
+  });
+
+  it("отделяет добор от наличника, не меняя математику фасовки", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      linearMaterialType: 1,
+      measuredLengthM: 10,
+      pieceLengthM: 2.5,
+    });
+
+    expect(findMaterial(result, "Добор")).toBeDefined();
+    expect(findMaterial(result, "Наличник")).toBeUndefined();
+    expect(result.totals.purchaseQuantity).toBe(10);
+  });
+
+  it("переводит готовое число креплений в целые упаковки", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      fastenerCount: 24,
+      extraFastenersPcs: 0,
+      fastenersPerPack: 20,
+    });
+    const fasteners = findMaterial(result, "Крепёж по монтажной схеме");
+
+    expect(result.totals.exactNeed).toBe(24);
+    expect(result.totals.needWithReserve).toBe(24);
+    expect(result.totals.packagesCount).toBe(2);
+    expect(result.totals.purchaseQuantity).toBe(40);
+    expect(fasteners?.packageInfo).toEqual({
+      count: 2,
+      size: 20,
+      packageUnit: "упаковок",
+    });
+    checkInvariants(result);
+  });
+
+  it("добавляет только явно указанное число запасных креплений", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      fastenerCount: 36,
+      extraFastenersPcs: 4,
+      fastenersPerPack: 20,
+    });
+
+    expect(result.totals.exactNeed).toBe(36);
+    expect(result.totals.needWithReserve).toBe(40);
+    expect(result.totals.packagesCount).toBe(2);
+    expect(result.totals.purchaseQuantity).toBe(40);
+  });
+
+  it("не создаёт условную многоматериальную ведомость", () => {
+    for (const positionType of [0, 1, 2]) {
+      const result = calc({ ...defaults, positionType });
+
+      expect(result.materials).toHaveLength(1);
+      expect(
+        result.warnings.some((warning) =>
+          warning.includes("автоматически не объединяются"),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("не скрывает множители в MIN/REC/MAX и режимах точности", () => {
+    const basic = doorsDef.calculate({
+      ...defaults,
+      accuracyMode: "basic" as unknown as number,
+    });
+    const realistic = doorsDef.calculate({
+      ...defaults,
+      accuracyMode: "realistic" as unknown as number,
+    });
+    const professional = doorsDef.calculate({
+      ...defaults,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(realistic.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("соблюдает exact_need → purchase_quantity → leftover", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      measuredLengthM: 15,
+      linearReservePercent: 10,
+      pieceLengthM: 2.2,
+    });
+    const scenario = result.scenarios?.REC;
+
+    expect(scenario?.exact_need).toBe(15);
+    expect(scenario?.purchase_quantity).toBeCloseTo(17.6, 6);
+    expect(scenario?.leftover).toBeCloseTo(2.6, 6);
+    expect(scenario?.purchase_quantity).toBeCloseTo(
+      (scenario?.exact_need ?? 0) + (scenario?.leftover ?? 0),
+      6,
+    );
+  });
+
+  it("возвращает валидный нулевой результат", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      fastenerCount: 0,
+      extraFastenersPcs: 0,
+    });
+
+    expect(result.materials).toHaveLength(0);
+    expect(result.totals.exactNeed).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(0);
+    expect(
+      result.warnings.some((warning) => warning.includes("нулевой результат")),
+    ).toBe(true);
+  });
+
+  it("объявляет условные поля трёх режимов", () => {
+    const byKey = new Map(doorsDef.fields.map((field) => [field.key, field]));
+
+    expect(byKey.get("foamCanEquivalentPerBlock")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 0,
+    });
+    expect(byKey.get("measuredLengthM")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 1,
+    });
+    expect(byKey.get("fastenerCount")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 2,
+    });
+  });
+
+  it("связан с откосами и отдельным калькулятором крепежа", () => {
     expect(CALCULATOR_COMPANIONS["ustanovka-dverej"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ slug: "otkosy-okon-i-dverej" }),
         expect.objectContaining({ slug: "krepezh" }),
       ]),
     );
-    expect(CALCULATOR_COMPANIONS["otkosy-okon-i-dverej"]).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ slug: "ustanovka-dverej" }),
-      ]),
-    );
   });
 
-  describe("3 двери 700×2000, стена 120 мм, с наличниками", () => {
-    // doorType=0 → w=700, h=2000
-    // perimM = 2*(700+2000)/1000 = 5.4
-    // foamPerDoor = 5.4 * 100 / 1000 = 0.54 litres
-    // foamCans = ceil(3 * 0.54 * 1.1 / 0.75) = ceil(2.376) = 3
-    // wallThickness=120 > 70 → needDobor, doborWidth=50
-    // doborLenPerDoor = (2*2000+700)/1000 * 1.05 = 4.935
-    // doborPcs = ceil(4.935/2.2) * 3 = 3 * 3 = 9
-    // nalichnikLenPerDoor = 4.935
-    // nalichnikPcs = ceil(4.935/2.2) * 3 * 2 = 3*3*2 = 18
-    // glueCarts = ceil(3*0.5) = 2
-    // screwPacks = ceil(3*12/50) = 1
-    // dubelPacks = ceil(3*6/20) = 1
-    const result = calc({
-      doorCount: 3,
-      doorType: 0,
-      wallThickness: 120,
-      withNalichnik: 1,
-    });
+  it("публикует границы, внутренние ссылки и проверяемые источники", () => {
+    const html = doorsDef.seoContent?.descriptionHtml ?? "";
 
-    it("монтажная пена (750 мл) присутствует", () => {
-      // Engine: "Монтажная пена (750 мл)"
-      const foam = findMaterial(result, "Монтажная пена");
-      expect(foam).toBeDefined();
-      expect(foam!.purchaseQty).toBeGreaterThan(0);
-    });
-
-    it("доборы присутствуют (стена 120 > 70)", () => {
-      // Engine: "Доборы (ширина 50 мм)"
-      const dobor = findMaterial(result, "Доборы");
-      expect(dobor).toBeDefined();
-      expect(dobor!.purchaseQty).toBe(9);
-    });
-
-    it("наличники = 18 шт", () => {
-      // Engine: "Наличники"
-      const nalichnik = findMaterial(result, "Наличники");
-      expect(nalichnik?.purchaseQty).toBe(18);
-    });
-
-    it("клей-герметик присутствует", () => {
-      // Engine: "Клей-герметик (картриджи)"
-      const glue = findMaterial(result, "Клей-герметик");
-      expect(glue?.purchaseQty).toBe(2);
-    });
-
-    it("саморезы (упаковка 50 шт) = 1 пачка", () => {
-      // Engine: "Саморезы (упаковка 50 шт)"
-      const screws = findMaterial(result, "Саморезы");
-      expect(screws?.purchaseQty).toBe(1);
-    });
-
-    it("дюбели (упаковка 20 шт) = 1 пачка × 20 = 20 шт", () => {
-      // Engine: "Дюбели (упаковка 20 шт)" — purchaseQty = packs * packSize
-      const dubels = findMaterial(result, "Дюбели");
-      expect(dubels?.purchaseQty).toBe(20);
-    });
-
-    it("totals содержат doorCount и foamCans", () => {
-      expect(result.totals.doorCount).toBe(3);
-      expect(result.totals.foamCans).toBeGreaterThan(0);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("1 дверь 860×2050, стена 250 мм", () => {
-    // doorType=3 → w=860, h=2050
-    // doborWidth = 250 - 70 = 180
-    const result = calc({
-      doorCount: 1,
-      doorType: 3,
-      wallThickness: 250,
-      withNalichnik: 1,
-    });
-
-    it("предупреждение о толстых стенах", () => {
-      // Engine: "При толстых стенах проверьте ширину доборов в магазине"
-      expect(result.warnings.some((w) => w.includes("толстых стенах") || w.includes("доборов"))).toBe(true);
-    });
-
-    it("доборы 180 мм присутствуют", () => {
-      // Engine: "Доборы (ширина 180 мм)"
-      const dobor = findMaterial(result, "Доборы");
-      expect(dobor).toBeDefined();
-      expect(dobor!.name).toContain("180");
-    });
-
-    it("монтажная пена присутствует", () => {
-      const foam = findMaterial(result, "Монтажная пена");
-      expect(foam).toBeDefined();
-    });
-  });
-
-  describe("Без наличников", () => {
-    const result = calc({
-      doorCount: 2,
-      doorType: 1,
-      wallThickness: 80,
-      withNalichnik: 0,
-    });
-
-    it("наличники отсутствуют в результате", () => {
-      const nalichnik = findMaterial(result, "Наличники");
-      expect(nalichnik).toBeUndefined();
-    });
-
-    it("доборы есть (80 > 70)", () => {
-      // doborWidth = 80 - 70 = 10
-      const dobor = findMaterial(result, "Доборы");
-      expect(dobor).toBeDefined();
-      expect(dobor!.name).toContain("10 мм");
-    });
-  });
-
-  describe("Стена 80 мм, дверь 800×2000", () => {
-    const result = calc({
-      doorCount: 1,
-      doorType: 1,
-      wallThickness: 80,
-      withNalichnik: 1,
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-
-    it("доборы есть (80 > 70)", () => {
-      const dobor = findMaterial(result, "Доборы");
-      expect(dobor).toBeDefined();
-    });
+    expect(doorsDef.h1).toContain("одна позиция к покупке");
+    expect(doorsDef.metaDescription).toContain("по обмеру");
+    expect(html).toContain("protect.gost.ru/gost/details/15817887");
+    expect(html).toContain("protect.gost.ru/gost/details/21f2503e");
+    expect(html).toContain("volhovec.ru/helpfull-info/installation");
+    expect(html).toContain("soudal.ru");
+    expect(html).toContain("/kalkulyatory/otdelka/otkosy-okon-i-dverej/");
+    expect(html).toContain("/kalkulyatory/otdelka/krepezh/");
+    expect(html).not.toContain("~100 мл/м.п.");
+    expect(html).not.toContain("2.5 палки");
   });
 });
