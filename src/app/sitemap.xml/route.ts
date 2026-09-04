@@ -9,8 +9,8 @@ export const revalidate = 3600;
 /**
  * Корневой sitemap-index (`robots.txt` → `/sitemap.xml`).
  *
- * Подсайтмапы `/sitemap/0.xml` … `/4.xml` — `app/sitemap.ts` + `generateSitemaps()`.
- * Next.js 15 не создаёт индекс автоматически при нескольких sitemap-файлах.
+ * Подсайтмапы `/sitemap/0.xml` … `/4.xml` отдаёт явный
+ * `app/sitemap/[id]/route.ts`, поэтому у корневого URL ровно один владелец.
  */
 export async function GET(): Promise<Response> {
   return new Response(buildSitemapIndexXml(), {

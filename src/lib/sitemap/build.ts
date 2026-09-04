@@ -5,7 +5,6 @@ import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
 import {
-  generateSitemapIds,
   parseSitemapChunkId,
   type SitemapChunkId,
 } from "@/lib/sitemap/chunks";
@@ -13,38 +12,23 @@ import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_LAST_REVIEWED, SITE_URL } from "@/li
 
 const BASE_URL = SITE_URL;
 
-export const dynamic = "force-static";
-
 /**
- * Разделённый sitemap для всех типов контента.
+ * Данные пяти частей sitemap для явного route handler.
  *
- * Next.js 15 + generateSitemaps:
- *  /sitemap.xml         — sitemap-index (app/sitemap.xml/route.ts, Next сам не строит)
- *  /sitemap/0.xml       — статичные/служебные страницы (главная, /blog/, etc.)
- *  /sitemap/1.xml       — категории калькуляторов
- *  /sitemap/2.xml       — индивидуальные калькуляторы
- *  /sitemap/3.xml       — инструменты + чек-листы
- *  /sitemap/4.xml       — посты блога + теги
+ * Публичный контракт:
+ *  /sitemap.xml    — sitemap-index (`app/sitemap.xml/route.ts`)
+ *  /sitemap/0.xml  — статичные/служебные страницы
+ *  /sitemap/1.xml  — категории калькуляторов
+ *  /sitemap/2.xml  — индивидуальные калькуляторы
+ *  /sitemap/3.xml  — инструменты + чек-листы
+ *  /sitemap/4.xml  — посты блога + теги
  *
- * Без route handler на /sitemap.xml при generateSitemaps() корневой URL даёт 404.
+ * Данные вынесены из специального `app/sitemap.ts`: такой файл сам владеет
+ * `/sitemap.xml` и конфликтует с ручным sitemap-index. Явный route handler
+ * сохраняет старые URL частей без двух владельцев одного корневого маршрута.
  *
- * Зачем разделять (на 2026-05-26 это главная SEO-проблема):
- *
- *  1. **Независимые lastModified.** Google видит, что «обновился sitemap калькуляторов»
- *     и не трогает остальные. До этого был один sitemap.xml на 130 URL — изменение
- *     одного блог-поста заставляло Google переоценивать ВЕСЬ файл.
- *
- *  2. **Crawl budget по группам.** Google назначает квоту обхода на каждый sitemap
- *     отдельно. У нас 72 страницы «Discovered, not indexed» — это значит общий
- *     бюджет закончился. Разделение даёт каждой группе свой бюджет.
- *
- *  3. **Sitemap-index можно отправить в GSC по частям.** При проблемах с
- *     индексацией одной группы — переотправляем только её, не трогая остальные.
- *
- * ВАЖНО для crawl budget Googlebot/Yandexbot:
- * lastModified должен быть **стабильным** между деплоями. Если мы ставим
- * `new Date()` (build timestamp), бот видит «обновились ВСЕ 200+ URL» и
- * переиндексирует с нуля. Менять руками когда контент действительно изменился.
+ * `lastModified` должен быть стабильным между деплоями и меняться только при
+ * содержательном обновлении соответствующей группы.
  */
 
 // ── Стабильные даты последних обновлений по группам страниц ──────────────────
@@ -70,12 +54,6 @@ const LEGAL_LAST_MODIFIED = "2026-01-01";
 
 /** Методология расчётов (E-E-A-T, GEO). */
 const METHODOLOGY_LAST_MODIFIED = SITE_LAST_REVIEWED;
-
-// ── Sitemap chunks (id → /sitemap/{id}.xml) — см. src/lib/sitemap/chunks.ts ─
-
-export async function generateSitemaps(): Promise<Array<{ id: SitemapChunkId }>> {
-  return generateSitemapIds();
-}
 
 // ── Builders для каждой части ───────────────────────────────────────────────
 
@@ -233,11 +211,9 @@ async function buildBlogSitemap(): Promise<MetadataRoute.Sitemap> {
 
 // ── Main sitemap router ─────────────────────────────────────────────────────
 
-export default async function sitemap({
-  id,
-}: {
-  id: SitemapChunkId | string;
-}): Promise<MetadataRoute.Sitemap> {
+export async function buildSitemapChunk(
+  id: SitemapChunkId | string,
+): Promise<MetadataRoute.Sitemap> {
   const chunkId = parseSitemapChunkId(id);
   if (chunkId === null) return [];
 

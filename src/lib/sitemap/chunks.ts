@@ -1,11 +1,11 @@
+import type { MetadataRoute } from "next";
 import { SITE_LAST_REVIEWED, SITE_URL } from "@/lib/site";
 
 /**
  * Части карты сайта. Порядок = id в URL `/sitemap/{id}.xml`.
  *
- * Next.js 15 с `generateSitemaps()` создаёт только подсайтмапы.
- * Корневой `/sitemap.xml` (sitemapindex) — через `app/sitemap.xml/route.ts`.
- * См. https://github.com/vercel/next.js/discussions/61257
+ * Корневой `/sitemap.xml` отдаёт sitemap-index через явный route handler,
+ * а `/sitemap/{id}.xml` — urlset соответствующей группы.
  */
 export const SITEMAP_CHUNKS = [
   "static",
@@ -36,7 +36,7 @@ export function parseSitemapChunkId(
   return n;
 }
 
-/** Для `generateSitemaps()` в `app/sitemap.ts`. */
+/** Для `generateStaticParams()` явного route handler частей sitemap. */
 export function generateSitemapIds(): Array<{ id: SitemapChunkId }> {
   return SITEMAP_CHUNKS.map((_, id) => ({ id }));
 }
@@ -79,3 +79,64 @@ export const SITEMAP_INDEX_RESPONSE_HEADERS = {
   "Content-Type": "application/xml; charset=utf-8",
   "Cache-Control": "public, max-age=3600, s-maxage=3600",
 } as const;
+
+export const SITEMAP_URLSET_RESPONSE_HEADERS = {
+  "Content-Type": "application/xml; charset=utf-8",
+  "Cache-Control": "public, max-age=3600, s-maxage=3600",
+} as const;
+
+function escapeXml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+function formatLastModified(value: string | Date): string {
+  return value instanceof Date ? value.toISOString() : value;
+}
+
+/** Сериализует MetadataRoute.Sitemap в самостоятельный XML urlset. */
+export function buildSitemapUrlsetXml(
+  entries: MetadataRoute.Sitemap,
+): string {
+  const hasImages = entries.some((entry) => (entry.images?.length ?? 0) > 0);
+  const imageNamespace = hasImages
+    ? ' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'
+    : "";
+
+  const urls = entries.map((entry) => {
+    const lines = ["  <url>", `    <loc>${escapeXml(entry.url)}</loc>`];
+
+    if (entry.lastModified) {
+      lines.push(
+        `    <lastmod>${escapeXml(formatLastModified(entry.lastModified))}</lastmod>`,
+      );
+    }
+    if (entry.changeFrequency) {
+      lines.push(
+        `    <changefreq>${escapeXml(entry.changeFrequency)}</changefreq>`,
+      );
+    }
+    if (entry.priority !== undefined) {
+      lines.push(`    <priority>${entry.priority}</priority>`);
+    }
+    for (const image of entry.images ?? []) {
+      lines.push(
+        "    <image:image>",
+        `      <image:loc>${escapeXml(image)}</image:loc>`,
+        "    </image:image>",
+      );
+    }
+
+    lines.push("  </url>");
+    return lines.join("\n");
+  }).join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${imageNamespace}>
+${urls}
+</urlset>`;
+}
