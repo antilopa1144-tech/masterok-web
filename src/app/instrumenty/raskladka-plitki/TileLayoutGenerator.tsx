@@ -15,6 +15,7 @@ import {
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import TileLayoutPassportCard from "@/components/tools/TileLayoutPassportCard";
+import TileSurfaceSelector from "./TileSurfaceSelector";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { copyText, shareOrCopy } from "@/lib/clipboard";
 import { useEstimateExport, type PdfVisual } from "@/lib/export";
@@ -2314,11 +2315,16 @@ export default function TileLayoutGenerator() {
         onResult={() => scrollTo(resultRef)}
       />
 
+      <div data-testid="tile-surface-entry" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Что раскладываем?</p>
+        <TileSurfaceSelector value={surfaceView} onChange={setSurfaceView} label="Поверхность для раскладки" />
+      </div>
+
       <section data-testid="tile-project-workspace" className="card overflow-hidden p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-700 dark:text-accent-300">Проект раскладки</p>
-            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Сохраните стену и вернитесь к ней позже</h2>
+            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Сохраните раскладку и вернитесь к ней позже</h2>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Размеры, проём, плитка, шов, запас и выбранный вид сохраняются в этом браузере. Ссылка восстанавливает ту же схему на другом устройстве.
             </p>
@@ -2330,7 +2336,7 @@ export default function TileLayoutGenerator() {
 
         <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(240px,1.15fr)_auto_minmax(280px,1fr)] xl:items-end">
           <label className="block min-w-0">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Название помещения или стены</span>
+            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Название помещения или поверхности</span>
             <input
               data-testid="tile-project-name"
               type="text"
@@ -2825,9 +2831,7 @@ export default function TileLayoutGenerator() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" aria-label="Вид поверхности">
-            {(["wall", "floor"] as const).map((value) => <button type="button" key={value} aria-pressed={surfaceView === value} onClick={() => setSurfaceView(value)} className={`min-h-11 rounded-lg px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 ${surfaceView === value ? "bg-white text-accent-700 shadow-sm dark:bg-slate-700 dark:text-accent-300" : "text-slate-500 dark:text-slate-400"}`}>{value === "wall" ? "Стена" : "Пол"}</button>)}
-          </div>
+          <TileSurfaceSelector value={surfaceView} onChange={setSurfaceView} label="Вид поверхности" />
           <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800" aria-label="Режим отображения">
             {(["room", "drawing"] as const).map((value) => (
               <button
