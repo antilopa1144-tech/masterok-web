@@ -1,205 +1,314 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { slopesDef } from "../formulas/slopes";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { CALCULATOR_COMPANIONS } from "../companions";
+import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(slopesDef.calculate.bind(slopesDef));
+const defaults = Object.fromEntries(
+  slopesDef.fields.map((field) => [field.key, field.defaultValue]),
+);
 
-describe("Калькулятор откосов окон и дверей", () => {
-  describe("5 окон 1200×1400, ширина откоса 350, сэндвич-панели", () => {
-    // openingType=0 → w=1200, h=1400, sides=3
-    // slopePerim = (2*1400+1200)/1000 = 4.0
-    // slopeArea = 4.0 * 0.35 = 1.4
-    // totalArea = 1.4*5 = 7.0
-    // totalPerim = 4.0*5 = 20.0
-    //
-    // finishType=0 → сэндвич:
-    //   panelCount = ceil(7.0*1.12/3.6) = ceil(2.178) = 3
-    //   fProfilePcs = ceil(20.0*1.1/3) = ceil(7.333) = 8
-    //   foamCans = ceil(20.0/5) = 4
-    //
-    // sealantTubes = ceil(20.0/5) = 4
-    // primerCans = ceil(7.0*0.15*1.15/10) = ceil(0.12075) = 1
+describe("Калькулятор откосов — закупочная модель", () => {
+  it("считает три прямоугольные грани по отдельным глубинам", () => {
     const result = calc({
-      openingCount: 5,
-      openingType: 0,
-      slopeWidth: 350,
-      finishType: 0,
-    });
-
-    it("сэндвич-панели ПВХ = 3 шт (base), purchaseQty with REC multiplier", () => {
-      // Engine: "Сэндвич-панели ПВХ" — quantity = recScenario.exact_need
-      const panels = findMaterial(result, "Пластиковые сэндвич-панели (ПВХ)");
-      expect(panels).toBeDefined();
-      expect(panels!.purchaseQty).toBeGreaterThanOrEqual(3);
-    });
-
-    it("F-образный профиль = 8 шт", () => {
-      const fProfile = findMaterial(result, "F-образный");
-      expect(fProfile?.purchaseQty).toBe(8);
-    });
-
-    it("монтажная пена = 4 баллона", () => {
-      // Engine: "Монтажная пена"
-      const foam = findMaterial(result, "Монтажная пена");
-      expect(foam?.purchaseQty).toBe(4);
-    });
-
-    it("герметик (тубы) присутствует", () => {
-      // Engine: "Герметик (тубы)"
-      const sealant = findMaterial(result, "Герметик");
-      expect(sealant).toBeDefined();
-      expect(sealant?.purchaseQty).toBe(4);
-    });
-
-    it("грунтовка: smart packaging (литры)", () => {
-      const primer = findMaterial(result, "Грунтовка");
-      expect(primer).toBeTruthy();
-      expect(primer!.unit).toBe("л");
-      expect(primer!.purchaseQty).toBeGreaterThan(0);
-    });
-
-    it("totals содержат totalArea и openingCount", () => {
-      expect(result.totals.totalArea).toBeCloseTo(7.0, 3);
-      expect(result.totals.openingCount).toBe(5);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("ПВХ-панели (finishType=1)", () => {
-    const result = calc({
-      openingCount: 3,
-      openingType: 1, // окно 900×1200, sides=3
-      slopeWidth: 250,
-      finishType: 1,
-    });
-
-    it("ПВХ-панели присутствуют", () => {
-      // Engine: "ПВХ-панели"
-      const panel = findMaterial(result, "Пластиковые панели (ПВХ)");
-      expect(panel).toBeDefined();
-    });
-
-    it("F-образный профиль присутствует", () => {
-      expect(findMaterial(result, "F-образный")).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
-  });
-
-  describe("Штукатурка (finishType=2)", () => {
-    // openingType=0 → w=1200, h=1400, sides=3
-    // totalArea = 7.0
-    // totalPerim = 20.0
-    // plasterBags = ceil(7.0*12*1.1/25) = ceil(3.696) = 4
-    // puttyBagsPlaster = ceil(7.0*1.2*1.1/25) = ceil(0.3696) = 1
-    // cornerPcs = ceil(20.0/3) = 7
-    const result = calc({
-      openingCount: 5,
-      openingType: 0,
-      slopeWidth: 350,
-      finishType: 2,
-    });
-
-    it("штукатурка (мешки 25 кг) присутствует", () => {
-      // Engine: "Штукатурка (мешки 25 кг)"
-      const plaster = findMaterial(result, "Штукатурка");
-      expect(plaster).toBeDefined();
-      // purchaseQty = ceil(recScenario.exact_need) with REC multiplier ≈ ceil(4*1.06) = 5
-      expect(plaster!.purchaseQty).toBeGreaterThanOrEqual(4);
-    });
-
-    it("шпаклёвка (мешки 25 кг) присутствует", () => {
-      // Engine: "Шпаклёвка (мешки 25 кг)"
-      const putty = findMaterial(result, "Шпаклёвка");
-      expect(putty?.purchaseQty).toBeGreaterThanOrEqual(1);
-    });
-
-    it("уголок перфорированный = 7 шт", () => {
-      // Engine: "Уголок перфорированный"
-      const corner = findMaterial(result, "Уголок перфорированный");
-      expect(corner?.purchaseQty).toBe(7);
-    });
-
-    it("нет сэндвич-панелей", () => {
-      expect(findMaterial(result, "Пластиковые сэндвич-панели")).toBeUndefined();
-    });
-  });
-
-  describe("ГКЛ (finishType=3)", () => {
-    // openingType=3 → w=900, h=2000, sides=3
-    // slopePerim = (2*2000+900)/1000 = 4.9
-    // slopeArea = 4.9 * 0.5 = 2.45
-    // totalArea = 2.45*2 = 4.9
-    // gklSheets = ceil(4.9*1.12/3.0) = ceil(1.829) = 2
-    // screwsGKL = ceil(2*20*1.05) = 42
-    // puttyBagsGKL = ceil(4.9*1.2*1.1/25) = ceil(0.258) = 1
-    const result = calc({
+      ...defaults,
       openingCount: 2,
-      openingType: 3,
-      slopeWidth: 500,
-      finishType: 3,
+      openingWidthM: 1.2,
+      openingHeightM: 1.4,
+      leftDepthMm: 300,
+      rightDepthMm: 320,
+      includeTop: 1,
+      topDepthMm: 280,
     });
 
-    it("ГКЛ для откосов присутствует", () => {
-      // Engine: "ГКЛ для откосов"
-      const gkl = findMaterial(result, "Гипсокартонные листы (ГКЛ) для откосов");
-      expect(gkl).toBeDefined();
-      // purchaseQty = ceil(recScenario.exact_need) with REC multiplier
-      expect(gkl!.purchaseQty).toBeGreaterThanOrEqual(2);
-    });
-
-    it("саморезы для ГКЛ присутствуют", () => {
-      // Engine: "Саморезы для ГКЛ"
-      const screws = findMaterial(result, "Саморезы для гипсокартона");
-      expect(screws).toBeDefined();
-      expect(screws!.unit).toBe("кг");
-      expect(screws!.purchaseQty).toBe(1);
-    });
-
-    it("шпаклёвка для ГКЛ присутствует", () => {
-      // Engine: "Шпаклёвка (мешки 25 кг)"
-      const putty = findMaterial(result, "Шпаклёвка");
-      expect(putty).toBeDefined();
-    });
+    expect(result.formulaVersion).toBe("slopes-web-purchase-v1");
+    expect(result.totals.sideAreaPerOpening).toBeCloseTo(0.868, 6);
+    expect(result.totals.topAreaPerOpening).toBeCloseTo(0.336, 6);
+    expect(result.totals.geometryAreaM2).toBeCloseTo(2.408, 6);
+    expect(result.totals.areaM2).toBeCloseTo(2.408, 6);
+    checkInvariants(result);
   });
 
-  describe("Дверной проём без верхнего откоса (openingType=2)", () => {
-    // openingType=2 → w=800, h=2000, sides=2
-    // slopePerim = 2*2000/1000 = 4.0
-    // slopeArea = 4.0 * 0.15 = 0.6
-    // totalArea = 0.6 * 1 = 0.6
+  it("исключает верхнюю грань для дверного проёма", () => {
     const result = calc({
+      ...defaults,
       openingCount: 1,
-      openingType: 2,
-      slopeWidth: 150,
-      finishType: 0,
+      openingWidthM: 1.2,
+      openingHeightM: 1.4,
+      leftDepthMm: 300,
+      rightDepthMm: 320,
+      includeTop: 0,
+      topDepthMm: 999,
     });
 
-    it("площадь откосов — только 2 боковых", () => {
-      expect(result.totals.totalArea).toBeCloseTo(0.6, 3);
+    expect(result.totals.topAreaPerOpening).toBe(0);
+    expect(result.totals.areaM2).toBeCloseTo(0.868, 6);
+  });
+
+  it("принимает готовую площадь вместо упрощённой геометрии", () => {
+    const result = calc({
+      ...defaults,
+      areaMode: 0,
+      measuredAreaM2: 7.35,
+      openingCount: 999,
     });
 
-    it("инварианты", () => {
-      checkInvariants(result);
+    expect(result.totals.areaM2).toBe(7.35);
+    expect(result.totals.exactNeed).toBe(7.35);
+  });
+
+  it("переводит площадь в целые листовые единицы без скрытого запаса", () => {
+    const result = calc({
+      ...defaults,
+      areaMode: 0,
+      measuredAreaM2: 7,
+      coveragePerUnitM2: 3.6,
+      sheetReservePercent: 0,
+    });
+    const sheet = findMaterial(result, "Листовой или панельный материал");
+
+    expect(result.totals.exactNeed).toBe(7);
+    expect(result.totals.needWithReserve).toBe(7);
+    expect(result.totals.packagesCount).toBe(2);
+    expect(result.totals.purchaseQuantity).toBeCloseTo(7.2, 6);
+    expect(result.totals.packagingSurplus).toBeCloseTo(0.2, 6);
+    expect(sheet?.packageInfo).toEqual({
+      count: 2,
+      size: 3.6,
+      packageUnit: "единиц",
+    });
+    checkInvariants(result);
+  });
+
+  it("применяет явный запас листов один раз до упаковочного округления", () => {
+    const result = calc({
+      ...defaults,
+      areaMode: 0,
+      measuredAreaM2: 7,
+      coveragePerUnitM2: 3.6,
+      sheetReservePercent: 10,
+    });
+
+    expect(result.totals.needWithReserve).toBeCloseTo(7.7, 6);
+    expect(result.totals.packagesCount).toBe(3);
+    expect(result.totals.purchaseQuantity).toBeCloseTo(10.8, 6);
+    expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("не добавляет единицу на точной границе и округляет превышение вверх", () => {
+    const exact = calc({
+      ...defaults,
+      areaMode: 0,
+      measuredAreaM2: 7.2,
+      coveragePerUnitM2: 3.6,
+    });
+    const above = calc({
+      ...defaults,
+      areaMode: 0,
+      measuredAreaM2: 7.201,
+      coveragePerUnitM2: 3.6,
+    });
+
+    expect(exact.totals.packagesCount).toBe(2);
+    expect(above.totals.packagesCount).toBe(3);
+  });
+
+  it("считает смесь по паспортному расходу и фактической упаковке", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      areaMode: 0,
+      measuredAreaM2: 7,
+      consumptionKgPerM2: 8.5,
+      mixtureReservePercent: 0,
+      packageMassKg: 30,
+    });
+    const mixture = findMaterial(result, "Смесь для откосов");
+
+    expect(result.totals.exactNeed).toBeCloseTo(59.5, 6);
+    expect(result.totals.packagesCount).toBe(2);
+    expect(result.totals.purchaseQuantity).toBe(60);
+    expect(mixture?.packageInfo).toEqual({
+      count: 2,
+      size: 30,
+      packageUnit: "упаковок",
+    });
+    checkInvariants(result);
+  });
+
+  it("применяет явный запас смеси до округления упаковок", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 1,
+      areaMode: 0,
+      measuredAreaM2: 7,
+      consumptionKgPerM2: 8.5,
+      mixtureReservePercent: 10,
+      packageMassKg: 30,
+    });
+
+    expect(result.totals.needWithReserve).toBeCloseTo(65.45, 6);
+    expect(result.totals.packagesCount).toBe(3);
+    expect(result.totals.purchaseQuantity).toBe(90);
+  });
+
+  it("считает профиль только по готовому обмеру и длине планки", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      measuredLinearM: 10,
+      linearReservePercent: 10,
+      pieceLengthM: 3,
+    });
+    const profile = findMaterial(result, "Профиль или уголок");
+
+    expect(result.totals.exactNeed).toBe(10);
+    expect(result.totals.needWithReserve).toBe(11);
+    expect(result.totals.packagesCount).toBe(4);
+    expect(result.totals.purchaseQuantity).toBe(12);
+    expect(profile?.packageInfo).toEqual({
+      count: 4,
+      size: 3,
+      packageUnit: "планок",
+    });
+    checkInvariants(result);
+  });
+
+  it("возвращает только одну выбранную позицию без условного комплекта", () => {
+    const forbidden = [
+      "Монтажная пена",
+      "Герметик",
+      "Грунтовка",
+      "Шпаклёвка",
+      "Саморезы",
+      "Утеплитель",
+    ];
+
+    for (const positionType of [0, 1, 2]) {
+      const result = calc({ ...defaults, positionType });
+
+      expect(result.materials).toHaveLength(1);
+      for (const name of forbidden) {
+        expect(findMaterial(result, name)).toBeUndefined();
+      }
+    }
+  });
+
+  it("не скрывает множители в MIN/REC/MAX и режимах точности", () => {
+    const basic = slopesDef.calculate({
+      ...defaults,
+      accuracyMode: "basic" as unknown as number,
+    });
+    const realistic = slopesDef.calculate({
+      ...defaults,
+      accuracyMode: "realistic" as unknown as number,
+    });
+    const professional = slopesDef.calculate({
+      ...defaults,
+      accuracyMode: "professional" as unknown as number,
+    });
+
+    expect(basic.scenarios?.MIN).toEqual(basic.scenarios?.REC);
+    expect(basic.scenarios?.REC).toEqual(basic.scenarios?.MAX);
+    expect(realistic.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.totals.purchaseQuantity).toBe(
+      basic.totals.purchaseQuantity,
+    );
+    expect(professional.accuracyExplanation?.combinedMultiplier).toBe(1);
+  });
+
+  it("соблюдает exact_need → purchase_quantity → leftover", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      measuredLinearM: 10,
+      linearReservePercent: 10,
+      pieceLengthM: 3,
+    });
+    const scenario = result.scenarios?.REC;
+
+    expect(scenario?.exact_need).toBe(10);
+    expect(scenario?.purchase_quantity).toBe(12);
+    expect(scenario?.leftover).toBe(2);
+    expect(scenario?.purchase_quantity).toBe(
+      (scenario?.exact_need ?? 0) + (scenario?.leftover ?? 0),
+    );
+  });
+
+  it("возвращает валидный нулевой результат", () => {
+    const result = calc({
+      ...defaults,
+      positionType: 2,
+      measuredLinearM: 0,
+    });
+
+    expect(result.materials).toHaveLength(0);
+    expect(result.totals.exactNeed).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(0);
+    expect(
+      result.warnings.some((warning) => warning.includes("нулевой результат")),
+    ).toBe(true);
+  });
+
+  it("объявляет условные поля площади и трёх товарных режимов", () => {
+    const byKey = new Map(slopesDef.fields.map((field) => [field.key, field]));
+
+    expect(byKey.get("measuredAreaM2")?.hideIf).toEqual([
+      { key: "positionType", op: "eq", value: 2 },
+      { key: "areaMode", op: "ne", value: 0 },
+    ]);
+    expect(byKey.get("topDepthMm")?.hideIf).toEqual([
+      { key: "positionType", op: "eq", value: 2 },
+      { key: "areaMode", op: "ne", value: 1 },
+      { key: "includeTop", op: "eq", value: 0 },
+    ]);
+    expect(byKey.get("coveragePerUnitM2")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 0,
+    });
+    expect(byKey.get("consumptionKgPerM2")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 1,
+    });
+    expect(byKey.get("measuredLinearM")?.hideIf).toEqual({
+      key: "positionType",
+      op: "ne",
+      value: 2,
     });
   });
 
-  describe("Предупреждения", () => {
-    it("slopeWidth >= 400 → предупреждение", () => {
-      const result = calc({ openingCount: 5, openingType: 0, slopeWidth: 400, finishType: 0 });
-      // Engine: "Широкие откосы — рекомендуется дополнительное утепление"
-      expect(result.warnings.some((w) => w.includes("Широкие откосы"))).toBe(true);
-    });
+  it("связан с дверями и отдельными калькуляторами отделочных слоёв", () => {
+    expect(CALCULATOR_COMPANIONS["otkosy-okon-i-dverej"]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ slug: "ustanovka-dverej" }),
+        expect.objectContaining({ slug: "shtukaturka" }),
+        expect.objectContaining({ slug: "gruntovka" }),
+        expect.objectContaining({ slug: "shpaklevka" }),
+        expect.objectContaining({ slug: "kraska" }),
+      ]),
+    );
+  });
 
-    it("openingCount > 15 → предупреждение", () => {
-      const result = calc({ openingCount: 20, openingType: 0, slopeWidth: 350, finishType: 0 });
-      // Engine: "Большое количество проёмов — рассмотрите оптовую закупку"
-      expect(result.warnings.some((w) => w.includes("оптовую закупку"))).toBe(true);
-    });
+  it("публикует границы, внутренние ссылки и первичные источники", () => {
+    const html = slopesDef.seoContent?.descriptionHtml ?? "";
+
+    expect(slopesDef.h1).toContain("одна позиция к покупке");
+    expect(slopesDef.metaDescription).toContain("рассчитайте");
+    expect(html).toContain("protect.gost.ru/gost/details/09b731bf");
+    expect(html).toContain("protect.gost.ru/gost/details/dd2cf1c8");
+    expect(html).toContain("knauf.ru/catalog");
+    expect(html).toContain("gyproc.ru/produkciya");
+    expect(html).toContain("/instrumenty/raskladka-listov/");
+    expect(html).toContain("/instrumenty/stoimost-remonta/");
+    expect(html).toContain("/kalkulyatory/otdelka/ustanovka-okon/");
+    expect(html).toContain("/kalkulyatory/otdelka/ustanovka-dverej/");
+    expect(html).not.toContain("~12 кг/м");
+    expect(html).not.toContain("свыше 400 мм");
+    expect(html).not.toContain("20–30 мм");
+    expect(html).not.toContain("/instrumenty/smeta-remonta/");
   });
 });

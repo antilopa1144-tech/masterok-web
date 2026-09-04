@@ -261,6 +261,8 @@ describe("Калькулятор установки дверей — закуп�
     expect(html).toContain("soudal.ru");
     expect(html).toContain("/kalkulyatory/otdelka/otkosy-okon-i-dverej/");
     expect(html).toContain("/kalkulyatory/otdelka/krepezh/");
+    expect(html).toContain("/instrumenty/stoimost-remonta/");
+    expect(html).not.toContain("/instrumenty/smeta-remonta/");
     expect(html).not.toContain("~100 мл/м.п.");
     expect(html).not.toContain("2.5 палки");
   });
