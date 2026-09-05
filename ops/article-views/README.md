@@ -80,3 +80,13 @@ views=0; неизвестный slug → 404. nginx -t успешен; Ghost, we
 Первичные справочники: [SQLite Python](https://docs.python.org/3.12/library/sqlite3.html),
 [nginx rate limit](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html),
 [Timeweb persistence](https://timeweb.cloud/docs/apps/how-it-works).
+
+### Исправление фактической CSP, 2026-09-06
+
+Первый релиз 8123397 прошёл CI и деплой, но число в браузере не появлялось. Причина
+подтверждена публичным HTTP-заголовком статьи: middleware.ts перезаписывает CSP из
+next.config.ts, а в middleware отсутствовал путь службы в connect-src. Ошибку ошибочно
+связывали только с ERR_BLOCKED_BY_CLIENT встроенного браузера; пользователь подтвердил
+тот же пустой счётчик у себя. Исправление разрешает только точный путь службы в runtime
+CSP, сохраняя nonce и остальные ограничения. tests/article-views-csp.test.ts воспроизвёл
+дефект до правки и проверяет итоговый заголовок middleware, а не только конфигурационный файл.

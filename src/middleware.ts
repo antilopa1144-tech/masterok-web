@@ -46,7 +46,7 @@ function buildCsp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+    "connect-src 'self' https://cms.getmasterok.ru/article-views/ https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
     "object-src 'none'",
     "base-uri 'self'",
