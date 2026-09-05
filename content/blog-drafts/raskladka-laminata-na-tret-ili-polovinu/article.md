@@ -13,6 +13,7 @@ tags:
   - "раскладка"
 internal_tags:
   - "#calc:laminat:poly"
+  - "#icon:🪵"
 feature_image: "./images/feature.webp"
 feature_image_alt: "Медовый ламинат под дуб в гостиной с бирюзовой стеной и терракотовым креслом"
 preview_kicker: "Ламинат · схема укладки · подрезки"
