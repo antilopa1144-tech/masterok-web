@@ -60,7 +60,7 @@ describe("tool analytics", () => {
       1,
       "event",
       "tool_start",
-      { tool: "raskladka-plitki", source: "surface_size" },
+      { tool: "raskladka-plitki", interaction_source: "surface_size" },
     );
     expect(gtag).toHaveBeenNthCalledWith(
       2,
@@ -68,6 +68,21 @@ describe("tool analytics", () => {
       "tool_result_view",
       { tool: "raskladka-plitki" },
     );
+  });
+
+  it("не передаёт внутренний source как источник трафика Google Analytics", () => {
+    trackToolStart("raskladka-plitki", "material_size");
+    trackProjectCreate("empty");
+    trackProjectOpen(2);
+
+    expect(gtag.mock.calls.map((call) => [call[1], call[2]])).toEqual([
+      ["tool_start", { tool: "raskladka-plitki", interaction_source: "material_size" }],
+      ["project_create", { interaction_source: "empty" }],
+      ["project_open", { interaction_source: "catalog", entry_count_bucket: "1-3" }],
+    ]);
+    expect(ym.mock.calls.map((call) => call[3].source)).toEqual([
+      "material_size", "empty", "catalog",
+    ]);
   });
 
   it("передаёт режим, пресет, экспорт и переход без пользовательских данных", () => {

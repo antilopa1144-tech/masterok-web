@@ -1,3 +1,16 @@
+/**
+ * Product interaction origins are not acquisition sources. Keep the legacy
+ * Metrika contract, but namespace this parameter at the Google transport edge.
+ * Never mutate params: the same object is also passed to Metrika.
+ */
+export function getGoogleAnalyticsEventParams(
+  params: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!("source" in params)) return params;
+  const { source, ...eventParams } = params;
+  return { ...eventParams, interaction_source: source };
+}
+
 export function getGoogleAnalyticsInitScript(measurementId: string): string {
   const id = JSON.stringify(measurementId);
 

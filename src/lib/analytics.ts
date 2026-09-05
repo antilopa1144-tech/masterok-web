@@ -27,6 +27,7 @@ export type {
   ToolInteractionSource,
 } from "@/lib/analytics/events";
 import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
+import { getGoogleAnalyticsEventParams } from "@/lib/analytics/google-analytics";
 
 export function trackEvent<EventName extends AnalyticsEventName>(
   target: EventName,
@@ -38,7 +39,7 @@ export function trackEvent<EventName extends AnalyticsEventName>(
       window.ym?.(YANDEX_METRIKA_COUNTER_ID, "reachGoal", target, params);
     }
     if (GOOGLE_ANALYTICS_ID) {
-      window.gtag?.("event", target, params);
+      window.gtag?.("event", target, getGoogleAnalyticsEventParams(params));
     }
   } catch {
     // silently ignore analytics errors

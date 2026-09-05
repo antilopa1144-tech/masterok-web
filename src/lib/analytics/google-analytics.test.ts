@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { getGoogleAnalyticsInitScript } from "./google-analytics";
+import { getGoogleAnalyticsEventParams, getGoogleAnalyticsInitScript } from "./google-analytics";
+
+describe("Google Analytics event params", () => {
+  it("переименовывает внутренний source, не изменяя объект Метрики", () => {
+    const params = Object.freeze({ tool: "raskladka-plitki", source: "surface_size" });
+    expect(getGoogleAnalyticsEventParams(params)).toEqual({
+      tool: "raskladka-plitki", interaction_source: "surface_size",
+    });
+    expect(params).toEqual({ tool: "raskladka-plitki", source: "surface_size" });
+  });
+
+  it("не меняет параметры событий без внутреннего source", () => {
+    const params = { calculator: "styazhka", accuracy_mode: "realistic" };
+    expect(getGoogleAnalyticsEventParams(params)).toBe(params);
+    expect(getGoogleAnalyticsEventParams({})).toEqual({});
+  });
+});
 
 describe("Google Analytics init", () => {
   it("создаёт очередь gtag и отключает автоматический page_view", () => {
