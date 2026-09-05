@@ -76,6 +76,13 @@ export default function Page() {
           </Link>
           {" "}на примере с подрезками и количеством к покупке.
         </p>
+        <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Планируете кухню? Посмотрите, как согласовать{" "}
+          <Link href="/blog/raskladka-plitki-na-kuhonnom-fartuke/" className="text-accent-700 underline underline-offset-4 hover:no-underline dark:text-accent-400">
+            раскладку плитки на фартуке со шкафами и розетками
+          </Link>
+          {" "}и заранее проверить открытые края и подрезки.
+        </p>
       </ToolPageExtras>
     </>
   );
