@@ -43,6 +43,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Test isolated article view service
+        run: python3 -m unittest discover -s ops/article-views -p 'test_*.py' -v
+
   build:
     name: Build
     runs-on: ubuntu-latest

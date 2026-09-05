@@ -145,7 +145,7 @@ const nextConfig: NextConfig = {
       // https: покрывает любой оставшийся HTTPS-источник.
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
+      "connect-src 'self' https://cms.getmasterok.ru/article-views/ https://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.ru wss://mc.yandex.com",
       "frame-src 'self' https://mc.yandex.ru https://mc.yandex.com",
       "object-src 'none'",
       "base-uri 'self'",

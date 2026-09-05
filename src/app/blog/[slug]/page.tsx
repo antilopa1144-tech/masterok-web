@@ -9,6 +9,7 @@ import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { pickRelatedCalculator } from "@/lib/blog-related-calculator";
 import parse from "html-react-parser";
 import DOMPurify from "isomorphic-dompurify";
+import ArticleViews from "@/components/blog/ArticleViews";
 
 const UI_TEXT = {
   notFoundTitle: "Статья не найдена",
@@ -327,6 +328,7 @@ export default async function BlogPostPage({ params }: Props) {
               {post.category}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-400">{post.readTime}</span>
+            <ArticleViews slug={post.slug} />
             <span className="text-xs text-slate-400 dark:text-slate-400">
               <time dateTime={post.date}>{formatRuDate(post.date)}</time>
             </span>

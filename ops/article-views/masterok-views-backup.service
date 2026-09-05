@@ -1,0 +1,13 @@
+[Unit]
+Description=Back up Masterok aggregate view totals
+
+[Service]
+Type=oneshot
+User=masterok-views
+Group=masterok-views
+ExecStart=/usr/bin/python3 /opt/masterok-views/server.py --backup
+StateDirectory=masterok-views
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true

@@ -1,0 +1,26 @@
+[Unit]
+Description=Masterok independent article view counter
+After=network.target ghost.service
+
+[Service]
+User=masterok-views
+Group=masterok-views
+ExecStart=/usr/bin/python3 /opt/masterok-views/server.py
+StateDirectory=masterok-views
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+CPUQuota=20%
+TasksMax=16
+
+[Install]
+WantedBy=multi-user.target
