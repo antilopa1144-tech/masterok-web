@@ -68,6 +68,7 @@ const metaTitle = scalar("meta_title") || title;
 const description = scalar("description");
 const featureImage = scalar("feature_image");
 const featureAlt = scalar("feature_image_alt") || title;
+const previewKicker = scalar("preview_kicker") || "Плитка · раскладка · практическое руководство";
 const wordCount = (markdown.match(/[\p{L}\p{N}][\p{L}\p{N}–—-]*/gu) ?? []).length;
 const readingTime = Math.max(1, Math.ceil(wordCount / 190));
 const toc = [...markdown.matchAll(/^##\s+(.+)$/gm)].map((match) => ({
@@ -167,7 +168,7 @@ const html = `<!doctype html>
     <article>
       ${featureImage ? `<img class="hero" src="${escapeHtml(repoUrl(featureImage))}" alt="${escapeHtml(featureAlt)}">` : ""}
       <div class="intro">
-        <div class="eyebrow">Плитка · раскладка · практическое руководство</div>
+        <div class="eyebrow">${escapeHtml(previewKicker)}</div>
         <h1>${escapeHtml(title)}</h1>
         <p class="lead">${escapeHtml(description)}</p>
         <div class="meta"><span>${wordCount.toLocaleString("ru-RU")} слов</span><span>≈ ${readingTime} мин чтения</span><span>${toc.length} разделов</span></div>
