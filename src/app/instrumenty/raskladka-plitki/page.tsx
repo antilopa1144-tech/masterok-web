@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
@@ -67,7 +68,15 @@ export default function Page() {
           <TileLayoutGenerator />
         </Suspense>
       </div>
-      <ToolPageExtras slug="raskladka-plitki" />
+      <ToolPageExtras slug="raskladka-plitki">
+        <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Не уверены, где задать начало? Разбираем{" "}
+          <Link href="/blog/otkuda-nachinat-raskladku-plitki/" className="text-accent-700 underline underline-offset-4 hover:no-underline dark:text-accent-400">
+            раскладку плитки от центра и от края
+          </Link>
+          {" "}на примере с подрезками и количеством к покупке.
+        </p>
+      </ToolPageExtras>
     </>
   );
 }
