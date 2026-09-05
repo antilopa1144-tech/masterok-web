@@ -55,6 +55,8 @@
 
 ## Калькулятор ламината: первые десять строк
 
+Дополнение 05.09: [дочитаны все 58 доступных строк, сохранены остальные 48](evidence-2026-09-05-laminate-area.md). Окно и показатели карточек не изменились. Таблица ниже сохранена как первые десять наблюдений, а не полный список.
+
 Все строки ведут на `/kalkulyatory/poly/laminat/`. [Отчёт GSC](https://search.google.com/search-console/performance/search-analytics?resource_id=https%3A%2F%2Fgetmasterok.ru%2F&num_of_days=28&page=!https%3A%2F%2Fgetmasterok.ru%2Fkalkulyatory%2Fpoly%2Flaminat%2F&metrics=CLICKS%2CIMPRESSIONS%2CCTR%2CPOSITION).
 
 | Запрос | Клики | Показы | CTR | Позиция |
