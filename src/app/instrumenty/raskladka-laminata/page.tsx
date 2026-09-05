@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
@@ -67,7 +68,15 @@ export default function Page() {
           <LaminateLayoutGenerator />
         </Suspense>
       </div>
-      <ToolPageExtras slug="raskladka-laminata" />
+      <ToolPageExtras slug="raskladka-laminata">
+        <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Выбираете смещение стыков? В статье{" "}
+          <Link href="/blog/raskladka-laminata-na-tret-ili-polovinu/" className="text-accent-700 underline underline-offset-4 hover:no-underline dark:text-accent-400">
+            раскладка ламината на 1/3 или 1/2
+          </Link>
+          {" "}сравниваем рисунок, крайние подрезки и использование обрезков.
+        </p>
+      </ToolPageExtras>
     </>
   );
 }
