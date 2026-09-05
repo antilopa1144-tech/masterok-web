@@ -4,8 +4,8 @@
  * Never mutate params: the same object is also passed to Metrika.
  */
 export function getGoogleAnalyticsEventParams(
-  params: Record<string, unknown>,
-): Record<string, unknown> {
+  params: object,
+): object {
   if (!("source" in params)) return params;
   const { source, ...eventParams } = params;
   return { ...eventParams, interaction_source: source };

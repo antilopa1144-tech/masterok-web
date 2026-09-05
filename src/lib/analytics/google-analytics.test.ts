@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getGoogleAnalyticsEventParams, getGoogleAnalyticsInitScript } from "./google-analytics";
+import { getSearchQueryMetrics } from "./events";
 
 describe("Google Analytics event params", () => {
   it("переименовывает внутренний source, не изменяя объект Метрики", () => {
@@ -14,6 +15,11 @@ describe("Google Analytics event params", () => {
     const params = { calculator: "styazhka", accuracy_mode: "realistic" };
     expect(getGoogleAnalyticsEventParams(params)).toBe(params);
     expect(getGoogleAnalyticsEventParams({})).toEqual({});
+  });
+
+  it("принимает типизированные поисковые метрики без индексной сигнатуры", () => {
+    const params = getSearchQueryMetrics("плитка");
+    expect(getGoogleAnalyticsEventParams(params)).toBe(params);
   });
 });
 
