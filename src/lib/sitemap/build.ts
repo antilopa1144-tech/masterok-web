@@ -55,13 +55,34 @@ const LEGAL_LAST_MODIFIED = "2026-01-01";
 /** Методология расчётов (E-E-A-T, GEO). */
 const METHODOLOGY_LAST_MODIFIED = SITE_LAST_REVIEWED;
 
+type TimestampedBlogPost = {
+  date: string;
+  updatedAt?: string;
+  publishedAtIso?: string;
+  updatedAtIso?: string;
+};
+
+function getPublishedTimestamp(post: TimestampedBlogPost): string {
+  return post.publishedAtIso ?? post.date;
+}
+
+function getUpdatedTimestamp(post: TimestampedBlogPost): string {
+  return post.updatedAtIso ?? post.updatedAt ?? post.publishedAtIso ?? post.date;
+}
+
+function getLatestPublishedTimestamp(posts: TimestampedBlogPost[]): string {
+  return posts.length > 0
+    ? posts.reduce((latest, post) => (
+      getPublishedTimestamp(post) > latest ? getPublishedTimestamp(post) : latest
+    ), getPublishedTimestamp(posts[0]))
+    : STATIC_PAGES_LAST_MODIFIED;
+}
+
 // ── Builders для каждой части ───────────────────────────────────────────────
 
 async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
   const allPosts = await getAllPosts();
-  const latestPostDate = allPosts.length > 0
-    ? allPosts.reduce((latest, p) => (p.date > latest ? p.date : latest), allPosts[0].date)
-    : STATIC_PAGES_LAST_MODIFIED;
+  const latestPostDate = getLatestPublishedTimestamp(allPosts);
 
   return [
     {
@@ -175,16 +196,14 @@ async function buildBlogSitemap(): Promise<MetadataRoute.Sitemap> {
   const allPosts = await getAllPosts();
   const allTags = await getAllTags();
 
-  const latestPostDate = allPosts.length > 0
-    ? allPosts.reduce((latest, p) => (p.date > latest ? p.date : latest), allPosts[0].date)
-    : STATIC_PAGES_LAST_MODIFIED;
+  const latestPostDate = getLatestPublishedTimestamp(allPosts);
 
   // Посты блога с lastModified из Ghost (updatedAt или date).
   // Image extension добавляется через ...(post.heroImage ? {images: [...]} : {})
   // для попадания обложек в Google Image Search.
   const blogPages: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}/`,
-    lastModified: post.updatedAt ?? post.date,
+    lastModified: getUpdatedTimestamp(post),
     changeFrequency: "monthly" as const,
     priority: 0.7,
     ...(post.heroImage ? { images: [post.heroImage] } : {}),

@@ -1,8 +1,6 @@
 /**
- * Ghost Content API client for build-time data fetching.
- *
- * Used only during `next build` — the site is statically exported,
- * so there is no runtime API access.
+ * Ghost Content API client for build and server-side revalidation.
+ * Only successful transformed catalogues are cached by blog.ts.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -115,6 +113,13 @@ function escapeHtmlAttribute(value: string): string {
 
 // ── API helper ──────────────────────────────────────────────────────────────
 
+class GhostApiError extends Error {
+  constructor(public readonly status: number, endpoint: string) {
+    // Never include the request URL: it contains the Content API key.
+    super(`Ghost API error: ${status} for ${endpoint}`);
+  }
+}
+
 async function ghostFetch<T>(
   endpoint: string,
   params: Record<string, string> = {},
@@ -132,15 +137,19 @@ async function ghostFetch<T>(
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      });
 
       if (!res.ok) {
-        throw new Error(`Ghost API error: ${res.status} ${res.statusText} for ${endpoint}`);
+        throw new GhostApiError(res.status, endpoint);
       }
 
       return (await res.json()) as T;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
+      if (err instanceof GhostApiError && err.status >= 400 && err.status < 500 && err.status !== 429) break;
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
@@ -185,12 +194,15 @@ function transformPost(post: GhostPost): BlogPost {
   const metaTitleRaw = post.meta_title?.trim();
 
   return applyBlogContentOverrides({
+    ghostId: post.id,
     slug: post.slug,
     title: post.title,
     metaTitle: metaTitleRaw && metaTitleRaw !== post.title ? metaTitleRaw : undefined,
     description: post.custom_excerpt ?? post.meta_description ?? post.excerpt ?? "",
     date: post.published_at?.split("T")[0] ?? "",
     updatedAt: post.updated_at?.split("T")[0] ?? undefined,
+    publishedAtIso: post.published_at,
+    updatedAtIso: post.updated_at,
     readTime: post.reading_time ? `${post.reading_time} мин` : "",
     category,
     icon,
@@ -240,6 +252,7 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
     if (!res.posts || res.posts.length === 0) return undefined;
     return transformPost(res.posts[0]);
   } catch (err) {
+    if (err instanceof GhostApiError && err.status === 404) return undefined;
     console.error(`[Ghost] Failed to fetch post "${slug}":`, err);
     throw err;
   }

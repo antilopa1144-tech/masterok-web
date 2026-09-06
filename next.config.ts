@@ -204,7 +204,7 @@ const nextConfig: NextConfig = {
       // Sitemap, robots, RSS
       {
         source: "/sitemap.xml",
-        headers: [{ key: "Cache-Control", value: "public, max-age=3600" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=0, s-maxage=60, stale-while-revalidate=60" }],
       },
       {
         source: "/robots.txt",
@@ -212,7 +212,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/rss.xml",
-        headers: [{ key: "Cache-Control", value: "public, max-age=1800" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=0, s-maxage=60, stale-while-revalidate=60" }],
       },
       // HTML страниц — короткий клиентский кэш + длинный CDN-кэш с фоновой ревалидацией.
       //
@@ -241,7 +241,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=300, s-maxage=300, stale-while-revalidate=86400",
+            value: "public, max-age=0, s-maxage=60, stale-while-revalidate=60",
           },
         ],
       },
@@ -263,12 +263,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Category pages include blog links; individual calculators keep their cache.
+      {
+        source: "/kalkulyatory/:category",
+        headers: [{ key: "Cache-Control", value: "public, max-age=0, s-maxage=60, stale-while-revalidate=60" }],
+      },
       {
         source: "/blog/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
+            value: "public, max-age=0, s-maxage=60, stale-while-revalidate=60",
           },
         ],
       },

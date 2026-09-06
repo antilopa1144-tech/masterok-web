@@ -5,6 +5,7 @@ import { getAllPosts } from "@/lib/blog";
 import { SITE_NAME, SITE_URL, SITE_METADATA_DESCRIPTION } from "@/lib/site";
 
 export const dynamic = "force-static";
+export const revalidate = 60;
 
 export async function GET() {
   const posts = await getAllPosts();

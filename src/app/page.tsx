@@ -29,6 +29,8 @@ const CalculatorSearch = dynamic(
 );
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
+// Homepage search receives the current Ghost article catalogue.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: { absolute: SITE_DEFAULT_TITLE },

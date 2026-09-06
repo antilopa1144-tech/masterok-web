@@ -4,7 +4,7 @@ import {
 } from "@/lib/sitemap/chunks";
 
 export const dynamic = "force-static";
-export const revalidate = 3600;
+export const revalidate = 60;
 
 /**
  * Корневой sitemap-index (`robots.txt` → `/sitemap.xml`).

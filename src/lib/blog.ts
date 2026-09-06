@@ -1,6 +1,9 @@
-import { fetchAllPosts, fetchPostBySlug } from "./ghost";
+import { unstable_cache } from "next/cache";
+import { fetchAllPosts } from "./ghost";
+import { BLOG_CACHE_TAG, BLOG_REVALIDATE_SECONDS } from "./blog-cache";
 
 export interface BlogPost {
+  ghostId?: string;
   slug: string;
   title: string;
   /**
@@ -13,6 +16,9 @@ export interface BlogPost {
   date: string;
   /** Дата последнего редактирования в CMS (YYYY-MM-DD). Используется для dateModified и sitemap lastmod. */
   updatedAt?: string;
+  /** Full CMS timestamps; display dates above remain backwards compatible. */
+  publishedAtIso?: string;
+  updatedAtIso?: string;
   readTime: string;
   category: string;
   icon: string;
@@ -33,20 +39,20 @@ export interface BlogPost {
   content: string;
 }
 
-/** Cache posts in memory during build to avoid duplicate API calls. */
-let _postsCache: BlogPost[] | null = null;
+// Next owns the lifetime: no process-global snapshot that survives revalidation.
+const getCachedPosts = unstable_cache(fetchAllPosts, ["ghost-published-posts-v2"], {
+  tags: [BLOG_CACHE_TAG],
+  revalidate: BLOG_REVALIDATE_SECONDS,
+});
 
 export async function getAllPosts(): Promise<BlogPost[]> {
-  if (_postsCache) return _postsCache;
-  _postsCache = await fetchAllPosts();
-  return _postsCache;
+  return getCachedPosts();
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
-  if (_postsCache) {
-    return _postsCache.find((p) => p.slug === slug);
-  }
-  return fetchPostBySlug(slug);
+  // Same published snapshot as the catalogue, feeds, tags and related links.
+  // Ghost failures propagate instead of turning into a false not-found.
+  return (await getAllPosts()).find((post) => post.slug === slug);
 }
 
 export async function getAllTags(): Promise<string[]> {

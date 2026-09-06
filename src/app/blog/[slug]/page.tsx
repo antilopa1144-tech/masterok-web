@@ -85,26 +85,20 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// dynamicParams: false → неизвестные slug возвращают 404 (через notFound())
-export const dynamicParams = false;
+// Published after the build is valid too; the CMS catalogue decides not-found.
+export const dynamicParams = true;
+// Root layout reads request headers. Runtime CMS routes must not switch from
+// a build-time static miss to dynamic rendering when the article is published.
+export const dynamic = "force-dynamic";
 
-// ISR: ревалидация раз в час — для блога статьи могут редактироваться чаще,
-// чем калькуляторы (тексты обновляются через Ghost CMS).
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const posts = await getAllPosts();
-  return posts.map((post) => ({ slug: post.slug }));
-}
+// Literal required by Next route config static analysis.
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) {
-    return {
-      title: UI_TEXT.notFoundTitle,
-      robots: { index: false, follow: false },
-    };
+    notFound();
   }
 
   const baseUrl = SITE_URL;
@@ -123,7 +117,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     url: canonicalUrl,
     type: "article",
-    publishedTime: post.date,
+    publishedTime: post.publishedAtIso ?? post.date,
+    modifiedTime: post.updatedAtIso ?? post.updatedAt ?? post.publishedAtIso ?? post.date,
     tags: post.tags,
     image: post.heroImage || undefined,
   });
@@ -206,8 +201,8 @@ export default async function BlogPostPage({ params }: Props) {
     headline: schemaHeadline,
     description: post.description,
     url: `${baseUrl}/blog/${post.slug}/`,
-    datePublished: post.date,
-    dateModified: post.updatedAt ?? post.date,
+    datePublished: post.publishedAtIso ?? post.date,
+    dateModified: post.updatedAtIso ?? post.updatedAt ?? post.publishedAtIso ?? post.date,
     wordCount,
     articleSection: post.category,
     author: {

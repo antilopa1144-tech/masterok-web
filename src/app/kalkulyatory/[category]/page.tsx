@@ -47,8 +47,8 @@ interface PageProps {
 // (Next.js не пытается рендерить компонент для них)
 export const dynamicParams = false;
 
-// ISR: ревалидация раз в сутки. Бот получает SSG-HTML моментально.
-export const revalidate = 86400;
+// Related blog articles must refresh alongside the publication catalogue.
+export const revalidate = 60;
 
 export async function generateStaticParams() {
   return CATEGORIES.map((cat) => ({ category: cat.slug }));

@@ -11,6 +11,7 @@ interface BuildPageMetadataOptions {
   openGraphTitle?: string;
   twitterTitle?: string;
   publishedTime?: string;
+  modifiedTime?: string;
   tags?: string[];
   /** Optional per-page OG image URL that overrides the site default */
   image?: string;
@@ -21,8 +22,7 @@ interface BuildPageMetadataOptions {
  * Нужен потому что:
  *   1) корневой layout добавляет суффикс через title.template ("%s | Мастерок"),
  *   2) редакторы Ghost / авторы калькуляторов часто включают «| Мастерок» в meta_title.
- * Без strip получается дубликат «… | Мастерок | Мастерок» — Google помечает страницу
- * как низкокачественную и оставляет в Discovered – not indexed.
+ * Без strip получается дубликат «… | Мастерок | Мастерок» в заголовке.
  */
 function stripSiteSuffix(title: string): string {
   const patterns = [
@@ -43,6 +43,7 @@ export function buildPageMetadata({
   openGraphTitle,
   twitterTitle,
   publishedTime,
+  modifiedTime,
   tags,
   image,
 }: BuildPageMetadataOptions): Metadata {
@@ -69,6 +70,7 @@ export function buildPageMetadata({
       type,
       images: [ogImage],
       ...(publishedTime ? { publishedTime } : {}),
+      ...(modifiedTime ? { modifiedTime } : {}),
       ...(tags?.length ? { tags } : {}),
     },
     twitter: {

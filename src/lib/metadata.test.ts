@@ -37,12 +37,14 @@ describe("buildPageMetadata", () => {
       url: "https://example.test/article/",
       type: "article",
       publishedTime: "2026-03-12",
+      modifiedTime: "2026-03-12T18:30:00.000Z",
       tags: ["ремонт", "плитка"],
     });
 
     expect((metadata.openGraph as any)?.type).toBe("article");
     expect(metadata.openGraph?.title).toBe("Статья");
     expect((metadata.openGraph as any)?.publishedTime).toBe("2026-03-12");
+    expect((metadata.openGraph as any)?.modifiedTime).toBe("2026-03-12T18:30:00.000Z");
     expect((metadata.openGraph as any)?.tags).toEqual(["ремонт", "плитка"]);
     // Суффикс «| Мастерок» снимается до того как корневой layout добавит свой
     // через title.template — иначе получался бы дубликат «… | Мастерок | Мастерок».

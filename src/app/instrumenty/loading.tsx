@@ -1,3 +1,5 @@
+// Keep this Suspense fallback scoped to tools. A root loading boundary would
+// flush HTTP 200 before an asynchronous blog lookup can return a real 404.
 export default function Loading() {
   return (
     <div className="page-container py-16">

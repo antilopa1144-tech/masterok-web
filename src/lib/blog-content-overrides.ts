@@ -8,6 +8,27 @@ const WRONG_CALCULATOR_URL = "https://getmasterok.ru/kalkulyatory/krovlya/krovly
 const FENCE_CALCULATOR_URL = "/kalkulyatory/fasad/zabor/";
 const QUICK_ANSWER_ID = "skolko-listov-20-30-50";
 
+/**
+ * Local editorial corrections have a known publication moment, but must not
+ * mask a later edit already made in Ghost. Keep the display date and ISO field
+ * derived from one UTC instant so sitemap/schema/RSS stay aligned.
+ */
+function withLatestContentModifiedAt(
+  post: Pick<BlogPost, "updatedAt" | "updatedAtIso">,
+  localModifiedAtIso: string,
+): Pick<BlogPost, "updatedAt" | "updatedAtIso"> {
+  const timestamps = [post.updatedAtIso, post.updatedAt, localModifiedAtIso]
+    .map((value) => value ? Date.parse(value) : Number.NaN)
+    .filter((value) => !Number.isNaN(value));
+  const latestTimestamp = Math.max(...timestamps);
+  const updatedAtIso = new Date(latestTimestamp).toISOString();
+
+  return {
+    updatedAt: updatedAtIso.slice(0, 10),
+    updatedAtIso,
+  };
+}
+
 const QUICK_ANSWER_HTML = `
 <h2 id="${QUICK_ANSWER_ID}">Сколько листов нужно на забор 20, 30 и 50 метров</h2>
 <p>Быстрый расчёт ниже сделан для сплошного прямого участка без ворот и калитки. Используется рабочая, а не габаритная ширина листа; количество округлено вверх до целого листа.</p>
@@ -263,7 +284,7 @@ export function applyBlogContentOverrides(post: BlogPost): BlogPost {
         metaTitle: "Сколько профлиста на забор 20, 30 и 50 м — таблица",
         description:
           "Сколько листов профнастила нужно на забор 20, 30 или 50 м: таблица для С8 и С21, формула по рабочей ширине, учёт ворот и калитки.",
-        updatedAt: "2026-08-02",
+        ...withLatestContentModifiedAt(post, "2026-08-02T00:00:00.000Z"),
         content: migrateProfnastilFenceHtml(post.content),
       };
     case WARM_FLOOR_SCREED_SLUG:
@@ -273,7 +294,7 @@ export function applyBlogContentOverrides(post: BlogPost): BlogPost {
         metaTitle: "Толщина стяжки тёплого пола: над трубой и общая",
         description:
           "Как определить толщину стяжки водяного и электрического тёплого пола: слой над трубой, общая высота, требования СП и инструкции системы.",
-        updatedAt: "2026-08-02",
+        ...withLatestContentModifiedAt(post, "2026-08-02T00:00:00.000Z"),
         relatedCalculator: { slug: "styazhka", categorySlug: "poly" },
         content: WARM_FLOOR_SCREED_HTML,
       };
@@ -284,7 +305,7 @@ export function applyBlogContentOverrides(post: BlogPost): BlogPost {
         metaTitle: "Расчёт гипсокартона на стену: листы и профиль",
         description:
           "Как рассчитать гипсокартон на стену: формула по площади, запас и округление, профиль для облицовки, проёмы и пример стены 4 × 2,7 м.",
-        updatedAt: "2026-08-09",
+        ...withLatestContentModifiedAt(post, "2026-08-09T00:00:00.000Z"),
         relatedCalculator: { slug: "gipsokarton", categorySlug: "steny" },
         content: DRYWALL_WALL_HTML,
       };
@@ -295,7 +316,7 @@ export function applyBlogContentOverrides(post: BlogPost): BlogPost {
         metaTitle: "Сколько кирпича на дом 10×10: расчёт и таблица",
         description:
           "Расчёт кирпича на одноэтажный дом 10 × 10 м: площадь стен и проёмов, таблица по толщине кладки, запас и готовый пример для калькулятора.",
-        updatedAt: "2026-08-09",
+        ...withLatestContentModifiedAt(post, "2026-08-09T00:00:00.000Z"),
         relatedCalculator: { slug: "kirpich", categorySlug: "steny" },
         content: BRICK_HOUSE_10X10_HTML,
       };

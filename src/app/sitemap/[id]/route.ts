@@ -7,7 +7,7 @@ import {
 } from "@/lib/sitemap/chunks";
 
 export const dynamic = "force-static";
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export function generateStaticParams(): Array<{ id: string }> {
   return generateSitemapIds().map(({ id }) => ({ id: `${id}.xml` }));

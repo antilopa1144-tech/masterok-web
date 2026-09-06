@@ -40,6 +40,27 @@ describe("applyBlogContentOverrides", () => {
     expect(twice.content.match(/id="skolko-listov-20-30-50"/g)).toHaveLength(1);
   });
 
+  it("ставит дату локального исправления, когда Ghost обновлял статью раньше", () => {
+    const result = applyBlogContentOverrides(makePost({
+      updatedAt: "2026-08-01",
+      updatedAtIso: "2026-08-01T18:30:00.000Z",
+    }));
+
+    expect(result.updatedAt).toBe("2026-08-02");
+    expect(result.updatedAtIso).toBe("2026-08-02T00:00:00.000Z");
+  });
+
+  it("не откатывает более позднее обновление Ghost в тот же день", () => {
+    const result = applyBlogContentOverrides(makePost({
+      updatedAt: "2026-08-02",
+      updatedAtIso: "2026-08-02T15:45:00.000Z",
+    }));
+
+    expect(result.updatedAt).toBe("2026-08-02");
+    expect(result.updatedAtIso).toBe("2026-08-02T15:45:00.000Z");
+    expect(applyBlogContentOverrides(result)).toEqual(result);
+  });
+
   it("исправляет статью о стяжке тёплого пола и ведёт в калькулятор стяжки", () => {
     const result = applyBlogContentOverrides(makePost({
       slug: "tolshchina-styazhki-pod-teplyy-pol",

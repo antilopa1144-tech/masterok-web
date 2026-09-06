@@ -50,6 +50,18 @@ describe("sitemap chunks", () => {
     expect(locCount).toBe(SITEMAP_CHUNKS.length);
   });
 
+  it("не подставляет фиктивный lastmod в sitemap-index, но экранирует явный", () => {
+    const withoutLastmod = buildSitemapIndexXml({ siteUrl: "https://example.test" });
+    const withLastmod = buildSitemapIndexXml({
+      siteUrl: "https://example.test?a=1&b=2",
+      lastmod: "2026-09-06&edited",
+    });
+
+    expect(withoutLastmod).not.toContain("<lastmod>");
+    expect(withLastmod).toContain("https://example.test?a=1&amp;b=2/sitemap/0.xml");
+    expect(withLastmod).toContain("<lastmod>2026-09-06&amp;edited</lastmod>");
+  });
+
   it.each(["2junk.xml", "2.5.xml", "2.xml.xml", "02.xml", " 2.xml", "+2.xml", "2.XML", "2\n", "99.xml", "-1.xml"])(
     "парсер не принимает некорректный id %j за существующую часть",
     (id) => {
@@ -79,6 +91,7 @@ describe("sitemap chunks", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/xml");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=60");
     expect(xml).toContain("<sitemapindex");
     expect(xml).not.toContain("<urlset");
     expect((xml.match(/<loc>/g) ?? [])).toHaveLength(SITEMAP_CHUNKS.length);
@@ -115,6 +128,7 @@ describe("sitemap chunks", () => {
 
     expect(valid.status).toBe(200);
     expect(valid.headers.get("content-type")).toContain("application/xml");
+    expect(valid.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=60");
     expect(validXml).toContain("<urlset");
     expect(validXml).toContain("/kalkulyatory/fundament/beton/");
     expect(invalid.status).toBe(404);

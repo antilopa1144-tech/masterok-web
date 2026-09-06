@@ -59,4 +59,26 @@ describe("Ghost blog availability guard", () => {
 
     await expect(fetchPostBySlug("net-takoy-stati")).resolves.toBeUndefined();
   });
+
+  it("HTTP 404 Ghost не становится ошибкой доступности или повторным запросом", async () => {
+    process.env.GHOST_API_URL = "https://cms.example.test";
+    process.env.GHOST_CONTENT_API_KEY = "test-content-key";
+    const fetchMock = vi.fn().mockResolvedValue(new Response("Not found", { status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchPostBySlug } = await importGhost();
+    await expect(fetchPostBySlug("unknown")).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("сохраняет точные timestamps CMS для новых редакций в пределах дня", async () => {
+    process.env.GHOST_API_URL = "https://cms.example.test";
+    process.env.GHOST_CONTENT_API_KEY = "test-content-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ posts: [{
+      id: "post-id", slug: "timestamp-test", title: "Test", html: "<p>Text</p>",
+      published_at: "2026-09-06T01:02:03.000Z", updated_at: "2026-09-06T02:03:04.000Z",
+    }] }), { status: 200 })));
+    const { fetchAllPosts } = await importGhost();
+    const [post] = await fetchAllPosts();
+    expect(post).toMatchObject({ ghostId: "post-id", date: "2026-09-06", publishedAtIso: "2026-09-06T01:02:03.000Z", updatedAtIso: "2026-09-06T02:03:04.000Z" });
+  });
 });

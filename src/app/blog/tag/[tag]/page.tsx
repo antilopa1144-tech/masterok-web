@@ -19,16 +19,11 @@ const UI_TEXT = {
   backToBlog: "← Все статьи",
 } as const;
 
-// dynamicParams: false → неизвестные tag возвращают 404 (через notFound())
-export const dynamicParams = false;
+// New CMS tags can appear without rebuilding. Unknown tags still use notFound().
+export const dynamicParams = true;
+export const dynamic = "force-dynamic";
 
-// ISR: ревалидация раз в час — теги синхронизируются с обновлениями постов.
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const tags = await getAllTags();
-  return tags.map((tag) => ({ tag: tagToSlug(tag) }));
-}
+export const revalidate = 60;
 
 interface TagPageProps {
   params: Promise<{ tag: string }>;
@@ -39,10 +34,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   const allTags = await getAllTags();
   const tag = resolveTagFromSlug(tagSlug, allTags);
   if (!tag) {
-    return {
-      title: `Статьи`,
-      robots: { index: false, follow: false },
-    };
+    notFound();
   }
   const posts = await getPostsByTag(tag);
   const indexable = posts.length >= BLOG_TAG_MIN_POSTS_FOR_INDEX;

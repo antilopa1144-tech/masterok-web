@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SITE_LAST_REVIEWED, SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * Части карты сайта. Порядок = id в URL `/sitemap/{id}.xml`.
@@ -61,12 +61,13 @@ export function buildSitemapIndexXml(options?: {
   lastmod?: string;
 }): string {
   const siteUrl = options?.siteUrl ?? SITE_URL;
-  const lastmod = options?.lastmod ?? SITE_LAST_REVIEWED;
 
   const entries = SITEMAP_CHUNKS.map((_, id) => {
+    const lastmod = options?.lastmod
+      ? `\n    <lastmod>${escapeXml(options.lastmod)}</lastmod>`
+      : "";
     return `  <sitemap>
-    <loc>${getSitemapChunkUrl(id, siteUrl)}</loc>
-    <lastmod>${lastmod}</lastmod>
+    <loc>${escapeXml(getSitemapChunkUrl(id, siteUrl))}</loc>${lastmod}
   </sitemap>`;
   }).join("\n");
 
@@ -78,12 +79,12 @@ ${entries}
 
 export const SITEMAP_INDEX_RESPONSE_HEADERS = {
   "Content-Type": "application/xml; charset=utf-8",
-  "Cache-Control": "public, max-age=3600, s-maxage=3600",
+  "Cache-Control": "public, max-age=60, s-maxage=60",
 } as const;
 
 export const SITEMAP_URLSET_RESPONSE_HEADERS = {
   "Content-Type": "application/xml; charset=utf-8",
-  "Cache-Control": "public, max-age=3600, s-maxage=3600",
+  "Cache-Control": "public, max-age=60, s-maxage=60",
 } as const;
 
 function escapeXml(value: string): string {

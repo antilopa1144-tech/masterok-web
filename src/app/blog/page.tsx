@@ -13,6 +13,7 @@ const META = {
 } as const;
 
 const PAGE_URL = `${SITE_URL}/blog/`;
+export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: META.title,
