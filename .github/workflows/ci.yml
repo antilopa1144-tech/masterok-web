@@ -49,6 +49,9 @@ jobs:
       - name: Test durable publication worker
         run: python3 -m unittest discover -s ops/publication-worker -p 'test_*.py' -v
 
+      - name: Test read-only search monitors
+        run: python3 -m unittest discover -s ops/search-monitor -p 'test_*.py' -v
+
   build:
     name: Build
     runs-on: ubuntu-latest

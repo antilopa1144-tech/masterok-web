@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Masterok Yandex Webmaster monitor
+[Timer]
+OnCalendar=*-*-* 06:35:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+[Install]
+WantedBy=timers.target

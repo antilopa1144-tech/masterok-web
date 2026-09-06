@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Masterok Search monitor
+[Timer]
+OnCalendar=*-*-* 06:20:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+[Install]
+WantedBy=timers.target

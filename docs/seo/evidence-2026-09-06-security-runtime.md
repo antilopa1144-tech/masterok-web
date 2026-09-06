@@ -19,4 +19,4 @@
 - Production lifecycle smoke в чистой копии: публикация после build — 51 с; правка без build — 61 с; снятие с публикации — 61 с; authenticated revalidation обновила контент сразу. При имитации Ghost 503 блог и RSS вернули 500, а не успешный пустой ответ. Артефакт: `output/publication-a-smoke-20260906/evidence/lifecycle.json`.
 - Root `npm test`: 3307 passed, 2 failed. Оба известные unrelated sewage SEO assertions в `src/lib/calculators/__tests__/index.test.ts` (`metaDescription` не соответствует единому шаблону и не содержит ожидаемый intent).
 
-Проверка не подтверждает deployment, CI или push: это остаётся отдельным этапом релизного процесса.
+Релиз `3d29a46` закоммичен и отправлен в origin/main. GitHub Actions `34005281108` завершился success. Timeweb приложения 178601 подтвердил этот commit, build/deploy succeeded, container healthy. После выкатки VPS-проверка реальной статьи `/blog/raskladka-plitki-na-kuhonnom-fartuke/` подтвердила 200, canonical, согласованную редакцию HTML/RSS, sitemap и обложку WebP 1280×720. Очередь B healthy, baseline 24 статьи, задач ещё нет.

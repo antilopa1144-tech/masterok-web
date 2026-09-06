@@ -1,0 +1,19 @@
+[Unit]
+Description=Masterok read-only Search Console monitor
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=masterok-search
+Group=masterok-search
+WorkingDirectory=/opt/masterok-search
+ExecStart=/opt/masterok-search/venv/bin/python /opt/masterok-search/monitor.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/masterok-search
+UMask=0077
+TimeoutStartSec=1800
+MemoryMax=128M
+CPUQuota=20%
