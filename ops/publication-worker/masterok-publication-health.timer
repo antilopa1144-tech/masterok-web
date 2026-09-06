@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the publication worker's own health independently
+
+[Timer]
+OnBootSec=10min
+OnUnitInactiveSec=10min
+AccuracySec=10
+Unit=masterok-publication-health.service
+
+[Install]
+WantedBy=timers.target

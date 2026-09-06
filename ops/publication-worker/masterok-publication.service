@@ -1,0 +1,24 @@
+[Unit]
+Description=Masterok Ghost publication outbox and public checks
+After=network-online.target ghost.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=masterok-publication
+Group=masterok-publication
+ExecStart=/usr/bin/python3 /opt/masterok-publication/worker.py
+StateDirectory=masterok-publication
+StateDirectoryMode=0700
+UMask=0077
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+CPUQuota=20%
+TasksMax=16

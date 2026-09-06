@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { BlogPost } from "./blog";
 import { applyBlogContentOverrides } from "./blog-content-overrides";
+import { blogSourceRevision } from "./blog-source-revision";
 
 // GHOST_API_URL: задайте в .env.local или CI secrets.
 // Fallback для локальных билдов (внутренний сервер Ghost).
@@ -195,6 +196,7 @@ function transformPost(post: GhostPost): BlogPost {
 
   return applyBlogContentOverrides({
     ghostId: post.id,
+    sourceRevision: blogSourceRevision(post),
     slug: post.slug,
     title: post.title,
     metaTitle: metaTitleRaw && metaTitleRaw !== post.title ? metaTitleRaw : undefined,

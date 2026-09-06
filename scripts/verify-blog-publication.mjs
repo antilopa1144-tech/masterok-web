@@ -90,6 +90,8 @@ try {
       checks.canonical = article.html.includes(`<link rel="canonical" href="${appUrl}/blog/${fresh.slug}/"`);
       checks.largePreview = article.html.includes('max-image-preview:large');
       checks.timestamp = article.html.includes(fresh.published_at);
+      const revision = article.html.match(/name="masterok:source-revision" content="([a-f0-9]{64})"/)?.[1];
+      checks.sourceRevision = Boolean(revision && rss.html.includes(`<masterok:sourceRevision>${revision}</masterok:sourceRevision>`));
     }
     return { ok: Object.values(checks).every(Boolean), checks, cache: { article: article.cache, rss: rss.cache, sitemap: sitemap.cache } };
   };

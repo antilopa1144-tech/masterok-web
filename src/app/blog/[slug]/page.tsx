@@ -110,7 +110,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = truncateDescription(post.description, 158);
   const canonicalUrl = `${baseUrl}/blog/${post.slug}/`;
 
-  return buildPageMetadata({
+  return {
+    ...buildPageMetadata({
     title: seoTitle,
     openGraphTitle: post.title,
     twitterTitle: seoTitle,
@@ -121,7 +122,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     modifiedTime: post.updatedAtIso ?? post.updatedAt ?? post.publishedAtIso ?? post.date,
     tags: post.tags,
     image: post.heroImage || undefined,
-  });
+    }),
+    other: post.sourceRevision ? { "masterok:source-revision": post.sourceRevision } : undefined,
+  };
 }
 
 // ── HTML content renderer ───────────────────────────────────────────────────

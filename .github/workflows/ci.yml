@@ -46,6 +46,9 @@ jobs:
       - name: Test isolated article view service
         run: python3 -m unittest discover -s ops/article-views -p 'test_*.py' -v
 
+      - name: Test durable publication worker
+        run: python3 -m unittest discover -s ops/publication-worker -p 'test_*.py' -v
+
   build:
     name: Build
     runs-on: ubuntu-latest

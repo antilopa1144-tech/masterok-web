@@ -6,7 +6,7 @@
     "dev": "next dev",
     "prebuild": "npx tsx scripts/generate-calculators-meta.ts",
     "build": "next build",
-    "postbuild": "node scripts/ping-indexnow.js",
+    "indexnow:manual": "node scripts/ping-indexnow.js",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

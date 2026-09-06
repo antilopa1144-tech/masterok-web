@@ -4,6 +4,8 @@ import { BLOG_CACHE_TAG, BLOG_REVALIDATE_SECONDS } from "./blog-cache";
 
 export interface BlogPost {
   ghostId?: string;
+  /** Digest of the exact CMS input rendered on this page, not a search signal. */
+  sourceRevision?: string;
   slug: string;
   title: string;
   /**
@@ -40,7 +42,7 @@ export interface BlogPost {
 }
 
 // Next owns the lifetime: no process-global snapshot that survives revalidation.
-const getCachedPosts = unstable_cache(fetchAllPosts, ["ghost-published-posts-v2"], {
+const getCachedPosts = unstable_cache(fetchAllPosts, ["ghost-published-posts-v3"], {
   tags: [BLOG_CACHE_TAG],
   revalidate: BLOG_REVALIDATE_SECONDS,
 });

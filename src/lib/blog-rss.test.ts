@@ -25,6 +25,7 @@ describe("blog RSS", () => {
           date: "2026-08-02",
           publishedAtIso: "2026-08-02T08:00:00.000Z",
           updatedAtIso: "2026-08-03T07:06:05.000Z",
+          sourceRevision: "a".repeat(64),
           category: "Строительство",
           heroImage: "",
         },
@@ -38,6 +39,8 @@ describe("blog RSS", () => {
     expect(xml).toContain("<![CDATA[Описание ]]]]><![CDATA[> без разрыва]]>");
     expect(xml).toContain('url="https://cdn.example.test/a.jpg?x=1&amp;y=2"');
     expect(xml).not.toContain("undefined");
+    expect(xml).toContain(`xmlns:masterok="https://getmasterok.ru/ns/publication/1.0"`);
+    expect(xml).toContain(`<masterok:sourceRevision>${"a".repeat(64)}</masterok:sourceRevision>`);
   });
 
   it("omits lastBuildDate for an empty, but valid, feed", () => {

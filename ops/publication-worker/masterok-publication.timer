@@ -1,0 +1,12 @@
+[Unit]
+Description=Check Ghost for published article changes every minute
+
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=60
+AccuracySec=5
+RandomizedDelaySec=5
+Unit=masterok-publication.service
+
+[Install]
+WantedBy=timers.target
