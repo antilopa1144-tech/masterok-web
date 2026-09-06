@@ -27,9 +27,9 @@ public_ready → POST recrawl → сохранить task_id + quota_remainder
 
 ### IndexNow
 
-06.09, реализация B: `ops/publication-worker/` проверяет реальную редакцию HTML и RSS, изображения, canonical/robots, sitemap и ссылки; затем отправляет отдельный URL. Автоматический postbuild-пинг убран, старый скрипт оставлен ручным. VPS пока observe, включение active фиксируется в [приёмке B](evidence-2026-09-06-publication-worker.md). Read-only/API-переобход Вебмастера этим worker ещё не подключён.
+06.09, реализация B: `ops/publication-worker/` проверяет реальную редакцию HTML и RSS, изображения, canonical/robots, sitemap и ссылки; затем отправляет отдельный URL. Автоматический postbuild-пинг убран, старый скрипт оставлен ручным. VPS active после проверки двух настоящих статей, детали в [приёмке B](evidence-2026-09-06-publication-worker.md). Read-only/API-переобход Вебмастера этим worker ещё не подключён.
 
-Имеющийся `scripts/ping-indexnow.js` — build-time сигнал разделов; его не считать подтверждением, что Ghost-статья уже доступна на production. После `public_ready` очередь должна отправлять только новый/изменённый/удалённый canonical URL по IndexNow и отдельно хранить HTTP-результат принятия. Яндекс поддерживает протокол, но прямо говорит: передача URL **не гарантирует индексацию**. Не слать весь sitemap при каждом событии. [Поддержка IndexNow](https://www.yandex.ru/support/webmaster/ru/indexing-options/index-now).
+Ручной `scripts/ping-indexnow.js` не является подтверждением, что Ghost-статья уже доступна на production. Очередь отправляет новый/изменённый/удалённый canonical только после `public_ready` и хранит HTTP-результат принятия. Яндекс поддерживает протокол, но прямо говорит: передача URL **не гарантирует индексацию**. Не слать весь sitemap при каждом событии. [Поддержка IndexNow](https://www.yandex.ru/support/webmaster/ru/indexing-options/index-now).
 
 ## Одноразовая настройка доступа
 
