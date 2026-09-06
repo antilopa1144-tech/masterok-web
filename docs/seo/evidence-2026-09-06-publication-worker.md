@@ -1,5 +1,7 @@
 # Приёмка B: очередь публикации
 
+Обновление 2026-09-06 03:07 UTC: две настоящие статьи прошли public gate и получили IndexNow HTTP 200, обе задачи `done`. Контроль первой production-публикации закрыт. [Редакционная приёмка с точными временами](evidence-2026-09-06-editorial-publication.md). Ниже сохранена хронология первоначальной установки; старый webhook не отключён.
+
 Дата: 06.09.2026. Статус: **код `c13bba1044be3f2081ad11073aef29e19c0b3b71` выпущен на production; VPS worker включён в active, без повторной отправки истории**. [CI 34002954514](https://github.com/antilopa1144-tech/masterok-web/actions/runs/34002954514): lint, web/Python tests и build — success.
 
 ## Что проверено

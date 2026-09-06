@@ -203,6 +203,8 @@ export const tileGroutDef: CalculatorDefinition = {
 <h2>Почему паспорт продукта важнее общей плотности</h2>
 <p>Официальная карточка <a href="https://ceresit.ru/ru/products/tiling/grouts-and-sealants/ce_40_aquastatic" rel="noopener noreferrer" target="_blank">Ceresit CE 40 PREMIUM</a> публикует собственную таблицу по размеру плитки и ширине шва, указывает швы до 10 мм и отдельные ограничения применения. Карточка <a href="https://www.ceresit.ru/ru/products/tiling/grouts-and-sealants/ce-89-epoxy-grout" rel="noopener noreferrer" target="_blank">Ceresit CE 89</a> даёт другую таблицу для эпоксидного состава и диапазон швов 1–15 мм. Это показывает, почему одного переключателя плотности недостаточно для товарной закупки.</p>
 
+<p>Как меняется покупка при шве 2, 3 и 5 мм, разобрали в статье <a href="/blog/rashod-zatirki-shirina-shva-format-plitki/">о влиянии ширины шва и формата плитки на расход затирки</a>: с отдельными допущениями таблицы и примером округления до целых упаковок.</p>
+
 <h2>Действующие документы</h2>
 <p>Для сухих строительных затирочных смесей действует <a href="https://protect.gost.ru/gost/details/ae484785-89b8-46bb-9f1b-d570493706ef" rel="noopener noreferrer" target="_blank">ГОСТ Р 58271-2018</a>. Общие требования к облицовочным работам проверяют по действующей редакции <a href="https://protect.gost.ru/sp/details/ca915ed9-5bce-4de4-94af-debfd041a939" rel="noopener noreferrer" target="_blank">СП 71.13330.2017 с изменениями</a>. Эти документы не задают калькулятору универсальный шов только по размеру плитки: ширину, деформационные узлы, материал заполнения и технологию принимают для конкретной облицовки и продукта.</p>
 `,

@@ -425,6 +425,8 @@ MIN/REC/MAX и режимы точности не добавляют скрыт�
 <h2>Связанные расчёты</h2>
 <p>Монтаж оконного или дверного блока не смешивается с отделкой откоса: используйте отдельные калькуляторы <a href="/kalkulyatory/otdelka/ustanovka-okon/">установки окон</a> и <a href="/kalkulyatory/otdelka/ustanovka-dverej/">установки дверей</a>. Для мокрой отделки отдельно рассчитайте <a href="/kalkulyatory/steny/shtukaturka/">штукатурку</a>, <a href="/kalkulyatory/otdelka/gruntovka/">грунтовку</a>, <a href="/kalkulyatory/otdelka/shpaklevka/">шпаклёвку</a> и <a href="/kalkulyatory/otdelka/kraska/">краску</a>. Стоимость материалов и работ переносите отдельными строками в <a href="/instrumenty/stoimost-remonta/">калькулятор стоимости ремонта</a>.</p>
 
+<p>Для листовых ПВХ-панелей дополнительно проверьте габариты деталей: в статье <a href="/blog/kak-rasschitat-paneli-na-otkosy/">об обмере и раскрое панелей на оконные откосы</a> показано, почему достаточной площади листа ещё недостаточно для удачного раскроя.</p>
+
 <h2>Проверяемые источники</h2>
 <ul>
   <li><a href="https://protect.gost.ru/gost/details/09b731bf-531e-428b-8ef9-556ed2d1c110" target="_blank" rel="noopener noreferrer">Росстандарт: ГОСТ 30971-2012</a> — область применения требований к монтажным швам оконных блоков.</li>

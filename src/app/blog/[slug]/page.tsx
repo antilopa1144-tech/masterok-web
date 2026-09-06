@@ -238,8 +238,6 @@ export default async function BlogPostPage({ params }: Props) {
     image: post.heroImage ? {
       "@type": "ImageObject",
       url: post.heroImage,
-      width: 1200,
-      height: 630,
     } : undefined,
     inLanguage: "ru",
   };
