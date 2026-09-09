@@ -182,9 +182,9 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1.3fr_.7fr]">
+        <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_.7fr]">
           <section className="theme-surface rounded-2xl border border-slate-200 p-5 dark:border-slate-700" aria-labelledby="categories-title">
-            <div className="mb-3 flex items-center justify-between gap-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <h2 id="categories-title" className="text-xl font-bold text-slate-950 dark:text-white">Все категории</h2>
               <Link href="/kalkulyatory/" className="text-sm font-semibold text-accent-700 no-underline hover:text-accent-800 dark:text-accent-400">Все калькуляторы →</Link>
             </div>
