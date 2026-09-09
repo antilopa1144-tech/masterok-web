@@ -400,6 +400,11 @@ html[data-theme="ocean"] {
 @utility prose-custom {
   @apply text-slate-700 dark:text-slate-300 leading-relaxed;
 
+  /* Keep article anchors below the sticky site header. */
+  & :is(h2, h3, h4)[id] {
+    scroll-margin-top: 6rem;
+  }
+
   & h2 {
     @apply text-xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-3;
   }
