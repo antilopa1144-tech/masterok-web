@@ -12,12 +12,12 @@ describe("Smoke test: all calculators execute without errors", () => {
 
       const result = calc.calculate(inputs);
 
-      // Большинство калькуляторов всегда формируют закупку. Вентиляция намеренно
-      // ждёт явную длину трассы и ведомость, чтобы не выдумывать материалы по площади.
+      // Большинство калькуляторов всегда формируют закупку. Вентиляция и септик
+      // намеренно ждут явную проектную ведомость, чтобы не выдумывать материалы.
       expect(result.materials).toBeDefined();
-      if (calc.id === "engineering_ventilation") {
+      if (calc.id === "engineering_ventilation" || calc.id === "sewage") {
         expect(result.materials).toHaveLength(0);
-        expect(result.warnings.some((warning) => warning.includes("длину трассы"))).toBe(true);
+        expect(result.warnings.length).toBeGreaterThan(0);
       } else {
         expect(result.materials.length).toBeGreaterThan(0);
       }

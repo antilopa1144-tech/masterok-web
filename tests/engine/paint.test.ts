@@ -13,6 +13,15 @@ function calc(inputs: Parameters<typeof computeCanonicalPaint>[1]) {
 }
 
 describe("computeCanonicalPaint — golden snapshot (basic mode)", () => {
+  it("для защитного прямого вызова с нулевой площадью не выдаёт правдоподобную покупку", () => {
+    const r = calc({ accuracyMode: "basic", area: 0 });
+
+    expect(r.totals.area).toBe(0);
+    expect(r.scenarios.REC.exact_need).toBe(0);
+    expect(r.scenarios.REC.purchase_quantity).toBe(0);
+    expect(r.warnings).toContain("Площадь окраски должна быть больше нуля");
+  });
+
   it("дефолтная площадь 40 м², 2 слоя, расход 10 м²/л → 8 л базового", () => {
     const r = calc({ accuracyMode: "basic" });
 
@@ -68,7 +77,7 @@ describe("computeCanonicalPaint — golden snapshot (basic mode)", () => {
   });
 
   it("грунтовка считается по площади", () => {
-    const r = calc({ accuracyMode: "basic" });
+    const r = calc({ accuracyMode: "basic", surfacePrep: 1 });
     expect(r.totals.primerLiters).toBeCloseTo(4.4, 1);
     const primer = r.materials.find((m) => m.name.includes("Грунтовка"));
     expect(primer).toBeDefined();
@@ -123,10 +132,26 @@ describe("computeCanonicalPaint — companion materials", () => {
     return r.materials.map((m) => m.name);
   }
 
-  it("дефолт: грунтовка включена, есть валик микрофибра, кисть, кювета, лента, перчатки, плёнка", () => {
+  it("добавляет грунтовку только для новой необработанной поверхности", () => {
+    const primedResult = calc({ accuracyMode: "basic", surfacePrep: 0 });
+    const rawResult = calc({ accuracyMode: "basic", surfacePrep: 1 });
+    const repaintedResult = calc({ accuracyMode: "basic", surfacePrep: 2 });
+    const primed = names(primedResult);
+    const raw = names(rawResult);
+    const repainted = names(repaintedResult);
+
+    expect(primed.some((name) => name.includes("Грунтовка"))).toBe(false);
+    expect(raw.some((name) => name.includes("Грунтовка"))).toBe(true);
+    expect(repainted.some((name) => name.includes("Грунтовка"))).toBe(false);
+    expect(primedResult.totals.primerLiters).toBe(0);
+    expect(rawResult.totals.primerLiters).toBeCloseTo(4.4, 1);
+    expect(repaintedResult.totals.primerLiters).toBe(0);
+  });
+
+  it("дефолт: грунтовка не нужна, остальные инструменты и расходники включены", () => {
     const r = calc({ accuracyMode: "basic" });
     const list = names(r);
-    expect(list.some((n) => n.includes("Грунтовка"))).toBe(true);
+    expect(list.some((n) => n.includes("Грунтовка"))).toBe(false);
     expect(list.some((n) => n.includes("микрофибра"))).toBe(true);
     expect(list.some((n) => n.includes("50 мм"))).toBe(true);
     expect(list.some((n) => n.includes("25 мм"))).toBe(true);
@@ -170,7 +195,7 @@ describe("computeCanonicalPaint — companion materials", () => {
   });
 
   it("грунтовка пакуется канистрами 10 л", () => {
-    const r = calc({ accuracyMode: "basic" });
+    const r = calc({ accuracyMode: "basic", surfacePrep: 1 });
     const primer = r.materials.find((m) => m.name.includes("Грунтовка"));
     expect(primer?.packageInfo?.size).toBe(10);
     expect(primer?.packageInfo?.packageUnit).toBe("канистр");

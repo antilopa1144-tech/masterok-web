@@ -1549,50 +1549,38 @@ export interface HeatingCanonicalSpec extends CanonicalCalculatorSpecBase {
 
 /* ─── Sewage (канализация) ─── */
 
-export interface SewageSeptikTypeSpec {
-  id: number;
-  key: string;
-  label: string;
+export interface SewageRetentionRule {
+  max_equivalent_residents: number;
+  daily_flow_multiplier: number;
 }
 
-export interface SewageGroundTypeSpec {
-  id: number;
-  key: string;
-  label: string;
-  gravel_m3: number;
+export interface SewageChamberRule {
+  max_equivalent_residents: number;
+  minimum_chambers: number;
 }
 
 export interface SewagePackagingRules {
-  unit: string;
-  package_size: number;
+  volume_unit: string;
+  meter_unit: string;
+  piece_unit: string;
+  system_unit: string;
+  pipe_section_unit: string;
 }
 
-export interface SewageMaterialRules {
-  liters_per_person_per_day: number;
-  reserve_days: number;
-  ring_volume_m3: number;
-  eurocube_usable_m3: number;
-  pipe_section_m: number;
-  pipe_reserve: number;
-  default_elbows: number;
-  default_tees: number;
-  gravel_by_ground: Record<string, number>;
-  geotextile_factor: number;
-  sand_backfill_factor: number;
-}
-
-export interface SewageWarningRules {
-  bio_treatment_residents_threshold: number;
+export interface SewageEvidence {
+  reviewed_at: string;
+  standards: Array<{ code: string; scope: string; source: string }>;
+  project_assumptions: string[];
 }
 
 export interface SewageCanonicalSpec extends CanonicalCalculatorSpecBase {
   normative_formula: {
-    septik_types: SewageSeptikTypeSpec[];
-    ground_types: SewageGroundTypeSpec[];
+    retention_rules: SewageRetentionRule[];
+    chamber_rules: SewageChamberRule[];
   };
   packaging_rules: SewagePackagingRules;
-  material_rules: SewageMaterialRules;
-  warnings_rules: SewageWarningRules;
+  evidence: SewageEvidence;
+  assumption_notes: string[];
 }
 
 /* ─── Foundation Slab (фундаментная плита) ─── */

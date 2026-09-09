@@ -2,10 +2,19 @@ import { describe, expect, it } from "vitest";
 import { paintDef } from "../formulas/paint";
 import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 import parityFixture from "../../../../tests/fixtures/paint-canonical-parity.json";
+import paintSpec from "../../../../configs/calculators/paint-canonical.v1.json";
 
 const calc = withBasicAccuracy(paintDef.calculate.bind(paintDef));
 
 describe("Калькулятор краски", () => {
+  it("использует единый минимум площади в web и canonical-контракте", () => {
+    const webArea = paintDef.fields.find((field) => field.key === "area");
+    const canonicalArea = paintSpec.input_schema.find((field) => field.key === "area");
+
+    expect(webArea?.min).toBe(1);
+    expect(canonicalArea?.min).toBe(webArea?.min);
+  });
+
   it("декларирует formulaVersion для canonical paint", () => {
     expect(paintDef.formulaVersion).toBe("paint-canonical-v2");
   });
@@ -106,7 +115,9 @@ describe("Canonical paint fixture parity", () => {
       expect(result.scenarios?.REC.exact_need ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.exactNeed, 2);
       expect(result.scenarios?.REC.purchase_quantity ?? 0).toBeCloseTo(fixtureCase.expected.recScenario.purchaseQuantity, 3);
       expect(result.materials.find((material) => material.category === "Основное")?.purchaseQty).toBe(fixtureCase.expected.materials.paintCans);
-      const _pm = findMaterial(result, 'Грунтовка'); expect(_pm).toBeTruthy(); expect(_pm!.purchaseQty).toBeGreaterThan(0);
+      expect(findMaterial(result, "Грунтовка")?.purchaseQty ?? 0).toBe(
+        fixtureCase.expected.materials.primerCans,
+      );
       expect(findMaterial(result, "Малярная лента")?.purchaseQty).toBe(fixtureCase.expected.materials.tapeRolls);
       expect(findMaterial(result, "Валик")?.purchaseQty).toBe(fixtureCase.expected.materials.rollers);
       expect(findMaterial(result, "Кисть")?.purchaseQty).toBe(fixtureCase.expected.materials.brushes);
@@ -114,5 +125,3 @@ describe("Canonical paint fixture parity", () => {
     });
   }
 });
-
-

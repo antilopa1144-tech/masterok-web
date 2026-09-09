@@ -280,11 +280,12 @@ export function computeCanonicalPaint(
     return acc;
   }, {} as ScenarioBundle);
 
+  const needsPrimer = preparation.id === 1;
   const warnings: string[] = [];
   if (effectiveArea <= 0) {
     warnings.push("Площадь окраски должна быть больше нуля");
   }
-  if (spec.warnings_rules.primer_required_surface_ids.includes(surface.id)) {
+  if (needsPrimer && spec.warnings_rules.primer_required_surface_ids.includes(surface.id)) {
     warnings.push("Для выбранной поверхности рекомендуется предварительное грунтование");
   }
   if (coats <= spec.warnings_rules.one_coat_warning_threshold) {
@@ -297,7 +298,9 @@ export function computeCanonicalPaint(
   const recScenario = scenarios.REC;
   const paintPackageSize = recScenario.buy_plan.package_size;
   const paintPackageCount = recScenario.buy_plan.packages_count;
-  const primerLiters = roundDisplay(effectiveArea * spec.material_rules.primer_l_per_m2, 3);
+  const primerLiters = needsPrimer
+    ? roundDisplay(effectiveArea * spec.material_rules.primer_l_per_m2, 3)
+    : 0;
   const tapeMeters = roundDisplay(work.estimatedPerimeter * spec.material_rules.tape_runs_per_room * spec.material_rules.tape_reserve_factor, 3);
   const tapeRolls = tapeMeters > 0 ? Math.max(1, Math.ceil(tapeMeters / spec.material_rules.tape_roll_length_m)) : 0;
 

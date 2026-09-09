@@ -1,331 +1,321 @@
-import { combineScenarioFactors, type FactorTable } from "./factors";
-import { optimizePackaging } from "./packaging";
 import { SCENARIOS, type ScenarioBundle } from "./scenarios";
 import type {
-  SewageCanonicalSpec,
   CanonicalCalculatorResult,
   CanonicalMaterialResult,
+  SewageCanonicalSpec,
 } from "./canonical";
-import { roundDisplay } from "./units";
-import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
+import { roundDisplay } from "./units";
 
 interface SewageInputs {
-  residents?: number;
-  septikType?: number;
-  chambersCount?: number;
-  pipeLength?: number;
-  groundType?: number;
-  accuracyMode?: AccuracyMode;
+  calculationMode?: number;
+  equivalentResidents?: number;
+  wastewaterPerResidentL?: number;
+  projectDailyFlowM3?: number;
+  selectedWorkingVolumeM3?: number;
+  selectedChamberCount?: number;
+  naturalTreatmentStatus?: number;
+  groundwaterStatus?: number;
+  pipeLengthM?: number;
+  pipeSectionLengthM?: number;
+  inspectionWellCount?: number;
+  fittingCount?: number;
 }
 
-/* ─── constants ─── */
-
-const LITERS_PER_PERSON_PER_DAY = 200;    // SP 30.13330
-const RESERVE_DAYS = 3;                    // SP 32.13330
-const RING_VOLUME_M3 = 0.71;              // KS 10-9
-const EUROCUBE_USABLE_M3 = 0.8;
-const PIPE_SECTION_M = 3;                 // PVC ø110
-const PIPE_RESERVE = 1.05;
-const DEFAULT_ELBOWS = 3;
-const DEFAULT_TEES = 2;
-const GRAVEL_BY_GROUND: Record<number, number> = { 0: 0, 1: 2, 2: 4 };  // m³
-const GEOTEXTILE_FACTOR = 2;              // m² per m³ total volume
-const SAND_BACKFILL_FACTOR = 0.5;         // m³ per m³ volume, for plastic
-
-/* ─── factor defaults ─── */
-
-const SEWAGE_FACTOR_TABLE: FactorTable = {
-  surface_quality: { min: 1, rec: 1, max: 1 },
-  geometry_complexity: { min: 0.95, rec: 1, max: 1.1 },
-  installation_method: { min: 1, rec: 1, max: 1 },
-  worker_skill: { min: 0.95, rec: 1, max: 1.1 },
-  waste_factor: { min: 0.97, rec: 1, max: 1.05 },
-  logistics_buffer: { min: 1, rec: 1, max: 1 },
-  packaging_rounding: { min: 1, rec: 1, max: 1 },
-};
-
-/* ─── helpers ─── */
-
-/* ─── main ─── */
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+const whole = (value: number, min: number, max: number) =>
+  Math.round(clamp(value, min, max));
 
 export function computeCanonicalSewage(
   spec: SewageCanonicalSpec,
   inputs: SewageInputs,
-  factorTable: FactorTable = SEWAGE_FACTOR_TABLE,
 ): CanonicalCalculatorResult {
-  const accuracyMode = inputs.accuracyMode ?? DEFAULT_ACCURACY_MODE;
-  const accuracyMult = getPrimaryMultiplier("generic", accuracyMode);
-
-  const residents = Math.max(1, Math.min(20, Math.round(inputs.residents ?? getInputDefault(spec, "residents", 4))));
-  const septikType = Math.max(0, Math.min(2, Math.round(inputs.septikType ?? getInputDefault(spec, "septikType", 0))));
-  const chambersCount = Math.max(1, Math.min(3, Math.round(inputs.chambersCount ?? getInputDefault(spec, "chambersCount", 2))));
-  const pipeLength = Math.max(1, Math.min(50, inputs.pipeLength ?? getInputDefault(spec, "pipeLength", 10)));
-  const groundType = Math.max(0, Math.min(2, Math.round(inputs.groundType ?? getInputDefault(spec, "groundType", 0))));
-
-  /* ─── volume calculation ─── */
-  const dailyVolumeLiters = residents * LITERS_PER_PERSON_PER_DAY;
-  const totalVolumeLiters = dailyVolumeLiters * RESERVE_DAYS;
-  const totalVolume = totalVolumeLiters / 1000;
-  const volumePerChamber = totalVolume / chambersCount;
-
-  /* ─── type-specific ─── */
-  const materials: CanonicalMaterialResult[] = [];
-  let basePrimary: number;
-
-  let totalRings = 0;
-  let ringsPerChamber = 0;
-  let bottomPlates = 0;
-  let topPlates = 0;
-  let covers = 0;
-  let sealingRings = 0;
-  let septicCount = 0;
-  let sandBackfill = 0;
-  let eurocubes = 0;
-
-  if (septikType === 0) {
-    // Concrete rings KS 10-9
-    ringsPerChamber = Math.ceil(volumePerChamber / RING_VOLUME_M3);
-    totalRings = ringsPerChamber * chambersCount;
-    bottomPlates = chambersCount;
-    topPlates = chambersCount;
-    covers = chambersCount;
-    sealingRings = totalRings;
-    basePrimary = totalRings;
-
-    materials.push(
-      {
-        name: "Железобетонные колодезные кольца, типоразмер КС 10-9",
-        quantity: totalRings,
-        unit: "шт",
-        withReserve: totalRings,
-        purchaseQty: totalRings,
-        category: "Ёмкость",
-      },
-      {
-        name: "Плиты днища колодца, заводская маркировка ПН-10",
-        quantity: bottomPlates,
-        unit: "шт",
-        withReserve: bottomPlates,
-        purchaseQty: bottomPlates,
-        category: "Ёмкость",
-      },
-      {
-        name: "Плиты перекрытия колодца, заводская маркировка ПП-10",
-        quantity: topPlates,
-        unit: "шт",
-        withReserve: topPlates,
-        purchaseQty: topPlates,
-        category: "Ёмкость",
-      },
-      {
-        name: "Люки чугунные",
-        quantity: covers,
-        unit: "шт",
-        withReserve: covers,
-        purchaseQty: covers,
-        category: "Ёмкость",
-      },
-      {
-        name: "Кольца уплотнительные",
-        quantity: sealingRings,
-        unit: "шт",
-        withReserve: sealingRings,
-        purchaseQty: sealingRings,
-        category: "Герметизация",
-      },
-    );
-  } else if (septikType === 1) {
-    // Plastic septic
-    septicCount = 1;
-    sandBackfill = Math.ceil(totalVolume * SAND_BACKFILL_FACTOR);
-    basePrimary = septicCount;
-
-    materials.push(
-      {
-        name: "Септик пластиковый",
-        quantity: septicCount,
-        unit: "шт",
-        withReserve: septicCount,
-        purchaseQty: septicCount,
-        category: "Ёмкость",
-      },
-      {
-        name: "Песок для обсыпки",
-        quantity: sandBackfill,
-        unit: "м³",
-        withReserve: sandBackfill,
-        purchaseQty: sandBackfill,
-        category: "Обсыпка",
-      },
-    );
-  } else {
-    // Eurocubes
-    eurocubes = Math.ceil(totalVolume / EUROCUBE_USABLE_M3);
-    basePrimary = eurocubes;
-
-    materials.push({
-      name: "Еврокубы",
-      quantity: eurocubes,
-      unit: "шт",
-      withReserve: eurocubes,
-      purchaseQty: eurocubes,
-      category: "Ёмкость",
-    });
-  }
-
-  /* ─── common materials ─── */
-  const pipeSections = Math.ceil(pipeLength * PIPE_RESERVE / PIPE_SECTION_M);
-  const elbows = DEFAULT_ELBOWS;
-  const tees = DEFAULT_TEES;
-  const gravel = GRAVEL_BY_GROUND[groundType] ?? 0;
-  const geotextile = groundType >= 1 ? Math.ceil(totalVolume * GEOTEXTILE_FACTOR) : 0;
-
-  materials.push(
-    {
-      name: "Пластиковая канализационная труба (ПВХ) Ø110 мм, отрезки по 3 м",
-      quantity: pipeSections,
-      unit: "шт",
-      withReserve: pipeSections,
-      purchaseQty: pipeSections,
-      category: "Трубопровод",
-    },
-    {
-      name: "Отводы (колена)",
-      quantity: elbows,
-      unit: "шт",
-      withReserve: elbows,
-      purchaseQty: elbows,
-      category: "Фасонные",
-    },
-    {
-      name: "Тройники",
-      quantity: tees,
-      unit: "шт",
-      withReserve: tees,
-      purchaseQty: tees,
-      category: "Фасонные",
-    },
+  const calculationMode = whole(
+    inputs.calculationMode ?? getInputDefault(spec, "calculationMode", 0),
+    0,
+    1,
+  );
+  const equivalentResidents = whole(
+    inputs.equivalentResidents ??
+      getInputDefault(spec, "equivalentResidents", 4),
+    1,
+    100,
+  );
+  const wastewaterPerResidentL = clamp(
+    inputs.wastewaterPerResidentL ??
+      getInputDefault(spec, "wastewaterPerResidentL", 200),
+    1,
+    2000,
+  );
+  const projectDailyFlowM3 = clamp(
+    inputs.projectDailyFlowM3 ??
+      getInputDefault(spec, "projectDailyFlowM3", 0.8),
+    0.001,
+    100,
+  );
+  const selectedWorkingVolumeM3 = clamp(
+    inputs.selectedWorkingVolumeM3 ??
+      getInputDefault(spec, "selectedWorkingVolumeM3", 0),
+    0,
+    1000,
+  );
+  const selectedChamberCount = whole(
+    inputs.selectedChamberCount ??
+      getInputDefault(spec, "selectedChamberCount", 0),
+    0,
+    3,
+  );
+  const naturalTreatmentStatus = whole(
+    inputs.naturalTreatmentStatus ??
+      getInputDefault(spec, "naturalTreatmentStatus", 0),
+    0,
+    2,
+  );
+  const groundwaterStatus = whole(
+    inputs.groundwaterStatus ??
+      getInputDefault(spec, "groundwaterStatus", 0),
+    0,
+    2,
+  );
+  const pipeLengthM = clamp(
+    inputs.pipeLengthM ?? getInputDefault(spec, "pipeLengthM", 0),
+    0,
+    1000,
+  );
+  const pipeSectionLengthM = clamp(
+    inputs.pipeSectionLengthM ??
+      getInputDefault(spec, "pipeSectionLengthM", 0),
+    0,
+    30,
+  );
+  const inspectionWellCount = whole(
+    inputs.inspectionWellCount ??
+      getInputDefault(spec, "inspectionWellCount", 0),
+    0,
+    100,
+  );
+  const fittingCount = whole(
+    inputs.fittingCount ?? getInputDefault(spec, "fittingCount", 0),
+    0,
+    1000,
   );
 
-  if (gravel > 0) {
-    materials.push({
-      name: "Щебень фракция 20-40",
-      quantity: gravel,
-      unit: "м³",
-      withReserve: gravel,
-      purchaseQty: gravel,
-      category: "Дренаж",
-    });
+  const dailyFlowM3 =
+    calculationMode === 0
+      ? (equivalentResidents * wastewaterPerResidentL) / 1000
+      : projectDailyFlowM3;
+  const retentionRule =
+    spec.normative_formula.retention_rules.find(
+      (rule) => equivalentResidents <= rule.max_equivalent_residents,
+    ) ?? spec.normative_formula.retention_rules.at(-1);
+  const chamberRule =
+    spec.normative_formula.chamber_rules.find(
+      (rule) => equivalentResidents <= rule.max_equivalent_residents,
+    ) ?? spec.normative_formula.chamber_rules.at(-1);
+
+  if (!retentionRule || !chamberRule) {
+    throw new Error("[sewage] В canonical-спеке не заданы правила объёма или камер");
   }
 
-  if (geotextile > 0) {
+  const retentionMultiplier = retentionRule.daily_flow_multiplier;
+  const minimumChamberCount = chamberRule.minimum_chambers;
+  const minimumWorkingVolumeM3 = dailyFlowM3 * retentionMultiplier;
+  const volumeShortfallM3 =
+    selectedWorkingVolumeM3 > 0
+      ? Math.max(0, minimumWorkingVolumeM3 - selectedWorkingVolumeM3)
+      : 0;
+  const volumeMarginM3 =
+    selectedWorkingVolumeM3 > 0
+      ? Math.max(0, selectedWorkingVolumeM3 - minimumWorkingVolumeM3)
+      : 0;
+  const verifiedWorkingVolumeM3 =
+    selectedWorkingVolumeM3 >= minimumWorkingVolumeM3
+      ? selectedWorkingVolumeM3
+      : minimumWorkingVolumeM3;
+
+  const pipeSections =
+    pipeLengthM > 0 && pipeSectionLengthM > 0
+      ? Math.ceil(pipeLengthM / pipeSectionLengthM)
+      : 0;
+  const purchasePipeLengthM =
+    pipeSections > 0 ? pipeSections * pipeSectionLengthM : pipeLengthM;
+  const pipeLeftoverM = Math.max(0, purchasePipeLengthM - pipeLengthM);
+  const materials: CanonicalMaterialResult[] = [];
+
+  if (selectedWorkingVolumeM3 > 0) {
     materials.push({
-      name: "Геотекстиль",
-      quantity: geotextile,
-      unit: "м²",
-      withReserve: geotextile,
-      purchaseQty: geotextile,
-      category: "Дренаж",
+      name: "Выбранная система септика по проекту или паспорту",
+      subtitle: `Рабочий объём: ${roundDisplay(selectedWorkingVolumeM3, 3)} м³`,
+      quantity: 1,
+      unit: spec.packaging_rules.system_unit,
+      withReserve: 1,
+      purchaseQty: 1,
+      category: "Выбранная система",
     });
   }
-
-  /* ─── scenarios ─── */
-  const basePrimaryRaw = basePrimary;
-  basePrimary = Math.ceil(basePrimary * accuracyMult);
-  const packageOptions = [{ size: 1, label: "sewage-unit", unit: "шт" }];
+  if (pipeLengthM > 0) {
+    materials.push({
+      name:
+        pipeSectionLengthM > 0
+          ? `Труба наружной канализации по проектной трассе, отрезок ${roundDisplay(pipeSectionLengthM, 3)} м`
+          : "Труба наружной канализации по проектной трассе",
+      quantity: roundDisplay(pipeLengthM, 6),
+      unit: spec.packaging_rules.meter_unit,
+      withReserve: roundDisplay(purchasePipeLengthM, 6),
+      purchaseQty: roundDisplay(purchasePipeLengthM, 6),
+      ...(pipeSections > 0
+        ? {
+            packageInfo: {
+              count: pipeSections,
+              size: roundDisplay(pipeSectionLengthM, 6),
+              packageUnit: spec.packaging_rules.pipe_section_unit,
+            },
+          }
+        : {}),
+      category: "Проектная трасса",
+    });
+  }
+  if (inspectionWellCount > 0) {
+    materials.push({
+      name: "Смотровой колодец по проектной ведомости",
+      quantity: inspectionWellCount,
+      unit: spec.packaging_rules.piece_unit,
+      withReserve: inspectionWellCount,
+      purchaseQty: inspectionWellCount,
+      category: "Проектная трасса",
+    });
+  }
+  if (fittingCount > 0) {
+    materials.push({
+      name: "Фасонные части по проектной ведомости",
+      quantity: fittingCount,
+      unit: spec.packaging_rules.piece_unit,
+      withReserve: fittingCount,
+      purchaseQty: fittingCount,
+      category: "Проектная трасса",
+    });
+  }
 
   const scenarios = SCENARIOS.reduce((acc, scenario) => {
-    const { multiplier, keyFactors } = combineScenarioFactors(factorTable, spec.field_factors.enabled, scenario);
-    const exactNeed = roundDisplay(basePrimary * multiplier, 6);
-    const packaging = optimizePackaging(exactNeed, packageOptions);
-
     acc[scenario] = {
-      exact_need: exactNeed,
-      purchase_quantity: roundDisplay(packaging.purchaseQuantity, 6),
-      leftover: roundDisplay(packaging.leftover, 6),
+      exact_need: roundDisplay(minimumWorkingVolumeM3, 6),
+      purchase_quantity: roundDisplay(verifiedWorkingVolumeM3, 6),
+      leftover: roundDisplay(
+        verifiedWorkingVolumeM3 - minimumWorkingVolumeM3,
+        6,
+      ),
       assumptions: [
         `formula_version:${spec.formula_version}`,
-        `septikType:${septikType}`,
-        `chambersCount:${chambersCount}`,
-        `groundType:${groundType}`,
-        `packaging:${packaging.package.label}`,
+        `calculationMode:${calculationMode}`,
+        `equivalentResidents:${equivalentResidents}`,
+        "no_hidden_reserve",
       ],
       key_factors: {
-        ...keyFactors,
-        field_multiplier: roundDisplay(multiplier, 6),
+        field_multiplier: 1,
+        retention_multiplier: retentionMultiplier,
       },
       buy_plan: {
-        package_label: packaging.package.label,
-        package_size: packaging.package.size,
-        packages_count: packaging.packageCount,
-        unit: packaging.package.unit,
+        package_label: "septic-working-volume",
+        package_size: roundDisplay(verifiedWorkingVolumeM3, 6),
+        packages_count: 1,
+        unit: spec.packaging_rules.volume_unit,
       },
     };
-
     return acc;
   }, {} as ScenarioBundle);
 
-  const recScenario = scenarios.REC;
-
-  /* ─── warnings ─── */
-  const warnings: string[] = [];
-  if (groundType === 2) {
-    warnings.push("Глинистый грунт — рекомендуется дренажный тоннель");
+  const warnings = [
+    "Септик выполняет только предварительную механическую очистку: обработанный сток требует последующей очистки по обоснованной проектной схеме.",
+    "Калькулятор не назначает конструкцию сооружения, санитарные разрывы, уклон и отметки трассы, вентиляцию, защиту от всплытия или способ сброса.",
+  ];
+  if (calculationMode === 0) {
+    warnings.push(
+      "Суточный объём на одного ЭЧЖ введён пользователем; стартовые 200 л/сут не заменяют расчёт фактического водоотведения.",
+    );
   }
-  if (residents > spec.warnings_rules.bio_treatment_residents_threshold) {
-    warnings.push("Более 10 жителей — рекомендуется станция биологической очистки");
+  if (selectedWorkingVolumeM3 <= 0) {
+    warnings.push(
+      "Рабочий объём выбранной системы не введён — показан только минимальный расчётный объём.",
+    );
+  } else if (volumeShortfallM3 > 0) {
+    warnings.push(
+      `Рабочий объём выбранной системы меньше расчётного минимума на ${roundDisplay(volumeShortfallM3, 3)} м³.`,
+    );
   }
-  if (chambersCount === 1) {
-    warnings.push("Одна камера — минимум, рекомендуется 2-3 камеры");
+  if (selectedChamberCount <= 0) {
+    warnings.push(
+      "Количество камер выбранной системы не введено и не проверено.",
+    );
+  } else if (selectedChamberCount < minimumChamberCount) {
+    warnings.push(
+      `В выбранной системе ${selectedChamberCount} камер(ы), а для ${equivalentResidents} ЭЧЖ расчётное правило требует не менее ${minimumChamberCount}.`,
+    );
   }
-
-
-  const practicalNotes: string[] = [];
-  if (residents > 6) {
-    practicalNotes.push(`На ${residents} человек рассмотрите станцию биоочистки вместо обычного септика`);
+  if (naturalTreatmentStatus === 0) {
+    warnings.push(
+      "Пригодность грунта и схема последующей очистки не подтверждены изысканиями и проектом.",
+    );
+  } else if (naturalTreatmentStatus === 2) {
+    warnings.push(
+      "Естественная почвенная доочистка не подтверждена — требуется отдельное инженерное решение.",
+    );
   }
-  practicalNotes.push("Труба канализации — уклон 2 см на метр, не больше и не меньше");
+  if (groundwaterStatus === 0) {
+    warnings.push(
+      "Расчётный сезонный уровень грунтовых вод не проверен.",
+    );
+  } else if (groundwaterStatus === 2) {
+    warnings.push(
+      "Высокий или сезонно высокий уровень грунтовых вод требует отдельной проверки конструкции и способа доочистки.",
+    );
+  }
+  if (pipeSectionLengthM > 0 && pipeLengthM <= 0) {
+    warnings.push(
+      "Длина товарного отрезка трубы введена без длины проектной трассы.",
+    );
+  }
 
   return {
     canonicalSpecId: spec.calculator_id,
     formulaVersion: spec.formula_version,
     materials,
     totals: {
-      residents,
-      septikType,
-      chambersCount,
-      pipeLength: roundDisplay(pipeLength, 3),
-      groundType,
-      dailyVolumeLiters,
-      totalVolumeLiters,
-      totalVolume: roundDisplay(totalVolume, 3),
-      volumePerChamber: roundDisplay(volumePerChamber, 3),
-      totalRings,
-      ringsPerChamber,
-      bottomPlates,
-      topPlates,
-      covers,
-      sealingRings,
-      septicCount,
-      sandBackfill,
-      eurocubes,
+      calculationMode,
+      equivalentResidents,
+      wastewaterPerResidentL: roundDisplay(wastewaterPerResidentL, 3),
+      projectDailyFlowM3: roundDisplay(projectDailyFlowM3, 3),
+      dailyFlowM3: roundDisplay(dailyFlowM3, 3),
+      retentionMultiplier: roundDisplay(retentionMultiplier, 3),
+      minimumWorkingVolumeM3: roundDisplay(minimumWorkingVolumeM3, 3),
+      selectedWorkingVolumeM3: roundDisplay(selectedWorkingVolumeM3, 3),
+      verifiedWorkingVolumeM3: roundDisplay(verifiedWorkingVolumeM3, 3),
+      volumeShortfallM3: roundDisplay(volumeShortfallM3, 3),
+      volumeMarginM3: roundDisplay(volumeMarginM3, 3),
+      minimumChamberCount,
+      selectedChamberCount,
+      naturalTreatmentStatus,
+      groundwaterStatus,
+      pipeLengthM: roundDisplay(pipeLengthM, 3),
+      pipeSectionLengthM: roundDisplay(pipeSectionLengthM, 3),
       pipeSections,
-      elbows,
-      tees,
-      gravel,
-      geotextile,
-      minExactNeed: scenarios.MIN.exact_need,
-      recExactNeed: recScenario.exact_need,
-      maxExactNeed: scenarios.MAX.exact_need,
-      minPurchase: scenarios.MIN.purchase_quantity,
-      recPurchase: recScenario.purchase_quantity,
-      maxPurchase: scenarios.MAX.purchase_quantity,
+      purchasePipeLengthM: roundDisplay(purchasePipeLengthM, 3),
+      pipeLeftoverM: roundDisplay(pipeLeftoverM, 3),
+      inspectionWellCount,
+      fittingCount,
+      minExactNeed: roundDisplay(minimumWorkingVolumeM3, 6),
+      recExactNeed: roundDisplay(minimumWorkingVolumeM3, 6),
+      maxExactNeed: roundDisplay(minimumWorkingVolumeM3, 6),
+      minPurchase: roundDisplay(verifiedWorkingVolumeM3, 6),
+      recPurchase: roundDisplay(verifiedWorkingVolumeM3, 6),
+      maxPurchase: roundDisplay(verifiedWorkingVolumeM3, 6),
     },
     warnings,
-    practicalNotes,
+    practicalNotes: [
+      "Сверьте расчётный суточный приток, залповые сбросы, рабочий объём и ограничения выбранного изделия с проектом и паспортом производителя.",
+      "Проверьте геологию, сезонный уровень грунтовых вод, санитарные ограничения участка и законный способ последующей очистки или отвода.",
+      "Трубы и штучные позиции появляются только из введённой проектной ведомости; скрытого запаса и автоматически назначенных фитингов нет.",
+    ],
     scenarios,
-    accuracyMode,
-    accuracyExplanation: applyAccuracyMode(basePrimaryRaw, "generic", accuracyMode).explanation,
   };
 }

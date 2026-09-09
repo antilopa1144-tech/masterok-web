@@ -904,6 +904,61 @@ test.describe("Калькулятор водяного тёплого пола",
   });
 });
 
+test.describe("Калькулятор септика", () => {
+  test("проверяет минимальный объём без выдуманной конструкции", async ({ page }) => {
+    await page.goto("/kalkulyatory/inzhenernye/septik/");
+    await expect(page.locator("h1")).toContainText("минимальный объём");
+    await expect(page.getByLabel("Эквивалентное число жителей").first()).toHaveValue("4");
+    await expect(page.getByLabel("Расчётный сток на одного ЭЧЖ").first()).toHaveValue("200");
+
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    const resultCard = page.getByRole("heading", { name: "Результат" }).locator("xpath=../../..");
+    await expect(resultCard).toContainText("Суточный приток");
+    await expect(resultCard).toContainText("0,8");
+    await expect(resultCard).toContainText("Минимальный рабочий объём");
+    await expect(resultCard).toContainText("2,4");
+    await expect(resultCard).not.toContainText(/КС 10-9|Еврокуб|Щебень|Геотекстиль|Тройники/i);
+    await expect(page.getByText(/предварительную механическую очистку/i).first()).toBeVisible();
+
+    await page.getByLabel("Рабочий объём выбранной системы").first().fill("2");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    await expect(resultCard).toContainText("не хватает 0,4 м³");
+
+    await page.getByRole("button", { name: "По суточному притоку проекта", exact: true }).click();
+    await expect(page.getByLabel("Расчётный сток на одного ЭЧЖ")).toHaveCount(0);
+    await page.getByLabel("Эквивалентное число жителей").first().fill("6");
+    await page.getByLabel("Суточный приток по проекту").first().fill("1.1");
+    await page.getByLabel("Рабочий объём выбранной системы").first().fill("3.5");
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    await expect(resultCard).toContainText("3,3");
+    await expect(resultCard).toContainText("3,5");
+
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+    ).toBeLessThanOrEqual(1);
+  });
+
+  test("на mobile показывает проверки участка без горизонтального переполнения", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/kalkulyatory/inzhenernye/septik/");
+
+    const additionalFields = page.getByRole("button", { name: /Дополнительные параметры/ }).first();
+    await expect(additionalFields).toBeVisible();
+    await additionalFields.click();
+    await expect(page.getByLabel("Последующая очистка стока").first()).toBeVisible();
+    await expect(page.getByLabel("Сезонный уровень грунтовых вод").first()).toBeVisible();
+    await expect(page.getByLabel("Длина трубы по проектной трассе").first()).toBeVisible();
+    await page.getByRole("button", { name: "Рассчитать", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Результат" })).toBeVisible();
+
+    const viewport = await page.locator("html").evaluate((element) => ({
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    }));
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+  });
+});
+
 test.describe("SEO", () => {
   test("страницы имеют правильные мета-теги", async ({ page }) => {
     await page.goto("/kalkulyatory/fundament/beton/");

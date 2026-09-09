@@ -1,221 +1,141 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { sewageDef } from "../formulas/sewage";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial } from "./_helpers";
 
-const calc = withBasicAccuracy(sewageDef.calculate.bind(sewageDef));
+const calculate = sewageDef.calculate.bind(sewageDef);
 
-describe("Калькулятор септика", () => {
-  describe("4 человека, бетонные кольца, 2 камеры, песок", () => {
-    const result = calc({
-      residents: 4,
-      septikType: 0,
-      chambersCount: 2,
-      pipeLength: 10,
-      groundType: 0,
+describe("Калькулятор септика v2", () => {
+  it("считает предварительный приток и трёхкратный минимум для 4 ЭЧЖ", () => {
+    const result = calculate({
+      calculationMode: 0,
+      equivalentResidents: 4,
+      wastewaterPerResidentL: 200,
     });
 
-    it("объём септика = 2.4 м³", () => {
-      expect(result.totals.totalVolume).toBeCloseTo(2.4, 2);
-    });
-
-    it("4 бетонных кольца (2 камеры × 2 кольца)", () => {
-      // Engine: "Кольца ЖБ КС 10-9"
-      const rings = findMaterial(result, "КС 10-9");
-      expect(rings).toBeDefined();
-      expect(rings!.quantity).toBe(4);
-    });
-
-    it("2 днища ПН-10", () => {
-      // Engine: "Днища ПН-10"
-      const bottoms = findMaterial(result, "ПН-10");
-      expect(bottoms).toBeDefined();
-      expect(bottoms!.quantity).toBe(2);
-    });
-
-    it("2 плиты перекрытия ПП-10", () => {
-      // Engine: "Плиты перекрытия ПП-10"
-      const lids = findMaterial(result, "ПП-10");
-      expect(lids).toBeDefined();
-      expect(lids!.quantity).toBe(2);
-    });
-
-    it("2 люка чугунных", () => {
-      // Engine: "Люки чугунные"
-      const manholes = findMaterial(result, "Люки чугунные");
-      expect(manholes).toBeDefined();
-      expect(manholes!.quantity).toBe(2);
-    });
-
-    it("4 уплотнительных кольца", () => {
-      // Engine: "Кольца уплотнительные"
-      const seals = findMaterial(result, "уплотнительн");
-      expect(seals).toBeDefined();
-      expect(seals!.quantity).toBe(4);
-    });
-
-    it("трубы ПВХ ø110 присутствуют", () => {
-      // Engine: "Труба ПВХ ø110 (секции 3 м)"
-      const pipes = findMaterial(result, "Ø110 мм");
-      expect(pipes).toBeDefined();
-      // 10 * 1.05 / 3 = 3.5 → ceil = 4
-      expect(pipes!.quantity).toBe(4);
-    });
-
-    it("отводы (колена) = 3 шт", () => {
-      // Engine: "Отводы (колена)"
-      const elbows = findMaterial(result, "Отводы");
-      expect(elbows).toBeDefined();
-      expect(elbows!.quantity).toBe(3);
-    });
-
-    it("тройники = 2 шт", () => {
-      // Engine: "Тройники"
-      const tees = findMaterial(result, "Тройники");
-      expect(tees).toBeDefined();
-      expect(tees!.quantity).toBe(2);
-    });
-
-    it("нет щебня для песчаного грунта", () => {
-      const gravel = findMaterial(result, "Щебень");
-      expect(gravel).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.formulaVersion).toBe("sewage-canonical-v2");
+    expect(result.totals.dailyFlowM3).toBe(0.8);
+    expect(result.totals.retentionMultiplier).toBe(3);
+    expect(result.totals.minimumWorkingVolumeM3).toBe(2.4);
+    expect(result.totals.minimumChamberCount).toBe(1);
+    expect(result.scenarios?.MIN.exact_need).toBe(2.4);
+    expect(result.scenarios?.REC.exact_need).toBe(2.4);
+    expect(result.scenarios?.MAX.exact_need).toBe(2.4);
+    expect(result.summaryCards?.find((card) => card.label === "Выбранная система"))
+      .toMatchObject({ value: "не введена", icon: "📋", tone: "slate" });
   });
 
-  describe("Пластиковый септик", () => {
-    const result = calc({
-      residents: 4,
-      septikType: 1,
-      chambersCount: 2,
-      pipeLength: 8,
-      groundType: 0,
+  it("принимает суточный приток из проекта без пересчёта по литрам на человека", () => {
+    const result = calculate({
+      calculationMode: 1,
+      equivalentResidents: 6,
+      wastewaterPerResidentL: 999,
+      projectDailyFlowM3: 1.1,
     });
 
-    it("1 пластиковый септик", () => {
-      // Engine: "Септик пластиковый"
-      const septik = findMaterial(result, "Септик пластиковый");
-      expect(septik).toBeDefined();
-      expect(septik!.quantity).toBe(1);
-    });
-
-    it("песок для обсыпки присутствует", () => {
-      // Engine: "Песок для обсыпки"
-      const sand = findMaterial(result, "Песок");
-      expect(sand).toBeDefined();
-    });
-
-    it("нет бетонных колец", () => {
-      const rings = findMaterial(result, "КС 10-9");
-      expect(rings).toBeUndefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.dailyFlowM3).toBe(1.1);
+    expect(result.totals.minimumWorkingVolumeM3).toBe(3.3);
+    expect(result.totals.minimumChamberCount).toBe(2);
   });
 
-  describe("Еврокубы", () => {
-    const result = calc({
-      residents: 4,
-      septikType: 2,
-      chambersCount: 2,
-      pipeLength: 10,
-      groundType: 0,
+  it("использует коэффициент 2,5 свыше 25 ЭЧЖ", () => {
+    const result = calculate({
+      calculationMode: 1,
+      equivalentResidents: 30,
+      projectDailyFlowM3: 6,
     });
 
-    it("еврокубов = 3 шт", () => {
-      // Engine: "Еврокубы", eurocubes=ceil(2.4/0.8)=3
-      const cubes = findMaterial(result, "Еврокуб");
-      expect(cubes).toBeDefined();
-      expect(cubes!.quantity).toBe(3);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.retentionMultiplier).toBe(2.5);
+    expect(result.totals.minimumWorkingVolumeM3).toBe(15);
+    expect(result.totals.minimumChamberCount).toBe(2);
   });
 
-  describe("Глинистый грунт → предупреждение + щебень", () => {
-    const result = calc({
-      residents: 4,
-      septikType: 0,
-      chambersCount: 2,
-      pipeLength: 10,
-      groundType: 2,
+  it("для 51–100 ЭЧЖ показывает минимум три камеры", () => {
+    const result = calculate({
+      calculationMode: 1,
+      equivalentResidents: 60,
+      projectDailyFlowM3: 10,
+      selectedChamberCount: 2,
     });
 
-    it("предупреждение о глинистом грунте", () => {
-      // Engine: "Глинистый грунт — рекомендуется дренажный тоннель"
-      expect(result.warnings.some((w) => w.includes("Глинистый грунт"))).toBe(true);
-    });
-
-    it("щебень = 4 м³ для глины", () => {
-      // Engine: "Щебень фракция 20-40"
-      const gravel = findMaterial(result, "Щебень");
-      expect(gravel).toBeDefined();
-      expect(gravel!.quantity).toBe(4);
-    });
-
-    it("геотекстиль присутствует", () => {
-      // Engine: "Геотекстиль"
-      const geo = findMaterial(result, "Геотекстиль");
-      expect(geo).toBeDefined();
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.minimumChamberCount).toBe(3);
+    expect(result.warnings.some((warning) => warning.includes("не менее 3"))).toBe(true);
   });
 
-  describe("Однокамерный → предупреждение", () => {
-    const result = calc({
-      residents: 4,
-      septikType: 0,
-      chambersCount: 1,
-      pipeLength: 10,
-      groundType: 0,
+  it("показывает дефицит рабочего объёма выбранной системы", () => {
+    const result = calculate({
+      calculationMode: 0,
+      equivalentResidents: 4,
+      wastewaterPerResidentL: 200,
+      selectedWorkingVolumeM3: 2,
     });
 
-    it("предупреждение о минимуме камер", () => {
-      // Engine: "Одна камера — минимум, рекомендуется 2-3 камеры"
-      expect(result.warnings.some((w) => w.includes("Одна камера"))).toBe(true);
-    });
-
-    it("кольца для 1 камеры", () => {
-      const rings = findMaterial(result, "КС 10-9");
-      expect(rings).toBeDefined();
-      // totalVolume=2.4 / 1 = 2.4, ceil(2.4/0.71) = 4 rings
-      expect(rings!.quantity).toBe(4);
-    });
-
-    it("инварианты", () => {
-      checkInvariants(result);
-    });
+    expect(result.totals.volumeShortfallM3).toBe(0.4);
+    expect(result.totals.volumeMarginM3).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(2.4);
+    expect(result.warnings.some((warning) => warning.includes("меньше расчётного"))).toBe(true);
+    checkInvariants(result);
   });
 
-  describe("> 10 человек → предупреждение о биоочистке", () => {
-    const result = calc({
-      residents: 12,
-      septikType: 0,
-      chambersCount: 3,
-      pipeLength: 15,
-      groundType: 0,
+  it("при достаточном объёме показывает явный запас выбранной системы", () => {
+    const result = calculate({
+      equivalentResidents: 4,
+      wastewaterPerResidentL: 200,
+      selectedWorkingVolumeM3: 3,
+      selectedChamberCount: 1,
     });
 
-    it("предупреждение о биологической очистке", () => {
-      // Engine: "Более 10 жителей — рекомендуется станция биологической очистки"
-      expect(result.warnings.some((w) => w.includes("биологической очистки"))).toBe(true);
+    expect(result.totals.volumeMarginM3).toBe(0.6);
+    expect(result.totals.volumeShortfallM3).toBe(0);
+    expect(result.scenarios?.REC.purchase_quantity).toBe(3);
+    expect(result.scenarios?.REC.leftover).toBe(0.6);
+    checkInvariants(result);
+  });
+
+  it("округляет проектную трубу только по явно введённому товарному отрезку", () => {
+    const result = calculate({
+      pipeLengthM: 10.2,
+      pipeSectionLengthM: 3,
+      inspectionWellCount: 1,
+      fittingCount: 4,
     });
 
-    it("объём = 12 * 0.2 * 3 = 7.2 м³", () => {
-      expect(result.totals.totalVolume).toBeCloseTo(7.2, 2);
+    const pipe = findMaterial(result, "Труба наружной канализации");
+    expect(pipe?.quantity).toBe(10.2);
+    expect(pipe?.purchaseQty).toBe(12);
+    expect(pipe?.packageInfo).toEqual({ count: 4, size: 3, packageUnit: "отрезк." });
+    expect(findMaterial(result, "Смотровой колодец")?.quantity).toBe(1);
+    expect(findMaterial(result, "Фасонные части")?.quantity).toBe(4);
+  });
+
+  it("не добавляет кольца, фитинги, щебень и геотекстиль автоматически", () => {
+    const result = calculate({
+      equivalentResidents: 4,
+      wastewaterPerResidentL: 200,
     });
 
-    it("инварианты", () => {
-      checkInvariants(result);
+    expect(result.materials).toHaveLength(0);
+    for (const fragment of ["КС 10-9", "Отвод", "Тройник", "Щебень", "Геотекстиль"]) {
+      expect(findMaterial(result, fragment)).toBeUndefined();
+    }
+  });
+
+  it("не выдаёт условия участка за проверенные по умолчанию", () => {
+    const result = calculate({
+      naturalTreatmentStatus: 0,
+      groundwaterStatus: 0,
     });
+
+    expect(result.warnings.some((warning) => warning.includes("Пригодность грунта"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("уровень грунтовых вод"))).toBe(true);
+  });
+
+  it("предупреждает о высоком УГВ и неподтверждённой естественной доочистке", () => {
+    const result = calculate({
+      naturalTreatmentStatus: 2,
+      groundwaterStatus: 2,
+    });
+
+    expect(result.warnings.some((warning) => warning.includes("инженерное решение"))).toBe(true);
+    expect(result.warnings.some((warning) => warning.includes("Высокий или сезонно высокий"))).toBe(true);
   });
 });

@@ -3,7 +3,7 @@
   "formula_version": "paint-canonical-v2",
   "input_schema": [
     { "key": "inputMode", "default_value": 1, "min": 0, "max": 1 },
-    { "key": "area", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
+    { "key": "area", "unit": "m2", "default_value": 40, "min": 1, "max": 1000 },
     { "key": "wallArea", "unit": "m2", "default_value": 40, "min": 0, "max": 1000 },
     { "key": "ceilingArea", "unit": "m2", "default_value": 20, "min": 0, "max": 1000 },
     { "key": "doorsWindows", "unit": "m2", "default_value": 0, "min": 0, "max": 200 },
@@ -103,8 +103,8 @@
       "label": "Грунтовка глубокого проникновения (10 л)",
       "category": "Подготовка",
       "unit": "л",
-      "rationale": "Грунтование основания перед окраской. Не нужна для ранее окрашенных поверхностей.",
-      "skip_when": { "type": "input_eq", "input_key": "surfacePrep", "value": 2 },
+      "rationale": "Грунтование новой необработанной поверхности перед окраской.",
+      "only_when": { "type": "input_eq", "input_key": "surfacePrep", "value": 1 },
       "formula": {
         "type": "area_consumption",
         "totals_key": "area",
