@@ -9,6 +9,7 @@ import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { RecentCalculators } from "@/components/home/HomeLazyWidgets";
+import ToolPreviews from "@/components/home/ToolPreviews";
 import {
   MASTEROK_RUSTORE_URL,
   SITE_DEFAULT_TITLE,
@@ -238,8 +239,10 @@ export default async function HomePage() {
           ))}
         </section>
 
+        <ToolPreviews />
+
         <section className="mt-14" aria-labelledby="tools-title">
-          <div className="mb-4 flex items-end justify-between gap-4">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 id="tools-title" className="text-xl font-bold text-slate-950 dark:text-white">Полезные инструменты</h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Раскладки, чек-листы и планирование ремонта</p>
