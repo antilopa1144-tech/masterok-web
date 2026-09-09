@@ -63,3 +63,6 @@ lighthouse-report.json
 tmp-mikhalych-test.json
 .tmp-sitemap-test/
 .tmp-shots/
+
+# Private analytics snapshots must not be published with source code
+/.local-analytics/
