@@ -7,6 +7,19 @@ import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(laminateDef.calculate.bind(laminateDef));
 
 describe("Калькулятор ламината", () => {
+  it.each([
+    [5, 4.2, 5],
+    [10, 2.1, 3],
+    [20, 1.05, 2],
+  ])("считает дробную потребность по выбранной фасовке подложки %s м²", (packSize, exactPackages, purchasePackages) => {
+    const result = calc({ inputMode: 1, area: 20, hasUnderlayment: 1, underlaymentRoll: packSize });
+    const underlay = findMaterial(result, "Подложка");
+    // 20 м² + существующие 5% = 21 м²; делим на фактическую фасовку.
+    expect(result.totals?.underlayArea).toBe(21);
+    expect(underlay?.quantity).toBeCloseTo(exactPackages, 6);
+    expect(underlay?.purchaseQty).toBe(purchasePackages);
+  });
+
   it("декларирует formulaVersion для canonical laminate", () => {
     expect(laminateDef.formulaVersion).toBe("laminate-canonical-v1");
   });

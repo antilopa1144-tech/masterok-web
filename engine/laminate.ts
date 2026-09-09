@@ -72,6 +72,7 @@ function buildMaterials(
   hasUnderlayment: boolean,
   underlaymentIsRoll: boolean,
   underlaymentArea: number,
+  underlaymentPackArea: number,
   underlaymentRolls: number,
   plinthLength: number,
   plinthPieces: number,
@@ -134,7 +135,7 @@ function buildMaterials(
   if (hasUnderlayment) {
     materials.splice(1, 0, {
       name: "Подложка под ламинат",
-      quantity: roundDisplay(underlaymentArea / spec.packaging_rules.underlayment_roll_area_m2, 6),
+      quantity: roundDisplay(underlaymentArea / underlaymentPackArea, 6),
       unit: underlaymentIsRoll ? "рулонов" : "упаковок",
       withReserve: underlaymentRolls,
       purchaseQty: underlaymentRolls,
@@ -267,6 +268,7 @@ export function computeCanonicalLaminate(
     hasUnderlayment,
     underlayType <= 3,
     underlaymentArea,
+    underlaymentRollArea,
     underlaymentRolls,
     plinthLength,
     plinthPieces,
