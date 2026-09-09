@@ -107,9 +107,9 @@ describe("laminate-layout", () => {
       const r = calculateLaminateLayout(3000, 4000, 1285, 192, "deck-third");
       expect(r.notes.some((n) => n.includes("зазор"))).toBe(true);
     });
-    it("палуба напоминает про смещение стыков 30 см", () => {
+    it("палуба напоминает проверить смещение по инструкции коллекции", () => {
       const r = calculateLaminateLayout(3000, 4000, 1285, 192, "deck-third");
-      expect(r.notes.some((n) => n.includes("30 см"))).toBe(true);
+      expect(r.notes.some((n) => n.includes("Минимальное смещение") && n.includes("инструкции конкретной коллекции"))).toBe(true);
     });
   });
 });

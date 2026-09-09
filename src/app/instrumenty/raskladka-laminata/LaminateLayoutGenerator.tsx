@@ -699,7 +699,7 @@ export default function LaminateLayoutGenerator() {
           <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
             <p className="text-3xl font-bold text-slate-950 dark:text-white">{result.purchaseBoards} шт</p>
             <p className="pb-1 text-xs text-slate-600 dark:text-slate-300">
-              {result.basePurchaseBoards} на схему + {result.purchaseReserveBoards} запас
+              {result.basePurchaseBoards} {mode === "herringbone" ? "по площади" : "на схему"} + {result.purchaseReserveBoards} запас
             </p>
           </div>
         </div>
@@ -715,7 +715,7 @@ export default function LaminateLayoutGenerator() {
 
         <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Перенесём в калькулятор: {surfaceAreaM2} м² пола — посчитаем упаковки ламината, подложку и плинтус с запасом.
+            Перенесём размеры комнаты ({surfaceAreaM2} м²) и схему укладки. В калькуляторе проверьте площадь пачки и запас: количество досок из раскладки не переносится, закупка считается отдельно по площади.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Link href={laminatCalcHref} onClick={() => trackToolRelatedClick("raskladka-laminata", "laminat-calculator")} className="btn-primary inline-flex text-sm no-underline">
