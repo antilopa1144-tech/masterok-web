@@ -222,6 +222,9 @@ function TotalInline({ name, value }: { name: string; value: number }) {
 // ── {CALCULATOR_UI_TEXT.scenariosTitle} ───────────────────────────────────────────────────
 
 export function ScenarioBlock({ result }: { result: CalculatorResult }) {
+  // Sewage scenarios compare system capacity, not material packaging.
+  // Its summary cards already show minimum/selected volume and any shortfall.
+  if (result.canonicalSpecId === "sewage") return null;
   if (!result.scenarios) return null;
 
   const rec = result.scenarios.REC;
