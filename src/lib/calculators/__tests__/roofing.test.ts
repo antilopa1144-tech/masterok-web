@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { roofingDef } from "../formulas/roofing";
-import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
+import { checkInvariants, findMaterial, withBasicAccuracy, requireScenarios } from "./_helpers";
 
 const calc = withBasicAccuracy(roofingDef.calculate.bind(roofingDef));
 
@@ -40,22 +40,22 @@ describe("Калькулятор кровли v3", () => {
   it("MIN/REC/MAX применяет только явный запас основного покрытия", () => {
     const result = calc(baseInputs);
 
-    expect(result.scenarios.MIN.exact_need).toBe(40);
-    expect(result.scenarios.MIN.purchase_quantity).toBe(40);
-    expect(result.scenarios.REC.exact_need).toBe(44);
-    expect(result.scenarios.REC.purchase_quantity).toBe(44);
-    expect(result.scenarios.MAX.exact_need).toBe(46);
-    expect(result.scenarios.MAX.purchase_quantity).toBe(46);
-    expect(result.scenarios.MAX.key_factors).toMatchObject({
+    expect(requireScenarios(result).MIN.exact_need).toBe(40);
+    expect(requireScenarios(result).MIN.purchase_quantity).toBe(40);
+    expect(requireScenarios(result).REC.exact_need).toBe(44);
+    expect(requireScenarios(result).REC.purchase_quantity).toBe(44);
+    expect(requireScenarios(result).MAX.exact_need).toBe(46);
+    expect(requireScenarios(result).MAX.purchase_quantity).toBe(46);
+    expect(requireScenarios(result).MAX.key_factors).toMatchObject({
       field_multiplier: 1,
       reserve_percent: 15,
     });
   });
 
   it("не применяет скрытые коэффициенты сложности или точности", () => {
-    const result = calc({ ...baseInputs, accuracyMode: "conservative" });
+    const result = roofingDef.calculate({ ...baseInputs, accuracyMode: "professional" as unknown as number });
 
-    expect(result.scenarios.REC.purchase_quantity).toBe(44);
+    expect(requireScenarios(result).REC.purchase_quantity).toBe(44);
     expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
     expect(result.accuracyExplanation?.notes.join(" ")).toContain("Скрытые коэффициенты");
   });
@@ -89,7 +89,7 @@ describe("Калькулятор кровли v3", () => {
     const result = calc({ ...baseInputs, primaryCoverageM2: 0 });
 
     expect(result.materials).toHaveLength(0);
-    expect(result.scenarios.REC.purchase_quantity).toBe(0);
+    expect(requireScenarios(result).REC.purchase_quantity).toBe(0);
     expect(result.warnings.some((warning) => warning.includes("полезную площадь"))).toBe(true);
   });
 
@@ -98,7 +98,7 @@ describe("Калькулятор кровли v3", () => {
     const covering = findMaterial(result, "Мягкая черепица");
 
     expect(covering?.packageInfo?.packageUnit).toBe("упаковок");
-    expect(result.scenarios.REC.buy_plan.unit).toBe("упаковок");
+    expect(requireScenarios(result).REC.buy_plan.unit).toBe("упаковок");
   });
 
   it("использует штучную покупную единицу для керамической черепицы", () => {

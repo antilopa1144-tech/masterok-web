@@ -47,7 +47,7 @@ describe("связка калькуляторов с таймером схват
   });
 
   it("ведёт каждый типовой пресет в существующий canonical калькулятор", () => {
-    const linkedPresets = new Set(CURING_TIMER_CALCULATOR_LINKS.map((link) => link.presetId));
+    const linkedPresets = new Set<string>(CURING_TIMER_CALCULATOR_LINKS.map((link) => link.presetId));
 
     for (const preset of CURING_PRESETS) {
       if (preset.id === "custom") continue;

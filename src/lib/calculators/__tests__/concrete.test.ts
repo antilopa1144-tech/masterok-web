@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { concreteDef } from "../formulas/concrete";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy, requireScenarios } from "./_helpers";
 
 const calc = withBasicAccuracy(concreteDef.calculate.bind(concreteDef));
 
@@ -105,8 +105,8 @@ describe("Калькулятор бетона", () => {
         reserve: 5,
         readyMixOrderStepM3: 0.5,
       });
-      expect(result.scenarios.REC.exact_need).toBe(5.25);
-      expect(result.scenarios.REC.purchase_quantity).toBe(5.5);
+      expect(requireScenarios(result).REC.exact_need).toBe(5.25);
+      expect(requireScenarios(result).REC.purchase_quantity).toBe(5.5);
     });
 
     it("объём < 0.5 м³ → предупреждение о малом объёме", () => {

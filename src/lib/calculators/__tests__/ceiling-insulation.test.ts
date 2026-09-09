@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ceilingInsulationDef } from "../formulas/ceiling-insulation";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy, requirePracticalNotes } from "./_helpers";
 
 const calc = withBasicAccuracy(ceilingInsulationDef.calculate.bind(ceilingInsulationDef));
 
@@ -26,8 +26,8 @@ describe("Утепление потолка", () => {
     expect(r.practicalNotes).toContain(
       "Толщину и состав перекрытия назначают по теплотехническому и влажностному расчёту; калькулятор считает количество по уже выбранной схеме.",
     );
-    expect(r.practicalNotes.some((note) => note.includes("Площади упаковок"))).toBe(true);
-    expect(r.practicalNotes.some((note) => note.includes("пароизоляционного слоя"))).toBe(true);
+    expect(requirePracticalNotes(r).some((note) => note.includes("Площади упаковок"))).toBe(true);
+    expect(requirePracticalNotes(r).some((note) => note.includes("пароизоляционного слоя"))).toBe(true);
   });
 
   describe("Минераловатные плиты (insulationType=0)", () => {

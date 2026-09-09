@@ -154,12 +154,12 @@ describe("Террасная доска — web purchase contract", () => {
     const basic = terraceDef.calculate({
       boardReservePercent: 10,
       boardsPerPack: 6,
-      accuracyMode: "basic",
+      accuracyMode: "basic" as unknown as number,
     });
     const professional = terraceDef.calculate({
       boardReservePercent: 10,
       boardsPerPack: 6,
-      accuracyMode: "professional",
+      accuracyMode: "professional" as unknown as number,
     });
 
     for (const result of [basic, professional]) {

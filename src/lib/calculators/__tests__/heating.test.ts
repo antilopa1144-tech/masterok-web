@@ -139,7 +139,7 @@ describe("Радиаторное отопление v4", () => {
       designReservePercent: 0,
     };
     const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
-      heatingDef.calculate({ ...inputs, accuracyMode }),
+      heatingDef.calculate({ ...inputs, accuracyMode: accuracyMode as unknown as number }),
     );
 
     for (const result of results) {

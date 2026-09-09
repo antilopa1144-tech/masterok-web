@@ -14,6 +14,18 @@ export function findMaterial(result: CalculatorResult, namePart: string) {
   return result.materials.find((m) => m.name.includes(namePart));
 }
 
+/** Required in tests that explicitly verify scenario outputs. */
+export function requireScenarios(result: CalculatorResult) {
+  if (!result.scenarios) throw new Error("Expected calculator scenarios");
+  return result.scenarios;
+}
+
+/** Fail explicitly instead of silently skipping required practical guidance. */
+export function requirePracticalNotes(result: CalculatorResult) {
+  if (!result.practicalNotes) throw new Error("Expected practical notes");
+  return result.practicalNotes;
+}
+
 /** Assert basic invariants: materials non-empty, purchaseQty > 0, quantity >= 0.
  * Note: purchaseQty may be < 1 for bulk materials (e.g., 0.7 м³ sand) — that's valid.
  * Note: withReserve and quantity may be in different units so we don't compare them. */

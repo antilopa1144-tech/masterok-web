@@ -37,11 +37,11 @@ interface CalculatorEntry {
 const calculators: CalculatorEntry[] = [
   {
     name: "concrete (бетон)",
-    compute: (inputs) => computeCanonicalConcrete(concreteSpec, inputs as any, factorTable),
+    compute: (inputs) => computeCanonicalConcrete(concreteSpec, inputs as any),
   },
   {
     name: "brick (кирпич)",
-    compute: (inputs) => computeCanonicalBrick(brickSpec, inputs as any, factorTable),
+    compute: (inputs) => computeCanonicalBrick(brickSpec, inputs as any),
   },
   {
     name: "tile (плитка)",

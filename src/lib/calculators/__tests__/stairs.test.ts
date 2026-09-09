@@ -161,7 +161,7 @@ describe("Калькулятор прямой лестницы", () => {
   });
 
   it("не применяет скрытые коэффициенты точности", () => {
-    const result = calc({ accuracyMode: "PRO" });
+    const result = stairsDef.calculate({ accuracyMode: "professional" as unknown as number });
 
     expect(result.accuracyExplanation?.combinedMultiplier).toBe(1);
     expect(result.accuracyExplanation?.appliedModifiers).toEqual([]);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { wallPanelsDef } from "../formulas/wall-panels";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy, requirePracticalNotes } from "./_helpers";
 
 const calc = withBasicAccuracy(wallPanelsDef.calculate.bind(wallPanelsDef));
 
@@ -25,11 +25,11 @@ describe("Калькулятор панелей для стен", () => {
     const glueResult = calc({ area: 20, panelType: 0, mountMethod: 0, height: 2.7 });
     const frameResult = calc({ area: 20, panelType: 1, mountMethod: 1, height: 3.2 });
 
-    expect(glueResult.practicalNotes[0]).toContain("эквивалентного квадрата");
-    expect(glueResult.practicalNotes.some((note) => note.includes("1 флакон на 4 м²"))).toBe(true);
-    expect(glueResult.practicalNotes.some((note) => note.includes("Обрешётку проверяйте"))).toBe(false);
-    expect(frameResult.practicalNotes.some((note) => note.includes("введённой высоте 3,2 м"))).toBe(true);
-    expect(frameResult.practicalNotes.some((note) => note.includes("Обрешётку проверяйте"))).toBe(true);
+    expect(requirePracticalNotes(glueResult)[0]).toContain("эквивалентного квадрата");
+    expect(requirePracticalNotes(glueResult).some((note) => note.includes("1 флакон на 4 м²"))).toBe(true);
+    expect(requirePracticalNotes(glueResult).some((note) => note.includes("Обрешётку проверяйте"))).toBe(false);
+    expect(requirePracticalNotes(frameResult).some((note) => note.includes("введённой высоте 3,2 м"))).toBe(true);
+    expect(requirePracticalNotes(frameResult).some((note) => note.includes("Обрешётку проверяйте"))).toBe(true);
   });
 
   it("изменяет ведомость обрешётки при изменении введённой высоты", () => {

@@ -200,7 +200,7 @@ describe("Гидроизоляция", () => {
       passportConsumptionKgM2: 1.2,
       allowancePercent: 5,
       packageWeightKg: 5,
-      accuracyMode: "professional",
+      accuracyMode: "professional" as unknown as number,
     });
 
     expect(result.scenarios?.MIN).toEqual(result.scenarios?.REC);

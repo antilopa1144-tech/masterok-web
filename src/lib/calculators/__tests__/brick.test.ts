@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { brickDef } from "../formulas/brick";
-import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import { findMaterial, checkInvariants, withBasicAccuracy, requireScenarios } from "./_helpers";
 
 const calc = withBasicAccuracy(brickDef.calculate.bind(brickDef));
 
@@ -128,14 +128,14 @@ describe("Калькулятор кирпича", () => {
     it("не добавляет второй скрытый запас режимами точности", () => {
       const inputs = { wallWidth: 5, wallHeight: 3, brickType: 0, wallThickness: 1, wasteMode: 0 };
       const results = ["basic", "realistic", "professional"].map((accuracyMode) =>
-        brickDef.calculate({ ...inputs, accuracyMode }),
+        brickDef.calculate({ ...inputs, accuracyMode: accuracyMode as unknown as number }),
       );
 
       for (const r of results) {
         const brick = findMaterial(r, "Кирпич");
-        expect(r.scenarios.MIN.exact_need).toBe(1530);
-        expect(r.scenarios.REC.exact_need).toBeCloseTo(1606.5, 5);
-        expect(r.scenarios.MAX.exact_need).toBe(1683);
+        expect(requireScenarios(r).MIN.exact_need).toBe(1530);
+        expect(requireScenarios(r).REC.exact_need).toBeCloseTo(1606.5, 5);
+        expect(requireScenarios(r).MAX.exact_need).toBe(1683);
         expect(brick?.quantity).toBe(1530);
         expect(brick?.withReserve).toBeCloseTo(1606.5, 5);
         expect(brick?.purchaseQty).toBe(1607);
@@ -147,10 +147,10 @@ describe("Калькулятор кирпича", () => {
       const minimal = calc({ wallWidth: 5, wallHeight: 3, wasteMode: 2 });
       const reinforced = calc({ wallWidth: 5, wallHeight: 3, wasteMode: 1 });
 
-      expect(minimal.scenarios.REC.exact_need).toBeCloseTo(1530 * 1.03, 5);
-      expect(minimal.scenarios.MAX.exact_need).toBe(1683);
-      expect(reinforced.scenarios.REC.exact_need).toBe(1683);
-      expect(reinforced.scenarios.MAX.exact_need).toBe(1683);
+      expect(requireScenarios(minimal).REC.exact_need).toBeCloseTo(1530 * 1.03, 5);
+      expect(requireScenarios(minimal).MAX.exact_need).toBe(1683);
+      expect(requireScenarios(reinforced).REC.exact_need).toBe(1683);
+      expect(requireScenarios(reinforced).MAX.exact_need).toBe(1683);
     });
   });
 

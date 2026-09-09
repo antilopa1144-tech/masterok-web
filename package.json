@@ -9,6 +9,7 @@
     "indexnow:manual": "node scripts/ping-indexnow.js",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:watch": "vitest",
     "sync:specs": "npx tsx scripts/sync-specs-to-dart.ts",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { rebarDef } from "../formulas/rebar";
-import { checkInvariants, findMaterial } from "./_helpers";
+import { checkInvariants, findMaterial, requireScenarios } from "./_helpers";
 
 const calc = (inputs: Record<string, number> = {}) =>
   rebarDef.calculate({ accuracyMode: "basic", ...inputs } as any);
@@ -117,13 +117,13 @@ describe("Калькулятор арматуры v2", () => {
   it("MIN/REC/MAX используют только явную политику запаса", () => {
     const result = calc({ reservePercent: 10 });
 
-    expect(result.scenarios.MIN.exact_need).toBe(1617.6);
-    expect(result.scenarios.MIN.purchase_quantity).toBe(1626.3);
-    expect(result.scenarios.REC.exact_need).toBe(1779.36);
-    expect(result.scenarios.REC.purchase_quantity).toBe(1790.1);
-    expect(result.scenarios.MAX.exact_need).toBe(1860.24);
-    expect(result.scenarios.MAX.purchase_quantity).toBe(1860.3);
-    expect(result.scenarios.REC.key_factors.reserve_percent).toBe(10);
+    expect(requireScenarios(result).MIN.exact_need).toBe(1617.6);
+    expect(requireScenarios(result).MIN.purchase_quantity).toBe(1626.3);
+    expect(requireScenarios(result).REC.exact_need).toBe(1779.36);
+    expect(requireScenarios(result).REC.purchase_quantity).toBe(1790.1);
+    expect(requireScenarios(result).MAX.exact_need).toBe(1860.24);
+    expect(requireScenarios(result).MAX.purchase_quantity).toBe(1860.3);
+    expect(requireScenarios(result).REC.key_factors.reserve_percent).toBe(10);
   });
 
   it("режим точности не добавляет скрытый множитель", () => {

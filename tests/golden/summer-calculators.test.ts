@@ -15,9 +15,9 @@ import { septicRingsDef } from "../../src/lib/calculators/formulas/septic-rings"
 import { greenhouseDef } from "../../src/lib/calculators/formulas/greenhouse";
 import { lawnDef } from "../../src/lib/calculators/formulas/lawn";
 
-const calc = <T extends { calculate: (i: Record<string, number>) => unknown }>(def: T) =>
+const calc = (def: { calculate: import("../../src/lib/calculators/types").CalculateFn }) =>
   (inputs: Record<string, number>) =>
-    (def.calculate as (i: Record<string, number>) => Record<string, unknown>)({
+    def.calculate({
       ...inputs,
       accuracyMode: "basic" as unknown as number,
     });
