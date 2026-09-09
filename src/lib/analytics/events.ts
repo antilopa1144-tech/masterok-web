@@ -52,7 +52,7 @@ export interface AnalyticsEventParams {
     entry_count_bucket: ProjectEntryCountBucket;
   };
   project_related_click: { target: string };
-  project_save_calculation: { calculator: string; created_project: boolean };
+  project_save_calculation: { calculator: string; created_project: boolean; calculator_slug?: string };
   rustore_click: { placement: string };
   site_search_empty: SearchQueryMetrics;
   site_search_select: SearchQueryMetrics & {

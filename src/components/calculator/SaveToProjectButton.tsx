@@ -77,7 +77,7 @@ export default function SaveToProjectButton({
       })),
       ts: Date.now(),
     });
-    trackProjectSave(calcId, createdProject);
+    trackProjectSave(calcId, createdProject, slug);
     setSaved(projectId);
   };
 

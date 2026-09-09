@@ -141,10 +141,12 @@ export function trackExport(calculatorName: string, format: "pdf" | "excel"): vo
   trackEvent("calculator_export", { calculator: calculatorName, format });
 }
 
-export function trackProjectSave(calculatorId: string, createdProject: boolean): void {
+export function trackProjectSave(calculatorId: string, createdProject: boolean, calculatorSlug?: string): void {
   trackEvent("project_save_calculation", {
     calculator: calculatorId,
     created_project: createdProject,
+    // Keep the historical ID contract; the slug links saves to calculator events.
+    ...(calculatorSlug ? { calculator_slug: calculatorSlug } : {}),
   });
 }
 

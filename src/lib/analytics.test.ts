@@ -9,6 +9,7 @@ import {
   trackProjectExport,
   trackProjectOpen,
   trackProjectRelatedClick,
+  trackProjectSave,
   trackSearchNoResults,
   trackSearchSelection,
   trackToolExport,
@@ -192,6 +193,20 @@ describe("tool analytics", () => {
       "calculator_related_click",
       { calculator: "laminat", target: "raskladka-laminata" },
     );
+  });
+
+  it("сохраняет прежний ID и добавляет slug для связи сохранения с расчётом", () => {
+    trackProjectSave("laminate", true, "laminat");
+    const params = { calculator: "laminate", created_project: true, calculator_slug: "laminat" };
+    expect(ym).toHaveBeenCalledWith(YANDEX_METRIKA_COUNTER_ID, "reachGoal", "project_save_calculation", params);
+    expect(gtag).toHaveBeenCalledWith("event", "project_save_calculation", params);
+  });
+
+  it("сохраняет контракт старого вызова без slug", () => {
+    trackProjectSave("paint", false);
+    expect(gtag).toHaveBeenCalledWith("event", "project_save_calculation", {
+      calculator: "paint", created_project: false,
+    });
   });
 
   it("отправляет воронку проектов только с агрегированными параметрами", () => {
