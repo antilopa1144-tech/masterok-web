@@ -326,7 +326,7 @@ export function ResultBlock({
                   <p className="mt-0.5 text-3xl font-extrabold leading-none tabular-nums text-accent-700 dark:text-accent-400">
                     {primaryDisplay} <span className="text-base font-bold">{primaryUnit}</span>
                   </p>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{primaryMaterial.name} · {primaryPurchaseHint}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{primaryMaterial.name} · {primaryPurchaseHint}</p>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 divide-x divide-slate-200 rounded-xl border border-slate-200 py-3 dark:divide-slate-700 dark:border-slate-700">

@@ -341,8 +341,10 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     const element = resultRef.current;
     const frame = requestAnimationFrame(() => {
       const top = element.getBoundingClientRect().top;
-      if (window.innerWidth >= 1280 || (top >= 0 && top < window.innerHeight * 0.35)) return;
-      window.scrollTo({ top: top + window.scrollY - 80, behavior: "smooth" });
+      // Share the CSS offset with manual anchor navigation, including the mobile tabs.
+      const offset = parseFloat(getComputedStyle(element).scrollMarginTop) || 0;
+      if (window.innerWidth >= 1280 || (top >= offset && top < window.innerHeight * 0.35)) return;
+      window.scrollTo({ top: top + window.scrollY - offset, behavior: "smooth" });
     });
     return () => cancelAnimationFrame(frame);
   }, [calcNonce]);
@@ -597,7 +599,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
       )}
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
-        <section ref={formRef} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-24 sm:p-6 dark:border-slate-700 dark:bg-slate-900" data-print-hide aria-labelledby="calculator-parameters-title">
+        <section ref={formRef} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-36 sm:scroll-mt-24 sm:p-6 dark:border-slate-700 dark:bg-slate-900" data-print-hide aria-labelledby="calculator-parameters-title">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <h2 id="calculator-parameters-title" className="mr-auto text-xl font-bold text-slate-950 dark:text-white">Параметры расчёта</h2>
             <div className="ml-auto flex shrink-0 items-center gap-3">
@@ -967,7 +969,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
           )}
         </section>
 
-        <section ref={resultRef} className="scroll-mt-24" aria-label="Результат расчёта">
+        <section ref={resultRef} className="scroll-mt-36 sm:scroll-mt-24" aria-label="Результат расчёта">
           {result ? (
             <ResultBlock
               result={result}
@@ -981,7 +983,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
             <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm xl:min-h-[36rem] dark:border-slate-700 dark:bg-slate-900">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-50 text-accent-700 dark:bg-accent-900/25 dark:text-accent-300"><CategoryIcon icon="calculator" size={27} color="currentColor" /></span>
               <h2 className="mt-4 text-xl font-bold text-slate-950 dark:text-white">Здесь появится результат</h2>
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500 dark:text-slate-400">Заполните параметры слева и нажмите «Рассчитать». Покажем точную потребность, запас и количество к покупке.</p>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600 dark:text-slate-300">Заполните параметры и нажмите «Рассчитать». Покажем точную потребность, запас и количество к покупке.</p>
             </div>
           )}
         </section>

@@ -22,6 +22,7 @@
   --color-accent-700: #c2410c;
   --color-accent-800: #9a3412;
   --color-accent-900: #7c2d12;
+  --color-accent-950: #431407;
 
   /* Серая палитра — slate */
   --color-slate-50: #f8fafc;
@@ -101,6 +102,7 @@ html[data-theme="bronze"] {
   --color-accent-700: #8a3e24;
   --color-accent-800: #70331e;
   --color-accent-900: #5c2b1a;
+  --color-accent-950: #32170e;
   --color-slate-50: #faf9f5;
   --color-slate-100: #f0eee6;
   --color-slate-200: #e2dfd3;
@@ -131,6 +133,7 @@ html[data-theme="ocean"] {
   --color-accent-700: #0369a1;
   --color-accent-800: #075985;
   --color-accent-900: #0c4a6e;
+  --color-accent-950: #082f49;
   --color-slate-50: #f4f8fc;
   --color-slate-100: #e8eff7;
   --color-slate-200: #d2dfee;
