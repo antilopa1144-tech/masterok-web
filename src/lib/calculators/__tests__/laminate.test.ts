@@ -18,6 +18,10 @@ describe("Калькулятор ламината", () => {
     expect(result.totals?.underlayArea).toBe(21);
     expect(underlay?.quantity).toBeCloseTo(exactPackages, 6);
     expect(underlay?.purchaseQty).toBe(purchasePackages);
+    expect(underlay?.subtitle).toContain(`В одной упаковке: ${packSize} м²`);
+    expect(underlay?.subtitle).toContain("Потребность с запасом: 21 м²");
+    expect(underlay?.subtitle).toContain(`Всего к покупке: ${purchasePackages * packSize} м²`);
+    expect(underlay?.subtitle).toContain(`Остаток сверх потребности: ${purchasePackages * packSize - 21} м²`);
   });
 
   it("декларирует formulaVersion для canonical laminate", () => {

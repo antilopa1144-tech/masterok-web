@@ -81,9 +81,13 @@ function buildMaterials(
   wedges: number,
   doorThresholds: number,
 ): CanonicalMaterialResult[] {
+  const areaText = (value: number) => roundDisplay(value, 3).toLocaleString("ru-RU");
+  const purchaseExplanation = (size: number, need: number, purchase: number) =>
+    `В одной упаковке: ${areaText(size)} м². Потребность с запасом: ${areaText(need)} м². Всего к покупке: ${areaText(purchase)} м². Остаток сверх потребности: ${areaText(Math.max(0, purchase - need))} м².`;
   const materials: CanonicalMaterialResult[] = [
     {
       name: `Ламинат (${roundDisplay(packArea, 3)} м² в упаковке)`,
+      subtitle: purchaseExplanation(packArea, recExactNeedArea, recPurchaseArea),
       quantity: roundDisplay(recExactNeedArea / packArea, 6),
       unit: "упак.",
       withReserve: packsNeeded,
@@ -135,6 +139,7 @@ function buildMaterials(
   if (hasUnderlayment) {
     materials.splice(1, 0, {
       name: "Подложка под ламинат",
+      subtitle: purchaseExplanation(underlaymentPackArea, underlaymentArea, underlaymentRolls * underlaymentPackArea),
       quantity: roundDisplay(underlaymentArea / underlaymentPackArea, 6),
       unit: underlaymentIsRoll ? "рулонов" : "упаковок",
       withReserve: underlaymentRolls,
