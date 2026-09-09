@@ -3,10 +3,56 @@ import laminateFixture from "../../../../tests/fixtures/laminate-canonical-parit
 import { laminateDef } from "../formulas/laminate";
 import { runCanonicalParitySuite } from "./canonical-parity";
 import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
+import { underlayCutMaterial } from "../../../../engine/underlay-cut";
+import { shouldHideField } from "../field-options";
+import { getCalculateFn } from "../registry";
 
 const calc = withBasicAccuracy(laminateDef.calculate.bind(laminateDef));
 
 describe("Калькулятор ламината", () => {
+  it("публичный registry сохраняет метраж и режим покупки", async () => {
+    const calculate = (await getCalculateFn("laminat"))!;
+    const material = findMaterial(calculate({ underlaySaleMode: 1, underlayWidth: 1.2 }), "Подложка")!;
+    expect(material.unit).toBe("пог. м");
+    expect(material.purchaseQty).toBe(18);
+  });
+
+  it("скрывает неиспользуемые поля, включая сохранённый режим при переходе на плиты", () => {
+    const field = (key: string) => laminateDef.fields.find((f) => f.key === key)!;
+    expect(shouldHideField(field("underlaymentRoll"), { hasUnderlayment: 1, underlaySaleMode: 1, underlayType: 3 })).toBe(true);
+    expect(shouldHideField(field("underlaymentRoll"), { hasUnderlayment: 1, underlaySaleMode: 1, underlayType: 4 })).toBe(false);
+    expect(shouldHideField(field("underlayWidth"), { hasUnderlayment: 0, underlaySaleMode: 1, underlayType: 3 })).toBe(true);
+  });
+
+  it("обрабатывает границы и дробную кратность без лишнего шага продажи", () => {
+    expect(underlayCutMaterial(0, 1, 1).purchaseQty).toBe(0);
+    expect(underlayCutMaterial(0.3, 1, 0.1).purchaseQty).toBe(0.3);
+    expect(underlayCutMaterial(0.30001, 1, 0.1).purchaseQty).toBe(0.4);
+    expect(underlayCutMaterial(21, NaN, Infinity).purchaseQty).toBe(21);
+    expect(underlayCutMaterial(21, 0, -1).purchaseQty).toBe(210);
+    expect(underlayCutMaterial(10000, 5, 10).purchaseQty).toBe(2000);
+  });
+
+  it.each([[1, 1, 21], [1.2, 1, 18], [1.2, 0.1, 17.5], [1.5, 0.5, 14]])(
+    "покупает подложку на отрез: ширина %s, шаг %s → %s пог. м",
+    (width, step, purchase) => {
+      const result = calc({ inputMode: 1, area: 20, hasUnderlayment: 1, underlayType: 2,
+        underlaySaleMode: 1, underlayWidth: width, underlaySaleStep: step });
+      const material = findMaterial(result, "Подложка")!;
+      expect(material.unit).toBe("пог. м");
+      expect(material.quantity).toBeCloseTo(21 / width, 6);
+      expect(material.purchaseQty).toBe(purchase);
+      expect(material.subtitle).toContain("Потребность с запасом: 21 м²");
+      expect(result.totals.underlaymentRolls).toBe(0);
+      expect(result.practicalNotes?.join(" ")).toContain("не схема раскроя");
+    },
+  );
+
+  it("игнорирует режим отреза для плит и выключенной подложки", () => {
+    expect(findMaterial(calc({ underlayType: 4, underlaySaleMode: 1 }), "Подложка")?.unit).toBe("упаковок");
+    expect(findMaterial(calc({ hasUnderlayment: 0, underlaySaleMode: 1 }), "Подложка")).toBeUndefined();
+  });
+
   it.each([
     [5, 4.2, 5],
     [10, 2.1, 3],

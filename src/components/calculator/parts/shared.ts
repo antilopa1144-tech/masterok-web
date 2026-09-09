@@ -32,6 +32,8 @@ export function isDiscreteUnit(unit: string): boolean {
 
 export function formatMaterialQty(value: number, unit: string): string {
   if (value === undefined || value === null || isNaN(value)) return "—";
+  // Метраж на отрез сохраняет кратность продавца, в том числе шаг 0,25 м.
+  if (unit === "пог. м") return value.toLocaleString("ru-RU", { maximumFractionDigits: 6 });
   // Целые единицы (штуки, мешки, рулоны) — всегда округляем вверх
   if (INTEGER_UNITS.has(unit)) {
     return Math.ceil(value).toLocaleString("ru-RU");

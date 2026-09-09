@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import type { CalculatorResult, CalculatorScenario } from "@/lib/calculators/types";
 import { MaterialList, ScenarioBlock } from "./ResultsDisplay";
 import { laminateDef } from "@/lib/calculators/formulas/laminate";
+import { formatMaterialQty } from "./shared";
 
 vi.stubGlobal("React", React);
 afterAll(() => vi.unstubAllGlobals());
@@ -19,6 +20,18 @@ const result: CalculatorResult = {
 };
 
 describe("ScenarioBlock presentation", () => {
+  it("preserves a seller's quarter-metre increment", () => {
+    expect(formatMaterialQty(17.75, "пог. м")).toBe("17,75");
+  });
+  it("shows cut underlay in linear metres with coverage and leftover", () => {
+    const calculated = laminateDef.calculate({ inputMode: 1, area: 20, underlaySaleMode: 1, underlayWidth: 1.2, underlaySaleStep: 1 });
+    const materials = calculated.materials.filter((m) => m.category === "Подложка");
+    const text = renderToStaticMarkup(React.createElement(MaterialList, { materials })).replace(/<[^>]*>/g, "");
+    expect(text).toContain("18 пог. м");
+    expect(text).toContain("21,6 м²");
+    expect(text).toContain("0,6 м²");
+    expect(text).not.toContain("без запаса");
+  });
   it("shows underlay purchase in whole rolls and need in square metres, not fractional rolls", () => {
     const calculated = laminateDef.calculate({ inputMode: 1, area: 20, underlaymentRoll: 5 });
     const materials = calculated.materials.filter((m) => m.name === "Подложка под ламинат");

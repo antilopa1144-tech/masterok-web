@@ -3,6 +3,7 @@ import { withSiteMetaTitle } from "../meta";
 import factorTables from "../../../../configs/factor-tables.json";
 import laminateCanonicalSpecJson from "../../../../configs/calculators/laminate-canonical.v1.json";
 import { computeCanonicalLaminate } from "../../../../engine/laminate";
+import { UNDERLAY_CUT } from "../../../../engine/underlay-cut";
 import type { LaminateCanonicalSpec } from "../../../../engine/canonical";
 import { buildManufacturerField, getManufacturerByIndex, getSpec } from "../manufacturerField";
 
@@ -151,6 +152,7 @@ export const laminateDef: CalculatorDefinition = {
       defaultValue: 10,
       hint: "Укажите полезную площадь рулона, гармошки или пачки выбранной подложки.",
       hideIf: { key: "hasUnderlayment", op: "eq", value: 0 },
+      hideIfAll: [{ key: "underlaySaleMode", op: "eq", value: 1 }, { key: "underlayType", op: "lte", value: 3 }],
     },
     {
       key: "underlayType",
@@ -165,6 +167,32 @@ export const laminateDef: CalculatorDefinition = {
       ],
       hint: "Для двух рулонных вариантов калькулятор добавляет один справочный рулон скотча на каждые 40 м². Для плит и гармошки скотч не добавляется — сверяйте способ соединения с инструкцией.",
       hideIf: { key: "hasUnderlayment", op: "eq", value: 0 },
+    },
+    {
+      key: "underlaySaleMode",
+      label: "Как продаётся подложка",
+      type: "select",
+      defaultValue: 0,
+      options: [{ value: 0, label: "Целыми рулонами" }, { value: 1, label: "На отрез — погонными метрами" }],
+      hideIf: [{ key: "hasUnderlayment", op: "eq", value: 0 }, { key: "underlayType", op: "gt", value: 3 }],
+    },
+    {
+      key: "underlayWidth",
+      label: "Ширина рулона подложки",
+      type: "number",
+      unit: "м",
+      ...UNDERLAY_CUT.width,
+      hint: "Укажите ширину выбранного рулона. Расчёт по площади не заменяет раскрой полос.",
+      hideIf: [{ key: "hasUnderlayment", op: "eq", value: 0 }, { key: "underlayType", op: "gt", value: 3 }, { key: "underlaySaleMode", op: "ne", value: 1 }],
+    },
+    {
+      key: "underlaySaleStep",
+      label: "Шаг продажи подложки",
+      type: "number",
+      unit: "пог. м",
+      ...UNDERLAY_CUT.saleStep,
+      hint: "Уточните у продавца: например, 0,1 м или 1 м. Длина покупки округляется вверх до этого шага.",
+      hideIf: [{ key: "hasUnderlayment", op: "eq", value: 0 }, { key: "underlayType", op: "gt", value: 3 }, { key: "underlaySaleMode", op: "ne", value: 1 }],
     },
     {
       key: "doorThresholds",
@@ -217,6 +245,9 @@ export const laminateDef: CalculatorDefinition = {
         reservePercent: inputs.reservePercent,
         hasUnderlayment: inputs.hasUnderlayment,
         underlaymentRollArea: inputs.underlaymentRoll,
+        underlaySaleMode: inputs.underlaySaleMode,
+        underlayWidth: inputs.underlayWidth,
+        underlaySaleStep: inputs.underlaySaleStep,
         doorThresholds: inputs.doorThresholds,
         underlayType: inputs.underlayType,
         floorBase: inputs.floorBase,

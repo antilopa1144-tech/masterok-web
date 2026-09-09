@@ -11,6 +11,7 @@ import { roundDisplay } from "./units";
 import { type AccuracyMode, DEFAULT_ACCURACY_MODE, applyAccuracyMode, getPrimaryMultiplier } from "./accuracy";
 import { getInputDefault } from "./spec-helpers";
 import { evaluateCompanionMaterials } from "./companion-materials";
+import { underlayCutMaterial } from "./underlay-cut";
 
 interface LaminateInputs {
   inputMode?: number;
@@ -23,6 +24,9 @@ interface LaminateInputs {
   reservePercent?: number;
   hasUnderlayment?: number;
   underlaymentRollArea?: number;
+  underlaySaleMode?: number;
+  underlayWidth?: number;
+  underlaySaleStep?: number;
   doorThresholds?: number;
   underlayType?: number;
   laminateClass?: number;
@@ -212,7 +216,8 @@ export function computeCanonicalLaminate(
   const underlaymentRollArea = Math.max(5, Math.min(20, inputs.underlaymentRollArea ?? getInputDefault(spec, "underlaymentRollArea", spec.packaging_rules.underlayment_roll_area_m2)));
   const underlayType = Math.max(2, Math.min(5, Math.round(inputs.underlayType ?? getInputDefault(spec, "underlayType", 3))));
   const underlaymentArea = hasUnderlayment ? roundDisplay(geometry.area * (1 + spec.material_rules.underlayment_overlap_percent / 100), 6) : 0;
-  const underlaymentRolls = hasUnderlayment ? Math.ceil(underlaymentArea / underlaymentRollArea) : 0;
+  const underlayCut = hasUnderlayment && underlayType <= 3 && inputs.underlaySaleMode === 1;
+  const underlaymentRolls = hasUnderlayment && !underlayCut ? Math.ceil(underlaymentArea / underlaymentRollArea) : 0;
   const doorThresholds = Math.max(0, Math.round(inputs.doorThresholds ?? getInputDefault(spec, "doorThresholds", 1)));
   const plinthLengthRaw = Math.max(0, geometry.perimeter - doorThresholds * spec.material_rules.default_door_opening_width_m);
   const plinthPieces = Math.ceil(plinthLengthRaw / spec.packaging_rules.plinth_piece_length_m);
@@ -257,7 +262,9 @@ export function computeCanonicalLaminate(
   );
   if (hasUnderlayment) {
     practicalNotes.push(
-      `Подложка посчитана с плановым добавлением ${spec.material_rules.underlayment_overlap_percent}% и округлением по введённой площади упаковки. Способ стыковки берите из инструкции продукта`,
+      underlayCut
+        ? `Подложка на отрез: площадь с плановым добавлением ${spec.material_rules.underlayment_overlap_percent}% разделена на ширину и округлена вверх до шага продажи. Это оценка по площади, не схема раскроя: проверьте длины полос, стыки и пригодность обрезков по инструкции продукта.`
+        : `Подложка посчитана с плановым добавлением ${spec.material_rules.underlayment_overlap_percent}% и округлением по введённой площади упаковки. Способ стыковки берите из инструкции продукта`,
     );
   }
   if (layoutProfile.id === 4) {
@@ -282,6 +289,10 @@ export function computeCanonicalLaminate(
     wedges,
     doorThresholds,
   );
+
+  if (underlayCut) {
+    materials[1] = underlayCutMaterial(underlaymentArea, inputs.underlayWidth, inputs.underlaySaleStep);
+  }
 
   // Companion materials: внешние углы, заглушки плинтуса, условная пароизоляция
   // (только для бетонного основания), скотч стыков подложки.
