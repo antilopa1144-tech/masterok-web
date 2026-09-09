@@ -64,6 +64,7 @@ export const KEY_FACTOR_LABELS: Record<string, string> = {
   overlap_factor: "Нахлёст",
   cutting_factor: "Подрезка",
   reserve_factor: "Запас",
+  reserve_percent: "Явный запас",
   packaging_factor: "Упаковка",
   round_up: "Округление",
 };

@@ -237,27 +237,27 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
   const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
 
   return (
-    <div className="card p-5">
+    <section aria-label="Потребность и покупка" className="min-w-0">
       <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
         {CALCULATOR_UI_TEXT.scenariosTitle}
       </h4>
 
       {/* Рекомендуемый — крупно */}
       <div className="bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4 mb-3">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-semibold text-accent-700 dark:text-accent-400 mb-1">{CALCULATOR_UI_TEXT.scenarioLabels.recommended}</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {formatNumber(rec.purchase_quantity)}{" "}
               <span className="text-base font-normal text-slate-500 dark:text-slate-400">{recUnit}</span>
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="min-w-0 text-left sm:text-right">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)} {translatedUnit}
             </p>
             {rec.leftover > 0 && (
-              <p className="text-xs text-slate-400 dark:text-slate-400">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)} {translatedUnit}
               </p>
             )}
@@ -268,7 +268,7 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
               if (isSinglePieceStep) return null;
               if (isBulkRounding) {
                 return (
-                  <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                     {CALCULATOR_UI_TEXT.scenarioLabels.rounding}: {formatNumber(rec.buy_plan.package_size)} {displayUnit(bpUnit)}
                   </p>
                 );
@@ -281,8 +281,8 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
                 : pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit);
               const sizeLabel = isRawUnit ? displayUnit(bpUnit) : "";
               return (
-                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
-                  {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size}{sizeLabel ? ` ${sizeLabel}` : ""}
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                  {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size.toLocaleString("ru-RU", { maximumFractionDigits: 10 })}{sizeLabel ? ` ${sizeLabel}` : ""}
                 </p>
               );
             })()}
@@ -292,7 +292,7 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
 
       {/* Диапазон MIN — MAX, компактно */}
       {min && max && (
-        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-400 dark:bg-green-500 shrink-0" />
             <span>{CALCULATOR_UI_TEXT.scenarioLabels.minimum}: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatNumber(min.purchase_quantity)}</span> {minUnit}</span>
@@ -304,7 +304,7 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

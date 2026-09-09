@@ -326,7 +326,7 @@ export function ResultBlock({
                   <p className="mt-0.5 text-3xl font-extrabold leading-none tabular-nums text-accent-700 dark:text-accent-400">
                     {primaryDisplay} <span className="text-base font-bold">{primaryUnit}</span>
                   </p>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{primaryMaterial.name} · {primaryPurchaseHint}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{primaryMaterial.name}{!result.scenarios?.REC && ` · ${primaryPurchaseHint}`}</p>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 divide-x divide-slate-200 rounded-xl border border-slate-200 py-3 dark:divide-slate-700 dark:border-slate-700">
@@ -343,6 +343,12 @@ export function ResultBlock({
           ) : null}
         </div>
 
+
+        {result.scenarios?.REC && (
+          <div className="border-t border-slate-100 p-4 sm:p-5 dark:border-slate-700">
+            <ScenarioBlock result={result} />
+          </div>
+        )}
 
         {reviewSlot && (
           <div className="border-t border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-700">{reviewSlot}</div>
@@ -436,11 +442,10 @@ export function ResultBlock({
                   <span key={index} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{modifier.label}: +{Math.round((modifier.value - 1) * 100)}%</span>
                 ))}
                 {result.scenarios?.REC?.key_factors && Object.entries(result.scenarios.REC.key_factors)
-                  .filter(([key]) => key !== "field_multiplier" && key !== "accuracy_multiplier")
-                  .map(([key, value]) => <span key={key} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">{KEY_FACTOR_LABELS[key] ?? key}: {(value as number).toFixed(2)}</span>)}
+                  .filter(([key, value]) => KEY_FACTOR_LABELS[key] && Number.isFinite(value))
+                  .map(([key, value]) => <span key={key} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{KEY_FACTOR_LABELS[key]}: {value.toLocaleString("ru-RU", { maximumFractionDigits: 2 })}{key === "reserve_percent" ? "%" : ""}</span>)}
               </div>
             )}
-            {result.scenarios && <ScenarioBlock result={result} />}
             <TotalsBlock totals={result.totals} />
             {result.practicalNotes && result.practicalNotes.length > 0 && <PracticalNotes notes={result.practicalNotes} />}
           </div>
