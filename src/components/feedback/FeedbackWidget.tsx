@@ -118,6 +118,7 @@ export default function FeedbackWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Оставить отзыв"
+        data-print-hide
         aria-expanded={open}
         className="fixed z-40 inline-flex size-11 items-center justify-center rounded-full border border-accent-200 bg-white text-sm font-semibold text-accent-700 shadow-lg transition-all hover:border-accent-300 hover:shadow-xl hover:-translate-y-0.5 left-[calc(1rem+env(safe-area-inset-left,0px))] bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:size-auto sm:gap-2 sm:px-3.5 sm:py-2.5 sm:left-[calc(1.5rem+env(safe-area-inset-left,0px))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] dark:border-accent-700/50 dark:bg-slate-800 dark:text-accent-300"
       >
@@ -132,6 +133,7 @@ export default function FeedbackWidget() {
           ref={panelRef}
           role="dialog"
           aria-label="Обратная связь"
+          data-print-hide
           className="fixed z-50 w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white shadow-2xl left-[calc(0.75rem+env(safe-area-inset-left,0px))] bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:left-[calc(1.5rem+env(safe-area-inset-left,0px))] sm:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] dark:border-slate-700 dark:bg-slate-800 overflow-hidden scale-in"
         >
           {/* Шапка в стиле чата */}
