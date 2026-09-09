@@ -4,7 +4,9 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import TrackedCatalogLink from "@/components/tools/TrackedCatalogLink";
 import { SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
-import { ALL_TOOLS, HUB_META, TOOL_CARDS, toolHref } from "@/lib/tools/config";
+import { ALL_TOOLS, HUB_META, toolHref } from "@/lib/tools/config";
+import { GROUPED_TOOL_CARDS } from "@/lib/tools/groups";
+import Link from "next/link";
 
 const PAGE_URL = `${SITE_URL}/instrumenty/`;
 const CHECKLIST_PREVIEW_COUNT = 4;
@@ -76,9 +78,26 @@ export default function InstrumentyPage() {
         </div>
       </section>
 
-      <section className="page-container-wide py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-5">
-          {TOOL_CARDS.map((tool) => {
+      <div className="page-container-wide py-8">
+        <nav aria-label="Группы инструментов" className="flex flex-wrap gap-2">
+          {GROUPED_TOOL_CARDS.map(group => (
+            <a key={group.id} href={`#${group.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:border-accent-500 dark:border-slate-700 dark:text-slate-200">
+              {group.title} <span className="text-slate-500 dark:text-slate-400">{group.tools.length}</span>
+            </a>
+          ))}
+        </nav>
+        <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+          <Link href="/proekty/" className="rounded-xl border border-slate-200 p-4 text-slate-700 no-underline dark:border-slate-700 dark:text-slate-200">Проекты — сохранённые расчёты и списки закупок</Link>
+          <Link href="/instrumenty/moy-remont/" className="rounded-xl border border-slate-200 p-4 text-slate-700 no-underline dark:border-slate-700 dark:text-slate-200">Мой ремонт — расчёт комнаты по этапам</Link>
+          <Link href="/mikhalych/" className="rounded-xl border border-slate-200 p-4 text-slate-700 no-underline dark:border-slate-700 dark:text-slate-200">Михалыч — помощь с выбором и расчётами</Link>
+        </div>
+      </div>
+      {GROUPED_TOOL_CARDS.map(group => (
+      <section key={group.id} id={group.id} aria-labelledby={`${group.id}-title`} className="page-container-wide scroll-mt-24 pb-10">
+        <h2 id={`${group.id}-title`} className="text-2xl font-bold text-slate-900 dark:text-slate-100">{group.title}</h2>
+        <p className="mt-2 mb-5 text-sm text-slate-600 dark:text-slate-300">{group.description}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          {group.tools.map((tool) => {
             const badge =
               tool.href === toolHref("chek-listy")
                 ? `${ALL_CHECKLISTS.length} шаблонов`
@@ -99,10 +118,10 @@ export default function InstrumentyPage() {
                   <CategoryIcon icon={tool.icon} size={26} color={tool.color} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-accent-700 transition-colors">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-accent-700 transition-colors">
                       {tool.title}
-                    </h2>
+                    </h3>
                     <span
                       className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0"
                       style={{ backgroundColor: tool.bg, color: tool.color }}
@@ -118,6 +137,7 @@ export default function InstrumentyPage() {
           })}
         </div>
       </section>
+      ))}
 
       <section className="page-container-wide py-2 pb-12">
         <div className="flex items-center justify-between mb-5">

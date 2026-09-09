@@ -15,7 +15,7 @@ const UI_TEXT = {
   aiAssistant: "Михалыч — AI-ассистент",
   blog: "Блог",
   app: "Приложение",
-  myRenovation: "Мой ремонт — сметы",
+  myRenovation: "Проекты — сохранённые расчёты",
   reportTitle: "Нашли ошибку или есть идея?",
   reportDescription: "Напишите напрямую — читаю каждый отзыв",
   leaveFeedback: "Оставить отзыв →",

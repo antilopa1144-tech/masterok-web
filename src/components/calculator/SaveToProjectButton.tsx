@@ -116,7 +116,7 @@ export default function SaveToProjectButton({
           <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Мой ремонт</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Проекты</p>
                 <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 truncate">{calcTitle}</p>
               </div>
               <Link
