@@ -24,6 +24,7 @@ describe("Ламинат: закупочный поисковый интент",
   it("связывает закупку с существующими инструментами без UTM", () => {
     expect(html).toContain('href="/instrumenty/ploshchad-komnaty/"');
     expect(html).toContain('href="/instrumenty/raskladka-laminata/"');
+    expect(html).toContain('href="/blog/kak-vybrat-podlozhku-pod-laminat/"');
     expect(html).not.toContain("utm_");
   });
 
