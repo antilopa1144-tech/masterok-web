@@ -454,7 +454,7 @@ export async function exportToExcel(data: EstimateData): Promise<void> {
         cat,
         m.name,
         m.subtitle ?? '',
-        String(m.quantity),
+        String(m.quantity).replace('.', ','),
         m.unit,
         m.waste ? String(Math.round(m.waste * 100)) : '0',
       ]);

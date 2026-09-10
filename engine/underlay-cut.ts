@@ -23,6 +23,6 @@ export function underlayCutMaterial(area: number, widthInput?: number, stepInput
     purchaseQty: purchase,
     unit: "пог. м",
     category: "Подложка",
-    subtitle: `Ширина: ${text(width)} м; шаг продажи: ${text(step)} пог. м. Потребность с запасом: ${text(area)} м². Всего к покупке: ${text(purchase * width)} м². Остаток сверх потребности: ${text(Math.max(0, purchase * width - area))} м².`,
+    subtitle: `Ширина: ${text(width)} м; шаг продажи: ${text(step)} пог. м. Потребность с запасом: ${text(area)} м². Всего к покупке: ${text(purchase * width)} м². Остаток сверх потребности: ${text(Math.max(0, purchase * width - area))} м². Оценка по площади, не схема раскроя: проверьте длины полос и пригодность обрезков.`,
   };
 }
