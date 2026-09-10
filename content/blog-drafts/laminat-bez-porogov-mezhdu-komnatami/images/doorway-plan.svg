@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1100" viewBox="0 0 1200 1100">
+<defs><pattern id="boards" width="90" height="220" patternUnits="userSpaceOnUse"><rect width="90" height="220" fill="#e8c498"/><path d="M0 0V220M45 0V220M0 60H45M45 170H90" fill="none" stroke="#b28c66" stroke-width="2"/></pattern></defs>
+<rect width="1200" height="1100" rx="24" fill="#f5f7f4"/>
+<g font-family="Arial, sans-serif" text-anchor="middle" fill="#183b3b">
+<text x="600" y="85" font-size="46" font-weight="700">Переход — отдельное решение</text>
+<rect x="160" y="170" width="880" height="320" fill="url(#boards)"/>
+<rect x="160" y="560" width="880" height="320" fill="url(#boards)"/>
+<path d="M160 490V170H1040V490M160 560V880H1040V560M160 525H425M775 525H1040" stroke="#183b3b" stroke-width="24" fill="none"/>
+<rect x="425" y="490" width="350" height="70" fill="#dc754b"/>
+<rect x="388" y="270" width="424" height="88" rx="16" fill="#f5f7f4"/><text x="600" y="329" font-size="43">Комната</text>
+<rect x="388" y="680" width="424" height="88" rx="16" fill="#f5f7f4"/><text x="600" y="739" font-size="43">Коридор</text>
+<text x="600" y="950" font-size="39" font-weight="700">Здесь проверяем шов и профиль</text>
+<text x="600" y="1020" font-size="30">Условный план, не монтажная карта</text>
+</g></svg>

@@ -1,0 +1,21 @@
+# Проверка выпуска — 10 сентября 2026
+
+URL: https://getmasterok.ru/blog/laminat-bez-porogov-mezhdu-komnatami/
+
+Ghost: `6aa232e1c4aacd28544c73ae`, published `2026-09-10T04:33:11.000Z`. Отдельные draft и publish, без рассылки. Существующий slug проверен до создания. CMS preview просмотрен до публикации.
+
+## Delivery evidence
+
+- Read-only verifier прошёл: HTTP 200, canonical основного URL, robots, H1/текст, BlogPosting/dates, редакция HTML/RSS, ссылка из блога, sitemap/lastmod и обложка.
+- Revision: `c4af11d3569e577aebb4c8bd926e3e26b7f194fd4ccc53b094267b53129e89ca`.
+- RSS pubDate `2026-09-10T04:33:11+00:00`, sitemap lastmod `2026-09-10T16:33:11.000+12:00`.
+- Сначала RSS ещё не содержал статью; после обновления кэшей проверка прошла. Очередь перешла с `done:7,pending:1` на `done:8`, healthy=true, snapshot 29. Это завершение задания и приём IndexNow по контракту worker, не подтверждение индексации.
+- В браузере canonical корректен; robots `index, follow, max-image-preview:large`. Обложка `feature-7.webp` 1536×1024 и схема `doorway-plan.webp` 1200×1100 полностью загрузились.
+- Desktop: заголовок, описание, обложка просмотрены. Mobile 390×844, тёмная тема: первый экран, текст первого раздела и начало схемы просмотрены; scrollWidth 384 ≤ innerWidth 390. Оглавление переводит к разделу. Полный пиксельный аудит всех абзацев не заявляется.
+- Блок связанных материалов показывает направление укладки, подложку и смещение 1/3–1/2. Из текста ведут ссылки на направление, раскладку и калькулятор.
+
+## Проверки и границы
+
+`npm.cmd test`: 3349 тестов, 208 файлов — пройдены. `npm.cmd run lint`: без ошибок и предупреждений ESLint. Приложение, формулы и Flutter не менялись; отдельный build для CMS-текста не запускался. Пустой Ghost-rebuild-коммит `6089132` принят fast-forward. Предыдущий редакционный CI `8d7cb56` успешен.
+
+Индексация, Discover и прирост трафика новой статьи ещё не подтверждены. Чужие `.codex/config.toml`, test-results, parity fixtures и временные output-файлы в commit не включать.
