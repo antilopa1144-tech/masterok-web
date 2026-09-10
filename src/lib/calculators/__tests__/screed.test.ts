@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { screedDef } from "../formulas/screed";
+import { ensureScenarioContract } from "../scenario-adapter";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 
 const calc = withBasicAccuracy(screedDef.calculate.bind(screedDef));
@@ -26,15 +27,15 @@ describe("Калькулятор стяжки пола", () => {
       const mix = findMaterial(result, "Пескобетон М300");
 
       expect(result.totals.volume).toBeCloseTo(1.54, 3);
-      expect(mix?.purchaseQty).toBe(3080);
+      expect(mix?.purchaseQty).toBe(2800);
       expect(mix?.packageInfo).toEqual({
-        count: 77,
+        count: 70,
         size: 40,
         packageUnit: "мешков",
       });
       expect(screedDef.seoContent?.descriptionHtml).toContain("1,54 м&sup3;");
-      expect(screedDef.seoContent?.descriptionHtml).toContain("3 080 кг");
-      expect(screedDef.seoContent?.descriptionHtml).toContain("77 мешков по 40 кг");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("2 800 кг");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("70 мешков по 40 кг");
     });
   });
 
@@ -62,7 +63,7 @@ describe("Калькулятор стяжки пола", () => {
     it("цемент 8 мешков × 50 кг = 400 кг", () => {
       const cement = findMaterial(result, "Цемент");
       expect(cement?.purchaseQty).toBe(400);
-      expect(cement?.subtitle).toContain("марка раствора требует подбора состава");
+      expect(cement?.subtitle).toContain("рабочей рецептурой");
       expect(cement?.subtitle).not.toContain("Раствор М150");
     });
 
@@ -70,12 +71,11 @@ describe("Калькулятор стяжки пола", () => {
       expect(findMaterial(result, "Песок")).toBeDefined();
     });
 
-    it("армосетка при 50 мм >= 40 мм", () => {
-      expect(findMaterial(result, "Сетка армирующая")).toBeDefined();
-    });
-
-    it("демпферная лента присутствует", () => {
-      expect(findMaterial(result, "Демпферная лента")).toBeDefined();
+    it("не добавляет в закупку слои и комплектующие без данных о конструкции пола", () => {
+      expect(findMaterial(result, "Сетка армирующая")).toBeUndefined();
+      expect(findMaterial(result, "Полиэтиленовая плёнка")).toBeUndefined();
+      expect(findMaterial(result, "Демпферная лента")).toBeUndefined();
+      expect(findMaterial(result, "Маячковый профиль")).toBeUndefined();
     });
 
     it("инварианты", () => {
@@ -86,7 +86,8 @@ describe("Калькулятор стяжки пола", () => {
   describe("Готовая смесь (пескобетон М300)", () => {
     // area=20, thicknessM=0.05, volume_multiplier=1.10 (готовая смесь, заводская)
     // volume = 20 * 0.05 * 1.10 = 1.10 м³
-    // массa = 1.10 * 2000 = 2200 кг; мешки 40 кг: ceil(2200/40) = 55 → 2200 кг
+    // паспортный расход по умолчанию: 20 кг/м² на 10 мм
+    // 20 м² × 5 × 20 = 2000 кг; мешки 40 кг: 50 шт.
     const result = calc({
       inputMode: 0,
       length: 5,
@@ -103,10 +104,10 @@ describe("Калькулятор стяжки пола", () => {
       expect(result.totals.volume).toBeCloseTo(1.10, 3);
     });
 
-    it("масса 2200 кг → 55 мешков × 40 кг = 2200 кг", () => {
+    it("масса 2000 кг → 50 мешков × 40 кг = 2000 кг", () => {
       const mix = findMaterial(result, "Пескобетон М300");
-      expect(mix?.purchaseQty).toBe(2200);
-      expect(mix?.packageInfo?.count).toBe(55);
+      expect(mix?.purchaseQty).toBe(2000);
+      expect(mix?.packageInfo?.count).toBe(50);
     });
   });
 
@@ -124,67 +125,36 @@ describe("Калькулятор стяжки пола", () => {
       screedType: 2,
     });
 
-    it("ориентировочная масса сухих компонентов присутствует", () => {
-      expect(findMaterial(result, "Сухие компоненты для полусухой")).toBeDefined();
-    });
-
     it("плановый объём с коэффициентом модели 1,07 = 1,07 м³", () => {
       expect(result.totals.volume).toBeCloseTo(1.07, 3);
     });
 
-    it("не выдумывает фасовку 50 кг для механизированной работы", () => {
-      const cps = findMaterial(result, "Сухие компоненты для полусухой");
-      expect(cps?.quantity).toBe(1926);
-      expect(cps?.purchaseQty).toBe(1930);
-      expect(cps?.packageInfo).toBeUndefined();
-    });
-
-    it("фиброволокно ПП присутствует", () => {
-      expect(findMaterial(result, "Фиброволокно")).toBeDefined();
-    });
-
-    it("фиброволокно считается по объёму, а не по площади", () => {
-      const fiber = findMaterial(result, "Фиброволокно");
-      // 1,07 м³ × 0,9 кг/м³ = 0,963 кг → 2 пакета по 0,6 кг.
-      expect(fiber?.quantity).toBeCloseTo(0.963, 3);
-      expect(fiber?.purchaseQty).toBe(1.2);
-      expect(fiber?.packageInfo).toEqual({
-        count: 2,
-        size: 0.6,
-        packageUnit: "пакетов",
-      });
+    it("не назначает фибру и показывает подрядчику расчётный объём", () => {
+      expect(findMaterial(result, "Фиброволокно")).toBeUndefined();
+      const volume = findMaterial(result, "Расчётный объём полусухой стяжки");
+      expect(volume?.quantity).toBeCloseTo(1.07, 3);
+      expect(volume?.unit).toBe("м³");
     });
   });
 
-  describe("Ручной замес — марка цемента и пропорция", () => {
+  describe("Ручной замес — явная рабочая рецептура", () => {
     const base = { inputMode: 0 as const, length: 5, width: 4, thickness: 50, screedType: 0 };
 
-    it("дефолт (М400, 1:3) не изменился — паритет: цемент 400 кг", () => {
-      const result = calc({ ...base, cementGrade: 0, mixProportion: 0 });
+    it("стартовая рецептура даёт цемент 400 кг к покупке", () => {
+      const result = calc({ ...base });
       const cement = findMaterial(result, "Цемент");
       expect(cement?.purchaseQty).toBe(400);
-      expect(cement?.name).toContain("М400");
+      expect(cement?.name).toContain("рабочей рецептуре");
     });
 
-    it("М400 1:4 — цемента меньше, чем при 1:3", () => {
-      const ref = calc({ ...base, cementGrade: 0, mixProportion: 0 });
-      const result = calc({ ...base, cementGrade: 0, mixProportion: 1 });
-      const refKg = findMaterial(ref, "Цемент")!.quantity;
-      const kg = findMaterial(result, "Цемент")!.quantity;
-      expect(kg).toBeLessThan(refKg);
-    });
-
-    it("М500 — цемента меньше, чем у М400 при той же пропорции", () => {
-      const m400 = calc({ ...base, cementGrade: 0, mixProportion: 0 });
-      const m500 = calc({ ...base, cementGrade: 1, mixProportion: 0 });
-      const kg400 = findMaterial(m400, "Цемент")!.quantity;
-      const kg500 = findMaterial(m500, "Цемент")!.quantity;
-      expect(kg500).toBeLessThan(kg400);
-      expect(findMaterial(m500, "Цемент")?.name).toContain("М500");
+    it("пересчитывает цемент и песок по введённой рецептуре на 1 м³", () => {
+      const result = calc({ ...base, cementKgPerM3: 300, sandKgPerM3: 1100 });
+      expect(findMaterial(result, "Цемент")?.quantity).toBeCloseTo(345, 3);
+      expect(findMaterial(result, "Песок")?.quantity).toBeCloseTo(1.265, 3);
     });
 
     it("цемент кратен мешку 50 кг (округление вверх)", () => {
-      const result = calc({ ...base, cementGrade: 1, mixProportion: 1 });
+      const result = calc({ ...base });
       const cement = findMaterial(result, "Цемент")!;
       expect(cement.purchaseQty! % 50).toBe(0);
       expect(cement.purchaseQty).toBeGreaterThanOrEqual(cement.quantity);
@@ -201,8 +171,8 @@ describe("Калькулятор стяжки пола", () => {
     it("не округляет песок до лишней целой тонны", () => {
       const result = calc({ ...base });
       const sand = findMaterial(result, "Песок")!;
-      expect(sand.quantity).toBe(1.4);
-      expect(sand.purchaseQty).toBe(1.4);
+      expect(sand.quantity).toBe(1.38);
+      expect(sand.purchaseQty).toBe(1.38);
     });
   });
 
@@ -226,9 +196,36 @@ describe("Калькулятор стяжки пола", () => {
       const result = calc({ ...base, readyBagWeight: 30 });
       const mix = findMaterial(result, "Пескобетон")!;
       expect(mix.packageInfo?.size).toBe(30);
-      expect(mix.packageInfo?.count).toBe(74);
-      expect(mix.purchaseQty).toBe(2220);
-      expect(result.scenarios?.REC.buy_plan.package_size).toBe(30);
+      expect(mix.packageInfo?.count).toBe(67);
+      expect(mix.purchaseQty).toBe(2010);
+      expect(result.scenarios).toBeUndefined();
+    });
+
+    it("использует расход конкретной смеси с упаковки", () => {
+      const result = calc({ ...base, readyConsumptionPer10mm: 18, readyBagWeight: 40 });
+      const mix = findMaterial(result, "Пескобетон")!;
+      expect(mix.quantity).toBe(1800);
+      expect(mix.packageInfo?.count).toBe(45);
+      expect(mix.purchaseQty).toBe(1800);
+    });
+  });
+
+  describe("Единый понятный результат", () => {
+    it("не показывает второй противоречащий закупке сценарный итог", () => {
+      const result = screedDef.calculate({
+        inputMode: 0,
+        length: 5,
+        width: 4,
+        thickness: 50,
+        screedType: 0,
+      });
+      const cement = findMaterial(result, "Цемент")!;
+
+      expect(cement.packageInfo?.count).toBe(8);
+      expect(cement.purchaseQty).toBe(400);
+      expect(result.scenarios).toBeUndefined();
+      expect(result.accuracyExplanation).toBeUndefined();
+      expect(ensureScenarioContract("styazhka", result).scenarios).toBeUndefined();
     });
   });
 
@@ -247,27 +244,22 @@ describe("Калькулятор стяжки пола", () => {
   });
 
   describe("Пользовательские границы расчёта", () => {
-    it("помечает сетку, плёнку, маяки и периметр как предварительные", () => {
+    it("не включает сетку, плёнку, маяки и ленту в ведомость без проектных данных", () => {
       const result = calc({ inputMode: 1, area: 60, thickness: 80, screedType: 0 });
       const notes = result.practicalNotes?.join(" ") ?? "";
 
-      expect(findMaterial(result, "Сетка")?.subtitle).toContain("внутреннему порогу толщины");
-      expect(findMaterial(result, "Полиэтиленовая плёнка")?.subtitle).toContain("Нужна не для каждой конструкции");
-      expect(notes).toContain("4 × √S");
-      expect(notes).toContain("один профиль на 2 м²");
+      expect(findMaterial(result, "Сетка")).toBeUndefined();
+      expect(findMaterial(result, "Полиэтиленовая плёнка")).toBeUndefined();
+      expect(findMaterial(result, "Маячковый профиль")).toBeUndefined();
+      expect(findMaterial(result, "Демпферная лента")).toBeUndefined();
+      expect(notes).toContain("не включены в закупочную ведомость");
       expect(notes).not.toContain("обязательно армирование");
     });
 
     it("не обещает назначение марки цемента и пропорции по типу помещения", () => {
-      const cement = screedDef.fields.find((field) => field.key === "cementGrade")!;
-      const proportion = screedDef.fields.find((field) => field.key === "mixProportion")!;
-      const labels = `${cement.options?.map((option) => option.label).join(" ")} ${proportion.options?.map((option) => option.label).join(" ")}`;
-
-      expect(labels).not.toContain("гараж");
-      expect(labels).not.toContain("жилые комнаты");
-      expect(labels).not.toContain("нежилые");
-      expect(cement.hint).toContain("не задаёт марку раствора");
-      expect(proportion.hint).toContain("не подбор марки раствора");
+      expect(screedDef.fields.find((field) => field.key === "cementGrade")).toBeUndefined();
+      expect(screedDef.fields.find((field) => field.key === "mixProportion")).toBeUndefined();
+      expect(screedDef.fields.find((field) => field.key === "cementKgPerM3")?.hint).toContain("рабочей рецептуры");
     });
 
     it("использует действующие профильные ссылки и не обещает универсальные сроки", () => {

@@ -125,6 +125,8 @@ export interface CalculatorMeta {
   tags: string[];
   popularity: number;
   complexity: 1 | 2 | 3;
+  /** Отключает общие режимы точности, если калькулятор использует собственные явные закупочные параметры. */
+  supportsAccuracyModes?: boolean;
 }
 
 export interface MaterialResult {
@@ -200,6 +202,8 @@ export interface CalculatorResult {
   hidePrimaryMaterialBadge?: boolean;
   /** Баннер над списком материалов (калькулятор утеплителя). */
   materialListBanner?: string;
+  /** Не достраивать общий MIN/REC/MAX поверх явно заданной предметной ведомости. */
+  skipScenarioContract?: boolean;
 }
 
 export type CalculateFn = (inputs: Record<string, number>) => CalculatorResult;

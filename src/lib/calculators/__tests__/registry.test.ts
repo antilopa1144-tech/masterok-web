@@ -88,7 +88,6 @@ describe("Сценарный контракт через registry", () => {
         const sample: Array<[string, Record<string, number>]> = [
       ["beton", { concreteVolume: 5, concreteGrade: 3, reserve: 5 }],
       ["kirpich", { inputMode: 1, area: 20, brickType: 0, wallThickness: 1 }],
-      ["styazhka", { inputMode: 1, area: 20, thickness: 50, screedType: 1 }],
       ["teplyy-pol", { roomArea: 12, furnitureArea: 2, heatingType: 0, powerDensity: 150 }],
       ["elektrika", { apartmentArea: 60, roomsCount: 3, ceilingHeight: 2.7, hasKitchen: 1 }],
       ["shpaklevka", { inputMode: 1, area: 40, puttyType: 1, bagWeight: 25 }],
@@ -118,6 +117,15 @@ describe("Сценарный контракт через registry", () => {
       expect(max?.exact_need ?? 0, `MAX exact invalid for ${slug}`).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
       expect(rec?.purchase_quantity ?? 0, `purchase < exact for ${slug}`).toBeGreaterThanOrEqual(rec?.exact_need ?? 0);
     }
+  });
+
+  it("не достраивает скрытые сценарии для явной ведомости стяжки", async () => {
+    const fn = await getCalculateFn("styazhka");
+    const result = fn!({ inputMode: 1, area: 20, thickness: 50, screedType: 1 });
+
+    expect(result.skipScenarioContract).toBe(true);
+    expect(result.scenarios).toBeUndefined();
+    expect(result.materials[0]?.packageInfo?.count).toBe(50);
   });
 });
 

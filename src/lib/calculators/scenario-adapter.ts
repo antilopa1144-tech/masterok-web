@@ -125,6 +125,7 @@ function buildScenariosFromPrimary(
 }
 
 export function ensureScenarioContract(slug: string, result: CalculatorResult, accuracyMode?: AccuracyMode): CalculatorResult {
+  if (result.skipScenarioContract) return result;
   const mode = accuracyMode ?? result.accuracyMode ?? DEFAULT_ACCURACY_MODE;
   if (hasCompleteScenarios(result)) {
     // Even if scenarios exist, attach accuracy info

@@ -1,263 +1,168 @@
-/**
- * Веб-надстройка над каноническим движком стяжки.
- *
- * Движок (engine/screed.ts) знает 3 базовых типа: ЦПС ручной (id 0),
- * готовая смесь (id 1), полусухая (id 2). Здесь мы НАД ним добавляем
- * пользовательский выбор, который движок не различает:
- *  - для ручного замеса: марка цемента (М400/М500) и пропорция (1:3 / 1:4);
- *  - для готовой смеси: реальная номенклатура мешков (пескобетон М300 и др.).
- *
- * Базовый канонический результат не трогаем (паритет с mobile сохраняется
- * для дефолтного сценария М400 1:3). Корректируем массу цемента/песка
- * множителями относительно базы и переименовываем позиции.
- *
- * Множители вариантов заданы ОТНОСИТЕЛЬНО текущей базы движка
- * (М400 1:3), поэтому дефолт даёт прежние цифры. Это legacy web-модель
- * закупки, а не подтверждённый подбор марки раствора; перенос вариантов и
- * их доказательной базы в canonical остаётся отдельной parity-задачей.
- */
+/** Web-адаптер честной закупочной ведомости стяжки. */
+import type { CalculatorResult, MaterialResult, SummaryCard } from "../types";
 
-import type { CalculatorResult, MaterialResult } from "../types";
-
-/** Значения поля cementGrade. */
-export const CEMENT_GRADE_M400 = 0;
-export const CEMENT_GRADE_M500 = 1;
-
-/** Значения поля mixProportion (только ручной замес). */
-export const PROPORTION_1_3 = 0;
-export const PROPORTION_1_4 = 1;
-
-/** Значения поля readyMix (готовая смесь в мешках). */
 export const READY_MIX_PESKOBETON_M300 = 0;
 export const READY_MIX_UNIVERSAL_M200 = 1;
 
-interface ManualMixVariant {
-  /** Множитель массы цемента относительно базы (М400 1:3 = 1.0). */
-  cementFactor: number;
-  /** Множитель массы песка относительно базы. */
-  sandFactor: number;
-  cementLabel: string;
-}
-
-/**
- * Таблица ручного замеса. Ключ — `${cementGrade}-${proportion}`.
- * cementFactor 1.0 для М400 1:3 гарантирует совпадение с текущим расчётом.
- */
-const MANUAL_MIX: Record<string, ManualMixVariant> = {
-  // М400
-  [`${CEMENT_GRADE_M400}-${PROPORTION_1_3}`]: { cementFactor: 1.0, sandFactor: 1.0, cementLabel: "М400" },
-  [`${CEMENT_GRADE_M400}-${PROPORTION_1_4}`]: { cementFactor: 0.82, sandFactor: 1.1, cementLabel: "М400" },
-  // М500 — крепче, на ту же марку раствора цемента нужно меньше
-  [`${CEMENT_GRADE_M500}-${PROPORTION_1_3}`]: { cementFactor: 0.92, sandFactor: 1.0, cementLabel: "М500" },
-  [`${CEMENT_GRADE_M500}-${PROPORTION_1_4}`]: { cementFactor: 0.75, sandFactor: 1.1, cementLabel: "М500" },
-};
-
-export function getManualMixVariant(cementGrade: number, proportion: number): ManualMixVariant {
-  const g = cementGrade === CEMENT_GRADE_M500 ? CEMENT_GRADE_M500 : CEMENT_GRADE_M400;
-  const p = proportion === PROPORTION_1_4 ? PROPORTION_1_4 : PROPORTION_1_3;
-  return MANUAL_MIX[`${g}-${p}`];
-}
-
-interface ReadyMixVariant {
-  /** Название позиции в списке материалов. */
-  name: string;
-  /** Доля массы относительно базовой готовой смеси (М300 = 1.0). */
-  massFactor: number;
-}
-
-const READY_MIX: Record<number, ReadyMixVariant> = {
-  [READY_MIX_PESKOBETON_M300]: {
-    name: "Пескобетон М300 для стяжки",
-    massFactor: 1.0,
-  },
-  [READY_MIX_UNIVERSAL_M200]: {
-    name: "Готовая цементно-песчаная смесь М200 для стяжки",
-    massFactor: 1.0,
-  },
-};
-
 const CEMENT_BAG_WEIGHTS = [25, 40, 50] as const;
 const READY_MIX_BAG_WEIGHTS = [20, 25, 30, 40, 50] as const;
+const READY_MIX_NAMES: Record<number, string> = {
+  [READY_MIX_PESKOBETON_M300]: "Пескобетон М300 для стяжки",
+  [READY_MIX_UNIVERSAL_M200]: "Готовая цементно-песчаная смесь М200 для стяжки",
+};
 
-function resolvePackageWeight(
-  value: number | undefined,
-  allowed: readonly number[],
-  fallback: number,
-): number {
+function resolvePackageWeight(value: number | undefined, allowed: readonly number[], fallback: number): number {
   const rounded = Math.round(value ?? fallback);
   return allowed.includes(rounded) ? rounded : fallback;
 }
 
-/**
- * Применяет выбор марки цемента/пропорции (ручной замес) или номенклатуры
- * готовой смеси к каноническому результату.
- */
+function positiveOr(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && (value ?? 0) > 0 ? Number(value) : fallback;
+}
+
 export function applyScreedMix(
   result: CalculatorResult,
   inputs: {
     screedType?: number;
-    cementGrade?: number;
-    mixProportion?: number;
+    cementKgPerM3?: number;
+    sandKgPerM3?: number;
     readyMix?: number;
+    readyConsumptionPer10mm?: number;
     cementBagWeight?: number;
     readyBagWeight?: number;
   },
 ): CalculatorResult {
+  const common = withoutUnsupportedPurchases(result);
   const screedType = Math.round(inputs.screedType ?? 0);
-
-  if (screedType === 0) {
-    return applyManualMix(result, inputs);
-  }
-  if (screedType === 1) {
-    return applyReadyMix(result, inputs);
-  }
-  return applySemiDry(result);
+  if (screedType === 0) return applyManualMix(common, inputs);
+  if (screedType === 1) return applyReadyMix(common, inputs);
+  return applySemiDry(common);
 }
 
-function applyManualMix(
-  result: CalculatorResult,
-  inputs: { cementGrade?: number; mixProportion?: number; cementBagWeight?: number },
-): CalculatorResult {
-  const variant = getManualMixVariant(
-    Math.round(inputs.cementGrade ?? CEMENT_GRADE_M400),
-    Math.round(inputs.mixProportion ?? PROPORTION_1_3),
-  );
-
-  const bagWeight = resolvePackageWeight(inputs.cementBagWeight, CEMENT_BAG_WEIGHTS, 50);
-  const materials = result.materials.map((m): MaterialResult => {
-    if (m.name.startsWith("Цемент")) {
-      const baseKg = m.quantity;
-      const adjustedKg = baseKg * variant.cementFactor;
-      const bags = Math.ceil(adjustedKg / bagWeight);
-      return {
-        ...m,
-        name: `Цемент ${variant.cementLabel} (мешки ${bagWeight} кг)`,
-        quantity: round3(adjustedKg),
-        withReserve: bags * bagWeight,
-        purchaseQty: bags * bagWeight,
-        packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
-        subtitle: `Справочный расчёт для пропорции ${inputs.mixProportion === PROPORTION_1_4 ? "1:4" : "1:3"}; марка раствора требует подбора состава`,
-      };
-    }
-    if (m.name.startsWith("Песок")) {
-      const adjustedTons = m.quantity * variant.sandFactor;
-      return {
-        ...m,
-        quantity: round3(Math.ceil(adjustedTons * 10) / 10),
-        withReserve: round3(Math.ceil(adjustedTons * 10) / 10),
-        purchaseQty: round3(Math.ceil(adjustedTons * 10) / 10),
-      };
-    }
-    return m;
-  });
+function withoutUnsupportedPurchases(result: CalculatorResult): CalculatorResult {
+  const excluded = ["Полиэтиленовая плёнка", "Сетка армирующая", "Маячковый профиль", "Демпферная лента", "Фиброволокно"];
+  const materials = result.materials.filter((material) => !excluded.some((prefix) => material.name.startsWith(prefix)));
+  const staleNotePrefixes = ["Сетка автоматически", "Плёнка автоматически", "Демпферная лента рассчитана", "При вводе только площади", "Маяки оценены"];
+  const practicalNotes = (result.practicalNotes ?? []).filter((note) => !staleNotePrefixes.some((prefix) => note.startsWith(prefix)));
+  practicalNotes.push("Плёнка, армирование, фибра, демпферная лента и маяки не включены в закупочную ведомость: их необходимость и количество зависят от принятой конструкции пола, фактического периметра и технологии работ.");
 
   return {
     ...result,
     materials,
-    scenarios: repackageScenarios(result, bagWeight, variant.cementFactor, "cement"),
-    totals: {
-      ...result.totals,
-      cementGrade: inputs.cementGrade ?? CEMENT_GRADE_M400,
-      mixProportion: inputs.mixProportion ?? PROPORTION_1_3,
-      cementBagWeight: bagWeight,
+    practicalNotes,
+    scenarios: undefined,
+    accuracyMode: undefined,
+    accuracyExplanation: undefined,
+    skipScenarioContract: true,
+  };
+}
+
+function applyManualMix(
+  result: CalculatorResult,
+  inputs: { cementKgPerM3?: number; sandKgPerM3?: number; cementBagWeight?: number },
+): CalculatorResult {
+  const volume = result.totals.volume ?? 0;
+  const cementKgPerM3 = positiveOr(inputs.cementKgPerM3, 325);
+  const sandKgPerM3 = positiveOr(inputs.sandKgPerM3, 1200);
+  const bagWeight = resolvePackageWeight(inputs.cementBagWeight, CEMENT_BAG_WEIGHTS, 50);
+  const cementKg = round3(volume * cementKgPerM3);
+  const cementBags = Math.ceil(cementKg / bagWeight);
+  const sandTons = round3(volume * sandKgPerM3 / 1000);
+  const materials: MaterialResult[] = [
+    {
+      name: `Цемент по рабочей рецептуре (мешки ${bagWeight} кг)`,
+      subtitle: `Задано ${cementKgPerM3} кг цемента на 1 м³; поле должно совпадать с рабочей рецептурой, а не только с маркой цемента`,
+      quantity: cementKg,
+      unit: "кг",
+      withReserve: cementBags * bagWeight,
+      purchaseQty: cementBags * bagWeight,
+      packageInfo: { count: cementBags, size: bagWeight, packageUnit: "мешков" },
+      category: "Основное",
     },
+    {
+      name: "Песок по рабочей рецептуре",
+      subtitle: `Задано ${sandKgPerM3} кг сухого песка на 1 м³; поставщик может отпускать его по массе или объёму`,
+      quantity: sandTons,
+      unit: "т",
+      withReserve: sandTons,
+      purchaseQty: sandTons,
+      category: "Основное",
+    },
+  ];
+
+  return {
+    ...result,
+    materials,
+    totals: { ...result.totals, cementKg, sandTons, cementKgPerM3, sandKgPerM3, cementBagWeight: bagWeight },
+    summaryCards: purchaseSummary(cementBags, cementKg, volume),
   };
 }
 
 function applyReadyMix(
   result: CalculatorResult,
-  inputs: { readyMix?: number; readyBagWeight?: number },
+  inputs: { readyMix?: number; readyConsumptionPer10mm?: number; readyBagWeight?: number },
 ): CalculatorResult {
   const choice = Math.round(inputs.readyMix ?? READY_MIX_PESKOBETON_M300);
-  const variant = READY_MIX[choice] ?? READY_MIX[READY_MIX_PESKOBETON_M300];
+  const name = READY_MIX_NAMES[choice] ?? READY_MIX_NAMES[READY_MIX_PESKOBETON_M300];
   const bagWeight = resolvePackageWeight(inputs.readyBagWeight, READY_MIX_BAG_WEIGHTS, 40);
-
-  const materials = result.materials.map((m): MaterialResult => {
-    if (m.name.startsWith("Готовая цементно-песчаная смесь") || m.name.startsWith("Пескобетон")) {
-      const baseKg = m.quantity * variant.massFactor;
-      const bags = Math.ceil(baseKg / bagWeight);
-      return {
-        ...m,
-        name: `${variant.name} (мешки ${bagWeight} кг)`,
-        subtitle:
-          "Перед покупкой сверьте расход на 10 мм слоя и допустимую толщину нанесения на этикетке выбранной смеси",
-        quantity: round3(baseKg),
-        withReserve: bags * bagWeight,
-        purchaseQty: bags * bagWeight,
-        packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
-      };
-    }
-    return m;
-  });
+  const consumption = positiveOr(inputs.readyConsumptionPer10mm, 20);
+  const area = result.totals.area ?? 0;
+  const thickness = result.totals.thickness ?? 0;
+  const exactKg = round3(area * (thickness / 10) * consumption);
+  const bags = Math.ceil(exactKg / bagWeight);
+  const volume = result.totals.volume ?? 0;
+  const materials: MaterialResult[] = [{
+    name: `${name} (мешки ${bagWeight} кг)`,
+    subtitle: `Расход из поля: ${consumption} кг/м² при слое 10 мм. Сверьте его и допустимую толщину с упаковкой конкретного продукта`,
+    quantity: exactKg,
+    unit: "кг",
+    withReserve: bags * bagWeight,
+    purchaseQty: bags * bagWeight,
+    packageInfo: { count: bags, size: bagWeight, packageUnit: "мешков" },
+    category: "Основное",
+  }];
 
   return {
     ...result,
     materials,
-    scenarios: repackageScenarios(result, bagWeight, variant.massFactor, "ready-mix"),
-    totals: { ...result.totals, readyMix: choice, readyBagWeight: bagWeight },
+    totals: { ...result.totals, cpsKg: exactKg, readyMix: choice, readyConsumptionPer10mm: consumption, readyBagWeight: bagWeight },
+    summaryCards: purchaseSummary(bags, exactKg, volume),
   };
 }
 
 function applySemiDry(result: CalculatorResult): CalculatorResult {
-  const materials = result.materials.map((m): MaterialResult => {
-    if (!m.name.includes("полусухой стяжки")) return m;
-    const purchaseKg = Math.ceil(m.quantity / 10) * 10;
-    const withoutPackage = { ...m };
-    delete withoutPackage.packageInfo;
-    return {
-      ...withoutPackage,
-      name: "Сухие компоненты для полусухой стяжки — ориентировочная масса",
-      subtitle: "Обычно цемент, песок и фибру привозит и дозирует бригада; перед заказом согласуйте её рецептуру и подачу смеси",
-      withReserve: purchaseKg,
-      purchaseQty: purchaseKg,
-    };
-  });
-
+  const volume = round3(result.totals.volume ?? 0);
+  const material: MaterialResult = {
+    name: "Расчётный объём полусухой стяжки",
+    subtitle: "Передайте площадь, полную толщину и объём исполнителю; массу компонентов, фибру и схему поставки определяет его рабочая рецептура",
+    quantity: volume,
+    unit: "м³",
+    withReserve: volume,
+    purchaseQty: volume,
+    category: "Основное",
+  };
   return {
     ...result,
-    materials,
-    scenarios: repackageScenarios(result, 1, 1, "semidry-estimate"),
-    totals: {
-      ...result.totals,
-      semidryEstimatedKg: result.totals.cpsKg ?? 0,
-    },
-    practicalNotes: [
-      ...(result.practicalNotes ?? []),
-      "Для механизированной полусухой стяжки не покупайте условные мешки по расчёту: сначала получите от бригады состав смеси и условия поставки",
+    materials: [material],
+    totals: { ...result.totals, semidryEstimatedKg: 0 },
+    summaryCards: [
+      { icon: "📐", label: "Площадь", value: formatRu(result.totals.area ?? 0), unit: "м²", tone: "slate" },
+      { icon: "↕️", label: "Полная толщина", value: formatRu(result.totals.thickness ?? 0), unit: "мм", tone: "amber" },
+      { icon: "🧱", label: "Расчётный объём", value: formatRu(volume), unit: "м³", hint: "для согласования с бригадой", tone: "emerald" },
     ],
   };
 }
 
-function repackageScenarios(
-  result: CalculatorResult,
-  packageSize: number,
-  exactFactor: number,
-  label: string,
-): CalculatorResult["scenarios"] {
-  if (!result.scenarios) return undefined;
-  return Object.fromEntries(
-    Object.entries(result.scenarios).map(([scenario, value]) => {
-      const exactNeed = round3(value.exact_need * exactFactor);
-      const packages = Math.ceil(exactNeed / packageSize);
-      const purchase = round3(packages * packageSize);
-      return [scenario, {
-        ...value,
-        exact_need: exactNeed,
-        purchase_quantity: purchase,
-        leftover: round3(purchase - exactNeed),
-        assumptions: [
-          ...value.assumptions.filter((item) => !item.startsWith("packaging:")),
-          `packaging:${label}-${packageSize}kg`,
-        ],
-        buy_plan: {
-          package_label: `${label}-${packageSize}kg`,
-          package_size: packageSize,
-          packages_count: packages,
-          unit: "кг",
-        },
-      }];
-    }),
-  ) as CalculatorResult["scenarios"];
+function purchaseSummary(packages: number, exactKg: number, volume: number): SummaryCard[] {
+  return [
+    { icon: "🛒", label: "К покупке", value: String(packages), unit: "мешков", tone: "emerald" },
+    { icon: "⚖️", label: "Расчётная масса", value: formatRu(exactKg), unit: "кг", tone: "amber" },
+    { icon: "🧱", label: "Плановый объём", value: formatRu(volume), unit: "м³", tone: "slate" },
+  ];
+}
+
+function formatRu(value: number): string {
+  return value.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 }
 
 function round3(n: number): number {

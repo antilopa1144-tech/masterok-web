@@ -203,7 +203,7 @@ export default function CalculatorWidget({ calculator }: Props) {
           })}
         </div>
 
-        {experienceMode === "pro" && (
+        {experienceMode === "pro" && calculator.supportsAccuracyModes !== false && (
           <>
             <AccuracyModeSelector
               mode={accuracyMode}
@@ -285,7 +285,7 @@ export default function CalculatorWidget({ calculator }: Props) {
           <div className="flex items-center justify-between print:hidden">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{CALCULATOR_UI_TEXT.resultsTitle}</h2>
             <div className="flex items-center gap-2" data-print-hide>
-              {experienceMode === "pro" && (
+              {experienceMode === "pro" && calculator.supportsAccuracyModes !== false && (
                 <button
                   onClick={handleToggleComparison}
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
