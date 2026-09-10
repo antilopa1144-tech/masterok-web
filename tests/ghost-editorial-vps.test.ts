@@ -73,6 +73,30 @@ describe('Ghost editorial VPS helper', () => {
     await expect(h.revise('test', file, mock)).rejects.toThrow();
     expect(writes).toBe(1);
   });
+  it('replaces a reviewed published article with an audited bundle and uploads its media', async () => {
+    const { file, bundle } = fixture();
+    const html = '<p>' + 'Old article. '.repeat(30) + '</p>';
+    const post = { id: 'id', slug: bundle.metadata.slug, status: 'published', visibility: 'public', html,
+      updated_at: '2026-09-10T01:00:00Z', published_at: '2026-02-14T00:00:00Z', feature_image: origin + '/content/old.webp',
+      canonical_url: 'https://getmasterok.ru/blog/new-post/' };
+    fs.writeFileSync(file, JSON.stringify({ ...bundle, revision: { updatedAt: post.updated_at,
+      htmlSha256: crypto.createHash('sha256').update(html).digest('hex') } }));
+    const uploaded = origin + '/content/images/replacement.webp';
+    let writes = 0;
+    const mock = async (url: string, init: RequestInit) => {
+      if (url.includes('/slug/')) return response({ posts: [post] });
+      if (url.includes('/images/upload/')) return response({ images: [{ url: uploaded }] });
+      writes++;
+      const payload = JSON.parse(String(init.body)).posts[0];
+      expect(payload.status).toBe('published');
+      expect(payload.feature_image).toBe(uploaded);
+      expect(payload.html).toContain(uploaded);
+      expect(JSON.parse(fs.readFileSync(file + '.before.json', 'utf8'))).toEqual(post);
+      return response({ posts: [{ ...post, ...payload, updated_at: 'newer', feature_image: uploaded }] });
+    };
+    expect((await h.replacePublished('test', file, mock)).uploaded).toBe(1);
+    expect(writes).toBe(1);
+  });
   it('returns null only for absent slug; no fake absence on auth failure', async () => {
     expect(await h.postForSlug('test', 'new-post', async () => response({}, 404))).toBeNull();
     await expect(h.postForSlug('test', 'new-post', async () => response({}, 403))).rejects.toThrow('http_403');

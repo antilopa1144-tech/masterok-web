@@ -1,6 +1,6 @@
 # Ламинат без порогов между комнатами
 
-Опубликован в Ghost 10 сентября 2026, 04:33:11 UTC. Slug `laminat-bez-porogov-mezhdu-komnatami`, post ID `6aa232e1c4aacd28544c73ae`. Текст — `article.md`; доказательства доставки — `publication-notes.md`.
+Опубликован в Ghost 10 сентября 2026, 04:33:11 UTC. Slug `laminat-bez-porogov-mezhdu-komnatami`, post ID `6aa232e1c4aacd28544c73ae`. Переработанный `article.md` — руководство из 1 202 слов с семью разделами и пятью визуалами; доказательства доставки — `publication-notes.md`.
 
 Самостоятельный intent: возможность непрерывной укладки, переход в дверном проёме, подбор профиля. Не дублирует статьи о направлении, смещении и подложке. В публичном блоге проверены 28 заголовков; отдельной статьи на эту тему не было. Admin API перед созданием вернул `found:false` для выбранного slug. Это не полная инвентаризация всех черновиков под другими адресами.
 
@@ -19,4 +19,4 @@
 
 Use case: photorealistic-natural. Landscape 1536x1024 editorial cover for renovation article about laminate floor transitions between rooms. Low architectural viewpoint from a warm terracotta hallway through a wide white rectangular doorway into a sunlit sage-green living room. Beautiful natural oak laminate flooring in both rooms with one slim discreet matching oak transition profile clearly crossing the doorway at floor level, not a step. Realistic wood grain and staggered straight boards, floor takes lower half of composition. Afternoon sunlight, inviting saturated natural terracotta and sage accents, crisp magazine quality, tasteful armchair visible in distant room. The transition is an attractive deliberate detail, no broken or swollen flooring. No text, no logos, no people, no watermarks, no rugs covering the doorway. Photorealistic illustrative interior, not a technical installation cutaway.
 
-Схема: авторский SVG `images/doorway-plan.svg`, экспорт WebP 1200×1100, quality 90, 30392 байта. Крупные подписи для мобильного чтения. Цвет отмечает место проверки, не размер шва. Это кодовая схема, не ИИ-изображение.
+Внутренние визуалы: авторские схемы `doorway-plan.svg`, `apartment-plan.svg`, `profile-types.svg` (каждая экспортирована в WebP с крупными подписями), а также AI-интерьер `profile-closeup.webp`. План квартиры объясняет вопросы каждого проёма; схема профилей различает покрытия на одном уровне и перепад, но не назначает способ крепления или размер. AI-визуал подписан как иллюстрация, а не монтажный узел.

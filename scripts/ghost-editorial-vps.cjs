@@ -18,14 +18,14 @@ function validSlug(value) {
 }
 function parseArgs(argv) {
   const result = {};
-  const names = { '--draft': 'draft', '--publish': 'publish', '--inspect-post': 'inspectPost', '--review-post': 'reviewPost', '--revise': 'revise', '--integration': 'integration' };
+  const names = { '--draft': 'draft', '--publish': 'publish', '--inspect-post': 'inspectPost', '--review-post': 'reviewPost', '--revise': 'revise', '--replace': 'replace', '--integration': 'integration' };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--inspect') { result.inspect = true; continue; }
     const key = names[argv[i]];
     if (!key || !argv[i + 1] || argv[i + 1].startsWith('--') || result[key]) throw Error('usage');
     result[key] = argv[++i];
   }
-  if ([result.inspect, result.draft, result.publish, result.inspectPost, result.reviewPost, result.revise].filter(Boolean).length !== 1) throw Error('usage');
+  if ([result.inspect, result.draft, result.publish, result.inspectPost, result.reviewPost, result.revise, result.replace].filter(Boolean).length !== 1) throw Error('usage');
   if (!result.inspect && !/^[a-f0-9]{24}$/.test(result.integration || '')) throw Error('integration');
   return result;
 }
@@ -183,6 +183,40 @@ async function revise(token, filename, fetcher = fetch) {
       result.published_at !== post.published_at || result.feature_image !== post.feature_image) throw Error('revision_result');
   return publicSummary(result);
 }
+async function replacePublished(token, filename, fetcher = fetch) {
+  const file = path.resolve(filename);
+  const bundle = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const meta = metadata(bundle.metadata);
+  const post = await postForSlug(token, meta.slug, fetcher);
+  const expected = bundle.revision;
+  if (!post || post.status !== 'published' || post.visibility !== 'public' || !post.updated_at ||
+      !expected || expected.updatedAt !== post.updated_at ||
+      expected.htmlSha256 !== crypto.createHash('sha256').update(post.html || '').digest('hex')) throw Error('revision_conflict');
+  card(bundle.html);
+  const assets = preflight(path.dirname(file), bundle.assetPaths);
+  if (!assets.some(asset => asset.rel === meta.feature_image)) throw Error('feature_image');
+  const mappings = [];
+  for (const asset of assets) {
+    const form = new FormData();
+    form.append('file', new Blob([asset.bytes], { type: 'image/webp' }), path.basename(asset.real));
+    form.append('ref', asset.rel);
+    const image = (await request(token, '/images/upload/', { method: 'POST', body: form }, fetcher)).images?.[0];
+    if (!image?.url?.startsWith(ORIGIN + '/content/')) throw Error('upload_invalid');
+    mappings.push([asset.rel, image.url]);
+  }
+  for (const field of ['feature_image', 'og_image', 'twitter_image']) meta[field] = rewrite(meta[field] || meta.feature_image, mappings);
+  const html = rewrite(bundle.html, mappings);
+  if (/src=["']\.\//.test(html)) throw Error('unmapped_image');
+  fs.writeFileSync(file + '.before.json', JSON.stringify(post), { flag: 'wx', mode: 0o600 });
+  const result = (await request(token, '/posts/' + post.id + '/?source=html&save_revision=true', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ posts: [{ ...meta, id: post.id, status: 'published', updated_at: post.updated_at, html: card(html) }] }),
+  }, fetcher)).posts?.[0];
+  if (!result || result.id !== post.id || result.slug !== post.slug || result.status !== 'published' ||
+      result.published_at !== post.published_at || result.canonical_url !== post.canonical_url ||
+      !result.feature_image?.startsWith(ORIGIN + '/content/')) throw Error('revision_result');
+  return { ...publicSummary(result), uploaded: mappings.length };
+}
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const connection = await dbKey(args.integration, args.inspect);
@@ -193,6 +227,7 @@ async function main() {
     if (args.draft) result = await createDraft(token, args.draft);
     else if (args.publish) result = await publish(token, validSlug(args.publish));
     else if (args.revise) result = await revise(token, args.revise);
+    else if (args.replace) result = await replacePublished(token, args.replace);
     else if (args.reviewPost) {
       const post = await postForSlug(token, args.reviewPost);
       if (!post || post.status !== 'published') throw Error('post_invalid');
@@ -202,7 +237,7 @@ async function main() {
     console.log(JSON.stringify(result));
   } finally { await connection.db.destroy(); }
 }
-module.exports = { parseArgs, jwt, card, preflight, rewrite, metadata, request, postForSlug, publishReady, createDraft, publish, revisedHtml, revise, unwrapHtmlCard };
+module.exports = { parseArgs, jwt, card, preflight, rewrite, metadata, request, postForSlug, publishReady, createDraft, publish, revisedHtml, revise, replacePublished, unwrapHtmlCard };
 if (require.main === module) main().catch(error => {
   const safe = /^(http_\d+|network|invalid_json|slug|assets|asset_path|metadata|integration|usage|html|unmapped_image|upload_invalid|feature_image|post_invalid|draft_not_ready|publish_invalid|revision_conflict|revision_invalid|revision_match|revision_media|revision_result)$/;
   console.error(safe.test(error.message) ? error.message : 'editorial_failed');
