@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "AI not configured on server. Set DEEPSEEK_API_KEY (recommended) or OPENROUTER_API_KEY in Timeweb env.",
+          "AI not configured on server. Set DEEPSEEK_API_KEY in Timeweb env.",
       },
       { status: 500, headers },
     );

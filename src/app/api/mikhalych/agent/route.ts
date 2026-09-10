@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const provider = getMikhalychUpstreamProvider();
   if (!provider) {
     return NextResponse.json(
-      { ok: false, error: "Set DEEPSEEK_API_KEY or OPENROUTER_API_KEY on server" },
+      { ok: false, error: "Set DEEPSEEK_API_KEY on server" },
       { status: 503, headers },
     );
   }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return jsonError(
       req,
       500,
-      "AI not configured on server. Set DEEPSEEK_API_KEY (recommended) or OPENROUTER_API_KEY.",
+      "AI not configured on server. Set DEEPSEEK_API_KEY.",
     );
   }
 

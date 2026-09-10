@@ -24,6 +24,17 @@ import type {
   ChatMessage,
 } from "./types";
 
+/**
+ * Бюджет генерации одного шага агента.
+ *
+ * Лимит ОБЩИЙ для скрытых рассуждений (`reasoning_content`) и ответа
+ * (`content`). Прежние 2048 выбирались под режим без размышлений; с
+ * включённым thinking модель на длинном вопросе успевала израсходовать все
+ * 2048 на рассуждения, ответ приходил пустым с `finish_reason=length`, и агент
+ * падал с «Пустой финальный ответ». 8192 покрывает и рассуждения, и смету.
+ */
+const AGENT_MAX_TOKENS = 8192;
+
 const MAX_TOOL_ROUNDS = () => {
   // Дефолт 10 (был 8): агент часто перевызывает run_calculator для исправления
   // (правило «молча перевызови с верными параметрами») + сравнение двух
@@ -49,9 +60,8 @@ export async function runMikhalychAgent(
   input: AgentRunInput,
   options: AgentRunOptions = {},
 ): Promise<AgentRunResult> {
-  const provider = getMikhalychUpstreamProvider();
-  if (!provider || provider !== "deepseek") {
-    throw new Error("Agent requires DeepSeek API");
+  if (!getMikhalychUpstreamProvider()) {
+    throw new Error("Agent requires DEEPSEEK_API_KEY");
   }
 
   const model = getMikhalychChatModel();
@@ -97,7 +107,7 @@ export async function runMikhalychAgent(
       });
 
       const usage = assistant.usage;
-      const { usage: _u, ...assistantMsg } = assistant;
+      const { usage: _u, finishReason: _f, ...assistantMsg } = assistant;
       trace.spanGeneration({
         name: `llm-round-${rounds}`,
         model,
@@ -119,7 +129,10 @@ export async function runMikhalychAgent(
       const toolCalls = assistantMsg.tool_calls;
       if (!toolCalls || toolCalls.length === 0) {
         const content = assistantMsg.content?.trim();
-        if (!content) throw new Error("Пустой финальный ответ");
+        if (!content) {
+          assertNotTruncated(assistant.finishReason, assistantMsg, usage);
+          throw new Error("Пустой финальный ответ");
+        }
         const result: AgentRunResult = {
           content,
           toolsUsed: [...new Set(ctx.toolsUsed)],
@@ -163,14 +176,24 @@ async function invokeModel(params: {
   clientLabel?: string;
   gen: typeof MIKHALYCH_CHAT_GENERATION;
   onDelta?: (text: string) => void;
-}): Promise<ChatMessage & { usage?: StreamedAssistantDelta["usage"] }> {
+}): Promise<ChatMessage & {
+  usage?: StreamedAssistantDelta["usage"];
+  finishReason?: string;
+}> {
   const body: Record<string, unknown> = {
     model: params.model,
     messages: params.messages,
     tools: MIKHALYCH_AGENT_TOOLS,
     tool_choice: "auto",
+    // В thinking-режиме temperature, top_p и *penalty не действуют: DeepSeek их
+    // игнорирует (значения ниже 0.95 для top_p поднимаются до 0.95). Поля
+    // оставлены для совместимости — реальную роль играет бюджет max_tokens.
     temperature: Math.min(params.gen.temperature, 0.75),
-    max_tokens: Math.max(params.gen.max_tokens, 2048),
+    // Бюджет ОБЩИЙ на reasoning_content и content. С включённым thinking модель
+    // тратит на рассуждения больше, чем весь прежний лимит 2048, и ответ
+    // обрывался с finish_reason=length и пустым content. 8192 покрывает и
+    // длинные рассуждения, и финальную смету.
+    max_tokens: AGENT_MAX_TOKENS,
     top_p: params.gen.top_p,
     frequency_penalty: params.gen.frequency_penalty,
     presence_penalty: params.gen.presence_penalty,
@@ -180,24 +203,30 @@ async function invokeModel(params: {
   const upstream = await mikhalychChatCompletion(body, {
     clientLabel: params.clientLabel ?? "agent",
     siteOrigin: params.siteOrigin,
+    // Агенту нужны скрытые рассуждения: он выбирает инструмент и не должен
+    // терять параметры из вопроса. В стрим reasoning_content не попадает.
+    allowThinking: true,
   });
 
   if (!params.stream || !upstream.ok || !upstream.body) {
     const data = (await upstream.json()) as {
-      choices?: Array<{ message?: ChatMessage }>;
+      choices?: Array<{ message?: ChatMessage; finish_reason?: string }>;
       error?: { message?: string };
       usage?: StreamedAssistantDelta["usage"];
     };
     if (!upstream.ok) {
       throw new Error(data.error?.message ?? `upstream ${upstream.status}`);
     }
-    const msg = data.choices?.[0]?.message;
+    const choice = data.choices?.[0];
+    const msg = choice?.message;
     if (!msg) throw new Error("Пустой ответ модели");
+    assertNotTruncated(choice?.finish_reason, msg, data.usage);
     return { ...msg, usage: data.usage };
   }
 
   const state: StreamedAssistantDelta = {
     content: "",
+    reasoningContent: "",
     toolCalls: [],
     finishReason: null,
   };
@@ -214,7 +243,26 @@ async function invokeModel(params: {
   }
 
   const assistant = streamedStateToAssistantMessage(state);
-  return { ...assistant, usage: state.usage };
+  return { ...assistant, usage: state.usage, finishReason: state.finishReason ?? undefined };
+}
+
+/**
+ * Обрыв по лимиту токенов выглядит как пустой ответ: в thinking-режиме бюджет
+ * расходуется на рассуждения, `content` остаётся пустым, а `finish_reason`
+ * приходит `length`. Без этой проверки диагностика сводилась к невнятному
+ * «Пустой финальный ответ» — теперь причина названа прямо.
+ */
+function assertNotTruncated(
+  finishReason: string | undefined,
+  msg: ChatMessage,
+  usage: StreamedAssistantDelta["usage"],
+): void {
+  if (finishReason !== "length") return;
+  const reasoning = msg.reasoning_content?.length ?? 0;
+  if (msg.content?.trim() && (msg.tool_calls?.length ?? 0) > 0) return;
+  throw new Error(
+    `Модель не уложилась в лимит ${AGENT_MAX_TOKENS} токенов: рассуждения ${reasoning} символов, ответ пустой. Упростите вопрос.`,
+  );
 }
 
 function normalizeUserMessages(messages: AgentUserMessage[]): ChatMessage[] {

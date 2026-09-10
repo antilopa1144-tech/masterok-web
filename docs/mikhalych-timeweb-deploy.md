@@ -11,7 +11,8 @@
 | `DEEPSEEK_API_KEY` | **Да** | [DeepSeek Platform](https://platform.deepseek.com/api_keys) — агент работает только с прямым API |
 | `NEXT_PUBLIC_SITE_URL` | Да | `https://getmasterok.ru` — ссылки на калькуляторы в ответах |
 | `MIKHALYCH_AGENT_ENABLED` | Нет | По умолчанию `true`. `false` — откат на старый линейный чат |
-| `MIKHALYCH_MODEL` | Нет | По умолчанию `deepseek-v4-pro` |
+| `MIKHALYCH_MODEL` | Нет | По умолчанию `deepseek-flash` (DeepSeek-V4.1-Flash). Идентификатора `deepseek-v4.1` в API нет — вернёт 400 |
+| `MIKHALYCH_REVIEW_MODEL` | Нет | По умолчанию `deepseek-flash`. Для второй модели можно оставить пустым |
 | `MIKHALYCH_AGENT_MAX_TOOL_ROUNDS` | Нет | Лимит циклов tools (дефолт `8`) |
 | `SERPER_API_KEY` | Нет | [serper.dev](https://serper.dev) — `web_search` (цены, нормы в сети) |
 | `JINA_API_KEY` | Нет | [jina.ai/reader](https://jina.ai/reader) — стабильнее `fetch_url` |
@@ -20,7 +21,16 @@
 | `LANGFUSE_BASE_URL` | Нет | `https://cloud.langfuse.com` или self-host |
 | `LANGFUSE_ENABLED` | Нет | Явно `false` отключает Langfuse |
 
-`OPENROUTER_API_KEY` — только fallback **без агента** (нет tool calling).
+`OPENROUTER_API_KEY` больше не поддерживается — второй провайдер удалён
+(на нём недоступен tool calling, то есть агент там не работал). Для работы
+Михалыча нужен только `DEEPSEEK_API_KEY`; без него роуты вернут 500/503.
+
+Модель: `deepseek-flash` — это **DeepSeek-V4.1-Flash**
+([Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing/)).
+`deepseek-v4-pro` (V4-Pro-0813) выводится из эксплуатации: с 14.09.2026 12:00
+по Пекину запросы к нему маршрутизируются в V4.1-Flash, поэтому дефолт переведён
+на Flash заранее. Легаси-имена `deepseek-v4-flash`, `deepseek-chat`,
+`deepseek-reasoner` принимаются и приводятся к `deepseek-flash`.
 
 ---
 
@@ -59,7 +69,7 @@ curl -s https://getmasterok.ru/api/mikhalych/ | jq
   "ok": true,
   "agentEnabled": true,
   "provider": "deepseek",
-  "chatModel": "deepseek-v4-pro"
+  "chatModel": "deepseek-flash"
 }
 ```
 
@@ -161,7 +171,7 @@ Timeweb обычно настроен так:
 | Симптом | Решение |
 |---------|---------|
 | `AI not configured` | Нет `DEEPSEEK_API_KEY` в env приложения |
-| Агент не вызывает tools | Провайдер не DeepSeek — проверьте, что не только OpenRouter |
+| Агент не вызывает tools | Проверьте, что `MIKHALYCH_AGENT_ENABLED` не `false` и что запрос идёт на `/api/mikhalych/agent/` |
 | Нет цен из интернета | Добавьте `SERPER_API_KEY` |
 | Пустой `fetch_url` | Добавьте `JINA_API_KEY` или проверьте URL |
 | Нет traces в Langfuse | Ключи + redeploy; не ставьте `LANGFUSE_ENABLED=false` |

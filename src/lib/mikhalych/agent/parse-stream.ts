@@ -2,6 +2,13 @@
 
 export interface StreamedAssistantDelta {
   content: string;
+  /**
+   * Скрытая цепочка рассуждений (thinking mode). Пользователю НЕ отдаётся, но
+   * обязана вернуться в API в следующем запросе: при наличии параметра `tools`
+   * DeepSeek требует передавать `reasoning_content` всех предыдущих ходов,
+   * иначе отвечает 400. https://api-docs.deepseek.com/guides/thinking_mode
+   */
+  reasoningContent: string;
   toolCalls: Array<{
     index: number;
     id?: string;
@@ -56,6 +63,12 @@ export function accumulateStreamChunk(
     state.content += delta.content;
   }
 
+  // reasoning_content обязателен для следующего запроса с tools — накапливаем,
+  // но наружу в стрим не отдаём (см. комментарий к StreamedAssistantDelta).
+  if (delta?.reasoning_content && typeof delta.reasoning_content === "string") {
+    state.reasoningContent += delta.reasoning_content;
+  }
+
   const toolDeltas = delta?.tool_calls as Array<Record<string, unknown>> | undefined;
   if (toolDeltas) {
     for (const td of toolDeltas) {
@@ -84,6 +97,7 @@ export function accumulateStreamChunk(
 export function streamedStateToAssistantMessage(state: StreamedAssistantDelta): {
   role: "assistant";
   content: string | null;
+  reasoning_content?: string;
   tool_calls?: Array<{
     id: string;
     type: "function";
@@ -104,6 +118,8 @@ export function streamedStateToAssistantMessage(state: StreamedAssistantDelta): 
   return {
     role: "assistant",
     content: state.content || null,
+    // При tools DeepSeek требует вернуть reasoning_content предыдущего хода.
+    ...(state.reasoningContent ? { reasoning_content: state.reasoningContent } : {}),
     ...(tool_calls.length > 0 ? { tool_calls } : {}),
   };
 }

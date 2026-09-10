@@ -5,6 +5,12 @@ export interface ChatMessage {
   content: string | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
+  /**
+   * Цепочка рассуждений ассистента (thinking mode). При наличии `tools` DeepSeek
+   * требует возвращать её в API во всех последующих запросах, иначе 400.
+   * https://api-docs.deepseek.com/guides/thinking_mode
+   */
+  reasoning_content?: string;
 }
 
 export interface ToolCall {

@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Set DEEPSEEK_API_KEY or OPENROUTER_API_KEY on server",
+        error: "Set DEEPSEEK_API_KEY on server",
       },
       { status: 503, headers },
     );
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "AI not configured on server. Set DEEPSEEK_API_KEY (recommended) or OPENROUTER_API_KEY in Timeweb env.",
+          "AI not configured on server. Set DEEPSEEK_API_KEY in Timeweb env.",
       },
       { status: 500, headers },
     );

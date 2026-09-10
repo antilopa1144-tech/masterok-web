@@ -6,7 +6,7 @@
 
 | Компонент | Реализация |
 |-----------|------------|
-| LLM | `deepseek-v4-pro` через OpenAI-совместимый API |
+| LLM | `deepseek-flash` (DeepSeek-V4.1-Flash) через OpenAI-совместимый API |
 | Оркестрация | Линейный чат: клиент → `POST /api/mikhalych` → upstream |
 | Контекст расчёта | Текстовый блок `buildMikhalychCalcContext()` в system/user |
 | Математика | **Не вызывается** — модель «советует зайти в калькулятор» |
@@ -157,10 +157,54 @@ flowchart TB
 
 | Узел | Модель | temperature | Задача |
 |------|--------|-------------|--------|
-| **interpreter** | deepseek-v4-pro | 0.3 | Классификация, извлечение параметров, выбор slug |
-| **researcher** | deepseek-v4-pro | 0.2 | План поиска, вызов web tools, суммаризация с цитатами |
-| **calculator** | deepseek-v4-flash | 0 | Только tool calls, без «придуманной» математики |
-| **formatter** | deepseek-v4-pro | 0.85 | Персона Михалыча, финальный Markdown |
+| **interpreter** | deepseek-flash | 0.3 | Классификация, извлечение параметров, выбор slug |
+| **researcher** | deepseek-flash | 0.2 | План поиска, вызов web tools, суммаризация с цитатами |
+| **calculator** | deepseek-flash | 0 | Только tool calls, без «придуманной» математики |
+| **formatter** | deepseek-flash | 0.85 | Персона Михалыча, финальный Markdown |
+
+Все четыре узла используют один и тот же `getMikhalychChatModel()`. Роли
+разводятся промптами, а не идентификатором модели: после вывода V4-Pro из
+эксплуатации отдельной «pro»-модели в API не осталось.
+
+### Миграция на DeepSeek V4.1 (2026-09-10)
+
+- `deepseek-flash` = **DeepSeek-V4.1-Flash** — так модель названа в
+  [Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing/).
+- Идентификатора `deepseek-v4.1` в API **нет**: запрос падает с
+  `400 The supported API model names are deepseek-flash, deepseek-v4-pro`.
+- `deepseek-v4-pro` (DeepSeek-V4-Pro-0813) выводится из эксплуатации: с
+  14.09.2026 12:00 по Пекину запросы к нему маршрутизируются в V4.1-Flash.
+  Поэтому дефолт переведён на Flash явно, а не по факту молчаливой подмены.
+- Легаси-имена `deepseek-v4-flash`, `deepseek-chat`, `deepseek-reasoner`
+  обслуживаются моделью V4.1-Flash; `resolveDeepSeekModel()` приводит их к
+  `deepseek-flash`. Явный `MIKHALYCH_MODEL=deepseek-v4-pro` уважается.
+- У Flash: контекст 1M, concurrency 2500, поддерживается vision; тарифы
+  Flash в 4–5 раз ниже Pro на входе. Эти параметры в коде не зашиты —
+  актуальные значения смотреть в документации API.
+
+### Thinking mode (обязательно к соблюдению)
+
+Агент вызывает модель с `allowThinking: true`, чат и ревью — без него
+(`withThinking(body, false)` в `deepseek-upstream.ts`).
+
+Два правила из [документации DeepSeek](https://api-docs.deepseek.com/guides/thinking_mode),
+на которых уже спотыкались:
+
+1. **`reasoning_content` обязан возвращаться в API.** При наличии параметра
+   `tools` модель требует передавать цепочку рассуждений всех предыдущих ходов —
+   иначе следующий запрос падает с 400. Поэтому `reasoning_content` накапливается
+   в `accumulateStreamChunk`, кладётся в сообщение ассистента
+   (`streamedStateToAssistantMessage`) и сохраняется в `ChatMessage`.
+   Пользователю он не показывается: в SSE уходит только `delta.content`.
+2. **`max_tokens` — общий бюджет на рассуждения и ответ.** Прежние 2048 в
+   thinking-режиме целиком уходили в `reasoning_content`, ответ приходил пустым
+   с `finish_reason=length`, и агент падал с «Пустой финальный ответ».
+   Сейчас `AGENT_MAX_TOKENS = 8192` в `run.ts`, а `assertNotTruncated()`
+   называет причину обрыва прямо вместо невнятной ошибки.
+
+Побочные следствия thinking-режима: `temperature`, `presence_penalty` и
+`frequency_penalty` **не действуют** (DeepSeek их игнорирует), `top_p` поднимается
+до нижней границы 0.95. Характер Михалыча держится промптом, а не температурой.
 
 ### Рёбра (conditional)
 
