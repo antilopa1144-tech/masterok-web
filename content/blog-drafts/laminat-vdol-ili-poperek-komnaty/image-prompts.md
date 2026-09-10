@@ -15,3 +15,7 @@ Use case: photorealistic-natural. Asset: landscape editorial cover for Russian h
 `images/hallway.webp` создан встроенным imagegen: светлая длинная прихожая, доски медового дуба идут к дальнему окну, бирюзовая скамья и естественный свет. Результат конвертирован в 1536×1024 WebP quality 85; в статье это интерьерный пример, не правило укладки.
 
 `images/viewpoints.svg` и `images/cuts-comparison.svg` — авторские условные схемы, экспортированные в WebP. Первая показывает разные точки, из которых читатель оценивает рисунок; вторая — как при повороте меняется ориентир рядов. Обе не являются картой раскроя и не содержат монтажных норм.
+
+## 3D-иллюстрации вместо плоских схем
+
+10 сентября старые внутренние WebP-схемы заменены в статье на `directions-3d.webp`, `viewpoints-3d.webp` и `cuts-comparison-3d.webp`. Все созданы встроенным imagegen и конвертированы в WebP quality 86. Общий подход промптов: «premium realistic 3D architectural visualization, editorial magazine quality; warm oak laminate; no text, labels, numbers, arrows, logos, watermarks; illustration rather than technical construction drawing». Первый визуал честно сравнивает один интерьер при двух поворотах досок; второй — точки взгляда; третий — два поворота покрытия в одной комнате.
