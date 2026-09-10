@@ -99,6 +99,7 @@ export const concreteDef: CalculatorDefinition = {
         { value: 1, label: "1 м³" },
       ],
       hint: "Уточните фактический шаг и минимальную партию у поставщика. При самостоятельном замесе поле не влияет на закупку компонентов.",
+      hideIf: { key: "manualMix", op: "eq", value: 1 },
     },
     {
       key: "reserve",
@@ -111,7 +112,9 @@ export const concreteDef: CalculatorDefinition = {
       defaultValue: 5,
       hint: "Проектный запас на геометрию опалубки, потери и схему подачи. Значение не установлено ГОСТ и выбирается по условиям объекта.",
     },
-    ...(cementManufacturerField ? [cementManufacturerField] : []),
+    ...(cementManufacturerField
+      ? [{ ...cementManufacturerField, hideIf: { key: "manualMix", op: "eq" as const, value: 0 } }]
+      : []),
   ],
   calculate(inputs) {
     const spec = concreteSpec as any;

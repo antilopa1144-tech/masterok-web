@@ -1,10 +1,29 @@
 import { describe, it, expect } from "vitest";
 import { concreteDef } from "../formulas/concrete";
+import { shouldHideField } from "../field-options";
 import { findMaterial, checkInvariants, withBasicAccuracy, requireScenarios } from "./_helpers";
 
 const calc = withBasicAccuracy(concreteDef.calculate.bind(concreteDef));
 
 describe("Калькулятор бетона", () => {
+  describe("Поля способа закупки", () => {
+    const field = (key: string) => concreteDef.fields.find((item) => item.key === key)!;
+
+    it("для готовой смеси показывает шаг заказа и скрывает производителя цемента", () => {
+      const values = { manualMix: 0 };
+
+      expect(shouldHideField(field("readyMixOrderStepM3"), values)).toBe(false);
+      expect(shouldHideField(field("manufacturer"), values)).toBe(true);
+    });
+
+    it("для самостоятельного замеса показывает производителя цемента и скрывает шаг заказа", () => {
+      const values = { manualMix: 1 };
+
+      expect(shouldHideField(field("readyMixOrderStepM3"), values)).toBe(true);
+      expect(shouldHideField(field("manufacturer"), values)).toBe(false);
+    });
+  });
+
   describe("Стандартный расчёт М200, 5 м³, запас 5%", () => {
     const result = calc({ concreteVolume: 5, concreteGrade: 3, manualMix: 0, reserve: 5 });
 
