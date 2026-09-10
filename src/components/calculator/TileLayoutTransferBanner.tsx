@@ -21,6 +21,10 @@ export default function TileLayoutTransferBanner() {
   const packagingSource = searchParams.get("packagingSource");
   const tilesPerBox = Number(searchParams.get("layoutTilesPerBox"));
   const packAreaM2 = Number(searchParams.get("packArea"));
+  const layoutTiles = Number(tilesHint);
+  const layoutPurchaseTiles = Number.isInteger(layoutTiles) && layoutTiles > 0 && Number.isInteger(tilesPerBox) && tilesPerBox > 0
+    ? Math.ceil(layoutTiles / tilesPerBox) * tilesPerBox
+    : null;
   const layoutModes: LayoutMode[] = ["straight", "offset-half", "offset-third", "diagonal"];
   const requestedLayoutMode = searchParams.get("layoutMode") as LayoutMode | null;
   const surfaceW = Number(searchParams.get("layoutSurfaceW"));
@@ -71,7 +75,8 @@ export default function TileLayoutTransferBanner() {
             {tilesHint ? (
               <>
                 {" "}
-                — по схеме <strong>{tilesHint} шт</strong> плитки; проверьте площадь и схему, затем «Посчитать».
+                — по схеме <strong>{tilesHint} шт</strong> плитки. Эта схема задаёт нижнюю границу покупки
+                {layoutPurchaseTiles != null ? <>: не меньше <strong>{layoutPurchaseTiles} шт. ({layoutPurchaseTiles / tilesPerBox} уп.)</strong>.</> : "."}
               </>
             ) : (
               <> — проверьте площадь и схему, затем нажмите «Посчитать».</>
@@ -86,7 +91,7 @@ export default function TileLayoutTransferBanner() {
           </p>
           {reserveHint != null && (
             <p>
-              В раскладке выбран запас <strong>{reserveHint}%</strong>. Здесь запас определяется отдельно по способу укладки, формату и сложности помещения, поэтому итог может отличаться.
+              В раскладке выбран запас <strong>{reserveHint}%</strong>. Площадная модель может добавить запас по способу укладки, формату и сложности помещения, но не уменьшит покупку ниже фактической схемы.
             </p>
           )}
         </div>

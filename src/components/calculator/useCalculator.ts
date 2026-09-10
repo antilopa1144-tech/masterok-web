@@ -22,6 +22,7 @@ import {
   trackComparisonOpen,
 } from "@/lib/analytics";
 import { getInvalidCalculatorFields } from "./calculatorValidation";
+import { applyTileLayoutPurchaseFloor } from "@/lib/tools/tile-layout-purchase-floor";
 import {
   addCalculationHistory,
   getAccuracyModeSetting,
@@ -122,6 +123,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   }, [calculator.slug]);
 
   const category = getCategoryById(calculator.category);
+  const applyTransferResult = useCallback(
+    (calculated: CalculatorResult) => applyTileLayoutPurchaseFloor(calculator.slug, searchParams, calculated),
+    [calculator.slug, searchParams],
+  );
   const visibleFields = useMemo(
     () => getVisibleCalculatorFields(calculator, values),
     [calculator, values],
@@ -164,7 +169,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
           const initialFields = getVisibleCalculatorFields(calculator, initVals);
           if (getInvalidCalculatorFields(initialFields, initVals).length > 0) return;
           const res = fn({ ...initVals, accuracyMode: accuracyMode as unknown as number });
-          setResult(res);
+          setResult(applyTransferResult(res));
           setHasCalculated(true);
         }
       });
@@ -186,19 +191,19 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       void getCalculateFn(calculator.slug).then((fn) => {
         if (!fn) return;
         const res = fn({ ...newValues, accuracyMode: accuracyModeRef.current as unknown as number });
-        setResult(res);
+        setResult(applyTransferResult(res));
         setHasCalculated(true);
         // Update comparison if panel is open
         if (showComparisonRef.current) {
           const cmp = {} as Record<AccuracyMode, CalculatorResult>;
           for (const m of ACCURACY_MODES) {
-            cmp[m] = fn({ ...newValues, accuracyMode: m as unknown as number });
+            cmp[m] = applyTransferResult(fn({ ...newValues, accuracyMode: m as unknown as number }));
           }
           setComparisonResults(cmp);
         }
       });
     }, 300);
-  }, [calculator]);
+  }, [calculator, applyTransferResult]);
 
   // Очистка таймера при размонтировании
   useEffect(() => () => clearTimeout(debounceRef.current), []);
@@ -229,10 +234,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     void getCalculateFn(calculator.slug).then((fn) => {
       if (!fn) return;
       const res = fn({ ...values, accuracyMode: mode as unknown as number });
-      setResult(res);
+      setResult(applyTransferResult(res));
       setHasCalculated(true);
     });
-  }, [calculator.slug, values, accuracyMode, customModifiers, hasValidationErrors, markCalculatorStarted]);
+  }, [calculator.slug, values, accuracyMode, customModifiers, hasValidationErrors, markCalculatorStarted, applyTransferResult]);
 
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
@@ -254,7 +259,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     void getCalculateFn(calculator.slug).then((fn) => {
       if (!fn) return;
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
-      setResult(res);
+      const adjustedResult = applyTransferResult(res);
+      setResult(adjustedResult);
       setHasCalculated(true);
       setCalcNonce((n) => n + 1);
       trackAccuracyModeCalculation(calculator.slug, accuracyMode);
@@ -264,13 +270,13 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         calcId: calculator.id,
         calcTitle: calculator.title,
         values,
-        result: res,
+        result: adjustedResult,
         ts: Date.now(),
       };
       void addCalculationHistory(entry).then(setHistory);
     });
     return true;
-  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors, invalidFields, markCalculatorStarted]);
+  }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors, invalidFields, markCalculatorStarted, applyTransferResult]);
 
   const handleReset = useCallback(() => {
     const defaults = Object.fromEntries(
@@ -289,6 +295,12 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     );
     if (accuracyMode !== DEFAULT_ACCURACY_MODE) {
       params.set("accuracyMode", accuracyMode);
+    }
+    if (calculator.slug === "plitka" && searchParams.get("from") === "raskladka") {
+      for (const key of ["from", "tilesHint", "layoutTilesPerBox", "layoutSurfaceW", "layoutSurfaceH", "layoutMode", "reserveHint", "packagingSource"]) {
+        const value = searchParams.get(key);
+        if (value != null) params.set(key, value);
+      }
     }
     const url = `${window.location.origin}${window.location.pathname}?${params}`;
 
@@ -313,7 +325,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
       prompt(CALCULATOR_UI_TEXT.copyLinkPrompt, url);
     }
     // "shared" and "cancelled" — no UI feedback needed
-  }, [values, accuracyMode, calculator.slug, calculator.title, result]);
+  }, [values, accuracyMode, calculator.slug, calculator.title, result, searchParams]);
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {
@@ -378,10 +390,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     if (!fn) return;
     const results = {} as Record<AccuracyMode, CalculatorResult>;
     for (const mode of ACCURACY_MODES) {
-      results[mode] = fn({ ...inputValues, accuracyMode: mode as unknown as number });
+      results[mode] = applyTransferResult(fn({ ...inputValues, accuracyMode: mode as unknown as number }));
     }
     setComparisonResults(results);
-  }, [calculator.slug]);
+  }, [calculator.slug, applyTransferResult]);
 
   const handleToggleComparison = useCallback(() => {
     markCalculatorStarted();
