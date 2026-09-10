@@ -18,14 +18,14 @@ function validSlug(value) {
 }
 function parseArgs(argv) {
   const result = {};
-  const names = { '--draft': 'draft', '--publish': 'publish', '--inspect-post': 'inspectPost', '--integration': 'integration' };
+  const names = { '--draft': 'draft', '--publish': 'publish', '--inspect-post': 'inspectPost', '--review-post': 'reviewPost', '--revise': 'revise', '--integration': 'integration' };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--inspect') { result.inspect = true; continue; }
     const key = names[argv[i]];
     if (!key || !argv[i + 1] || argv[i + 1].startsWith('--') || result[key]) throw Error('usage');
     result[key] = argv[++i];
   }
-  if ([result.inspect, result.draft, result.publish, result.inspectPost].filter(Boolean).length !== 1) throw Error('usage');
+  if ([result.inspect, result.draft, result.publish, result.inspectPost, result.reviewPost, result.revise].filter(Boolean).length !== 1) throw Error('usage');
   if (!result.inspect && !/^[a-f0-9]{24}$/.test(result.integration || '')) throw Error('integration');
   return result;
 }
@@ -38,7 +38,7 @@ function jwt(kid, secret) {
   return unsigned + '.' + crypto.createHmac('sha256', Buffer.from(secret, 'hex')).update(unsigned).digest('base64url');
 }
 function card(html) {
-  if (typeof html !== 'string' || html.length < 300 || /<script\b|<iframe\b|kg-card-(begin|end):html/i.test(html)) throw Error('html');
+  if (typeof html !== 'string' || html.length < 300 || /<script\b|<iframe\b|kg-card-(begin|end):\s*html/i.test(html)) throw Error('html');
   return '<!--kg-card-begin:html-->' + html + '<!--kg-card-end:html-->';
 }
 function preflight(root, assets) {
@@ -148,6 +148,41 @@ async function publish(token, slug, fetcher = fetch) {
   if (result?.status !== 'published') throw Error('publish_invalid');
   return publicSummary(result);
 }
+function unwrapHtmlCard(html) {
+  return html.replace(/^\s*<!--kg-card-begin:\s*html-->\s*([\s\S]*?)\s*<!--kg-card-end:\s*html-->\s*$/, '$1');
+}
+function revisedHtml(post, revision) {
+  if (!post || post.status !== 'published' || post.visibility !== 'public' || post.slug !== validSlug(revision.slug) ||
+      !post.updated_at || revision.expectedUpdatedAt !== post.updated_at ||
+      typeof post.html !== 'string' || crypto.createHash('sha256').update(post.html).digest('hex') !== revision.expectedHtmlSha256) throw Error('revision_conflict');
+  if (!Array.isArray(revision.replacements) || !revision.replacements.length || revision.replacements.length > 100) throw Error('revision_invalid');
+  let html = post.html;
+  for (const edit of revision.replacements) {
+    if (typeof edit.before !== 'string' || !edit.before || typeof edit.after !== 'string' ||
+        html.split(edit.before).length !== 2) throw Error('revision_match');
+    html = html.replace(edit.before, () => edit.after);
+  }
+  html = unwrapHtmlCard(html);
+  card(html); // Reject executable markup and nested HTML-card wrappers.
+  // Editorial text changes must preserve existing media markup, including captions.
+  const figures = value => value.match(/<figure\b[^>]*>[\s\S]*?<\/figure>|<img\b[^>]*>/gi) || [];
+  if (JSON.stringify(figures(post.html)) !== JSON.stringify(figures(html)) || html === post.html) throw Error('revision_media');
+  return html;
+}
+async function revise(token, filename, fetcher = fetch) {
+  const revision = JSON.parse(fs.readFileSync(filename, 'utf8'));
+  const post = await postForSlug(token, validSlug(revision.slug), fetcher);
+  const html = revisedHtml(post, revision);
+  // Exclusive backup before the only write; a retry requires fresh inspection.
+  fs.writeFileSync(filename + '.before.json', JSON.stringify(post), { flag: 'wx', mode: 0o600 });
+  const result = (await request(token, '/posts/' + post.id + '/?source=html&save_revision=true', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ posts: [{ id: post.id, updated_at: post.updated_at, html: card(html) }] }),
+  }, fetcher)).posts?.[0];
+  if (!result || result.id !== post.id || result.slug !== post.slug || result.status !== 'published' ||
+      result.published_at !== post.published_at || result.feature_image !== post.feature_image) throw Error('revision_result');
+  return publicSummary(result);
+}
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const connection = await dbKey(args.integration, args.inspect);
@@ -157,13 +192,19 @@ async function main() {
     let result;
     if (args.draft) result = await createDraft(token, args.draft);
     else if (args.publish) result = await publish(token, validSlug(args.publish));
+    else if (args.revise) result = await revise(token, args.revise);
+    else if (args.reviewPost) {
+      const post = await postForSlug(token, args.reviewPost);
+      if (!post || post.status !== 'published') throw Error('post_invalid');
+      result = { ...publicSummary(post), html: post.html, htmlSha256: crypto.createHash('sha256').update(post.html).digest('hex') };
+    }
     else { const post = await postForSlug(token, args.inspectPost); result = post ? publicSummary(post) : { found: false }; }
     console.log(JSON.stringify(result));
   } finally { await connection.db.destroy(); }
 }
-module.exports = { parseArgs, jwt, card, preflight, rewrite, metadata, request, postForSlug, publishReady, createDraft, publish };
+module.exports = { parseArgs, jwt, card, preflight, rewrite, metadata, request, postForSlug, publishReady, createDraft, publish, revisedHtml, revise, unwrapHtmlCard };
 if (require.main === module) main().catch(error => {
-  const safe = /^(http_\d+|network|invalid_json|slug|assets|asset_path|metadata|integration|usage|html|unmapped_image|upload_invalid|feature_image|post_invalid|draft_not_ready|publish_invalid)$/;
+  const safe = /^(http_\d+|network|invalid_json|slug|assets|asset_path|metadata|integration|usage|html|unmapped_image|upload_invalid|feature_image|post_invalid|draft_not_ready|publish_invalid|revision_conflict|revision_invalid|revision_match|revision_media|revision_result)$/;
   console.error(safe.test(error.message) ? error.message : 'editorial_failed');
   process.exitCode = 1;
 });

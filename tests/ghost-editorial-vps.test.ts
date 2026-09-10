@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const h = require('../scripts/ghost-editorial-vps.cjs');
 const folders: string[] = [];
@@ -34,6 +35,43 @@ describe('Ghost editorial VPS helper', () => {
     expect(() => h.parseArgs(['--draft', 'bundle.json'])).toThrow('integration');
     expect(() => h.parseArgs(['--inspect', '--publish', 'slug'])).toThrow('usage');
     expect(h.parseArgs(['--inspect'])).toEqual({ inspect: true });
+    expect(() => h.parseArgs(['--review-post', 'slug', '--revise', 'file'])).toThrow('usage');
+  });
+  it('revises only matched text at the reviewed version and preserves media', async () => {
+    const { root } = fixture();
+    const html = '<p>' + 'Existing article. '.repeat(30) + '</p><figure><img src="https://cms.getmasterok.ru/content/a.webp"><figcaption>Caption</figcaption></figure>';
+    const post = { id: 'id', slug: 'old-post', status: 'published', visibility: 'public', html,
+      updated_at: '2026-09-10T01:00:00Z', published_at: '2026-02-14T00:00:00Z', feature_image: origin + '/content/cover.webp' };
+    const revision = { slug: post.slug, expectedUpdatedAt: post.updated_at,
+      expectedHtmlSha256: crypto.createHash('sha256').update(html).digest('hex'),
+      replacements: [{ before: '<p>', after: '<p>Correction. ' }] };
+    expect(h.revisedHtml(post, revision)).toContain('<p>Correction. ');
+    const wrapped = '\n<!--kg-card-begin: html-->\n' + html + '\n<!--kg-card-end: html-->\n';
+    expect(h.revisedHtml({ ...post, html: wrapped }, { ...revision,
+      expectedHtmlSha256: crypto.createHash('sha256').update(wrapped).digest('hex'),
+    })).toBe(h.revisedHtml(post, revision));
+    expect(() => h.card(wrapped)).toThrow('html');
+    expect(() => h.revisedHtml({ ...post, updated_at: 'newer' }, revision)).toThrow('revision_conflict');
+    expect(() => h.revisedHtml(post, { ...revision, expectedHtmlSha256: 'bad' })).toThrow('revision_conflict');
+    expect(() => h.revisedHtml(post, { ...revision, replacements: [{ before: 'Existing', after: 'New' }] })).toThrow('revision_match');
+    expect(() => h.revisedHtml(post, { ...revision, replacements: [{ before: 'Caption', after: 'Different' }] })).toThrow('revision_media');
+    expect(() => h.revisedHtml(post, { ...revision, replacements: [{ before: '<p>', after: '<script>bad</script><p>' }] })).toThrow('html');
+    const file = path.join(root, 'revision.json');
+    fs.writeFileSync(file, JSON.stringify(revision));
+    let writes = 0;
+    const mock = async (url: string, init: RequestInit) => {
+      if (url.includes('/slug/')) return response({ posts: [post] });
+      writes++;
+      expect(url).toContain('source=html&save_revision=true');
+      const payload = JSON.parse(String(init.body)).posts[0];
+      expect(Object.keys(payload).sort()).toEqual(['html', 'id', 'updated_at']);
+      expect(payload.html).toContain('kg-card-begin:html');
+      expect(JSON.parse(fs.readFileSync(file + '.before.json', 'utf8'))).toEqual(post);
+      return response({ posts: [{ ...post, updated_at: 'newer' }] });
+    };
+    expect((await h.revise('test', file, mock)).status).toBe('published');
+    await expect(h.revise('test', file, mock)).rejects.toThrow();
+    expect(writes).toBe(1);
   });
   it('returns null only for absent slug; no fake absence on auth failure', async () => {
     expect(await h.postForSlug('test', 'new-post', async () => response({}, 404))).toBeNull();
