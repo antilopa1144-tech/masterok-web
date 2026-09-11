@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCalculatorsMetaByCategory as getCalculatorsByCategory } from "@/lib/calculators/meta.generated";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/calculators/categories";
+import { buildCategoryTitle } from "@/lib/calculators/category-meta";
 import { SITE_URL } from "@/lib/site";
-import type { Category } from "@/lib/calculators/types";
 import { buildPageMetadata } from "@/lib/metadata";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { CATEGORY_FAQ } from "@/lib/calculators/category-faq";
@@ -17,27 +17,10 @@ const UI_TEXT = {
   emptyState: "Калькуляторы этой категории скоро появятся",
   allCalculators: "Все калькуляторы",
   complexitySuffix: "сложность",
-  // SEO-title по схеме: «Калькуляторы X: расчёт материалов онлайн» (X из seoSubject категории).
-  // Если итог с « — Мастерок» > 60 символов — fallback на компактную форму «Калькуляторы X онлайн».
-  titleLongTpl: ": расчёт материалов онлайн",
-  titleShortTpl: " онлайн",
   descriptionPrefix: "Бесплатные калькуляторы:",
   descriptionSuffix: "Расход материалов, запас и итог к покупке.",
   itemListNameSuffix: "— строительные калькуляторы",
 } as const;
-
-/**
- * SEO-title для страницы категории по схеме:
- *   Калькуляторы [seoSubject]: расчёт материалов онлайн
- * Если итог с « — Мастерок» (+11 симв., добавит layout template) превышает 60 —
- * fallback на компактную форму «Калькуляторы [seoSubject] онлайн».
- */
-function buildCategoryTitle(cat: Category): string {
-  const SUFFIX_LEN = 11; // " — Мастерок"
-  const long = `Калькуляторы ${cat.seoSubject}${UI_TEXT.titleLongTpl}`;
-  if (long.length + SUFFIX_LEN <= 60) return long;
-  return `Калькуляторы ${cat.seoSubject}${UI_TEXT.titleShortTpl}`;
-}
 
 interface PageProps {
   params: Promise<{ category: string }>;
