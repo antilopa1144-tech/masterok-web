@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Metadata } from "next";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { buildCategoryTitle } from "@/lib/calculators/category-meta";
@@ -22,6 +23,18 @@ const DESCRIPTION_MAX = 165;
 /** Итоговый title = заголовок страницы, к которому хелпер добавил бренд. */
 function finalTitle(pageTitle: string): string {
   return withSiteSuffix(pageTitle);
+}
+
+/**
+ * Достаёт строку заголовка из Metadata. Next допускает три формы: строку,
+ * `{ absolute }` и `{ default, template }` — buildPageMetadata всегда отдаёт
+ * `absolute`, но тест не должен падать на типе, если форма когда-то изменится.
+ */
+function metadataTitle(metadata: Metadata): string {
+  const title = metadata.title;
+  if (typeof title === "string") return title;
+  if (title && typeof title === "object" && "absolute" in title) return title.absolute;
+  return "";
 }
 
 describe("длина title и description по всем источникам метаданных", () => {
@@ -65,7 +78,7 @@ describe("длина title и description по всем источникам м�
       // не важна: страница не попадает в sitemap и закрыта от индексации.
       if (tool.noindex) continue;
       const metadata = buildToolPageMetadata(tool.slug);
-      const title = typeof metadata.title === "string" ? metadata.title : metadata.title?.absolute;
+      const title = metadataTitle(metadata);
       if (!title || !metadata.description) continue;
       if (title.length > TITLE_MAX_LENGTH) violations.push(`${tool.slug}: title ${title.length}`);
       if (metadata.description.length < DESCRIPTION_MIN || metadata.description.length > DESCRIPTION_MAX) {
@@ -79,10 +92,7 @@ describe("длина title и description по всем источникам м�
     const titles = [
       ...ALL_CALCULATORS_META.map((calc) => finalTitle(calc.metaTitle)),
       ...CATEGORIES.map((cat) => finalTitle(buildCategoryTitle(cat))),
-      ...TOOL_CONFIGS.map((tool) => {
-        const metadata = buildToolPageMetadata(tool.slug);
-        return typeof metadata.title === "string" ? metadata.title : (metadata.title?.absolute ?? "");
-      }),
+      ...TOOL_CONFIGS.map((tool) => metadataTitle(buildToolPageMetadata(tool.slug))),
     ];
     const duplicated = titles.filter((title) => (title.match(/Мастерок/g) ?? []).length > 1);
     expect(duplicated).toEqual([]);
