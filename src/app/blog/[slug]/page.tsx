@@ -187,11 +187,18 @@ export default async function BlogPostPage({ params }: Props) {
 
   const relatedPosts = await getRelatedPosts(post);
 
-  const wordCount = post.content.split(/\s+/).length;
+  // wordCount считаем по видимому тексту, а не по HTML-строке: раньше сюда
+  // попадала разметка, и значение выходило завышенным примерно на 7%.
+  const wordCount = post.content
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z#0-9]+;/gi, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 1).length;
 
-  // headline — Google предпочитает короткий variant (≤ 110 chars) для AMP/News.
-  // Если редактор задал meta_title в Ghost — используем его.
-  const schemaHeadline = post.metaTitle ?? post.title;
+  // headline должен отражать видимый заголовок статьи. Раньше здесь был metaTitle
+  // из Ghost — короткий SEO-вариант с суффиксом «| Мастерок», из-за чего значение
+  // не совпадало ни с <h1>, ни с og:title. Видимый h1 берётся из post.title.
+  const schemaHeadline = post.title;
 
   // Дата обновления, видимая пользователю. Показываем только если правка
   // существенная — иначе любое касание в Ghost имитирует свежесть.

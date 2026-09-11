@@ -1,5 +1,108 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  ROUTE_CALCULATOR_CATEGORY,
+  ROUTE_CALCULATOR_SLUGS,
+  ROUTE_CATEGORY_SLUGS,
+  ROUTE_CHECKLIST_SLUGS,
+  ROUTE_TOOL_SLUGS,
+} from "./lib/seo/route-manifest.generated";
+
+// =============================================================================
+// Валидация динамических маршрутов ДО рендера.
+//
+// Зачем: notFound() внутри страницы вызывается уже после начала стриминга,
+// когда заголовки и код ответа отправлены, поэтому несуществующие адреса
+// отдавали 200 с пустым телом (мягкий 404) и с конфликтующими тегами robots.
+// Middleware исполняется раньше рендера — здесь статус гарантирован.
+//
+// Списки маршрутов лежат в route-manifest.generated.ts строками: middleware
+// работает на Edge и не может импортировать модули с Node-зависимостями.
+// =============================================================================
+
+const CATEGORY_SLUGS = new Set<string>(ROUTE_CATEGORY_SLUGS);
+const CALCULATOR_SLUGS = new Set<string>(ROUTE_CALCULATOR_SLUGS);
+const TOOL_SLUGS = new Set<string>(ROUTE_TOOL_SLUGS);
+const CHECKLIST_SLUGS = new Set<string>(ROUTE_CHECKLIST_SLUGS);
+
+/** Сегменты пути без ведущего и замыкающего слэша. */
+function segmentsOf(pathname: string): string[] {
+  return pathname.split("/").filter(Boolean);
+}
+
+function notFoundResponse(nonce: string): NextResponse {
+  // Отдаём 404 прямо из middleware: rewrite на внутренний /not-found приводит
+  // к 500, а notFound() внутри страницы не успевает повлиять на статус,
+  // потому что заголовки уже отправлены стримингом. Тело — минимальная
+  // страница со ссылкой на каталог; роботам важен код ответа, не разметка.
+  const response = new NextResponse(
+    `<!doctype html><html lang="ru"><head><meta charset="utf-8">` +
+      `<meta name="robots" content="noindex, follow">` +
+      `<title>Страница не найдена — Мастерок</title></head>` +
+      `<body><h1>Страница не найдена</h1>` +
+      `<p>Возможно, адрес изменился. Откройте <a href="/kalkulyatory/">каталог калькуляторов</a> или <a href="/">главную</a>.</p>` +
+      `</body></html>`,
+    {
+      status: 404,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        // Ответ на несуществующий адрес не должен осесть в кэше CDN.
+        "cache-control": "no-store",
+      },
+    },
+  );
+  response.headers.set("x-nonce", nonce);
+  return response;
+}
+
+/**
+ * Проверяет динамические маршруты. Возвращает 404/301 либо null, если адрес
+ * валиден и его должен обработать рендер.
+ */
+function validateDynamicRoute(request: NextRequest, nonce: string): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  const seg = segmentsOf(pathname);
+
+  if (seg[0] === "kalkulyatory") {
+    // /kalkulyatory/<category>/<slug>/
+    if (seg.length >= 3) {
+      const category = seg[1];
+      const slug = seg[2];
+      const canonicalCategory = ROUTE_CALCULATOR_CATEGORY[slug];
+      if (!canonicalCategory || !CALCULATOR_SLUGS.has(slug)) return notFoundResponse(nonce);
+      // Известный калькулятор по чужой категории — постоянный редирект на канонический адрес.
+      if (category !== canonicalCategory) {
+        const url = new URL(request.url);
+        url.pathname = `/kalkulyatory/${canonicalCategory}/${slug}/`;
+        const response = NextResponse.redirect(url.toString(), 301);
+        response.headers.set("x-nonce", nonce);
+        return response;
+      }
+      return null;
+    }
+    // /kalkulyatory/<category>/
+    if (seg.length === 2) {
+      return CATEGORY_SLUGS.has(seg[1]) ? null : notFoundResponse(nonce);
+    }
+    return null;
+  }
+
+  if (seg[0] === "instrumenty") {
+    // /instrumenty/chek-listy/<slug>/
+    if (seg[1] === "chek-listy" && seg.length >= 3) {
+      return CHECKLIST_SLUGS.has(seg[2]) ? null : notFoundResponse(nonce);
+    }
+    // /instrumenty/<slug>/
+    if (seg.length === 2) {
+      // Каталог чек-листов — статический маршрут, не инструмент из реестра.
+      if (seg[1] === "chek-listy") return null;
+      return TOOL_SLUGS.has(seg[1]) ? null : notFoundResponse(nonce);
+    }
+    return null;
+  }
+
+  return null;
+}
 
 // =============================================================================
 // Транслитерация кириллицы → латиница для slug тегов блога.
@@ -101,6 +204,11 @@ export function middleware(request: NextRequest) {
     response.headers.set("x-nonce", nonce);
     return response;
   }
+
+  // Валидация динамических маршрутов: несуществующие slug и категории должны
+  // получить 404 здесь, а не после старта стриминга (иначе мягкий 404 с кодом 200).
+  const routeVerdict = validateDynamicRoute(request, nonce);
+  if (routeVerdict) return routeVerdict;
 
   const response = NextResponse.next();
 

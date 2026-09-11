@@ -76,3 +76,60 @@ describe("SEO-страницы калькуляторов", () => {
     }
   });
 });
+
+/**
+ * Разметка обязана описывать то, что реально видно на странице. Раньше здесь
+ * были сконструированные строки, которых на странице нет:
+ *   HowTo.name      = «Как пользоваться: <title>»
+ *   Article.headline = «Советы экспертов: <title>»
+ * Google требует соответствия structured data видимому содержимому.
+ */
+describe("JSON-LD соответствует видимому контенту", () => {
+  async function schemasFor(category: string, slug: string) {
+    const page = await CalculatorPage({ params: Promise.resolve({ category, slug }) });
+    const html = renderToStaticMarkup(page);
+    const schemas = [
+      ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+    ].map((match) => JSON.parse(match[1]) as Record<string, unknown>);
+    return { html, schemas };
+  }
+
+  it("HowTo.name совпадает с видимым заголовком инструкции", async () => {
+    const { html, schemas } = await schemasFor("poly", "plitka");
+    const howTo = schemas.find((s) => s["@type"] === "HowTo");
+    expect(howTo?.name).toBe("Как пользоваться");
+    // Тот же текст виден пользователю как заголовок аккордеона.
+    expect(html).toContain("Как пользоваться");
+    expect(html).not.toContain("Как пользоваться: Калькулятор");
+  });
+
+  it("Article.headline совпадает с видимым заголовком блока совета", async () => {
+    const { html, schemas } = await schemasFor("poly", "plitka");
+    const article = schemas.find((s) => s["@type"] === "Article");
+    if (!article) return; // у калькулятора может не быть expertTips
+    expect(article.headline).toBe("Совет Михалыча");
+    expect(html).toContain("Совет Михалыча");
+    expect(html).not.toContain("Советы экспертов");
+  });
+
+  it("articleBody содержит только тот совет, который показан", async () => {
+    const { schemas } = await schemasFor("poly", "plitka");
+    const article = schemas.find((s) => s["@type"] === "Article");
+    if (!article) return;
+    const body = String(article.articleBody ?? "");
+    expect(body.length).toBeGreaterThan(0);
+    // Один совет, а не склейка всех подсказок через пустую строку.
+    expect(body).not.toContain("\n\n");
+  });
+
+  it("ни один headline/name не содержит бренд-суффикс", async () => {
+    for (const [category, slug] of [["poly", "plitka"], ["fundament", "beton"], ["otdelka", "kraska"]]) {
+      const { schemas } = await schemasFor(category, slug);
+      for (const schema of schemas) {
+        const headline = String(schema.headline ?? schema.name ?? "");
+        expect(headline).not.toMatch(/Мастерок/);
+        expect(headline).not.toMatch(/\|/);
+      }
+    }
+  });
+});

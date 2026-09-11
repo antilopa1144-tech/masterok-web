@@ -109,11 +109,14 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
   // для форумных Q&A-сайтов вроде StackOverflow. FAQPage достаточен для SEO,
   // AEO и AI-цитирования (Perplexity, ChatGPT парсят FAQPage).
 
-  // HowTo schema
+  // HowTo schema.
+  // name обязан совпадать с видимым заголовком страницы: инструкция раскрывается
+  // в аккордеоне «Как пользоваться» (SeoContentBlock), а не в сконструированной
+  // строке «Как пользоваться: <title>» — такой строки на странице нет.
   const howToLd = calc.howToUse && calc.howToUse.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name: `Как пользоваться: ${calc.title}`,
+    name: "Как пользоваться",
     description: calc.metaDescription,
     inLanguage: "ru",
     url: canonicalUrl,
@@ -132,13 +135,17 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     })),
   } : null;
 
-  // Expert tips as Article snippets for AEO.
-  // Авторство указывается как Organization — сайт не использует фиктивных
-  // персональных экспертов (нарушение E-E-A-T по Google guidelines).
+  // Совет прораба как Article для AEO.
+  // headline и articleBody обязаны совпадать с тем, что реально видно: на странице
+  // есть блок «Совет Михалыча» с ОДНИМ советом (CalculatorWithMikhalych), а не
+  // раздел «Советы экспертов» со всеми подсказками — прежний headline был
+  // сконструированной строкой, которой на странице нет.
+  // Авторство — Organization: сайт не использует фиктивных персональных экспертов
+  // (нарушение E-E-A-T по гайдлайнам Google).
   const expertTipsLd = calc.expertTips && calc.expertTips.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: `Советы экспертов: ${calc.title}`,
+    headline: "Совет Михалыча",
     description: calc.metaDescription,
     inLanguage: "ru",
     url: canonicalUrl,
@@ -150,7 +157,9 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       name: SITE_NAME,
       url: SITE_URL,
     },
-    articleBody: calc.expertTips.map(t => `${t.title}: ${t.content}`).join("\n\n"),
+    // Только тот совет, который показан в блоке: первый по тому же порядку,
+    // что и practicalAdvice в CalculatorWithMikhalych.
+    articleBody: `${calc.expertTips[0].title}: ${calc.expertTips[0].content}`,
     publisher: {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
