@@ -11,7 +11,7 @@ import {
   WEIGHT_KG_TOTAL_KEYS,
   TOTAL_LABEL_FORMS,
 } from "../totalsDisplay";
-import { pluralizeRu, pluralizePackageUnit, displayUnit } from "@/lib/format/pluralize";
+import { pluralizeRu, pluralizePackageUnit, displayUnit, PACKAGE_UNIT_FORMS } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 import {
   formatMaterialQty,
@@ -232,9 +232,34 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
   const max = result.scenarios.MAX;
   if (!rec) return null;
 
-  // Get unit from buy_plan or primary material, translate to Russian
-  const rawUnit = rec.buy_plan?.unit ?? result.materials[0]?.unit ?? "";
+  // Get unit from buy_plan or primary material, translate to Russian.
+  //
+  // buy_plan.unit описывает саму упаковку («мешков», «прутков», «листов»), а
+  // purchase_quantity и exact_need выражены в единицах материала: 5 мешков × 25 кг —
+  // это 125 кг, а не 125 мешков. Поэтому при размере упаковки больше единицы берём
+  // единицу того материала, у которого совпадают число и размер упаковки. Если
+  // размер упаковки равен единице, штука и есть упаковка — поле уже верное.
+  const recBuyPlan = rec.buy_plan;
+  const materialForScenario = recBuyPlan
+    ? result.materials.find(
+        (item) =>
+          item.packageInfo &&
+          item.packageInfo.count === recBuyPlan.packages_count &&
+          Math.abs(item.packageInfo.size - recBuyPlan.package_size) < 1e-9,
+      )
+    : undefined;
+  const rawUnit =
+    recBuyPlan && recBuyPlan.package_size !== 1 && materialForScenario
+      ? materialForScenario.unit
+      : (recBuyPlan?.unit ?? result.materials[0]?.unit ?? "");
   const translatedUnit = displayUnit(rawUnit);
+  // Дробное количество требует родительного единственного: «7,42 упаковки», а не
+  // «7,42 упаковок». Целые — по обычному правилу склонения.
+  const unitForQty = (qty: number): string => {
+    const forms = PACKAGE_UNIT_FORMS[translatedUnit];
+    if (!forms) return translatedUnit;
+    return Number.isInteger(qty) ? pluralizeRu(qty, forms) : forms[1];
+  };
   const recUnit = pluralizeUnit(rec.purchase_quantity, translatedUnit) || translatedUnit;
   const minUnit = min ? (pluralizeUnit(min.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
   const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
@@ -257,18 +282,19 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
           </div>
           <div className="min-w-0 text-left sm:text-right">
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)} {translatedUnit}
+              {CALCULATOR_UI_TEXT.scenarioLabels.need}: {formatNumber(rec.exact_need)} {unitForQty(rec.exact_need)}
             </p>
             {rec.leftover > 0 && (
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)} {translatedUnit}
+                {CALCULATOR_UI_TEXT.scenarioLabels.leftover}: {formatNumber(rec.leftover)} {unitForQty(rec.leftover)}
               </p>
             )}
             {rec.buy_plan && rec.buy_plan.packages_count > 0 && (() => {
               const bpUnit = rec.buy_plan.unit;
               const isBulkRounding = (bpUnit === "м³" || bpUnit === "m3") && rec.buy_plan.package_size < 1;
-              const isSinglePieceStep = (bpUnit === "шт" || bpUnit === "piece") && rec.buy_plan.package_size === 1;
-              if (isSinglePieceStep) return null;
+              // Упаковка размером ровно 1 штука: число к покупке уже показано крупно,
+              // отдельная строка «8 листов × 1» ничего не добавляет.
+              if (!isBulkRounding && rec.buy_plan.package_size === 1) return null;
               if (isBulkRounding) {
                 return (
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
@@ -276,16 +302,16 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
                   </p>
                 );
               }
-              // If buy_plan.unit is a raw unit (kg, l, m), show "N шт × size unit"
-              // If buy_plan.unit is a package type (мешков, канистр), pluralize it
-              const isRawUnit = !!({ kg: 1, g: 1, l: 1, m: 1, m2: 1, m3: 1, "м²": 1, "м³": 1 } as Record<string, number>)[bpUnit];
-              const countLabel = isRawUnit
-                ? pluralizeRu(rec.buy_plan.packages_count, ["шт.", "шт.", "шт."])
-                : pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit);
-              const sizeLabel = isRawUnit ? displayUnit(bpUnit) : "";
+              // Строка расшифровывает, из чего сложилось число к покупке:
+              // «5 мешков × 25 кг» вместо просто «125 кг». Если buy_plan.unit — уже
+              // единица измерения (кг, м³), упаковка считается штуками.
+              const isPackageNoun = Object.prototype.hasOwnProperty.call(PACKAGE_UNIT_FORMS, bpUnit);
+              const countLabel = isPackageNoun
+                ? pluralizePackageUnit(rec.buy_plan.packages_count, bpUnit)
+                : pluralizeRu(rec.buy_plan.packages_count, ["шт.", "шт.", "шт."]);
               return (
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                  {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size.toLocaleString("ru-RU", { maximumFractionDigits: 10 })}{sizeLabel ? ` ${sizeLabel}` : ""}
+                  {rec.buy_plan.packages_count} {countLabel} × {rec.buy_plan.package_size.toLocaleString("ru-RU", { maximumFractionDigits: 10 })} {translatedUnit}
                 </p>
               );
             })()}
