@@ -167,20 +167,23 @@ export default function SeoContentBlock({
         </AccordionItem>
       )}
 
-      {/* FAQ — объединённый, без дубликатов */}
+      {/* FAQ — объединённый, без дубликатов.
+          Вопросы размечены как h2: именно вопрос и следующий за ним короткий ответ
+          вытаскивают поисковики и answer-движки в сниппет, поэтому вопрос должен
+          стоять в оглавлении страницы, а не быть подписью внутри раздела. */}
       {hasFaq && (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 px-1">
-            <span>❓</span>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 px-1">
+            <span aria-hidden>❓</span>
             Частые вопросы
-          </h2>
+          </p>
           {allFaq.map((item, i) => (
             <details
               key={`${calculatorId}-faq-${i}`}
               className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
             >
               <summary className="relative cursor-pointer list-none pr-6 text-sm font-medium text-slate-900 dark:text-slate-100">
-                <h3 className="text-sm font-medium">{item.question}</h3>
+                <h2 className="text-sm font-medium">{item.question}</h2>
                 <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">+</span>
               </summary>
               <div

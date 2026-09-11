@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPostsByTag, resolveTagFromSlug, tagToSlug } from "@/lib/blog";
-import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
+import { getTagCalculatorLinks } from "@/lib/blog-tag-links";
 import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -174,17 +174,7 @@ export default async function TagPage({ params }: TagPageProps) {
           {/* Калькуляторы по теме: агрегируем relatedCalculator статей подборки,
               чтобы страница тега вела не только в блог, но и к расчётам. */}
           {(() => {
-            const related: Array<{ slug: string; categorySlug: string; title: string }> = [];
-            for (const post of posts) {
-              const ref = post.relatedCalculator;
-              if (!ref) continue;
-              if (related.some((item) => item.slug === ref.slug)) continue;
-              // Только существующие калькуляторы: битая ссылка в подборке хуже,
-              // чем отсутствие ссылки.
-              const meta = ALL_CALCULATORS_META.find((item) => item.slug === ref.slug);
-              if (!meta) continue;
-              related.push({ slug: ref.slug, categorySlug: meta.categorySlug, title: meta.title });
-            }
+            const related = getTagCalculatorLinks(posts);
             if (related.length === 0) return null;
             return (
               <section className="mt-8" aria-label="Калькуляторы по теме">
@@ -192,7 +182,7 @@ export default async function TagPage({ params }: TagPageProps) {
                   Калькуляторы по теме
                 </h2>
                 <ul className="space-y-2">
-                  {related.slice(0, 5).map((ref) => (
+                  {related.map((ref) => (
                     <li key={ref.slug}>
                       <Link
                         href={`/kalkulyatory/${ref.categorySlug}/${ref.slug}/`}
