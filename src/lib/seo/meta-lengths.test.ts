@@ -6,6 +6,17 @@ import { buildCategoryTitle } from "@/lib/calculators/category-meta";
 import { TOOL_CONFIGS } from "@/lib/tools/config";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { TITLE_MAX_LENGTH, withSiteSuffix } from "@/lib/metadata";
+import { metadata as homeMetadata } from "@/app/page";
+import { metadata as aiMetadata } from "@/app/ai/page";
+import { metadata as aboutMetadata } from "@/app/o-proekte/page";
+import { metadata as appMetadata } from "@/app/prilozhenie/page";
+import { metadata as projectsMetadata } from "@/app/proekty/page";
+import { metadata as methodologyMetadata } from "@/app/metodologiya/page";
+import { metadata as privacyMetadata } from "@/app/politika-konfidencialnosti/page";
+import { metadata as calculatorsIndexMetadata } from "@/app/kalkulyatory/page";
+import { metadata as toolsIndexMetadata } from "@/app/instrumenty/page";
+import { metadata as blogIndexMetadata } from "@/app/blog/page";
+import { metadata as mikhalychMetadata } from "@/app/mikhalych/page";
 
 /**
  * Волна 2 SEO-аудита: 30 заголовков из 148 выходили за 60 символов, потому что
@@ -96,5 +107,39 @@ describe("длина title и description по всем источникам м�
     ];
     const duplicated = titles.filter((title) => (title.match(/Мастерок/g) ?? []).length > 1);
     expect(duplicated).toEqual([]);
+  });
+
+  /**
+   * Статические страницы: главная, каталоги, служебные и справочные. До этого
+   * они проверялись только замером собранного HTML, то есть новая правка текста
+   * могла вывести заголовок или описание за лимит незамеченной.
+   */
+  it("держит лимиты на статических страницах", () => {
+    const pages: Array<[string, Metadata]> = [
+      ["/", homeMetadata],
+      ["/ai/", aiMetadata],
+      ["/o-proekte/", aboutMetadata],
+      ["/prilozhenie/", appMetadata],
+      ["/proekty/", projectsMetadata],
+      ["/metodologiya/", methodologyMetadata],
+      ["/politika-konfidencialnosti/", privacyMetadata],
+      ["/kalkulyatory/", calculatorsIndexMetadata],
+      ["/instrumenty/", toolsIndexMetadata],
+      ["/blog/", blogIndexMetadata],
+      ["/mikhalych/", mikhalychMetadata],
+    ];
+
+    const violations: string[] = [];
+    for (const [path, metadata] of pages) {
+      const title = metadataTitle(metadata);
+      const description = metadata.description ?? "";
+      if (!title) violations.push(`${path}: нет title`);
+      else if (title.length > TITLE_MAX_LENGTH) violations.push(`${path}: title ${title.length}`);
+      if (description.length < DESCRIPTION_MIN || description.length > DESCRIPTION_MAX) {
+        violations.push(`${path}: description ${description.length}`);
+      }
+      if ((title.match(/Мастерок/g) ?? []).length > 1) violations.push(`${path}: дубль бренда в title`);
+    }
+    expect(violations).toEqual([]);
   });
 });
