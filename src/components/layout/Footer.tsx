@@ -150,6 +150,15 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                {/* Ссылка выводит /ai/ из сирот: страница-справка о расчётах
+                    нужна и людям, и AI-краулерам, но не имела ни одной
+                    внутренней входящей ссылки. */}
+                <Link href="/ai/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                  <CategoryIcon icon="book" size={14} color="currentColor" />
+                  Как устроены расчёты
+                </Link>
+              </li>
+              <li>
                 <Link href="/kalkulyatory/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="tile" size={14} color="currentColor" />
                   Все калькуляторы
