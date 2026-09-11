@@ -6,6 +6,8 @@ import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import RenovationCalendar from "./RenovationCalendar";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import RenovationCalendarSeo from "@/components/tools/RenovationCalendarSeo";
+import { CALENDAR_FAQ } from "@/lib/renovation-calendar/seo-content";
 
 const META = {
   title: `Календарь ремонта — этапы, чек-листы и таймеры`,
@@ -64,7 +66,13 @@ export default function KalendarRemontaPage() {
         >
           <RenovationCalendar />
         </Suspense>
-        <ToolPageExtras slug="kalendar-remonta" />
+        <ToolPageExtras
+          slug="kalendar-remonta"
+          extraFaq={CALENDAR_FAQ}
+          extraIntro="Ниже — этапы всех четырёх сценариев с интервалами от даты старта и правила очерёдности работ: что и почему нельзя переставлять."
+        >
+          <RenovationCalendarSeo />
+        </ToolPageExtras>
       </div>
     </>
   );

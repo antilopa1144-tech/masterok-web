@@ -43,15 +43,21 @@ function deduplicateFaq(items: FaqItem[]): FaqItem[] {
   });
 }
 
-function AccordionItem({ id, title, icon, children, defaultOpen }: {
+function AccordionItem({ id, title, icon, children, defaultOpen, as = "h2" }: {
   id: string;
   title: string;
   icon: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  /** Тег заголовка раздела. h2 — верхний уровень справки на странице калькулятора. */
+  as?: "h2" | "h3";
 }) {
-  // Свёрнутость не вредит индексации: с mobile-first indexing Google даёт
-  // полный вес контенту в закрытых <details>, если он в DOM (а он в DOM).
+  // Заголовок раздела — настоящий <h2>/<h3>, а не <span>: поисковики и
+  // answer-движки (Perplexity, ChatGPT, Алиса) разбирают структуру документа
+  // по заголовкам и по ним собирают «оглавление» ответа. Свёрнутость не вредит
+  // индексации: с mobile-first indexing Google даёт полный вес контенту
+  // в закрытых <details>, если он в DOM (а он в DOM).
+  const Heading = as;
   return (
     <details
       id={id}
@@ -60,8 +66,8 @@ function AccordionItem({ id, title, icon, children, defaultOpen }: {
     >
       <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none list-none font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
         <span className="flex items-center gap-2 text-sm">
-          <span>{icon}</span>
-          {title}
+          <span aria-hidden>{icon}</span>
+          <Heading className="text-sm font-semibold">{title}</Heading>
         </span>
         <span className="text-slate-400 group-open:rotate-45 transition-transform text-lg leading-none">+</span>
       </summary>
@@ -174,7 +180,7 @@ export default function SeoContentBlock({
               className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
             >
               <summary className="relative cursor-pointer list-none pr-6 text-sm font-medium text-slate-900 dark:text-slate-100">
-                {item.question}
+                <h3 className="text-sm font-medium">{item.question}</h3>
                 <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">+</span>
               </summary>
               <div

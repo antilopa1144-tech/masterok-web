@@ -75,6 +75,79 @@ const APP_CATEGORIES = [
   { icon: "🔲", name: "Ламинат", cat: "Полы" },
 ] as const;
 
+/** Честное сравнение: что реально умеет веб-версия, а что добавляет приложение. */
+const APP_VS_WEB = [
+  {
+    feature: "Установка",
+    web: "Не нужна — открывается в браузере",
+    app: "Android, установка из RuStore",
+  },
+  {
+    feature: "Работа без интернета",
+    web: "Нет: страницу и ассистента нужно загрузить из сети",
+    app: "Калькуляторы считают офлайн",
+  },
+  {
+    feature: "Сохранение расчётов",
+    web: "Проекты в браузере, привязаны к устройству",
+    app: "Проекты внутри приложения",
+  },
+  {
+    feature: "Экспорт в PDF",
+    web: "Есть у каждого калькулятора",
+    app: "Есть",
+  },
+  {
+    feature: "QR-код расчёта",
+    web: "Нет",
+    app: "Есть",
+  },
+  {
+    feature: "ИИ-ассистент Михалыч",
+    web: "Есть, отвечает через интернет",
+    app: "Есть, отвечает через интернет",
+  },
+] as const;
+
+const INSTALL_STEPS = [
+  "Откройте карточку приложения в RuStore по кнопке на этой странице.",
+  "Нажмите «Установить» и подтвердите установку — приложение бесплатное, регистрация не нужна.",
+  "Откройте приложение и выберите калькулятор. Первый запуск не требует интернета после установки.",
+] as const;
+
+const APP_FAQ = [
+  {
+    question: "Приложение бесплатное?",
+    answer:
+      "Да. Скачивание и все калькуляторы бесплатны, регистрация и подписка не нужны. Оплата — только за стройматериалы, которые вы посчитаете.",
+  },
+  {
+    question: "Нужен ли интернет, чтобы считать?",
+    answer:
+      "Для работы калькуляторов — нет, расчёты идут на устройстве и доступны офлайн. Интернет нужен только для установки, обновлений и ответов ИИ-ассистента Михалыча: он обращается к серверу.",
+  },
+  {
+    question: "Чем приложение отличается от сайта?",
+    answer:
+      "Расчётная логика одна и та же, поэтому результаты совпадают. Приложение добавляет офлайн-режим, проекты внутри устройства и QR-код расчёта. Веб-версия не требует установки, а сохранённые проекты в браузере привязаны к конкретному устройству и браузеру.",
+  },
+  {
+    question: "Куда сохраняются расчёты?",
+    answer:
+      "В проекты на вашем устройстве: в приложении — внутри приложения, в веб-версии — в хранилище браузера. Аккаунта и входа нет, поэтому привязки к серверу тоже нет: чтобы перенести расчёт на другое устройство, используйте экспорт в PDF или QR-код.",
+  },
+  {
+    question: "Есть ли версия для iOS?",
+    answer:
+      "Сейчас приложение публикуется для Android в RuStore. На iPhone и iPad пользуйтесь веб-версией: она открывается в Safari и считает так же, но без офлайн-режима и QR-кода.",
+  },
+  {
+    question: "Насколько точны расчёты?",
+    answer:
+      "Калькуляторы считают по строительным нормам и паспортным расходам материалов, отдельно показывая точную потребность и итог к покупке с округлением до целых упаковок. Формулы, коэффициенты запаса и источники норм описаны на странице методологии — там же указано, что расчёт не заменяет проект.",
+  },
+] as const;
+
 const appJsonLd = {
   "@context": "https://schema.org",
   "@type": "MobileApplication",
@@ -112,11 +185,24 @@ const breadcrumbLd = {
   ],
 };
 
+// FAQPage: вопросы — те же, что видны на странице в разделе «Частые вопросы».
+const faqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  url: `${SITE_URL}/prilozhenie/`,
+  mainEntity: APP_FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
+
 export default function PrilozheniePage() {
   return (
     <div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="page-container-wide py-12 md:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
@@ -222,6 +308,93 @@ export default function PrilozheniePage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 dark:border-slate-800">
+        <div className="page-container-wide py-12">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+            Приложение или веб-версия
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl mb-6">
+            Расчётная логика одна и та же — набор калькуляторов и формулы совпадают, поэтому результаты
+            сходятся. Разница в том, как вы ими пользуетесь.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] border-collapse text-sm">
+              <thead>
+                <tr className="text-left text-slate-500 dark:text-slate-400">
+                  <th scope="col" className="border-b border-slate-200 py-2 pr-4 font-semibold dark:border-slate-700">
+                    Возможность
+                  </th>
+                  <th scope="col" className="border-b border-slate-200 py-2 pr-4 font-semibold dark:border-slate-700">
+                    Веб-версия
+                  </th>
+                  <th scope="col" className="border-b border-slate-200 py-2 font-semibold dark:border-slate-700">
+                    Приложение
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {APP_VS_WEB.map((row) => (
+                  <tr key={row.feature} className="align-top">
+                    <th
+                      scope="row"
+                      className="border-b border-slate-100 py-3 pr-4 text-left font-medium text-slate-900 dark:border-slate-800 dark:text-slate-100"
+                    >
+                      {row.feature}
+                    </th>
+                    <td className="border-b border-slate-100 py-3 pr-4 text-slate-600 dark:border-slate-800 dark:text-slate-300">
+                      {row.web}
+                    </td>
+                    <td className="border-b border-slate-100 py-3 text-slate-600 dark:border-slate-800 dark:text-slate-300">
+                      {row.app}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+        <div className="page-container-wide py-12">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+            Как установить приложение
+          </h2>
+          <ol className="max-w-3xl space-y-4">
+            {INSTALL_STEPS.map((step, i) => (
+              <li key={step} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-500 text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <span className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 dark:border-slate-800">
+        <div className="page-container-wide py-12">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Частые вопросы</h2>
+          <div className="max-w-3xl space-y-3">
+            {APP_FAQ.map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-xl border border-slate-200 bg-white px-5 py-4 dark:border-slate-700 dark:bg-slate-900"
+              >
+                <summary className="relative cursor-pointer list-none pr-6 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-sm font-semibold">{item.question}</h3>
+                  <span className="absolute right-0 top-0 text-slate-400 transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{item.answer}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
