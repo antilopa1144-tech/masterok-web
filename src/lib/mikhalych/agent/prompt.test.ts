@@ -10,7 +10,7 @@ describe("buildAgentSystemPrompt", () => {
   const prompt = buildAgentSystemPrompt();
 
   it("содержит требование назвать класс и расход", () => {
-    expect(prompt).toContain("какой класс/тип применил и какой расход");
+    expect(prompt).toContain("какую полосу/класс применил и какой расход");
   });
 
   it("запрещает расширять границы класса и молча выбирать на границе", () => {

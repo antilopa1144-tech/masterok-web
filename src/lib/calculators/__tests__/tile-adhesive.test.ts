@@ -1,12 +1,63 @@
 import { describe, it, expect } from "vitest";
-import { tileAdhesiveDef } from "../formulas/tile-adhesive";
+import { tileAdhesiveDef, TILE_ADHESIVE_SIZE_CLASSES } from "../formulas/tile-adhesive";
 import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
+import tileAdhesiveSpec from "../../../../configs/calculators/tile-adhesive-canonical.v1.json";
 
 const calc = withBasicAccuracy(tileAdhesiveDef.calculate.bind(tileAdhesiveDef)) as (
   inputs: Record<string, any>,
 ) => ReturnType<typeof tileAdhesiveDef.calculate>;
 
 describe("Плиточный клей", () => {
+  /**
+   * Регрессия на дефект подписей: класс 0 был подписан «до 30×30 см» при норме
+   * 3 кг/м², из-за чего 30×30 попадал сразу в два класса (3,0 и 5,0) и один и
+   * тот же размер давал расхождение в 1,7 раза.
+   */
+  describe("Полосы формата: подписи не обещают больше нормы", () => {
+    const norms = tileAdhesiveSpec.material_rules.base_consumption as Record<string, number>;
+
+    it("норма каждого класса не ниже нормы для верхнего размера своей полосы", () => {
+      for (const cls of TILE_ADHESIVE_SIZE_CLASSES) {
+        const norm = norms[String(cls.value)];
+        expect(norm, `класс ${cls.value}: нет нормы в спеке`).toBeDefined();
+        // Класс без верхней границы (от 90×90 см) сверять не с чем: сверху
+        // норма не ограничена, а расход там поднимает множитель ×1,70.
+        if (cls.upperCm === 0) continue;
+        expect(
+          norm,
+          `класс ${cls.value} «${cls.label}»: норма ${norm} ниже табличной ${cls.upperNormCeiling} для верхнего размера полосы`,
+        ).toBeGreaterThanOrEqual(cls.upperNormCeiling);
+      }
+    });
+
+    it("полосы соседних классов не пересекаются", () => {
+      const bounded = TILE_ADHESIVE_SIZE_CLASSES.filter((c) => c.upperCm > 0);
+      for (let i = 1; i < bounded.length; i += 1) {
+        const prev = bounded[i - 1];
+        const next = bounded[i];
+        // Номер нижней границы следующей полосы берём из подписи: «25×25 — …», «50×50 — …».
+        const lower = Number(next.label.match(/^(\d+)×/)?.[1]);
+        expect(Number.isFinite(lower), `класс ${next.value}: не разобрать нижнюю границу из «${next.label}»`).toBe(true);
+        expect(
+          lower,
+          `класс ${next.value} начинается с ${lower}, а класс ${prev.value} кончается на ${prev.upperCm}`,
+        ).toBeGreaterThan(prev.upperCm);
+      }
+    });
+
+    it("селект в форме показывает ровно те же подписи, что и полосы", () => {
+      const field = tileAdhesiveDef.fields.find((item) => item.key === "tileSize");
+      expect(field?.options?.map((o) => o.label)).toEqual(TILE_ADHESIVE_SIZE_CLASSES.map((c) => c.label));
+    });
+
+    it("30×30 см попадает в единственную полосу", () => {
+      const matches = TILE_ADHESIVE_SIZE_CLASSES.filter((c) => c.value === 0 || 30 <= c.upperCm);
+      // Класс 0 кончается на 20 см, значит 30×30 обслуживает только следующий класс.
+      expect(TILE_ADHESIVE_SIZE_CLASSES[0].upperCm).toBeLessThan(30);
+      expect(matches.length).toBeGreaterThan(0);
+    });
+  });
+
   describe("Стандартный расчёт", () => {
     it("20 м², маленькая плитка (tileSize=0), пол (laying=0), бетон (base=0), мешки 25 кг", () => {
       const r = calc({ area: 20, tileSize: 0, laying: 0, base: 0, bagWeight: 25 });
@@ -79,6 +130,9 @@ describe("Плиточный клей", () => {
   describe("Предупреждения", () => {
     it("крупная плитка → честная граница паспортного расхода", () => {
       const r = calc({ area: 20, tileSize: 2, laying: 0, base: 0, bagWeight: 25 });
+      // Предупреждение называет полосу формата и отправляет к техкарте продукта,
+      // а не назначает конкретный зуб шпателя.
+      expect(r.warnings.some(w => w.includes("50×50 — 80×80 см"))).toBe(true);
       expect(r.warnings.some(w => w.includes("техкарте конкретного клея"))).toBe(true);
       expect(r.warnings.some(w => w.includes("10-12 мм"))).toBe(false);
     });
@@ -110,7 +164,7 @@ describe("Плиточный клей", () => {
 
     it("tileSize=3: warning раскрывает коэффициент и оставляет технологию техкарте", () => {
       const hasWarning = largeFormat.warnings.some((w) =>
-        w.includes("60×120 см") && w.includes("×1,70") && w.includes("техкарте"),
+        w.includes("от 90×90 см") && w.includes("×1,70") && w.includes("техкарте"),
       );
       expect(hasWarning).toBe(true);
     });
