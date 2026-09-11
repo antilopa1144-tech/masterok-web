@@ -264,9 +264,9 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
     if (!forms) return translatedUnit;
     return Number.isInteger(qty) ? pluralizeRu(qty, forms) : forms[1];
   };
-  const recUnit = pluralizeUnit(rec.purchase_quantity, translatedUnit) || translatedUnit;
-  const minUnit = min ? (pluralizeUnit(min.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
-  const maxUnit = max ? (pluralizeUnit(max.purchase_quantity, translatedUnit) || translatedUnit) : translatedUnit;
+  const recUnit = unitForQty(rec.purchase_quantity);
+  const minUnit = min ? unitForQty(min.purchase_quantity) : translatedUnit;
+  const maxUnit = max ? unitForQty(max.purchase_quantity) : translatedUnit;
 
   return (
     <section aria-label="Потребность и покупка" className="min-w-0">
