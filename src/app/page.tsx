@@ -37,6 +37,15 @@ export const metadata: Metadata = {
   title: { absolute: SITE_DEFAULT_TITLE },
   description: `${CALC_COUNT}+ бесплатных строительных калькуляторов: точная потребность, практический запас и количество материалов к покупке.`,
   alternates: { canonical: `${SITE_URL}/` },
+  // Задаётся явно: корневой layout больше не выставляет robots, чтобы страницы
+  // без своих метаданных не получали второй тег. Главная не использует
+  // buildPageMetadata, поэтому указывает директивы сама.
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 const HOME_TASK_LINKS = [

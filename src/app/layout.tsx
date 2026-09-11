@@ -85,12 +85,11 @@ export const metadata: Metadata = {
     description: SITE_TWITTER_DESCRIPTION,
     images: [SITE_OG_IMAGE_PATH],
   },
-  robots: {
-    index: true,
-    follow: true,
-    "max-image-preview": "large",
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
+  // robots намеренно НЕ задаём на уровне layout: страницы без собственных
+  // метаданных (например not-found) наследуют его и получают ДВА тега robots —
+  // «index, follow» из layout и «noindex» со страницы. Краулеры читают такие
+  // противоречивые сигналы непредсказуемо. Для обычной страницы значение по
+  // умолчанию и так index/follow, а нужные директивы страницы задают сами.
   openGraph: {
     type: "website",
     locale: "ru_RU",

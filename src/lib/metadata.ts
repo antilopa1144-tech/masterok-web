@@ -58,6 +58,16 @@ export function buildPageMetadata({
   return {
     title: cleanTitle,
     description,
+    // Единственное место, где robots задаётся для обычных страниц. Раньше это
+    // дублировалось в корневом layout, из-за чего страницы без собственных
+    // метаданных (not-found) получали ДВА тега robots: унаследованный
+    // index/follow рядом со своим noindex.
+    robots: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large" as const,
+      googleBot: { index: true, follow: true, "max-image-preview": "large" as const },
+    },
     alternates: {
       canonical: url,
     },

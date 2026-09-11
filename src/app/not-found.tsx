@@ -6,12 +6,13 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import CalculatorSearch from "@/components/calculator/CalculatorSearch";
 
 export const metadata: Metadata = {
-  title: "Страница не найдена | Мастерок",
+  // Объект с absolute: title.template из корневого layout дописывает бренд к
+  // строковому title, из-за чего получалось «Страница не найдена | Мастерок —
+  // Мастерок». absolute отключает шаблон и даёт один заголовок.
+  title: { absolute: "Страница не найдена | Мастерок" },
   description: "Запрошенная страница не найдена. Перейдите к каталогу строительных калькуляторов или на главную.",
-  robots: {
-    index: false,
-    follow: true,
-  },
+  // robots намеренно не задаём: App Router сам добавляет noindex для not-found,
+  // а второй тег с тем же значением только дублировал директиву.
 };
 
 const POPULAR = ALL_CALCULATORS_META.filter((c) => c.popularity >= 9).slice(0, 6);

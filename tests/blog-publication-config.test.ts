@@ -13,7 +13,11 @@ describe("publication route contract", () => {
     expect(source(path)).toContain("export const revalidate = 60");
   });
   it("allows large image previews for general robots and Googlebot", () => {
-    expect(source("src/app/layout.tsx").match(/"max-image-preview": "large"/g)).toHaveLength(2);
+    // Директивы живут в buildPageMetadata: там единственное место, где robots
+    // задаётся для обычных страниц. В корневом layout их быть не должно —
+    // иначе not-found получает второй тег robots рядом со своим noindex.
+    expect(source("src/lib/metadata.ts").match(/"max-image-preview": "large"/g)).toHaveLength(2);
+    expect(source("src/app/layout.tsx")).not.toContain("robots:");
   });
   it("does not stream a root loading shell before blog existence is resolved", () => {
     expect(existsSync("src/app/loading.tsx")).toBe(false);
