@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPostsByTag, resolveTagFromSlug, tagToSlug } from "@/lib/blog";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { BLOG_TAG_MIN_POSTS_FOR_INDEX, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -117,6 +118,13 @@ export default async function TagPage({ params }: TagPageProps) {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Posts grid */}
           <div className="flex-1">
+            {/* Пояснение к подборке: без него страница тега — только сетка карточек,
+                и поисковику нечего показать в сниппете. */}
+            <p className="mb-5 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              Подборка материалов по теме «{tag}»: {UI_TEXT.postsCount(posts.length)} с расчётами,
+              выбором материалов и практикой монтажа. Ниже — статьи, а следом калькуляторы, которые
+              считают материалы для этих работ в цифрах.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {posts.map((post) => (
                 <article key={post.slug} className="card-hover flex flex-col overflow-hidden">
@@ -162,6 +170,42 @@ export default async function TagPage({ params }: TagPageProps) {
               </Link>
             </div>
           </div>
+
+          {/* Калькуляторы по теме: агрегируем relatedCalculator статей подборки,
+              чтобы страница тега вела не только в блог, но и к расчётам. */}
+          {(() => {
+            const related: Array<{ slug: string; categorySlug: string; title: string }> = [];
+            for (const post of posts) {
+              const ref = post.relatedCalculator;
+              if (!ref) continue;
+              if (related.some((item) => item.slug === ref.slug)) continue;
+              // Только существующие калькуляторы: битая ссылка в подборке хуже,
+              // чем отсутствие ссылки.
+              const meta = ALL_CALCULATORS_META.find((item) => item.slug === ref.slug);
+              if (!meta) continue;
+              related.push({ slug: ref.slug, categorySlug: meta.categorySlug, title: meta.title });
+            }
+            if (related.length === 0) return null;
+            return (
+              <section className="mt-8" aria-label="Калькуляторы по теме">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">
+                  Калькуляторы по теме
+                </h2>
+                <ul className="space-y-2">
+                  {related.slice(0, 5).map((ref) => (
+                    <li key={ref.slug}>
+                      <Link
+                        href={`/kalkulyatory/${ref.categorySlug}/${ref.slug}/`}
+                        className="text-sm text-accent-700 no-underline hover:underline dark:text-accent-400"
+                      >
+                        {ref.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
 
           {/* Tags sidebar */}
           <aside className="lg:w-64 shrink-0">

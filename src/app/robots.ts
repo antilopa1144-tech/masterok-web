@@ -60,10 +60,24 @@ export default function robots(): MetadataRoute.Robots {
       // Perplexity, Gemini. Разрешаем всё кроме API — см. также llms.txt.
       { userAgent: "GPTBot", allow: "/", disallow: ["/api/"] },
       { userAgent: "OAI-SearchBot", allow: "/", disallow: ["/api/"] },
+      { userAgent: "ChatGPT-User", allow: "/", disallow: ["/api/"] },
       { userAgent: "ClaudeBot", allow: "/", disallow: ["/api/"] },
+      { userAgent: "Claude-User", allow: "/", disallow: ["/api/"] },
       { userAgent: "anthropic-ai", allow: "/", disallow: ["/api/"] },
       { userAgent: "PerplexityBot", allow: "/", disallow: ["/api/"] },
+      { userAgent: "Perplexity-User", allow: "/", disallow: ["/api/"] },
       { userAgent: "Google-Extended", allow: "/", disallow: ["/api/"] },
+      { userAgent: "Applebot", allow: "/", disallow: ["/api/"] },
+      // Applebot-Extended — токен согласия на использование контента в Apple
+      // Intelligence. Без явного allow он трактуется как отказ.
+      { userAgent: "Applebot-Extended", allow: "/", disallow: ["/api/"] },
+      { userAgent: "meta-externalagent", allow: "/", disallow: ["/api/"] },
+      { userAgent: "DuckAssistBot", allow: "/", disallow: ["/api/"] },
+      { userAgent: "MistralAI-Index", allow: "/", disallow: ["/api/"] },
+      // CCBot формирует Common Crawl — основу датасетов для обучения LLM.
+      { userAgent: "CCBot", allow: "/", disallow: ["/api/"] },
+      // YandexAdditional — краулер Yandex для дополнительных данных и Нейро.
+      { userAgent: "YandexAdditional", allow: "/", disallow: ["/api/"] },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
   };

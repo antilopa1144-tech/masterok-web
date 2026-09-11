@@ -4,6 +4,8 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { Suspense } from "react";
 import CuringTimer from "./CuringTimer";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
+import CuringTimerSeo from "@/components/tools/CuringTimerSeo";
+import { CURING_FAQ } from "@/lib/curing-timer/seo-content";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 
 const META = {
@@ -67,7 +69,12 @@ export default function Page() {
           <CuringTimer />
         </Suspense>
       </div>
-      <ToolPageExtras slug="tajmer-skhvatyvaniya" />
+      <CuringTimerSeo />
+      <ToolPageExtras
+        slug="tajmer-skhvatyvaniya"
+        extraFaq={CURING_FAQ}
+        extraIntro="Ниже — таблица сроков схватывания и высыхания по материалам: те же ориентиры, что отсчитывает таймер, с подсказкой, на что смотреть при проверке поверхности."
+      />
     </>
   );
 }

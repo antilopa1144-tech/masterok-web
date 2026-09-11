@@ -231,6 +231,10 @@ export function ScenarioBlock({ result }: { result: CalculatorResult }) {
   const min = result.scenarios.MIN;
   const max = result.scenarios.MAX;
   if (!rec) return null;
+  // Ноль к покупке показывать нечего: в режимах, где калькулятор проверяет
+  // параметры (например вентиляция без заданной длины трассы), материалов нет,
+  // и «Рекомендуем 0 отрезков» читается как поломка вёрстки.
+  if (rec.purchase_quantity <= 0) return null;
 
   // Get unit from buy_plan or primary material, translate to Russian.
   //
