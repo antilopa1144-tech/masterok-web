@@ -6,7 +6,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import SheetLayoutGenerator from "./SheetLayoutGenerator";
 
-const description = "Визуальная раскладка листов гипсокартона и ориентированно-стружечных плит (ОСП): ориентация, разбежка стыков, раскрой, повторное использование обрезков и итог к покупке.";
+const description = "Раскладка листов гипсокартона и ОСП: ориентация, разбежка стыков, карты раскроя, повторное использование обрезков и итог к покупке.";
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-listov", { description });
 

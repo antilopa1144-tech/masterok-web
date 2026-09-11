@@ -38,15 +38,16 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   }
   const posts = await getPostsByTag(tag);
   const indexable = posts.length >= BLOG_TAG_MIN_POSTS_FOR_INDEX;
-  // Description ограничен ~155 символами — больше Google режет в SERP с многоточием.
-  // Если короткие заголовки уместятся, добавляем хвост «и другие материалы»; иначе
-  // обрезаем по слову.
-  const fullDescription =
+  // Описание должно попадать в 120–165 символов: короче — поисковик дополнит
+  // текст сам, длиннее — обрежет. Вариант с заголовками статей подходит не
+  // всегда, поэтому он проверяется целиком, а не только по верхней границе.
+  const word = posts.length === 1 ? "материал" : posts.length < 5 ? "материала" : "материалов";
+  const titlesVariant =
     `Статьи по теме «${tag}»: ${posts.slice(0, 3).map((p) => p.title).join(", ")}. Практические советы и расчёты.`;
-  const description = fullDescription.length <= 160
-    ? fullDescription
-    : `Статьи на тему «${tag}»: ${posts.length} материал${posts.length === 1 ? "" : posts.length < 5 ? "а" : "ов"} с расчётами материалов, рекомендациями и пошаговыми инструкциями.`;
-  // SEO-title по единой системе сайта; брендовый « — Мастерок» добавит template.
+  const countVariant =
+    `Статьи на тему «${tag}»: ${posts.length} ${word} с расчётами материалов, рекомендациями по выбору и пошаговыми инструкциями. Считайте в калькуляторах Мастерка.`;
+  const description =
+    titlesVariant.length >= 120 && titlesVariant.length <= 165 ? titlesVariant : countVariant;
   return {
     ...buildPageMetadata({
       title: `Статьи на тему «${tag}»`,

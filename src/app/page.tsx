@@ -12,7 +12,6 @@ import { RecentCalculators } from "@/components/home/HomeLazyWidgets";
 import ToolPreviews from "@/components/home/ToolPreviews";
 import {
   MASTEROK_RUSTORE_URL,
-  SITE_DEFAULT_TITLE,
   SITE_FOUNDING_DATE,
   SITE_NAME,
   SITE_SAME_AS,
@@ -34,8 +33,12 @@ const CALC_COUNT = ALL_CALCULATORS_META.length;
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: { absolute: SITE_DEFAULT_TITLE },
-  description: `${CALC_COUNT}+ бесплатных строительных калькуляторов: точная потребность, практический запас и количество материалов к покупке.`,
+  // absolute: на главной суффикс бренда уже входит в заголовок (62 символа
+  // с ним — выше комфортного диапазона выдачи, поэтому здесь он без суффикса).
+  title: { absolute: "Строительные калькуляторы онлайн — расчёт материалов" },
+  // «65+» заменено на точное число: в каталоге ровно 65 калькуляторов,
+  // и завышение на единицу видно в выдаче.
+  description: `65 бесплатных строительных калькуляторов: точная потребность, практический запас и количество материалов к покупке. Без регистрации, на русском.`,
   alternates: { canonical: `${SITE_URL}/` },
   // Задаётся явно: корневой layout больше не выставляет robots, чтобы страницы
   // без своих метаданных не получали второй тег. Главная не использует

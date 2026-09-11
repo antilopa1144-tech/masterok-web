@@ -5,9 +5,10 @@ import { SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/sit
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: `О проекте ${SITE_NAME} — строительные калькуляторы`,
+  // Бренд в title не дублируем: его добавляет withSiteSuffix.
+  title: "О проекте — строительные калькуляторы",
   description:
-    `${SITE_NAME} — бесплатный сервис из ${ALL_CALCULATORS_META.length}+ строительных калькуляторов с нормами расхода, запасом и итогом к покупке. О проекте, миссии и технологиях.`,
+    `${SITE_NAME} — бесплатный сервис из ${ALL_CALCULATORS_META.length} строительных калькуляторов с нормами расхода, запасом и итогом к покупке. О проекте и технологиях.`,
   url: `${SITE_URL}/o-proekte/`,
 });
 

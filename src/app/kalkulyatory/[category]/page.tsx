@@ -60,7 +60,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!cat) return {};
 
   const title = buildCategoryTitle(cat);
-  const description = `${UI_TEXT.descriptionPrefix} ${cat.description.toLowerCase()}. ${UI_TEXT.descriptionSuffix}`;
+  // metaDescription отдельным полем: шаблон с видимым описанием давал 107–118
+  // символов, а удлинять подзаголовок в шапке категории ради метатега нельзя.
+  const description = cat.metaDescription;
   const pageUrl = `${SITE_URL}/kalkulyatory/${cat.slug}/`;
 
   return buildPageMetadata({

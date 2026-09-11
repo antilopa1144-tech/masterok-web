@@ -8,7 +8,9 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 const PAGE_URL = `${SITE_URL}/ai/`;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: `Что такое ${SITE_NAME} — справка о сайте`,
+  // Бренда в title нет: его добавляет withSiteSuffix, а слово «Мастерок»
+  // в самом заголовке давало дубль «… — Мастерок — Мастерок».
+  title: "Справка о сайте: что считает и как устроены формулы",
   description:
     "Что такое Мастерок: бесплатные строительные калькуляторы для ремонта и отделки. Как устроены формулы, практический запас, упаковка, ключевые разделы.",
   url: PAGE_URL,

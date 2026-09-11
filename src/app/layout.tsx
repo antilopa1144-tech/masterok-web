@@ -69,10 +69,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: {
-    default: SITE_DEFAULT_TITLE,
-    template: `%s — ${SITE_NAME}`,
-  },
+  // Простая строка без template. Раньше шаблон `%s — Мастерок` безусловно
+  // дописывал бренд ко всем страницам, и 30 заголовков из 148 выходили за
+  // 60 символов. Теперь суффикс ставит withSiteSuffix() в src/lib/metadata.ts,
+  // где известна полная длина, а все страницы проходят через buildPageMetadata.
+  // Для страниц без собственных метаданных это значение и есть заголовок.
+  title: SITE_DEFAULT_TITLE,
   description:
     SITE_METADATA_DESCRIPTION,
   authors: [{ name: `Редакция ${SITE_NAME}`, url: `${SITE_URL}/o-proekte/` }],
