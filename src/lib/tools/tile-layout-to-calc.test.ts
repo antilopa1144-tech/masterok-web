@@ -10,6 +10,7 @@ import {
   parseTileLayoutFromSearchParams,
   mapLayoutModeToLayingMethod,
   mapTileSizeToAdhesiveOption,
+  parseTileLayoutReservePercent,
 } from "./tile-layout-to-calc";
 
 const base = {
@@ -24,6 +25,19 @@ const base = {
   packagingSource: "estimated" as const,
   reservePercent: 10,
 };
+
+describe("parseTileLayoutReservePercent", () => {
+  it("отличает отсутствующий параметр от явно выбранного нулевого запаса", () => {
+    expect(parseTileLayoutReservePercent(null)).toBe(10);
+    expect(parseTileLayoutReservePercent("")).toBe(10);
+    expect(parseTileLayoutReservePercent("0")).toBe(0);
+  });
+
+  it("возвращает безопасный дефолт для некорректного URL", () => {
+    expect(parseTileLayoutReservePercent("abc")).toBe(10);
+    expect(parseTileLayoutReservePercent("31")).toBe(10);
+  });
+});
 
 describe("mapLayoutModeToLayingMethod", () => {
   it("maps straight to 0", () => {

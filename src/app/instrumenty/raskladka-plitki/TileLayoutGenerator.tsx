@@ -43,6 +43,7 @@ import {
   buildPlitkaCalculatorHref,
   buildTileAdhesiveCalculatorHref,
   buildTileGroutCalculatorHref,
+  parseTileLayoutReservePercent,
   parseTileLayoutFromSearchParams,
 } from "@/lib/tools/tile-layout-to-calc";
 import {
@@ -1534,17 +1535,13 @@ export default function TileLayoutGenerator() {
     && isValidTilesPerBox(initialTilesPerBox)
     ? "label"
     : "estimated";
-  const initialReservePercent = Number(searchParams.get("reservePercent"));
+  const initialReservePercent = parseTileLayoutReservePercent(searchParams.get("reservePercent"));
   const [surfaceW, setSurfaceW] = useState(2500);
   const [surfaceH, setSurfaceH] = useState(2600);
   const [tileW, setTileW] = useState(600);
   const [tileH, setTileH] = useState(300);
   const [groutMm, setGroutMm] = useState(2);
-  const [reservePercent, setReservePercent] = useState(
-    Number.isFinite(initialReservePercent) && initialReservePercent >= 0 && initialReservePercent <= 30
-      ? initialReservePercent
-      : 10,
-  );
+  const [reservePercent, setReservePercent] = useState(initialReservePercent);
   const [packAreaInput, setPackAreaInput] = useState(
     String(isValidTilePackArea(initialPackAreaM2) ? initialPackAreaM2 : DEFAULT_TILE_PACK_AREA_M2),
   );
@@ -1918,7 +1915,7 @@ export default function TileLayoutGenerator() {
         packAreaM2: packAreaError ? undefined : parsedPackAreaM2,
         tilesPerBox: tilesPerBoxError ? undefined : parsedTilesPerBox,
         packagingSource,
-        reservePercent,
+        reservePercent: result.reservePercent,
         hasOpening: Boolean(normalizedOpening),
         openingW: normalizedOpening?.widthMm,
         openingH: normalizedOpening?.heightMm,
@@ -1926,7 +1923,7 @@ export default function TileLayoutGenerator() {
       },
       { areaM2: surfaceAreaM2, tilesTotal: result.purchaseTiles },
     ),
-    [layoutMode, normalizedInput, normalizedOpening, packAreaError, packagingSource, parsedPackAreaM2, parsedTilesPerBox, reservePercent, result.purchaseTiles, surfaceAreaM2, tilesPerBoxError],
+    [layoutMode, normalizedInput, normalizedOpening, packAreaError, packagingSource, parsedPackAreaM2, parsedTilesPerBox, result.purchaseTiles, result.reservePercent, surfaceAreaM2, tilesPerBoxError],
   );
 
   const tileAdhesiveHref = useMemo(

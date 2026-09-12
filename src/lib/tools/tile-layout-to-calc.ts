@@ -64,6 +64,19 @@ export const TILE_ADHESIVE_CALCULATOR_PATH = "/kalkulyatory/poly/klej-dlya-plitk
 export const TILE_GROUT_CALCULATOR_PATH = "/kalkulyatory/poly/zatirka/";
 export const TILE_LAYOUT_TRANSFER_FROM = "raskladka";
 export const TILE_ROOM_TRANSFER_FROM = "ploshchad-komnaty";
+export const DEFAULT_TILE_LAYOUT_RESERVE_PERCENT = 10;
+
+/**
+ * URLSearchParams#get возвращает null, а Number(null) неожиданно даёт 0.
+ * Поэтому отсутствие параметра нужно отличать от явно выбранного нулевого запаса.
+ */
+export function parseTileLayoutReservePercent(value: string | null): number {
+  if (value == null || value.trim() === "") return DEFAULT_TILE_LAYOUT_RESERVE_PERCENT;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 30
+    ? parsed
+    : DEFAULT_TILE_LAYOUT_RESERVE_PERCENT;
+}
 
 function roundRoomTransferValue(value: number): number {
   return Math.round((value + Number.EPSILON) * 1000) / 1000;

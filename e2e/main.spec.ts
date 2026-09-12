@@ -659,6 +659,22 @@ test.describe("Рабочее место раскладки плитки", () =>
     await expect(page.getByTestId("tile-share-result")).toBeVisible();
     await expect(page.getByTestId("tile-procurement-plan")).toContainText("Плитка → клей → затирка");
   });
+
+  test("на mobile сохраняет фактически применённый запас при переходе в калькулятор", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/instrumenty/raskladka-plitki/");
+
+    await page.getByTestId("tile-workspace-steps").getByRole("button", { name: "1 Параметры" }).click();
+    const reserve = page.getByLabel("Запас материала");
+    const calculatorLink = page.getByTestId("tile-procurement-plan").getByRole("link", { name: /1\. Плитка/ });
+
+    await expect(reserve).toHaveValue("10");
+    await expect(calculatorLink).toHaveAttribute("href", /reserveHint=10/);
+
+    await page.getByLabel("Способ укладки").selectOption("diagonal");
+    await expect(reserve).toHaveValue("15");
+    await expect(calculatorLink).toHaveAttribute("href", /reserveHint=15/);
+  });
 });
 
 test.describe("Мобильная адаптация", () => {
