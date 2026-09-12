@@ -282,8 +282,8 @@ export const warmFloorPipesDef: CalculatorDefinition = {
 
 <h2>Расход трубы на 1 м² при шаге 100, 150 и 200 мм</h2>
 <p>Таблица помогает проверить ввод: разделите 1 м² на шаг в метрах. Это геометрия поля укладки без подводок, уточнения поворотов и краевых зон. Значения шага приведены для сравнения расхода, а не как рекомендация для комнаты.</p>
-<table>
-<caption>Длина трубы до добавления подводок</caption>
+<div class="my-5 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"><table class="w-full text-left text-sm [&_th]:p-3 [&_td]:p-3 [&_th]:font-semibold [&_tbody_tr]:border-t [&_tbody_tr]:border-slate-200 dark:[&_tbody_tr]:border-slate-700 [&_thead]:bg-slate-100 dark:[&_thead]:bg-slate-800">
+<caption class="p-3 text-left text-slate-600 dark:text-slate-300">Длина трубы до добавления подводок</caption>
 <thead><tr><th scope="col">Шаг трубы</th><th scope="col">На 1 м²</th><th scope="col">На 20 м² раскладки</th></tr></thead>
 <tbody>
 <tr><th scope="row">100 мм</th><td>10 м</td><td>200 м</td></tr>
@@ -291,7 +291,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
 <tr><th scope="row">200 мм</th><td>5 м</td><td>100 м</td></tr>
 <tr><th scope="row">250 мм</th><td>4 м</td><td>80 м</td></tr>
 <tr><th scope="row">300 мм</th><td>около 3,33 м</td><td>около 66,67 м</td></tr>
-</tbody></table>
+</tbody></table></div>
 <p>Для расчёта всей комнаты используйте исходную формулу, а не округлённую цифру на 1 м². При шаге 150 мм считайте 20 / 0,15, а не 20 × 6,67. Если в проекте есть зоны с разным шагом, оцените каждую отдельно и сложите длины. Теплоотдачу по этой таблице определить нельзя.</p>
 
 <h2>Как учесть расстояние от коллектора до комнаты</h2>
