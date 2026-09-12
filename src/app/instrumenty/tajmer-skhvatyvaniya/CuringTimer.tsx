@@ -44,7 +44,7 @@ export default function CuringTimer() {
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState(DEFAULT_PRESET_ID);
   const [activeCategory, setActiveCategory] = useState(CURING_PRESETS[0].category);
-  const [customMinutesInput, setCustomMinutesInput] = useState("60");
+  const [customMinutesInput, setCustomMinutesInput] = useState("");
   const [status, setStatus] = useState<TimerStatus>("setup");
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [timerTotalSeconds, setTimerTotalSeconds] = useState(0);
@@ -57,7 +57,7 @@ export default function CuringTimer() {
   const selectedPreset = CURING_PRESETS.find((preset) => preset.id === selectedId) ?? CURING_PRESETS[0];
   const visiblePresets = CURING_PRESETS.filter((preset) => preset.category === activeCategory);
   const customDuration = parseCustomMinutes(customMinutesInput);
-  const selectedMinutes = selectedPreset.id === "custom" ? customDuration.minutes : selectedPreset.durationMinutes;
+  const selectedMinutes = customDuration.minutes;
   const canStart = selectedMinutes !== null;
   const progress = getTimerProgress(timerTotalSeconds, secondsLeft);
   const transfer = useMemo(() => readCuringTimerTransfer(searchParams), [searchParams]);
@@ -77,6 +77,9 @@ export default function CuringTimer() {
       if (fromUrlPreset) {
         setSelectedId(fromUrlPreset.id);
         setActiveCategory(fromUrlPreset.category);
+        setCustomMinutesInput("");
+        setStatus("setup");
+        setDeadlineMs(null);
       }
     }
   }, [searchParams]);
@@ -137,6 +140,7 @@ export default function CuringTimer() {
     setActiveCategory(category);
     const firstPreset = CURING_PRESETS.find((preset) => preset.category === category);
     if (firstPreset) {
+      if (firstPreset.id !== selectedId) setCustomMinutesInput("");
       setSelectedId(firstPreset.id);
       trackToolPresetSelect(CURING_TIMER_TOOL_SLUG, "material", firstPreset.id);
     }
@@ -145,6 +149,7 @@ export default function CuringTimer() {
 
   const selectPreset = (presetId: string) => {
     markStarted("preset");
+    if (presetId !== selectedId) setCustomMinutesInput("");
     setSelectedId(presetId);
     trackToolPresetSelect(CURING_TIMER_TOOL_SLUG, "material", presetId);
   };
@@ -192,7 +197,7 @@ export default function CuringTimer() {
       <audio ref={audioRef} preload="none" src="data:audio/wav;base64,UklGRl4FAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YToFAACAj56ssbu+wLy2rqKUhoB/gIaSnKiyw7zCwLqyqJ6SiIGAgISMlqCqtLzBwb67s6uhnZKIgoCAhIyWoKq0vMHBvruzoZ2SiIKAgISMlqCqtLzBwb67s6GdkoiCgICEjJagqrS8wcG+u7OhnZKIgoCAhIyWoKq0vMHBvruzoZ2SiIKAgISMlqCqtLzBwb67s6GdkoiCgA==" />
 
       <nav className="card grid grid-cols-3 overflow-hidden p-1" aria-label="Этапы таймера">
-        {["Материал", "Таймер", "Готово"].map((label, index) => {
+        {["Материал", "Таймер", "Проверка"].map((label, index) => {
           const step = index + 1;
           return (
             <div key={label} className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-semibold sm:text-sm ${phase === step ? "bg-accent-600 text-white shadow-sm" : phase > step ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
@@ -244,23 +249,24 @@ export default function CuringTimer() {
                       <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-xl ${selected ? "bg-white shadow-sm dark:!bg-slate-900" : "bg-slate-100 dark:bg-slate-800"}`} aria-hidden="true">{preset.icon}</span>
                       <span className="min-w-0">
                         <span className="block text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{preset.name}</span>
-                        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{formatTimerDuration(preset.durationMinutes)}</span>
+                        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{preset.stage}</span>
                       </span>
                     </button>
                   );
                 })}
               </div>
 
-              {selectedPreset.id === "custom" && (
+              <>
                 <label className="mt-4 block rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Продолжительность в минутах</span>
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Интервал до проверки, минут</span>
                   <div className="mt-2 flex items-center gap-3">
                     <input type="number" inputMode="numeric" min={1} max={14400} step={1} value={customMinutesInput} onChange={(event) => { markStarted("value_input"); setCustomMinutesInput(event.target.value); }} aria-invalid={customDuration.error !== null} aria-describedby={customDuration.error ? "custom-duration-error" : "custom-duration-hint"} className="input-field min-h-12 w-32" />
                     {customDuration.minutes !== null && <span id="custom-duration-hint" className="text-sm font-semibold text-slate-600 dark:text-slate-300">{formatTimerDuration(customDuration.minutes)}</span>}
                   </div>
                   {customDuration.error && <span id="custom-duration-error" className="mt-2 block text-xs font-medium text-red-600 dark:text-red-400">{customDuration.error}</span>}
                 </label>
-              )}
+                <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Введите интервал для нужного этапа из инструкции вашего продукта: от 1 минуты до 10 дней (14 400 минут). Например, 2 часа = 120 минут — это перевод единиц, не рекомендация по сушке.</p>
+              </>
             </section>
 
             <aside className="card overflow-hidden lg:sticky lg:top-6">
@@ -273,7 +279,7 @@ export default function CuringTimer() {
                     <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{selectedMinutes === null ? "—" : formatTimerDuration(selectedMinutes)}</p>
                   </div>
                 </div>
-                <span className="mt-3 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Готов к запуску</span>
+                <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{canStart ? "Интервал задан вами" : "Укажите интервал"}</span>
               </div>
               <div className="space-y-4 p-4 sm:p-5">
                 <div>
@@ -285,8 +291,9 @@ export default function CuringTimer() {
                     <span className="font-bold">Проверка мастера:</span> {selectedPreset.tip}
                   </div>
                 )}
+                {selectedPreset.source && <a href={selectedPreset.source.url} target="_blank" rel="noopener noreferrer" className="block text-xs underline">{selectedPreset.source.label} ↗</a>}
                 <button type="button" onClick={startTimer} disabled={!canStart} className="btn-primary min-h-12 w-full text-base">Запустить таймер →</button>
-                <p className="text-[11px] leading-relaxed text-slate-400">Время ориентировочное. Перед следующим этапом проверьте инструкцию производителя и состояние поверхности.</p>
+                <p className="text-[11px] leading-relaxed text-slate-400">Это напоминание, не разрешение продолжать работу. При закрытии или обновлении страницы отсчёт сбросится. Для длительной выдержки поставьте отдельное напоминание на телефоне.</p>
                 {relatedCalculator && relatedCalculatorHref && (
                   <Link
                     href={relatedCalculatorHref}
@@ -338,8 +345,8 @@ export default function CuringTimer() {
               </div>
               {selectedPreset.tip && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-200"><span className="font-bold">Перед продолжением:</span> {selectedPreset.tip}</div>}
               <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Сигнал по готовности</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Звук и вибрация сработают в открытой вкладке.</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Сигнал по окончании интервала</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Звук и вибрация зависят от браузера. В фоне сигнал может задержаться; закрытие или обновление страницы сбросит таймер.</p>
                 {notificationPermission === "default" && <button type="button" onClick={enableNotifications} className="mt-2 min-h-11 text-left text-xs font-bold text-accent-700 hover:text-accent-800 dark:text-accent-300">Включить системное уведомление →</button>}
                 {notificationPermission === "granted" && <p className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ Системное уведомление включено</p>}
                 {notificationPermission === "denied" && <p className="mt-2 text-xs text-slate-500">Уведомления запрещены в настройках браузера.</p>}
@@ -353,7 +360,7 @@ export default function CuringTimer() {
         <section ref={resultRef} className="card overflow-hidden" role="status">
           <div className="bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 text-center dark:from-emerald-950/30 dark:via-slate-900 dark:to-amber-950/20 sm:p-8">
             <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-emerald-500 text-3xl text-white shadow-lg shadow-emerald-500/20">✓</div>
-            <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Выдержка завершена</p>
+            <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Заданный интервал завершён</p>
             <h2 className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">Пора проверить поверхность</h2>
             <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600 dark:text-slate-300">{selectedPreset.name}: таймер закончен, но фактическая готовность зависит от температуры, влажности, толщины слоя и инструкции на упаковке.</p>
             {selectedPreset.tip && <div className="mx-auto mt-5 max-w-lg rounded-2xl border border-amber-200 bg-white/80 p-4 text-left text-sm text-amber-900 dark:border-amber-800/50 dark:bg-slate-900/70 dark:text-amber-200"><span className="font-bold">Проверка мастера:</span> {selectedPreset.tip}</div>}

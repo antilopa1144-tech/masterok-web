@@ -23,6 +23,8 @@ describe("curing timer helpers", () => {
     expect(formatTimerDuration(30)).toBe("30 мин");
     expect(formatTimerDuration(90)).toBe("1 ч 30 мин");
     expect(formatTimerDuration(2880)).toBe("2 дн.");
+    expect(formatTimerDuration(1441)).toBe("1 дн. 1 мин");
+    expect(formatTimerDuration(1501)).toBe("1 дн. 1 ч 1 мин");
   });
 
   it("formats a countdown and never exposes negative time", () => {

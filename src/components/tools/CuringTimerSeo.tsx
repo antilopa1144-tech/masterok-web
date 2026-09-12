@@ -1,7 +1,7 @@
 import { getCuringGroups } from "@/lib/curing-timer/seo-content";
 
 /**
- * Статичная таблица сроков схватывания и высыхания.
+ * Статичная справка по этапам схватывания и высыхания.
  *
  * Серверный компонент: таблица попадает в HTML без JavaScript, поэтому её видят
  * поисковики и answer-движки. Данные — пресеты самого таймера (CURING_PRESETS).
@@ -12,12 +12,12 @@ export default function CuringTimerSeo() {
   return (
     <section className="page-container pb-4" data-print-hide>
       <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-        Сроки схватывания и высыхания по материалам
+        Как выбрать интервал для своего материала
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-        Ориентиры для температуры около 20 °C и нормальной влажности — те же значения, которые
-        отсчитывает таймер. Это не норматив: приоритет у инструкции производителя, а срок зависит от
-        толщины слоя, температуры и влажности.
+        Универсального времени для всей категории нет. Найдите в инструкции именно нужный этап:
+        обработку, следующий слой, ходьбу или укладку покрытия. Указанные там условия должны
+        соответствовать вашей работе; сам таймер не измеряет влажность и прочность.
       </p>
 
       <div className="mt-6 space-y-6">
@@ -34,7 +34,7 @@ export default function CuringTimerSeo() {
                       Материал
                     </th>
                     <th scope="col" className="border-b border-slate-200 py-2 pr-4 font-semibold dark:border-slate-700">
-                      Сроки
+                      Какой этап проверить
                     </th>
                     <th scope="col" className="border-b border-slate-200 py-2 font-semibold dark:border-slate-700">
                       На что смотреть
@@ -55,6 +55,7 @@ export default function CuringTimerSeo() {
                       </td>
                       <td className="border-b border-slate-100 py-3 text-slate-600 dark:border-slate-800 dark:text-slate-300">
                         {row.tip}
+                        {row.source && <a href={row.source.url} target="_blank" rel="noopener noreferrer" className="mt-2 block underline">{row.source.label} ↗</a>}
                       </td>
                     </tr>
                   ))}

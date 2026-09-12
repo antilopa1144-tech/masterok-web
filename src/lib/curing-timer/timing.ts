@@ -30,7 +30,7 @@ export function formatTimerDuration(minutes: number): string {
   if (hours < 24) return remainder === 0 ? `${hours} ч` : `${hours} ч ${remainder} мин`;
   const days = Math.floor(hours / 24);
   const hoursRemainder = hours % 24;
-  return hoursRemainder === 0 ? `${days} дн.` : `${days} дн. ${hoursRemainder} ч`;
+  return [`${days} дн.`, hoursRemainder ? `${hoursRemainder} ч` : "", remainder ? `${remainder} мин` : ""].filter(Boolean).join(" ");
 }
 
 export function formatTimerCountdown(seconds: number): string {
