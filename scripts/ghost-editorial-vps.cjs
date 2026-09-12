@@ -213,7 +213,7 @@ async function replacePublished(token, filename, fetcher = fetch) {
     body: JSON.stringify({ posts: [{ ...meta, id: post.id, status: 'published', updated_at: post.updated_at, html: card(html) }] }),
   }, fetcher)).posts?.[0];
   if (!result || result.id !== post.id || result.slug !== post.slug || result.status !== 'published' ||
-      result.published_at !== post.published_at || result.canonical_url !== post.canonical_url ||
+      result.published_at !== post.published_at || result.canonical_url !== meta.canonical_url ||
       !result.feature_image?.startsWith(ORIGIN + '/content/')) throw Error('revision_result');
   return { ...publicSummary(result), uploaded: mappings.length };
 }

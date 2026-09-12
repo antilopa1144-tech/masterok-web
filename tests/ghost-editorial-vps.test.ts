@@ -78,7 +78,7 @@ describe('Ghost editorial VPS helper', () => {
     const html = '<p>' + 'Old article. '.repeat(30) + '</p>';
     const post = { id: 'id', slug: bundle.metadata.slug, status: 'published', visibility: 'public', html,
       updated_at: '2026-09-10T01:00:00Z', published_at: '2026-02-14T00:00:00Z', feature_image: origin + '/content/old.webp',
-      canonical_url: 'https://getmasterok.ru/blog/new-post/' };
+      canonical_url: null };
     fs.writeFileSync(file, JSON.stringify({ ...bundle, revision: { updatedAt: post.updated_at,
       htmlSha256: crypto.createHash('sha256').update(html).digest('hex') } }));
     const uploaded = origin + '/content/images/replacement.webp';
@@ -91,6 +91,7 @@ describe('Ghost editorial VPS helper', () => {
       expect(payload.status).toBe('published');
       expect(payload.feature_image).toBe(uploaded);
       expect(payload.html).toContain(uploaded);
+      expect(payload.canonical_url).toBe('https://getmasterok.ru/blog/new-post/');
       expect(JSON.parse(fs.readFileSync(file + '.before.json', 'utf8'))).toEqual(post);
       return response({ posts: [{ ...post, ...payload, updated_at: 'newer', feature_image: uploaded }] });
     };
