@@ -116,7 +116,7 @@ const checks = [
     name: "усиленные страницы содержат новые блоки",
     async run() {
       const expectations = [
-        ["/instrumenty/tajmer-skhvatyvaniya/", "Сроки схватывания и высыхания"],
+        ["/instrumenty/tajmer-skhvatyvaniya/", "Как выбрать интервал для своего материала"],
         ["/instrumenty/kalendar-remonta/", "Этапы ремонта по сценариям"],
         ["/prilozhenie/", "Приложение или веб-версия"],
         ["/instrumenty/konverter/", "насыпной плотности"],
@@ -127,6 +127,20 @@ const checks = [
         if (!visibleHtml(body).includes(marker)) missing.push(`${path} → «${marker}»`);
       }
       return missing.length ? `нет блоков: ${missing.join("; ")}` : null;
+    },
+  },
+  {
+    name: "таймер требует интервал и не обещает готовность по календарю",
+    async run() {
+      const { body } = await fetchText(`${SITE}/instrumenty/tajmer-skhvatyvaniya/`);
+      const html = visibleHtml(body);
+      const required = ["Интервал до проверки, минут", "остаточную влажность", "Характеристики КНАУФ-Ротбанд"];
+      const forbidden = ["50 мм = 50 дней", "Класть покрытие — через 28 дней", "Высыхание слоя 10мм — сутки"];
+      const missing = required.filter((marker) => !html.includes(marker));
+      const stale = forbidden.filter((marker) => html.includes(marker));
+      return missing.length || stale.length
+        ? `отсутствуют: ${missing.join(", ") || "нет"}; устаревшие утверждения: ${stale.join(", ") || "нет"}`
+        : null;
     },
   },
   {
@@ -225,4 +239,3 @@ if (failed > 0) {
 }
 
 process.exit(failed === 0 ? 0 : 1);
-
