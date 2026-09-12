@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
@@ -58,6 +59,12 @@ export default function Page() {
           </h1>
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
             Спланируйте полосы на каждой стене и раскрой каждого рулона с учётом раппорта, прямой или смещённой подгонки рисунка.
+          </p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Не уверены, как читать 64/32?{" "}
+            <Link href="/blog/skolko-oboev-na-komnatu/" className="font-medium text-orange-600 underline-offset-4 hover:underline dark:text-orange-400">
+              Разберитесь в раппорте и расчёте рулонов
+            </Link>
           </p>
         </div>
       </div>

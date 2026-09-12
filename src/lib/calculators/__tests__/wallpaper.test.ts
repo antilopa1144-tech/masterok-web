@@ -230,6 +230,7 @@ describe("Обои — полотна, раскрой и целые рулоны
     expect(html).toContain(
       "https://www.as-creation.com/fileadmin/02_Tapeten_Highlights/Kollektionsbroschuren/Pint_Walls_DE-EN.pdf",
     );
+    expect(html).toContain("/blog/skolko-oboev-na-komnatu/");
     expect(html).toContain("/instrumenty/raskladka-oboev/");
   });
 });
