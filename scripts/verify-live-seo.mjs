@@ -94,6 +94,20 @@ const checks = [
     },
   },
   {
+    name: "несуществующая статья отдаёт полезную 404",
+    needsBlog: true,
+    async run() {
+      const { status, body } = await fetchText(`${SITE}/blog/masterok-missing-article-check/`);
+      const html = visibleHtml(body);
+      const problems = [];
+      if (status !== 404) problems.push(`HTTP ${status} вместо 404`);
+      if (!html.includes("Статья не найдена")) problems.push("нет понятного заголовка");
+      if (!html.includes('href="/blog')) problems.push("нет ссылки обратно в блог");
+      if (!/<meta[^>]+name=["']robots["'][^>]+noindex/i.test(body)) problems.push("нет noindex");
+      return problems.length ? problems.join("; ") : null;
+    },
+  },
+  {
     name: "ответы FAQ страниц категорий есть в HTML",
     needsGhost: true,
     async run() {
@@ -208,6 +222,11 @@ let skipped = 0;
 console.log(`Проверка живых URL: ${SITE}\n`);
 
 for (const check of checks) {
+  if (check.needsBlog && SKIP_BLOG) {
+    skipped += 1;
+    console.log(`  skip  ${check.name} (пропущен блог)`);
+    continue;
+  }
   if (check.needsGhost && SKIP_GHOST) {
     skipped += 1;
     console.log(`  skip  ${check.name} (нужен Ghost)`);

@@ -10,6 +10,7 @@ import { pickRelatedCalculator } from "@/lib/blog-related-calculator";
 import parse from "html-react-parser";
 import DOMPurify from "isomorphic-dompurify";
 import ArticleViews from "@/components/blog/ArticleViews";
+import { MISSING_POST_METADATA } from "./missing-post-metadata";
 
 const UI_TEXT = {
   notFoundTitle: "Статья не найдена",
@@ -98,7 +99,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) {
-    notFound();
+    // notFound() из generateMetadata опережает страницу и в динамическом
+    // маршруте может оставить пустой HTML. Статус 404 и UI формирует вызов
+    // notFound() ниже, в BlogPostPage; metadata лишь закрывает URL от индексации.
+    return MISSING_POST_METADATA;
   }
 
   const baseUrl = SITE_URL;
