@@ -99,10 +99,20 @@ const checks = [
     async run() {
       const { status, body } = await fetchText(`${SITE}/blog/masterok-missing-article-check/`);
       const html = visibleHtml(body);
+      // Next 15 может прислать ближайший not-found как React Flight payload:
+      // браузер превращает его в обычный DOM, но в исходном HTML блок лежит в
+      // <script>. Для этой проверки payload безопасно учитывать только вместе
+      // с HTTP 404, robots noindex и уникальным id нашего not-found-компонента.
+      const flightPayload = body.replace(/\\\"/g, '"');
+      const hasNotFoundComponent = flightPayload.includes('"id":"blog-not-found-destinations"');
+      const hasHeading = html.includes("Статья не найдена")
+        || (hasNotFoundComponent && flightPayload.includes('"children":"Статья не найдена"'));
+      const hasBlogLink = html.includes('href="/blog')
+        || (hasNotFoundComponent && flightPayload.includes('"href":"/blog/"'));
       const problems = [];
       if (status !== 404) problems.push(`HTTP ${status} вместо 404`);
-      if (!html.includes("Статья не найдена")) problems.push("нет понятного заголовка");
-      if (!html.includes('href="/blog')) problems.push("нет ссылки обратно в блог");
+      if (!hasHeading) problems.push("нет понятного заголовка");
+      if (!hasBlogLink) problems.push("нет ссылки обратно в блог");
       if (!/<meta[^>]+name=["']robots["'][^>]+noindex/i.test(body)) problems.push("нет noindex");
       return problems.length ? problems.join("; ") : null;
     },
