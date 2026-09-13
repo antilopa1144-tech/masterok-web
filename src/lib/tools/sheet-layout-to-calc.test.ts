@@ -4,6 +4,7 @@ import {
   buildFastenersCalculatorHref,
   buildSheetLayoutHref,
   buildSheetLayoutHrefFromDrywall,
+  buildSheetLayoutHrefFromDrywallCeiling,
   buildSheetLayoutHrefFromFasteners,
 } from "./sheet-layout-to-calc";
 import type { SheetLayoutInput } from "./sheet-layout";
@@ -24,14 +25,36 @@ const input: SheetLayoutInput = {
 
 describe("sheet-layout-to-calc", () => {
   it("переносит размеры, слой и формат листа в калькулятор ГКЛ", () => {
-    const url = new URL(buildDrywallCalculatorHref(input, 12), "https://getmasterok.ru");
+    const url = new URL(buildDrywallCalculatorHref(input, 12)!, "https://getmasterok.ru");
 
     expect(url.pathname).toBe("/kalkulyatory/steny/gipsokarton/");
+    expect(url.searchParams.get("surfaceMode")).toBe("1");
+    expect(url.searchParams.get("inputMode")).toBe("0");
     expect(url.searchParams.get("length")).toBe("5");
     expect(url.searchParams.get("height")).toBe("2.7");
+    expect(url.searchParams.get("openingsArea")).toBe("0");
     expect(url.searchParams.get("layers")).toBe("2");
     expect(url.searchParams.get("sheetSize")).toBe("0");
     expect(url.searchParams.get("sheetsHint")).toBe("12");
+    expect(url.searchParams.has("workType")).toBe(false);
+  });
+
+  it("переносит потолок в системный калькулятор потолка ГКЛ", () => {
+    const url = new URL(buildDrywallCalculatorHref({ ...input, surface: "ceiling" }, 12)!, "https://getmasterok.ru");
+
+    expect(url.pathname).toBe("/kalkulyatory/potolki/podvesnoy-potolok-gkl/");
+    expect(url.searchParams.get("inputMode")).toBe("0");
+    expect(url.searchParams.get("length")).toBe("5");
+    expect(url.searchParams.get("width")).toBe("2.7");
+    expect(url.searchParams.get("layers")).toBe("2");
+    expect(url.searchParams.get("sheetWidthMm")).toBe("1200");
+    expect(url.searchParams.get("sheetLengthMm")).toBe("2500");
+    expect(url.searchParams.get("sheetReservePercent")).toBe("5");
+    expect(url.searchParams.get("sheetsHint")).toBe("12");
+  });
+
+  it("не предлагает стеновой комплект для раскладки пола", () => {
+    expect(buildDrywallCalculatorHref({ ...input, surface: "floor" }, 12)).toBeNull();
   });
 
   it("строит обратную ссылку из калькулятора", () => {
@@ -48,7 +71,7 @@ describe("sheet-layout-to-calc", () => {
   });
 
   it("переводит метры и индекс формата из калькулятора в раскладку", () => {
-    const url = new URL(buildSheetLayoutHrefFromDrywall({ length: 5, height: 2.7, layers: 2, sheetSize: 1 }), "https://getmasterok.ru");
+    const url = new URL(buildSheetLayoutHrefFromDrywall({ surfaceMode: 1, length: 5, height: 2.7, layers: 2, sheetSize: 1 }), "https://getmasterok.ru");
 
     expect(url.searchParams.get("from")).toBe("gipsokarton");
     expect(url.searchParams.get("material")).toBe("drywall");
@@ -56,6 +79,58 @@ describe("sheet-layout-to-calc", () => {
     expect(url.searchParams.get("surfaceHeightMm")).toBe("2700");
     expect(url.searchParams.get("sheetLengthMm")).toBe("3000");
     expect(url.searchParams.get("layers")).toBe("2");
+  });
+
+  it("не подставляет одну стену для четырёх стен или перегородки", () => {
+    for (const surfaceMode of [0, 2]) {
+      const url = new URL(buildSheetLayoutHrefFromDrywall({ surfaceMode, length: 5, height: 2.7 }), "https://getmasterok.ru");
+      expect(url.searchParams.get("from")).toBe("gipsokarton");
+      expect(url.searchParams.get("material")).toBe("drywall");
+      expect(url.searchParams.get("sheetWidthMm")).toBe("1200");
+      expect(url.searchParams.get("sheetLengthMm")).toBe("2500");
+      expect(url.searchParams.has("surfaceWidthMm")).toBe(false);
+      expect(url.searchParams.has("surfaceHeightMm")).toBe(false);
+    }
+  });
+
+  it("переносит потолок ГКЛ обратно в раскладку", () => {
+    const url = new URL(buildSheetLayoutHrefFromDrywallCeiling({
+      inputMode: 0,
+      length: 5,
+      width: 2.7,
+      layers: 2,
+      sheetWidthMm: 1200,
+      sheetLengthMm: 2500,
+      sheetReservePercent: 7,
+    }), "https://getmasterok.ru");
+
+    expect(url.searchParams.get("from")).toBe("podvesnoy-potolok-gkl");
+    expect(url.searchParams.get("material")).toBe("drywall");
+    expect(url.searchParams.get("surface")).toBe("ceiling");
+    expect(url.searchParams.get("surfaceWidthMm")).toBe("5000");
+    expect(url.searchParams.get("surfaceHeightMm")).toBe("2700");
+    expect(url.searchParams.get("sheetWidthMm")).toBe("1200");
+    expect(url.searchParams.get("sheetLengthMm")).toBe("2500");
+    expect(url.searchParams.get("layers")).toBe("2");
+    expect(url.searchParams.get("reservePercent")).toBe("7");
+  });
+
+  it("не выдумывает прямоугольник потолка из площади и периметра", () => {
+    const url = new URL(buildSheetLayoutHrefFromDrywallCeiling({
+      inputMode: 1,
+      length: 5,
+      width: 2.7,
+      layers: 2,
+      sheetWidthMm: 1200,
+      sheetLengthMm: 2500,
+      sheetReservePercent: 7,
+    }), "https://getmasterok.ru");
+
+    expect(url.searchParams.get("surface")).toBe("ceiling");
+    expect(url.searchParams.get("sheetWidthMm")).toBe("1200");
+    expect(url.searchParams.get("sheetLengthMm")).toBe("2500");
+    expect(url.searchParams.has("surfaceWidthMm")).toBe(false);
+    expect(url.searchParams.has("surfaceHeightMm")).toBe(false);
   });
 
   it("переносит точное количество ГКЛ из раскладки в крепёж", () => {

@@ -388,7 +388,16 @@ export default function SheetLayoutGenerator() {
     <div ref={workspaceTopRef} className="max-w-5xl space-y-4 scroll-mt-24">
       {transferSource === "gipsokarton" && (
         <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
-          Из калькулятора гипсокартона перенесены размеры участка, формат листа и число слоёв. Проверьте ориентацию, положение каркаса и фактические проёмы перед раскроем.
+          {searchParams.has("surfaceWidthMm") && searchParams.has("surfaceHeightMm")
+            ? "Из калькулятора гипсокартона перенесены размеры одной стены, формат листа и число слоёв. Проверьте ориентацию, положение каркаса и фактические проёмы перед раскроем."
+            : "Калькулятор считал все стены комнаты или перегородку, а такую систему нельзя честно представить одним прямоугольником. Здесь укажите размеры одной непрерывной стороны и разложите остальные стороны отдельно."}
+        </div>
+      )}
+      {transferSource === "podvesnoy-potolok-gkl" && (
+        <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
+          {searchParams.has("surfaceWidthMm") && searchParams.has("surfaceHeightMm")
+            ? "Из калькулятора потолка перенесены размеры, формат листа, число слоёв и запас. Сверьте направление профилей, подвесы, закладные и расположение светильников с проектом потолка."
+            : "Калькулятор потолка был задан площадью и периметром: этого недостаточно для честного прямоугольника раскладки. Формат листа, число слоёв и запас сохранены, а фактические длину и ширину укажите здесь."}
         </div>
       )}
       {transferSource === FASTENERS_TRANSFER_FROM && (
@@ -470,7 +479,7 @@ export default function SheetLayoutGenerator() {
       </div>
 
       <div ref={resultRef} hidden={activeStage !== "result"} className="card scroll-mt-24 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
-        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:border-teal-900/50 dark:from-teal-950/20 dark:to-cyan-950/10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-800 dark:text-teal-300">Паспорт раскладки</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold text-stone-950 dark:text-white">{materialShortLabel} · {surfaceLabel.toLowerCase()}</h2><p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{surfaceWidth.toLocaleString("ru-RU")} × {surfaceHeight.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()} · {layers} {layers === 1 ? "слой" : "слоя"}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Готово к закупке</span></div></div>
+        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 dark:border-teal-900/50 dark:from-teal-950/20 dark:to-cyan-950/10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-800 dark:text-teal-300">Паспорт раскладки</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold text-stone-950 dark:text-white">{materialShortLabel} · {surfaceLabel.toLowerCase()}</h2><p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{surfaceWidth.toLocaleString("ru-RU")} × {surfaceHeight.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()} · {layers} {layers === 1 ? "слой" : "слоя"}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Предварительный итог</span></div></div>
         <div className="mt-3 rounded-2xl border border-teal-200 bg-teal-50 p-4 dark:border-teal-800/60 dark:bg-teal-900/20"><p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Купить листов</p><div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1"><p className="text-4xl font-bold text-slate-950 dark:text-white">{result.purchaseSheets}</p><p className="pb-1 text-sm text-slate-600 dark:text-slate-300">{result.baseSheets} в раскрой + {result.reserveSheets} закрытых в запас</p></div></div>
         <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4"><div><p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.layoutPieces}</p><p className="text-xs text-slate-500">Деталей на схеме</p></div><div><p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{result.wholePlacements}</p><p className="text-xs text-slate-500">Целых листов</p></div><div><p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{result.cutPieces}</p><p className="text-xs text-slate-500">Деталей с резом</p></div><div><p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{result.wastePercent}%</p><p className="text-xs text-slate-500">Остаток раскроя</p></div></div>
         <div className="mt-5 grid gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:bg-slate-900"><p className="flex justify-between gap-3"><span className="text-slate-500">Поверхность</span><strong>{result.surfaceAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Обшивка со слоями</span><strong>{result.coveredAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Материал без зазоров</span><strong>{result.netMaterialAreaM2} м²</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Ориентация</span><strong>{orientationLabel(surface, result.orientation)}</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Межлистовой зазор</span><strong>{result.input.jointGapMm} мм</strong></p><p className="flex justify-between gap-3"><span className="text-slate-500">Остаток открытых листов</span><strong>{result.offcutAreaM2} м²</strong></p></div>
@@ -478,12 +487,12 @@ export default function SheetLayoutGenerator() {
         <details className="group mt-4 rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-stone-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden"><span>Монтажные условия · {result.notes.length}</span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><ul className="list-disc space-y-1 border-t border-stone-100 px-8 pb-4 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">{result.notes.map((note) => <li key={note}>{note}</li>)}</ul></details>
         <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Раскладка даёт точное число листов и карту реза. Для ГКЛ комплектный профиль, ленту и шпаклёвку считайте в калькуляторе гипсокартона; саморезы для ГКЛ и ОСП — по фактическому числу листов в калькуляторе крепежа.
+            Для заданной прямоугольной поверхности и выбранных допущений карта даёт закупочный ориентир по листам и раскрой. Сохраните это число как итог по листовому материалу. Системный калькулятор отдельно оценит листы по площади и поможет посчитать профиль, крепёж и расходники.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {material === "drywall" && surface !== "floor" && (
+            {drywallHref && (
               <Link href={drywallHref} onClick={() => trackToolRelatedClick("raskladka-listov", "drywall-calculator")} className="btn-primary min-h-11 justify-center text-sm no-underline">
-                Комплект ГКЛ →
+                {surface === "ceiling" ? "Комплект потолка →" : "Комплект ГКЛ →"}
               </Link>
             )}
             {fastenersHref && (

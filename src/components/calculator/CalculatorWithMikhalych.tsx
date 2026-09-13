@@ -93,6 +93,7 @@ import {
 } from "@/lib/tools/brickwork-layout-to-calc";
 import {
   buildSheetLayoutHrefFromDrywall,
+  buildSheetLayoutHrefFromDrywallCeiling,
   buildSheetLayoutHrefFromFasteners,
   SHEET_LAYOUT_TRANSFER_FROM,
 } from "@/lib/tools/sheet-layout-to-calc";
@@ -586,7 +587,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         )}
         {Number.isFinite(sheetLayoutHint) && sheetLayoutHint > 0 && (
           <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
-            Из карты раскроя перенесено: <strong>{sheetLayoutHint} {pluralizeRu(sheetLayoutHint, ["лист", "листа", "листов"])}</strong>. Здесь уточняются профиль, крепёж и расходники.
+            Карта раскроя дала <strong>{sheetLayoutHint} {pluralizeRu(sheetLayoutHint, ["лист", "листа", "листов"])}</strong> — сохраняйте это число как итог по листам. Калькулятор ниже оценивает листы независимо по площади и системному запасу; здесь полезно уточнить профиль, крепёж и расходники.
           </div>
         )}
       </div>
@@ -687,11 +688,20 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
           )}
           {calculator.slug === "gipsokarton" && (
             <Link
-              href={buildSheetLayoutHrefFromDrywall({ length: values.length, height: values.height, layers: values.layers, sheetSize: values.sheetSize })}
+              href={buildSheetLayoutHrefFromDrywall({ surfaceMode: values.surfaceMode, length: values.length, height: values.height, layers: values.layers, sheetSize: values.sheetSize })}
               onClick={() => trackCalculatorRelatedClick("gipsokarton", "raskladka-listov")}
               className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
             >
               Разложить листы и увидеть карту раскроя <span aria-hidden>→</span>
+            </Link>
+          )}
+          {calculator.slug === "podvesnoy-potolok-gkl" && (
+            <Link
+              href={buildSheetLayoutHrefFromDrywallCeiling({ inputMode: values.inputMode, length: values.length, width: values.width, layers: values.layers, sheetWidthMm: values.sheetWidthMm, sheetLengthMm: values.sheetLengthMm, sheetReservePercent: values.sheetReservePercent })}
+              onClick={() => trackCalculatorRelatedClick("podvesnoy-potolok-gkl", "raskladka-listov")}
+              className="mt-3 flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 no-underline dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300"
+            >
+              Разложить листы потолка и увидеть карту раскроя <span aria-hidden>→</span>
             </Link>
           )}
           {fastenersLayoutHref && (
