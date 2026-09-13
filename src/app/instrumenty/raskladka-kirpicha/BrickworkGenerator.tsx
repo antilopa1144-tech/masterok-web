@@ -29,6 +29,7 @@ import {
 // Оттенки кирпича: основной + варианты для баварской кладки.
 const BRICK_TONES = ["#B45309", "#92400E", "#C2683A"]; // терракот, тёмный, светлый
 const JOINT_COLOR = "#D6D3D1";
+const RESERVE_OPTIONS = [0, 3, 5, 10, 15] as const;
 type BrickWorkspaceStage = "parameters" | "layout" | "result";
 
 const BRICK_WORKSPACE_STAGES = [
@@ -101,6 +102,7 @@ export default function BrickworkGenerator() {
   const [brickH, setBrickH] = useState(transfer.brickHmm ?? 65);
   const [jointMm, setJointMm] = useState(10);
   const [bond, setBond] = useState<BondType>("stretcher");
+  const [reservePercent, setReservePercent] = useState(5);
   const svgRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLElement>(null);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
@@ -111,8 +113,8 @@ export default function BrickworkGenerator() {
   );
 
   const result = useMemo(
-    () => calculateBrickwork(surfaceW, surfaceH, brickL, brickH, jointMm, bond),
-    [surfaceW, surfaceH, brickL, brickH, jointMm, bond],
+    () => calculateBrickwork(surfaceW, surfaceH, brickL, brickH, jointMm, bond, reservePercent),
+    [surfaceW, surfaceH, brickL, brickH, jointMm, bond, reservePercent],
   );
 
   const surfaceAreaM2 = useMemo(
@@ -147,10 +149,10 @@ export default function BrickworkGenerator() {
 
   const materials = useMemo(
     () => [
-      { name: "Кирпич к закупке (с запасом)", quantity: result.purchaseBricks, unit: "шт", category: "Кирпич" },
+      { name: `Кирпич к закупке (запас ${result.reservePercent}%)`, quantity: result.purchaseBricks, unit: "шт", category: "Кирпич" },
       { name: "Площадь кладки", quantity: surfaceAreaM2, unit: "м²", category: "Кирпич" },
     ],
-    [result.purchaseBricks, surfaceAreaM2],
+    [result.purchaseBricks, result.reservePercent, surfaceAreaM2],
   );
 
   const kladkaHref = buildBrickworkCalculatorHref({ surfaceWmm: surfaceW, surfaceHmm: surfaceH, brickLmm: brickL, brickHmm: brickH, jointMm });
@@ -333,14 +335,33 @@ export default function BrickworkGenerator() {
                   <h2 id="brick-result-title" className="text-xl font-bold text-stone-950 dark:text-white">{selectedBond.label}</h2>
                   <p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{surfaceW.toLocaleString("ru-RU")} × {surfaceH.toLocaleString("ru-RU")} мм · {result.rows.length} рядов · шов {jointMm} мм</p>
                 </div>
-                <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Готово к расчёту</span>
+                <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Предварительный итог</span>
               </div>
             </div>
 
             <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
               <p className="text-xs text-stone-500 dark:text-slate-400">Кирпичей к закупке</p>
               <p className="mt-1 text-4xl font-bold tracking-tight text-orange-800 dark:text-orange-300">{result.purchaseBricks} <span className="text-lg">шт.</span></p>
-              <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">На схеме {result.totalBricks} элементов кладки; закупка считает целые кирпичи, повторное использование подходящих обрезков и запас на бой.</p>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500 dark:text-slate-400">
+                База после парного использования подходящих краевых обрезков — {result.effectiveBricks} шт. Выбранный запас {result.reservePercent}% добавляет {result.reserveBricks} шт.
+              </p>
+              <div className="mt-4 border-t border-orange-100 pt-3 dark:border-orange-900/40">
+                <p className="text-xs font-semibold text-stone-700 dark:text-slate-300">Запас на бой и непригодные обрезки</p>
+                <div className="mt-2 grid grid-cols-5 gap-1.5" role="group" aria-label="Запас кирпича в процентах">
+                  {RESERVE_OPTIONS.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={reservePercent === value}
+                      onClick={() => { markStarted("material_reserve"); setReservePercent(value); }}
+                      className={`min-h-10 rounded-xl border px-2 text-xs font-semibold transition-colors ${reservePercent === value ? "border-orange-500 bg-orange-600 text-white shadow-sm" : "border-stone-200 bg-white text-stone-600 hover:border-orange-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"}`}
+                    >
+                      {value}%
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-stone-500 dark:text-slate-400">5% — стартовое допущение, а не скрытый норматив. Уменьшите запас для точной карты раскроя или увеличьте при сложных углах, браке и сомнении в повторном использовании обрезков.</p>
+              </div>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">

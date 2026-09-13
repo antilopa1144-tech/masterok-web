@@ -13,7 +13,7 @@ describe("brickwork-layout", () => {
       expect(r.rows[0][0].cut).toBe(false);
     });
 
-    it("расход кирпича близок к норме ~51 шт/м² (ГОСТ)", () => {
+    it("геометрическая плотность раскладки остаётся в ожидаемом диапазоне", () => {
       const r = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher");
       const m2 = (4000 * 2700) / 1_000_000; // 10.8 м²
       const perM2 = r.totalBricks / m2;
@@ -53,11 +53,28 @@ describe("brickwork-layout", () => {
   });
 
   describe("закупка и края", () => {
-    it("к закупке = целые + половина обрезков + запас, обрезки переиспользуются", () => {
+    it("по умолчанию явно применяет запас 5% к базе с повторным использованием обрезков", () => {
       const r = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher");
-      // покупка меньше «каждый обрезок = целый кирпич», но не меньше целых
-      expect(r.purchaseBricks).toBeGreaterThanOrEqual(r.wholeBricks);
-      expect(r.purchaseBricks).toBeLessThan(r.totalBricks * 1.1);
+      expect(r.reservePercent).toBe(5);
+      expect(r.purchaseBricks).toBe(Math.ceil(r.effectiveBricks * 1.05));
+      expect(r.reserveBricks).toBe(r.purchaseBricks - r.effectiveBricks);
+    });
+
+    it("позволяет убрать запас без скрытой надбавки", () => {
+      const r = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher", 0);
+      expect(r.reservePercent).toBe(0);
+      expect(r.purchaseBricks).toBe(r.effectiveBricks);
+      expect(r.reserveBricks).toBe(0);
+    });
+
+    it("пересчитывает выбранный запас и ограничивает его безопасным диапазоном", () => {
+      const tenPercent = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher", 10);
+      const excessive = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher", 99);
+      const negative = calculateBrickwork(4000, 2700, 250, 65, 10, "stretcher", -5);
+
+      expect(tenPercent.purchaseBricks).toBe(Math.ceil(tenPercent.effectiveBricks * 1.1));
+      expect(excessive.reservePercent).toBe(20);
+      expect(negative.reservePercent).toBe(0);
     });
 
     it("стена меньше кирпича — предупреждение", () => {

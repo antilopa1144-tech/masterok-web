@@ -29,7 +29,13 @@ export interface BrickLayoutResult {
   wholeBricks: number;
   /** Половинок/обрезков по краям. */
   cutBricks: number;
-  /** К закупке с запасом на бой/подрезку. */
+  /** Расчётная база после парного использования подходящих обрезков. */
+  effectiveBricks: number;
+  /** Выбранный пользователем запас на бой и непригодные обрезки, %. */
+  reservePercent: number;
+  /** Сколько целых кирпичей добавил выбранный запас после округления. */
+  reserveBricks: number;
+  /** Итог к закупке с выбранным запасом. */
   purchaseBricks: number;
   surfaceWmm: number;
   surfaceHmm: number;
@@ -65,8 +71,6 @@ export const WALL_SIZE_PRESETS = [
   { label: "Фасад 6×3 м", w: 6000, h: 3000 },
 ] as const;
 
-/** Запас на бой и подрезку кирпича, % (норматив ~5%). */
-const PURCHASE_RESERVE = 0.05;
 /** Тычок ≈ половина ложка по ширине лицевой части. */
 const HEADER_RATIO = 0.48;
 
@@ -142,6 +146,7 @@ export function calculateBrickwork(
   brickH: number,
   jointMm: number,
   bond: BondType = "stretcher",
+  reservePercent = 5,
 ): BrickLayoutResult {
   const clamped = clampBrickInputs(surfaceW, surfaceH, brickL, brickH, jointMm);
   surfaceW = clamped.surfaceW;
@@ -149,6 +154,7 @@ export function calculateBrickwork(
   brickL = clamped.brickL;
   brickH = clamped.brickH;
   jointMm = clamped.jointMm;
+  reservePercent = Math.max(0, Math.min(20, Math.round(reservePercent)));
 
   const stepH = brickH + jointMm;
   const rowCount = Math.max(1, Math.ceil(surfaceH / stepH));
@@ -195,18 +201,19 @@ export function calculateBrickwork(
     }
   }
   const total = whole + cut;
-  // Обрезки часто переиспользуются на парный край (как у плитки) → к закупке
-  // целые + половина обрезков + запас на бой.
+  // База закупки предполагает, что два подходящих краевых обрезка можно получить
+  // из одного целого кирпича. Возможность повторного использования зависит от
+  // фактических размеров обрезков и проверяется по карте раскладки на объекте.
   const effectiveBricks = whole + Math.ceil(cut / 2);
-  const purchaseBricks = Math.ceil(effectiveBricks * (1 + PURCHASE_RESERVE));
+  const purchaseBricks = Math.ceil(effectiveBricks * (1 + reservePercent / 100));
+  const reserveBricks = purchaseBricks - effectiveBricks;
 
   const notes: string[] = [];
   if (surfaceW < brickL || surfaceH < brickH) {
     notes.push("Стена меньше одного кирпича — проверьте, что размеры в миллиметрах.");
   }
-  notes.push(
-    "Шов кладки 10–12 мм — стандарт. Перевязка обязательна: вертикальные швы соседних рядов не должны совпадать (минимум ¼ кирпича), иначе кладка теряет прочность.",
-  );
+  notes.push("Закупочная база предполагает парное использование подходящих краевых обрезков. Если обрезки нельзя использовать повторно, увеличьте запас после проверки схемы.");
+  notes.push("Это эскиз лицевой раскладки одного прямоугольного участка. Толщину стены, перевязку углов, связи, перемычки и примыкания определяют по проекту.");
   if (bond === "bavarian") {
     notes.push("Баварская кладка: закупайте кирпич 2–4 близких оттенков и смешивайте из разных паллет для естественного рисунка.");
   }
@@ -217,6 +224,9 @@ export function calculateBrickwork(
     totalBricks: total,
     wholeBricks: whole,
     cutBricks: cut,
+    effectiveBricks,
+    reservePercent,
+    reserveBricks,
     purchaseBricks,
     surfaceWmm: surfaceW,
     surfaceHmm: surfaceH,
