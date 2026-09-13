@@ -408,7 +408,6 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
   septik: [
     { slug: "septik-iz-kolets", reason: "Альтернатива — септик из ЖБИ-колец" },
     { slug: "drenazh-uchastka", reason: "Дренаж и поля фильтрации" },
-    { slug: "ventilyaciya", reason: "Вентиляция канализационного стояка" },
   ],
   "septik-iz-kolets": [
     { slug: "septik", reason: "Сравнить с пластиковым септиком" },
