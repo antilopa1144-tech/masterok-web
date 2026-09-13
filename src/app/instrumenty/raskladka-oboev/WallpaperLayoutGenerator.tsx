@@ -1039,7 +1039,7 @@ export default function WallpaperLayoutGenerator() {
           <div><p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{result.stripCount}</p><p className="text-xs text-slate-500">Полос на стенах</p></div>
           <div><p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{result.cutLengthM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">Длина полосы</p></div>
           <div><p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{result.patternWasteM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">На подгонку рисунка</p></div>
-          <div><p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{result.fullStripRemainderM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">На полные полосы</p></div>
+          <div><p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{result.fullStripRemainderM.toLocaleString("ru-RU")} м</p><p className="text-xs text-slate-500">Остаток на целые полотна</p></div>
         </div>
 
         <div className="mt-5 grid gap-2 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:bg-slate-900">
@@ -1047,7 +1047,7 @@ export default function WallpaperLayoutGenerator() {
           <p className="flex justify-between gap-3"><span className="text-slate-500">Полос из рулона</span><strong>{result.stripsPerRollRange.min === result.stripsPerRollRange.max ? result.stripsPerRollRange.max : `${result.stripsPerRollRange.min}–${result.stripsPerRollRange.max}`}</strong></p>
           <p className="flex justify-between gap-3"><span className="text-slate-500">Припуск на подрезку</span><strong>{result.trimWasteM.toLocaleString("ru-RU")} м</strong></p>
           <p className="flex justify-between gap-3"><span className="text-slate-500">Остатки открытых рулонов</span><strong>{result.rollRemainderM.toLocaleString("ru-RU")} м</strong></p>
-          <p className="flex justify-between gap-3"><span className="text-slate-500">Куски от 1 м для участков</span><strong>{result.patchRemainderM.toLocaleString("ru-RU")} м</strong></p>
+          <p className="flex justify-between gap-3"><span className="text-slate-500">Остатки для участков от 1 м</span><strong>{result.patchRemainderM.toLocaleString("ru-RU")} м</strong></p>
           <p className="flex justify-between gap-3 sm:col-span-2"><span className="text-slate-500">Вне полноразмерных полос</span><strong>{result.totalWasteM.toLocaleString("ru-RU")} м · {result.wastePercent.toLocaleString("ru-RU")}%</strong></p>
         </div>
 
@@ -1061,9 +1061,9 @@ export default function WallpaperLayoutGenerator() {
         </ul>
 
         <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">Для рулонов ориентируйтесь на эту раскладку. В полном калькуляторе по тем же размерам можно дополнительно посчитать клей, грунтовку и инструмент.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Для закупки рулонов ориентируйтесь на эту раскладку. Калькулятор откроется в режиме готового итога: отдельно покажет рулоны по карте и выбранный закрытый резерв, не пересчитывая раппорт второй раз.</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link href={calculatorHref} onClick={() => trackToolRelatedClick("raskladka-oboev", "wallpaper-calculator")} className="btn-primary inline-flex text-sm no-underline">Клей и грунтовка →</Link>
+            <Link href={calculatorHref} onClick={() => trackToolRelatedClick("raskladka-oboev", "wallpaper-calculator")} className="btn-primary inline-flex text-sm no-underline">Проверить итог в калькуляторе →</Link>
             <button type="button" onClick={shareLayout} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition-colors hover:border-orange-300 hover:text-orange-700 dark:border-slate-700 dark:text-slate-300">
               {shareState === "copied" ? "Ссылка с настройками скопирована" : shareState === "copied-without-photo" ? "Ссылка скопирована без фото" : "Поделиться раскладкой"}
             </button>
