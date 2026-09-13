@@ -14,7 +14,9 @@ export const warmFloorPipesDef: CalculatorDefinition = {
   h1: "Калькулятор водяного тёплого пола — длина трубы и проверка контуров",
   description:
     "Оцените длину трубы по фактической раскладке или проверьте проектную ведомость, контуры, бухты и коллектор без скрытых нормативов.",
-  metaTitle: withSiteMetaTitle("Калькулятор водяного тёплого пола"),
+  metaTitle: withSiteMetaTitle(
+    "Калькулятор водяного тёплого пола: длина трубы и контуры",
+  ),
   metaDescription:
     "Бесплатный калькулятор водяного тёплого пола: рассчитайте длину трубы по площади раскладки и шагу или проверьте проектные контуры и реальные бухты.",
   category: "engineering",
@@ -138,7 +140,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
     },
     {
       key: "coilLengthM",
-      label: "Длина фактической бухты",
+      label: "Длина одной фактической бухты",
       type: "number",
       unit: "м",
       min: 0,
@@ -146,7 +148,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
       step: 1,
       defaultValue: 0,
       hint:
-        "0 — результат в метрах. При вводе длины покупка округляется до бухт, но раскрой отдельных петель нужно проверить.",
+        "Возьмите метраж с этикетки. Результат покажет минимум бухт по общей длине; раскрой каждой цельной петли проверьте отдельно.",
       group: "purchase",
     },
     {
@@ -185,11 +187,28 @@ export const warmFloorPipesDef: CalculatorDefinition = {
     const circuitCount = canonical.totals.circuitCount;
     const average = canonical.totals.averageCircuitLengthM;
     const coilCount = canonical.totals.requiredCoilCount;
+    const materials = canonical.materials.map((material, index) =>
+      index === 0
+        ? {
+            ...material,
+            purchaseLabel:
+              coilCount > 0 ? "Минимум по общему метражу" : "Расчётная длина",
+            subtitle:
+              coilCount > 0
+                ? "Нижняя оценка: пригодность раскроя цельных контуров проверьте отдельно."
+                : "Без округления до бухты; доступную длину отреза уточните у продавца.",
+          }
+        : material,
+    );
+    const warnings = [
+      "Граница расчёта: здесь считается только длина трубы. Шаг, теплоотдача, гидравлика и состав конструкции пола задаются проектом.",
+      ...canonical.warnings.slice(2),
+    ];
 
     return {
-      materials: canonical.materials,
+      materials,
       totals: canonical.totals,
-      warnings: canonical.warnings,
+      warnings,
       scenarios: canonical.scenarios,
       formulaVersion: canonical.formulaVersion,
       canonicalSpecId: canonical.canonicalSpecId,
@@ -208,12 +227,12 @@ export const warmFloorPipesDef: CalculatorDefinition = {
         },
         {
           icon: "🛒",
-          label: "К покупке",
+          label: "Минимум по метражу",
           value: format(purchase),
           unit: "м",
           hint:
             coilCount > 0
-              ? `${format(coilCount, 0)} ${pluralizeRu(coilCount, ["бухта", "бухты", "бухт"])} по ${format(canonical.totals.coilLengthM)} м`
+              ? `нижняя оценка: ${format(coilCount, 0)} ${pluralizeRu(coilCount, ["бухта", "бухты", "бухт"])} по ${format(canonical.totals.coilLengthM)} м · раскрой отдельно`
               : "без округления до бухты",
           tone: "emerald",
         },
@@ -228,6 +247,8 @@ export const warmFloorPipesDef: CalculatorDefinition = {
           tone: "violet",
         },
       ],
+      hideScenarioBlock: true,
+      hidePrimaryMaterialBadge: true,
     };
   },
   formulaDescription: `
@@ -293,6 +314,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
 <tr><th scope="row">300 мм</th><td>около 3,33 м</td><td>около 66,67 м</td></tr>
 </tbody></table></div>
 <p>Для расчёта всей комнаты используйте исходную формулу, а не округлённую цифру на 1 м². При шаге 150 мм считайте 20 / 0,15, а не 20 × 6,67. Если в проекте есть зоны с разным шагом, оцените каждую отдельно и сложите длины. Теплоотдачу по этой таблице определить нельзя.</p>
+<p>Как читать шаг 100, 150 и 200 мм без универсальных назначений, разобрано в статье <a href="/blog/shag-truby-teplogo-pola/">«Шаг трубы тёплого пола: как выбрать исходное значение и проверить расход»</a>.</p>
 
 <h2>Как учесть расстояние от коллектора до комнаты</h2>
 <p>В поле «Подводки вне площади раскладки» нужна сумма всех подающих и обратных участков. Например, если у двух петель путь от коллектора до границы раскладки составляет по 3 м в одну сторону, подводки займут 2 × 3 × 2 = <strong>12 м</strong>. При площади 20 м² и шаге 200 мм предварительная длина получится 100 + 12 = <strong>112 м</strong>. Это пример геометрии, а не выбор числа петель.</p>
@@ -312,7 +334,7 @@ export const warmFloorPipesDef: CalculatorDefinition = {
 <p>Практические пояснения к подводкам и контурам есть в <a href="https://valtec.ru/make/warm-floor-faq.html">ответах VALTEC по водяному тёплому полу</a>. Для теплового и гидравлического расчёта производитель публикует <a href="https://valtec.ru/document/calculate/">специализированные расчётные программы</a>. Их назначение шире геометрической оценки на этой странице.</p>
 
 <h2>Что намеренно не входит в результат</h2>
-<p>Калькулятор не назначает ЭППС, демпферную ленту, крепёж, арматуру, насосно-смесительный узел или стяжку. Состав и толщины слоёв задаёт проект конструкции пола. Для количественного расчёта используйте отдельные калькуляторы <a href="/kalkulyatory/poly/styazhka/">стяжки</a> и <a href="/kalkulyatory/fasad/uteplenie/">утепления</a> с проектными исходными данными.</p>
+<p>Калькулятор не назначает ЭППС, демпферную ленту, крепёж, арматуру, насосно-смесительный узел или стяжку. Состав и толщины слоёв задаёт проект конструкции пола. Сначала разберите <a href="/blog/tolshchina-styazhki-pod-teplyy-pol/">разницу между слоем над трубой и полной толщиной стяжки</a>, а для количественного расчёта используйте отдельные калькуляторы <a href="/kalkulyatory/poly/styazhka/">стяжки</a> и <a href="/kalkulyatory/fasad/uteplenie/">утепления</a> с проектными исходными данными.</p>
 
 <h2>Нормативные границы</h2>
 <p>Общие требования к отоплению относятся к СП 60.13330.2020 с действующими изменениями, конструкция пола — к СП 29.13330.2011, а технические характеристики термопластовых труб — к ГОСТ 32415-2013. Эти документы не превращают один шаг, длину петли или состав пола в универсальное значение для любого помещения.</p>

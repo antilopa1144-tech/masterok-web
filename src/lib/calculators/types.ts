@@ -148,6 +148,8 @@ export interface MaterialResult {
   packageInfo?: { count: number; size: number; packageUnit: string };
   /** Доп. строка под названием (размер плиты, упаковка). */
   subtitle?: string;
+  /** Локальная подпись над итогом вместо общего «К покупке». */
+  purchaseLabel?: string;
   /** Основная позиция в списке (утеплитель). */
   highlight?: boolean;
 }
@@ -209,6 +211,8 @@ export interface CalculatorResult {
   summaryCards?: SummaryCard[];
   /** Скрыть generic-бейдж «Основное», если в результате несколько равнозначных главных материалов. */
   hidePrimaryMaterialBadge?: boolean;
+  /** Не показывать общий блок MIN/REC/MAX, когда предметные карточки точнее объясняют тот же итог. */
+  hideScenarioBlock?: boolean;
   /** Баннер над списком материалов (калькулятор утеплителя). */
   materialListBanner?: string;
   /** Не достраивать общий MIN/REC/MAX поверх явно заданной предметной ведомости. */

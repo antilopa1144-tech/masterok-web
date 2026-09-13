@@ -347,7 +347,7 @@ export function ResultBlock({
         </div>
 
 
-        {result.scenarios?.REC && (
+        {result.scenarios?.REC && !result.hideScenarioBlock && (
           <div className="border-t border-slate-100 p-4 sm:p-5 dark:border-slate-700">
             <ScenarioBlock result={result} />
           </div>

@@ -44,6 +44,23 @@ describe("ScenarioBlock presentation", () => {
     expect(text).toContain("5 рулонов");
     expect(text).not.toMatch(/4[,.]2/);
   });
+  it("allows a material to name a lower-bound result without calling it a purchase plan", () => {
+    const html = renderToStaticMarkup(React.createElement(MaterialList, {
+      materials: [{
+        name: "Труба",
+        quantity: 210,
+        purchaseQty: 240,
+        unit: "м",
+        purchaseLabel: "Минимум по общему метражу",
+        subtitle: "Раскрой цельных контуров проверьте отдельно.",
+      }],
+    }));
+    const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+
+    expect(text).toContain("Минимум по общему метражу");
+    expect(text).toContain("240 м");
+    expect(text).not.toContain("К покупке");
+  });
   it("does not present septic capacity as purchasable volume and leftover material", () => {
     expect(renderToStaticMarkup(React.createElement(ScenarioBlock, { result }))).toBe("");
   });

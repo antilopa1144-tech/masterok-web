@@ -85,7 +85,7 @@ export function MaterialList({ materials }: { materials: CalculatorResult["mater
                   </div>
                   <div className="text-right shrink-0 max-w-[12rem]">
                     <div className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">
-                      {CALCULATOR_UI_TEXT.toBuyPrefix}
+                      {m.purchaseLabel ?? CALCULATOR_UI_TEXT.toBuyPrefix}
                     </div>
                     <div className="text-lg font-bold tabular-nums text-slate-950 dark:text-slate-50">
                       {displayVal}{" "}

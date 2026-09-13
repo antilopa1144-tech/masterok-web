@@ -163,12 +163,32 @@ describe("Калькулятор водяного тёплого пола", () =
 
     expect(result.summaryCards?.map((card) => card.label)).toEqual([
       "Точная потребность",
-      "К покупке",
+      "Минимум по метражу",
       "Контуры",
     ]);
     expect(result.summaryCards?.[0]).toMatchObject({ value: "260", unit: "м" });
-    expect(result.summaryCards?.[1]?.hint).toContain("2 бухты по 200 м");
+    expect(result.summaryCards?.[1]?.hint).toContain("нижняя оценка: 2 бухты по 200 м");
+    expect(result.summaryCards?.[1]?.hint).toContain("раскрой отдельно");
     expect(result.summaryCards?.[2]?.hint).toContain("86,7 м");
+    expect(result.hideScenarioBlock).toBe(true);
+    expect(result.hidePrimaryMaterialBadge).toBe(true);
+  });
+
+  it("не выдаёт нижнюю оценку бухт за готовый план закупки", () => {
+    const result = calc({
+      calculationMode: 1,
+      projectTotalPipeLengthM: 210,
+      circuitCount: 3,
+      longestCircuitLengthM: 70,
+      coilLengthM: 120,
+    });
+    const pipe = findMaterial(result, "Труба");
+
+    expect(result.totals.requiredCoilCount).toBe(2);
+    expect(result.totals.purchasePipeLengthM).toBe(240);
+    expect(pipe?.purchaseLabel).toBe("Минимум по общему метражу");
+    expect(pipe?.subtitle).toContain("пригодность раскроя цельных контуров");
+    expect(result.summaryCards?.some((card) => card.label === "К покупке")).toBe(false);
   });
 
   it("SEO-текст честно ограничивает назначение калькулятора", () => {
@@ -178,6 +198,8 @@ describe("Калькулятор водяного тёплого пола", () =
     expect(content).toContain("не вычитает условные 15%");
     expect(content).toContain("не назначает ЭППС");
     expect(content).toContain("Почему нет автоматических 80 м на контур");
+    expect(content).toContain('href="/blog/shag-truby-teplogo-pola/"');
+    expect(content).toContain('href="/blog/tolshchina-styazhki-pod-teplyy-pol/"');
     expect(content).not.toContain("Площадь помещения &times; 0.85");
     expect(content).not.toContain("фиксированный общий слой 50 мм");
   });
