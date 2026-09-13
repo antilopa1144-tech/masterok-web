@@ -81,7 +81,7 @@ describe("calculator risk registry", () => {
     expect(
       CALCULATOR_RISK_REGISTRY.find((entry) => entry.slug === "elektrika")
         ?.implementationAudit,
-    ).toBe("completed");
+    ).toBe("pending");
   });
 
   it("держит сгенерированный markdown синхронным с реестром", () => {

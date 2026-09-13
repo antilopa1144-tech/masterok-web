@@ -194,18 +194,11 @@ export const CALCULATOR_RISK_REGISTRY: CalculatorRiskEntry[] = [
       "закупка появляется только из явной проектной ведомости и фактических фасовок, MIN/REC/MAX применяется только к заготовкам ступеней без скрытого запаса; web/mobile parity, CalculatorEngine и фактический Flutter ProCalculator flow",
     ],
   ),
-  implementationAudited(
-    "elektrika",
-    "electric",
-    "P0",
-    ["engineering_safety", "large_purchase", "multi_material"],
-    [
-      "canonical electric-canonical-v3",
-      "официальные карточки СП 256.1325800.2016, ГОСТ Р 50571.4.41-2022 и ГОСТ 31565-2012",
-      "регрессии покупки по метрам/бухтам и выбора фазности",
-      "web/mobile parity и фактический Flutter ProCalculator flow",
-    ],
-  ),
+  pending("elektrika", "electric", "P0", [
+    "engineering_safety",
+    "large_purchase",
+    "multi_material",
+  ]),
   implementationAudited(
     "otoplenie-radiatory",
     "heating",
