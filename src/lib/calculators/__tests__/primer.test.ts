@@ -235,6 +235,7 @@ describe("Грунтовка — паспортный расход и факти
     expect(html).toContain(
       "/instrumenty/tajmer-skhvatyvaniya/?preset=primer-deep&amp;from=gruntovka",
     );
+    expect(html).toContain("/blog/skolko-sohnet-gruntovka/");
     expect(CATEGORY_INTRO.interior.standards.join(" ")).toContain(
       "СП 71.13330",
     );
