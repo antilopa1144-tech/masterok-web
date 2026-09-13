@@ -8,11 +8,23 @@ describe("engineering calculator companions", () => {
     expect(septicTargets).not.toContain("ventilyaciya");
   });
 
-  it("keeps ventilation related to systems it can actually support", () => {
+  it("keeps ventilation related only to tasks the targets can support", () => {
     expect(CALCULATOR_COMPANIONS.ventilyaciya).toEqual([
-      { slug: "elektrika", reason: "Питание вентилятора и автоматики" },
       { slug: "krepezh", reason: "Хомуты и крепёж воздуховодов" },
       { slug: "kassetnyi-potolok", reason: "Воздуховоды за подвесным потолком" },
     ]);
+  });
+
+  it("does not send engineering equipment loads to the area-based electric estimate", () => {
+    for (const source of [
+      "teplyy-pol",
+      "vodyanoy-teplyy-pol",
+      "otoplenie-radiatory",
+      "ventilyaciya",
+    ]) {
+      const targets = CALCULATOR_COMPANIONS[source]?.map((item) => item.slug) ?? [];
+
+      expect(targets, source).not.toContain("elektrika");
+    }
   });
 });

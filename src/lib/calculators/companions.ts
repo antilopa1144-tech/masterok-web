@@ -365,19 +365,16 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "styazhka", reason: "Стяжка поверх тёплого пола" },
     { slug: "plitka", reason: "Плитка на тёплый пол" },
     { slug: "vodyanoy-teplyy-pol", reason: "Альтернатива — водяной контур" },
-    { slug: "elektrika", reason: "Питание и терморегулятор" },
   ],
   "vodyanoy-teplyy-pol": [
     { slug: "styazhka", reason: "Стяжка над контуром" },
     { slug: "plitka", reason: "Плитка как покрытие" },
     { slug: "teplyy-pol", reason: "Альтернатива — электрический" },
     { slug: "otoplenie-radiatory", reason: "Связка с радиаторным отоплением" },
-    { slug: "elektrika", reason: "Питание насоса и автоматики" },
   ],
   "otoplenie-radiatory": [
     { slug: "vodyanoy-teplyy-pol", reason: "Водяной тёплый пол как дополнение" },
     { slug: "teplyy-pol", reason: "Электрический тёплый пол" },
-    { slug: "elektrika", reason: "Питание котла и насосов" },
   ],
 
   "elektrika": [
@@ -386,7 +383,6 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
     { slug: "krepezh", reason: "Клипсы, гофра, подрозетники" },
   ],
   "ventilyaciya": [
-    { slug: "elektrika", reason: "Питание вентилятора и автоматики" },
     { slug: "krepezh", reason: "Хомуты и крепёж воздуховодов" },
     { slug: "kassetnyi-potolok", reason: "Воздуховоды за подвесным потолком" },
   ],
