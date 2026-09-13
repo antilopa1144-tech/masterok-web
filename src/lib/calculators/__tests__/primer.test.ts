@@ -152,6 +152,14 @@ describe("Грунтовка — паспортный расход и факти
     expect(names).not.toMatch(/Валик|Кисть|Кювета/);
   });
 
+  it("не заслоняет мобильный результат стеной предупреждений", () => {
+    const result = calc(directInputs);
+
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain("техкарте");
+    expect(result.warnings[0].toLowerCase()).toContain("литры и килограммы");
+  });
+
   it("не добавляет скрытые сценарные и accuracy-множители", () => {
     const result = calc({
       ...directInputs,
@@ -200,11 +208,13 @@ describe("Грунтовка — паспортный расход и факти
 
   it("не обещает универсальный расход, бренд и готовый подбор", () => {
     expect(primerDef.h1).toBe(
-      "Калькулятор грунтовки — расход по техкарте и упаковка",
+      "Калькулятор грунтовки: расход на 1 м² и количество упаковок",
     );
     expect(primerDef.description).not.toMatch(/0[,.](1|12|15|35|42)/i);
     expect(primerDef.description).not.toMatch(/Ceresit|Knauf/i);
     expect(primerDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+    expect(primerDef.metaTitle).toContain("на 1 м²");
+    expect(primerDef.metaDescription).toContain("для стен, потолка и пола");
   });
 
   it("ссылается на СП и техдокументацию разных продуктов", () => {
@@ -221,6 +231,9 @@ describe("Грунтовка — паспортный расход и факти
     );
     expect(html).toContain(
       "https://www.knauf.ru/catalog/sukhie-stroitelnye-smesi-i-gotovye-sostavy/gruntovki/knauf-betogrund/",
+    );
+    expect(html).toContain(
+      "/instrumenty/tajmer-skhvatyvaniya/?preset=primer-deep&amp;from=gruntovka",
     );
     expect(CATEGORY_INTRO.interior.standards.join(" ")).toContain(
       "СП 71.13330",

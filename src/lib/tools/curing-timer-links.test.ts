@@ -11,6 +11,12 @@ import {
 
 describe("связка калькуляторов с таймером схватывания", () => {
   it("строит ссылку только для однозначного пресета по выбранному материалу", () => {
+    expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerPurpose: 1 })).toBe(
+      "/instrumenty/tajmer-skhvatyvaniya/?preset=primer-deep&from=gruntovka",
+    );
+    expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerPurpose: 2 })).toBe(
+      "/instrumenty/tajmer-skhvatyvaniya/?preset=primer-contact&from=gruntovka",
+    );
     expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerType: 1 })).toBe(
       "/instrumenty/tajmer-skhvatyvaniya/?preset=primer-contact&from=gruntovka",
     );
@@ -26,6 +32,8 @@ describe("связка калькуляторов с таймером схват
   });
 
   it("не угадывает пресет для неоднозначного или несовместимого состава", () => {
+    expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerPurpose: 0 })).toBeNull();
+    expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerPurpose: 3 })).toBeNull();
     expect(buildCuringTimerHrefFromCalculator("gruntovka", { primerType: 2 })).toBeNull();
     expect(buildCuringTimerHrefFromCalculator("shtukaturka", { plasterType: 2 })).toBeNull();
     expect(buildCuringTimerHrefFromCalculator("shpaklevka", { puttyType: 1 })).toBeNull();

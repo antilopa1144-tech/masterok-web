@@ -42,10 +42,14 @@ function getCuringPresetForCalculator(
   values: Readonly<Record<string, number>>,
 ): string | null {
   switch (calculatorSlug) {
-    case "gruntovka":
+    case "gruntovka": {
+      if (values.primerPurpose === 1) return "primer-deep";
+      if (values.primerPurpose === 2) return "primer-contact";
+      if (values.primerPurpose !== undefined) return null;
       if (values.primerType === 0) return "primer-deep";
       if (values.primerType === 1) return "primer-contact";
       return null;
+    }
     case "shtukaturka":
       if (values.plasterType === 0) return "plaster-gypsum";
       if (values.plasterType === 1) return "plaster-cement";
