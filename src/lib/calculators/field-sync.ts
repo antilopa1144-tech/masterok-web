@@ -24,7 +24,7 @@ export function syncDependentFields(
   // у полей с `optionsFromBrand` текущие значения могут оказаться вне
   // допустимого набора (например, у Пеноплэкс Комфорт нет 80 мм). В этом
   // случае подменяем на ближайшее значение из новых опций.
-  if (key === "manufacturer" || key === "materialForm" || key === "productId") {
+  if (key === "manufacturer" || key === "materialForm" || key === "productId" || key === "mountSystem") {
     for (const f of calculator.fields) {
       if (!fieldUsesDynamicOptions(f)) continue;
       const opts = resolveFieldOptions(f, next);
@@ -46,6 +46,7 @@ export function syncDependentFields(
       next.productId = getDefaultProductIdForApplication(
         Math.round(next.application ?? 0),
         Math.round(next.materialForm ?? 0),
+        Math.round(next.mountSystem ?? 0),
       );
     }
 
@@ -53,10 +54,19 @@ export function syncDependentFields(
       next.productId = getDefaultProductIdForApplication(
         application,
         Math.round(value),
+        Math.round(next.mountSystem ?? 0),
       );
     }
 
-    if (key === "application" || key === "materialForm" || key === "productId") {
+    if (key === "mountSystem") {
+      next.productId = getDefaultProductIdForApplication(
+        application,
+        Math.round(next.materialForm ?? 0),
+        Math.round(value),
+      );
+    }
+
+    if (key === "application" || key === "materialForm" || key === "productId" || key === "mountSystem") {
       const thicknessOpts = resolveFieldOptions(
         calculator.fields.find((f) => f.key === "thickness")!,
         next,

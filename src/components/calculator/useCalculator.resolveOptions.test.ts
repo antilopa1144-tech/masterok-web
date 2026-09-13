@@ -66,15 +66,23 @@ describe("resolveFieldOptions — каталог утеплителя (productId
   };
 
   it("плиты для фасада (application=0): фасадные линейки, без Лайт Баттс и Пеноплэкс", () => {
-    // Фасад (0): Фасад Баттс (apps=[0]), Роклайт (apps=[0,1]).
-    // Лайт Баттс (apps=[1,2]) и Пеноплэкс (apps=[3,4]) — исключены.
-    const r = resolveFieldOptions(productField, { materialForm: 0, application: 0 });
+    // СФТК: Фасад Баттс и Технофас. Роклайт относится к каркасу/сайдингу.
+    // Лайт Баттс (apps=[1,2]) и Пеноплэкс (apps=[3,4]) тоже исключены.
+    const r = resolveFieldOptions(productField, { materialForm: 0, application: 0, mountSystem: 0 });
     const labels = r?.map((o) => o.label).join(" ") ?? "";
     expect(labels).toContain("Фасад Баттс");
-    expect(labels).toContain("Роклайт");
+    expect(labels).not.toContain("Роклайт");
     expect(labels).not.toContain("Лайт Баттс");
     expect(labels).not.toContain("Пеноплэкс");
     expect(labels).not.toContain("Тепло Roll");
+  });
+
+  it("плиты для фасада по каркасу: Роклайт без плит СФТК", () => {
+    const r = resolveFieldOptions(productField, { materialForm: 0, application: 0, mountSystem: 1 });
+    const labels = r?.map((o) => o.label).join(" ") ?? "";
+    expect(labels).toContain("Роклайт");
+    expect(labels).not.toContain("Фасад Баттс");
+    expect(labels).not.toContain("Технофас");
   });
 
   it("плиты для стен (application=1): стеновые линейки", () => {

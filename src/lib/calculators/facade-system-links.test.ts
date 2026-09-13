@@ -14,6 +14,7 @@ describe("facade system links", () => {
       productForm: 0,
       insulationType: 1,
       thickness: 150,
+      productId: 0,
     });
     const url = new URL(link.href, "https://getmasterok.ru");
 
@@ -33,6 +34,7 @@ describe("facade system links", () => {
     expect(buildFacadeSystemLinksFromInsulationResult({ application: 0, area: 80, mountSystem: 0, productForm: 1, insulationType: 0, thickness: 100 })).toEqual([]);
     expect(buildFacadeSystemLinksFromInsulationResult({ application: 0, area: 80, mountSystem: 0, productForm: 0, insulationType: 2, thickness: 100 })).toEqual([]);
     expect(buildFacadeSystemLinksFromInsulationResult({ application: 0, area: 80, mountSystem: 0, productForm: 0, insulationType: 0, thickness: 250 })).toEqual([]);
+    expect(buildFacadeSystemLinksFromInsulationResult({ application: 0, area: 80, mountSystem: 0, productForm: 0, insulationType: 0, thickness: 100, productId: 3 })).toEqual([]);
   });
 
   it("offers vent-facade finishes while transferring only the net area", () => {
@@ -44,6 +46,7 @@ describe("facade system links", () => {
     expect(byTarget.sayding.searchParams.has("perimeter")).toBe(false);
     expect(byTarget.sayding.searchParams.has("height")).toBe(false);
     expect(byTarget.sayding.searchParams.has("cornersCount")).toBe(false);
+    expect(links.find((link) => link.target === "sayding")?.description).toBe("Панели по рабочим размерам и упаковке");
 
     expect(byTarget["fasadnye-paneli"].searchParams.get("inputMode")).toBe("1");
     expect(byTarget["fasadnye-paneli"].searchParams.get("area")).toBe("76.5");
@@ -66,6 +69,7 @@ describe("facade system links", () => {
     expect(sidingUrl.searchParams.get("application")).toBe("0");
     expect(sidingUrl.searchParams.get("area")).toBe("92");
     expect(sidingUrl.searchParams.get("mountSystem")).toBe("1");
+    expect(sidingUrl.searchParams.get("productId")).toBe("0");
     expect(sidingUrl.searchParams.has("insulationType")).toBe(false);
     expect(sidingUrl.searchParams.has("thickness")).toBe(false);
 

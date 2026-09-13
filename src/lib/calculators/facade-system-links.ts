@@ -31,6 +31,7 @@ export function buildFacadeSystemLinksFromInsulationResult(totals: Totals): Faca
   if (area === null || (mountSystem !== 0 && mountSystem !== 1)) return [];
 
   if (mountSystem === 0) {
+    const productId = readNumber(totals, "productId");
     const productForm = readNumber(totals, "productForm");
     const insulationType = readNumber(totals, "insulationType");
     const thickness = readNumber(totals, "thickness");
@@ -44,6 +45,7 @@ export function buildFacadeSystemLinksFromInsulationResult(totals: Totals): Faca
       || thickness === null
       || thickness < 50
       || thickness > 200
+      || (productId !== null && productId !== 0 && productId !== 2 && productId !== 4)
     ) {
       return [];
     }
@@ -72,7 +74,7 @@ export function buildFacadeSystemLinksFromInsulationResult(totals: Totals): Faca
     links.push({
       target: "sayding",
       title: "Сайдинг",
-      description: "Типовые панели и комплектующие",
+      description: "Панели по рабочим размерам и упаковке",
       href: `/kalkulyatory/fasad/sayding/?${sidingParams.toString()}`,
     });
   }
@@ -104,6 +106,7 @@ export function buildInsulationHrefFromFacadeResult(
     application: "0",
     area: String(area),
     mountSystem: "1",
+    productId: "0",
   });
   return `/kalkulyatory/fasad/uteplenie/?${params.toString()}`;
 }

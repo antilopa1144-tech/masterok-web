@@ -45,8 +45,9 @@
       "packHeightMm": 600,
       "thicknessMm": [50, 100, 150],
       "packPieces": { "50": 8, "100": 4, "150": 3 },
-      "note": "Фасадная минвата под СФТК и вентфасад.",
-      "applications": [0]
+      "note": "Фасадная минвата для СФТК с наружным штукатурным слоем.",
+      "applications": [0],
+      "facadeMountSystems": [0]
     },
     {
       "id": 3,
@@ -62,8 +63,9 @@
       "packHeightMm": 600,
       "thicknessMm": [50, 100, 150],
       "packPieces": { "50": 12, "100": 6, "150": 4 },
-      "note": "Базальтовая вата, бюджетный сегмент.",
-      "applications": [0, 1]
+      "note": "Базальтовая вата для каркасных стен и фасада с отделкой сайдингом.",
+      "applications": [0, 1],
+      "facadeMountSystems": [1]
     },
     {
       "id": 4,
@@ -80,7 +82,8 @@
       "thicknessMm": [50, 100, 150],
       "packPieces": { "50": 6, "100": 3, "150": 2 },
       "note": "Плотная минвата для мокрого штукатурного фасада.",
-      "applications": [0]
+      "applications": [0],
+      "facadeMountSystems": [0]
     },
     {
       "id": 5,
@@ -131,7 +134,8 @@
       "thicknessMm": [50, 100, 150],
       "packPieces": { "50": 10, "100": 5, "150": 3 },
       "note": "Пенопласт под штукатурный фасад, ГОСТ Р 56148.",
-      "applications": [0]
+      "applications": [0],
+      "facadeMountSystems": [0]
     },
     {
       "id": 8,

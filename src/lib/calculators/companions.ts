@@ -325,18 +325,16 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
 
   // ── Фасад ──────────────────────────────────────────────────────────────
   sayding: [
-    { slug: "uteplenie-fasada-minvatoj", reason: "Утеплитель под сайдингом" },
+    { slug: "uteplenie", reason: "Утеплитель для каркаса под сайдингом" },
     { slug: "fasadnye-paneli", reason: "Альтернатива — фасадные панели" },
     { slug: "kalkulyator-terrasnoy-doski", reason: "Терраса из доски" },
     { slug: "otdelka-balkona", reason: "Обшивка балкона" },
   ],
   "fasadnye-paneli": [
-    { slug: "uteplenie-fasada-minvatoj", reason: "Утеплитель под панелями" },
+    { slug: "uteplenie", reason: "Утеплитель для каркаса под панелями" },
     { slug: "sayding", reason: "Альтернатива — сайдинг" },
   ],
   "uteplenie-fasada-minvatoj": [
-    { slug: "sayding", reason: "Сайдинг поверх утеплителя" },
-    { slug: "fasadnye-paneli", reason: "Фасадные панели поверх" },
     { slug: "oblitsovochnyj-kirpich", reason: "Облицовочный кирпич" },
     { slug: "uteplenie", reason: "Общий калькулятор утеплителя" },
     { slug: "dekorativnaya-shtukaturka", reason: "Декоративная штукатурка по фасаду" },
@@ -345,7 +343,7 @@ export const CALCULATOR_COMPANIONS: Record<string, CompanionLink[]> = {
   ],
 
   "uteplenie": [
-    { slug: "uteplenie-fasada-minvatoj", reason: "Точный расчёт по минвате" },
+    { slug: "uteplenie-fasada-minvatoj", reason: "СФТК: клей, дюбели и отделка" },
     { slug: "uteplenie-potolka", reason: "Утепление перекрытия" },
     { slug: "karkasnyj-dom", reason: "Утепление каркасного дома" },
     { slug: "otdelka-mansardy", reason: "Утепление скатов мансарды" },

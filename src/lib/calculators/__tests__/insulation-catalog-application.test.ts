@@ -4,6 +4,7 @@ import {
   filterProductsForContext,
   getDefaultProductIdForApplication,
   productMatchesApplication,
+  productMatchesFacadeMountSystem,
 } from "../insulation-catalog";
 import { INSULATION_APPLICATION } from "../insulation-application";
 import { getInsulationProduct } from "../insulation-catalog";
@@ -27,14 +28,33 @@ describe("insulation-catalog × application", () => {
   });
 
   it("фасад: только фасадные плиты", () => {
-    const opts = buildProductSelectOptions(0, INSULATION_APPLICATION.FACADE);
+    const opts = buildProductSelectOptions(0, INSULATION_APPLICATION.FACADE, 0);
     expect(opts.some((o) => o.value === 2)).toBe(true);
+    expect(opts.some((o) => o.value === 3)).toBe(false);
     expect(opts.some((o) => o.value === 5)).toBe(false);
+  });
+
+  it("фасад: каталог разделяет СФТК и каркас/сайдинг", () => {
+    const wet = buildProductSelectOptions(0, INSULATION_APPLICATION.FACADE, 0);
+    const frame = buildProductSelectOptions(0, INSULATION_APPLICATION.FACADE, 1);
+
+    expect(wet.some((o) => o.value === 2)).toBe(true);
+    expect(wet.some((o) => o.value === 4)).toBe(true);
+    expect(wet.some((o) => o.value === 3)).toBe(false);
+    expect(frame.some((o) => o.value === 3)).toBe(true);
+    expect(frame.some((o) => o.value === 2)).toBe(false);
+    expect(getDefaultProductIdForApplication(INSULATION_APPLICATION.FACADE, 0, 1)).toBe(3);
   });
 
   it("productMatchesApplication учитывает applications", () => {
     const light = getInsulationProduct(1)!;
     expect(productMatchesApplication(light, INSULATION_APPLICATION.FLOOR)).toBe(false);
     expect(productMatchesApplication(light, INSULATION_APPLICATION.INTERNAL)).toBe(true);
+  });
+
+  it("productMatchesFacadeMountSystem не переносит штукатурную плиту в каркас", () => {
+    expect(productMatchesFacadeMountSystem(getInsulationProduct(2)!, INSULATION_APPLICATION.FACADE, 0)).toBe(true);
+    expect(productMatchesFacadeMountSystem(getInsulationProduct(2)!, INSULATION_APPLICATION.FACADE, 1)).toBe(false);
+    expect(productMatchesFacadeMountSystem(getInsulationProduct(3)!, INSULATION_APPLICATION.FACADE, 1)).toBe(true);
   });
 });

@@ -43,4 +43,19 @@ describe("insulation-smart × application", () => {
 
     expect(next.thickness).toBe(100);
   });
+
+  it("при смене фасадной системы выбирает совместимую справочную линейку", () => {
+    const next = {
+      application: INSULATION_APPLICATION.FACADE,
+      mountSystem: 1,
+      materialForm: 0,
+      productId: 2,
+      thickness: 100,
+    };
+
+    syncDependentFields(insulationDef, "mountSystem", 1, next);
+
+    expect(next.productId).toBe(3);
+    expect(next.thickness).toBe(100);
+  });
 });

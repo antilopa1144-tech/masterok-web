@@ -33,8 +33,8 @@ describe("insulation formula — каталог линеек (productId)", () =>
     expect(r.materials[0].category).toBe("Утеплитель (плиты)");
   });
 
-  it("Технониколь Роклайт: 6 плит/пачка для 100 мм", () => {
-    const r = calc({ area: 40, thickness: 100, productId: 3, materialForm: INSULATION_FORM_SLABS });
+  it("Технониколь Роклайт: 6 плит/пачка для фасада под сайдинг", () => {
+    const r = calc({ area: 40, thickness: 100, productId: 3, materialForm: INSULATION_FORM_SLABS, mountSystem: 1 });
     expect(r.totals.piecesPerPack).toBe(6);
     expect(r.materials[0].name).toContain("Технониколь Роклайт");
   });
@@ -80,8 +80,23 @@ describe("insulation formula — каталог линеек (productId)", () =>
   });
 
   it("warning при толщине вне линейки", () => {
-    const r = calc({ area: 40, thickness: 80, productId: 3, materialForm: INSULATION_FORM_SLABS });
+    const r = calc({ area: 40, thickness: 80, productId: 3, materialForm: INSULATION_FORM_SLABS, mountSystem: 1 });
     expect(r.warnings.some((w) => w.includes("Роклайт") && w.includes("50, 100, 150"))).toBe(true);
+  });
+
+  it("не применяет фасадную линейку к неподтверждённой системе из старой ссылки", () => {
+    const r = calc({
+      area: 40,
+      thickness: 100,
+      productId: 2,
+      materialForm: INSULATION_FORM_SLABS,
+      application: 0,
+      mountSystem: 1,
+    });
+
+    expect(r.totals.productId).toBe(INSULATION_PRODUCT_MANUAL);
+    expect(r.materials[0].name).not.toContain("Фасад Баттс");
+    expect(r.warnings.some((warning) => warning.includes("не подтверждена") && warning.includes("фасадной системы"))).toBe(true);
   });
 
   it("явный piecesPerPack от пользователя побеждает каталог (только ручной режим)", () => {

@@ -13,6 +13,7 @@ import {
   INSULATION_FORM_SLABS,
   INSULATION_FORM_SPRAY,
   INSULATION_PRODUCT_MANUAL,
+  productMatchesFacadeMountSystem,
   productMatchesApplication,
   type InsulationCatalogProduct,
 } from "../insulation-catalog";
@@ -110,11 +111,22 @@ export function runInsulationCalculate(
   const application = Math.round(inputs.application ?? INSULATION_APPLICATION.FACADE);
   const productId = Math.round(inputs.productId ?? INSULATION_PRODUCT_MANUAL);
   const userMaterialForm = Math.round(inputs.materialForm ?? INSULATION_FORM_SLABS);
+  const requestedMountSystem = Number(inputs.mountSystem ?? 0);
   let product = getInsulationProduct(productId);
   if (product && !productMatchesApplication(product, application)) {
     brandWarnings.push(
       `Линейка «${product.manufacturer} ${product.lineName}» не входит в справочный список для выбранного назначения. ` +
         "Верните подходящую позицию из списка или ручной ввод и проверьте область применения по документации производителя.",
+    );
+    product = null;
+  }
+  if (
+    product
+    && !productMatchesFacadeMountSystem(product, application, requestedMountSystem)
+  ) {
+    brandWarnings.push(
+      `Линейка «${product.manufacturer} ${product.lineName}» не подтверждена справочным каталогом для выбранной фасадной системы. ` +
+        "Выберите позицию из обновлённого списка или ручной ввод и проверьте документацию производителя.",
     );
     product = null;
   }
@@ -261,7 +273,7 @@ export function runInsulationCalculate(
   const materialListBanner = buildMaterialListBanner(materialsCtx);
   const totals: Record<string, number> = {
     ...canonical.totals,
-    productId,
+    productId: product?.id ?? INSULATION_PRODUCT_MANUAL,
     materialForm,
     application: applicationResolved,
   };

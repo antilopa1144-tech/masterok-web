@@ -30,6 +30,8 @@ export interface InsulationCatalogProduct {
   note?: string;
   /** INSULATION_APPLICATION ids; без поля — доступна везде (обратная совместимость) */
   applications?: number[];
+  /** Для фасада: 0 = СФТК, 1 = каркас/вентфасад. Без поля — система не подтверждена. */
+  facadeMountSystems?: number[];
 }
 
 const catalog = catalogJson as {
@@ -61,23 +63,44 @@ export function productMatchesApplication(
   return product.applications.includes(application);
 }
 
+export function productMatchesFacadeMountSystem(
+  product: InsulationCatalogProduct,
+  application: number,
+  mountSystem?: number,
+): boolean {
+  if (application !== 0 || mountSystem === undefined) return true;
+  if (!product.facadeMountSystems || product.facadeMountSystems.length === 0) return false;
+  return product.facadeMountSystems.includes(mountSystem);
+}
+
+export function productMatchesContext(
+  product: InsulationCatalogProduct,
+  application: number,
+  mountSystem?: number,
+): boolean {
+  return productMatchesApplication(product, application)
+    && productMatchesFacadeMountSystem(product, application, mountSystem);
+}
+
 export function filterProductsForContext(
   materialForm: number,
   application: number,
+  mountSystem?: number,
 ): InsulationCatalogProduct[] {
   const formKey = formKeyFromMaterialForm(materialForm);
   return catalog.products.filter(
-    (p) => p.form === formKey && productMatchesApplication(p, application),
+    (p) => p.form === formKey && productMatchesContext(p, application, mountSystem),
   );
 }
 
 export function getDefaultProductIdForApplication(
   application: number,
   materialForm?: number,
+  mountSystem?: number,
 ): number {
   const profile = getApplicationProfile(application);
   const form = materialForm ?? profile.defaultMaterialForm;
-  const candidates = filterProductsForContext(form, application);
+  const candidates = filterProductsForContext(form, application, mountSystem);
   if (candidates.length > 0) {
     const preferred = candidates.find((p) => p.id === profile.defaultProductId);
     return preferred?.id ?? candidates[0]!.id;
@@ -93,6 +116,7 @@ export function getDefaultProductIdForForm(materialForm: number): number {
 export function buildProductSelectOptions(
   materialForm: number,
   application?: number,
+  mountSystem?: number,
 ): Array<{
   value: number;
   label: string;
@@ -115,7 +139,7 @@ export function buildProductSelectOptions(
       (p) =>
         p.form === formKey &&
         p.subgroup === sg &&
-        (application === undefined || productMatchesApplication(p, application)),
+        (application === undefined || productMatchesContext(p, application, mountSystem)),
     );
     for (const p of items) {
       const sizeHint =

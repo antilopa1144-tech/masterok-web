@@ -88,7 +88,8 @@ export function resolveFieldOptions(
   if (field.key === "productId") {
     const form = Math.round(values.materialForm ?? 0);
     const application = Math.round(values.application ?? 0);
-    return buildProductSelectOptions(form, application);
+    const mountSystem = Math.round(values.mountSystem ?? 0);
+    return buildProductSelectOptions(form, application, mountSystem);
   }
 
   if (field.optionsFromProduct) {
