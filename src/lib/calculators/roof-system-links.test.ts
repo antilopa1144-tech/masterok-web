@@ -68,9 +68,12 @@ describe("roof system links", () => {
     expect(gutters.searchParams.has("roofPerimeter")).toBe(false);
     expect(gutters.searchParams.has("roofHeight")).toBe(false);
     expect(gutters.searchParams.has("funnels")).toBe(false);
+    expect(links[0].title).toBe("Наружный водосток");
+    expect(links[0].description).toContain("Предварительно");
+    expect(links[0].description).not.toContain("пропускную способность");
   });
 
-  it("returns from soft roofing to the full bill and gutters", () => {
+  it("returns from soft roofing to project materials and gutters", () => {
     const links = buildRoofingLinksFromSoftRoofingResult({
       roofArea: 112,
       ridgeLength: 8,
@@ -86,6 +89,8 @@ describe("roof system links", () => {
     expect(byTarget.krovlya.searchParams.get("ridgeProjectM")).toBe("8");
     expect(byTarget.krovlya.searchParams.get("eavesProjectM")).toBe("22");
     expect(byTarget.vodostok.searchParams.get("roofArea")).toBe("112");
+    expect(links.find((link) => link.target === ROOFING_TRANSFER_FROM)?.title).toBe("Материалы кровли по проекту");
+    expect(links.find((link) => link.target === GUTTERS_TRANSFER_FROM)?.title).toBe("Наружный водосток");
   });
 
   it("returns from gutters with area only and rejects out-of-range values", () => {

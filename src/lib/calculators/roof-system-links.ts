@@ -92,8 +92,8 @@ export function buildRoofingLinksFromRoofingResult(
 
   links.push({
     target: GUTTERS_TRANSFER_FROM,
-    title: "Водосточная система",
-    description: "Проверить пропускную способность по площади",
+    title: "Наружный водосток",
+    description: "Предварительно рассчитать воронки и комплект",
     href: buildGuttersHref(ROOFING_TRANSFER_FROM, area),
   });
   return links;
@@ -122,14 +122,14 @@ export function buildRoofingLinksFromSoftRoofingResult(totals: Totals): RoofSyst
   return [
     {
       target: ROOFING_TRANSFER_FROM,
-      title: "Полная ведомость кровли",
-      description: "Покрытие и проектные позиции по фасовкам",
+      title: "Материалы кровли по проекту",
+      description: "Покрытие и заданные позиции по фасовкам",
       href: `/kalkulyatory/krovlya/krovlya/?${roofingParams.toString()}`,
     },
     {
       target: GUTTERS_TRANSFER_FROM,
-      title: "Водосточная система",
-      description: "Проверить пропускную способность по площади",
+      title: "Наружный водосток",
+      description: "Предварительно рассчитать воронки и комплект",
       href: buildGuttersHref(SOFT_ROOFING_TRANSFER_FROM, area),
     },
   ];

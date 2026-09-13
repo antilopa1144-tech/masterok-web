@@ -206,4 +206,12 @@ describe("Водосточная система", () => {
     expect(html).toContain("https://protect.gost.ru/sp/details/cf3b6ea5-c63b-4aa4-9dd3-4295fcaef945");
     expect(html).toContain("MIN/REC/MAX в этой версии меняют только сценарное число желобов");
   });
+
+  it("закрепляет поисковую роль наружного водостока скатной крыши", () => {
+    expect(guttersDef.h1).toContain("водостока для крыши");
+    expect(guttersDef.description).toContain("наружный водосток скатной крыши");
+    expect(guttersDef.description).not.toContain("внутренний водосток");
+    expect(guttersDef.faq?.find((item) => item.question.includes("плоской кровли"))?.answer)
+      .toContain("Нет");
+  });
 });
