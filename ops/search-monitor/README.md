@@ -37,3 +37,24 @@ systemctl list-timers masterok-search-monitor.timer
 Для разового безопасного импорта доступны `scripts/import-yandex-token-vps.py` и `scripts/import-yandex-token-local.cjs`. Первый размещается на VPS в `/tmp/masterok-import-yandex-token.py`; второй открывает одноразовую форму только на loopback `127.0.0.1:43127`, проверяет Origin/nonce/размер, передаёт токен SSH stdin, не хранит его локально и прекращает принимать запросы после импорта. Перед повторным импортом/ротацией согласовать замену: VPS-скрипт не перезаписывает существующий файл. Секреты не вставлять в команды, Git или чат.
 
 Первичные источники: [авторизация](https://yandex.ru/dev/webmaster/doc/ru/tasks/how-to-get-oauth), [сводка сайта](https://yandex.ru/dev/webmaster/doc/ru/reference/host-id-summary), [примеры страниц в поиске](https://yandex.ru/dev/webmaster/doc/ru/reference/hosts-indexing-insearch-samples).
+
+### Разовый query-to-URL срез
+
+`query_analytics.py` читает официальный отчёт `query-analytics/list` с тем же
+защищённым OAuth-токеном. Несмотря на HTTP POST, метод является отчётным: скрипт
+не добавляет сайты, не отправляет URL на переобход и не меняет настройки.
+
+Запросы, которые Яндекс связывает с одной канонической страницей:
+
+```sh
+runuser -u masterok-search -- /opt/masterok-search/venv/bin/python \
+  /opt/masterok-search/query_analytics.py \
+  --text-indicator QUERY --filter-indicator URL --operation TEXT_MATCH \
+  --value https://getmasterok.ru/kalkulyatory/otdelka/gruntovka/
+```
+
+В отчётах Яндекс представляет URL как путь без домена. CLI принимает и полный
+canonical, безопасно преобразует его в такой путь, завершает пагинацию до 10 000
+строк и сообщает `truncated`. В ответе остаются исходное и фактическое значения
+фильтра, но OAuth-токен никогда не печатается. JSON с закрытыми показателями не
+следует добавлять в Git.
