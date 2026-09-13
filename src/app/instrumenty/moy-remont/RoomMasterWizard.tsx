@@ -33,6 +33,7 @@ import {
   ROOM_MASTER_TOOL_SLUG,
 } from "@/lib/tools/room-master-to-renovation-cost";
 import { trackToolModeChange, trackToolRelatedClick } from "@/lib/analytics";
+import { pluralizePackageUnit, pluralizeRu } from "@/lib/format";
 
 const TILE_FLOOR_OPTIONS = [
   { value: 0, label: "300×300" },
@@ -82,7 +83,27 @@ function materialName(name: string): string {
 }
 
 function purchaseValue(material: MaterialResult): string {
-  return `${formatNumber(material.purchaseQty ?? material.withReserve ?? material.quantity)} ${material.unit}`;
+  const quantity = material.purchaseQty ?? material.withReserve ?? material.quantity;
+  return `${formatNumber(quantity)} ${pluralizePackageUnit(quantity, material.unit)}`;
+}
+
+function packDisclosures(packId: RoomPackId): string[] {
+  if (packId === "bathroom") {
+    return [
+      "Основная ведомость включает плитку пола и стен. Клей, затирка, грунт и гидроизоляция требуют отдельных расчётов по выбранной системе.",
+      "Вычитается один дверной проём. Ниши, короба, экран ванны, окна и раскладку по отдельным плоскостям нужно уточнить.",
+    ];
+  }
+  if (packId === "kitchen") {
+    return [
+      "Основная ведомость объединяет стяжку и ламинат. Фартук и отделка стен открываются отдельными расчётами.",
+      "Толщина стяжки, рецептура, фасовка ламината и подложки берутся из стартовых настроек профильных калькуляторов — перед покупкой их нужно сверить.",
+    ];
+  }
+  return [
+    "Основная ведомость объединяет ламинат и окраску стен в два слоя. Из площади стен вычитается один дверной проём.",
+    "Окна, ниши, радиаторы, подготовка основания, фактическая фасовка покрытия и краски уточняются в профильных калькуляторах.",
+  ];
 }
 
 export default function RoomMasterWizard() {
@@ -143,6 +164,10 @@ export default function RoomMasterWizard() {
     ? null
     : buildRenovationCostHrefFromRoom({ areaM2: floorM2, packId });
   const primaryMaterials = useMemo(() => (run ? getPrimaryMaterials(run) : []), [run]);
+  const resultChecks = useMemo(
+    () => run ? [...new Set([...(run.merged.warnings ?? []), ...(run.merged.practicalNotes ?? [])])] : [],
+    [run],
+  );
   const { markStarted, selectMode } = useToolAnalytics(
     ROOM_MASTER_TOOL_SLUG,
     resultRef,
@@ -218,6 +243,15 @@ export default function RoomMasterWizard() {
         ))}
       </div>
 
+      <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/50 dark:bg-amber-950/20" aria-labelledby="room-master-boundaries">
+        <h2 id="room-master-boundaries" className="text-sm font-bold text-amber-950 dark:text-amber-100">
+          Что войдёт в предварительный расчёт
+        </h2>
+        <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+          {packDisclosures(packId).map((item) => <li key={item}>• {item}</li>)}
+        </ul>
+      </section>
+
       <div className="grid items-start gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className={`${mobileStage === "result" ? "hidden" : "block"} order-2 card border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 lg:order-1 lg:block sm:p-5`}>
           <div>
@@ -280,9 +314,9 @@ export default function RoomMasterWizard() {
           {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
 
           <button type="button" onClick={() => void handleCalculate()} disabled={loading || !isValid} className="btn-primary mt-5 min-h-12 w-full justify-center text-base disabled:cursor-not-allowed disabled:opacity-50">
-            {loading ? "Собираем ведомость…" : "Получить закупку →"}
+            {loading ? "Считаем материалы…" : "Рассчитать материалы →"}
           </button>
-          <p className="mt-2 text-center text-[11px] text-stone-400 dark:text-slate-500">Реальные упаковки и запас берутся из профильных калькуляторов</p>
+          <p className="mt-2 text-center text-[11px] text-stone-400 dark:text-slate-500">Упаковки и запас берутся из стартовых настроек профильных калькуляторов</p>
         </aside>
 
         <main className="min-w-0 order-1 lg:order-2">
@@ -296,11 +330,11 @@ export default function RoomMasterWizard() {
                 <div className="border-b border-accent-100 bg-gradient-to-br from-orange-50 via-amber-50 to-emerald-50 p-4 dark:border-accent-900/40 dark:from-orange-950/20 dark:via-amber-950/10 dark:to-emerald-950/20 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-accent-700 dark:text-accent-300">Паспорт закупки</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-accent-700 dark:text-accent-300">Сводный расчёт</p>
                       <h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{pack.icon} {run.packTitle}</h2>
-                      <p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{drafts.length} × {drafts.width} × {drafts.height} м · {run.merged.materials.length} позиций</p>
+                      <p className="mt-1 text-xs text-stone-600 dark:text-slate-400">{drafts.length} × {drafts.width} × {drafts.height} м · {run.merged.materials.length} {pluralizeRu(run.merged.materials.length, ["позиция", "позиции", "позиций"])}</p>
                     </div>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">Готово к закупке</span>
+                    <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">Нужно проверить</span>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2">
                     <ResultMetric label="Пол" value={`${floorM2?.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} м²`} />
@@ -312,7 +346,7 @@ export default function RoomMasterWizard() {
                 <div className="p-4 sm:p-5">
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-400">Основная закупка</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-400">Основные позиции</p>
                       <h3 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">С чего начать</h3>
                     </div>
                     <span className="text-xs text-stone-400">с запасом</span>
@@ -331,7 +365,7 @@ export default function RoomMasterWizard() {
 
                   <details className="mt-4 rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950">
                     <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold text-stone-700 dark:text-slate-200">
-                      Полная ведомость <span className="text-xs font-medium text-stone-400">{run.merged.materials.length} позиций ↓</span>
+                      Все позиции расчёта <span className="text-xs font-medium text-stone-400">{run.merged.materials.length} {pluralizeRu(run.merged.materials.length, ["позиция", "позиции", "позиций"])} ↓</span>
                     </summary>
                     <ul className="divide-y divide-stone-100 border-t border-stone-100 px-4 dark:divide-slate-800 dark:border-slate-800">
                       {run.merged.materials.map((material, index) => (
@@ -342,6 +376,18 @@ export default function RoomMasterWizard() {
                       ))}
                     </ul>
                   </details>
+
+                  {resultChecks.length > 0 && (
+                    <details className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20">
+                      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold text-amber-950 dark:text-amber-100">
+                        Что проверить перед покупкой
+                        <span className="text-xs font-medium text-amber-700/70 dark:text-amber-300/70">{resultChecks.length} {pluralizeRu(resultChecks.length, ["пункт", "пункта", "пунктов"])} ↓</span>
+                      </summary>
+                      <ul className="space-y-2 border-t border-amber-200 px-4 py-3 text-xs leading-relaxed text-amber-900/80 dark:border-amber-900/50 dark:text-amber-200/80">
+                        {resultChecks.map((item) => <li key={item}>• {item}</li>)}
+                      </ul>
+                    </details>
+                  )}
 
                   <div className="mt-4 grid gap-2 sm:grid-cols-2">
                     <SaveToProjectButton

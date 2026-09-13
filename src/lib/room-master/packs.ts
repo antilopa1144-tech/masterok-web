@@ -41,7 +41,7 @@ export const ROOM_PACKS: Record<RoomPackId, RoomPackConfig> = {
   bathroom: {
     id: "bathroom",
     title: "Ванная",
-    subtitle: "Плитка, клей, затирка, гидроизоляция, грунтовка — один расчёт",
+    subtitle: "Плитка пола и стен — клей, затирка и подготовка считаются отдельно",
     icon: "🚿",
     primarySteps: [
       {

@@ -29,7 +29,9 @@ export function mergePackResults(
       ...m,
       name: prefixMaterialName(step.title, m.name),
       category: m.category ? `${step.title} · ${m.category}` : step.title,
-    })),
+    })).filter((material) =>
+      (material.purchaseQty ?? material.withReserve ?? material.quantity) > 0,
+    ),
   );
 
   const totals: CalculatorResult["totals"] = {};

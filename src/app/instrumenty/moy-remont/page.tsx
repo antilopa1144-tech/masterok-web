@@ -9,7 +9,7 @@ import ToolPageExtras from "@/components/tools/ToolPageExtras";
 const META = {
   title: `Мастер «Мой ремонт» — ванная, кухня, комната одним вводом`,
   description:
-    "Введите размеры помещения один раз: получите сводную закупку материалов и ссылки на детальные калькуляторы. Сохраните итог в проект «Мой ремонт».",
+    "Введите размеры ванной, кухни или комнаты один раз: получите предварительный список материалов, проверьте допущения и сохраните расчёт в проект.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("moy-remont", {
@@ -43,9 +43,9 @@ export default function MoyRemontPage() {
               { label: "Мой ремонт" },
             ]}
           />
-          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Сводная закупка помещения</p>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-accent-700 dark:text-accent-300">Сводный расчёт помещения</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Мастер «Мой ремонт»</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">Размеры вводятся один раз. На выходе — приоритетные покупки, полная ведомость и сохранение в проект.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">Размеры вводятся один раз. На выходе — предварительная ведомость выбранных этапов, допущения для проверки и сохранение в проект.</p>
         </div>
       </div>
 
