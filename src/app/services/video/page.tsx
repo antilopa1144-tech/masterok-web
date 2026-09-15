@@ -191,13 +191,13 @@ export default function VideoServicePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/92 to-slate-950/20 sm:via-slate-950/82" aria-hidden="true" />
         <div className="page-container-wide relative py-8 sm:py-12 lg:py-20">
-          <Breadcrumbs items={[{ label: "Анимационные ролики" }]} />
+          <Breadcrumbs items={[{ label: "Анимационные ролики" }]} tone="inverse" />
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1.5 text-sm font-semibold text-orange-200 backdrop-blur">
               <Sparkles size={16} aria-hidden="true" />
               Видео для строительного бизнеса
             </div>
-            <h1 id="video-service-title" className="mt-5 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 id="video-service-title" className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
               Короткие анимационные ролики,
               <span className="block text-orange-400">которые хочется досмотреть</span>
             </h1>

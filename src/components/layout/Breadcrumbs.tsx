@@ -11,10 +11,13 @@ interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[]
+  tone?: 'default' | 'inverse'
 }
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, tone = 'default' }: BreadcrumbsProps) {
   if (!items || items.length === 0) return null
+
+  const isInverse = tone === 'inverse'
 
   return (
     <nav
@@ -22,12 +25,18 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       className="mb-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <ol
-        className="flex w-max min-w-full items-center gap-2 whitespace-nowrap pb-1 text-sm text-slate-600 dark:text-slate-300"
+        className={`flex w-max min-w-full items-center gap-2 whitespace-nowrap pb-1 text-sm ${
+          isInverse ? 'text-white/80' : 'text-slate-600 dark:text-slate-300'
+        }`}
       >
         <li className="shrink-0">
           <Link
             href="/"
-            className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            className={
+              isInverse
+                ? 'text-white/90 transition-colors hover:text-white'
+                : 'transition-colors hover:text-slate-900 dark:hover:text-slate-100'
+            }
           >
             Главная
           </Link>
@@ -35,21 +44,40 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
         {items.map((item, index) => (
           <React.Fragment key={item.href || item.label}>
-            <ChevronRight className="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-400" aria-hidden="true" />
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 ${
+                isInverse ? 'text-white/45' : 'text-slate-400 dark:text-slate-400'
+              }`}
+              aria-hidden="true"
+            />
             <li className="shrink-0">
               {item.href ? (
                 <Link
                   href={item.href}
-                  className={`hover:text-slate-900 dark:hover:text-slate-100 transition-colors ${
-                    index === items.length - 1
-                      ? 'text-slate-500 dark:text-slate-400 pointer-events-none'
-                      : ''
-                  }`}
+                  className={
+                    isInverse
+                      ? `transition-colors hover:text-white ${
+                          index === items.length - 1
+                            ? 'pointer-events-none text-white/65'
+                            : 'text-white/90'
+                        }`
+                      : `transition-colors hover:text-slate-900 dark:hover:text-slate-100 ${
+                          index === items.length - 1
+                            ? 'pointer-events-none text-slate-500 dark:text-slate-400'
+                            : ''
+                        }`
+                  }
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-slate-500 dark:text-slate-400">
+                <span
+                  className={
+                    isInverse
+                      ? 'text-white/65'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }
+                >
                   {item.label}
                 </span>
               )}

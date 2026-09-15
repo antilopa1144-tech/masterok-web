@@ -16,6 +16,8 @@ describe("страница услуги анимационных роликов"
     );
 
     expect(source).toContain("Короткие анимационные ролики");
+    expect(source).toContain('tone="inverse"');
+    expect(source).toContain('tracking-tight text-white');
     expect(source).toContain("от 4 990 ₽");
     expect(source).toContain("от 8 990 ₽");
     expect(source).toContain("Новая 3D-модель персонажа");
