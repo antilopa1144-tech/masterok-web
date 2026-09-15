@@ -16,6 +16,7 @@ import {
   type SearchResultType,
   type ToolCatalogPlacement,
   type ToolInteractionSource,
+  type VideoServiceContactPlacement,
 } from "@/lib/analytics/events";
 export type {
   ChecklistExportFormat,
@@ -25,6 +26,7 @@ export type {
   ProjectExportFormat,
   ToolCatalogPlacement,
   ToolInteractionSource,
+  VideoServiceContactPlacement,
 } from "@/lib/analytics/events";
 import { isProductionAnalyticsBrowser } from "@/lib/analytics/runtime";
 import { getGoogleAnalyticsEventParams } from "@/lib/analytics/google-analytics";

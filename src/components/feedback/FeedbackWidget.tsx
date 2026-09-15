@@ -13,9 +13,14 @@ const SENTIMENTS: { id: Sentiment; emoji: string; label: string }[] = [
 
 /** Глобальное событие — открыть виджет из футера или откуда угодно. */
 export const OPEN_FEEDBACK_EVENT = "masterok:open-feedback";
+export type FeedbackMode = "feedback" | "video-service";
+export interface OpenFeedbackDetail {
+  mode?: FeedbackMode;
+}
 
 export default function FeedbackWidget() {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<FeedbackMode>("feedback");
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [message, setMessage] = useState("");
   const [contact, setContact] = useState("");
@@ -27,7 +32,11 @@ export default function FeedbackWidget() {
 
   // Открытие по глобальному событию (ссылка в футере)
   useEffect(() => {
-    const onOpen = () => setOpen(true);
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<OpenFeedbackDetail>).detail;
+      setMode(detail?.mode ?? "feedback");
+      setOpen(true);
+    };
     window.addEventListener(OPEN_FEEDBACK_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_FEEDBACK_EVENT, onOpen);
   }, []);
@@ -116,7 +125,10 @@ export default function FeedbackWidget() {
     <>
       {/* Плавающая кнопка — слева снизу (справа занято кнопкой «Наверх») */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setMode("feedback");
+          setOpen((v) => !v);
+        }}
         aria-label="Оставить отзыв"
         data-print-hide
         aria-expanded={open}
@@ -140,8 +152,14 @@ export default function FeedbackWidget() {
           <div className="flex items-center gap-2.5 border-b border-slate-100 bg-gradient-to-br from-accent-50 to-white px-4 py-3 dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-600 text-base text-white shadow" aria-hidden>🔧</span>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Обратная связь</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Читаю лично — отвечу, если оставите контакт</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                {mode === "video-service" ? "Обсудить ролик" : "Обратная связь"}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {mode === "video-service"
+                  ? "Коротко опишите задачу — отвечу по объёму и срокам"
+                  : "Читаю лично — отвечу, если оставите контакт"}
+              </p>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -158,7 +176,11 @@ export default function FeedbackWidget() {
             <div className="px-4 py-8 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl dark:bg-emerald-900/40" aria-hidden>✓</div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Спасибо! Получил 🔧</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Каждый отзыв реально читаю и правлю по нему сайт.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {mode === "video-service"
+                  ? "Посмотрю задачу и свяжусь по оставленному контакту."
+                  : "Каждый отзыв реально читаю и правлю по нему сайт."}
+              </p>
             </div>
           ) : (
             <div className="px-4 py-3.5 space-y-3">
@@ -191,7 +213,9 @@ export default function FeedbackWidget() {
                 onChange={(e) => { setMessage(e.target.value); if (status === "error") setStatus("idle"); }}
                 rows={3}
                 maxLength={2000}
-                placeholder="Что улучшить? Чего не хватает? Нашли ошибку в расчёте — где и какую?"
+                placeholder={mode === "video-service"
+                  ? "Что нужно показать в ролике, для какой площадки и к какому сроку?"
+                  : "Что улучшить? Чего не хватает? Нашли ошибку в расчёте — где и какую?"}
                 className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
 

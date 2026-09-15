@@ -32,6 +32,7 @@ import {
   Droplets,
   Download,
   FolderClosed,
+  Clapperboard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -59,6 +60,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   primer: Droplets,
   download: Download,
   folder: FolderClosed,
+  video: Clapperboard,
   // UI
   trophy: Trophy,
   bot: Bot,

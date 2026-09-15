@@ -27,6 +27,7 @@ export type ToolCatalogPlacement =
   | "checklist_grid";
 export type ChecklistProgressMilestone = 25 | 50 | 75 | 100;
 export type ChecklistExportFormat = "pdf" | "print";
+export type VideoServiceContactPlacement = "hero" | "pricing" | "final" | "home";
 
 export interface AnalyticsEventParams {
   accuracy_comparison_open: { calculator: string };
@@ -70,6 +71,7 @@ export interface AnalyticsEventParams {
   tool_related_click: { tool: string; target: string };
   tool_result_view: { tool: string };
   tool_start: { tool: string; source: ToolInteractionSource };
+  video_service_contact_click: { placement: VideoServiceContactPlacement };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEventParams;
@@ -217,6 +219,11 @@ export const ANALYTICS_EVENT_DEFINITIONS = {
     owner: "product", kpiRole: "primary", pii: "none",
     trigger: "Первое осмысленное действие в визуальном инструменте.",
     dedupe: "Один раз за монтирование инструмента.",
+  },
+  video_service_contact_click: {
+    owner: "product", kpiRole: "primary", pii: "none",
+    trigger: "Пользователь открывает форму обсуждения анимационного ролика.",
+    dedupe: "Каждое явное нажатие CTA.",
   },
 } as const satisfies Record<AnalyticsEventName, AnalyticsEventDefinition>;
 

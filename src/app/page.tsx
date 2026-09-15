@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
@@ -10,6 +11,7 @@ import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { RecentCalculators } from "@/components/home/HomeLazyWidgets";
 import ToolPreviews from "@/components/home/ToolPreviews";
+import VideoServiceContactButton from "@/components/services/VideoServiceContactButton";
 import {
   MASTEROK_RUSTORE_URL,
   SITE_FOUNDING_DATE,
@@ -249,6 +251,22 @@ export default async function HomePage() {
               </div>
             </div>
           ))}
+        </section>
+
+        <section className="relative mt-6 overflow-hidden rounded-3xl bg-slate-950 text-white" aria-labelledby="home-video-title">
+          <div className="absolute inset-0 lg:left-[42%]">
+            <Image src="/services/video-production-hero.webp" alt="" fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover object-[68%_center] opacity-45 lg:opacity-80" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/25" aria-hidden="true" />
+          <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+            <p className="text-xs font-bold uppercase tracking-[.16em] text-orange-300">Новое направление Мастерка</p>
+            <h2 id="home-video-title" className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">3D-ролики для строительного бизнеса</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">Сценарий, персонажи, озвучка, субтитры и монтаж. Пилот на 20–30 секунд — от 4 990 ₽.</p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link href="/services/video/" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white no-underline transition-colors hover:bg-orange-400">Посмотреть услугу →</Link>
+              <VideoServiceContactButton placement="home" compact className="rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/15" />
+            </div>
+          </div>
         </section>
 
         <ToolPreviews />

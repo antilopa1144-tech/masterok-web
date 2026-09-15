@@ -31,6 +31,7 @@ const EXPECTED_EVENTS = [
   "tool_related_click",
   "tool_result_view",
   "tool_start",
+  "video_service_contact_click",
 ].sort();
 
 describe("analytics event contract", () => {

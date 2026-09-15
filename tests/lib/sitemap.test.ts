@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/blog", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/blog")>()),
+  getAllPosts: vi.fn().mockResolvedValue([]),
+}));
 import {
   SITEMAP_CHUNKS,
   buildSitemapIndexXml,
@@ -143,5 +148,16 @@ describe("sitemap chunks", () => {
     for (const tool of noindexTools) {
       expect(urls).not.toContain(`${SITE_URL}${toolHref(tool.slug)}`);
     }
+  });
+
+  it("публикует страницу видеопродакшена в статической части", async () => {
+    const entries = await buildSitemapChunk(0);
+    const service = entries.find((entry) => entry.url === `${SITE_URL}/services/video/`);
+
+    expect(service).toMatchObject({
+      lastModified: "2026-09-15",
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
   });
 });

@@ -19,6 +19,7 @@ import {
   trackToolRelatedClick,
   trackToolResultView,
   trackToolStart,
+  trackEvent,
 } from "@/lib/analytics";
 
 describe("tool analytics", () => {
@@ -193,6 +194,18 @@ describe("tool analytics", () => {
       "calculator_related_click",
       { calculator: "laminat", target: "raskladka-laminata" },
     );
+  });
+
+  it("измеряет открытие заявки на видеоролик без пользовательского текста", () => {
+    trackEvent("video_service_contact_click", { placement: "hero" });
+
+    expect(ym.mock.calls.map((call) => [call[2], call[3]])).toEqual([
+      ["video_service_contact_click", { placement: "hero" }],
+    ]);
+    for (const call of ym.mock.calls) {
+      expect(call[3]).not.toHaveProperty("message");
+      expect(call[3]).not.toHaveProperty("contact");
+    }
   });
 
   it("сохраняет прежний ID и добавляет slug для связи сохранения с расчётом", () => {

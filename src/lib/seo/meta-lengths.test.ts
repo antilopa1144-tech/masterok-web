@@ -17,6 +17,7 @@ import { metadata as calculatorsIndexMetadata } from "@/app/kalkulyatory/page";
 import { metadata as toolsIndexMetadata } from "@/app/instrumenty/page";
 import { metadata as blogIndexMetadata } from "@/app/blog/page";
 import { metadata as mikhalychMetadata } from "@/app/mikhalych/page";
+import { metadata as videoServiceMetadata } from "@/app/services/video/page";
 
 /**
  * Волна 2 SEO-аудита: 30 заголовков из 148 выходили за 60 символов, потому что
@@ -127,6 +128,7 @@ describe("длина title и description по всем источникам м�
       ["/instrumenty/", toolsIndexMetadata],
       ["/blog/", blogIndexMetadata],
       ["/mikhalych/", mikhalychMetadata],
+      ["/services/video/", videoServiceMetadata],
     ];
 
     const violations: string[] = [];

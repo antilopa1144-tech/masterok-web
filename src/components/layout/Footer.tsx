@@ -4,7 +4,8 @@ import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import FeedbackFooterLink from "@/components/feedback/FeedbackFooterLink";
-import { SITE_FOOTER_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import VideoSocialLinks from "@/components/services/VideoSocialLinks";
+import { MASTEROK_SOCIAL_LINKS, SITE_FOOTER_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 const UI_TEXT = {
   siteDescription: SITE_FOOTER_DESCRIPTION,
@@ -15,6 +16,7 @@ const UI_TEXT = {
   aiAssistant: "Михалыч — AI-ассистент",
   blog: "Блог",
   app: "Приложение",
+  videoService: "Анимационные ролики",
   myRenovation: "Проекты — сохранённые расчёты",
   reportTitle: "Нашли ошибку или есть идея?",
   reportDescription: "Напишите напрямую — читаю каждый отзыв",
@@ -74,6 +76,7 @@ export default function Footer() {
               <CategoryIcon icon="phone" size={14} color="currentColor" />
               {UI_TEXT.downloadApp}
             </Link>
+            <VideoSocialLinks links={MASTEROK_SOCIAL_LINKS} />
           </div>
 
           <div>
@@ -142,6 +145,12 @@ export default function Footer() {
                 <Link href="/prilozhenie/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="phone" size={14} color="currentColor" />
                   {UI_TEXT.app}
+                </Link>
+              </li>
+              <li>
+                <Link href="/services/video/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
+                  <CategoryIcon icon="video" size={14} color="currentColor" />
+                  {UI_TEXT.videoService}
                 </Link>
               </li>
               <li>

@@ -39,7 +39,35 @@ export const SITE_LAST_REVIEWED = "2026-05-25";
 
 // Ссылки на внешние профили организации (sameAs для Schema.org).
 export const MASTEROK_RUSTORE_URL = "https://www.rustore.ru/catalog/app/ru.masterok.app";
-export const SITE_SAME_AS = [MASTEROK_RUSTORE_URL] as const;
+export const MASTEROK_YOUTUBE_URL = "https://www.youtube.com/@masterok11";
+export const MASTEROK_TIKTOK_URL = "https://www.tiktok.com/@.masterok";
+export const MASTEROK_INSTAGRAM_URL = "https://www.instagram.com/antilopa1144/";
+
+export const MASTEROK_SOCIAL_LINKS = [
+  {
+    platform: "youtube",
+    label: "YouTube",
+    handle: "@masterok11",
+    href: MASTEROK_YOUTUBE_URL,
+  },
+  {
+    platform: "tiktok",
+    label: "TikTok",
+    handle: "@.masterok",
+    href: MASTEROK_TIKTOK_URL,
+  },
+  {
+    platform: "instagram",
+    label: "Instagram",
+    handle: "@antilopa1144",
+    href: MASTEROK_INSTAGRAM_URL,
+  },
+] as const;
+
+export const SITE_SAME_AS = [
+  MASTEROK_RUSTORE_URL,
+  ...MASTEROK_SOCIAL_LINKS.map((link) => link.href),
+] as const;
 
 // Ключевые нормативные документы — используются в citation schema калькуляторов и GEO.
 export const SITE_CITATIONS = [

@@ -37,6 +37,9 @@ const BASE_URL = SITE_URL;
 /** Структура главной/основных навигационных страниц. Меняется редко. */
 const STATIC_PAGES_LAST_MODIFIED = "2026-05-09";
 
+/** Коммерческая страница производства видео. */
+const VIDEO_SERVICE_LAST_MODIFIED = "2026-09-15";
+
 /** Реестр калькуляторов (добавление/удаление калькуляторов, формулы). */
 const CALCULATORS_LAST_MODIFIED = SITE_LAST_REVIEWED;
 
@@ -144,6 +147,12 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: latestPostDate,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/services/video/`,
+      lastModified: VIDEO_SERVICE_LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
     {
       url: `${BASE_URL}/ai/`,

@@ -18,6 +18,7 @@ export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
   { href: "/instrumenty/", label: "Инструменты", match: ["/instrumenty"], icon: "wrench" },
   { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/blog/", label: "Блог", match: ["/blog"], icon: "book" },
+  { href: "/services/video/", label: "Видео", match: ["/services/video"], icon: "video" },
 ];
 
 /**

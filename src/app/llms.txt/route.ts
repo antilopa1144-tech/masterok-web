@@ -2,7 +2,12 @@ import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_TOOLS } from "@/lib/tools";
 import { getAllPosts } from "@/lib/blog";
-import { SITE_NAME, SITE_URL, SITE_METADATA_DESCRIPTION } from "@/lib/site";
+import {
+  MASTEROK_SOCIAL_LINKS,
+  SITE_NAME,
+  SITE_URL,
+  SITE_METADATA_DESCRIPTION,
+} from "@/lib/site";
 
 export const dynamic = "force-static";
 export const revalidate = 60;
@@ -30,7 +35,15 @@ export async function GET() {
   lines.push(`- [О проекте](${SITE_URL}/o-proekte/): информация о сервисе`);
   lines.push(`- [Методология расчётов](${SITE_URL}/metodologiya/): источники норм, этапы, запас, упаковки, верификация`);
   lines.push(`- [Приложение](${SITE_URL}/prilozhenie/): мобильное приложение для Android`);
+  lines.push(`- [Анимационные ролики](${SITE_URL}/services/video/): короткие 3D-ролики для строительного бизнеса — сценарий, персонажи, озвучка и монтаж`);
   lines.push(`- [Справка для ИИ](${SITE_URL}/ai/): что считает сайт, как устроены формулы, ограничения`);
+  lines.push("");
+
+  lines.push("## Видеоканалы");
+  lines.push("");
+  for (const channel of MASTEROK_SOCIAL_LINKS) {
+    lines.push(`- [${channel.label} ${channel.handle}](${channel.href})`);
+  }
   lines.push("");
 
   lines.push("## Что считает Мастерок");

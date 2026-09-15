@@ -53,6 +53,7 @@
 | `site_search_select` | Driver | Выбран результат поиска | `query_length`, `query_word_count`, `result_type`, `result_id` | Каждый выбор |
 | `site_search_empty` | Guardrail | Запрос от трёх символов без результатов | `query_length`, `query_word_count` | Один раз на нормализованный запрос за mount |
 | `rustore_click` | Driver | Переход в RuStore | `placement` | Каждый переход |
+| `video_service_contact_click` | Primary | Открыта форма обсуждения ролика | `placement` | Каждое нажатие CTA |
 
 Все строки таблицы имеют `owner=product` и `pii=none` в машинном каталоге.
 
