@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/blog", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/blog")>()),
   getAllPosts: vi.fn().mockResolvedValue([]),
+  getAllTags: vi.fn().mockResolvedValue([]),
+  getPostsByTag: vi.fn().mockResolvedValue([]),
 }));
 import {
   SITEMAP_CHUNKS,
@@ -15,6 +17,7 @@ import {
 import { buildSitemapChunk } from "@/lib/sitemap/build";
 import { GET as getSitemapChunk, generateStaticParams } from "@/app/sitemap/[id]/route";
 import { GET as getSitemapIndex } from "@/app/sitemap.xml/route";
+import { GET as getFlatSitemap } from "@/app/sitemap-pages.xml/route";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
@@ -104,6 +107,23 @@ describe("sitemap chunks", () => {
     expect(xml).toContain("<sitemapindex");
     expect(xml).not.toContain("<urlset");
     expect((xml.match(/<loc>/g) ?? [])).toHaveLength(SITEMAP_CHUNKS.length);
+  });
+
+  it("плоский sitemap отдаёт все URL без зависимости от чтения дочерних карт", async () => {
+    const response = await getFlatSitemap();
+    const xml = await response.text();
+    const chunks = await Promise.all(
+      SITEMAP_CHUNKS.map((_, id) => buildSitemapChunk(id)),
+    );
+    const expectedCount = chunks.flat().length;
+    const locations = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/xml");
+    expect(xml).toContain("<urlset");
+    expect(xml).not.toContain("<sitemapindex");
+    expect(locations).toHaveLength(expectedCount);
+    expect(new Set(locations).size).toBe(expectedCount);
   });
 
   it("buildSitemapUrlsetXml экранирует URL и сохраняет image sitemap", () => {

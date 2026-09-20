@@ -9,7 +9,7 @@ describe("publication route contract", () => {
     expect(source(path)).toContain('export const dynamic = "force-dynamic"');
     expect(source(path)).toContain("notFound()");
   });
-  it.each(["src/app/blog/page.tsx", "src/app/blog/[slug]/page.tsx", "src/app/blog/tag/[tag]/page.tsx", "src/app/rss.xml/route.ts", "src/app/sitemap/[id]/route.ts", "src/app/sitemap.xml/route.ts", "src/app/page.tsx", "src/app/kalkulyatory/[category]/page.tsx"])("%s has a short fallback refresh interval", (path) => {
+  it.each(["src/app/blog/page.tsx", "src/app/blog/[slug]/page.tsx", "src/app/blog/tag/[tag]/page.tsx", "src/app/rss.xml/route.ts", "src/app/sitemap/[id]/route.ts", "src/app/sitemap.xml/route.ts", "src/app/sitemap-pages.xml/route.ts", "src/app/page.tsx", "src/app/kalkulyatory/[category]/page.tsx"])("%s has a short fallback refresh interval", (path) => {
     expect(source(path)).toContain("export const revalidate = 60");
   });
   it("allows large image previews for general robots and Googlebot", () => {

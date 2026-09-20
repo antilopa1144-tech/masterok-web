@@ -19,7 +19,10 @@ describe("robots.txt", () => {
     }
   });
 
-  it("публикует основной sitemap", () => {
-    expect(robots().sitemap).toBe(`${SITE_URL}/sitemap.xml`);
+  it("публикует основной sitemap-index и плоский fallback для краулеров", () => {
+    expect(robots().sitemap).toEqual([
+      `${SITE_URL}/sitemap.xml`,
+      `${SITE_URL}/sitemap-pages.xml`,
+    ]);
   });
 });

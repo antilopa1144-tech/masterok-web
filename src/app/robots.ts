@@ -24,7 +24,8 @@ export const dynamic = "force-static";
  *  - Правила для AI-краулеров (GPTBot, OAI-SearchBot, ClaudeBot, anthropic-ai,
  *    PerplexityBot, Google-Extended) — для попадания в ChatGPT/Claude/Perplexity/
  *    Gemini. Дополнительно есть llms.txt с инструкцией для AI.
- *  - Sitemap — главный сигнал для Googlebot, замещает deprecated ping endpoint.
+ *  - Sitemap-index и плоская карта — сигналы для Googlebot, замещающие
+ *    deprecated ping endpoint. Плоская карта страхует чтение дочерних URL.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -79,6 +80,9 @@ export default function robots(): MetadataRoute.Robots {
       // YandexAdditional — краулер Yandex для дополнительных данных и Нейро.
       { userAgent: "YandexAdditional", allow: "/", disallow: ["/api/"] },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: [
+      `${BASE_URL}/sitemap.xml`,
+      `${BASE_URL}/sitemap-pages.xml`,
+    ],
   };
 }
