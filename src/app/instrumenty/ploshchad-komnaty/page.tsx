@@ -30,6 +30,21 @@ const SHAPES: ShapeOption[] = [
   { id: "circle", label: "Круг / сектор", icon: "○", desc: "По радиусу" },
 ];
 
+const MEASUREMENT_GUIDES: Record<RoomShape, string> = {
+  rect:
+    "Измерьте длину A и ширину B по линии пола между готовыми поверхностями стен. Высоту укажите отдельно, только если нужна площадь стен.",
+  lshape:
+    "Снимите общий габарит A × B, затем измерьте отсутствующий угловой вырез C × D. Калькулятор вычтет его из большого прямоугольника.",
+  tshape:
+    "Разбейте контур на два прямоугольника без пересечения: перекладину A × B и примыкающую к ней стойку C × D.",
+  trapezoid:
+    "Измерьте параллельные основания A и B и расстояние C между ними. Периметр будет верным для равнобедренной трапеции.",
+  triangle:
+    "Измерьте основание A и перпендикулярную к нему высоту B. Периметр будет верным для равнобедренного треугольника.",
+  circle:
+    "Измерьте радиус от центра до стены. Для сектора укажите угол; 0° или 360° означает полный круг.",
+};
+
 type RoomWorkspaceStage = "parameters" | "layout" | "result";
 
 const ROOM_WORKSPACE_STAGES: Array<{ value: RoomWorkspaceStage; label: string }> = [
@@ -99,7 +114,7 @@ function NumInput({
 }
 
 export default function PloshadKomnatyPage() {
-  const [activeStage, setActiveStage] = useState<RoomWorkspaceStage>("layout");
+  const [activeStage, setActiveStage] = useState<RoomWorkspaceStage>("parameters");
   const [shape, setShape] = useState<RoomShape>("rect");
   const [wallHeight, setWallHeight] = useState("2.7");
   const [a, setA] = useState("5");
@@ -180,9 +195,9 @@ export default function PloshadKomnatyPage() {
 
       <div className="mb-4 max-w-3xl sm:mb-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Геометрия помещения</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Калькулятор площади комнаты</h1>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white md:text-3xl">Калькулятор площади комнаты в м²</h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
-          Посчитайте площадь комнаты в м² по длине и ширине. Калькулятор также покажет периметр и площадь стен.
+          Введите размеры прямоугольной или сложной комнаты. Калькулятор покажет площадь пола, периметр и площадь стен.
         </p>
       </div>
 
@@ -247,6 +262,12 @@ export default function PloshadKomnatyPage() {
               <div className="col-span-2 lg:col-span-1 xl:col-span-2">
                 <NumInput label="Высота стен" value={wallHeight} onChange={(value) => { markStarted("surface_size"); setWallHeight(value); }} allowZero hint="0 — если нужна только площадь пола" />
               </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 dark:border-amber-900/60 dark:bg-amber-950/20">
+              <p className="text-xs font-semibold text-amber-950 dark:text-amber-200">Как снять размеры</p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+                {MEASUREMENT_GUIDES[shape]}
+              </p>
             </div>
             <p className="mt-3 flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400">
               <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
