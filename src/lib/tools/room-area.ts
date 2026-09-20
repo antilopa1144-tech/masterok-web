@@ -17,6 +17,47 @@ export interface RoomAreaResult {
   error?: string;
 }
 
+function formatRoomValue(value: number | undefined): string {
+  if (!Number.isFinite(value) || Number(value) <= 0) return "—";
+  return Number(value).toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+}
+
+function wallHeightLabel(value: number | undefined): string {
+  const height = dimension(value);
+  return height > 0
+    ? `стены ${formatRoomValue(height)} м`
+    : "без расчёта стен";
+}
+
+/** Понятная расшифровка именно тех параметров, которые относятся к выбранной форме. */
+export function getRoomPassportSummary(input: RoomAreaInput): string {
+  const a = formatRoomValue(input.a);
+  const b = formatRoomValue(input.b);
+  const c = formatRoomValue(input.c);
+  const d = formatRoomValue(input.d);
+  const walls = wallHeightLabel(input.wallHeight);
+
+  switch (input.shape) {
+    case "rect":
+      return `длина ${a} м · ширина ${b} м · ${walls}`;
+    case "lshape":
+      return `габарит ${a} × ${b} м · вырез ${c} × ${d} м · ${walls}`;
+    case "tshape":
+      return `перекладина ${a} × ${b} м · стойка ${c} × ${d} м · ${walls}`;
+    case "trapezoid":
+      return `основания ${a} и ${b} м · высота ${c} м · ${walls}`;
+    case "triangle":
+      return `основание ${a} м · высота ${b} м · ${walls}`;
+    case "circle": {
+      const angle = dimension(input.b);
+      const sector = angle === 0 || angle >= 360
+        ? "полный круг"
+        : `сектор ${formatRoomValue(angle)}°`;
+      return `радиус ${a} м · ${sector} · ${walls}`;
+    }
+  }
+}
+
 const NOTES = {
   lshape: "Вырез считается расположенным в углу большого прямоугольника.",
   tshape: "Стойка считается примыкающей к перекладине по центру.",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateRoomArea, parseRoomDimension } from "./room-area";
+import { calculateRoomArea, getRoomPassportSummary, parseRoomDimension } from "./room-area";
 import { getToolConfig } from "./config";
 
 describe("инструмент площади комнаты", () => {
@@ -78,6 +78,23 @@ describe("инструмент площади комнаты", () => {
     expect(circle.perimeter).toBeCloseTo(4 * Math.PI, 8);
     expect(quarter.floorArea).toBeCloseTo(Math.PI, 8);
     expect(quarter.perimeter).toBeCloseTo(4 + Math.PI, 8);
+  });
+
+  it("описывает параметры паспорта в терминах выбранной формы", () => {
+    expect(getRoomPassportSummary({ shape: "rect", a: 5, b: 4, wallHeight: 2.7 }))
+      .toBe("длина 5 м · ширина 4 м · стены 2,7 м");
+    expect(getRoomPassportSummary({ shape: "lshape", a: 6, b: 5, c: 2, d: 1.5, wallHeight: 2.7 }))
+      .toBe("габарит 6 × 5 м · вырез 2 × 1,5 м · стены 2,7 м");
+    expect(getRoomPassportSummary({ shape: "tshape", a: 6, b: 2, c: 2, d: 4, wallHeight: 2.5 }))
+      .toBe("перекладина 6 × 2 м · стойка 2 × 4 м · стены 2,5 м");
+    expect(getRoomPassportSummary({ shape: "trapezoid", a: 6, b: 4, c: 3, wallHeight: 0 }))
+      .toBe("основания 6 и 4 м · высота 3 м · без расчёта стен");
+    expect(getRoomPassportSummary({ shape: "triangle", a: 6, b: 4, wallHeight: 2.7 }))
+      .toBe("основание 6 м · высота 4 м · стены 2,7 м");
+    expect(getRoomPassportSummary({ shape: "circle", a: 2, b: 90, wallHeight: 2.7 }))
+      .toBe("радиус 2 м · сектор 90° · стены 2,7 м");
+    expect(getRoomPassportSummary({ shape: "circle", a: 2, b: 0, wallHeight: 0 }))
+      .toBe("радиус 2 м · полный круг · без расчёта стен");
   });
 
   it("нормализует пустые, отрицательные и дробные значения", () => {

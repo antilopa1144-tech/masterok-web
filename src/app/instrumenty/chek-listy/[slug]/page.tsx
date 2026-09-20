@@ -24,7 +24,7 @@ const UI_TEXT = {
   stagesSuffix: "этапов",
   backToAll: "← Все чек-листы",
   tipPrefix: "Совет:",
-  tipText: "Откройте страницу на телефоне, чтобы отмечать пункты прямо на объекте. Или нажмите Ctrl+P для печати.",
+  tipText: "Отметки сохраняются в этом браузере после перезагрузки. Для отдельной копии скачайте PDF или нажмите Ctrl+P для печати.",
 } as const;
 
 interface Props {
@@ -147,5 +147,4 @@ export default async function ChecklistPage({ params }: Props) {
     </>
   );
 }
-
 

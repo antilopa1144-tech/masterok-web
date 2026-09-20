@@ -9,6 +9,7 @@ import { buildPlitkaCalculatorHrefFromRoom } from "@/lib/tools/tile-layout-to-ca
 import { buildWallpaperCalculatorHrefFromRoom } from "@/lib/tools/wallpaper-layout-to-calc";
 import {
   calculateRoomArea,
+  getRoomPassportSummary,
   parseRoomDimension,
   type RoomShape,
 } from "@/lib/tools/room-area";
@@ -117,6 +118,15 @@ export default function PloshadKomnatyPage() {
     }),
     [a, b, c, d, shape, wallHeight],
   );
+  const roomInput = useMemo(() => ({
+    shape,
+    a: parseRoomDimension(a),
+    b: parseRoomDimension(b),
+    c: parseRoomDimension(c),
+    d: parseRoomDimension(d),
+    wallHeight: parseRoomDimension(wallHeight),
+  }), [a, b, c, d, shape, wallHeight]);
+  const passportSummary = getRoomPassportSummary(roomInput);
   const hasInputError = isNegative(wallHeight) || result.error !== undefined;
   const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted, selectMode } = useToolAnalytics(
@@ -275,7 +285,7 @@ export default function PloshadKomnatyPage() {
             <div className="mt-2 flex items-start justify-between gap-3 lg:block">
               <div>
                 <h2 className="text-lg font-bold text-slate-950 dark:text-white">{selectedShape.label}</h2>
-                <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">{a || "—"} × {b || "—"} м · стены {wallHeight || "0"} м</p>
+                <p className="mt-1 text-xs leading-relaxed text-stone-500 dark:text-slate-400">{passportSummary}</p>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold lg:mt-3 lg:inline-flex ${hasInputError ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"}`}>
                 {hasInputError ? "Нужно исправить" : "Расчёт готов"}
@@ -308,7 +318,14 @@ export default function PloshadKomnatyPage() {
               <p className="mt-2 rounded-xl bg-stone-100 px-3 py-3 text-xs leading-relaxed text-stone-500 dark:bg-slate-950 dark:text-slate-400">Исправьте размеры — после этого откроются калькуляторы закупки.</p>
             ) : (
               <div className="mt-2 grid gap-2">
-                <Link href={roomMasterHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "moy-remont")} className="btn-primary min-h-11 justify-center text-sm no-underline">Собрать материалы →</Link>
+                {shape !== "rect" && (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200">
+                    «Мой ремонт» принимает прямоугольные длину и ширину. Сложная форма и её площадь не переносятся — размеры помещения нужно будет задать заново.
+                  </p>
+                )}
+                <Link href={roomMasterHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "moy-remont")} className="btn-primary min-h-11 justify-center text-center text-sm no-underline">
+                  {shape === "rect" ? "Собрать материалы →" : "Открыть мастер без переноса формы →"}
+                </Link>
                 <div className="grid grid-cols-2 gap-2">
                   <Link href={laminateCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "laminat-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Рассчитать ламинат</Link>
                   <Link href={wallpaperCalculatorHref} onClick={() => trackToolRelatedClick("ploshchad-komnaty", "wallpaper-calculator")} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-3 text-center text-xs font-semibold text-stone-700 no-underline hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">Рассчитать обои</Link>
