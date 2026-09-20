@@ -52,6 +52,9 @@ describe("Шпаклёвка — паспортный расход и факти
 
     expect(result.totals.primaryBaseNeedKg).toBe(36);
     expect(result.materials[0].quantity).toBe(36);
+    expect(result.totals.primaryPackages).toBe(2);
+    expect(result.totals.primaryPurchaseKg).toBe(40);
+    expect(result.totals.primaryLeftoverKg).toBe(4);
   });
 
   it("считает паспортный расход на проход по явному числу слоёв", () => {
@@ -258,11 +261,28 @@ describe("Шпаклёвка — паспортный расход и факти
 
   it("не обещает универсальные нормы, бренды и автоматический подбор", () => {
     expect(puttyDef.h1).toBe(
-      "Калькулятор шпаклёвки — расход по техкарте и упаковка",
+      "Калькулятор шпаклёвки для стен и потолка по площади",
+    );
+    expect(puttyDef.metaTitle).toContain(
+      "Калькулятор шпаклёвки для стен по площади",
     );
     expect(puttyDef.description).not.toMatch(/Knauf|Волма|Ceresit/i);
     expect(puttyDef.description).not.toMatch(/0[,.](8|9)|1[,.](0|1|2|3|5)/i);
     expect(puttyDef.metaDescription.toLowerCase()).toContain("рассчитайте");
+  });
+
+  it("объясняет расчёт по площади на воспроизводимом примере без выдачи нормы за дефолт", () => {
+    const html = puttyDef.seoContent?.descriptionHtml ?? "";
+    const faq = (puttyDef.seoContent?.faq ?? [])
+      .map((item) => `${item.question} ${item.answer}`)
+      .join(" ");
+
+    expect(html).toContain("20 м² × 1,2 кг/м² × 1,5 мм = 36 кг");
+    expect(html).toContain("2 упаковки по 20 кг");
+    expect(html).toContain("остаток 4 кг");
+    expect(html).toMatch(/условный пример/i);
+    expect(faq).toContain("Как рассчитать шпаклёвку для стен по площади?");
+    expect(faq).toContain("не универсальная норма");
   });
 
   it("ссылается на действующие нормы и техдокументацию разных продуктов", () => {
