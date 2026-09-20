@@ -34,6 +34,13 @@ const CYRILLIC_TO_LATIN: Readonly<Record<string, string>> = {
   я: "ya",
 };
 
+/** Slug, которые прежняя отдельная карта middleware уже успела отдать поисковым роботам. */
+const LEGACY_BLOG_TAG_SLUGS: Readonly<Record<string, string>> = {
+  vozdukhoobmen: "vozduhoobmen",
+  "tyoplyy-pol": "teplyy-pol",
+  tekhnonikol: "tehnonikol",
+};
+
 /** Канонический ASCII-slug тега. Модуль не зависит от Node API и безопасен для Edge middleware. */
 export function tagToSlug(tag: string): string {
   const transliterated = tag
@@ -47,6 +54,10 @@ export function tagToSlug(tag: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "tag";
+}
+
+export function canonicalBlogTagSlug(slug: string): string {
+  return LEGACY_BLOG_TAG_SLUGS[slug.toLowerCase()] ?? slug.toLowerCase();
 }
 
 function preferTagLabel(current: string, candidate: string): string {

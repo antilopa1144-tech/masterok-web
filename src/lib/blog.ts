@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { fetchAllPosts } from "./ghost";
 import { BLOG_CACHE_TAG, BLOG_REVALIDATE_SECONDS } from "./blog-cache";
-import { dedupeBlogTags, isSameBlogTag, tagToSlug } from "./blog-tag-slug";
+import { canonicalBlogTagSlug, dedupeBlogTags, isSameBlogTag, tagToSlug } from "./blog-tag-slug";
 
 export { tagToSlug } from "./blog-tag-slug";
 
@@ -86,8 +86,9 @@ export function resolveTagFromSlug(slug: string, tags: string[]): string | undef
       return slug;
     }
   })().toLowerCase();
+  const canonicalSlug = canonicalBlogTagSlug(decodedSlug);
 
-  return tags.find((tag) => tagToSlug(tag) === decodedSlug)
+  return tags.find((tag) => tagToSlug(tag) === canonicalSlug)
     ?? tags.find((tag) => tag.toLowerCase() === decodedSlug)
     ?? tags.find((tag) => slugToTag(slug).toLowerCase() === tag.toLowerCase());
 }

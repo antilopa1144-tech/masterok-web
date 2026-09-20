@@ -27,6 +27,18 @@ describe("middleware contract after framework updates", () => {
     expect(result.headers.get("location")).toBe(`https://getmasterok.ru/blog/tag/${slug}/`);
   });
 
+  it.each([
+    ["vozdukhoobmen", "vozduhoobmen"],
+    ["tyoplyy-pol", "teplyy-pol"],
+    ["tekhnonikol", "tehnonikol"],
+  ])("redirects the previously emitted legacy slug %s", (legacySlug, canonicalSlug) => {
+    const result = middleware(request(`/blog/tag/${legacySlug}/?source=legacy`));
+    expect(result.status).toBe(301);
+    expect(result.headers.get("location")).toBe(
+      `https://getmasterok.ru/blog/tag/${canonicalSlug}/?source=legacy`,
+    );
+  });
+
   it.each(["/api/blog/revalidate", "/api/mikhalych", "/rss.xml", "/_next/static/example.js"])("does not redirect %s", (path) => {
     const result = middleware(request(path));
     expect(result.headers.get("location")).toBeNull();

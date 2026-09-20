@@ -7,7 +7,7 @@ import {
   ROUTE_CHECKLIST_SLUGS,
   ROUTE_TOOL_SLUGS,
 } from "./lib/seo/route-manifest.generated";
-import { tagToSlug } from "./lib/blog-tag-slug";
+import { canonicalBlogTagSlug, tagToSlug } from "./lib/blog-tag-slug";
 
 // =============================================================================
 // Валидация динамических маршрутов ДО рендера.
@@ -151,6 +151,20 @@ export function middleware(request: NextRequest) {
     pathname.includes(".")
   ) {
     return NextResponse.next();
+  }
+
+  // Ошибочные ASCII-slug, которые прежняя отдельная карта транслитерации
+  // успела отдать поисковым роботам, закладкам и внешним ссылкам.
+  if (pathname.startsWith("/blog/tag/")) {
+    const tagSegment = pathname.replace(/^\/blog\/tag\//, "").replace(/\/$/, "");
+    const canonicalSlug = canonicalBlogTagSlug(tagSegment);
+    if (canonicalSlug !== tagSegment.toLowerCase()) {
+      const url = new URL(request.url);
+      url.pathname = `/blog/tag/${canonicalSlug}/`;
+      const response = NextResponse.redirect(url.toString(), 301);
+      response.headers.set("x-nonce", nonce);
+      return response;
+    }
   }
 
   // SEO-фикс: исторические URL тегов блога с кириллицей в slug → 301

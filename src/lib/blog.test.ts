@@ -12,11 +12,14 @@ describe("blog tag slugs", () => {
   });
 
   it("resolves generated slugs back to the original tag names", () => {
-    const tags = ["ГКЛ", "Тёплый пол", "Ceresit"];
+    const tags = ["ГКЛ", "Тёплый пол", "Воздухообмен", "Технониколь", "Ceresit"];
 
     expect(resolveTagFromSlug("gkl", tags)).toBe("ГКЛ");
     expect(resolveTagFromSlug("teplyy-pol", tags)).toBe("Тёплый пол");
     expect(resolveTagFromSlug("ceresit", tags)).toBe("Ceresit");
+    expect(resolveTagFromSlug("vozdukhoobmen", tags)).toBe("Воздухообмен");
+    expect(resolveTagFromSlug("tyoplyy-pol", tags)).toBe("Тёплый пол");
+    expect(resolveTagFromSlug("tekhnonikol", tags)).toBe("Технониколь");
   });
 
   it("merges case variants into one canonical tag collection", () => {
