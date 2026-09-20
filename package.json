@@ -26,6 +26,7 @@
     "analyze": "ANALYZE=true npm run build",
     "analyze:server": "ANALYZE=true next build",
     "test:e2e": "playwright test",
+    "test:e2e:catalog": "playwright test e2e/catalog-smoke.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed"
   },

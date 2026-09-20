@@ -78,4 +78,22 @@ jobs:
           GHOST_API_URL: ${{ secrets.GHOST_API_URL }}
           GHOST_CONTENT_API_KEY: ${{ secrets.GHOST_CONTENT_API_KEY }}
 
+      - name: Install Chromium for catalog smoke
+        run: npx playwright install --with-deps chromium
+
+      - name: Run catalog browser smoke
+        run: |
+          npm run start -- -p 3456 > /tmp/masterok-next.log 2>&1 &
+          APP_PID=$!
+          trap 'kill $APP_PID' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3456/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npm run test:e2e:catalog || { cat /tmp/masterok-next.log; exit 1; }
+        env:
+          E2E_BASE_URL: http://127.0.0.1:3456
+
   # Deploy: Timeweb Cloud auto-deploys from main branch
