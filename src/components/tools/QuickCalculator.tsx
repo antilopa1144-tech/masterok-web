@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import {
+  appendQuickCalculatorChar,
+  backspaceQuickCalculator,
+  evaluateQuickExpression,
+  percentTrailingOperand,
+  QUICK_CALCULATOR_ERROR,
+  toggleTrailingOperand,
+} from "@/lib/tools/quick-calculator";
 
 type HistoryItem = { expr: string; result: string };
 
@@ -9,62 +17,10 @@ const MAX_HISTORY = 8;
 const QUICK_CALCULATOR_TOOL_SLUG = "kalkulyator";
 
 const UI_TEXT = {
-  error: "Ошибка",
+  error: QUICK_CALCULATOR_ERROR,
   historyTitle: "История вычислений",
   clearHistory: "Очистить",
 } as const;
-
-/**
- * Безопасный парсер арифметических выражений без eval/new Function.
- * Поддерживает: +, -, *, /, скобки, отрицательные числа.
- */
-function safeEval(expr: string): number {
-  let pos = 0;
-  const s = expr.replace(/\s/g, "");
-
-  function parseExpr(): number {
-    let result = parseTerm();
-    while (pos < s.length && (s[pos] === "+" || s[pos] === "-")) {
-      const op = s[pos++];
-      const term = parseTerm();
-      result = op === "+" ? result + term : result - term;
-    }
-    return result;
-  }
-
-  function parseTerm(): number {
-    let result = parseFactor();
-    while (pos < s.length && (s[pos] === "*" || s[pos] === "/")) {
-      const op = s[pos++];
-      const factor = parseFactor();
-      result = op === "*" ? result * factor : result / factor;
-    }
-    return result;
-  }
-
-  function parseFactor(): number {
-    if (s[pos] === "-") {
-      pos++;
-      return -parseFactor();
-    }
-    if (s[pos] === "(") {
-      pos++;
-      const result = parseExpr();
-      pos++;
-      return result;
-    }
-    const start = pos;
-    while (pos < s.length && ((s[pos] >= "0" && s[pos] <= "9") || s[pos] === ".")) {
-      pos++;
-    }
-    if (start === pos) throw new Error("Unexpected token");
-    return parseFloat(s.slice(start, pos));
-  }
-
-  const result = parseExpr();
-  if (pos < s.length) throw new Error("Unexpected characters");
-  return result;
-}
 
 interface QuickCalculatorProps {
   compact?: boolean;
@@ -94,14 +50,10 @@ export default function QuickCalculator({
   const append = useCallback((char: string) => {
     markStarted("value_input");
     setDisplay((prev) => {
-      if (justCalculated) {
+      if (justCalculated || prev === UI_TEXT.error) {
         setJustCalculated(false);
-        if ("0123456789.".includes(char)) return char;
-        return prev + char;
       }
-      if (prev === "0" && "0123456789".includes(char) && char !== ".") return char;
-      if (char === "." && prev.split(/[+\-×÷]/).pop()?.includes(".")) return prev;
-      return prev + char;
+      return appendQuickCalculatorChar(prev, char, justCalculated);
     });
   }, [justCalculated, markStarted]);
 
@@ -113,28 +65,19 @@ export default function QuickCalculator({
 
   const backspace = useCallback(() => {
     setDisplay((prev) => {
-      if (justCalculated) {
+      if (justCalculated || prev === UI_TEXT.error) {
         setJustCalculated(false);
-        return "0";
       }
-      if (prev.length <= 1 || (prev.length === 2 && prev.startsWith("-"))) return "0";
-      return prev.slice(0, -1);
+      return backspaceQuickCalculator(prev, justCalculated);
     });
   }, [justCalculated]);
 
   const toggleSign = useCallback(() => {
-    setDisplay((prev) => {
-      if (prev === "0") return "0";
-      return prev.startsWith("-") ? prev.slice(1) : "-" + prev;
-    });
+    setDisplay(toggleTrailingOperand);
   }, []);
 
   const percent = useCallback(() => {
-    setDisplay((prev) => {
-      const n = parseFloat(prev.replace(",", "."));
-      if (isNaN(n)) return prev;
-      return String(n / 100);
-    });
+    setDisplay(percentTrailingOperand);
   }, []);
 
   const calculate = useCallback(() => {
@@ -146,7 +89,7 @@ export default function QuickCalculator({
         .replace(/÷/g, "/")
         .replace(/,/g, ".");
 
-      const result = safeEval(safeExpr);
+      const result = evaluateQuickExpression(safeExpr);
 
       if (!isFinite(result) || isNaN(result)) {
         setDisplay(UI_TEXT.error);
@@ -220,7 +163,8 @@ export default function QuickCalculator({
       </div>
 
       <div className={`grid grid-cols-4 ${compact ? "gap-1.5 p-2" : "gap-2 p-3"} bg-slate-50 dark:bg-slate-900`}>
-        <button onClick={clear} className={`${BTN} col-span-2 bg-red-100 text-red-700 hover:bg-red-200 text-base`} aria-label="Очистить">C</button>
+        <button onClick={clear} className={`${BTN} bg-red-100 text-red-700 hover:bg-red-200 text-base`} aria-label="Очистить">C</button>
+        <button onClick={percent} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600`} aria-label="Процент">%</button>
         <button onClick={backspace} className={`${BTN} bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600`} aria-label="Удалить последний символ">⌫</button>
         <button onClick={() => append("÷")} className={`${BTN} bg-accent-100 text-accent-700 hover:bg-accent-200`} aria-label="Разделить">÷</button>
 
