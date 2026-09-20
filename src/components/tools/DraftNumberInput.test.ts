@@ -113,4 +113,31 @@ describe("DraftNumberInput", () => {
     expect(input.title).toContain("Введите значение от 1 до 50 000");
     expect(input.title).toContain("последнее допустимое значение");
   });
+
+  it("разрешает пустой черновик для необязательного нулевого значения", async () => {
+    const onChange = vi.fn();
+    await act(async () => root.render(createElement(DraftNumberInput, {
+      ariaLabel: "Цена",
+      value: 0,
+      min: 0,
+      max: 100_000_000,
+      emptyWhenZero: true,
+      placeholder: "Не указана",
+      onChange,
+    })));
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    expect(input.value).toBe("");
+    expect(input.placeholder).toBe("Не указана");
+    expect(input.getAttribute("aria-invalid")).toBe("false");
+
+    await act(async () => typeValue(input, "2"));
+    await act(async () => typeValue(input, "20"));
+    expect(input.value).toBe("20");
+    expect(onChange).toHaveBeenLastCalledWith(20);
+
+    await act(async () => typeValue(input, ""));
+    expect(input.value).toBe("");
+    expect(onChange).toHaveBeenLastCalledWith(0);
+  });
 });

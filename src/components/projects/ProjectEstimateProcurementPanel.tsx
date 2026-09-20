@@ -14,6 +14,7 @@ import type { ProjectEstimateTotals } from "@/lib/projects/build-estimate";
 import type { ProjectWithEntries } from "@/lib/storage/types";
 import { IconChevron, IconSearch } from "./ProjectEstimateIcons";
 import ProcurementLineRow from "./ProcurementLineRow";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 
 const SHOW_SEARCH_FROM = 12;
 
@@ -253,26 +254,30 @@ export default function ProjectEstimateProcurementPanel({
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
               <span className="text-xs text-slate-500">Запас на подрезку / бой, %</span>
-              <input
-                type="number"
+              <DraftNumberInput
+                ariaLabel="Запас на подрезку и бой, %"
                 min={0}
                 max={30}
                 step={1}
-                value={meta.reservePercent || ""}
-                onChange={(e) =>
-                  onMetaChange({ reservePercent: Math.max(0, Number(e.target.value) || 0) })
-                }
+                value={meta.reservePercent}
+                emptyWhenZero
+                onChange={(reservePercent) => onMetaChange({ reservePercent })}
+                containerClassName="mt-1 min-w-0"
                 className="input-field mt-1 w-full"
               />
             </label>
             <label className="block">
               <span className="text-xs text-slate-500">Доставка, ₽</span>
-              <input
-                type="number"
+              <DraftNumberInput
+                ariaLabel="Доставка, ₽"
                 min={0}
+                max={1_000_000_000}
                 step={100}
-                value={meta.deliveryRub || ""}
-                onChange={(e) => onMetaChange({ deliveryRub: Math.max(0, Number(e.target.value) || 0) })}
+                integerOnly={false}
+                value={meta.deliveryRub}
+                emptyWhenZero
+                onChange={(deliveryRub) => onMetaChange({ deliveryRub })}
+                containerClassName="mt-1 min-w-0"
                 className="input-field mt-1 w-full"
               />
             </label>

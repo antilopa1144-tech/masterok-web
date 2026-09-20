@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import {
   trackToolModeChange,
   trackToolPresetSelect,
@@ -282,15 +283,18 @@ export default function MaterialComparison() {
       <label htmlFor={`comparison-price-${label}`} className="mt-3 block text-xs font-medium text-slate-500 dark:text-slate-400">
         Ваша цена, {category.unit}
       </label>
-      <input
+      <DraftNumberInput
         id={`comparison-price-${label}`}
-        type="number"
-        inputMode="decimal"
+        ariaLabel={`Ваша цена: материал ${label}`}
         min={0}
-        step={1}
-        value={price || ""}
+        max={100_000_000}
+        step={0.01}
+        integerOnly={false}
+        value={price}
+        emptyWhenZero
         placeholder="Не указана"
-        onChange={(event) => handlePriceChange(material.name, Number(event.target.value) || 0)}
+        onChange={(value) => handlePriceChange(material.name, value)}
+        containerClassName="mt-1 min-w-0"
         className={`mt-1 min-h-12 w-full rounded-lg border px-3 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-accent-500/30 dark:text-slate-100 ${
           price > 0
             ? "border-accent-300 bg-accent-50/50 dark:border-accent-700 dark:bg-accent-950/20"
