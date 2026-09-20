@@ -7,6 +7,7 @@ import {
   ROUTE_CHECKLIST_SLUGS,
   ROUTE_TOOL_SLUGS,
 } from "./lib/seo/route-manifest.generated";
+import { tagToSlug } from "./lib/blog-tag-slug";
 
 // =============================================================================
 // Валидация динамических маршрутов ДО рендера.
@@ -104,31 +105,6 @@ function validateDynamicRoute(request: NextRequest, nonce: string): NextResponse
   return null;
 }
 
-// =============================================================================
-// Транслитерация кириллицы → латиница для slug тегов блога.
-// Дублирует CYRILLIC_TO_LATIN из src/lib/blog.ts, т.к. middleware работает
-// на Edge runtime и не может импортировать модули с Node-зависимостями
-// (blog.ts → ghost.ts → fs/process). При изменении карты в одном месте —
-// синхронизируй и здесь.
-// =============================================================================
-const CYRILLIC_TO_LATIN: Record<string, string> = {
-  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo",
-  ж: "zh", з: "z", и: "i", й: "y", к: "k", л: "l", м: "m",
-  н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u",
-  ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "sch",
-  ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
-};
-
-function transliterateTag(tag: string): string {
-  return tag
-    .toLowerCase()
-    .split("")
-    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
-    .join("")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "tag";
-}
-
 // Любой символ кириллицы или %D[01]/%D[89A-F] (кириллица в percent-encoding).
 const CYRILLIC_OR_ENCODED = /[Ѐ-ӿ]|%D[0-9A-Fa-f]/;
 
@@ -186,7 +162,7 @@ export function middleware(request: NextRequest) {
     } catch {
       decoded = tagSegment;
     }
-    const transliterated = transliterateTag(decoded);
+    const transliterated = tagToSlug(decoded);
     if (transliterated && transliterated !== tagSegment) {
       const url = new URL(request.url);
       url.pathname = `/blog/tag/${transliterated}/`;

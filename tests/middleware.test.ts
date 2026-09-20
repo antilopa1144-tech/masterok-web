@@ -17,6 +17,16 @@ describe("middleware contract after framework updates", () => {
     expect(result.headers.get("location")).toBe("https://getmasterok.ru/blog/tag/plitka/");
   });
 
+  it.each([
+    ["Воздухообмен", "vozduhoobmen"],
+    ["Тёплый пол", "teplyy-pol"],
+    ["Технониколь", "tehnonikol"],
+  ])("uses the same canonical tag slug for %s as blog pages", (tag, slug) => {
+    const result = middleware(request(`/blog/tag/${encodeURIComponent(tag)}/`));
+    expect(result.status).toBe(301);
+    expect(result.headers.get("location")).toBe(`https://getmasterok.ru/blog/tag/${slug}/`);
+  });
+
   it.each(["/api/blog/revalidate", "/api/mikhalych", "/rss.xml", "/_next/static/example.js"])("does not redirect %s", (path) => {
     const result = middleware(request(path));
     expect(result.headers.get("location")).toBeNull();

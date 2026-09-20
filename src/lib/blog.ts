@@ -1,6 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { fetchAllPosts } from "./ghost";
 import { BLOG_CACHE_TAG, BLOG_REVALIDATE_SECONDS } from "./blog-cache";
+import { dedupeBlogTags, isSameBlogTag, tagToSlug } from "./blog-tag-slug";
+
+export { tagToSlug } from "./blog-tag-slug";
 
 export interface BlogPost {
   ghostId?: string;
@@ -59,66 +62,12 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | undefined>
 
 export async function getAllTags(): Promise<string[]> {
   const posts = await getAllPosts();
-  const set = new Set<string>();
-  for (const post of posts) {
-    for (const tag of post.tags) set.add(tag);
-  }
-  return Array.from(set).sort();
+  return dedupeBlogTags(posts.flatMap((post) => post.tags));
 }
 
 export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
   const posts = await getAllPosts();
-  return posts.filter((p) => p.tags.includes(tag));
-}
-
-const CYRILLIC_TO_LATIN: Record<string, string> = {
-  а: "a",
-  б: "b",
-  в: "v",
-  г: "g",
-  д: "d",
-  е: "e",
-  ё: "e",
-  ж: "zh",
-  з: "z",
-  и: "i",
-  й: "y",
-  к: "k",
-  л: "l",
-  м: "m",
-  н: "n",
-  о: "o",
-  п: "p",
-  р: "r",
-  с: "s",
-  т: "t",
-  у: "u",
-  ф: "f",
-  х: "h",
-  ц: "ts",
-  ч: "ch",
-  ш: "sh",
-  щ: "sch",
-  ъ: "",
-  ы: "y",
-  ь: "",
-  э: "e",
-  ю: "yu",
-  я: "ya",
-};
-
-export function tagToSlug(tag: string): string {
-  const transliterated = tag
-    .toLowerCase()
-    .split("")
-    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
-    .join("");
-
-  return transliterated
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "tag";
+  return posts.filter((post) => post.tags.some((postTag) => isSameBlogTag(postTag, tag)));
 }
 
 export function slugToTag(slug: string): string {
