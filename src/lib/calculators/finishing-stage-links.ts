@@ -43,9 +43,8 @@ export function buildFinishLinksFromPuttyResult(totals: Totals, surface: number 
   if (area <= 500) {
     const primerParams = new URLSearchParams({
       from: PUTTY_FINISHING_TRANSFER_FROM,
-      area: String(area),
-      surfaceType: "1",
-      primerType: "0",
+      inputMode: "0",
+      projectAreaM2: String(area),
     });
     links.push({
       target: "gruntovka",

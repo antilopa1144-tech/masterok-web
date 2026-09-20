@@ -6,18 +6,13 @@ import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
 import { getCategoryById } from "@/lib/calculators/categories";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
-const TRANSFERABLE_KEYS = ["area", "length", "width", "height", "inputMode"];
-
-function buildTransferParams(values: Record<string, number>, targetSlug: string): string {
-  const params = new URLSearchParams();
-  for (const key of TRANSFERABLE_KEYS) {
-    if (values[key] != null && values[key] > 0) {
-      params.set(key, String(values[key]));
-    }
-  }
-  params.set("from", targetSlug);
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
+export function buildCompanionHref(
+  categorySlug: string,
+  targetSlug: string,
+  sourceSlug: string,
+): string {
+  const params = new URLSearchParams({ from: sourceSlug });
+  return `/kalkulyatory/${categorySlug}/${targetSlug}/?${params.toString()}`;
 }
 
 interface Props {
@@ -25,7 +20,7 @@ interface Props {
   values: Record<string, number>;
 }
 
-export default function CompanionLinks({ slug, values }: Props) {
+export default function CompanionLinks({ slug }: Props) {
   const companions = CALCULATOR_COMPANIONS[slug];
   if (!companions || companions.length === 0) return null;
 
@@ -57,7 +52,7 @@ export default function CompanionLinks({ slug, values }: Props) {
         {resolved.map((c) => (
           <Link
             key={c.slug}
-            href={`/kalkulyatory/${c.calc.categorySlug}/${c.calc.slug}/${buildTransferParams(values, slug)}`}
+            href={buildCompanionHref(c.calc.categorySlug, c.calc.slug, slug)}
             className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-accent-300 dark:hover:border-accent-600 transition-all no-underline group"
           >
             <div

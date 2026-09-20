@@ -58,11 +58,11 @@ export function buildCeilingStretchHrefFromLightingLayout(result: LightingLayout
 
   const params = new URLSearchParams({
     from: LIGHTING_LAYOUT_TRANSFER_FROM,
-    area: String(areaM2),
-    corners: "4",
-    fixtures: String(fixtures),
-    roomWidthMm: String(roomWidthMm),
-    roomLengthMm: String(roomLengthMm),
+    inputMode: "0",
+    length: String(round(roomLengthMm / 1000, 3)),
+    width: String(round(roomWidthMm / 1000, 3)),
+    lightingNodesEnabled: "1",
+    projectLightingNodeCount: String(fixtures),
   });
   return `/kalkulyatory/potolki/natyazhnoj-potolok/?${params.toString()}`;
 }
@@ -72,20 +72,22 @@ export function readLightingLayoutCeilingTransfer(
 ): LightingLayoutCeilingTransfer | null {
   if (searchParams.get("from") !== LIGHTING_LAYOUT_TRANSFER_FROM) return null;
 
-  const roomWidthMm = readParam(searchParams, "roomWidthMm", 500, 30_000);
-  const roomLengthMm = readParam(searchParams, "roomLengthMm", 500, 30_000);
-  const areaM2 = readParam(searchParams, "area", 1, 500);
-  const fixtures = readParam(searchParams, "fixtures", 1, 50);
+  if (readParam(searchParams, "inputMode", 0, 0) !== 0) return null;
+  const roomWidthM = readParam(searchParams, "width", 0.5, 30);
+  const roomLengthM = readParam(searchParams, "length", 0.5, 30);
+  const lightingNodesEnabled = readParam(searchParams, "lightingNodesEnabled", 1, 1);
+  const fixtures = readParam(searchParams, "projectLightingNodeCount", 1, 50);
   if (
-    roomWidthMm === null
-    || roomLengthMm === null
-    || areaM2 === null
+    roomWidthM === null
+    || roomLengthM === null
+    || lightingNodesEnabled !== 1
     || fixtures === null
     || !Number.isInteger(fixtures)
   ) return null;
 
-  const exactAreaM2 = round(roomWidthMm * roomLengthMm / 1_000_000);
-  if (Math.abs(exactAreaM2 - areaM2) > 0.01) return null;
+  const roomWidthMm = round(roomWidthM * 1000, 3);
+  const roomLengthMm = round(roomLengthM * 1000, 3);
+  const areaM2 = round(roomWidthM * roomLengthM);
 
   return {
     roomWidthMm,
@@ -97,8 +99,18 @@ export function readLightingLayoutCeilingTransfer(
 }
 
 export function buildLightingLayoutHrefFromCeilingCalculator(values: Values): string | null {
-  const areaM2 = readValue(values, "area", 1, 500);
-  const fixtures = readValue(values, "fixtures", 0, 50);
+  const inputMode = readValue(values, "inputMode", 0, 1);
+  if (inputMode === null || !Number.isInteger(inputMode)) return null;
+  const lengthM = readValue(values, "length", 1, 50);
+  const widthM = readValue(values, "width", 1, 50);
+  const enteredAreaM2 = readValue(values, "area", 1, 500);
+  const areaM2 = inputMode === 0 && lengthM !== null && widthM !== null
+    ? round(lengthM * widthM)
+    : enteredAreaM2;
+  const lightingNodesEnabled = readValue(values, "lightingNodesEnabled", 0, 1);
+  const fixtures = lightingNodesEnabled === 1
+    ? readValue(values, "projectLightingNodeCount", 0, 50)
+    : 0;
   if (areaM2 === null || fixtures === null || !Number.isInteger(fixtures)) return null;
 
   const params = new URLSearchParams({

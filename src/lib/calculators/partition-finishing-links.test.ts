@@ -16,9 +16,11 @@ describe("partition finishing links", () => {
 
     expect(byTarget.gruntovka.pathname).toBe("/kalkulyatory/otdelka/gruntovka/");
     expect(byTarget.gruntovka.searchParams.get("from")).toBe(PARTITION_FINISHING_TRANSFER_FROM);
-    expect(byTarget.gruntovka.searchParams.get("area")).toBe("27");
-    expect(byTarget.gruntovka.searchParams.get("surfaceType")).toBe("0");
-    expect(byTarget.gruntovka.searchParams.get("primerType")).toBe("0");
+    expect(byTarget.gruntovka.searchParams.get("inputMode")).toBe("0");
+    expect(byTarget.gruntovka.searchParams.get("projectAreaM2")).toBe("27");
+    expect(byTarget.gruntovka.searchParams.has("area")).toBe(false);
+    expect(byTarget.gruntovka.searchParams.has("surfaceType")).toBe(false);
+    expect(byTarget.gruntovka.searchParams.has("primerType")).toBe(false);
     expect(byTarget.gruntovka.searchParams.has("coats")).toBe(false);
 
     expect(byTarget.shtukaturka.pathname).toBe("/kalkulyatory/steny/shtukaturka/");

@@ -30,7 +30,11 @@ describe("finishing stage links", () => {
     const byTarget = Object.fromEntries(links.map((link) => [link.target, new URL(link.href, "https://getmasterok.ru")]));
 
     expect(byTarget.gruntovka.searchParams.get("from")).toBe(PUTTY_FINISHING_TRANSFER_FROM);
-    expect(byTarget.gruntovka.searchParams.get("area")).toBe("48");
+    expect(byTarget.gruntovka.searchParams.get("inputMode")).toBe("0");
+    expect(byTarget.gruntovka.searchParams.get("projectAreaM2")).toBe("48");
+    expect(byTarget.gruntovka.searchParams.has("area")).toBe(false);
+    expect(byTarget.gruntovka.searchParams.has("surfaceType")).toBe(false);
+    expect(byTarget.gruntovka.searchParams.has("primerType")).toBe(false);
     expect(byTarget.gruntovka.searchParams.has("coats")).toBe(false);
 
     expect(byTarget.kraska.pathname).toBe("/kalkulyatory/otdelka/kraska/");

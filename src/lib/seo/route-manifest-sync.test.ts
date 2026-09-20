@@ -33,9 +33,9 @@ describe("route-manifest синхронен с источниками", () => {
     expect(ROUTE_CALCULATOR_CATEGORY).toEqual(expected);
   });
 
-  it("инструменты совпадают с TOOL_CONFIGS без noindex", () => {
+  it("инструменты совпадают со всеми TOOL_CONFIGS, включая noindex", () => {
     expect([...ROUTE_TOOL_SLUGS].sort()).toEqual(
-      TOOL_CONFIGS.filter((t) => !t.noindex).map((t) => t.slug).sort(),
+      TOOL_CONFIGS.map((t) => t.slug).sort(),
     );
   });
 

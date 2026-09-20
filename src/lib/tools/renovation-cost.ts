@@ -18,6 +18,8 @@ export interface RenovationType {
 
 export interface RenovationCostLine extends RenovationCostItem {
   qty: number;
+  /** Расчётная потребность до округления штучной позиции вверх. */
+  estimatedQty: number;
   price: number;
   cost: number;
 }
@@ -152,10 +154,14 @@ function buildLine(
   area: number,
   price: number,
 ): RenovationCostLine {
-  const qty = Math.ceil(area * item.consumptionPerM2 * 10) / 10;
+  const rawQty = area * item.consumptionPerM2;
+  const estimatedQty = Math.ceil(rawQty * 10) / 10;
+  const isDiscrete = /^(шт|уп(?:\.|$)|компл(?:\.|$)|рулон|лист|мешок)/i.test(item.unit.trim());
+  const qty = isDiscrete ? Math.ceil(rawQty) : estimatedQty;
   return {
     ...item,
     qty,
+    estimatedQty,
     price,
     cost: Math.round(qty * price),
   };

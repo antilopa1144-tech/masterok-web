@@ -15,6 +15,7 @@ import {
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import TileLayoutPassportCard from "@/components/tools/TileLayoutPassportCard";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import TileSurfaceSelector from "./TileSurfaceSelector";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import { copyText, shareOrCopy } from "@/lib/clipboard";
@@ -1540,6 +1541,8 @@ export default function TileLayoutGenerator() {
   const [surfaceH, setSurfaceH] = useState(2600);
   const [tileW, setTileW] = useState(600);
   const [tileH, setTileH] = useState(300);
+  const [customSurfaceSize, setCustomSurfaceSize] = useState(false);
+  const [customTileSize, setCustomTileSize] = useState(false);
   const [groutMm, setGroutMm] = useState(2);
   const [reservePercent, setReservePercent] = useState(initialReservePercent);
   const [packAreaInput, setPackAreaInput] = useState(
@@ -1675,7 +1678,10 @@ export default function TileLayoutGenerator() {
     }
     if (parsed.packagingSource) setPackagingSource(parsed.packagingSource);
     if (parsed.reservePercent != null) setReservePercent(parsed.reservePercent);
-    setHasOpening(parsed.hasOpening ?? false);
+    if (parsed.surfaceView != null) {
+      setSurfaceView(parsed.surfaceView);
+    }
+    setHasOpening(parsed.surfaceView === "floor" ? false : parsed.hasOpening ?? false);
     if (parsed.openingW != null) setOpeningW(parsed.openingW);
     if (parsed.openingH != null) setOpeningH(parsed.openingH);
     if (parsed.openingOffsetLeft != null) setOpeningOffsetLeft(parsed.openingOffsetLeft);
@@ -2272,6 +2278,7 @@ export default function TileLayoutGenerator() {
     const floorPreset = preset.label.toLocaleLowerCase("ru-RU").includes("пол");
     setSurfaceW(preset.w);
     setSurfaceH(preset.h);
+    setCustomSurfaceSize(false);
     setSurfaceView(floorPreset ? "floor" : "wall");
     if (floorPreset) setHasOpening(false);
     if (preset.w === 2500 && preset.h === 2600) {
@@ -2289,6 +2296,7 @@ export default function TileLayoutGenerator() {
     trackToolPresetSelect("raskladka-plitki", "material", preset.label);
     setTileW(preset.w);
     setTileH(preset.h);
+    setCustomTileSize(false);
     if (packagingSource === "estimated" && parsedPackAreaM2 != null && !packAreaError) {
       setTilesPerBoxInput(String(estimateTilesPerBoxFromArea(preset.w, preset.h, parsedPackAreaM2)));
     }
@@ -2466,9 +2474,9 @@ export default function TileLayoutGenerator() {
             Размер поверхности
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
-            <input aria-label="Ширина поверхности в миллиметрах" type="number" inputMode="numeric" min={100} max={20000} value={surfaceW} onChange={(e) => { markStarted("surface_size"); setSurfaceW(clampLayoutInput(Number(e.target.value), "surface")); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Ширина поверхности в миллиметрах" min={100} max={20000} value={surfaceW} onChange={(next) => { markStarted("surface_size"); setCustomSurfaceSize(true); setSurfaceW(next); }} />
             <span className="text-slate-400">×</span>
-            <input aria-label="Высота поверхности в миллиметрах" type="number" inputMode="numeric" min={100} max={20000} value={surfaceH} onChange={(e) => { markStarted("surface_size"); setSurfaceH(clampLayoutInput(Number(e.target.value), "surface")); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Высота поверхности в миллиметрах" min={100} max={20000} value={surfaceH} onChange={(next) => { markStarted("surface_size"); setCustomSurfaceSize(true); setSurfaceH(next); }} />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <details className="group mt-2 rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700">
@@ -2477,9 +2485,10 @@ export default function TileLayoutGenerator() {
             </summary>
             <select
               aria-label="Быстрый размер поверхности"
-              value={selectedSurfacePreset >= 0 ? String(selectedSurfacePreset) : ""}
+              value={!customSurfaceSize && selectedSurfacePreset >= 0 ? String(selectedSurfacePreset) : ""}
               onChange={(event) => {
-                if (event.target.value !== "") applySurfacePreset(Number(event.target.value));
+                if (event.target.value === "") setCustomSurfaceSize(true);
+                else applySurfacePreset(Number(event.target.value));
               }}
               className="input-field mt-2 w-full text-xs"
             >
@@ -2498,18 +2507,19 @@ export default function TileLayoutGenerator() {
             Размер плитки
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
-            <input aria-label="Ширина плитки в миллиметрах" type="number" inputMode="numeric" min={10} max={2000} value={tileW} onChange={(e) => { const next = clampLayoutInput(Number(e.target.value), "tile"); markStarted("material_size"); setTileW(next); if (packagingSource === "estimated" && parsedPackAreaM2 != null && !packAreaError) setTilesPerBoxInput(String(estimateTilesPerBoxFromArea(next, normalizedInput.tileH, parsedPackAreaM2))); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Ширина плитки в миллиметрах" min={10} max={2000} value={tileW} onChange={(next) => { markStarted("material_size"); setCustomTileSize(true); setTileW(next); if (packagingSource === "estimated" && parsedPackAreaM2 != null && !packAreaError) setTilesPerBoxInput(String(estimateTilesPerBoxFromArea(next, normalizedInput.tileH, parsedPackAreaM2))); }} />
             <span className="text-slate-400">×</span>
-            <input aria-label="Высота плитки в миллиметрах" type="number" inputMode="numeric" min={10} max={2000} value={tileH} onChange={(e) => { const next = clampLayoutInput(Number(e.target.value), "tile"); markStarted("material_size"); setTileH(next); if (packagingSource === "estimated" && parsedPackAreaM2 != null && !packAreaError) setTilesPerBoxInput(String(estimateTilesPerBoxFromArea(normalizedInput.tileW, next, parsedPackAreaM2))); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Высота плитки в миллиметрах" min={10} max={2000} value={tileH} onChange={(next) => { markStarted("material_size"); setCustomTileSize(true); setTileH(next); if (packagingSource === "estimated" && parsedPackAreaM2 != null && !packAreaError) setTilesPerBoxInput(String(estimateTilesPerBoxFromArea(normalizedInput.tileW, next, parsedPackAreaM2))); }} />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <label className="mt-2 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
             Быстрый формат
             <select
               aria-label="Быстрый формат плитки"
-              value={selectedTilePreset >= 0 ? String(selectedTilePreset) : ""}
+              value={!customTileSize && selectedTilePreset >= 0 ? String(selectedTilePreset) : ""}
               onChange={(event) => {
-                if (event.target.value !== "") applyTilePreset(Number(event.target.value));
+                if (event.target.value === "") setCustomTileSize(true);
+                else applyTilePreset(Number(event.target.value));
               }}
               className="input-field mt-1 w-full text-xs"
             >
@@ -2661,15 +2671,12 @@ export default function TileLayoutGenerator() {
                   <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                     Подрезка слева
                     <div className="relative mt-1">
-                      <input
-                        aria-label="Стартовый сдвиг по горизонтали"
-                        type="number"
-                        inputMode="decimal"
+                      <DraftNumberInput
+                        ariaLabel="Стартовый сдвиг по горизонтали"
                         min={0}
                         max={Math.max(normalizedInput.tileW - 0.5, 0)}
-                        step={1}
                         value={startOffsetXmm}
-                        onChange={(event) => setStartOffsetXmm(Math.min(Math.max(Number(event.target.value), 0), normalizedInput.tileW - 0.5))}
+                        onChange={setStartOffsetXmm}
                         className="input-field w-full pr-9"
                       />
                       <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">мм</span>
@@ -2678,15 +2685,12 @@ export default function TileLayoutGenerator() {
                   <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                     Подрезка сверху
                     <div className="relative mt-1">
-                      <input
-                        aria-label="Стартовый сдвиг по вертикали"
-                        type="number"
-                        inputMode="decimal"
+                      <DraftNumberInput
+                        ariaLabel="Стартовый сдвиг по вертикали"
                         min={0}
                         max={Math.max(normalizedInput.tileH - 0.5, 0)}
-                        step={1}
                         value={startOffsetYmm}
-                        onChange={(event) => setStartOffsetYmm(Math.min(Math.max(Number(event.target.value), 0), normalizedInput.tileH - 0.5))}
+                        onChange={setStartOffsetYmm}
                         className="input-field w-full pr-9"
                       />
                       <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">мм</span>
@@ -2708,17 +2712,15 @@ export default function TileLayoutGenerator() {
             <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Ширина шва
               <div className="relative mt-1">
-                <input
-                  aria-label="Ширина шва в миллиметрах"
-                  type="number"
-                  inputMode="decimal"
+                <DraftNumberInput
+                  ariaLabel="Ширина шва в миллиметрах"
                   min={0}
                   max={10}
                   step={0.5}
                   value={groutMm}
-                  onChange={(event) => {
+                  onChange={(next) => {
                     markStarted("joint_width");
-                    setGroutMm(clampLayoutInput(Number(event.target.value), "grout"));
+                    setGroutMm(next);
                   }}
                   className="input-field w-full pr-10"
                 />
@@ -2781,14 +2783,14 @@ export default function TileLayoutGenerator() {
               <label className="space-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 Ширина
                 <div className="relative">
-                  <input aria-label="Ширина дверного проёма в миллиметрах" type="number" inputMode="numeric" min={100} max={normalizedInput.surfaceW} value={openingW} onChange={(e) => { markStarted("opening"); setOpeningW(Math.min(Math.max(Number(e.target.value), 100), normalizedInput.surfaceW)); }} className="input-field w-full pr-10" />
+                  <DraftNumberInput ariaLabel="Ширина дверного проёма в миллиметрах" min={100} max={normalizedInput.surfaceW} value={openingW} onChange={(next) => { markStarted("opening"); setOpeningW(next); }} className="input-field w-full pr-10" />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">мм</span>
                 </div>
               </label>
               <label className="space-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 Высота
                 <div className="relative">
-                  <input aria-label="Высота дверного проёма в миллиметрах" type="number" inputMode="numeric" min={100} max={normalizedInput.surfaceH} value={openingH} onChange={(e) => { markStarted("opening"); setOpeningH(Math.min(Math.max(Number(e.target.value), 100), normalizedInput.surfaceH)); }} className="input-field w-full pr-10" />
+                  <DraftNumberInput ariaLabel="Высота дверного проёма в миллиметрах" min={100} max={normalizedInput.surfaceH} value={openingH} onChange={(next) => { markStarted("opening"); setOpeningH(next); }} className="input-field w-full pr-10" />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">мм</span>
                 </div>
               </label>
@@ -2799,7 +2801,7 @@ export default function TileLayoutGenerator() {
                 <label className="mt-2 block space-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   Отступ слева
                   <div className="relative">
-                    <input aria-label="Отступ дверного проёма слева в миллиметрах" type="number" inputMode="numeric" min={0} max={maxOpeningOffsetMm} value={openingOffsetLeft} onChange={(e) => updateOpeningPosition(Number(e.target.value))} className="input-field w-full pr-10" />
+                    <DraftNumberInput ariaLabel="Отступ дверного проёма слева в миллиметрах" min={0} max={maxOpeningOffsetMm} value={openingOffsetLeft} onChange={updateOpeningPosition} className="input-field w-full pr-10" />
                     <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">мм</span>
                   </div>
                 </label>

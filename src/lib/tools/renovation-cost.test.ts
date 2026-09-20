@@ -16,12 +16,27 @@ describe("инструмент стоимости ремонта", () => {
 
     expect(result.materialLines[0]).toMatchObject({
       name: "Штукатурка гипсовая",
-      qty: 19.3,
+      qty: 20,
+      estimatedQty: 19.3,
       price: 0,
       cost: 0,
     });
     expect(result.durationDays).toBe(39);
     expect(result.hasAnyPrice).toBe(false);
+  });
+
+  it("округляет двери и фасованные материалы до целой закупочной позиции", () => {
+    const result = calculateRenovationCost({
+      area: 55,
+      typeId: "standard",
+      withWork: true,
+      prices: { "Двери межкомнатные": 10_000 },
+    });
+    const doors = result.materialLines.find((line) => line.name === "Двери межкомнатные");
+    const adhesive = result.materialLines.find((line) => line.name === "Плиточный клей");
+
+    expect(doors).toMatchObject({ estimatedQty: 2.2, qty: 3, cost: 30_000 });
+    expect(adhesive).toMatchObject({ estimatedQty: 2.8, qty: 3 });
   });
 
   it("считает материалы и работы по пользовательским ценам", () => {
@@ -35,12 +50,12 @@ describe("инструмент стоимости ремонта", () => {
       },
     });
 
-    expect(result.materialLines[0].qty).toBe(1.8);
-    expect(result.materialTotal).toBe(1_800);
+    expect(result.materialLines[0]).toMatchObject({ qty: 2, estimatedQty: 1.8 });
+    expect(result.materialTotal).toBe(2_000);
     expect(result.workLines[0].qty).toBe(25);
     expect(result.workTotal).toBe(12_500);
-    expect(result.total).toBe(14_300);
-    expect(result.perM2).toBe(1_430);
+    expect(result.total).toBe(14_500);
+    expect(result.perM2).toBe(1_450);
   });
 
   it("не добавляет работы, когда они отключены", () => {

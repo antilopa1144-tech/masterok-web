@@ -6,6 +6,7 @@ import { type ChangeEvent, useCallback, useEffect, useId, useMemo, useRef, useSt
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -121,19 +122,10 @@ function NumberInput({
   return (
     <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
-      <span className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <input
-          type="number"
-          inputMode="decimal"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
-          className="input-field min-w-0 w-full"
-        />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <DraftNumberInput ariaLabel={label} min={min} max={max} step={step} value={value} onChange={onChange} />
         <span className="text-xs text-slate-400">{unit}</span>
-      </span>
+      </div>
     </label>
   );
 }

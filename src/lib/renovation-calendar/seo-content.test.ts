@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CALENDAR_FAQ, ORDER_RULES, getScenarioSummaries } from "./seo-content";
-import { RENOVATION_SCENARIOS } from "./scenarios";
+import { getScenarioDurationLabel, RENOVATION_SCENARIOS } from "./scenarios";
 import { getToolConfig } from "@/lib/tools/config";
 
 describe("справочный контент календаря ремонта", () => {
@@ -22,6 +22,13 @@ describe("справочный контент календаря ремонта"
         expect(row.summary.length).toBeGreaterThan(20);
       }
     }
+  });
+
+  it("выводит общий срок из последнего дня расписания", () => {
+    for (const scenario of Object.values(RENOVATION_SCENARIOS)) {
+      expect(scenario.durationLabel).toBe(getScenarioDurationLabel(scenario.stages));
+    }
+    expect(RENOVATION_SCENARIOS.bathroom.durationLabel).toBe("до 48 дней");
   });
 
   it("объясняет очерёдность работ, а не только перечисляет этапы", () => {

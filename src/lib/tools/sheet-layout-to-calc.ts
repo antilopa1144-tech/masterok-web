@@ -48,25 +48,13 @@ export function buildDrywallCalculatorHref(input: SheetLayoutInput, sheetsHint?:
 
 export function buildFastenersCalculatorHref(
   input: SheetLayoutInput,
-  purchaseSheets: number,
+  _purchaseSheets: number,
 ): string | null {
   if (input.material !== "drywall" && input.material !== "osb") return null;
 
-  const sheetCount = Math.round(purchaseSheets);
-  // Поле калькулятора крепежа принимает не более 200 листов. Не передаём
-  // значение с неявным ограничением, чтобы пользователь не получил заниженную
-  // закупку на большом объекте.
-  if (!Number.isFinite(sheetCount) || sheetCount < 1 || sheetCount > 200) return null;
-
-  const isDrywall = input.material === "drywall";
-  const params = new URLSearchParams({
-    from: SHEET_LAYOUT_TRANSFER_FROM,
-    materialType: isDrywall ? "0" : "1",
-    sheetCount: String(sheetCount),
-    fastenerStep: isDrywall ? "250" : "200",
-    withFrameScrews: isDrywall ? "1" : "0",
-    withDubels: "0",
-  });
+  // Количество листов не определяет число крепежей без системы, основания,
+  // линий и подтверждённого шага. Открываем калькулятор без выдуманных норм.
+  const params = new URLSearchParams({ from: SHEET_LAYOUT_TRANSFER_FROM });
   return `${FASTENERS_CALCULATOR_PATH}?${params.toString()}`;
 }
 

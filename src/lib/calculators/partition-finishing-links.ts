@@ -26,7 +26,7 @@ const TARGETS: Array<{
     path: "/kalkulyatory/otdelka/gruntovka/",
     title: "1. Грунтовка",
     description: "Подготовить впитывающее основание",
-    params: { surfaceType: 0, primerType: 0 },
+    params: { inputMode: 0 },
   },
   {
     target: "shtukaturka",
@@ -66,8 +66,9 @@ export function buildPartitionFinishingLinks(input: PartitionDimensions): Partit
   return TARGETS.map((target) => {
     const params = new URLSearchParams({
       from: PARTITION_FINISHING_TRANSFER_FROM,
-      area: String(area),
     });
+    if (target.target === "gruntovka") params.set("projectAreaM2", String(area));
+    else params.set("area", String(area));
     for (const [key, value] of Object.entries(target.params)) {
       params.set(key, String(value));
     }

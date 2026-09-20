@@ -37,6 +37,29 @@ function roomSizeParams(d: RoomDimensions): URLSearchParams {
   return p;
 }
 
+const FLOOR_TILE_DIMENSIONS: Record<number, [number, number]> = {
+  0: [300, 300],
+  1: [450, 450],
+  2: [600, 600],
+};
+
+const WALL_TILE_DIMENSIONS: Record<number, [number, number]> = {
+  0: [200, 300],
+  1: [250, 400],
+  2: [300, 600],
+};
+
+function bathroomTileInputs(d: RoomDimensions): Record<string, number> {
+  const [floorTileWidthMm, floorTileHeightMm] = FLOOR_TILE_DIMENSIONS[d.floorTileSize] ?? FLOOR_TILE_DIMENSIONS[0];
+  const [wallTileWidthMm, wallTileHeightMm] = WALL_TILE_DIMENSIONS[d.wallTileSize] ?? WALL_TILE_DIMENSIONS[0];
+  return {
+    floorTileWidthMm,
+    floorTileHeightMm,
+    wallTileWidthMm,
+    wallTileHeightMm,
+  };
+}
+
 export const ROOM_PACKS: Record<RoomPackId, RoomPackConfig> = {
   bathroom: {
     id: "bathroom",
@@ -52,8 +75,7 @@ export const ROOM_PACKS: Record<RoomPackId, RoomPackConfig> = {
           length: d.length,
           width: d.width,
           height: d.height,
-          floorTileSize: d.floorTileSize,
-          wallTileSize: d.wallTileSize,
+          ...bathroomTileInputs(d),
           hasWaterproofing: d.hasWaterproofing,
           doorWidth: d.doorWidth,
         }),
@@ -90,8 +112,9 @@ export const ROOM_PACKS: Record<RoomPackId, RoomPackConfig> = {
     ],
     fullCalculatorHref: (d) => {
       const p = roomSizeParams(d);
-      p.set("floorTileSize", String(d.floorTileSize));
-      p.set("wallTileSize", String(d.wallTileSize));
+      for (const [key, value] of Object.entries(bathroomTileInputs(d))) {
+        p.set(key, String(value));
+      }
       p.set("hasWaterproofing", String(d.hasWaterproofing));
       p.set("from", "moy-remont");
       return `${calcHref({ slug: "vannaya-komnata", categorySlug: "otdelka" })}?${p}`;

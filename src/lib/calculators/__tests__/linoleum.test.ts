@@ -74,6 +74,24 @@ describe("Калькулятор линолеума", () => {
     expect(result.totals.exactLinearM).toBeCloseTo(8.2, 6);
     expect(result.totals.purchaseLinearM).toBeCloseTo(8.5, 6);
     expect(result.totals.linearLeftoverM).toBeCloseTo(0.3, 6);
+    expect(result.scenarios?.REC.buy_plan).toMatchObject({
+      package_size: 0.5,
+      packages_count: 17,
+      unit: "м.п.",
+    });
+  });
+
+  it.each([
+    { step: 0.1, count: 82 },
+    { step: 0.5, count: 17 },
+    { step: 1, count: 9 },
+  ])("показывает $count шагов продажи по $step м", ({ step, count }) => {
+    const result = calc({ ...defaults, purchaseStepM: step });
+    const buyPlan = result.scenarios?.REC.buy_plan;
+
+    expect(buyPlan?.packages_count).toBe(count);
+    expect((buyPlan?.packages_count ?? 0) * (buyPlan?.package_size ?? 0))
+      .toBeCloseTo(result.totals.purchaseLinearM, 6);
   });
 
   it("не назначает грунтовку, клей, скотч, плинтус и холодную сварку", () => {

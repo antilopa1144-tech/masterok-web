@@ -1,15 +1,17 @@
 "use client";
 
+import DraftNumberInput from "./DraftNumberInput";
+
 export function ToolNumberInput({ label, value, unit, min, max, step = 1, hint, onChange }: {
   label: string; value: number; unit: string; min: number; max: number; step?: number; hint?: string; onChange: (value: number) => void;
 }) {
   return (
     <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
-      <span className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <input type="number" inputMode="decimal" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className="input-field min-w-0 w-full" />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <DraftNumberInput ariaLabel={label} value={value} min={min} max={max} step={step} onChange={onChange} />
         <span className="text-xs text-slate-400">{unit}</span>
-      </span>
+      </div>
       {hint && <span className="mt-1 block text-[11px] leading-relaxed text-slate-400">{hint}</span>}
     </label>
   );

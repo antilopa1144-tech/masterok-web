@@ -17,5 +17,8 @@ export function roomFloorLayoutHref(d: RoomDimensions): string {
     tileH,
     groutMm: 2,
     layoutMode: "straight",
+    reservePercent: 10,
+    surfaceView: "floor",
+    transferSource: "moy-remont",
   });
 }

@@ -36,7 +36,10 @@ const calculatorSlugs = ALL_CALCULATORS_META.map((c) => c.slug).sort();
 const calculatorCategory: Record<string, string> = {};
 for (const c of ALL_CALCULATORS_META) calculatorCategory[c.slug] = c.categorySlug;
 
-const toolSlugs = TOOL_CONFIGS.filter((t) => !t.noindex).map((t) => t.slug).sort();
+// Доступность маршрута и разрешение индексации — независимые свойства.
+// `noindex` управляет metadata/robots, но страница всё равно существует и
+// должна пропускаться middleware.
+const toolSlugs = TOOL_CONFIGS.map((t) => t.slug).sort();
 const checklistSlugs = ALL_CHECKLISTS.map((c) => c.slug).sort();
 
 const fileContent = `// AUTO-GENERATED — DO NOT EDIT MANUALLY

@@ -30,11 +30,11 @@ describe("lighting-layout-to-ceiling", () => {
     expect(url.pathname).toBe("/kalkulyatory/potolki/natyazhnoj-potolok/");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       from: LIGHTING_LAYOUT_TRANSFER_FROM,
-      area: "24",
-      corners: "4",
-      fixtures: "12",
-      roomWidthMm: "4000",
-      roomLengthMm: "6000",
+      inputMode: "0",
+      length: "6",
+      width: "4",
+      lightingNodesEnabled: "1",
+      projectLightingNodeCount: "12",
     });
   });
 
@@ -48,10 +48,11 @@ describe("lighting-layout-to-ceiling", () => {
   it("проверяет согласованность размеров и площади входящего URL", () => {
     const valid = new URLSearchParams({
       from: LIGHTING_LAYOUT_TRANSFER_FROM,
-      area: "24",
-      fixtures: "12",
-      roomWidthMm: "4000",
-      roomLengthMm: "6000",
+      inputMode: "0",
+      length: "6",
+      width: "4",
+      lightingNodesEnabled: "1",
+      projectLightingNodeCount: "12",
     });
     expect(readLightingLayoutCeilingTransfer(valid)).toEqual({
       roomWidthMm: 4000,
@@ -61,12 +62,18 @@ describe("lighting-layout-to-ceiling", () => {
       exactPerimeterM: 20,
     });
 
-    valid.set("area", "25");
+    valid.set("width", "bad");
     expect(readLightingLayoutCeilingTransfer(valid)).toBeNull();
   });
 
   it("из калькулятора передаёт только подсказки, не выдумывая стороны и сетку", () => {
-    const href = buildLightingLayoutHrefFromCeilingCalculator({ area: 20, fixtures: 6 });
+    const href = buildLightingLayoutHrefFromCeilingCalculator({
+      inputMode: 0,
+      length: 5,
+      width: 4,
+      lightingNodesEnabled: 1,
+      projectLightingNodeCount: 6,
+    });
     const url = new URL(href!, "https://getmasterok.ru");
 
     expect(url.pathname).toBe("/instrumenty/rasstanovka-svetilnikov/");
@@ -95,6 +102,11 @@ describe("lighting-layout-to-ceiling", () => {
       areaHint: "18",
       fixturesHint: "6",
     }))).toBeNull();
-    expect(buildLightingLayoutHrefFromCeilingCalculator({ area: 18, fixtures: 6.5 })).toBeNull();
+    expect(buildLightingLayoutHrefFromCeilingCalculator({
+      inputMode: 1,
+      area: 18,
+      lightingNodesEnabled: 1,
+      projectLightingNodeCount: 6.5,
+    })).toBeNull();
   });
 });

@@ -9,10 +9,8 @@ import { ExportButtons } from "./ExportButtons";
 import { CALCULATOR_PRESETS } from "@/lib/calculators/presets";
 import { CALCULATOR_UI_TEXT } from "./uiText";
 import Link from "next/link";
-import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import { getCalculatorMetaBySlug } from "@/lib/calculators/meta.generated";
-import CategoryIcon from "@/components/ui/CategoryIcon";
-import { getCategoryById } from "@/lib/calculators/categories";
+import CompanionLinks from "./CompanionLinks";
 import { trackRecentCalculator } from "./RecentCalculators";
 import TileLayoutTransferBanner from "./TileLayoutTransferBanner";
 import { buildWallpaperLayoutHref } from "@/lib/tools/wallpaper-layout-to-calc";
@@ -29,7 +27,6 @@ export type { CalculatorWidgetProps };
 interface Props {
   calculator: CalculatorWidgetProps;
 }
-
 export default function CalculatorWidget({ calculator }: Props) {
   const searchParams = useSearchParams();
   const fromCalc = searchParams.get("from");
@@ -377,69 +374,6 @@ export default function CalculatorWidget({ calculator }: Props) {
           <CalculatorFAQ faq={calculator.faq} />
         </div>
       )}
-    </div>
-  );
-}
-
-// Keys that commonly transfer between calculators
-const TRANSFERABLE_KEYS = ["area", "length", "width", "height", "inputMode"];
-
-function buildTransferParams(values: Record<string, number>, targetSlug: string): string {
-  const params = new URLSearchParams();
-  for (const key of TRANSFERABLE_KEYS) {
-    if (values[key] != null && values[key] > 0) {
-      params.set(key, String(values[key]));
-    }
-  }
-  params.set("from", targetSlug);
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
-
-function CompanionLinks({ slug, values }: { slug: string; values: Record<string, number> }) {
-  const companions = CALCULATOR_COMPANIONS[slug];
-  if (!companions || companions.length === 0) return null;
-
-  const resolved = companions
-    .map((c) => {
-      const calc = getCalculatorMetaBySlug(c.slug);
-      if (!calc) return null;
-      const cat = getCategoryById(calc.category);
-      return { ...c, calc, cat };
-    })
-    .filter(Boolean) as { slug: string; reason: string; calc: NonNullable<ReturnType<typeof getCalculatorMetaBySlug>>; cat: ReturnType<typeof getCategoryById> }[];
-
-  if (resolved.length === 0) return null;
-
-  return (
-    <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-        Также может пригодиться
-      </p>
-      <div className="space-y-2">
-        {resolved.map((c) => (
-          <Link
-            key={c.slug}
-            href={`/kalkulyatory/${c.calc.categorySlug}/${c.calc.slug}/${buildTransferParams(values, slug)}`}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-accent-300 dark:hover:border-accent-600 transition-all no-underline group"
-          >
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: c.cat?.bgColor ?? "#f1f5f9" }}
-            >
-              <CategoryIcon icon={c.cat?.icon ?? "wrench"} size={18} color={c.cat?.color ?? "#64748b"} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-accent-700 transition-colors">
-                {c.calc.title}
-              </span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {c.reason}
-              </p>
-            </div>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

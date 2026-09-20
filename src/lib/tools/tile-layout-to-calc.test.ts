@@ -231,6 +231,21 @@ describe("buildTileLayoutHref", () => {
     expect(parsed?.openingOffsetLeft).toBe(450);
   });
 
+  it("не превращает отсутствующий запас в ноль при разборе ссылки", () => {
+    const parsed = parseTileLayoutFromSearchParams(new URLSearchParams({
+      surfaceW: "2500",
+      surfaceH: "1700",
+      tileW: "600",
+      tileH: "600",
+      surfaceView: "floor",
+      from: "moy-remont",
+    }));
+
+    expect(parsed?.reservePercent).toBeUndefined();
+    expect(parsed?.surfaceView).toBe("floor");
+    expect(parsed?.transferSource).toBe("moy-remont");
+  });
+
   it("переносит точные размеры и фасовку из калькулятора", () => {
     const href = buildTileLayoutHrefFromCalculatorValues({
       inputMode: 0,

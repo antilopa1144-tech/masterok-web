@@ -276,9 +276,25 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   );
   const lightingLayoutHref = useMemo(
     () => calculator.slug === CEILING_STRETCH_TRANSFER_FROM && hasCalculated
-      ? buildLightingLayoutHrefFromCeilingCalculator({ area: values.area, fixtures: values.fixtures })
+      ? buildLightingLayoutHrefFromCeilingCalculator({
+        inputMode: values.inputMode,
+        length: values.length,
+        width: values.width,
+        area: values.area,
+        lightingNodesEnabled: values.lightingNodesEnabled,
+        projectLightingNodeCount: values.projectLightingNodeCount,
+      })
       : null,
-    [calculator.slug, hasCalculated, values.area, values.fixtures],
+    [
+      calculator.slug,
+      hasCalculated,
+      values.area,
+      values.inputMode,
+      values.length,
+      values.lightingNodesEnabled,
+      values.projectLightingNodeCount,
+      values.width,
+    ],
   );
   const consumptionNormHref = useMemo(
     () => hasCalculated ? buildConsumptionNormHref(calculator.slug) : null,
@@ -418,7 +434,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
         )}
         {calculator.slug === "krepezh" && transferSource === SHEET_LAYOUT_TRANSFER_FROM && (
           <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/20 dark:text-teal-300">
-            Из карты раскроя перенесено <strong>{values.sheetCount} {pluralizeRu(values.sheetCount, ["лист", "листа", "листов"])}</strong>, выбран материал и базовый шаг крепления. Проверьте шаг по системе производителя и условиям основания.
+            Карта раскроя определила листы, но не систему крепления. Выберите способ расчёта и введите проектное количество, подтверждённую норму либо длину линий и шаг. Автоматическая норма по числу листов не назначается.
           </div>
         )}
         {transferSource === PARTITION_FINISHING_TRANSFER_FROM

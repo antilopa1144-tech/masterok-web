@@ -34,12 +34,14 @@ const checklist = (slug: string, label: string): RenovationStageLink => ({
   href: `/instrumenty/chek-listy/${slug}/`,
 });
 
-export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenario> = {
+const RENOVATION_SCENARIO_DEFINITIONS: Record<
+  RenovationScenarioId,
+  Omit<RenovationScenario, "durationLabel">
+> = {
   bathroom: {
     id: "bathroom",
     title: "Ванная",
     icon: "🚿",
-    durationLabel: "2–4 недели",
     description: "Гидроизоляция, стяжка, плитка, затирка и сантехника — в правильном порядке.",
     stages: [
       {
@@ -132,7 +134,6 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
     id: "kitchen",
     title: "Кухня",
     icon: "🍳",
-    durationLabel: "3–6 недель",
     description: "Стяжка, напольное покрытие, стены, фартук.",
     stages: [
       {
@@ -196,7 +197,6 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
     id: "room",
     title: "Комната",
     icon: "🛋️",
-    durationLabel: "2–5 недель",
     description: "Стяжка, пол, отделка стен и потолка.",
     stages: [
       {
@@ -257,7 +257,6 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
     id: "apartment",
     title: "Квартира целиком",
     icon: "🏠",
-    durationLabel: "2–6 месяцев",
     description: "Крупные этапы капремонта со ссылкой на полный чек-лист.",
     stages: [
       {
@@ -328,6 +327,18 @@ export const RENOVATION_SCENARIOS: Record<RenovationScenarioId, RenovationScenar
     ],
   },
 };
+
+export function getScenarioDurationLabel(stages: RenovationStage[]): string {
+  const finalDay = stages.reduce((latest, stage) => Math.max(latest, stage.dayTo), 0);
+  return `до ${finalDay} ${finalDay === 1 ? "дня" : "дней"}`;
+}
+
+export const RENOVATION_SCENARIOS = Object.fromEntries(
+  Object.entries(RENOVATION_SCENARIO_DEFINITIONS).map(([id, scenario]) => [
+    id,
+    { ...scenario, durationLabel: getScenarioDurationLabel(scenario.stages) },
+  ]),
+) as Record<RenovationScenarioId, RenovationScenario>;
 
 export function getScenarioList(): RenovationScenario[] {
   return [

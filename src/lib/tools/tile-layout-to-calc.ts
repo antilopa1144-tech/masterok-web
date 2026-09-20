@@ -18,11 +18,12 @@ export interface TileLayoutTransferInput {
   tilesPerBox?: number;
   packagingSource?: TilePackagingSource;
   reservePercent?: number;
+  surfaceView?: "wall" | "floor";
   hasOpening?: boolean;
   openingW?: number;
   openingH?: number;
   openingOffsetLeft?: number;
-  transferSource?: "calculator";
+  transferSource?: "calculator" | "moy-remont";
   surfaceSource?: "exact" | "area-derived";
 }
 
@@ -220,6 +221,7 @@ export function buildTileLayoutHref(input: TileLayoutTransferInput): string {
   const params = new URLSearchParams();
   if (input.transferSource) params.set("from", input.transferSource);
   if (input.surfaceSource) params.set("surfaceSource", input.surfaceSource);
+  if (input.surfaceView) params.set("surfaceView", input.surfaceView);
   params.set("surfaceW", String(Math.round(input.surfaceW)));
   params.set("surfaceH", String(Math.round(input.surfaceH)));
   params.set("tileW", String(Math.round(input.tileW)));
@@ -311,7 +313,11 @@ export function parseTileLayoutFromSearchParams(
   const packAreaM2 = Number(params.get("packAreaM2"));
   const tilesPerBox = Number(params.get("tilesPerBox"));
   const packagingSource = params.get("packagingSource");
-  const reservePercent = Number(params.get("reservePercent"));
+  const reserveRaw = params.get("reservePercent");
+  const reservePercent = reserveRaw === null
+    ? undefined
+    : parseTileLayoutReservePercent(reserveRaw);
+  const surfaceView = params.get("surfaceView");
   const surfaceSource = params.get("surfaceSource");
   const openingW = Number(params.get("openingW"));
   const openingH = Number(params.get("openingH"));
@@ -328,8 +334,13 @@ export function parseTileLayoutFromSearchParams(
     packAreaM2: isValidTilePackArea(packAreaM2) ? packAreaM2 : undefined,
     tilesPerBox: isValidTilesPerBox(tilesPerBox) ? tilesPerBox : undefined,
     packagingSource: packagingSource === "label" ? "label" : "estimated",
-    reservePercent: Number.isFinite(reservePercent) && reservePercent >= 0 ? reservePercent : undefined,
-    transferSource: params.get("from") === "calculator" ? "calculator" : undefined,
+    reservePercent,
+    surfaceView: surfaceView === "floor" ? "floor" : surfaceView === "wall" ? "wall" : undefined,
+    transferSource: params.get("from") === "calculator"
+      ? "calculator"
+      : params.get("from") === "moy-remont"
+        ? "moy-remont"
+        : undefined,
     surfaceSource: surfaceSource === "area-derived" ? "area-derived" : "exact",
     hasOpening,
     openingW: hasOpening ? openingW : undefined,

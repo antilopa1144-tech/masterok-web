@@ -220,6 +220,7 @@ export const linoleumDef: CalculatorDefinition = {
       : "вдоль ширины комнаты";
     const exactLinearM = cutting.exactLinearM;
     const purchaseLinearM = roundUpToStep(exactLinearM, purchaseStepM);
+    const purchaseSteps = Math.round(purchaseLinearM / purchaseStepM);
     const linearLeftoverM = Math.max(0, purchaseLinearM - exactLinearM);
     const roomArea = roomLength * roomWidth;
     const purchasedCoverageArea = purchaseLinearM * rollWidth;
@@ -260,7 +261,7 @@ export const linoleumDef: CalculatorDefinition = {
       buy_plan: {
         package_label: `linear-meter-step-${purchaseStepM}`,
         package_size: purchaseStepM,
-        packages_count: 0,
+        packages_count: purchaseSteps,
         unit: "м.п.",
       },
     };

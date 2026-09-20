@@ -50,7 +50,7 @@ describe("валидация полей калькулятора", () => {
     ]);
   });
 
-  it("не применяет числовые границы к переключателям", () => {
+  it("отклоняет значение, которого нет среди вариантов выбора", () => {
     const modeField: CalculatorField = {
       key: "mode",
       label: "Режим",
@@ -59,6 +59,23 @@ describe("валидация полей калькулятора", () => {
       options: [{ value: 0, label: "Обычный" }],
     };
 
-    expect(isCalculatorFieldValueValid(modeField, 99)).toBe(true);
+    expect(isCalculatorFieldValueValid(modeField, 0)).toBe(true);
+    expect(isCalculatorFieldValueValid(modeField, 99)).toBe(false);
+    expect(getInvalidCalculatorFields([modeField], { mode: 99 })).toEqual([
+      { field: modeField, value: 99 },
+    ]);
+  });
+
+  it("принимает для переключателя только 0 или 1", () => {
+    const switchField: CalculatorField = {
+      key: "includeReserve",
+      label: "Добавить запас",
+      type: "switch",
+      defaultValue: 0,
+    };
+
+    expect(isCalculatorFieldValueValid(switchField, 0)).toBe(true);
+    expect(isCalculatorFieldValueValid(switchField, 1)).toBe(true);
+    expect(isCalculatorFieldValueValid(switchField, 2)).toBe(false);
   });
 });

@@ -133,31 +133,25 @@ describe("sheet-layout-to-calc", () => {
     expect(url.searchParams.has("surfaceHeightMm")).toBe(false);
   });
 
-  it("переносит точное количество ГКЛ из раскладки в крепёж", () => {
+  it("открывает крепёж без выдуманной нормы по числу листов", () => {
     const href = buildFastenersCalculatorHref(input, 12);
     const url = new URL(href!, "https://getmasterok.ru");
 
     expect(url.pathname).toBe("/kalkulyatory/otdelka/krepezh/");
     expect(url.searchParams.get("from")).toBe("raskladka-listov");
-    expect(url.searchParams.get("materialType")).toBe("0");
-    expect(url.searchParams.get("sheetCount")).toBe("12");
-    expect(url.searchParams.get("fastenerStep")).toBe("250");
-    expect(url.searchParams.get("withFrameScrews")).toBe("1");
+    expect([...url.searchParams.keys()]).toEqual(["from"]);
   });
 
-  it("выбирает режим ОСП и его базовый шаг крепления", () => {
+  it("не назначает ОСП базовый шаг крепления", () => {
     const href = buildFastenersCalculatorHref({ ...input, material: "osb" }, 18);
     const url = new URL(href!, "https://getmasterok.ru");
 
-    expect(url.searchParams.get("materialType")).toBe("1");
-    expect(url.searchParams.get("sheetCount")).toBe("18");
-    expect(url.searchParams.get("fastenerStep")).toBe("200");
-    expect(url.searchParams.get("withFrameScrews")).toBe("0");
+    expect([...url.searchParams.keys()]).toEqual(["from"]);
   });
 
-  it("не строит ссылку на крепёж для своего листа и объёма вне диапазона", () => {
+  it("не строит ссылку на крепёж только для неопределённого своего листа", () => {
     expect(buildFastenersCalculatorHref({ ...input, material: "custom" }, 12)).toBeNull();
-    expect(buildFastenersCalculatorHref(input, 201)).toBeNull();
+    expect(buildFastenersCalculatorHref(input, 201)).not.toBeNull();
   });
 
   it("возвращает из крепежа только к безопасному стартовому формату листа", () => {

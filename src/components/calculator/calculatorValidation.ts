@@ -1,4 +1,5 @@
 import type { CalculatorField } from "@/lib/calculators/types";
+import { resolveFieldOptions } from "@/lib/calculators/field-options";
 
 export interface InvalidCalculatorField {
   field: CalculatorField;
@@ -12,9 +13,18 @@ function isNumericField(field: CalculatorField): boolean {
 export function isCalculatorFieldValueValid(
   field: CalculatorField,
   value: number,
+  values: Record<string, number> = { [field.key]: value },
 ): boolean {
-  if (!isNumericField(field)) return true;
   if (!Number.isFinite(value)) return false;
+
+  if (field.type === "switch") return value === 0 || value === 1;
+
+  if (field.type === "select" || field.type === "radio") {
+    const options = resolveFieldOptions(field, values) ?? [];
+    return options.length === 0 || options.some((option) => option.value === value);
+  }
+
+  if (!isNumericField(field)) return true;
 
   const min = field.min ?? 0;
   const max = field.max ?? 100;
@@ -29,6 +39,6 @@ export function getInvalidCalculatorFields(
 ): InvalidCalculatorField[] {
   return fields.flatMap((field) => {
     const value = values[field.key] ?? field.defaultValue;
-    return isCalculatorFieldValueValid(field, value) ? [] : [{ field, value }];
+    return isCalculatorFieldValueValid(field, value, values) ? [] : [{ field, value }];
   });
 }

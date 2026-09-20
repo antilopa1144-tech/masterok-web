@@ -163,6 +163,7 @@ export const ROUTE_CALCULATOR_CATEGORY: Readonly<Record<string, string>> = {
 export const ROUTE_TOOL_SLUGS: readonly string[] = [
   "chek-listy",
   "kalendar-remonta",
+  "kalkulyator",
   "konverter",
   "lineynyy-raskroy",
   "moy-remont",

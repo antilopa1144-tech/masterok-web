@@ -5,6 +5,7 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -211,12 +212,12 @@ export default function BrickworkGenerator() {
                 <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
                   <label className="text-xs text-stone-500 dark:text-slate-400">
                     Ширина
-                    <input aria-label="Ширина стены в миллиметрах" type="number" inputMode="numeric" min={250} max={30000} value={surfaceW} onChange={(event) => { markStarted("surface_size"); setSurfaceW(Number(event.target.value) || 250); }} className="input-field mt-1 w-full" />
+                    <DraftNumberInput ariaLabel="Ширина стены в миллиметрах" min={250} max={30000} value={surfaceW} onChange={(next) => { markStarted("surface_size"); setSurfaceW(next); }} className="input-field mt-1 w-full" />
                   </label>
                   <span className="pb-3 text-stone-400">×</span>
                   <label className="text-xs text-stone-500 dark:text-slate-400">
                     Высота
-                    <input aria-label="Высота стены в миллиметрах" type="number" inputMode="numeric" min={65} max={15000} value={surfaceH} onChange={(event) => { markStarted("surface_size"); setSurfaceH(Number(event.target.value) || 65); }} className="input-field mt-1 w-full" />
+                    <DraftNumberInput ariaLabel="Высота стены в миллиметрах" min={65} max={15000} value={surfaceH} onChange={(next) => { markStarted("surface_size"); setSurfaceH(next); }} className="input-field mt-1 w-full" />
                   </label>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">

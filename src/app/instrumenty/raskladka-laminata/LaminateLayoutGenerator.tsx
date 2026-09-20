@@ -5,6 +5,7 @@ import { useState, useMemo, useRef, useCallback, useEffect, useId } from "react"
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
+import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
   trackToolExport,
@@ -471,9 +472,9 @@ export default function LaminateLayoutGenerator() {
             Размер помещения
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
-            <input aria-label="Ширина помещения в миллиметрах" type="number" inputMode="numeric" min={300} max={30000} value={surfaceW} onChange={(e) => { markStarted("surface_size"); setSurfaceW(Number(e.target.value) || 300); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Ширина помещения в миллиметрах" min={300} max={30000} value={surfaceW} onChange={(next) => { markStarted("surface_size"); setSurfaceW(next); }} />
             <span className="text-slate-400">×</span>
-            <input aria-label="Длина помещения в миллиметрах" type="number" inputMode="numeric" min={300} max={30000} value={surfaceH} onChange={(e) => { markStarted("surface_size"); setSurfaceH(Number(e.target.value) || 300); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Длина помещения в миллиметрах" min={300} max={30000} value={surfaceH} onChange={(next) => { markStarted("surface_size"); setSurfaceH(next); }} />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -502,9 +503,9 @@ export default function LaminateLayoutGenerator() {
             Размер доски (длина × ширина)
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 sm:max-w-sm">
-            <input aria-label="Длина доски в миллиметрах" type="number" inputMode="numeric" min={100} max={3000} value={boardW} onChange={(e) => { markStarted("material_size"); setBoardW(Number(e.target.value) || 100); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Длина доски в миллиметрах" min={100} max={3000} value={boardW} onChange={(next) => { markStarted("material_size"); setBoardW(next); }} />
             <span className="text-slate-400">×</span>
-            <input aria-label="Ширина доски в миллиметрах" type="number" inputMode="numeric" min={40} max={500} value={boardH} onChange={(e) => { markStarted("material_size"); setBoardH(Number(e.target.value) || 40); }} className="input-field min-w-0 w-full" />
+            <DraftNumberInput ariaLabel="Ширина доски в миллиметрах" min={40} max={500} value={boardH} onChange={(next) => { markStarted("material_size"); setBoardH(next); }} />
             <span className="text-xs text-slate-400">мм</span>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">

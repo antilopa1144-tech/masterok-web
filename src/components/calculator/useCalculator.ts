@@ -112,6 +112,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [customModifiers, setCustomModifiersState] = useState<Partial<AccuracyModifiers>>({});
   const [hasStarted, setHasStarted] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const calculationRevisionRef = useRef(0);
   const hasTrackedStartRef = useRef(false);
   const lastValidationErrorSignatureRef = useRef("");
 
@@ -163,8 +164,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   useEffect(() => {
     const hasParams = calculator.fields.some((f) => searchParams.get(f.key) !== null);
     if (hasParams) {
+      const requestRevision = ++calculationRevisionRef.current;
       void getCalculateFn(calculator.slug).then((fn) => {
-        if (fn) {
+        if (fn && calculationRevisionRef.current === requestRevision) {
           const initVals = getInitialValues();
           const initialFields = getVisibleCalculatorFields(calculator, initVals);
           if (getInvalidCalculatorFields(initialFields, initVals).length > 0) return;
@@ -185,11 +187,12 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   const runAutoCalc = useCallback((newValues: Record<string, number>) => {
     clearTimeout(debounceRef.current);
+    const requestRevision = ++calculationRevisionRef.current;
     const nextFields = getVisibleCalculatorFields(calculator, newValues);
     if (getInvalidCalculatorFields(nextFields, newValues).length > 0) return;
     debounceRef.current = setTimeout(() => {
       void getCalculateFn(calculator.slug).then((fn) => {
-        if (!fn) return;
+        if (!fn || calculationRevisionRef.current !== requestRevision) return;
         const res = fn({ ...newValues, accuracyMode: accuracyModeRef.current as unknown as number });
         setResult(applyTransferResult(res));
         setHasCalculated(true);
@@ -206,7 +209,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   }, [calculator, applyTransferResult]);
 
   // Очистка таймера при размонтировании
-  useEffect(() => () => clearTimeout(debounceRef.current), []);
+  useEffect(() => () => {
+    clearTimeout(debounceRef.current);
+    calculationRevisionRef.current += 1;
+  }, []);
 
   const handleChange = useCallback((key: string, value: number) => {
     markCalculatorStarted();
@@ -231,8 +237,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     if (hasValidationErrors) return;
     // Trigger recalculation with new mode
     clearTimeout(debounceRef.current);
+    const requestRevision = ++calculationRevisionRef.current;
     void getCalculateFn(calculator.slug).then((fn) => {
-      if (!fn) return;
+      if (!fn || calculationRevisionRef.current !== requestRevision) return;
       const res = fn({ ...values, accuracyMode: mode as unknown as number });
       setResult(applyTransferResult(res));
       setHasCalculated(true);
@@ -241,6 +248,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   const handleCalculate = useCallback(() => {
     clearTimeout(debounceRef.current);
+    const requestRevision = ++calculationRevisionRef.current;
     markCalculatorStarted();
     if (hasValidationErrors) {
       const invalidFieldKeys = invalidFields.map(({ field }) => field.key).sort();
@@ -257,7 +265,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     }
     lastValidationErrorSignatureRef.current = "";
     void getCalculateFn(calculator.slug).then((fn) => {
-      if (!fn) return;
+      if (!fn || calculationRevisionRef.current !== requestRevision) return;
       const res = fn({ ...values, accuracyMode: accuracyMode as unknown as number });
       const adjustedResult = applyTransferResult(res);
       setResult(adjustedResult);
@@ -279,6 +287,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   }, [calculator.slug, calculator.id, calculator.title, values, accuracyMode, hasValidationErrors, invalidFields, markCalculatorStarted, applyTransferResult]);
 
   const handleReset = useCallback(() => {
+    clearTimeout(debounceRef.current);
+    calculationRevisionRef.current += 1;
     const defaults = Object.fromEntries(
       calculator.fields.map((f) => [f.key, f.defaultValue])
     );
@@ -329,6 +339,8 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   // Восстановить из истории
   const handleRestoreHistory = useCallback((entry: HistoryEntry) => {
+    clearTimeout(debounceRef.current);
+    calculationRevisionRef.current += 1;
     markCalculatorStarted();
     setValues(entry.values);
     setResult(entry.result);
