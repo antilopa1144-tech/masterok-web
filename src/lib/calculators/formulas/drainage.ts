@@ -34,6 +34,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const drainageDef: CalculatorDefinition = {
   id: "engineering_drainage",
   slug: "drenazh-uchastka",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор дренажа участка",
   h1: "Калькулятор дренажа — материалы по проектной трассе",

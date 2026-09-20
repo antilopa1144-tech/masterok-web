@@ -11,6 +11,7 @@ const formatRuNumber = (value: number): string => new Intl.NumberFormat("ru-RU",
 export const softRoofingDef: CalculatorDefinition = {
   id: "soft_roofing",
   slug: "myagkaya-krovlya",
+  lastModified: "2026-09-20",
   title: "Калькулятор мягкой кровли",
   h1: "Калькулятор мягкой кровли онлайн — расчёт гибкой черепицы",
   description: "Рассчитайте гибкую черепицу, сплошной подкладочный и ендовный ковры, кровельные гвозди и доборные элементы. ОСП — только по явному выбору.",

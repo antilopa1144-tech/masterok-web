@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const tileGroutDef: CalculatorDefinition = {
   id: "floors_tile_grout",
   slug: "zatirka",
+  lastModified: "2026-09-20",
   title: "Калькулятор затирки для плитки",
   h1: "Калькулятор затирки для плитки онлайн — расчёт расхода",
   description: "Рассчитайте количество затирки (фуги) для плитки с учётом ширины и глубины шва. Ceresit, Mapei, Litokol.",

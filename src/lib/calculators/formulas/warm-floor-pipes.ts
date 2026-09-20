@@ -10,6 +10,7 @@ const format = (value: number, maximumFractionDigits = 1) =>
 export const warmFloorPipesDef: CalculatorDefinition = {
   id: "warm_floor_pipes",
   slug: "vodyanoy-teplyy-pol",
+  lastModified: "2026-09-20",
   title: "Калькулятор водяного тёплого пола",
   h1: "Калькулятор водяного тёплого пола — длина трубы и проверка контуров",
   description:

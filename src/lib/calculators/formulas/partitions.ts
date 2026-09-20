@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const partitionsDef: CalculatorDefinition = {
   id: "partitions_blocks",
   slug: "peregorodki-iz-blokov",
+  lastModified: "2026-09-20",
   title: "Калькулятор перегородок из блоков",
   h1: "Калькулятор перегородок из газоблока и пеноблока онлайн",
   description: "Рассчитайте количество блоков (газобетон, пенобетон), клея и армирующей сетки для возведения перегородки.",

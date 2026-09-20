@@ -9,6 +9,7 @@ const format = (value: number, maximumFractionDigits = 2) =>
 export const sewageDef: CalculatorDefinition = {
   id: "sewage",
   slug: "septik",
+  lastModified: "2026-09-20",
   title: "Калькулятор септика",
   h1: "Калькулятор септика — минимальный объём и проверка проекта",
   description:

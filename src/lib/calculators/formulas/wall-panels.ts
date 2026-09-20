@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const wallPanelsDef: CalculatorDefinition = {
   id: "walls_panels",
   slug: "paneli-dlya-sten",
+  lastModified: "2026-09-20",
   title: "Калькулятор панелей для стен",
   h1: "Калькулятор панелей для стен — расчёт ПВХ, МДФ и 3D-панелей",
   description: "Рассчитайте количество ПВХ-, МДФ- или 3D-панелей на стены, запас на подрезку, клей, обрешётку и комплектующие.",

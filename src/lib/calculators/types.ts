@@ -124,6 +124,8 @@ export interface Category {
 export interface CalculatorMeta {
   id: string;
   slug: string;         // URL slug для /kalkulyatory/[cat]/[slug]/
+  /** Дата последнего значимого изменения формы, расчёта или содержимого страницы. */
+  lastModified: string; // YYYY-MM-DD; используется в sitemap и structured data
   title: string;        // название
   h1: string;           // SEO H1
   description: string;  // краткое описание

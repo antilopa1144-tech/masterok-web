@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const facadeInsulationDef: CalculatorDefinition = {
   id: "insulation_mineral_wool",
   slug: "uteplenie-fasada-minvatoj",
+  lastModified: "2026-09-20",
   title: "Калькулятор утепления фасада минватой",
   h1: "Калькулятор утепления фасада минватой — расчёт материалов",
   description: "Рассчитайте минеральную вату, клей, дюбели и штукатурку для системы наружного утепления с тонким штукатурным слоем — «мокрого фасада».",

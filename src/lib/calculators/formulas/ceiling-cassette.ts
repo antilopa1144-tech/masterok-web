@@ -153,6 +153,7 @@ const calculateCountPurchase = (
 export const ceilingCassetteDef: CalculatorDefinition = {
   id: "ceilings_cassette",
   slug: "kassetnyi-potolok",
+  lastModified: "2026-09-20",
   title: "Калькулятор кассетного потолка",
   h1: "Калькулятор кассетного потолка — раскладка и проектные материалы",
   description:

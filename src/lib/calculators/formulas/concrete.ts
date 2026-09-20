@@ -9,6 +9,7 @@ const cementManufacturerField = buildManufacturerField("cement", { label: "Пр�
 export const concreteDef: CalculatorDefinition = {
   id: "concrete_universal",
   slug: "beton",
+  lastModified: "2026-09-20",
   title: "Калькулятор бетона",
   h1: "Калькулятор бетона онлайн — расчёт объёма и состава смеси",
   description: "Рассчитайте геометрический объём и план заказа готовой смеси. Для самостоятельного замеса получите ориентировочную закупку компонентов, а не проектный рецепт бетона.",

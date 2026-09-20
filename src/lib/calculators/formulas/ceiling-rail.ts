@@ -93,6 +93,7 @@ const calculateLinearPurchase = (
 export const ceilingRailDef: CalculatorDefinition = {
   id: "ceilings_rail",
   slug: "reechnyj-potolok",
+  lastModified: "2026-09-20",
   title: "Калькулятор реечного потолка",
   h1: "Калькулятор реечного потолка — рейки и проектные материалы",
   description:

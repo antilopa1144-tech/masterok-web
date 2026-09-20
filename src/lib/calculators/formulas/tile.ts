@@ -31,6 +31,7 @@ function mapLegacyComplexityToCanonical(roomComplexity: number | undefined): num
 export const tileDef: CalculatorDefinition = {
   id: "tile",
   slug: "plitka",
+  lastModified: "2026-09-20",
   formulaVersion: tileCanonicalSpec.formula_version,
   title: "Калькулятор плитки",
   h1: "Калькулятор плитки онлайн — расчёт количества плитки и клея",

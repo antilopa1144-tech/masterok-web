@@ -6,6 +6,7 @@ import stripfoundationSpec from "../../../../configs/calculators/strip-foundatio
 export const stripFoundationDef: CalculatorDefinition = {
   id: "strip_foundation",
   slug: "lentochnyy-fundament",
+  lastModified: "2026-09-20",
   title: "Калькулятор ленточного фундамента",
   h1: "Калькулятор ленточного фундамента — бетон, арматура и опалубка",
   description: "Рассчитайте по заданным размерам чистый объём бетона, арматуру, площадь опалубки и количество досок для ленточного фундамента.",

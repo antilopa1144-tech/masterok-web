@@ -6,6 +6,7 @@ import type { CalculatorDefinition } from "../types";
 export const heatingDef: CalculatorDefinition = {
   id: "engineering_heating",
   slug: "otoplenie-radiatory",
+  lastModified: "2026-09-20",
   formulaVersion: heatingSpec.formula_version,
   title: "Калькулятор радиаторов отопления",
   h1: "Калькулятор радиаторов — мощность при рабочем режиме",

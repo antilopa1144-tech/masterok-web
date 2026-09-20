@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const gypsumBoardDef: CalculatorDefinition = {
   id: "gypsum_board",
   slug: "gipsokarton-potolok",
+  lastModified: "2026-09-20",
   title: "Калькулятор гипсокартона на потолок",
   h1: "Калькулятор гипсокартона на потолок — расчёт листов, профилей и крепежа",
   description: "Рассчитайте листы гипсокартона, потолочные профили 60×27, направляющие профили 27×28, подвесы, дюбели и саморезы.",

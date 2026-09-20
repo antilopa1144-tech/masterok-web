@@ -29,6 +29,7 @@ const otherGroup = "Крепёж и площадки по проекту";
 export const stairsDef: CalculatorDefinition = {
   id: "stairs",
   slug: "kalkulyator-lestnicy",
+  lastModified: "2026-09-20",
   title: "Калькулятор прямой лестницы",
   h1: "Прямая лестница — геометрия марша и закупка по проекту",
   description:

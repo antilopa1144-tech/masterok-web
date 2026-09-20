@@ -35,7 +35,7 @@ export const SITE_FOUNDING_DATE = "2026-02-01";
 // автоматическое обновление воспринимается поисковиками как имитация freshness
 // (Google/Yandex могут штрафовать за fake lastmod в sitemap/schema).
 // Следующий апдейт — при значимом пересмотре расчётов или выходе новых СП.
-export const SITE_LAST_REVIEWED = "2026-05-25";
+export const SITE_LAST_REVIEWED = "2026-09-20";
 
 // Ссылки на внешние профили организации (sameAs для Schema.org).
 export const MASTEROK_RUSTORE_URL = "https://www.rustore.ru/catalog/app/ru.masterok.app";

@@ -22,6 +22,7 @@ describe("meta.generated.ts должен быть синхронен с ALL_CALC
       expect(meta, `meta для ${full.id} отсутствует`).toBeDefined();
       if (!meta) continue;
       expect(meta.slug).toBe(full.slug);
+      expect(meta.lastModified).toBe(full.lastModified);
       expect(meta.title).toBe(full.title);
       expect(meta.h1).toBe(full.h1);
       expect(meta.description).toBe(full.description);

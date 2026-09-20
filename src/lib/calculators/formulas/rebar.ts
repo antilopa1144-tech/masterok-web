@@ -9,6 +9,7 @@ const hideForFrame = { key: "structureType", op: "ne" as const, value: 1 };
 export const rebarDef: CalculatorDefinition = {
   id: "rebar",
   slug: "armatura",
+  lastModified: "2026-09-20",
   title: "Калькулятор арматуры",
   h1: "Калькулятор арматуры — метраж, вес и прутки к покупке",
   description:

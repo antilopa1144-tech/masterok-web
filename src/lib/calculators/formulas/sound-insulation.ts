@@ -39,6 +39,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const soundInsulationDef: CalculatorDefinition = {
   id: "insulation_sound",
   slug: "zvukoizolyaciya",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор звукоизоляции",
   h1: "Калькулятор звукоизоляции — материалы по фактической фасовке",

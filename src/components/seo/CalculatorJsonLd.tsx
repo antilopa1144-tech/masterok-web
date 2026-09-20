@@ -1,9 +1,10 @@
-import { SITE_FOUNDING_DATE, SITE_LAST_REVIEWED, SITE_NAME, SITE_SAME_AS, SITE_URL, siteCitationsToSchema } from "@/lib/site";
+import { SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL, siteCitationsToSchema } from "@/lib/site";
 
 interface CalculatorJsonLdProps {
   calc: {
     id: string;
     slug: string;
+    lastModified: string;
     title: string;
     h1: string;
     description: string;
@@ -43,7 +44,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
       availability: "https://schema.org/InStock",
     },
     datePublished: SITE_FOUNDING_DATE,
-    dateModified: SITE_LAST_REVIEWED,
+    dateModified: calc.lastModified,
     author: {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
@@ -150,7 +151,7 @@ export function CalculatorJsonLd({ calc, categoryLabel, canonicalUrl }: Calculat
     inLanguage: "ru",
     url: canonicalUrl,
     datePublished: SITE_FOUNDING_DATE,
-    dateModified: SITE_LAST_REVIEWED,
+    dateModified: calc.lastModified,
     author: {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,

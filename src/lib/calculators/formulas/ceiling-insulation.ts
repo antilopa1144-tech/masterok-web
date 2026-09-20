@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const ceilingInsulationDef: CalculatorDefinition = {
   id: "ceilings_insulation",
   slug: "uteplenie-potolka",
+  lastModified: "2026-09-20",
   title: "Калькулятор утепления потолка",
   h1: "Калькулятор утепления потолка — минвата и экструдированный пенополистирол",
   description: "Рассчитайте количество минеральной ваты или экструдированного пенополистирола (ЭППС), пароизоляции и соединительной ленты.",

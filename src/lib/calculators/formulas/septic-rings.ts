@@ -27,6 +27,7 @@ const formatChamberCount = (count: number): string =>
 export const septicRingsDef: CalculatorDefinition = {
   id: "engineering_septic_rings",
   slug: "septik-iz-kolets",
+  lastModified: "2026-09-20",
   title: "Калькулятор септика из железобетонных колец",
   h1: "Калькулятор септика из железобетонных колец — расчёт материалов",
   description: "Проверьте минимальный рабочий объём и геометрическое число колец КС-10/15/20, днищ, перекрытий и прямых отрезков трубы. Фильтрация и узлы — только по проекту.",

@@ -70,6 +70,7 @@ function getSemiEllipseGeometry(width: number, rise: number) {
 export const greenhouseDef: CalculatorDefinition = {
   id: "facade_greenhouse",
   slug: "teplitsa-iz-polikarbonata",
+  lastModified: "2026-09-20",
   title: "Калькулятор теплицы из поликарбоната",
   h1: "Калькулятор теплицы из поликарбоната — площадь и листы",
   description: "Рассчитайте площадь покрытия арочной или двускатной теплицы и теоретический минимум листов поликарбоната с явным запасом на раскрой.",

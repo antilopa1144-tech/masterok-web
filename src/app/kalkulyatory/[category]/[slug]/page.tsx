@@ -126,6 +126,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             calculator={{
               id: calc.id,
               slug: calc.slug,
+              lastModified: calc.lastModified,
               title: calc.title,
               h1: calc.h1,
               description: calc.metaDescription,

@@ -7,6 +7,7 @@ import type { CalculatorDefinition } from "../types";
 export const drywallCeilingDef: CalculatorDefinition = {
   id: "drywall_ceiling",
   slug: "podvesnoy-potolok-gkl",
+  lastModified: "2026-09-20",
   formulaVersion: drywallCeilingSpec.formula_version,
   title: "Калькулятор потолка КНАУФ П 113",
   h1: "Потолок из гипсовых плит КНАУФ П 113 — материалы к покупке",

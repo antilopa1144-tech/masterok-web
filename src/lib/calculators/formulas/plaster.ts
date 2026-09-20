@@ -26,6 +26,7 @@ function isCompatibleProductType(productType: string, plasterType: number): bool
 export const plasterDef: CalculatorDefinition = {
   id: "mixes_plaster",
   slug: "shtukaturka",
+  lastModified: "2026-09-20",
   formulaVersion: plasterCanonicalSpec.formula_version,
   title: "Калькулятор штукатурки",
   h1: "Калькулятор штукатурки онлайн — расчёт расхода смеси на стены",

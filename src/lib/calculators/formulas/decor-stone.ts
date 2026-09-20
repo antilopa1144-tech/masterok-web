@@ -7,6 +7,7 @@ import type { CalculatorDefinition } from "../types";
 export const decorStoneDef: CalculatorDefinition = {
   id: "walls_decor_stone",
   slug: "dekorativnyj-kamen",
+  lastModified: "2026-09-20",
   title: "Калькулятор декоративного камня",
   h1: "Калькулятор декоративного камня онлайн — расчёт покупки",
   description: "Рассчитайте чистую площадь, запас, упаковки камня и расходники по данным с этикеток выбранных материалов.",

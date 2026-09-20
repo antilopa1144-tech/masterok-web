@@ -77,6 +77,7 @@ const pluralRu = (
 export const ceilingStretchDef: CalculatorDefinition = {
   id: "ceilings_stretch",
   slug: "natyazhnoj-potolok",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор натяжного потолка",
   h1: "Калькулятор натяжного потолка — площадь и проектные материалы",

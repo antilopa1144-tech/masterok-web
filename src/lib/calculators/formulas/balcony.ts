@@ -63,6 +63,7 @@ const plural = (
 export const balconyDef: CalculatorDefinition = {
   id: "balcony",
   slug: "otdelka-balkona",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор обшивки балкона",
   h1: "Калькулятор обшивки балкона — панели, вагонка и упаковки",

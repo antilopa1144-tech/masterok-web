@@ -64,6 +64,7 @@ const plural = (
 export const waterproofingDef: CalculatorDefinition = {
   id: "bathroom_waterproof",
   slug: "gidroizolyaciya-vlagozaschita",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор гидроизоляции",
   h1: "Калькулятор гидроизоляции — расход по техкарте и упаковка",

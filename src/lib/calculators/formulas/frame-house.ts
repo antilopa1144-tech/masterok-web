@@ -25,6 +25,7 @@ const hideWithoutFramingFasteners = {
 export const frameHouseDef: CalculatorDefinition = {
   id: "frame_house",
   slug: "karkasnyj-dom",
+  lastModified: "2026-09-20",
   title: "Калькулятор материалов каркасного дома",
   h1: "Каркасный дом — закупка материалов по проектной ведомости",
   description:

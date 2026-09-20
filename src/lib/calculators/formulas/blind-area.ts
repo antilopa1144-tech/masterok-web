@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const blindAreaDef: CalculatorDefinition = {
   id: "foundation_blind_area",
   slug: "otmostka",
+  lastModified: "2026-09-20",
   title: "Калькулятор отмостки",
   h1: "Калькулятор отмостки вокруг дома — площадь, бетон и материалы",
   description: "Рассчитайте площадь отмостки вокруг дома, объём бетона, песка, щебня, геотекстиль и утепление по периметру, ширине и толщине.",

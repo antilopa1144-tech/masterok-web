@@ -35,6 +35,7 @@ const LARGE_FORMAT_CLASS = 3;
 export const tileAdhesiveDef: CalculatorDefinition = {
   id: "mixes_tile_glue",
   slug: "klej-dlya-plitki",
+  lastModified: "2026-09-20",
   title: "Калькулятор плиточного клея",
   h1: "Калькулятор плиточного клея онлайн — расчёт расхода Ceresit, Knauf",
   description: "Рассчитайте количество плиточного клея по площади, размеру плитки и толщине нанесения. Ceresit CM, Knauf Флексклебер.",

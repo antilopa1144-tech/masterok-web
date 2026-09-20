@@ -14,6 +14,7 @@ const getSpecDefault = (key: string, fallback: number): number => Number(
 export const facadePanelsDef: CalculatorDefinition = {
   id: "exterior_facade_panels",
   slug: "fasadnye-paneli",
+  lastModified: "2026-09-20",
   title: "Калькулятор фасадных панелей",
   h1: "Калькулятор фасадных панелей — расчёт к покупке",
   description: "Рассчитайте чистую площадь фасада, панели с одним явным запасом, профиль, утеплитель и доборные элементы по данным выбранной системы.",

@@ -19,6 +19,7 @@ const RESERVE_OPTIONS = [
 export const lawnDef: CalculatorDefinition = {
   id: "facade_lawn",
   slug: "gazon",
+  lastModified: "2026-09-20",
   formulaVersion: LAWN_PURCHASE_FORMULA_VERSION,
   title: "Калькулятор газона",
   h1: "Калькулятор газона — семена или рулоны к покупке",

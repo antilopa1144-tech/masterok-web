@@ -16,7 +16,11 @@ import { buildSitemapChunk } from "@/lib/sitemap/build";
 import { GET as getSitemapChunk, generateStaticParams } from "@/app/sitemap/[id]/route";
 import { GET as getSitemapIndex } from "@/app/sitemap.xml/route";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
+import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
+import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { SITE_URL } from "@/lib/site";
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 describe("sitemap chunks", () => {
   it("parseSitemapChunkId принимает число и строку из Next.js", () => {
@@ -147,6 +151,39 @@ describe("sitemap chunks", () => {
     expect(noindexTools.length).toBeGreaterThan(0);
     for (const tool of noindexTools) {
       expect(urls).not.toContain(`${SITE_URL}${toolHref(tool.slug)}`);
+    }
+  });
+
+  it("публикует достоверный lastmod каждого калькулятора из его meta", async () => {
+    const entries = await buildSitemapChunk(2);
+
+    expect(entries).toHaveLength(ALL_CALCULATORS_META.length);
+    for (const calculator of ALL_CALCULATORS_META) {
+      expect(calculator.lastModified).toMatch(ISO_DATE);
+      expect(entries).toContainEqual(expect.objectContaining({
+        url: `${SITE_URL}/kalkulyatory/${calculator.categorySlug}/${calculator.slug}/`,
+        lastModified: calculator.lastModified,
+      }));
+    }
+  });
+
+  it("публикует lastmod каждого инструмента и чек-листа из источника страницы", async () => {
+    const entries = await buildSitemapChunk(3);
+
+    for (const tool of TOOL_CONFIGS.filter((item) => !item.noindex)) {
+      expect(tool.lastModified).toMatch(ISO_DATE);
+      expect(entries).toContainEqual(expect.objectContaining({
+        url: `${SITE_URL}${toolHref(tool.slug)}`,
+        lastModified: tool.lastModified,
+      }));
+    }
+
+    for (const checklist of ALL_CHECKLISTS) {
+      expect(checklist.lastModified).toMatch(ISO_DATE);
+      expect(entries).toContainEqual(expect.objectContaining({
+        url: `${SITE_URL}/instrumenty/chek-listy/${checklist.slug}/`,
+        lastModified: checklist.lastModified,
+      }));
     }
   });
 

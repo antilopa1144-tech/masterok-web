@@ -71,6 +71,7 @@ const pluralRu = (
 export const selfLevelingDef: CalculatorDefinition = {
   id: "floors_self_leveling",
   slug: "nalivnoy-pol",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор наливного пола",
   h1: "Калькулятор наливного пола — смесь, толщина и мешки",

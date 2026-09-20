@@ -11,6 +11,7 @@ const hideWithoutInsulation = { key: "insulationThickness", op: "eq" as const, v
 export const foundationSlabDef: CalculatorDefinition = {
   id: "foundation_slab",
   slug: "plitnyj-fundament",
+  lastModified: "2026-09-20",
   title: "Калькулятор плитного фундамента",
   h1: "Калькулятор плитного фундамента — материалы по проектной схеме",
   description:

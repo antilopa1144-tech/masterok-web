@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const aeratedConcreteDef: CalculatorDefinition = {
   id: "walls_aerated_concrete",
   slug: "gazobeton",
+  lastModified: "2026-09-20",
   title: "Калькулятор газобетона",
   h1: "Калькулятор газобетона онлайн — расчёт блоков и клея",
   description: "Рассчитайте количество газобетонных блоков, тонкошовного клея и предварительный расход армирования для стен и перегородок.",

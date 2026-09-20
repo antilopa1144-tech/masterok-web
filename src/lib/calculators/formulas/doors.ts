@@ -36,6 +36,7 @@ const plural = (
 export const doorsDef: CalculatorDefinition = {
   id: "doors_install",
   slug: "ustanovka-dverej",
+  lastModified: "2026-09-20",
   formulaVersion: DOORS_PURCHASE_FORMULA_VERSION,
   title: "Калькулятор материалов для установки дверей",
   h1: "Калькулятор установки дверей — одна позиция к покупке",

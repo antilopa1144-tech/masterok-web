@@ -47,6 +47,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const foamBlocksDef: CalculatorDefinition = {
   id: "foam_blocks",
   slug: "penobloki",
+  lastModified: "2026-09-20",
   title: "Калькулятор пеноблоков и керамзитоблоков",
   h1: "Калькулятор пеноблоков онлайн — расчёт количества блоков",
   description: "Рассчитайте предварительное количество пеноблоков или керамзитобетонных стеновых камней по площади стены, проёмам, размеру и явному запасу.",

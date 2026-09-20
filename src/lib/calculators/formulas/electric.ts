@@ -58,6 +58,7 @@ function buildElectricSummaryCards(
 export const electricDef: CalculatorDefinition = {
   id: "engineering_electrics",
   slug: "elektrika",
+  lastModified: "2026-09-20",
   title: "Калькулятор электропроводки",
   h1: "Калькулятор электропроводки онлайн — расчёт кабеля и автоматов",
   description: "Рассчитайте метраж кабеля, количество автоматических выключателей, устройств защитного отключения (УЗО) и розеток для квартиры или дома.",

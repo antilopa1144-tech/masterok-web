@@ -26,6 +26,7 @@ const hideWithoutInsulatedWalls = [
 export const basementDef: CalculatorDefinition = {
   id: "foundation_basement",
   slug: "podval-fundamenta",
+  lastModified: "2026-09-20",
   title: "Калькулятор монолитного подвала",
   h1: "Калькулятор подвала — материалы по проектной схеме",
   description:

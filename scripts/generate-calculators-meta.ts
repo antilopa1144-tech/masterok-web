@@ -31,6 +31,7 @@ const OUTPUT_PATH = path.resolve(__dirname, "../src/lib/calculators/meta.generat
 const meta = ALL_CALCULATORS.map((c) => ({
   id: c.id,
   slug: c.slug,
+  lastModified: c.lastModified,
   title: c.title,
   h1: c.h1,
   description: c.description,

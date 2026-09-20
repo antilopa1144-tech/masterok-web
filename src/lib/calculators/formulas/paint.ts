@@ -12,6 +12,7 @@ const paintManufacturerField = buildManufacturerField("paint");
 export const paintDef: CalculatorDefinition = {
   id: "paint",
   slug: "kraska",
+  lastModified: "2026-09-20",
   formulaVersion: paintCanonicalSpec.formula_version,
   title: "Калькулятор краски",
   h1: "Калькулятор краски онлайн — расчёт количества краски для стен и потолка",

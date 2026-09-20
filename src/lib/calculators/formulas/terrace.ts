@@ -69,6 +69,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const terraceDef: CalculatorDefinition = {
   id: "terrace",
   slug: "kalkulyator-terrasnoy-doski",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор террасной доски",
   h1: "Калькулятор террасной доски — раскрой и закупка по фактическому профилю",

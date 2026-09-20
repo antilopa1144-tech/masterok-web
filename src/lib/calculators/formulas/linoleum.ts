@@ -72,6 +72,7 @@ const buildCuttingOption = ({
 export const linoleumDef: CalculatorDefinition = {
   id: "floors_linoleum",
   slug: "linoleum",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор линолеума",
   h1: "Калькулятор линолеума онлайн — расчёт погонных метров и раскроя",

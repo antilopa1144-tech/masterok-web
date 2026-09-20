@@ -57,6 +57,7 @@ const RESERVE_OPTIONS = [
 export const atticDef: CalculatorDefinition = {
   id: "attic",
   slug: "otdelka-mansardy",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор утепления мансарды",
   h1: "Калькулятор утепления мансарды — по проектной толщине и упаковке",

@@ -17,6 +17,7 @@ const SHEET_SIZES: Record<number, [number, number]> = {
 export const drywallDef: CalculatorDefinition = {
   id: "drywall",
   slug: "gipsokarton",
+  lastModified: "2026-09-20",
   title: "Калькулятор гипсокартона",
   h1: "Калькулятор гипсокартона онлайн — расчёт листов и профиля",
   description: "Рассчитайте количество листов гипсокартона, потолочных и направляющих профилей, крепежа для перегородок и обшивки стен.",

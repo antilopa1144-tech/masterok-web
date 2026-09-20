@@ -28,10 +28,10 @@ const BASE_URL = SITE_URL;
  * сохраняет старые URL частей без двух владельцев одного корневого маршрута.
  *
  * `lastModified` должен быть стабильным между деплоями и меняться только при
- * содержательном обновлении соответствующей группы.
+ * содержательном обновлении соответствующей страницы.
  */
 
-// ── Стабильные даты последних обновлений по группам страниц ──────────────────
+// ── Стабильные даты общих страниц ────────────────────────────────────────────
 // Менять руками при значимых изменениях.
 
 /** Структура главной/основных навигационных страниц. Меняется редко. */
@@ -39,18 +39,6 @@ const STATIC_PAGES_LAST_MODIFIED = "2026-05-09";
 
 /** Коммерческая страница производства видео. */
 const VIDEO_SERVICE_LAST_MODIFIED = "2026-09-15";
-
-/** Реестр калькуляторов (добавление/удаление калькуляторов, формулы). */
-const CALCULATORS_LAST_MODIFIED = SITE_LAST_REVIEWED;
-
-/** Категории калькуляторов (структура категорий). */
-const CATEGORIES_LAST_MODIFIED = SITE_LAST_REVIEWED;
-
-/** Инструменты (страницы /instrumenty/*). */
-const TOOLS_LAST_MODIFIED = "2026-04-19";
-
-/** Чек-листы. */
-const CHECKLISTS_LAST_MODIFIED = "2026-04-19";
 
 /** Юридические/служебные страницы. Меняются ещё реже. */
 const LEGAL_LAST_MODIFIED = "2026-01-01";
@@ -81,6 +69,26 @@ function getLatestPublishedTimestamp(posts: TimestampedBlogPost[]): string {
     : STATIC_PAGES_LAST_MODIFIED;
 }
 
+function getLatestDate(values: string[], fallback: string): string {
+  return values.reduce(
+    (latest, value) => (value > latest ? value : latest),
+    fallback,
+  );
+}
+
+const CALCULATORS_HUB_LAST_MODIFIED = getLatestDate(
+  ALL_CALCULATORS.map((calculator) => calculator.lastModified),
+  SITE_LAST_REVIEWED,
+);
+
+const TOOLS_HUB_LAST_MODIFIED = getLatestDate(
+  [
+    ...TOOL_CONFIGS.map((tool) => tool.lastModified),
+    ...ALL_CHECKLISTS.map((checklist) => checklist.lastModified),
+  ],
+  SITE_LAST_REVIEWED,
+);
+
 // ── Builders для каждой части ───────────────────────────────────────────────
 
 async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
@@ -96,7 +104,7 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/kalkulyatory/`,
-      lastModified: CALCULATORS_LAST_MODIFIED,
+      lastModified: CALCULATORS_HUB_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 0.9,
     },
@@ -138,7 +146,7 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/instrumenty/`,
-      lastModified: TOOLS_LAST_MODIFIED,
+      lastModified: TOOLS_HUB_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.7,
     },
@@ -164,18 +172,27 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
 }
 
 function buildCategoriesSitemap(): MetadataRoute.Sitemap {
-  return CATEGORIES.map((cat) => ({
-    url: `${BASE_URL}/kalkulyatory/${cat.slug}/`,
-    lastModified: CATEGORIES_LAST_MODIFIED,
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
+  return CATEGORIES.map((cat) => {
+    const categoryLastModified = getLatestDate(
+      ALL_CALCULATORS
+        .filter((calculator) => calculator.category === cat.id)
+        .map((calculator) => calculator.lastModified),
+      SITE_LAST_REVIEWED,
+    );
+
+    return {
+      url: `${BASE_URL}/kalkulyatory/${cat.slug}/`,
+      lastModified: categoryLastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    };
+  });
 }
 
 function buildCalculatorsSitemap(): MetadataRoute.Sitemap {
   return ALL_CALCULATORS.map((calc) => ({
     url: `${BASE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`,
-    lastModified: CALCULATORS_LAST_MODIFIED,
+    lastModified: calc.lastModified,
     changeFrequency: "weekly" as const,
     priority: calc.popularity >= 75 ? 0.9 : 0.7,
   }));
@@ -186,14 +203,14 @@ function buildToolsSitemap(): MetadataRoute.Sitemap {
     .filter((tool) => !tool.noindex)
     .map((tool) => ({
       url: `${BASE_URL}${toolHref(tool.slug)}`,
-      lastModified: TOOLS_LAST_MODIFIED,
+      lastModified: tool.lastModified,
       changeFrequency: "monthly" as const,
       priority: tool.priority,
     }));
 
   const checklistPages: MetadataRoute.Sitemap = ALL_CHECKLISTS.map((cl) => ({
     url: `${BASE_URL}/instrumenty/chek-listy/${cl.slug}/`,
-    lastModified: CHECKLISTS_LAST_MODIFIED,
+    lastModified: cl.lastModified,
     changeFrequency: "monthly" as const,
     priority: 0.6,
   }));

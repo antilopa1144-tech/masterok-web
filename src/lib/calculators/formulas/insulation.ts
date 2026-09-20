@@ -12,6 +12,7 @@ import { runInsulationCalculate } from "./insulation-calculate";
 export const insulationDef: CalculatorDefinition = {
   id: "insulation",
   slug: "uteplenie",
+  lastModified: "2026-09-20",
   title: "Калькулятор утеплителя",
   h1: "Калькулятор утеплителя онлайн — расчёт минваты и пеноплекса",
   description: "Рассчитайте количество минеральной ваты, экструдированного или обычного пенополистирола для стен, кровли и пола.",

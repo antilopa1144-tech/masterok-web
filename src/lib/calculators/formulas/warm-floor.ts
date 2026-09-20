@@ -6,6 +6,7 @@ import warmFloorSpec from "../../../../configs/calculators/warm-floor-canonical.
 export const warmFloorDef: CalculatorDefinition = {
   id: "warm_floor",
   slug: "teplyy-pol",
+  lastModified: "2026-09-20",
   title: "Калькулятор электрического тёплого пола",
   h1: "Калькулятор электрического тёплого пола — комплект, площадь и нагрузка",
   description:

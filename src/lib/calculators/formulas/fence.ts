@@ -37,6 +37,7 @@ const TYPE_LABELS: Record<number, string> = {
 export const fenceDef: CalculatorDefinition = {
   id: "fence",
   slug: "zabor",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор забора",
   h1: "Калькулятор забора онлайн — расчёт заполнения по длине",

@@ -43,6 +43,7 @@ const AREA_POSITION_HIDDEN = {
 export const slopesDef: CalculatorDefinition = {
   id: "slopes_finishing",
   slug: "otkosy-okon-i-dverej",
+  lastModified: "2026-09-20",
   formulaVersion: SLOPES_PURCHASE_FORMULA_VERSION,
   title: "Калькулятор материалов для откосов",
   h1: "Калькулятор откосов — обмер и одна позиция к покупке",

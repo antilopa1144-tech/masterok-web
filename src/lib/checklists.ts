@@ -5,6 +5,8 @@ export interface ChecklistStep {
 
 export interface Checklist {
   slug: string;
+  /** Дата последнего значимого изменения чек-листа или его страницы. */
+  lastModified: string;
   title: string;
   description: string;
   category: string;
@@ -18,6 +20,7 @@ export interface Checklist {
 export const ALL_CHECKLISTS: Checklist[] = [
   {
     slug: "remont-kvartiry",
+    lastModified: "2026-09-20",
     title: "Ремонт квартиры с нуля",
     description: "Полный чек-лист капитального ремонта квартиры: демонтаж, электрика и сантехника, перегородки, стяжка, плитка, финишная отделка. 40+ пунктов в правильном порядке.",
     category: "Общее строительство",
@@ -139,6 +142,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
 
   {
     slug: "ukladka-plitki",
+    lastModified: "2026-09-20",
     title: "Укладка плитки",
     description: "Пошаговый чек-лист укладки керамической плитки и керамогранита на пол и стены: подготовка основания, разметка, клей, подрезка, затирка швов и проверка плоскости.",
     category: "Полы и стены",
@@ -220,6 +224,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
 
   {
     slug: "styazhka-pola",
+    lastModified: "2026-09-20",
     title: "Стяжка пола",
     description: "Чек-лист для устройства цементно-песчаной или полусухой стяжки пола. Правильная последовательность от подготовки до шлифовки.",
     category: "Полы",
@@ -289,6 +294,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
 
   {
     slug: "montazh-gipsokartona",
+    lastModified: "2026-09-20",
     title: "Монтаж гипсокартона",
     description: "Чек-лист монтажа перегородки или обшивки стен гипсокартоном по системе КНАУФ: разметка, профили ПН и ПС, звукоизоляция, два слоя ГКЛ, швы и крепёж.",
     category: "Стены",
@@ -359,6 +365,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
 
   {
     slug: "pokraska-sten",
+    lastModified: "2026-09-20",
     title: "Покраска стен",
     description: "Пошаговый чек-лист покраски стен и потолка: подготовка поверхности, грунтование, выбор инструмента, два слоя краски, работа с углами и откосами без полос и разводов.",
     category: "Отделка",
@@ -421,6 +428,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
 
   {
     slug: "pokleivaniye-oboev",
+    lastModified: "2026-09-20",
     title: "Поклейка обоев",
     description: "Пошаговый чек-лист поклейки обоев: подготовка и грунтование стен, нарезка полос с учётом раппорта, нанесение клея, стыковка рисунка, сложные места.",
     category: "Отделка",
@@ -473,6 +481,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
   },
   {
     slug: "ustroystvo-fundamenta",
+    lastModified: "2026-09-20",
     title: "Устройство ленточного фундамента",
     description: "Чек-лист устройства ленточного фундамента: разметка и земляные работы, песчано-гравийная подушка, опалубка, армирование, заливка бетона, уход и снятие опалубки.",
     category: "Фундамент",
@@ -538,6 +547,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
   },
   {
     slug: "uteplenie-fasada",
+    lastModified: "2026-09-20",
     title: "Утепление фасада минватой (мокрый фасад)",
     description: "Чек-лист утепления фасада минватой по системе СФТК: подготовка и грунтование стен, монтаж плит, армирующий слой со стеклосеткой, декоративная штукатурка и покраска.",
     category: "Фасад",
@@ -592,6 +602,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
   },
   {
     slug: "montazh-krovli",
+    lastModified: "2026-09-20",
     title: "Монтаж кровли из металлочерепицы",
     description: "Чек-лист монтажа скатной кровли: стропильная система, утепление и пароизоляция мансарды, гидроизоляция, обрешётка, укладка металлочерепицы и крепёж.",
     category: "Кровля",
@@ -657,6 +668,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
   },
   {
     slug: "razvodka-elektriki",
+    lastModified: "2026-09-20",
     title: "Разводка электрики в квартире",
     description: "Чек-лист электромонтажа в квартире: проектирование линий, разметка и штробление, прокладка кабеля, сборка щита с автоматами и УЗО, подключение розеток.",
     category: "Инженерные системы",
@@ -712,6 +724,7 @@ export const ALL_CHECKLISTS: Checklist[] = [
   },
   {
     slug: "ustanovka-santehniki",
+    lastModified: "2026-09-20",
     title: "Установка сантехники в ванной",
     description: "Чек-лист монтажа сантехники в ванной: разводка труб, гидроизоляция мокрых зон, установка унитаза, раковины и ванны, подключение к канализации и проверка на протечки.",
     category: "Инженерные системы",

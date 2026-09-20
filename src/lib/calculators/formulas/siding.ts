@@ -37,6 +37,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const sidingDef: CalculatorDefinition = {
   id: "exterior_siding",
   slug: "sayding",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор сайдинга",
   h1: "Калькулятор сайдинга онлайн — расчёт количества панелей",

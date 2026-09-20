@@ -38,6 +38,7 @@ import { useCalculator } from "./useCalculator";
 const calculator: CalculatorWidgetProps = {
   id: "test",
   slug: "test",
+  lastModified: "2026-09-20",
   title: "Тест",
   h1: "Тест",
   description: "Тест",

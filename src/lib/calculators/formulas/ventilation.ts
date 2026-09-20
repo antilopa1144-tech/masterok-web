@@ -6,6 +6,7 @@ import type { CalculatorDefinition } from "../types";
 export const ventilationDef: CalculatorDefinition = {
   id: "engineering_ventilation",
   slug: "ventilyaciya",
+  lastModified: "2026-09-20",
   formulaVersion: ventilationSpec.formula_version,
   title: "Калькулятор вентиляции",
   h1: "Калькулятор вентиляции — расход воздуха и проверка воздуховода",

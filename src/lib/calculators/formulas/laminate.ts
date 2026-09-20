@@ -24,6 +24,7 @@ function mapLegacyLayoutProfile(layingMethod: number | undefined, offsetMode: nu
 export const laminateDef: CalculatorDefinition = {
   id: "laminate",
   slug: "laminat",
+  lastModified: "2026-09-20",
   formulaVersion: laminateCanonicalSpec.formula_version,
   title: "Калькулятор ламината",
   h1: "Калькулятор ламината онлайн — расчёт количества упаковок",

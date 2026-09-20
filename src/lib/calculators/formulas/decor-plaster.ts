@@ -7,6 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const decorPlasterDef: CalculatorDefinition = {
   id: "walls_decor_plaster",
   slug: "dekorativnaya-shtukaturka",
+  lastModified: "2026-09-20",
   title: "Калькулятор декоративной штукатурки",
   h1: "Калькулятор декоративной штукатурки онлайн — расчёт расхода",
   description: "Рассчитайте количество декоративной штукатурки (короед, шуба, камешковая, венецианская) по площади стен.",

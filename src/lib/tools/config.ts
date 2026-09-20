@@ -14,6 +14,8 @@ export interface ToolFaqItem {
 
 export interface ToolConfig {
   slug: string;
+  /** Дата последнего значимого изменения инструмента или содержимого страницы. */
+  lastModified: string;
   /** UI-заголовок страницы инструмента (отображается на самой странице). */
   title: string;
   /**
@@ -49,6 +51,7 @@ export function toolHref(slug: string): string {
 export const TOOL_CONFIGS: ToolConfig[] = [
   {
     slug: "rasstanovka-svetilnikov",
+    lastModified: "2026-08-31",
     title: "Схема точечных светильников",
     seoTitle: "Расстановка точечных светильников онлайн",
     cardTitle: "Расстановка светильников",
@@ -72,6 +75,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-reek",
+    lastModified: "2026-08-31",
     title: "Калькулятор реек на стену с визуальной раскладкой",
     seoTitle: "Калькулятор реек на стену онлайн: расчёт и схема",
     cardTitle: "Раскладка реек",
@@ -96,6 +100,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-terrasnoy-doski",
+    lastModified: "2026-08-30",
     title: "Раскладка террасной доски",
     seoTitle: "Раскладка террасной доски онлайн: схема настила",
     cardTitle: "Раскладка террасной доски",
@@ -119,6 +124,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-trotuarnoy-plitki",
+    lastModified: "2026-08-30",
     title: "Раскладка тротуарной плитки",
     seoTitle: "Раскладка тротуарной плитки онлайн",
     cardTitle: "Раскладка тротуарной плитки",
@@ -142,6 +148,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "lineynyy-raskroy",
+    lastModified: "2026-09-20",
     title: "Калькулятор линейного раскроя",
     seoTitle: "Калькулятор линейного раскроя онлайн",
     cardTitle: "Линейный раскрой",
@@ -168,6 +175,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "moy-remont",
+    lastModified: "2026-09-20",
     title: "Мастер «Мой ремонт»",
     cardTitle: "Мой ремонт",
     description:
@@ -207,6 +215,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "kalendar-remonta",
+    lastModified: "2026-09-11",
     title: "Календарь ремонта",
     cardTitle: "Календарь ремонта",
     description:
@@ -239,6 +248,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "stoimost-remonta",
+    lastModified: "2026-09-13",
     title: "Калькулятор стоимости ремонта",
     cardTitle: "Стоимость ремонта",
     description:
@@ -278,6 +288,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-plitki",
+    lastModified: "2026-09-20",
     title: "Генератор раскладки плитки",
     seoTitle: "Раскладка плитки онлайн по размерам — пол и стены",
     cardTitle: "Раскладка плитки",
@@ -336,6 +347,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-kirpicha",
+    lastModified: "2026-09-20",
     title: "Генератор раскладки кирпичной кладки",
     cardTitle: "Раскладка кирпича",
     description:
@@ -378,6 +390,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-laminata",
+    lastModified: "2026-09-20",
     title: "Генератор раскладки ламината",
     seoTitle: "Раскладка ламината онлайн со схемой",
     cardTitle: "Раскладка ламината",
@@ -431,6 +444,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-oboev",
+    lastModified: "2026-09-20",
     title: "Генератор раскладки обоев",
     seoTitle: "Раскладка обоев по рулонам онлайн",
     cardTitle: "Раскладка обоев",
@@ -475,6 +489,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "raskladka-listov",
+    lastModified: "2026-09-20",
     title: "Генератор раскладки листов ГКЛ и ОСП",
     seoTitle: "Раскладка листов ГКЛ и ОСП онлайн",
     cardTitle: "Раскладка листов",
@@ -525,6 +540,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "normy-raskhoda",
+    lastModified: "2026-09-11",
     title: "Таблица норм расхода строительных материалов",
     seoTitle: "Таблица норм расхода строительных материалов на 1 м²",
     cardTitle: "Нормы расхода",
@@ -569,6 +585,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "sravnenie-materialov",
+    lastModified: "2026-09-20",
     title: "Сравнение строительных материалов",
     cardTitle: "Сравнение материалов",
     description:
@@ -598,6 +615,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "skolko-ostalos",
+    lastModified: "2026-08-31",
     title: "Калькулятор «Сколько осталось»",
     cardTitle: "Сколько осталось?",
     description:
@@ -632,6 +650,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "tajmer-skhvatyvaniya",
+    lastModified: "2026-09-13",
     title: "Таймер схватывания и высыхания",
     cardTitle: "Таймер схватывания",
     description:
@@ -660,6 +679,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "konverter",
+    lastModified: "2026-08-31",
     title: "Конвертер единиц измерения",
     cardTitle: "Конвертер единиц",
     description:
@@ -711,6 +731,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "ploshchad-komnaty",
+    lastModified: "2026-09-20",
     title: "Калькулятор площади комнаты",
     seoTitle: "Калькулятор площади комнаты в м² онлайн",
     cardTitle: "Площадь комнаты",
@@ -771,6 +792,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "kalkulyator",
+    lastModified: "2026-09-20",
     title: "Калькулятор на объекте",
     cardTitle: "Калькулятор",
     description:
@@ -792,6 +814,7 @@ export const TOOL_CONFIGS: ToolConfig[] = [
   },
   {
     slug: "chek-listy",
+    lastModified: "2026-09-20",
     title: "Чек-листы для ремонта",
     cardTitle: "Чек-листы работ",
     description:

@@ -113,6 +113,7 @@ const createMaterial = (
 export const fastenersDef: CalculatorDefinition = {
   id: "fasteners",
   slug: "krepezh",
+  lastModified: "2026-09-20",
   title: "Калькулятор крепежа",
   h1: "Калькулятор крепежа — точки, шаг и упаковки",
   description:

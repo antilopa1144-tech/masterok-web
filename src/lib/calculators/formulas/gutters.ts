@@ -11,6 +11,7 @@ const formatRuNumber = (value: number): string => new Intl.NumberFormat("ru-RU",
 export const guttersDef: CalculatorDefinition = {
   id: "roofing_gutters",
   slug: "vodostok",
+  lastModified: "2026-09-20",
   title: "Калькулятор водосточной системы",
   h1: "Калькулятор водостока для крыши — расчёт системы ТЕХНОНИКОЛЬ",
   description:

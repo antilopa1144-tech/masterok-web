@@ -20,6 +20,7 @@ const hideWithoutTape = { key: "sealingTapeProjectM", op: "eq" as const, value: 
 export const roofingDef: CalculatorDefinition = {
   id: "roofing_unified",
   slug: "krovlya",
+  lastModified: "2026-09-20",
   title: "Калькулятор материалов кровли",
   h1: "Калькулятор кровли — материалы по проекту и фактическим фасовкам",
   description:

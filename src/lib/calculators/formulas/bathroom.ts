@@ -148,6 +148,7 @@ const buildTileMaterial = (
 export const bathroomDef: CalculatorDefinition = {
   id: "bathroom",
   slug: "vannaya-komnata",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор ванной комнаты",
   h1: "Калькулятор плитки для ванной — пол, стены и коробки",

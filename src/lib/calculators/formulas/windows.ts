@@ -57,6 +57,7 @@ const RESERVE_OPTIONS = [
 export const windowsDef: CalculatorDefinition = {
   id: "windows_install",
   slug: "ustanovka-okon",
+  lastModified: "2026-09-20",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор материалов для монтажа окон",
   h1: "Калькулятор монтажа окон — пена и материалы по фактическому шву",
