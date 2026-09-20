@@ -159,7 +159,7 @@ const positionFormulaText = (
 export const puttyDef: CalculatorDefinition = {
   id: "mixes_putty",
   slug: "shpaklevka",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор шпаклёвки",
   h1: "Калькулятор шпаклёвки — расход по техкарте и упаковка",

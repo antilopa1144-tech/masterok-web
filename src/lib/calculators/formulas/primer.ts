@@ -71,7 +71,7 @@ const plural = (
 export const primerDef: CalculatorDefinition = {
   id: "mixes_primer",
   slug: "gruntovka",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор грунтовки",
   h1: "Калькулятор грунтовки: расход на 1 м² и количество упаковок",

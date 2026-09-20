@@ -34,7 +34,7 @@ const pluralRu = (count: number, one: string, few: string, many: string): string
 export const pavingTilesDef: CalculatorDefinition = {
   id: "facade_paving_tiles",
   slug: "trotuarnaya-plitka",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор тротуарной плитки",
   h1: "Калькулятор тротуарной плитки — закупка покрытия и заданных слоёв",

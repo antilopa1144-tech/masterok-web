@@ -7,7 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const facadeBrickDef: CalculatorDefinition = {
   id: "exterior_brick",
   slug: "oblitsovochnyj-kirpich",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   title: "Калькулятор облицовочного кирпича",
   h1: "Калькулятор облицовочного кирпича — расчёт для фасада",
   description: "Рассчитайте количество облицовочного (фасадного) кирпича, раствора и анкеров для облицовки фасада или цоколя.",

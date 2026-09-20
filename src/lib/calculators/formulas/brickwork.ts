@@ -7,7 +7,7 @@ import defaultFactorTables from "../../../../configs/factor-tables.json";
 export const brickworkDef: CalculatorDefinition = {
   id: "brickwork",
   slug: "kladka-kirpicha",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   title: "Калькулятор кладки кирпича",
   h1: "Калькулятор кладки кирпича онлайн — расчёт кирпича и раствора",
   description: "Предварительный расчёт кирпича и раствора для стены. Сетка и перемычки показаны справочно; конструктивные решения — по проекту.",

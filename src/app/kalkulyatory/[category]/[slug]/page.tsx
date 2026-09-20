@@ -8,12 +8,15 @@ import { getCategoryById } from "@/lib/calculators/categories";
 import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
+import CalculatorRelatedTools from "@/components/calculator/CalculatorRelatedTools";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import { getCalculatorCategoryRedirect } from "@/lib/calculators/canonical-path";
+import { CALCULATOR_RELATED_TOOLS } from "@/lib/calculators/related-tools";
+import { getToolConfig, toolHref } from "@/lib/tools/config";
 
 interface PageProps {
   params: Promise<{ category: string; slug: string }>;
@@ -96,6 +99,12 @@ export default async function CalculatorPage({ params }: PageProps) {
     .slice(0, 6);
   const accentColor = category?.color ?? "#f97316";
   const canonicalUrl = `${SITE_URL}/kalkulyatory/${calc.categorySlug}/${calc.slug}/`;
+  const relatedTools = (CALCULATOR_RELATED_TOOLS[calc.slug] ?? []).flatMap((link) => {
+    const tool = getToolConfig(link.slug);
+    return tool
+      ? [{ slug: tool.slug, href: toolHref(tool.slug), title: tool.cardTitle, reason: link.reason }]
+      : [];
+  });
 
   return (
     <>
@@ -143,6 +152,8 @@ export default async function CalculatorPage({ params }: PageProps) {
             }}
           />
         </Suspense>
+
+        <CalculatorRelatedTools calculatorSlug={calc.slug} items={relatedTools} />
 
         <div className="mt-4" data-print-hide>
           <SeoContentBlock

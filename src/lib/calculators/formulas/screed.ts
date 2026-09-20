@@ -7,7 +7,7 @@ import { applyScreedMix } from "./screed-mix";
 export const screedDef: CalculatorDefinition = {
   id: "screed",
   slug: "styazhka",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   title: "Калькулятор стяжки пола",
   h1: "Калькулятор стяжки пола — цемент, песок и смесь",
   description: "Рассчитайте цемент и песок по рабочей рецептуре, готовую смесь по расходу с упаковки или объём полусухой стяжки.",

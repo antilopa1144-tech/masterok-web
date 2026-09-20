@@ -9,7 +9,7 @@ const brickManufacturerField = buildManufacturerField("brick");
 export const brickDef: CalculatorDefinition = {
   id: "brick",
   slug: "kirpich",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   title: "Калькулятор кирпича",
   h1: "Калькулятор кирпича онлайн — расчёт количества кирпичей и раствора",
   description: "Рассчитайте точное количество кирпича, цемента и песка для кладки. Учёт типа кирпича, толщины стены, условий работы.",

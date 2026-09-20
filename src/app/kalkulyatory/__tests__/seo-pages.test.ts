@@ -52,6 +52,20 @@ describe("SEO-страницы калькуляторов", () => {
     );
   });
 
+  it("рендерит контекстную ссылку на следующий инструмент в исходном HTML", async () => {
+    const page = await CalculatorPage({
+      params: Promise.resolve({
+        category: "steny",
+        slug: "paneli-dlya-sten",
+      }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain("Следующий шаг");
+    expect(html).toContain('href="/instrumenty/raskladka-reek');
+    expect(html).toContain("Разложить декоративные рейки");
+  });
+
   it("связывает HowTo JSON-LD с видимыми шагами", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({
