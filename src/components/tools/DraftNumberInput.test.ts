@@ -95,4 +95,22 @@ describe("DraftNumberInput", () => {
     expect(container.querySelector("[role=alert]")?.textContent).toContain("Допустимо от 100 до 500");
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("показывает короткую ошибку в компактной таблице и сохраняет полное пояснение", async () => {
+    await act(async () => root.render(createElement(DraftNumberInput, {
+      ariaLabel: "Длина детали",
+      value: 2600,
+      min: 1,
+      max: 50000,
+      compactError: "1–50 000 мм",
+      onChange: vi.fn(),
+    })));
+    const input = container.querySelector("input") as HTMLInputElement;
+
+    await act(async () => typeValue(input, ""));
+
+    expect(container.querySelector("[role=alert]")?.textContent).toBe("1–50 000 мм");
+    expect(input.title).toContain("Введите значение от 1 до 50 000");
+    expect(input.title).toContain("последнее допустимое значение");
+  });
 });

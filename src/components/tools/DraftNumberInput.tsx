@@ -17,6 +17,7 @@ interface DraftNumberInputProps {
   integerOnly?: boolean;
   className?: string;
   containerClassName?: string;
+  compactError?: string;
   onChange: (value: number) => void;
 }
 
@@ -46,6 +47,7 @@ export default function DraftNumberInput({
   integerOnly = step >= 1,
   className = "input-field min-w-0 w-full",
   containerClassName = "min-w-0",
+  compactError,
   onChange,
 }: DraftNumberInputProps) {
   const [draft, setDraft] = useState(() => formatDecimalValue(value));
@@ -72,6 +74,7 @@ export default function DraftNumberInput({
       <input
         aria-label={ariaLabel}
         aria-invalid={Boolean(error)}
+        title={error ? `${error} Расчёт пока использует последнее допустимое значение.` : undefined}
         type="text"
         inputMode={integerOnly ? "numeric" : "decimal"}
         value={draft}
@@ -96,7 +99,7 @@ export default function DraftNumberInput({
       />
       {error && (
         <p role="alert" className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
-          {error} Расчёт пока использует последнее допустимое значение.
+          {compactError ?? `${error} Расчёт пока использует последнее допустимое значение.`}
         </p>
       )}
     </div>
