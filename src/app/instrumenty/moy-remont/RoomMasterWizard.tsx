@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import { formatNumber } from "@/components/calculator/useCalculator";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
@@ -111,6 +111,7 @@ export default function RoomMasterWizard() {
   const searchParams = useSearchParams();
   const workspaceRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLElement>(null);
+  const calculationRevisionRef = useRef(0);
   const [packId, setPackId] = useState<RoomPackId>("bathroom");
   const [drafts, setDrafts] = useState<MeasureDrafts>(defaultDrafts);
   const [floorTileSize, setFloorTileSize] = useState(DEFAULT_ROOM_DIMENSIONS.floorTileSize);
@@ -120,16 +121,24 @@ export default function RoomMasterWizard() {
   const [error, setError] = useState<string | null>(null);
   const [run, setRun] = useState<PackRunResult | null>(null);
   const [mobileStage, setMobileStage] = useState<MobileStage>("parameters");
+  const serializedSearchParams = searchParams.toString();
 
   useEffect(() => {
-    const fromUrl = parsePackId(searchParams.get("pack"));
+    calculationRevisionRef.current += 1;
+    setLoading(false);
+    setRun(null);
+    setError(null);
+    setMobileStage("parameters");
+
+    const params = new URLSearchParams(serializedSearchParams);
+    const fromUrl = parsePackId(params.get("pack"));
     if (fromUrl) setPackId(fromUrl);
 
     setDrafts((current) => {
       const next = { ...current };
       let changed = false;
       for (const key of Object.keys(next) as RoomMeasureKey[]) {
-        const value = searchParams.get(key);
+        const value = params.get(key);
         if (value !== null) {
           next[key] = value;
           changed = true;
@@ -137,7 +146,11 @@ export default function RoomMasterWizard() {
       }
       return changed ? next : current;
     });
-  }, [searchParams]);
+  }, [serializedSearchParams]);
+
+  useEffect(() => () => {
+    calculationRevisionRef.current += 1;
+  }, []);
 
   const measures = useMemo(
     () => ({
@@ -175,6 +188,8 @@ export default function RoomMasterWizard() {
   );
 
   const resetResult = () => {
+    calculationRevisionRef.current += 1;
+    setLoading(false);
     setRun(null);
     setError(null);
     setMobileStage("parameters");
@@ -191,7 +206,7 @@ export default function RoomMasterWizard() {
     selectMode(`pack:${nextPack}`);
     setPackId(nextPack);
     resetResult();
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(serializedSearchParams);
     params.set("pack", nextPack);
     router.replace(`/instrumenty/${ROOM_MASTER_TOOL_SLUG}/?${params}`, { scroll: false });
   };
@@ -202,18 +217,23 @@ export default function RoomMasterWizard() {
       setError("Проверьте размеры помещения перед расчётом.");
       return;
     }
+    const requestRevision = ++calculationRevisionRef.current;
     setLoading(true);
     setError(null);
     try {
       const result = await runRoomPack(packId, dims);
+      if (calculationRevisionRef.current !== requestRevision) return;
       setRun(result);
       setMobileStage("result");
       window.requestAnimationFrame(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (caught) {
+      if (calculationRevisionRef.current !== requestRevision) return;
       setError(caught instanceof Error ? caught.message : "Не удалось выполнить расчёт");
       setRun(null);
     } finally {
-      setLoading(false);
+      if (calculationRevisionRef.current === requestRevision) {
+        setLoading(false);
+      }
     }
   };
 
