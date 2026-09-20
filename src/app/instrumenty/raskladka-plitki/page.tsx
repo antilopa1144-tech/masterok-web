@@ -8,7 +8,6 @@ import TileLayoutGenerator from "./TileLayoutGenerator";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
-  title: `Раскладка плитки онлайн — визуализация и расчёт подрезки`,
   description: "Визуализатор раскладки плитки на стену или пол: введите размеры, увидите раскладку, подрезку и количество плитки. Прямая и диагональная укладка.",
 };
 

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import ToolSeoBlock from "@/components/tools/ToolSeoBlock";
 import { getToolConfig } from "./config";
+import { buildToolPageMetadata } from "./metadata";
 
 const tool = getToolConfig("raskladka-plitki")!;
 const pageUrl = "https://getmasterok.ru/instrumenty/raskladka-plitki/";
@@ -41,9 +42,12 @@ describe("tile layout editorial content", () => {
     expect(answers).toContain("не заменяют полноценный 3D-проект");
   });
 
-  it("keeps the existing search title and three procurement destinations", () => {
+  it("uses the query-aligned search title and keeps three procurement destinations", () => {
     expect(tool.title).toBe("Генератор раскладки плитки");
-    expect(tool.seoTitle).toBeUndefined();
+    expect(tool.seoTitle).toBe("Раскладка плитки онлайн по размерам — пол и стены");
+    expect(buildToolPageMetadata("raskladka-plitki").title).toEqual({
+      absolute: "Раскладка плитки онлайн по размерам — пол и стены — Мастерок",
+    });
     expect(tool.relatedCalculators).toEqual([
       { slug: "plitka", categorySlug: "poly" },
       { slug: "klej-dlya-plitki", categorySlug: "poly" },
