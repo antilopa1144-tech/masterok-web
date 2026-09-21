@@ -166,6 +166,10 @@ const DRYWALL_WALL_HTML = `
   <li>Для двух слоёв считайте площадь каждого слоя и предусматривайте смещение стыков по схеме системы.</li>
 </ul>
 
+<h2 id="tri-zadachi">Стена, потолок и раскладка — разные задачи</h2>
+<p>Калькулятор стены оценивает листы, профиль и комплектующие для облицовки или перегородки. Для подвесной конструкции используйте <a href="/kalkulyatory/potolki/podvesnoy-potolok-gkl/">отдельный калькулятор потолка из ГКЛ</a>: у него другая система профилей, подвесов и соединителей. Переносить результат стены на потолок нельзя.</p>
+<p><a href="/instrumenty/raskladka-listov/?surfaceWidthMm=4000&surfaceHeightMm=2700&sheetWidthMm=1200&sheetLengthMm=2500&layers=1&from=gipsokarton&material=drywall&surface=wall&orientation=auto&reservePercent=10">Открыть раскладку листов для стены 4 × 2,7 м</a>. Инструмент покажет положение целых листов и обрезков на одной прямоугольной поверхности, повторное использование подходящих остатков и итог к покупке. Он не подбирает каркас и проектную систему — эти материалы проверяйте в калькуляторе стены.</p>
+
 <h2 id="pered-pokupkoy">Что проверить перед покупкой</h2>
 <ol>
   <li>Выбрана правильная конструкция: облицовка одной стены, все стены комнаты или перегородка.</li>
@@ -305,7 +309,7 @@ export function applyBlogContentOverrides(post: BlogPost): BlogPost {
         metaTitle: "Расчёт гипсокартона на стену: листы и профиль",
         description:
           "Как рассчитать гипсокартон на стену: формула по площади, запас и округление, профиль для облицовки, проёмы и пример стены 4 × 2,7 м.",
-        ...withLatestContentModifiedAt(post, "2026-08-09T00:00:00.000Z"),
+        ...withLatestContentModifiedAt(post, "2026-09-21T00:00:00.000Z"),
         relatedCalculator: { slug: "gipsokarton", categorySlug: "steny" },
         content: DRYWALL_WALL_HTML,
       };

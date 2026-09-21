@@ -102,12 +102,18 @@ describe("applyBlogContentOverrides", () => {
     expect(result.title).toContain("Расчёт гипсокартона на стену");
     expect(result.metaTitle).toContain("листы и профиль");
     expect(result.description).toContain("пример стены 4 × 2,7 м");
+    expect(result.updatedAt).toBe("2026-09-21");
     expect(result.relatedCalculator).toEqual({ slug: "gipsokarton", categorySlug: "steny" });
     expect(result.content).toContain("1,2 × 3,0");
     expect(result.content).toContain("3,6 м²");
     expect(result.content).toContain("минимум 4 целых листа");
     expect(result.content).toContain("Реальном");
     expect(result.content).toContain("КНАУФ С 623");
+    expect(result.content).toContain("/instrumenty/raskladka-listov/?");
+    expect(result.content).toContain("surfaceWidthMm=4000");
+    expect(result.content).toContain("surfaceHeightMm=2700");
+    expect(result.content).toContain("/kalkulyatory/potolki/podvesnoy-potolok-gkl/");
+    expect(result.content).toContain("Стена, потолок и раскладка — разные задачи");
     expect(result.content).not.toContain("3,5 м²");
   });
 
