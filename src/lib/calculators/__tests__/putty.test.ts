@@ -310,4 +310,13 @@ describe("Шпаклёвка — паспортный расход и факти
       "СП 71.13330",
     );
   });
+
+  it("объясняет подготовку стен в квартире в отопительный сезон", () => {
+    const html = puttyDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain("Шпаклёвка стен в квартире в отопительный сезон");
+    expect(html).toContain("/kalkulyatory/otdelka/gruntovka/");
+    expect(html).toContain("/kalkulyatory/otdelka/oboi/");
+    expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
+  });
 });

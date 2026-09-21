@@ -204,7 +204,7 @@ describe("Обои — полотна, раскрой и целые рулоны
 
   it("не обещает точность по одной площади и автоматический комплект", () => {
     expect(wallpaperDef.h1).toBe(
-      "Калькулятор обоев — расчёт полотен и рулонов",
+      "Калькулятор обоев на комнату — расчёт полотен и рулонов",
     );
     expect(wallpaperDef.description).toContain("полотен");
     expect(wallpaperDef.description).not.toMatch(/клея|грунтовки|расходник/i);
@@ -232,5 +232,15 @@ describe("Обои — полотна, раскрой и целые рулоны
     );
     expect(html).toContain("/blog/skolko-oboev-na-komnatu/");
     expect(html).toContain("/instrumenty/raskladka-oboev/");
+  });
+
+  it("связывает зимнюю оклейку квартиры с подготовкой стен", () => {
+    const html = wallpaperDef.seoContent?.descriptionHtml ?? "";
+
+    expect(wallpaperDef.metaTitle).toContain("на комнату");
+    expect(html).toContain("Поклейка обоев в квартире осенью и зимой");
+    expect(html).toContain("/kalkulyatory/otdelka/gruntovka/");
+    expect(html).toContain("/kalkulyatory/otdelka/shpaklevka/");
+    expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
   });
 });

@@ -214,7 +214,7 @@ describe("Грунтовка — паспортный расход и факти
     expect(primerDef.description).not.toMatch(/Ceresit|Knauf/i);
     expect(primerDef.metaDescription.toLowerCase()).toContain("рассчитайте");
     expect(primerDef.metaTitle).toContain("на 1 м²");
-    expect(primerDef.metaDescription).toContain("для стен, потолка и пола");
+    expect(primerDef.metaDescription).toContain("для стен");
   });
 
   it("ссылается на СП и техдокументацию разных продуктов", () => {
@@ -239,5 +239,15 @@ describe("Грунтовка — паспортный расход и факти
     expect(CATEGORY_INTRO.interior.standards.join(" ")).toContain(
       "СП 71.13330",
     );
+  });
+
+  it("связывает зимнюю подготовку стен с этапами ремонта квартиры", () => {
+    const html = primerDef.seoContent?.descriptionHtml ?? "";
+
+    expect(primerDef.metaTitle).toContain("для стен");
+    expect(html).toContain("Грунтовка стен в квартире осенью и зимой");
+    expect(html).toContain("/kalkulyatory/otdelka/shpaklevka/");
+    expect(html).toContain("/kalkulyatory/otdelka/oboi/");
+    expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
   });
 });
