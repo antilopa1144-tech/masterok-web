@@ -78,6 +78,19 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).not.toContain("Мы закладываем запас по нормативу");
   });
 
+  it("выводит в хабе отделки путь от подготовки стен к краске или обоям", async () => {
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "otdelka" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/kalkulyatory/otdelka/gruntovka"');
+    expect(html).toContain('href="/kalkulyatory/otdelka/shpaklevka"');
+    expect(html).toContain('href="/kalkulyatory/otdelka/kraska"');
+    expect(html).toContain('href="/kalkulyatory/otdelka/oboi"');
+    expect(html).toContain('href="/instrumenty/raskladka-oboev"');
+  });
+
   it("использует SEO-H1 калькулятора вместо короткого названия", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({

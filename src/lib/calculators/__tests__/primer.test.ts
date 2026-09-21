@@ -247,6 +247,7 @@ describe("Грунтовка — паспортный расход и факти
     expect(primerDef.metaTitle).toContain("для стен");
     expect(html).toContain("Грунтовка стен в квартире осенью и зимой");
     expect(html).toContain("/kalkulyatory/otdelka/shpaklevka/");
+    expect(html).toContain("/kalkulyatory/otdelka/kraska/");
     expect(html).toContain("/kalkulyatory/otdelka/oboi/");
     expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
   });

@@ -70,4 +70,18 @@ describe("Быстрые ссылки категорий", () => {
     expect(engineering.lead).not.toMatch(/запас по нормативу/i);
     expect(engineering.pitfalls?.join(" ")).toContain("не доказывает");
   });
+
+  it("связывает подготовку стен квартиры с грунтовкой, шпаклёвкой и финишем", () => {
+    const interior = CATEGORY_INTRO.interior;
+    const hrefs = interior.quickLinks?.map((link) => link.href) ?? [];
+
+    expect(hrefs).toContain("/kalkulyatory/otdelka/gruntovka/");
+    expect(hrefs).toContain("/kalkulyatory/otdelka/shpaklevka/");
+    expect(hrefs).toContain("/kalkulyatory/otdelka/kraska/");
+    expect(hrefs).toContain("/kalkulyatory/otdelka/oboi/");
+    expect(hrefs).toContain("/instrumenty/raskladka-oboev/");
+    expect(interior.lead).toContain("квартире или доме");
+    expect(interior.lead).toMatch(/тех(?:ническ\S* карт|карт)/i);
+    expect(interior.pitfalls?.join(" ")).toMatch(/отопительн\S* сезон/i);
+  });
 });

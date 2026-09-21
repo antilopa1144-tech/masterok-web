@@ -316,6 +316,7 @@ describe("Шпаклёвка — паспортный расход и факти
 
     expect(html).toContain("Шпаклёвка стен в квартире в отопительный сезон");
     expect(html).toContain("/kalkulyatory/otdelka/gruntovka/");
+    expect(html).toContain("/kalkulyatory/otdelka/kraska/");
     expect(html).toContain("/kalkulyatory/otdelka/oboi/");
     expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
   });

@@ -143,7 +143,11 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
     : "длина и ширина комнаты";
   const wallpaperRollsHint = Number(searchParams.get("rollsHint"));
   const sheetLayoutHint = Number(searchParams.get("sheetsHint"));
-  const transferredFinishingArea = Number(searchParams.get("area") ?? searchParams.get("facadeArea"));
+  const transferredFinishingArea = Number(
+    searchParams.get("area")
+      ?? searchParams.get("projectAreaM2")
+      ?? searchParams.get("facadeArea"),
+  );
   const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
   const deckLayoutBoardsHint = Number(searchParams.get("layoutBoardsHint"));
   const paverLayoutPiecesHint = Number(searchParams.get("layoutPaversHint"));

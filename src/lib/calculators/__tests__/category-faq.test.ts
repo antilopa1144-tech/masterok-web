@@ -18,4 +18,14 @@ describe("FAQ категорий про полы и инженерные сис�
     expect(answers).not.toMatch(/100 Вт|150-200 Вт|1,5 кв\.мм|экономия до 70%/i);
     expect(answers).not.toContain("требуемая мощность, число терморегуляторов");
   });
+
+  it("не назначает универсальные материалы и расходы для внутренней отделки", () => {
+    const answers = CATEGORY_FAQ.interior.map((item) => item.answer).join(" ");
+
+    expect(answers).toMatch(/техническ\S* карт|этикетк/i);
+    expect(answers).toMatch(/раппорт|полотн/i);
+    expect(answers).not.toMatch(/150-250 мл|15-20%|снижает расход краски на 20-30%/i);
+    expect(answers).not.toContain("грунтовка обязательна");
+    expect(answers).not.toContain("Используйте грунтовку глубокого проникновения");
+  });
 });
