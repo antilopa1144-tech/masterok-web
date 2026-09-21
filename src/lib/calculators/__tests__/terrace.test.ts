@@ -223,4 +223,17 @@ describe("Террасная доска — web purchase contract", () => {
     expect(seo).toContain("/instrumenty/raskladka-terrasnoy-doski/");
     expect(seo).not.toContain("универсальный шаг 400");
   });
+
+  it("раскрывает интент ДПК без универсальных монтажных норм", () => {
+    const seo = terraceDef.seoContent?.descriptionHtml ?? "";
+
+    expect(terraceDef.h1).toContain("ДПК");
+    expect(terraceDef.metaTitle).toContain("ДПК");
+    expect(terraceDef.metaDescription).toContain("ДПК");
+    expect(seo).toContain("ДПК и деревянная доска: что меняется во входных данных");
+    expect(seo).toContain("геометрическая модель расчёта одинакова");
+    expect(seo).toContain("фактическую рабочую ширину");
+    expect(seo).toContain("нельзя переносить между системами");
+    expect(seo).not.toMatch(/универсальный зазор|универсальный шаг лаг/i);
+  });
 });
