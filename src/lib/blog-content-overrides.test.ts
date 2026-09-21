@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BlogPost } from "./blog";
 import { applyBlogContentOverrides } from "./blog-content-overrides";
 import { foundationSlabDef } from "./calculators/formulas/foundation-slab";
+import { roofingDef } from "./calculators/formulas/roofing";
 import { stripFoundationDef } from "./calculators/formulas/strip-foundation";
 
 function makePost(overrides: Partial<BlogPost> = {}): BlogPost {
@@ -201,6 +202,50 @@ describe("applyBlogContentOverrides", () => {
 
   it("идемпотентно применяет замену статьи о фундаменте", () => {
     const post = makePost({ slug: "raschet-fundamenta" });
+    const once = applyBlogContentOverrides(post);
+    expect(applyBlogContentOverrides(once)).toEqual(once);
+  });
+
+  it("заменяет статью о кровле на проверяемый расчёт площади и закупки", () => {
+    const result = applyBlogContentOverrides(makePost({
+      slug: "kak-rasschitat-krovlyu",
+      title: "Точный расчёт кровли в 2026 году",
+      content:
+        "<p>В 2026 году нагрузки пересмотрены, а подрядчики всегда добавляют 8–15 процентов.</p>",
+    }));
+
+    expect(result.title).toContain("Как рассчитать материалы кровли");
+    expect(result.metaTitle).toContain("площадь и закупка");
+    expect(result.description).toContain("площадь скатов");
+    expect(result.updatedAt).toBe("2026-09-21");
+    expect(result.relatedCalculator).toEqual({ slug: "krovlya", categorySlug: "krovlya" });
+    expect(result.content).toContain("126,5 м²");
+    expect(result.content).toContain("135,355 м²");
+    expect(result.content).toContain("65 целых листов");
+    expect(result.content).toContain("S<sub>скатов</sub> = S<sub>проекции</sub> / cos");
+    expect(result.content).toContain("/kalkulyatory/krovlya/krovlya/?");
+    expect(result.content).toContain("/kalkulyatory/krovlya/myagkaya-krovlya/");
+    expect(result.content).toContain("/kalkulyatory/krovlya/vodostok/");
+    expect(result.content).toContain("СП 17.13330.2017");
+    expect(result.content).toContain("СП 20.13330.2016");
+    expect(result.content).not.toContain("нагрузки пересмотрены");
+    expect(result.content).not.toContain("8–15 процентов");
+
+    const example = roofingDef.calculate({
+      roofAreaMode: 0,
+      projectSlopeAreaM2: 126.5,
+      roofingType: 0,
+      primaryCoverageM2: 2.1,
+      primaryReservePercent: 7,
+      accuracyMode: "basic" as unknown as number,
+    });
+    expect(example.totals.selectedSlopeAreaM2).toBe(126.5);
+    expect(example.totals.primaryUnits).toBe(65);
+    expect(example.materials[0]?.withReserve).toBe(135.355);
+  });
+
+  it("идемпотентно применяет замену статьи о кровле", () => {
+    const post = makePost({ slug: "kak-rasschitat-krovlyu" });
     const once = applyBlogContentOverrides(post);
     expect(applyBlogContentOverrides(once)).toEqual(once);
   });
