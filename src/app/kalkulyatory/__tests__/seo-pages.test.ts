@@ -42,6 +42,18 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).toContain("Рассчитать опалубку для фундамента");
   });
 
+  it("выводит в потолочном хабе реечный потолок, утепление и схему светильников", async () => {
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "potolki" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/kalkulyatory/potolki/reechnyj-potolok"');
+    expect(html).toContain('href="/kalkulyatory/potolki/uteplenie-potolka"');
+    expect(html).toContain('href="/instrumenty/rasstanovka-svetilnikov"');
+    expect(html).toContain("Расставить точечные светильники");
+  });
+
   it("использует SEO-H1 калькулятора вместо короткого названия", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({
