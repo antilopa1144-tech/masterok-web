@@ -5,6 +5,15 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(warmFloorDef.calculate.bind(warmFloorDef));
 
 describe("Калькулятор электрического тёплого пола v3", () => {
+  it("объясняет зимний сценарий квартиры и границу основного отопления", () => {
+    const seoHtml = warmFloorDef.seoContent?.descriptionHtml ?? "";
+
+    expect(seoHtml).toContain("Тёплый пол в квартире осенью и зимой");
+    expect(seoHtml).toContain("не доказывает, что тёплый пол сможет быть основным отоплением");
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/otoplenie-radiatory/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+  });
+
   it("проверяет выбранный мат по плану и паспортной мощности", () => {
     const result = calc({
       roomAreaM2: 10,

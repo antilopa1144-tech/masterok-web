@@ -5,6 +5,18 @@ import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(ventilationDef.calculate.bind(ventilationDef));
 
 describe("Вентиляция — canonical v2", () => {
+  it("формирует зимний квартирный маршрут без диагностики по одному симптому", () => {
+    const seoHtml = ventilationDef.seoContent?.descriptionHtml ?? "";
+
+    expect(ventilationDef.h1).toContain("квартиры и дома");
+    expect(ventilationDef.metaTitle).toContain("квартиры и дома");
+    expect(seoHtml).toContain("Квартира зимой: приток, вытяжка и конденсат на окнах");
+    expect(seoHtml).toContain("не диагностирует тягу общедомового канала");
+    expect(seoHtml).toContain('/kalkulyatory/otdelka/ustanovka-okon/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/otoplenie-radiatory/');
+    expect(seoHtml).toContain('/kalkulyatory/fasad/uteplenie/');
+  });
+
   describe("предварительный жилой расход", () => {
     it("при площади более 20 м²/чел берёт максимум по людям и 0,35 объёма", () => {
       const result = calc({

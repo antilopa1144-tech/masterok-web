@@ -5,6 +5,17 @@ import { checkInvariants, findMaterial, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(heatingDef.calculate.bind(heatingDef));
 
 describe("Радиаторное отопление v4", () => {
+  it("связывает зимний квартирный сценарий с окнами, вентиляцией и тёплым полом", () => {
+    const seoHtml = heatingDef.seoContent?.descriptionHtml ?? "";
+
+    expect(heatingDef.metaTitle).toContain("для квартиры и дома");
+    expect(seoHtml).toContain("Радиаторы в квартире перед отопительным сезоном");
+    expect(seoHtml).toContain('/kalkulyatory/otdelka/ustanovka-okon/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/teplyy-pol/');
+    expect(seoHtml).toContain("не подтверждает самовольную замену");
+  });
+
   it("принимает готовую нагрузку и паспортную мощность для рабочего режима", () => {
     const result = calc({
       loadMode: 0,

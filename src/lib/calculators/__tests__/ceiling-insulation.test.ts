@@ -5,6 +5,17 @@ import { findMaterial, checkInvariants, withBasicAccuracy, requirePracticalNotes
 const calc = withBasicAccuracy(ceilingInsulationDef.calculate.bind(ceilingInsulationDef));
 
 describe("Утепление потолка", () => {
+  it("разделяет потолок квартиры и чердак и не рекомендует внутреннюю схему без проверки", () => {
+    const seoHtml = ceilingInsulationDef.seoContent?.descriptionHtml ?? "";
+
+    expect(ceilingInsulationDef.metaTitle).toContain("в квартире и доме");
+    expect(seoHtml).toContain("Потолок квартиры на последнем этаже");
+    expect(seoHtml).toContain("не подтверждает, что внутреннее утепление безопасно");
+    expect(seoHtml).toContain('/kalkulyatory/fasad/uteplenie/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+    expect(seoHtml).not.toContain("самый простой вариант");
+  });
+
   it("синхронизирует web-дефолт площади с canonical-спекой", () => {
     expect(ceilingInsulationDef.fields.find((field) => field.key === "area")?.defaultValue).toBe(40);
   });
