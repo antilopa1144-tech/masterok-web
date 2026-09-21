@@ -185,7 +185,7 @@ describe("Калькулятор плитки для ванной", () => {
   it("публикует границы расчёта, внутренние ссылки и первичные источники", () => {
     const html = bathroomDef.seoContent?.descriptionHtml ?? "";
 
-    expect(bathroomDef.h1).toContain("плитки для ванной");
+    expect(bathroomDef.h1).toContain("Калькулятор ванной комнаты");
     expect(bathroomDef.metaDescription).toContain("рассчитайте");
     expect(html).toContain("ГОСТ 13996-2019");
     expect(html).toContain("СП 71.13330.2017");
@@ -195,5 +195,15 @@ describe("Калькулятор плитки для ванной", () => {
     expect(html).toContain("/kalkulyatory/otdelka/gidroizolyaciya-vlagozaschita/");
     expect(html).not.toContain("5 кг/м²");
     expect(html).not.toContain("1,5 кг/м²");
+  });
+
+  it("отвечает на запрос площади ванной и учитывает холодный сезон квартиры", () => {
+    const html = bathroomDef.seoContent?.descriptionHtml ?? "";
+
+    expect(bathroomDef.metaTitle).toContain("площадь стен и плитка");
+    expect(bathroomDef.metaDescription).toContain("с вычетом проёмов");
+    expect(html).toContain("Ремонт ванной в квартире осенью и зимой");
+    expect(html).toContain("/kalkulyatory/otdelka/gidroizolyaciya-vlagozaschita/");
+    expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
   });
 });

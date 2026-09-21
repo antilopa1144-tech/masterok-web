@@ -155,6 +155,17 @@ describe("Калькулятор ламината", () => {
     expect(content).toContain("ГОСТ Р 72714-2026");
     expect(content).toContain("1 января 2027 года");
   });
+
+  it("связывает расчёт ламината по площади с квартирным зимним сценарием", () => {
+    const html = laminateDef.seoContent?.descriptionHtml ?? "";
+
+    expect(laminateDef.h1).toContain("по площади");
+    expect(laminateDef.metaTitle).toContain("упаковки и подложка");
+    expect(html).toContain("Укладка ламината в квартире осенью и зимой");
+    expect(html).toContain("/instrumenty/ploshchad-komnaty/");
+    expect(html).toContain("/instrumenty/raskladka-laminata/");
+    expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
+  });
 });
 
 runCanonicalParitySuite({
