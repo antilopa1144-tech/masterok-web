@@ -9,6 +9,20 @@ const defaults = Object.fromEntries(
 );
 
 describe("Калькулятор обшивки балкона", () => {
+  it("отвечает на запрос площади балкона и связывает зимний квартирный маршрут", () => {
+    const seoHtml = balconyDef.seoContent?.descriptionHtml ?? "";
+
+    expect(balconyDef.h1).toContain("площади и обшивки балкона");
+    expect(balconyDef.metaTitle).toContain("площади и обшивки балкона");
+    expect(balconyDef.metaDescription).toContain("стены и потолок с вычетом проёмов");
+    expect(seoHtml).toContain("Как посчитать площадь балкона или лоджии");
+    expect(seoHtml).toContain("Балкон и лоджия перед холодами");
+    expect(seoHtml).toContain('/kalkulyatory/otdelka/ustanovka-okon/');
+    expect(seoHtml).toContain('/kalkulyatory/fasad/uteplenie/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+    expect(seoHtml).toContain("не подтверждает присоединение лоджии к комнате");
+  });
+
   it("считает одну позицию по чистой площади и рабочей ширине", () => {
     const result = calc(defaults);
     const cladding = findMaterial(result, "Панели / вагонка");
