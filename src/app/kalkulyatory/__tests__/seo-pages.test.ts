@@ -35,6 +35,10 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).toContain(
       'href="/kalkulyatory/fundament/lentochnyy-fundament"',
     );
+    expect(html).toContain(
+      'href="/kalkulyatory/fundament/plitnyj-fundament"',
+    );
+    expect(html).toContain("Рассчитать материалы плитного фундамента");
     expect(html).toContain("Рассчитать опалубку для фундамента");
   });
 

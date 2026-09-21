@@ -21,4 +21,16 @@ describe("Быстрые ссылки категорий", () => {
       }
     }
   });
+
+  it("выводит плитный фундамент в быстрый выбор и не ограничивает проектную проверку многоэтажными домами", () => {
+    const foundation = CATEGORY_INTRO.foundation;
+
+    expect(foundation.quickLinks).toContainEqual({
+      label: "Рассчитать материалы плитного фундамента",
+      href: "/kalkulyatory/fundament/plitnyj-fundament/",
+    });
+    expect(foundation.lead).toContain("определяют по проекту");
+    expect(foundation.pitfalls?.join(" ")).toContain("для каждого здания");
+    expect(foundation.pitfalls?.join(" ")).not.toMatch(/многоэтаж/i);
+  });
 });
