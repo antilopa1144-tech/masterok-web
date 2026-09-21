@@ -3,11 +3,13 @@ import { getToolConfig } from "./config";
 import { calculateLinearCutLayout } from "./linear-cut-layout";
 
 describe("linear-cut-layout", () => {
-  it("описывает страницу как онлайн-калькулятор линейного раскроя", () => {
+  it("описывает страницу как онлайн-калькулятор раскроя трубы и профиля", () => {
     const config = getToolConfig("lineynyy-raskroy");
 
-    expect(config?.seoTitle).toBe("Калькулятор линейного раскроя онлайн");
+    expect(config?.seoTitle).toBe("Калькулятор линейного раскроя трубы онлайн");
+    expect(config?.title).toContain("трубы и профиля");
     expect(config?.description).toContain("профильной трубы");
+    expect(config?.faq.some((item) => item.question.includes("раскрой профильной трубы"))).toBe(true);
     expect(config?.seoIntro).toContain("8 заготовок");
   });
 
