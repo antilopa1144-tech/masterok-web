@@ -28,4 +28,15 @@ describe("FAQ категорий про полы и инженерные сис�
     expect(answers).not.toContain("грунтовка обязательна");
     expect(answers).not.toContain("Используйте грунтовку глубокого проникновения");
   });
+
+  it("не назначает материал и толщину фасадного утепления по типу стены или региону", () => {
+    const answers = CATEGORY_FAQ.facade.map((item) => item.answer).join(" ");
+
+    expect(answers).toMatch(/теплотехническ\S* и влажностн\S* расч/i);
+    expect(answers).toMatch(/проект|проектной/i);
+    expect(answers).toMatch(/рабоч\S* (?:длин|ширин|размер)/i);
+    expect(answers).not.toMatch(/для деревянных стен — только минвата/i);
+    expect(answers).not.toMatch(/100-150 мм|150-200 мм/i);
+    expect(answers).not.toMatch(/металлический сайдинг — для промышленных объектов/i);
+  });
 });

@@ -138,4 +138,12 @@ describe("Калькулятор сайдинга", () => {
     expect(sidingDef.description).not.toMatch(/комплектующ|профил|Docke|Grand Line/i);
     expect(sidingDef.metaDescription).not.toMatch(/комплектующ|профил|Docke|Grand Line/i);
   });
+
+  it("ведёт к утеплению и детальному расчёту фасадных панелей", () => {
+    const html = sidingDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain("/kalkulyatory/fasad/uteplenie/");
+    expect(html).toContain("/kalkulyatory/fasad/fasadnye-paneli/");
+    expect(html).toMatch(/связанные расчёты фасада/i);
+  });
 });

@@ -84,4 +84,18 @@ describe("Быстрые ссылки категорий", () => {
     expect(interior.lead).toMatch(/тех(?:ническ\S* карт|карт)/i);
     expect(interior.pitfalls?.join(" ")).toMatch(/отопительн\S* сезон/i);
   });
+
+  it("разводит мокрый и вентилируемый фасад и ведёт к связанным расчётам", () => {
+    const facade = CATEGORY_INTRO.facade;
+    const hrefs = facade.quickLinks?.map((link) => link.href) ?? [];
+
+    expect(hrefs).toContain("/kalkulyatory/fasad/uteplenie/");
+    expect(hrefs).toContain("/kalkulyatory/fasad/uteplenie-fasada-minvatoj/");
+    expect(hrefs).toContain("/kalkulyatory/fasad/sayding/");
+    expect(hrefs).toContain("/kalkulyatory/fasad/fasadnye-paneli/");
+    expect(facade.lead).toMatch(/перед осенне-зимними работами/i);
+    expect(facade.lead).toMatch(/не выбирают толщину утеплителя/i);
+    expect(facade.pitfalls?.join(" ")).toMatch(/разные системы/i);
+    expect(facade.lead).not.toMatch(/в полтора раза/i);
+  });
 });

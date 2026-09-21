@@ -91,6 +91,19 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).toContain('href="/instrumenty/raskladka-oboev"');
   });
 
+  it("выводит в фасадном хабе отдельные маршруты мокрой и вентилируемой системы", async () => {
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "fasad" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/kalkulyatory/fasad/uteplenie"');
+    expect(html).toContain('href="/kalkulyatory/fasad/uteplenie-fasada-minvatoj"');
+    expect(html).toContain('href="/kalkulyatory/fasad/sayding"');
+    expect(html).toContain('href="/kalkulyatory/fasad/fasadnye-paneli"');
+    expect(html).toContain("Мокрый и вентилируемый фасад — разные системы");
+  });
+
   it("использует SEO-H1 калькулятора вместо короткого названия", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({

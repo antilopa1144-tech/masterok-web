@@ -71,4 +71,12 @@ describe("Фасадные панели", () => {
     expect(html).toContain("https://protect.gost.ru/sp/details/5081dae9-9ee9-455f-80e8-d093d495361c");
     expect(html).toContain("не задают универсальный шаг, крепёж или полезную площадь");
   });
+
+  it("ведёт к утеплению и отдельному калькулятору сайдинга", () => {
+    const html = facadePanelsDef.seoContent?.descriptionHtml ?? "";
+
+    expect(html).toContain("/kalkulyatory/fasad/uteplenie/");
+    expect(html).toContain("/kalkulyatory/fasad/sayding/");
+    expect(html).toMatch(/связанные расчёты фасада/i);
+  });
 });

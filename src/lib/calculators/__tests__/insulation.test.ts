@@ -28,6 +28,8 @@ describe("Калькулятор утеплителя", () => {
 
       expect(html).toContain("Утепление частного дома перед зимой");
       expect(html).toContain("/kalkulyatory/otdelka/otdelka-mansardy/");
+      expect(html).toContain("/kalkulyatory/fasad/sayding/");
+      expect(html).toContain("/kalkulyatory/fasad/fasadnye-paneli/");
     });
 
     it("не предлагает внутреннее утепление без проверки влаги и узлов", () => {
