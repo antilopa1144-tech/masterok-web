@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { BlogPost } from "./blog";
 import { applyBlogContentOverrides } from "./blog-content-overrides";
 import { foundationSlabDef } from "./calculators/formulas/foundation-slab";
+import { pavingTilesDef } from "./calculators/formulas/paving-tiles";
 import { roofingDef } from "./calculators/formulas/roofing";
 import { stripFoundationDef } from "./calculators/formulas/strip-foundation";
+import { calculatePaverLayout } from "./tools/paver-layout";
 
 function makePost(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -246,6 +248,73 @@ describe("applyBlogContentOverrides", () => {
 
   it("идемпотентно применяет замену статьи о кровле", () => {
     const post = makePost({ slug: "kak-rasschitat-krovlyu" });
+    const once = applyBlogContentOverrides(post);
+    expect(applyBlogContentOverrides(once)).toEqual(once);
+  });
+
+  it("заменяет статью о тротуарной плитке на маршрут от раскладки к закупке", () => {
+    const result = applyBlogContentOverrides(makePost({
+      slug: "trotuarnaia-plitka-v-2026-ghodu-kak-vybrat-ulozhit-i-sokhranit-dvor-v-rossiiskikh-riealiiakh",
+      title: "Тротуарная плитка в 2026 году",
+      content:
+        "<p>Геотекстиль обязателен. Для пешеходов снимите 20 см, запас всегда 5–7%, а покрытие прослужит десятилетия без ремонта.</p>",
+    }));
+
+    expect(result.title).toContain("Расчёт тротуарной плитки");
+    expect(result.metaTitle).toContain("раскладка и закупка");
+    expect(result.description).toContain("раскладки");
+    expect(result.updatedAt).toBe("2026-09-21");
+    expect(result.relatedCalculator).toEqual({ slug: "trotuarnaya-plitka", categorySlug: "fasad" });
+    expect(result.content).toContain("3 × 5 м");
+    expect(result.content).toContain("803 элемента");
+    expect(result.content).toContain("16,1 м²");
+    expect(result.content).toContain("16 бордюров");
+    expect(result.content).toContain("/instrumenty/raskladka-trotuarnoy-plitki/");
+    expect(result.content).toContain("/kalkulyatory/fasad/trotuarnaya-plitka/?");
+    expect(result.content).toContain("ГОСТ 17608-2017");
+    expect(result.content).toContain("СП 82.13330.2016");
+    expect(result.content).toContain("ГОСТ 6665-91");
+    expect(result.content).not.toContain("Геотекстиль обязателен");
+    expect(result.content).not.toContain("снимите 20 см");
+    expect(result.content).not.toContain("запас всегда 5–7%");
+    expect(result.content).not.toContain("десятилетия без ремонта");
+
+    const layout = calculatePaverLayout({
+      surfaceWidthMm: 3000,
+      surfaceLengthMm: 5000,
+      paverWidthMm: 100,
+      paverLengthMm: 200,
+      jointMm: 3,
+      pattern: "offset-half",
+      reservePercent: 7,
+    });
+    expect(layout.areaM2).toBe(15);
+    expect(layout.basePavers).toBe(750);
+    expect(layout.reservePavers).toBe(53);
+    expect(layout.purchasePavers).toBe(803);
+
+    const purchase = pavingTilesDef.calculate({
+      area: 15,
+      tileReservePercent: 7,
+      tileSaleStepM2: 0.1,
+      borderEnabled: 1,
+      perimeter: 16,
+      borderPieceLengthM: 1,
+      borderReservePercent: 0,
+      layersEnabled: 0,
+      jointSandEnabled: 0,
+      geotextileEnabled: 0,
+      accuracyMode: "basic" as unknown as number,
+    });
+    expect(purchase.totals.tileReservedM2).toBe(16.05);
+    expect(purchase.totals.tilePurchaseM2).toBe(16.1);
+    expect(purchase.totals.borderPurchasePcs).toBe(16);
+  });
+
+  it("идемпотентно применяет замену статьи о тротуарной плитке", () => {
+    const post = makePost({
+      slug: "trotuarnaia-plitka-v-2026-ghodu-kak-vybrat-ulozhit-i-sokhranit-dvor-v-rossiiskikh-riealiiakh",
+    });
     const once = applyBlogContentOverrides(post);
     expect(applyBlogContentOverrides(once)).toEqual(once);
   });
