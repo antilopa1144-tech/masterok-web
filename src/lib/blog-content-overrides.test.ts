@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { BlogPost } from "./blog";
 import { applyBlogContentOverrides } from "./blog-content-overrides";
+import { foundationSlabDef } from "./calculators/formulas/foundation-slab";
+import { stripFoundationDef } from "./calculators/formulas/strip-foundation";
 
 function makePost(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -144,6 +146,61 @@ describe("applyBlogContentOverrides", () => {
 
   it("идемпотентно применяет замену статьи о доме 10×10", () => {
     const post = makePost({ slug: "skolko-kirpicha-na-dom-10x10" });
+    const once = applyBlogContentOverrides(post);
+    expect(applyBlogContentOverrides(once)).toEqual(once);
+  });
+
+  it("заменяет статью о фундаменте на ведомость материалов по проектным размерам", () => {
+    const result = applyBlogContentOverrides(makePost({
+      slug: "raschet-fundamenta",
+      title: "Как самостоятельно выбрать фундамент",
+      content: "<p>Для дома достаточно плиты 200 мм и бетона B20.</p>",
+    }));
+
+    expect(result.title).toContain("материалы для фундамента");
+    expect(result.metaTitle).toContain("бетон, арматура и опалубка");
+    expect(result.description).toContain("по размерам из проекта");
+    expect(result.updatedAt).toBe("2026-09-21");
+    expect(result.relatedCalculator).toEqual({ slug: "lentochnyy-fundament", categorySlug: "fundament" });
+    expect(result.content).toContain("40 × 0,4 × 1,0 = <strong>16 м³</strong>");
+    expect(result.content).toContain("16,8 м³");
+    expect(result.content).toContain("10 × 6 × 0,2 = <strong>12 м³</strong>");
+    expect(result.content).toContain("12,6 м³");
+    expect(result.content).toContain("/kalkulyatory/fundament/lentochnyy-fundament/?");
+    expect(result.content).toContain("/kalkulyatory/fundament/plitnyj-fundament/?");
+    expect(result.content).toContain("/kalkulyatory/fundament/beton/");
+    expect(result.content).toContain("/kalkulyatory/fundament/armatura/");
+    expect(result.content).not.toContain("достаточно плиты 200 мм");
+    expect(result.content).not.toContain("бетона B20");
+
+    const strip = stripFoundationDef.calculate({
+      perimeter: 40,
+      width: 400,
+      depth: 700,
+      aboveGround: 300,
+      reserve: 5,
+      readyMixOrderStepM3: 0.1,
+      deliveryAllowanceM3: 0,
+      accuracyMode: "basic" as unknown as number,
+    });
+    expect(strip.totals.vol).toBe(16);
+    expect(strip.scenarios?.REC.exact_need).toBe(16.8);
+
+    const slab = foundationSlabDef.calculate({
+      length: 10,
+      width: 6,
+      thickness: 200,
+      concreteReservePercent: 5,
+      readyMixOrderStepM3: 0.1,
+      deliveryAllowanceM3: 0,
+      accuracyMode: "basic" as unknown as number,
+    });
+    expect(slab.totals.concreteM3).toBe(12);
+    expect(slab.scenarios?.REC.exact_need).toBe(12.6);
+  });
+
+  it("идемпотентно применяет замену статьи о фундаменте", () => {
+    const post = makePost({ slug: "raschet-fundamenta" });
     const once = applyBlogContentOverrides(post);
     expect(applyBlogContentOverrides(once)).toEqual(once);
   });
