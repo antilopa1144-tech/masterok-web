@@ -219,4 +219,17 @@ describe("Монтаж окон — web joint contract", () => {
     expect(seo).toContain("https://protect.gost.ru/gost/details/dd2cf1c8-2634-46e7-8349-4a08ca4597f2");
     expect(seo).toContain("https://soudal.ru/images/stories/soudal/tds-profi/soudafoam-professional-60_tds_ru.pdf");
   });
+
+  it("отвечает на сезонный запрос о пене, не обещая расчёт оконной конструкции", () => {
+    const seo = windowsDef.seoContent?.descriptionHtml ?? "";
+
+    expect(windowsDef.h1).toContain("Калькулятор установки окон");
+    expect(windowsDef.metaTitle).toContain("установки окон и монтажной пены");
+    expect(windowsDef.metaDescription).toContain("сколько монтажной пены нужно");
+    expect(seo).toContain("Окна перед отопительным сезоном");
+    expect(seo).toContain("не рассчитывает оконный блок");
+    expect(seo).toContain("/kalkulyatory/otdelka/otkosy-okon-i-dverej/");
+    expect(seo).toContain("/kalkulyatory/fasad/uteplenie/");
+    expect(seo).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
+  });
 });
