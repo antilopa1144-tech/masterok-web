@@ -5,6 +5,40 @@ import { findMaterial, checkInvariants, withBasicAccuracy } from "./_helpers";
 const calc = withBasicAccuracy(insulationDef.calculate.bind(insulationDef));
 
 describe("Калькулятор утеплителя", () => {
+  describe("осенне-зимний поисковый сценарий для дома и квартиры", () => {
+    it("разделяет закупку утеплителя и расчёт полной фасадной системы", () => {
+      const html = insulationDef.seoContent?.descriptionHtml ?? "";
+
+      expect(insulationDef.h1).toContain("для дома и квартиры");
+      expect(insulationDef.metaDescription).toContain("для дома и квартиры");
+      expect(html).toContain("закупку уже выбранного утеплителя");
+      expect(html).toContain("/kalkulyatory/fasad/uteplenie-fasada-minvatoj/");
+      expect(html).toMatch(/полную ведомость мокрого фасада/i);
+    });
+
+    it("даёт отдельные маршруты для квартиры и частного дома", () => {
+      const html = insulationDef.seoContent?.descriptionHtml ?? "";
+
+      expect(html).toContain("Утепление квартиры перед холодами");
+      expect(html).toContain("/kalkulyatory/otdelka/otdelka-balkona/");
+      expect(html).toContain("/kalkulyatory/otdelka/ustanovka-okon/");
+      expect(html).toContain("/kalkulyatory/potolki/uteplenie-potolka/");
+      expect(html).toContain("/kalkulyatory/inzhenernye/otoplenie-radiatory/");
+      expect(html).toContain("/kalkulyatory/inzhenernye/ventilyaciya/");
+
+      expect(html).toContain("Утепление частного дома перед зимой");
+      expect(html).toContain("/kalkulyatory/otdelka/otdelka-mansardy/");
+    });
+
+    it("не предлагает внутреннее утепление без проверки влаги и узлов", () => {
+      const html = insulationDef.seoContent?.descriptionHtml ?? "";
+
+      expect(html).toContain("Утепление изнутри");
+      expect(html).toContain("влажностного режима");
+      expect(html).toContain("мостиков холода");
+    });
+  });
+
   describe("Минвата 100 мм, 50 м², плита 1200×600 мм", () => {
     // plateArea = 0.72, areaWithReserve = 52.5
     // platesNeeded = ceil(52.5/0.72) = ceil(72.9) = 73

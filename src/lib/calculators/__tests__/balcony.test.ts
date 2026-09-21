@@ -215,7 +215,8 @@ describe("Калькулятор обшивки балкона", () => {
     expect(html).toContain("spb.lesobirzha.ru/articles/skolko-vagonki-v-m2");
     expect(html).toContain("/kalkulyatory/steny/paneli-dlya-sten/");
     expect(html).toContain("/instrumenty/lineynyy-raskroy/");
-    expect(html).toContain("/kalkulyatory/steny/uteplenie/");
+    expect(html).toContain("/kalkulyatory/fasad/uteplenie/");
+    expect(html).not.toContain("/kalkulyatory/steny/uteplenie/");
     expect(html).not.toContain("до 20%");
     expect(html).not.toContain("R ≈");
   });
