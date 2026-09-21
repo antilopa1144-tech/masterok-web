@@ -7,6 +7,27 @@ import paintSpec from "../../../../configs/calculators/paint-canonical.v1.json";
 const calc = withBasicAccuracy(paintDef.calculate.bind(paintDef));
 
 describe("Калькулятор краски", () => {
+  it("описывает расчёт для стен и потолка без универсальных норм", () => {
+    expect(paintDef.h1).toContain("для стен и потолка");
+    expect(paintDef.metaTitle).toContain("для стен");
+    expect(paintDef.metaDescription).toContain("расходу производителя");
+
+    const consumption = paintDef.fields.find((field) => field.key === "consumption");
+    expect(consumption?.hint).toContain("с упаковки или технической карты");
+    expect(paintDef.howToUse?.join(" ")).toContain("технической карты выбранной краски");
+
+    const html = paintDef.seoContent?.descriptionHtml ?? "";
+    expect(html).toContain("Пример расчёта краски на 20 м²");
+    expect(html).toContain("Покраска квартиры осенью и зимой");
+    expect(html).toContain('/kalkulyatory/otdelka/shpaklevka/');
+    expect(html).toContain('/kalkulyatory/otdelka/gruntovka/');
+    expect(html).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+    expect(html).toContain('/instrumenty/normy-raskhoda/#norm-kraska');
+    expect(html).toContain('/instrumenty/tajmer-skhvatyvaniya/?preset=paint-latex');
+    expect(html).not.toContain("грунтовка — она снижает расход");
+    expect(html).not.toContain("экономия достигает");
+  });
+
   it("использует единый минимум площади в web и canonical-контракте", () => {
     const webArea = paintDef.fields.find((field) => field.key === "area");
     const canonicalArea = paintSpec.input_schema.find((field) => field.key === "area");
