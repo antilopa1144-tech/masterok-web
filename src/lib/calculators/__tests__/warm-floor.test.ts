@@ -12,6 +12,8 @@ describe("Калькулятор электрического тёплого п�
     expect(seoHtml).toContain("не доказывает, что тёплый пол сможет быть основным отоплением");
     expect(seoHtml).toContain('/kalkulyatory/inzhenernye/otoplenie-radiatory/');
     expect(seoHtml).toContain('/kalkulyatory/inzhenernye/ventilyaciya/');
+    expect(seoHtml).toContain('/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/');
+    expect(seoHtml).toContain('/kalkulyatory/poly/styazhka/');
   });
 
   it("проверяет выбранный мат по плану и паспортной мощности", () => {

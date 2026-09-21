@@ -54,6 +54,30 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).toContain("Расставить точечные светильники");
   });
 
+  it("выводит в хабе полов маршрут от тёплого пола к стяжке и покрытию", async () => {
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "poly" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/kalkulyatory/inzhenernye/teplyy-pol"');
+    expect(html).toContain('href="/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol"');
+    expect(html).toContain('href="/kalkulyatory/poly/styazhka"');
+    expect(html).toContain('href="/kalkulyatory/poly/laminat"');
+  });
+
+  it("выводит в инженерном хабе переход от систем подогрева к стяжке", async () => {
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "inzhenernye" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="/kalkulyatory/inzhenernye/teplyy-pol"');
+    expect(html).toContain('href="/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol"');
+    expect(html).toContain('href="/kalkulyatory/poly/styazhka"');
+    expect(html).not.toContain("Мы закладываем запас по нормативу");
+  });
+
   it("использует SEO-H1 калькулятора вместо короткого названия", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({

@@ -46,4 +46,28 @@ describe("Быстрые ссылки категорий", () => {
     expect(ceiling.lead).toContain("квартиры или дома");
     expect(ceiling.pitfalls?.join(" ")).toContain("до заказа материалов");
   });
+
+  it("связывает пирог пола с электрическим и водяным подогревом", () => {
+    const flooring = CATEGORY_INTRO.flooring;
+    const hrefs = flooring.quickLinks?.map((link) => link.href) ?? [];
+
+    expect(hrefs).toContain("/kalkulyatory/poly/styazhka/");
+    expect(hrefs).toContain("/kalkulyatory/poly/nalivnoy-pol/");
+    expect(hrefs).toContain("/kalkulyatory/inzhenernye/teplyy-pol/");
+    expect(hrefs).toContain("/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/");
+    expect(flooring.lead).toContain("квартире или доме");
+    expect(flooring.lead).toContain("одна площадь помещения их не определяет");
+    expect(flooring.pitfalls?.join(" ")).not.toMatch(/учитываем автоматически/i);
+  });
+
+  it("не обещает нормативный запас инженерных материалов и ведёт к стяжке", () => {
+    const engineering = CATEGORY_INTRO.engineering;
+    const hrefs = engineering.quickLinks?.map((link) => link.href) ?? [];
+
+    expect(hrefs).toContain("/kalkulyatory/inzhenernye/teplyy-pol/");
+    expect(hrefs).toContain("/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/");
+    expect(hrefs).toContain("/kalkulyatory/poly/styazhka/");
+    expect(engineering.lead).not.toMatch(/запас по нормативу/i);
+    expect(engineering.pitfalls?.join(" ")).toContain("не доказывает");
+  });
 });

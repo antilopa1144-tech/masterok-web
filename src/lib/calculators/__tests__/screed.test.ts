@@ -21,6 +21,8 @@ describe("Калькулятор стяжки пола", () => {
       expect(screedDef.metaDescription).toContain("полной толщине");
       expect(screedDef.metaDescription).toContain("тёплым полом");
       expect(screedDef.seoContent?.descriptionHtml).toContain("весь слой от основания");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("/kalkulyatory/inzhenernye/teplyy-pol/");
+      expect(screedDef.seoContent?.descriptionHtml).toContain("/kalkulyatory/inzhenernye/vodyanoy-teplyy-pol/");
     });
 
     it("пример 20 м² и 70 мм совпадает с движком и фасовкой", () => {
