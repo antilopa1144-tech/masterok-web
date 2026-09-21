@@ -19,7 +19,7 @@ describe("контекстные связи калькуляторов с инс
     }
   });
 
-  it("закрывает первую волну слабосвязанных инструментов", () => {
+  it("закрывает слабосвязанные инструменты постоянными контекстными входами", () => {
     const targets = new Set(
       Object.values(CALCULATOR_RELATED_TOOLS).flatMap((links) => links.map((item) => item.slug)),
     );
@@ -30,8 +30,19 @@ describe("контекстные связи калькуляторов с инс
       "normy-raskhoda",
       "raskladka-trotuarnoy-plitki",
       "rasstanovka-svetilnikov",
+      "konverter",
+      "skolko-ostalos",
+      "sravnenie-materialov",
     ]) {
       expect(targets.has(slug), slug).toBe(true);
     }
+  });
+
+  it("ведёт к инструменту из совместимого пользовательского сценария", () => {
+    expect(CALCULATOR_RELATED_TOOLS.beton?.map((item) => item.slug)).toContain("konverter");
+    expect(CALCULATOR_RELATED_TOOLS.kraska?.map((item) => item.slug)).toContain("skolko-ostalos");
+    expect(CALCULATOR_RELATED_TOOLS.laminat?.map((item) => item.slug)).toContain("sravnenie-materialov");
+    expect(CALCULATOR_RELATED_TOOLS.laminat?.find((item) => item.slug === "sravnenie-materialov")?.href)
+      .toBe("/instrumenty/sravnenie-materialov/?category=flooring&from=laminat");
   });
 });

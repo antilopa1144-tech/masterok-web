@@ -66,6 +66,21 @@ describe("SEO-страницы калькуляторов", () => {
     expect(html).toContain("Разложить декоративные рейки");
   });
 
+  it("передаёт выбранный тип материала в сравнение из исходного HTML", async () => {
+    const page = await CalculatorPage({
+      params: Promise.resolve({
+        category: "poly",
+        slug: "laminat",
+      }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain(
+      'href="/instrumenty/sravnenie-materialov?category=flooring&amp;from=laminat"',
+    );
+    expect(html).toContain("Сравнить ламинат с другими напольными покрытиями");
+  });
+
   it("связывает HowTo JSON-LD с видимыми шагами", async () => {
     const page = await CalculatorPage({
       params: Promise.resolve({

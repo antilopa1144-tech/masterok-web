@@ -83,7 +83,7 @@ const pluralRu = (
 export const parquetDef: CalculatorDefinition = {
   id: "floors_parquet",
   slug: "parket",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор паркетной доски",
   h1: "Калькулятор паркетной доски — площадь, запас и пачки",

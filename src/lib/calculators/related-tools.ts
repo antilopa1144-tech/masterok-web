@@ -1,5 +1,8 @@
+import { buildMaterialComparisonHrefFromCalculator } from "@/lib/tools/material-comparison-links";
+
 export interface CalculatorRelatedToolLink {
   slug: string;
+  href?: string;
   reason: string;
 }
 
@@ -9,6 +12,12 @@ export interface CalculatorRelatedToolLink {
  * запускал ли пользователь клиентскую форму.
  */
 export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[]> = {
+  beton: [
+    {
+      slug: "konverter",
+      reason: "Перевести литры, кубометры, килограммы и тонны по известной плотности материала.",
+    },
+  ],
   "paneli-dlya-sten": [
     {
       slug: "raskladka-reek",
@@ -62,6 +71,10 @@ export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[
       slug: "normy-raskhoda",
       reason: "Сверить базовый расход на квадратный метр и условия применения с техкартой продукта.",
     },
+    {
+      slug: "skolko-ostalos",
+      reason: "Проверить, какую площадь можно покрыть фактическим остатком грунтовки на объекте.",
+    },
   ],
   shpaklevka: [
     {
@@ -74,11 +87,19 @@ export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[
       slug: "normy-raskhoda",
       reason: "Проверить типовой расход краски по числу слоёв перед вводом данных с упаковки.",
     },
+    {
+      slug: "skolko-ostalos",
+      reason: "Посчитать, на какую площадь хватит оставшейся краски при заданном расходе и числе слоёв.",
+    },
   ],
   shtukaturka: [
     {
       slug: "normy-raskhoda",
       reason: "Сопоставить расход штукатурки на квадратный метр для выбранной толщины слоя.",
+    },
+    {
+      slug: "skolko-ostalos",
+      reason: "Оценить площадь, которую закроет остаток штукатурки при фактической толщине слоя.",
     },
   ],
   "klej-dlya-plitki": [
@@ -86,11 +107,47 @@ export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[
       slug: "normy-raskhoda",
       reason: "Сверить типовой расход клея с форматом плитки, зубом шпателя и техкартой состава.",
     },
+    {
+      slug: "skolko-ostalos",
+      reason: "Проверить, на какую площадь хватит оставшегося плиточного клея при заданном расходе.",
+    },
   ],
   styazhka: [
     {
       slug: "normy-raskhoda",
       reason: "Проверить, как толщина слоя влияет на расход сухой смеси на квадратный метр.",
+    },
+    {
+      slug: "konverter",
+      reason: "Перевести объём смеси между литрами и кубометрами или массу по известной плотности.",
+    },
+  ],
+  laminat: [
+    {
+      slug: "sravnenie-materialov",
+      href: buildMaterialComparisonHrefFromCalculator("laminat") ?? undefined,
+      reason: "Сравнить ламинат с другими напольными покрытиями по введённой цене и условиям использования.",
+    },
+  ],
+  parket: [
+    {
+      slug: "sravnenie-materialov",
+      href: buildMaterialComparisonHrefFromCalculator("parket") ?? undefined,
+      reason: "Сопоставить паркет с другими покрытиями до расчёта закупки и сопутствующих материалов.",
+    },
+  ],
+  uteplenie: [
+    {
+      slug: "sravnenie-materialov",
+      href: buildMaterialComparisonHrefFromCalculator("uteplenie") ?? undefined,
+      reason: "Сравнить виды утеплителя по заданной цене и справочным характеристикам перед расчётом объёма.",
+    },
+  ],
+  oboi: [
+    {
+      slug: "sravnenie-materialov",
+      href: buildMaterialComparisonHrefFromCalculator("oboi") ?? undefined,
+      reason: "Сопоставить отделочные материалы перед расчётом рулонов, запаса и стоимости выбранных обоев.",
     },
   ],
 };

@@ -102,7 +102,7 @@ export default async function CalculatorPage({ params }: PageProps) {
   const relatedTools = (CALCULATOR_RELATED_TOOLS[calc.slug] ?? []).flatMap((link) => {
     const tool = getToolConfig(link.slug);
     return tool
-      ? [{ slug: tool.slug, href: toolHref(tool.slug), title: tool.cardTitle, reason: link.reason }]
+      ? [{ slug: tool.slug, href: link.href ?? toolHref(tool.slug), title: tool.cardTitle, reason: link.reason }]
       : [];
   });
 

@@ -55,7 +55,7 @@ const plural = (
 export const wallpaperDef: CalculatorDefinition = {
   id: "wallpaper",
   slug: "oboi",
-  lastModified: "2026-09-20",
+  lastModified: "2026-09-21",
   formulaVersion: WEB_FORMULA_VERSION,
   title: "Калькулятор обоев",
   h1: "Калькулятор обоев — расчёт полотен и рулонов",
