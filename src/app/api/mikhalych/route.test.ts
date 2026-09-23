@@ -3,7 +3,6 @@ import { NextRequest } from "next/server";
 
 process.env.MONETIZATION_MODE = "local";
 process.env.COMMERCE_LOCAL_DATA_DIR = "memory://";
-process.env.COMMERCE_AUTH_SECRET = "test-commerce-secret-that-is-long-enough";
 process.env.DEEPSEEK_API_KEY = "test-key-only";
 
 const agent = vi.hoisted(() => ({ run: vi.fn() }));

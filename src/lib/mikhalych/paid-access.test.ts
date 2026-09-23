@@ -9,7 +9,6 @@ import type { CommerceOrder } from "../commerce/types";
 
 process.env.MONETIZATION_MODE = "local";
 process.env.COMMERCE_LOCAL_DATA_DIR = "memory://";
-process.env.COMMERCE_AUTH_SECRET = "test-commerce-secret-that-is-long-enough";
 process.env.DEEPSEEK_API_KEY = "test-key-only";
 
 const request = (cookie = "") => new Request("http://localhost:3460/api/mikhalych", { headers: { "x-forwarded-for": "192.0.2.34", "user-agent": "quota-test", cookie } });

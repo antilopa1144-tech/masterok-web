@@ -7,7 +7,12 @@ export const SESSION_COOKIE = "masterok_account";
 const SESSION_LIFETIME = 30 * 86400000;
 
 function digest(value: string): string {
-  const secret = process.env.COMMERCE_AUTH_SECRET ?? (commerceMode() === "local" ? "local-simulation-only-no-production" : "");
+  // Outside the local simulator, the database connection string is required
+  // and already holds a deployment-only credential. Reuse it as the stable
+  // HMAC key so operators do not need to manage a second secret. Rotating the
+  // database password intentionally invalidates existing login sessions;
+  // stored orders and entitlements remain untouched.
+  const secret = process.env.COMMERCE_DATABASE_URL ?? (commerceMode() === "local" ? "local-simulation-only-no-production" : "");
   if (secret.length < 24) throw new CommerceError(503, "Вход пока не подключён");
   return createHmac("sha256", secret).update(value).digest("hex");
 }

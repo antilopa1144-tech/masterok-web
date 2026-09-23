@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 process.env.MONETIZATION_MODE = "local";
 process.env.COMMERCE_LOCAL_DATA_DIR = "memory://";
-process.env.COMMERCE_AUTH_SECRET = "test-commerce-secret-that-is-long-enough";
 
 import { accessFor, cancelRenewal, confirmPayment, nextCalendarMonth, runRenewals, startRefund } from "./billing";
 import { defaultSettings } from "./config";

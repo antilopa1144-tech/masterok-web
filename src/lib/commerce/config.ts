@@ -41,7 +41,7 @@ export function providerConfigured(): boolean {
 export function publicState(settings: CommerceSettings): CommercePublicState {
   const mode = commerceMode();
   const mailReady = Boolean(process.env.COMMERCE_MAIL_FROM && (process.env.RESEND_API_KEY || process.env.COMMERCE_SMTP_URL));
-  const liveReady = mode !== "live" || Boolean(process.env.COMMERCE_ALLOW_LIVE_PAYMENTS === "true" && settings.legalApproved && settings.sellerName && /^\d{12}$/.test(settings.sellerInn) && settings.supportEmail && process.env.COMMERCE_AUTH_SECRET && process.env.COMMERCE_DATABASE_URL && mailReady && process.env.COMMERCE_CHECKS_NPD_CONFIRMED === "true");
+  const liveReady = mode !== "live" || Boolean(process.env.COMMERCE_ALLOW_LIVE_PAYMENTS === "true" && settings.legalApproved && settings.sellerName && /^\d{12}$/.test(settings.sellerInn) && settings.supportEmail && process.env.COMMERCE_DATABASE_URL && mailReady && process.env.COMMERCE_CHECKS_NPD_CONFIRMED === "true");
   const checkoutAvailable = mode !== "off" && settings.checkoutEnabled && liveReady && (mode === "local" || providerConfigured());
   const aiAvailable = mode !== "off" && settings.proAiEnabled && Boolean(process.env.DEEPSEEK_API_KEY) && settings.aiInputKopecksPerMillion > 0 && settings.aiOutputKopecksPerMillion > 0 && Date.parse(settings.aiPriceCheckedAt) <= Date.now() && Date.parse(settings.aiPriceCheckedAt) > Date.now() - 31 * 86400000;
   return {

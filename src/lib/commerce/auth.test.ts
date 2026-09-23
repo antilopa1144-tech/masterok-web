@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 process.env.MONETIZATION_MODE = "local";
 process.env.COMMERCE_LOCAL_DATA_DIR = "memory://";
-process.env.COMMERCE_AUTH_SECRET = "test-commerce-secret-that-is-long-enough";
 
 import { assertSameOrigin, requestLogin, verifyLogin } from "./auth";
 import { closeCommerceDatabase, database } from "./db";
@@ -36,9 +35,11 @@ describe("commerce OTP and CSRF", () => {
     const oldMode = process.env.MONETIZATION_MODE;
     const oldKey = process.env.RESEND_API_KEY;
     const oldFrom = process.env.COMMERCE_MAIL_FROM;
+    const oldDatabaseUrl = process.env.COMMERCE_DATABASE_URL;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     try {
       process.env.MONETIZATION_MODE = "sandbox";
+      process.env.COMMERCE_DATABASE_URL = "postgres://commerce:test-password@example.test:5432/commerce";
       process.env.RESEND_API_KEY = "test-key";
       process.env.COMMERCE_MAIL_FROM = "Мастерок <login@example.test>";
       const result = await requestLogin("buyer@example.test", "127.0.0.3");
@@ -49,6 +50,7 @@ describe("commerce OTP and CSRF", () => {
     } finally {
       fetchMock.mockRestore();
       if (oldMode === undefined) delete process.env.MONETIZATION_MODE; else process.env.MONETIZATION_MODE = oldMode;
+      if (oldDatabaseUrl === undefined) delete process.env.COMMERCE_DATABASE_URL; else process.env.COMMERCE_DATABASE_URL = oldDatabaseUrl;
       if (oldKey === undefined) delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY = oldKey;
       if (oldFrom === undefined) delete process.env.COMMERCE_MAIL_FROM; else process.env.COMMERCE_MAIL_FROM = oldFrom;
     }
