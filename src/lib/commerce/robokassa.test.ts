@@ -2,11 +2,11 @@ import { createHash, createHmac, generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 process.env.MONETIZATION_MODE = "local";
-import { commerceMode } from "./config";
+import { commerceMode, providerConfigured } from "./config";
 import { buildPaymentUrl, createProviderRefund, queryOperation, queryProviderRefund, resultSignature, verifyResult, verifyResult2 } from "./robokassa";
 import type { CommerceOrder } from "./types";
 
-const envNames = ["MONETIZATION_MODE", "ROBOKASSA_MERCHANT_LOGIN", "ROBOKASSA_PASSWORD1", "ROBOKASSA_PASSWORD2", "ROBOKASSA_PASSWORD3", "ROBOKASSA_HASH_ALGORITHM", "ROBOKASSA_RESULT2_CERTIFICATE", "COMMERCE_ORIGIN", "COMMERCE_CHECKS_NPD_CONFIRMED"] as const;
+const envNames = ["MONETIZATION_MODE", "ROBOKASSA_MERCHANT_LOGIN", "ROBOKASSA_PASSWORD1", "ROBOKASSA_PASSWORD2", "ROBOKASSA_PASSWORD3", "ROBOKASSA_TEST_PASSWORD1", "ROBOKASSA_TEST_PASSWORD2", "ROBOKASSA_HASH_ALGORITHM", "ROBOKASSA_RESULT2_CERTIFICATE", "COMMERCE_ORIGIN", "COMMERCE_CHECKS_NPD_CONFIRMED"] as const;
 const initialEnv = Object.fromEntries(envNames.map((name) => [name, process.env[name]]));
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -35,10 +35,26 @@ describe("Robokassa callback boundary", () => {
     process.env.MONETIZATION_MODE = initial; expect(commerceMode()).toBe("local");
   });
 
+  it("requires the matching credential pair for sandbox and live readiness", () => {
+    process.env.ROBOKASSA_MERCHANT_LOGIN = "test-shop";
+    process.env.ROBOKASSA_PASSWORD1 = "live-password-one";
+    process.env.ROBOKASSA_PASSWORD2 = "live-password-two";
+    delete process.env.ROBOKASSA_TEST_PASSWORD1;
+    delete process.env.ROBOKASSA_TEST_PASSWORD2;
+    process.env.MONETIZATION_MODE = "sandbox";
+    expect(providerConfigured()).toBe(false);
+    process.env.ROBOKASSA_TEST_PASSWORD1 = "test-password-one";
+    process.env.ROBOKASSA_TEST_PASSWORD2 = "test-password-two";
+    expect(providerConfigured()).toBe(true);
+    process.env.MONETIZATION_MODE = "live";
+    expect(providerConfigured()).toBe(true);
+  });
+
   it("builds a test-only provider URL with the signed encoded receipt", () => {
     process.env.MONETIZATION_MODE = "sandbox";
     process.env.ROBOKASSA_MERCHANT_LOGIN = "test-shop";
-    process.env.ROBOKASSA_PASSWORD1 = "test-password-one";
+    process.env.ROBOKASSA_PASSWORD1 = "live-password-one";
+    process.env.ROBOKASSA_TEST_PASSWORD1 = "test-password-one";
     process.env.ROBOKASSA_HASH_ALGORITHM = "sha256";
     const order = { id: "11111111-1111-1111-1111-111111111111", invoice: "100001", amount: 24900, kind: "project_pack", mode: "sandbox" } as CommerceOrder;
     const url = new URL(buildPaymentUrl(order, "buyer@example.test"));
@@ -50,6 +66,17 @@ describe("Robokassa callback boundary", () => {
     expect(url.searchParams.get("Description")).toBe("Смета проекта в PDF и XLSX");
     const base = `test-shop:249.00:100001:${receipt}:test-password-one:Shp_order=${order.id}`;
     expect(url.searchParams.get("SignatureValue")).toBe(createHash("sha256").update(base).digest("hex"));
+  });
+
+  it("verifies sandbox callbacks with test Password2 and never falls back to live credentials", () => {
+    process.env.MONETIZATION_MODE = "sandbox";
+    process.env.ROBOKASSA_PASSWORD2 = "live-password-two";
+    delete process.env.ROBOKASSA_TEST_PASSWORD2;
+    const amount = "249.00"; const invoice = "100001"; const orderId = "11111111-1111-1111-1111-111111111111";
+    expect(() => resultSignature(amount, invoice, orderId)).toThrow("Платёжный сервис ещё не подключён");
+    process.env.ROBOKASSA_TEST_PASSWORD2 = "test-password-two";
+    const params = new URLSearchParams({ OutSum: amount, InvId: invoice, Shp_order: orderId, SignatureValue: resultSignature(amount, invoice, orderId) });
+    expect(verifyResult(params)).toEqual({ invoice, orderId, amount: 24900 });
   });
 
   it("signs partial refunds with Password3 and reconciles only the provider's completed amount", async () => {

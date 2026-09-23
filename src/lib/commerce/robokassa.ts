@@ -5,9 +5,15 @@ import { CommerceError, type CommerceOrder } from "./types";
 
 const localPassword = "local-simulation-only-no-real-payments";
 function secret(number: 1 | 2 | 3): string {
-  const value = process.env[`ROBOKASSA_PASSWORD${number}`];
+  const mode = commerceMode();
+  // Robokassa requires dedicated test credentials for IsTest=1. Password #3
+  // is used only by the live refund API; test settings provide #1 and #2.
+  const key = mode === "sandbox" && number <= 2
+    ? `ROBOKASSA_TEST_PASSWORD${number}`
+    : `ROBOKASSA_PASSWORD${number}`;
+  const value = process.env[key];
   if (value) return value;
-  if (commerceMode() === "local") return localPassword;
+  if (mode === "local") return localPassword;
   throw new CommerceError(503, "Платёжный сервис ещё не подключён");
 }
 

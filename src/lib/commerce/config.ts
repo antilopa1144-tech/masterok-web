@@ -32,7 +32,10 @@ export async function getSettings(sql?: Sql): Promise<CommerceSettings> {
 }
 
 export function providerConfigured(): boolean {
-  return Boolean(process.env.ROBOKASSA_MERCHANT_LOGIN && process.env.ROBOKASSA_PASSWORD1 && process.env.ROBOKASSA_PASSWORD2);
+  const test = commerceMode() === "sandbox";
+  const password1 = process.env[test ? "ROBOKASSA_TEST_PASSWORD1" : "ROBOKASSA_PASSWORD1"];
+  const password2 = process.env[test ? "ROBOKASSA_TEST_PASSWORD2" : "ROBOKASSA_PASSWORD2"];
+  return Boolean(process.env.ROBOKASSA_MERCHANT_LOGIN && password1 && password2);
 }
 
 export function publicState(settings: CommerceSettings): CommercePublicState {
