@@ -38,8 +38,10 @@ describe("commerce catch-all route", () => {
     process.env.MONETIZATION_MODE = "off";
     const config = await GET(request(["config"]), context(["config"]));
     const me = await GET(request(["me"]), context(["me"]));
+    const health = await GET(request(["health"]), context(["health"]));
     expect(config.status).toBe(200); expect((await config.json()).mode).toBe("off");
     expect((await me.json()).user).toBeNull();
+    expect(health.status).toBe(200); expect(await health.json()).toEqual({ database: "ok" });
     process.env.MONETIZATION_MODE = "local";
   });
 

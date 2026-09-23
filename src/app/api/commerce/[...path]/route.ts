@@ -26,6 +26,14 @@ async function boundedText(request: Request): Promise<string> {
 async function handle(request: Request, context: { params: Promise<{ path: string[] }> }) {
   try {
     const path = (await context.params).path; const route = path.join("/"); const method = request.method;
+    if (method === "GET" && route === "health") {
+      try {
+        await (await database()).query("SELECT 1");
+        return json({ database: "ok" });
+      } catch {
+        return json({ database: "unavailable" }, 503);
+      }
+    }
     const mode = commerceMode(); const settings = await getSettings(); const state = publicState(settings);
     if (method === "GET" && route === "config") return json(state);
     if (method === "GET" && route === "offers") {
