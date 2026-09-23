@@ -54,6 +54,7 @@ export interface AgentRunOptions {
   stream?: boolean;
   sessionId?: string;
   onEvent?: (event: MikhalychSseEvent) => void;
+  onUsage?: (input: number | undefined, output: number | undefined) => void;
 }
 
 export async function runMikhalychAgent(
@@ -107,6 +108,7 @@ export async function runMikhalychAgent(
       });
 
       const usage = assistant.usage;
+      options.onUsage?.(usage?.prompt_tokens, usage?.completion_tokens);
       const { usage: _u, finishReason: _f, ...assistantMsg } = assistant;
       trace.spanGeneration({
         name: `llm-round-${rounds}`,
@@ -310,6 +312,7 @@ export function toOpenAIChatCompletionPayload(result: AgentRunResult) {
 export function runMikhalychAgentAsSseStream(
   input: AgentRunInput,
   sessionId: string,
+  accounting?: { onUsage?: AgentRunOptions["onUsage"]; finish?: () => Promise<void> },
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
 
@@ -319,6 +322,7 @@ export function runMikhalychAgentAsSseStream(
         await runMikhalychAgent(input, {
           stream: true,
           sessionId,
+          onUsage: accounting?.onUsage,
           onEvent(event) {
             controller.enqueue(encoder.encode(encodeSseEvent(event)));
           },
@@ -339,6 +343,7 @@ export function runMikhalychAgentAsSseStream(
           ),
         );
       } finally {
+        await accounting?.finish?.().catch(() => {});
         controller.close();
       }
     },

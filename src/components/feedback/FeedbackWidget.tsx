@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Sentiment = "like" | "neutral" | "dislike";
 type Status = "idle" | "sending" | "sent" | "error";
@@ -19,6 +20,8 @@ export interface OpenFeedbackDetail {
 }
 
 export default function FeedbackWidget() {
+  const pathname = usePathname();
+  const isPurchaseWorkspace = /^(\/kabinet|\/oplata|\/upravlenie)(\/|$)/.test(pathname) || /^\/proekty\/[^/]+\/zakupka/.test(pathname);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<FeedbackMode>("feedback");
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
@@ -124,7 +127,7 @@ export default function FeedbackWidget() {
   return (
     <>
       {/* Плавающая кнопка — слева снизу (справа занято кнопкой «Наверх») */}
-      <button
+      {!isPurchaseWorkspace && <button
         onClick={() => {
           setMode("feedback");
           setOpen((v) => !v);
@@ -138,7 +141,7 @@ export default function FeedbackWidget() {
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
         </svg>
         <span className="hidden sm:inline">Отзыв</span>
-      </button>
+      </button>}
 
       {open && (
         <div

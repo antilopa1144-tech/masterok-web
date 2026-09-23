@@ -52,7 +52,7 @@ export default function ProjectEstimateStickyBar({
                 )}
               </p>
             )}
-            <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого к оплате</p>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого по введённым ценам</p>
             <p className="text-xl font-black tabular-nums text-accent-700 dark:text-accent-300 leading-tight">
               {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "— ₽"}
             </p>

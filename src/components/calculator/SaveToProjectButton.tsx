@@ -7,6 +7,7 @@ import type { ProjectWithEntries } from "@/lib/storage/types";
 import { calendarHref } from "@/lib/renovation-hub/context";
 import type { RenovationScenarioId } from "@/lib/renovation-calendar/scenarios";
 import { trackCalculatorRelatedClick, trackProjectSave } from "@/lib/analytics";
+import { toStoredMaterial, type MaterialSnapshot } from "@/lib/commerce/material-snapshot";
 
 interface Props {
   calcId: string;
@@ -14,6 +15,8 @@ interface Props {
   slug: string;
   categorySlug: string;
   materials: { name: string; subtitle?: string; quantity: number; unit: string; category?: string }[];
+  /** Full calculator result snapshot. Prefer this over materials when available. */
+  materialResults?: MaterialSnapshot[];
   /** Ссылка на календарь после сохранения. */
   calendarScenarioId?: RenovationScenarioId | null;
 }
@@ -24,15 +27,19 @@ export default function SaveToProjectButton({
   slug,
   categorySlug,
   materials,
+  materialResults,
   calendarScenarioId,
 }: Props) {
   const [projects, setProjects] = useState<ProjectWithEntries[]>([]);
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
+  const [savedWasUpdate, setSavedWasUpdate] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [entryLabel, setEntryLabel] = useState("");
   const [creating, setCreating] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const savedEntryIds = useRef(new Map<string, string>());
 
   const loadProjects = useCallback(async () => {
     const items = await getProjects();
@@ -66,17 +73,16 @@ export default function SaveToProjectButton({
   }, [open]);
 
   const handleSave = async (projectId: string, createdProject = false) => {
-    await saveEntryToProject(projectId, {
+    const entrySaveKey = `${projectId}:${entryLabel.trim()}`;
+    const existingEntryId = savedEntryIds.current.get(entrySaveKey);
+    const savedEntryId = await saveEntryToProject(projectId, {
       calcId, calcTitle, slug, categorySlug,
-      materials: materials.map((m) => ({
-        name: m.name,
-        ...(m.subtitle ? { subtitle: m.subtitle } : {}),
-        quantity: m.quantity,
-        unit: m.unit,
-        ...(m.category ? { category: m.category } : {}),
-      })),
+      materials: (materialResults ?? materials).map(toStoredMaterial),
       ts: Date.now(),
-    });
+    }, { entryId: existingEntryId, label: entryLabel });
+    if (!savedEntryId) return;
+    savedEntryIds.current.set(entrySaveKey, savedEntryId);
+    setSavedWasUpdate(Boolean(existingEntryId));
     trackProjectSave(calcId, createdProject, slug);
     setSaved(projectId);
   };
@@ -118,6 +124,18 @@ export default function SaveToProjectButton({
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Проекты</p>
                 <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 truncate">{calcTitle}</p>
+                <label className="mt-2 block text-[11px] text-slate-500 dark:text-slate-400">
+                  Помещение или подпись расчёта
+                  <input
+                    value={entryLabel}
+                    onChange={(event) => setEntryLabel(event.target.value)}
+                    placeholder="Например, кухня"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                </label>
+                <p className="mt-1 text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
+                  Одинаковая подпись обновит этот расчёт. Укажите другую подпись, чтобы добавить отдельный.
+                </p>
               </div>
               <Link
                 href="/proekty/"
@@ -136,7 +154,7 @@ export default function SaveToProjectButton({
                   <svg className="h-5 w-5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l3.5 3.5L13 5"/></svg>
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Расчёт добавлен</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{savedWasUpdate ? "Расчёт обновлён" : "Расчёт добавлен"}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
                     {projects.find((project) => project.id === saved)?.name ?? "Новый проект"}
                   </p>
@@ -144,7 +162,7 @@ export default function SaveToProjectButton({
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <Link
-                  href={`/proekty/${saved}`}
+                  href={`/proekty/${saved}/`}
                   className="btn-primary min-h-11 justify-center px-3 text-xs no-underline"
                   onClick={() => setOpen(false)}
                 >

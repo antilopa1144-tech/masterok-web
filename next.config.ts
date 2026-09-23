@@ -30,6 +30,9 @@ const withBundleAnalyzer = bundleAnalyzer({
  */
 
 const nextConfig: NextConfig = {
+  deploymentId: process.env.NODE_ENV === "development" ? process.env.COMMERCE_DEV_ASSET_VERSION : undefined,
+  distDir: process.env.MASTEROK_BUILD_DIR ?? ".next",
+  serverExternalPackages: ["@electric-sql/pglite", "pg", "nodemailer", "exceljs"],
   // Без output → стандартный server mode (next start)
 
   // Tree-shaking для barrel-import lucide-react (Header, CategoryIcon).
@@ -180,11 +183,11 @@ const nextConfig: NextConfig = {
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
-      // Content-hashed статика Next.js — иммутабельный кэш на год
+      // В dev имена чанков не содержат хэш: годовой кэш оставляет старый UI после правок.
       {
         source: "/_next/static/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          { key: "Cache-Control", value: process.env.NODE_ENV === "development" ? "no-store" : "public, max-age=31536000, immutable" },
         ],
       },
       // Шрифты — иммутабельный кэш на год

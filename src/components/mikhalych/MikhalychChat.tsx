@@ -27,6 +27,10 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
     },
   ]);
   const [input, setInput] = useState("");
+  const [photo, setPhoto] = useState<{ name: string; data: string } | null>(null);
+  const [photoAvailable, setPhotoAvailable] = useState(false);
+  const [proOfferAvailable, setProOfferAvailable] = useState(false);
+  const [accessHint, setAccessHint] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusHint, setStatusHint] = useState<string | null>(null);
@@ -46,6 +50,19 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    void fetch("/api/commerce/me", { cache: "no-store" }).then((response) => response.json()).then((data) => {
+      if (!active) return;
+      setPhotoAvailable(Boolean(data?.state?.aiAvailable && data?.access?.pro));
+      setProOfferAvailable(Boolean(data?.state?.aiAvailable && data?.state?.proAvailable && !data?.access?.pro));
+      if (data?.state?.checkoutAvailable) setAccessHint(data?.state?.aiAvailable && data?.access?.pro
+        ? `PRO: до ${data.state.proAiRequests} вопросов в месяц, включая фото и помощника сметы.`
+        : data.state.proAvailable && data.state.aiAvailable ? `Бесплатно: до ${data.state.freeAiWeeklyRequests} вопросов в неделю (с понедельника, 00:00 мск).` : "Михалыч пока работает на прежних условиях.");
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: loading ? "auto" : "smooth" });
@@ -61,9 +78,11 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         return;
       }
 
-      const userMsg: Message = { role: "user", content: text.trim() };
+      const attachedPhoto = photo;
+      const userMsg: Message = { role: "user", content: `${text.trim()}${attachedPhoto ? "\n📷 Фото приложено" : ""}` };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
+      setPhoto(null);
       setLoading(true);
       setError(null);
       setAgentMeta(null);
@@ -76,7 +95,6 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         const apiMessages = [...messages, userMsg].slice(-10);
 
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-        setLoading(false);
 
         const result = await streamMikhalychChat(
           {
@@ -85,6 +103,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
               content: m.content,
             })),
             stream: true,
+            photo: attachedPhoto?.data,
           },
           {
             onStatus: (m) => setStatusHint(m),
@@ -116,6 +135,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         });
         setStatusHint(null);
       } catch (err) {
+        setMessages((prev) => prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content ? prev.slice(0, -1) : prev);
         const msg =
           err instanceof Error
             ? err.message
@@ -126,7 +146,7 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
         setStatusHint(null);
       }
     },
-    [messages, loading]
+    [messages, loading, photo]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -239,6 +259,22 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
       {/* Ввод прибит к низу. pb с safe-area для iPhone (нижняя «чёлка»). */}
       <div className="border-t border-slate-200 bg-slate-50 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-950 sm:px-6">
         <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
+          {(photoAvailable || proOfferAvailable) && <div className="mb-2 flex flex-wrap items-center gap-2 px-2 text-xs text-slate-600 dark:text-slate-300">
+            {photoAvailable ? <>
+            <label className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600">Добавить фото для PRO
+              <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={(event) => {
+                const file = event.target.files?.[0]; event.target.value = "";
+                if (!file) return;
+                if (!/image\/(jpeg|png|webp)/.test(file.type) || file.size > 2_000_000) { setError("Нужно фото JPEG, PNG или WebP до 2 МБ."); return; }
+                const reader = new FileReader();
+                reader.onload = () => { if (typeof reader.result === "string") { setPhoto({ name: file.name, data: reader.result }); setError(null); } };
+                reader.onerror = () => setError("Не удалось прочитать фото.");
+                reader.readAsDataURL(file);
+              }} />
+            </label>
+            {photo && <><span className="max-w-[15rem] truncate" title={photo.name}>{photo.name}</span><button type="button" className="underline" onClick={() => setPhoto(null)}>Убрать</button></>}
+            </> : <Link className="underline" href="/kabinet/">Анализ фото доступен с PRO</Link>}
+          </div>}
           <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -277,9 +313,10 @@ export default function MikhalychChat({ starterQuestions = [] }: Props) {
             <span className="text-[11px] text-slate-400 dark:text-slate-500">Enter — отправить</span>
             <span className="hidden text-[11px] text-slate-400 dark:text-slate-500 sm:inline">Shift+Enter — новая строка</span>
           </div>
+          {accessHint && <p className="mt-1 px-1 text-[11px] text-slate-500 dark:text-slate-400">{accessHint}</p>}
         </div>
         <p className="mx-auto mt-2 w-full max-w-3xl text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
-          Ответы справочные. Объёмы материалов Михалыч считает через{" "}
+          Ответы справочные. Фото передаётся DeepSeek для разбора и не даёт точных размеров или заключения о безопасности. Объёмы материалов Михалыч считает через{" "}
           <Link href="/" className="text-accent-600 hover:underline dark:text-accent-400">калькуляторы</Link>{" "}
           Мастерок.
         </p>

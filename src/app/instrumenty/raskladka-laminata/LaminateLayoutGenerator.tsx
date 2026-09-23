@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useMemo, useRef, useCallback, useEffect, useId } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
+import SaveLayoutToProject from "@/components/commerce/SaveLayoutToProject";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import CompactToolWorkspaceNav from "@/components/tools/CompactToolWorkspaceNav";
 import DraftNumberInput from "@/components/tools/DraftNumberInput";
@@ -34,6 +35,26 @@ function laminateModeLabel(mode: LaminateMode): string {
 
 function laminateDirectionLabel(direction: LaminateDirection): string {
   return direction === "along-length" ? "Вдоль длины" : "Вдоль ширины";
+}
+
+async function renderSvgToPngDataUrl(svg: SVGSVGElement): Promise<string> {
+  const exportSvg = await cloneSvgWithEmbeddedImages(svg);
+  const svgData = new XMLSerializer().serializeToString(exportSvg);
+  const img = new Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Не удалось подготовить текущую схему"));
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width * 2;
+  canvas.height = img.height * 2;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Браузер не поддерживает подготовку изображения");
+  ctx.fillStyle = "#fffbeb";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png");
 }
 
 type LaminateVisualFinish = "natural-oak" | "white-oak" | "smoked-oak" | "walnut";
@@ -408,26 +429,24 @@ export default function LaminateLayoutGenerator() {
     const svgEl = svgRef.current?.querySelector("svg");
     if (!svgEl) return;
     trackToolExport("raskladka-laminata", "png");
-    const exportSvg = await cloneSvgWithEmbeddedImages(svgEl);
-    const svgData = new XMLSerializer().serializeToString(exportSvg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width * 2;
-      canvas.height = img.height * 2;
-      ctx.scale(2, 2);
-      ctx.fillStyle = "#fffbeb";
-      ctx.fillRect(0, 0, img.width, img.height);
-      ctx.drawImage(img, 0, 0);
-      const link = document.createElement("a");
-      link.download = "laminate-layout.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    };
-    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+    const link = document.createElement("a");
+    link.download = "laminate-layout.png";
+    link.href = await renderSvgToPngDataUrl(svgEl);
+    link.click();
   }, []);
+
+  const createProjectLayout = useCallback(async () => {
+    const svg = svgRef.current?.querySelector("svg");
+    if (!svg) throw new Error("Не удалось подготовить текущую схему");
+    return {
+      kind: "laminate" as const,
+      title: `Раскладка ламината · ${surfaceW}×${surfaceH} мм`,
+      summary: `${laminateModeLabel(mode)} · ${laminateDirectionLabel(direction)}. Площадь ${surfaceAreaM2} м²; к покупке ${result.purchaseBoards} шт. (${result.basePurchaseBoards} + запас ${result.purchaseReserveBoards}).`,
+      imageDataUrl: await renderSvgToPngDataUrl(svg),
+      sourceLabel: "Раскладка ламината · laminate-layout/v1",
+      sourceFingerprint: JSON.stringify({ v: 1, surfaceW, surfaceH, boardW, boardH, mode, direction, presentationMode }),
+    };
+  }, [boardH, boardW, direction, mode, presentationMode, result.basePurchaseBoards, result.purchaseBoards, result.purchaseReserveBoards, surfaceAreaM2, surfaceH, surfaceW]);
 
   const layoutMaterials = useMemo(
     () => [
@@ -730,6 +749,7 @@ export default function LaminateLayoutGenerator() {
               materials={layoutMaterials}
               calendarScenarioId="room"
             />
+            <SaveLayoutToProject createLayout={createProjectLayout} />
           </div>
         </div>
         <button type="button" onClick={() => changeStage("layout")} className="mt-4 min-h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 xl:hidden">← Вернуться к комнате</button>

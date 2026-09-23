@@ -13,6 +13,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
+import SaveLayoutToProject from "@/components/commerce/SaveLayoutToProject";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import TileLayoutPassportCard from "@/components/tools/TileLayoutPassportCard";
 import DraftNumberInput from "@/components/tools/DraftNumberInput";
@@ -2211,6 +2212,25 @@ export default function TileLayoutGenerator() {
     setShareStatus(result);
   }, [exportPlan, projectState]);
 
+  const createProjectLayout = useCallback(async () => {
+    if (!exportPlan) throw new Error("Сначала дождитесь расчёта раскладки");
+    const svg = svgContainerRef.current?.querySelector("svg");
+    if (!svg) throw new Error("Не удалось подготовить текущую схему");
+    const visual = await renderSvgToPngVisual(svg, "Раскладка плитки");
+    return {
+      kind: "tile" as const,
+      title: exportPlan.passport.title,
+      summary: exportPlan.shareText,
+      imageDataUrl: visual.dataUrl,
+      sourceLabel: "Раскладка плитки · tile-layout/v1",
+      sourceFingerprint: JSON.stringify({
+        v: 1, surfaceView, surfaceW: normalizedInput.surfaceW, surfaceH: normalizedInput.surfaceH,
+        tileW: normalizedInput.tileW, tileH: normalizedInput.tileH, groutMm: normalizedInput.groutMm,
+        layoutMode, startMode: result.startMode, reservePercent, hasOpening, openingW, openingH, openingOffsetLeft,
+      }),
+    };
+  }, [exportPlan, hasOpening, layoutMode, normalizedInput, openingH, openingOffsetLeft, openingW, reservePercent, result.startMode, surfaceView]);
+
   const handleSaveProject = useCallback(() => {
     if (packagingError || typeof window === "undefined") return;
     setProjectStatus("saving");
@@ -3495,6 +3515,9 @@ export default function TileLayoutGenerator() {
                 materials={layoutMaterials}
                 calendarScenarioId="bathroom"
               />
+            </div>
+            <div className="sm:col-span-2 xl:col-span-1 [&>div]:!w-full [&_button]:!min-h-11 [&_button]:!w-full">
+              <SaveLayoutToProject createLayout={createProjectLayout} />
             </div>
           </div>
         </div>

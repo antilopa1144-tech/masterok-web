@@ -282,11 +282,14 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
                     month: "short",
                   })}
                 </p>
+                <Link href={`/proekty/${project.id}/zakupka/`} className="mt-2 inline-block text-sm font-semibold text-accent-700 hover:underline dark:text-accent-300">
+                  Открыть корзину и смету для заказчика →
+                </Link>
 
               </div>
 
               <div className="hidden shrink-0 text-right sm:block">
-                <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого к оплате</p>
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">Итого по введённым ценам</p>
                 <p className="text-2xl sm:text-3xl font-black tabular-nums text-accent-700 dark:text-accent-300">
                   {totals.grandTotal > 0 ? `${formatCost(totals.grandTotal)} ₽` : "— ₽"}
                 </p>

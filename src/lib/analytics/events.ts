@@ -43,6 +43,14 @@ export interface AnalyticsEventParams {
     invalid_field_count: number;
     first_invalid_field: string;
   };
+  commerce_materials_open: { calculator: string };
+  commerce_offer_click: { offer_id: string; calculator: string };
+  commerce_cart_open: { entry_count_bucket: ProjectEntryCountBucket };
+  commerce_checkout_start: { product: "project_pack" | "pro_month" };
+  commerce_document_download: { format: "pdf" | "xlsx" };
+  /** Emitted only by server-confirmed purchase delivery, never by a client CTA. */
+  commerce_purchase: { product: "project_pack" | "pro_month"; value: number; currency: "RUB" };
+  commerce_subscription_cancel: Record<string, never>;
   checklist_export: { checklist: string; format: ChecklistExportFormat };
   checklist_progress: { checklist: string; milestone: ChecklistProgressMilestone };
   checklist_start: { checklist: string };
@@ -130,6 +138,13 @@ export const ANALYTICS_EVENT_DEFINITIONS = {
     trigger: "Явная попытка расчёта с невалидными полями.",
     dedupe: "Один раз для неизменившегося набора ошибочных полей.",
   },
+  commerce_materials_open: { owner: "product", kpiRole: "driver", pii: "none", trigger: "Пользователь раскрывает подбор материалов.", dedupe: "Каждое явное раскрытие панели." },
+  commerce_offer_click: { owner: "product", kpiRole: "driver", pii: "none", trigger: "Пользователь открывает маркированное предложение.", dedupe: "Каждый явный переход по предложению." },
+  commerce_cart_open: { owner: "product", kpiRole: "primary", pii: "none", trigger: "Пользователь открывает корзину проекта.", dedupe: "Каждое явное открытие корзины." },
+  commerce_checkout_start: { owner: "product", kpiRole: "driver", pii: "none", trigger: "Пользователь начинает оформление выбранного продукта.", dedupe: "Каждое явное начало оформления." },
+  commerce_document_download: { owner: "product", kpiRole: "driver", pii: "none", trigger: "Пользователь скачивает сформированный документ.", dedupe: "Каждое успешное скачивание." },
+  commerce_purchase: { owner: "product", kpiRole: "primary", pii: "none", trigger: "Сервер подтверждает успешную покупку.", dedupe: "Один раз на подтверждённый заказ." },
+  commerce_subscription_cancel: { owner: "product", kpiRole: "driver", pii: "none", trigger: "Пользователь подтверждает отмену подписки.", dedupe: "Каждая подтверждённая отмена." },
   checklist_export: {
     owner: "product", kpiRole: "driver", pii: "none",
     trigger: "Пользователь запрашивает печать или успешно сохраняет PDF чек-листа.",

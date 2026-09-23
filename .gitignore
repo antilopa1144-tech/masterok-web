@@ -11,6 +11,8 @@
 
 # next.js
 /.next/
+/.next-commerce-build/
+/.next-commerce-preview/
 /out/
 
 # production
@@ -66,3 +68,7 @@ tmp-mikhalych-test.json
 
 # Private analytics snapshots must not be published with source code
 /.local-analytics/
+
+# Local commerce simulation: accounts, test payments and project documents
+/.commerce-data/
+/.next-commerce-*/

@@ -78,6 +78,14 @@ export function trackComparisonOpen(calculatorSlug: string): void {
   });
 }
 
+/** Typed transport for the closed commerce event contract. */
+export function trackCommerceEvent<EventName extends Extract<AnalyticsEventName, `commerce_${string}`>>(
+  event: EventName,
+  params: AnalyticsEventParams[EventName],
+): void {
+  trackEvent(event, params);
+}
+
 export function trackCalculatorStart(calculatorSlug: string): void {
   trackEvent("calculator_start", { calculator: calculatorSlug });
 }

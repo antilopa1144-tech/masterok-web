@@ -20,6 +20,9 @@ import {
   getMikhalychUpstreamProvider,
   mikhalychChatCompletion,
 } from "@/lib/mikhalych/deepseek-upstream";
+import { reserveMikhalychAccess, type MikhalychReservation } from "@/lib/mikhalych/paid-access";
+import { describePhoto, validatePhoto } from "@/lib/mikhalych/photo";
+import { CommerceError } from "@/lib/commerce/types";
 
 const MODEL = getMikhalychChatModel();
 const CHAT_GEN = MIKHALYCH_CHAT_GENERATION;
@@ -112,6 +115,7 @@ export async function POST(req: NextRequest) {
     presence_penalty?: number;
     stream?: boolean;
     legacy?: boolean;
+    photo?: unknown;
   };
   try {
     body = await req.json();
@@ -120,6 +124,15 @@ export async function POST(req: NextRequest) {
       { error: "Invalid JSON body" },
       { status: 400, headers },
     );
+  }
+
+  let photo: string | null;
+  let reservation: MikhalychReservation | null = null;
+  try {
+    photo = validatePhoto(body.photo);
+    if (photo && (body.legacy === true || !isMikhalychAgentEnabled())) throw new CommerceError(503, "Анализ фото требует режим агента");
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось проверить доступ" }, { status: error instanceof CommerceError ? error.status : 503, headers });
   }
 
   const useAgent =
@@ -131,6 +144,18 @@ export async function POST(req: NextRequest) {
     const agentMessages = normalizeChatMessages(body.messages);
     if (!agentMessages) {
       return NextResponse.json({ error: "Invalid messages" }, { status: 400, headers });
+    }
+    try { reservation = await reserveMikhalychAccess(req, Boolean(photo)); }
+    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось проверить доступ" }, { status: error instanceof CommerceError ? error.status : 503, headers }); }
+    if (photo) {
+      try {
+        const question = [...agentMessages].reverse().find((m) => m.role === "user")?.content ?? "Что видно на фото?";
+        const description = await describePhoto(photo, question);
+        const index = agentMessages.map((m) => m.role).lastIndexOf("user");
+        agentMessages[index] = { ...agentMessages[index], content: `${agentMessages[index].content}\n\nНаблюдения по приложенному фото (предположение модели, проверь по месту): ${description}` };
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось разобрать фото" }, { status: error instanceof CommerceError ? error.status : 502, headers });
+      }
     }
     const calcContext =
       typeof body.calcContext === "string" ? body.calcContext.slice(0, 16_000) : undefined;
@@ -146,6 +171,7 @@ export async function POST(req: NextRequest) {
           siteOrigin: SITE_ORIGIN,
         },
         sessionId,
+        { onUsage: (input, output) => reservation?.recordUsage(input, output), finish: () => reservation?.finish() ?? Promise.resolve() },
       );
       return createSseResponse(stream, headers);
     }
@@ -158,10 +184,12 @@ export async function POST(req: NextRequest) {
           clientLabel: client,
           siteOrigin: SITE_ORIGIN,
         },
-        { sessionId },
+        { sessionId, onUsage: (input, output) => reservation?.recordUsage(input, output) },
       );
+      await reservation?.finish();
       return NextResponse.json(toOpenAIChatCompletionPayload(result), { headers });
     } catch (err) {
+      await reservation?.finish().catch(() => {});
       console.error("[mikhalych] agent failed", err);
       const message = err instanceof Error ? err.message : "Agent request failed";
       return NextResponse.json({ error: message }, { status: 502, headers });
@@ -175,6 +203,8 @@ export async function POST(req: NextRequest) {
       { status: 400, headers },
     );
   }
+  try { reservation = await reserveMikhalychAccess(req, false); }
+  catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Не удалось проверить доступ" }, { status: error instanceof CommerceError ? error.status : 503, headers }); }
 
   const upstreamRequest: Record<string, unknown> = {
     model: MODEL,
@@ -205,7 +235,13 @@ export async function POST(req: NextRequest) {
           },
         });
       }
-      return new Response(upstream.body, {
+      const metered = new ReadableStream<Uint8Array>({ async start(controller) {
+        const reader = upstream.body!.getReader();
+        try {
+          for (;;) { const next = await reader.read(); if (next.done) break; controller.enqueue(next.value); }
+        } finally { await reservation?.finish().catch(() => {}); controller.close(); }
+      } });
+      return new Response(metered, {
         status: 200,
         headers: {
           ...headers,
@@ -217,6 +253,8 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await upstream.json();
+    reservation?.recordUsage(data?.usage?.prompt_tokens, data?.usage?.completion_tokens);
+    await reservation?.finish();
     if (!upstream.ok) {
       console.error("[mikhalych] upstream error", {
         status: upstream.status,
@@ -230,6 +268,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json(data, { headers });
   } catch (err) {
+    await reservation?.finish().catch(() => {});
     console.error("[mikhalych] proxy request failed", err);
     return NextResponse.json(
       { error: "Proxy request failed" },

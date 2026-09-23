@@ -96,6 +96,8 @@ export function withThinking(
 }
 
 export interface MikhalychUpstreamRequestOptions {
+  /** Ограничение длительности конкретного запроса. */
+  signal?: AbortSignal;
   /** Метка клиента (`x-client`) — уходит в трейсы Langfuse. */
   clientLabel?: string;
   /** Оригин сайта — используется для ссылок на калькуляторы в контексте. */
@@ -119,6 +121,7 @@ export async function mikhalychChatCompletion(
   }
 
   return fetch(DEEPSEEK_CHAT_URL, {
+    signal: options.signal,
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -8,6 +8,7 @@ import { pluralizeRu, pluralizePackageUnit } from "@/lib/format/pluralize";
 import { formatWeightParts } from "@/lib/format/weight";
 import { InsulationMaterialList } from "../InsulationMaterialList";
 import SaveToProjectButton from "../SaveToProjectButton";
+import MaterialSelection from "@/components/commerce/MaterialSelection";
 import { getScenarioForCalculator } from "@/lib/renovation-hub/context";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { getPrices, setPrice, resetScope, PRICE_SCOPES } from "@/lib/userPrices";
@@ -393,6 +394,8 @@ export function ResultBlock({
           </div>
         )}
 
+        <MaterialSelection calculatorId={projectSave?.calcId} calculatorSlug={calculatorSlug} materials={result.materials} />
+
         <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-2 dark:border-slate-700" data-print-hide>
           {projectSave && (
             <div className="[&>div]:w-full [&_button]:w-full">
@@ -402,6 +405,7 @@ export function ResultBlock({
                 slug={projectSave.slug}
                 categorySlug={projectSave.categorySlug}
                 calendarScenarioId={getScenarioForCalculator(calculatorSlug)}
+                materialResults={result.materials}
                 materials={result.materials.map((m) => ({
                   name: m.name,
                   subtitle: m.subtitle,

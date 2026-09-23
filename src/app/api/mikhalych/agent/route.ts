@@ -15,6 +15,9 @@ import {
 } from "@/lib/mikhalych/agent";
 import { createSseResponse } from "@/lib/mikhalych/agent/sse";
 import { getMikhalychUpstreamProvider } from "@/lib/mikhalych/deepseek-upstream";
+import { reserveMikhalychAccess } from "@/lib/mikhalych/paid-access";
+import { describePhoto, validatePhoto } from "@/lib/mikhalych/photo";
+import { CommerceError } from "@/lib/commerce/types";
 
 export function OPTIONS(req: NextRequest) {
   return new Response(null, { status: 204, headers: corsHeaders(req) });
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest) {
     return jsonError(req, 429, "Too many requests");
   }
 
-  let body: { messages?: unknown; calcContext?: string; stream?: boolean };
+  let body: { messages?: unknown; calcContext?: string; stream?: boolean; photo?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -73,6 +76,19 @@ export async function POST(req: NextRequest) {
   const messages = normalizeChatMessages(body.messages);
   if (!messages) {
     return jsonError(req, 400, "Invalid messages");
+  }
+  let reservation: Awaited<ReturnType<typeof reserveMikhalychAccess>> = null;
+  try {
+    const photo = validatePhoto(body.photo);
+    reservation = await reserveMikhalychAccess(req, Boolean(photo));
+    if (photo) {
+      const question = [...messages].reverse().find((m) => m.role === "user")?.content ?? "Что видно на фото?";
+      const description = await describePhoto(photo, question);
+      const index = messages.map((m) => m.role).lastIndexOf("user");
+      messages[index] = { ...messages[index], content: `${messages[index].content}\n\nНаблюдения по приложенному фото (предположение модели, проверь по месту): ${description}` };
+    }
+  } catch (error) {
+    return jsonError(req, error instanceof CommerceError ? error.status : 503, error instanceof Error ? error.message : "Не удалось проверить доступ");
   }
 
   const calcContext =
@@ -89,6 +105,7 @@ export async function POST(req: NextRequest) {
         siteOrigin: getSiteOrigin(),
       },
       sessionId,
+      { onUsage: (input, output) => reservation?.recordUsage(input, output), finish: () => reservation?.finish() ?? Promise.resolve() },
     );
     return createSseResponse(stream, headers);
   }
@@ -101,11 +118,13 @@ export async function POST(req: NextRequest) {
         clientLabel: client,
         siteOrigin: getSiteOrigin(),
       },
-      { sessionId },
+      { sessionId, onUsage: (input, output) => reservation?.recordUsage(input, output) },
     );
+    await reservation?.finish();
 
     return NextResponse.json(toOpenAIChatCompletionPayload(result), { headers });
   } catch (err) {
+    await reservation?.finish().catch(() => {});
     console.error("[mikhalych/agent] failed", err);
     const message = err instanceof Error ? err.message : "Agent request failed";
     return jsonError(req, 502, message);

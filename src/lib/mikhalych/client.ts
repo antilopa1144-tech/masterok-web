@@ -11,6 +11,7 @@ function getApiHeaders(): Record<string, string> {
 export interface MikhalychChatRequest {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   calcContext?: string;
+  photo?: string;
   /** По умолчанию true — стриминг финального ответа и статусы tools. */
   stream?: boolean;
 }
@@ -43,6 +44,7 @@ export async function postMikhalychChat(
     body: JSON.stringify({
       messages: input.messages,
       calcContext: input.calcContext,
+      photo: input.photo,
       stream: false,
       ...MIKHALYCH_CHAT_GENERATION,
     }),
@@ -66,6 +68,7 @@ export async function streamMikhalychChat(
     body: JSON.stringify({
       messages: input.messages,
       calcContext: input.calcContext,
+      photo: input.photo,
       stream: true,
       ...MIKHALYCH_CHAT_GENERATION,
     }),
