@@ -37,11 +37,24 @@ const schema = [
 
 const cache = globalThis as unknown as { masterokCommerceDb?: Promise<Database> };
 
+// The entry-level Timeweb cluster permits one database. Keep provider tests
+// and customer orders in separate PostgreSQL schemas in that database.
+export function postgresCommerceSchema(mode: string | undefined): string {
+  return mode === "live" ? "commerce_live" : "commerce_sandbox";
+}
+
 async function openDatabase(): Promise<Database> {
   let db: Database;
   if (process.env.COMMERCE_DATABASE_URL) {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.COMMERCE_DATABASE_URL, max: 5 });
+    const schemaName = postgresCommerceSchema(process.env.MONETIZATION_MODE);
+    const pool = new Pool({
+      connectionString: process.env.COMMERCE_DATABASE_URL,
+      max: 5,
+      options: `-c search_path=${schemaName}`,
+    });
+    try { await pool.query(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`); }
+    catch (error) { await pool.end(); throw error; }
     db = {
       query: async <T>(sql: string, params?: unknown[]) => ({ rows: (await pool.query(sql, params)).rows as T[] }),
       transaction: async <T>(fn: (sql: Sql) => Promise<T>) => {
