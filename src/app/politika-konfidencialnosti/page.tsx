@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { commerceMode } from "@/lib/commerce/config";
+import { commerceMode, defaultSettings } from "@/lib/commerce/config";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export const metadata: Metadata = buildPageMetadata({
 export default function PrivacyPage() {
   const baseUrl = SITE_URL;
   const accountEnabled = commerceMode() !== "off";
+  const { sellerName, sellerInn, supportEmail } = defaultSettings();
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -46,7 +47,7 @@ export default function PrivacyPage() {
 
         <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
           <p>
-            Дата последнего обновления: 23 сентября 2026 года.
+            Дата последнего обновления: 24 сентября 2026 года.
           </p>
 
           <section>
@@ -57,6 +58,7 @@ export default function PrivacyPage() {
               приложения {SITE_NAME}. Ниже описаны используемые на сайте средства аналитики
               и технические данные, необходимые для их работы.
             </p>
+            <p>Оператор данных для покупок на сайте — самозанятый {sellerName}, ИНН {sellerInn}. По вопросам обработки данных: <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.</p>
           </section>
 
           <section>
@@ -65,7 +67,7 @@ export default function PrivacyPage() {
               Бесплатными калькуляторами можно пользоваться без регистрации. Проекты и цены,
               сохранённые только в браузере, остаются на вашем устройстве. Если вы отправите
               отзыв и оставите контакт, мы получим указанные вами сведения для ответа.
-              {accountEnabled && " При добровольном входе в кабинет мы получаем адрес электронной почты; при сохранении проекта — его название, введённые размеры, материалы, цены, работы и созданные документы; при покупке — заказ, сумму, состояние оплаты и срок доступа."}
+              При добровольном входе в кабинет мы получаем адрес электронной почты; при сохранении проекта — его название, введённые размеры, материалы, цены, работы и созданные документы; при покупке — заказ, сумму, состояние оплаты и срок доступа.{!accountEnabled && " Пока кабинет покупок выключен, эти действия посетителям недоступны."}
               Для улучшения качества сервиса используется аналитика:
             </p>
             <ul>
@@ -108,11 +110,9 @@ export default function PrivacyPage() {
                 </a>
               </li>
               <li><strong>Unsplash</strong> — изображения для блога (загружаются с серверов Unsplash)</li>
-              {accountEnabled && <>
-                <li><strong>Robokassa</strong> — проведение платежа и передача сведений для чека. Сайт не получает номер карты; сервису передаются номер заказа, сумма, название услуги и адрес почты покупателя.</li>
-                <li><strong>{process.env.RESEND_API_KEY ? "Resend" : "Почтовый сервис"}</strong> — доставка одноразового кода на указанный адрес почты. Для отправки передаются адрес и текст кода; отправка включается только после настройки сервиса.</li>
-                <li><strong>Timeweb Cloud</strong> — размещение сайта и хранение данных кабинета в базе данных в России.</li>
-              </>}
+              <li><strong>Robokassa</strong> — при включении покупок проведение платежа и передача сведений для чека. Сайт не получает номер карты; сервису передаются номер заказа, сумма, название услуги и адрес почты покупателя.</li>
+              <li><strong>Resend</strong> — при включении кабинета доставка одноразового кода. Для отправки передаются адрес и текст кода. По <a href="https://resend.com/security/gdpr" target="_blank" rel="noopener noreferrer">сведениям Resend</a>, данные писем и журнал доставки хранятся в США; европейский регион отправки этого не меняет.</li>
+              <li><strong>Timeweb Cloud</strong> — размещение сайта и хранение данных кабинета в базе данных в России.</li>
             </ul>
           </section>
 
@@ -145,8 +145,8 @@ export default function PrivacyPage() {
           <section>
             <h2>6. Обратная связь</h2>
             <p>
-              По вопросам доступа к данным или их удаления используйте форму обратной связи
-              внизу страницы. Не отправляйте паспортные данные через форму или Михалыча.
+              По вопросам доступа к данным, их исправления или удаления напишите на <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+              Не отправляйте паспортные данные через форму или Михалыча.
             </p>
           </section>
         </div>
