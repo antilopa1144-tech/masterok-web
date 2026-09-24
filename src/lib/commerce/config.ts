@@ -18,7 +18,8 @@ export const defaultSettings = (): CommerceSettings => ({
   recurringEnabled: false, offersEnabled: false, proAiEnabled: false,
   proAiRequests: 100, freeAiWeeklyRequests: 5, proAiBudgetKopecks: 15000,
   aiInputKopecksPerMillion: 0, aiOutputKopecksPerMillion: 0, aiPriceCheckedAt: "",
-  sellerName: "", sellerInn: "", supportEmail: "", offerVersion: "2026-09-22",
+  sellerName: "Щегольков Михаил Вячеславович", sellerInn: "410123116570",
+  supportEmail: "antilopa1144@gmail.com", offerVersion: "2026-09-24",
   legalApproved: false, offers: [],
 });
 

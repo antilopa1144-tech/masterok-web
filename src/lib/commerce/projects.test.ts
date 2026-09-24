@@ -5,6 +5,7 @@ process.env.MONETIZATION_MODE = "local";
 process.env.COMMERCE_LOCAL_DATA_DIR = "memory://";
 
 import { confirmPayment, createOrder, startRefund } from "./billing";
+import { defaultSettings } from "./config";
 import { closeCommerceDatabase, database } from "./db";
 import { createDocument, downloadDocument, saveServerProject, serverProject } from "./projects";
 import type { CommerceUser } from "./types";
@@ -40,8 +41,8 @@ describe("server project and paid document boundary", () => {
       ...document("Санузел"),
       parties: { contractor: { name: "Мастер ремонта", contact: "+7 900 000-00-00" } },
     });
-    await expect(createOrder(owner, { kind: "project_pack", projectId: project.id, expectedAmount: 1, acceptedOffer: "2026-09-22" })).rejects.toMatchObject({ status: 409 });
-    const checkout = await createOrder(owner, { kind: "project_pack", projectId: project.id, expectedAmount: 24900, acceptedOffer: "2026-09-22" });
+    await expect(createOrder(owner, { kind: "project_pack", projectId: project.id, expectedAmount: 1, acceptedOffer: defaultSettings().offerVersion })).rejects.toMatchObject({ status: 409 });
+    const checkout = await createOrder(owner, { kind: "project_pack", projectId: project.id, expectedAmount: 24900, acceptedOffer: defaultSettings().offerVersion });
     await expect(createDocument(owner.id, project.id, "pdf", false)).rejects.toMatchObject({ status: 403 });
     await confirmPayment(String(checkout.order.invoice), checkout.order.amount, checkout.order.id, "local-pack");
     const pdf = await createDocument(owner.id, project.id, "pdf", false);
@@ -61,7 +62,7 @@ describe("server project and paid document boundary", () => {
   it("retains an already generated PRO document after its access period expires", async () => {
     const owner = await user();
     const project = await saveServerProject(owner.id, "hall", document("Прихожая"));
-    const checkout = await createOrder(owner, { kind: "pro_month", expectedAmount: 39900, acceptedOffer: "2026-09-22" });
+    const checkout = await createOrder(owner, { kind: "pro_month", expectedAmount: 39900, acceptedOffer: defaultSettings().offerVersion });
     await confirmPayment(String(checkout.order.invoice), checkout.order.amount, checkout.order.id, "local-pro", Date.now() - 1_000);
     const created = await createDocument(owner.id, project.id, "xlsx", true);
     await (await database()).query("UPDATE commerce_orders SET access_end=$1 WHERE id=$2", [Date.now() - 1, checkout.order.id]);

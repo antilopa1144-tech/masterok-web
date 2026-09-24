@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { getSettings, publicState } from "@/lib/commerce/config";
 import { PROJECT_ESTIMATE_NAME } from "@/lib/commerce/product-copy";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Условия покупки",
+  title: "Публичная оферта и условия покупки",
   robots: { index: false, follow: false },
 };
 
@@ -20,8 +21,8 @@ export default async function PurchaseTermsPage() {
 
   return <main className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
     <p className="text-sm font-semibold text-accent-700 dark:text-accent-300">Мастерок</p>
-    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Условия покупки</h1>
-    <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">Что входит в покупку, как получить документы и куда обратиться за помощью.</p>
+    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Публичная оферта и условия покупки</h1>
+    <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">Предложение самозанятого исполнителя об оказании услуги по оформлению сметы проекта. Редакция от 24 сентября 2026 года.</p>
     {state.mode !== "live" && <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950 dark:bg-amber-950/30 dark:text-amber-200">{state.mode === "off" ? "Покупки пока недоступны. Бесплатными расчётами и проектами можно пользоваться." : "Тестовая версия: реальные деньги не списываются. Условия подготовлены для проверки перед открытием продаж."}</p>}
 
     <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
@@ -38,6 +39,12 @@ export default async function PurchaseTermsPage() {
       <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Документы доступны в кабинете после подтверждения оплаты. Цены материалов и работ вы указываете сами; позиции без цены отмечаются отдельно и не входят в итог. Покупка не включает замеры на объекте, проверку инженером или покупку самих материалов.</p>
     </section>
 
+    <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="text-lg font-bold text-slate-950 dark:text-white">Как заключить договор и получить результат</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Это предложение адресовано совершеннолетним пользователям сайта getmasterok.ru. Перед оплатой вы видите выбранный проект, состав услуги, цену и ссылку на эту редакцию оферты. Нажимая кнопку оплаты, вы принимаете условия для указанного заказа; договор считается заключённым после успешной оплаты.</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Оплату обрабатывает Robokassa. После подтверждения платежа доступ к PDF и XLSX открывается в кабинете для оплаченного проекта. Если подтверждение задерживается, проверьте статус заказа и напишите в поддержку с номером заказа — повторно платить не нужно. Материалы и цены в смете основаны на данных, которые вы внесли в проект; до оплаты проверьте их полноту.</p>
+    </section>
+
     {state.enabled && <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <h2 className="text-lg font-bold text-slate-950 dark:text-white">PRO, продление и отмена</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Доступ PRO предоставляется на один месяц. Автопродление возможно только после отдельного подтверждённого согласия; если согласие не оформлено или функция не одобрена, период не продлевается автоматически. Отменить продление можно в аккаунте до следующего списания. Отмена не удаляет проекты и уже созданные документы.</p>
@@ -45,7 +52,12 @@ export default async function PurchaseTermsPage() {
 
     <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <h2 className="text-lg font-bold text-slate-950 dark:text-white">Возвраты и поддержка</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Запрос на возврат рассматривается по обращению в поддержку. Сервис не отказывает в возврате автоматически: порядок, сроки и документы определяются после проверки конкретной оплаты и применимых требований. {state.supportEmail ? <>Напишите: <a className="text-accent-700 underline dark:text-accent-300" href={`mailto:${state.supportEmail}`}>{state.supportEmail}</a>.</> : "Контакт поддержки ещё не опубликован."}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Если документы не открылись, заказ недоступен или вы хотите отказаться от услуги, напишите в поддержку и укажите номер заказа и адрес входа в кабинет. Мы проверим оплату и состояние выдачи документов, ответим по существу и при наличии основания оформим возврат через платёжный сервис. Права покупателя, предусмотренные законом, сохраняются; автоматического отказа из-за скачивания файла нет. {state.supportEmail ? <>Напишите: <a className="text-accent-700 underline dark:text-accent-300" href={`mailto:${state.supportEmail}`}>{state.supportEmail}</a>.</> : "Контакт поддержки ещё не опубликован."}</p>
+    </section>
+
+    <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="text-lg font-bold text-slate-950 dark:text-white">Данные заказа</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Для входа и выдачи документов нужен адрес электронной почты. Данные проекта и сведения об оплате используются для исполнения заказа и поддержки. Номер банковской карты сайт не получает. Подробнее об обработке данных — в <Link className="text-accent-700 underline dark:text-accent-300" href="/politika-konfidencialnosti/">политике конфиденциальности</Link>.</p>
     </section>
 
     <section className="mt-8 border-t border-slate-200 pt-5 dark:border-slate-700">
