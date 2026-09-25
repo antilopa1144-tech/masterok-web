@@ -18,7 +18,8 @@ const TAG_TO_CALCULATOR_SLUG: Array<{ pattern: RegExp; slug: string }> = [
   { pattern: /т[её]пл.* пол/i, slug: "teplyy-pol" },
   { pattern: /гипсокартон|гкл/i, slug: "gipsokarton" },
   { pattern: /кр[её]пеж|саморез|дюбел/i, slug: "krepezh" },
-  { pattern: /кладк/i, slug: "kladka-kirpicha" },
+  // «Раскладка» не означает кирпичную кладку.
+  { pattern: /(?:^|[^\p{L}])кладк/iu, slug: "kladka-kirpicha" },
   { pattern: /кирпич/i, slug: "kirpich" },
   { pattern: /газобетон|газоблок/i, slug: "gazobeton" },
   { pattern: /пеноблок|керамзитоблок/i, slug: "penobloki" },

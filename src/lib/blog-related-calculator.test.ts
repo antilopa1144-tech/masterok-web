@@ -15,4 +15,18 @@ describe("pickRelatedCalculator", () => {
       tags: ["кровля"],
     })).toEqual({ slug: "krovlya", categorySlug: "krovlya" });
   });
+
+  it("не подставляет кирпичную кладку к раскладке листов ОСП", () => {
+    expect(pickRelatedCalculator({
+      title: "Раскладка ОСП на полу: почему на 12 м² нужно не четыре листа",
+      tags: ["ОСП", "раскладка листов", "пол по лагам"],
+    })).toBeUndefined();
+  });
+
+  it("оставляет калькулятор кладки для отдельного слова «кладка»", () => {
+    expect(pickRelatedCalculator({
+      title: "Кладка кирпича: сколько нужно материала",
+      tags: ["кирпич"],
+    })).toEqual({ slug: "kladka-kirpicha", categorySlug: "steny" });
+  });
 });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
@@ -39,6 +40,17 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <div className="border-b border-slate-200 bg-gradient-to-b from-teal-50 to-white dark:border-slate-800 dark:from-slate-900 dark:to-slate-950"><div className="page-container py-6"><Breadcrumbs items={[{ href: "/instrumenty/", label: "Инструменты" }, { label: "Раскладка листов" }]} /><h1 className="mt-4 text-2xl font-bold text-slate-900 md:text-3xl dark:text-slate-100">Раскладка гипсокартона и ОСП-плит</h1><p className="mt-2 max-w-3xl text-slate-500 dark:text-slate-400">ОСП — ориентированно-стружечная плита. Сравните ориентации листа, разнесите стыки, получите карту раскроя и количество к покупке с повторным использованием обрезков.</p></div></div>
       <div className="page-container py-8"><Suspense fallback={<div className="card animate-pulse p-8 text-sm text-slate-400">Загрузка…</div>}><SheetLayoutGenerator /></Suspense></div>
+      <div className="page-container pb-8">
+        <div className="rounded-2xl border border-teal-200 bg-teal-50 p-5 dark:border-teal-900 dark:bg-teal-950/40">
+          <p className="font-semibold text-slate-900 dark:text-slate-100">Пример с реальными размерами</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700 dark:text-slate-300">
+            Разобрали пол 3 × 4 м: как из шести деталей получается раскрой пяти листов ОСП и когда к покупке нужен шестой.
+          </p>
+          <Link href="/blog/raskladka-osp-na-polu/" className="mt-3 inline-block text-sm font-semibold text-teal-800 underline underline-offset-4 hover:text-teal-950 dark:text-teal-300 dark:hover:text-teal-100">
+            Читать пример раскладки ОСП →
+          </Link>
+        </div>
+      </div>
       <ToolPageExtras slug="raskladka-listov" />
     </>
   );
