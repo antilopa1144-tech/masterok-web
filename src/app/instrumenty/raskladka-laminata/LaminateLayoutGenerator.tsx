@@ -26,6 +26,7 @@ import {
   buildLaminateCalculatorHref,
   parseLaminateLayoutSearchParams,
 } from "@/lib/tools/laminate-layout-to-calc";
+import { getLaminateExportCopy, getLaminateExportGeometry } from "@/lib/tools/laminate-layout-export";
 
 // ── SVG scene ────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,92 @@ async function renderSvgToPngDataUrl(svg: SVGSVGElement): Promise<string> {
   ctx.fillStyle = "#fffbeb";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png");
+}
+
+async function renderLaminateReportPngDataUrl(svg: SVGSVGElement, result: LaminateLayoutResult, direction: LaminateDirection): Promise<string> {
+  const viewBox = svg.viewBox.baseVal;
+  const geometry = getLaminateExportGeometry(viewBox.width, viewBox.height);
+  const copy = getLaminateExportCopy(result, direction);
+  const exportSvg = await cloneSvgWithEmbeddedImages(svg);
+  exportSvg.setAttribute("width", String(viewBox.width));
+  exportSvg.setAttribute("height", String(viewBox.height));
+  const svgData = new XMLSerializer().serializeToString(exportSvg);
+  const image = new Image();
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Не удалось подготовить план для экспорта"));
+    image.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+  });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = geometry.width;
+  canvas.height = geometry.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Браузер не поддерживает подготовку изображения");
+  ctx.fillStyle = "#fffdf9";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#172033";
+  ctx.fillRect(0, 0, canvas.width, 190);
+  ctx.fillStyle = "#fb923c";
+  ctx.fillRect(0, 0, 12, 190);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 54px Arial, sans-serif";
+  ctx.fillText(copy.title, 96, 77);
+  ctx.font = "28px Arial, sans-serif";
+  ctx.fillStyle = "#dbe4ef";
+  ctx.fillText(copy.parameters, 96, 125);
+  ctx.fillText(copy.method, 96, 165);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(geometry.planX - 18, geometry.planY - 18, geometry.planWidth + 36, geometry.planHeight + 36);
+  ctx.strokeStyle = "#d9e2ec";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(geometry.planX - 18, geometry.planY - 18, geometry.planWidth + 36, geometry.planHeight + 36);
+  ctx.drawImage(image, geometry.planX, geometry.planY, geometry.planWidth, geometry.planHeight);
+
+  const cards = [
+    { label: "К покупке с запасом", value: `${result.purchaseBoards} шт`, accent: true },
+    { label: copy.baseLabel, value: `${result.basePurchaseBoards} шт` },
+    { label: "Дополнительный запас", value: `${result.purchaseReserveBoards} шт` },
+    result.mode === "herringbone"
+      ? { label: "Площадь пола", value: `${(result.surfaceW * result.surfaceH / 1_000_000).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} м²` }
+      : { label: "Отход материала", value: `${result.wastePercent.toFixed(1)}%` },
+  ];
+  const cardGap = 20;
+  const cardWidth = (1408 - cardGap * 3) / 4;
+  cards.forEach((card, index) => {
+    const x = 96 + index * (cardWidth + cardGap);
+    ctx.fillStyle = card.accent ? "#fff1dc" : "#f1f5f9";
+    ctx.fillRect(x, geometry.summaryY, cardWidth, 158);
+    ctx.fillStyle = card.accent ? "#9a3412" : "#475569";
+    ctx.font = "bold 22px Arial, sans-serif";
+    ctx.fillText(card.label, x + 20, geometry.summaryY + 46);
+    ctx.fillStyle = "#172033";
+    ctx.font = "bold 55px Arial, sans-serif";
+    ctx.fillText(card.value, x + 20, geometry.summaryY + 118);
+  });
+
+  ctx.fillStyle = "#334155";
+  ctx.font = "27px Arial, sans-serif";
+  const words = copy.caveat.split(" ");
+  let line = "";
+  let lineY = geometry.summaryY + 227;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (ctx.measureText(candidate).width > 1408 && line) {
+      ctx.fillText(line, 96, lineY);
+      line = word;
+      lineY += 42;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) ctx.fillText(line, 96, lineY);
+  ctx.fillStyle = "#64748b";
+  ctx.font = "23px Arial, sans-serif";
+  ctx.fillText("Одна прямоугольная комната · упаковки сверяйте с выбранной коллекцией", 96, geometry.height - 102);
+  ctx.fillText("getmasterok.ru/instrumenty/raskladka-laminata/", 96, geometry.height - 58);
   return canvas.toDataURL("image/png");
 }
 
@@ -385,9 +472,11 @@ export default function LaminateLayoutGenerator() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareFinish, setCompareFinish] = useState<LaminateVisualFinish>("white-oak");
   const [compareDirection, setCompareDirection] = useState<LaminateDirection>("along-length");
+  const [exportStatus, setExportStatus] = useState<"idle" | "preparing" | "done" | "error">("idle");
   const hydratedFromUrl = useRef(false);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<HTMLDivElement>(null);
+  const exportPlanRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -415,6 +504,10 @@ export default function LaminateLayoutGenerator() {
     [surfaceW, surfaceH, boardW, boardH, mode, direction],
   );
 
+  useEffect(() => {
+    setExportStatus("idle");
+  }, [result, visualFinish, presentationMode]);
+
   const compareResult = useMemo(
     () => calculateDirectionalLaminateLayout(surfaceW, surfaceH, boardW, boardH, mode, compareDirection),
     [surfaceW, surfaceH, boardW, boardH, mode, compareDirection],
@@ -426,14 +519,21 @@ export default function LaminateLayoutGenerator() {
   );
 
   const handleExportPNG = useCallback(async () => {
-    const svgEl = svgRef.current?.querySelector("svg");
-    if (!svgEl) return;
-    trackToolExport("raskladka-laminata", "png");
-    const link = document.createElement("a");
-    link.download = "laminate-layout.png";
-    link.href = await renderSvgToPngDataUrl(svgEl);
-    link.click();
-  }, []);
+    setExportStatus("preparing");
+    try {
+      const plan = (presentationMode === "plan" ? svgRef : exportPlanRef).current?.querySelector("svg");
+      if (!plan) throw new Error("Не удалось найти план для экспорта");
+      const href = await renderLaminateReportPngDataUrl(plan, result, direction);
+      const link = document.createElement("a");
+      link.download = "raskladka-laminata-plan.png";
+      link.href = href;
+      link.click();
+      trackToolExport("raskladka-laminata", "png");
+      setExportStatus("done");
+    } catch {
+      setExportStatus("error");
+    }
+  }, [direction, presentationMode, result]);
 
   const createProjectLayout = useCallback(async () => {
     const svg = svgRef.current?.querySelector("svg");
@@ -584,9 +684,10 @@ export default function LaminateLayoutGenerator() {
               <button type="button" aria-pressed={presentationMode === "plan"} onClick={() => { setPresentationMode("plan"); setCompareMode(false); }} className={`min-h-11 rounded-md px-3 text-xs font-semibold ${presentationMode === "plan" ? "bg-white text-accent-700 shadow-sm dark:bg-slate-800 dark:text-accent-300" : "text-slate-500"}`}>План</button>
             </div>
             <button type="button" aria-pressed={compareMode} onClick={() => { setCompareMode((value) => !value); setPresentationMode("room"); }} className={`min-h-11 rounded-lg border px-3 text-xs font-semibold transition-colors ${compareMode ? "border-accent-400 bg-accent-50 text-accent-700 dark:bg-accent-900/20 dark:text-accent-300" : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-300"}`}>Сравнить</button>
-            <button type="button" onClick={handleExportPNG} className="min-h-11 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 transition-colors hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:text-slate-400">{compareMode ? "PNG варианта A" : "Скачать PNG"}</button>
+            <button type="button" onClick={handleExportPNG} disabled={exportStatus === "preparing"} className="min-h-11 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 transition-colors hover:border-accent-300 hover:text-accent-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-400">{exportStatus === "preparing" ? "Готовим PNG…" : compareMode ? "Скачать план A" : "Скачать план PNG"}</button>
           </div>
         </div>
+        {(exportStatus === "done" || exportStatus === "error") && <p role="status" aria-live="polite" className="order-1 text-xs text-slate-500 dark:text-slate-400">{exportStatus === "done" ? "План с размерами и итогом к покупке скачан в PNG." : "Не удалось подготовить PNG. Попробуйте ещё раз."}</p>}
 
         <div data-testid="laminate-texture-controls" className="order-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/60 xl:order-2">
           <div className="flex items-center justify-between gap-3">
@@ -670,6 +771,11 @@ export default function LaminateLayoutGenerator() {
             ) : <LaminateRoomSVG result={result} finish={visualFinish} lightSource={lightSource} roomDetails={roomDetails} />
           ) : result.herringbone ? <HerringboneSVG result={result} finish={visualFinish} /> : <DeckSVG result={result} finish={visualFinish} />}
         </div>
+        {presentationMode === "room" && (
+          <div ref={exportPlanRef} aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden">
+            {result.herringbone ? <HerringboneSVG result={result} finish={visualFinish} /> : <DeckSVG result={result} finish={visualFinish} />}
+          </div>
+        )}
 
         {presentationMode === "room" && compareMode && (
           <div data-testid="laminate-comparison-summary" className="order-4 grid gap-2 sm:grid-cols-2">
