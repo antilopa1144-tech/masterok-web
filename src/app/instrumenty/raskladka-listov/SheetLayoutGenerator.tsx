@@ -25,6 +25,7 @@ import {
   buildFastenersCalculatorHref,
   FASTENERS_TRANSFER_FROM,
 } from "@/lib/tools/sheet-layout-to-calc";
+import { getSheetExportCopy, getSheetExportGeometry } from "@/lib/tools/sheet-layout-export";
 
 const SURFACE_PRESETS = [
   { label: "Стена 3 × 2,7 м", width: 3000, height: 2700, surface: "wall" as const },
@@ -61,6 +62,81 @@ function materialLabel(material: SheetMaterial): string {
   if (material === "drywall") return "Гипсокартон";
   if (material === "osb") return "ОСП (ориентированно-стружечная плита)";
   return "Лист";
+}
+
+async function renderSheetReportPng(svgs: SVGSVGElement[], result: SheetLayoutResult): Promise<string> {
+  const geometry = getSheetExportGeometry(svgs.map((svg) => ({ width: svg.viewBox.baseVal.width, height: svg.viewBox.baseVal.height })));
+  const copy = getSheetExportCopy(result);
+  const images = await Promise.all(svgs.map(async (svg) => {
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.setAttribute("width", String(svg.viewBox.baseVal.width));
+    clone.setAttribute("height", String(svg.viewBox.baseVal.height));
+    const image = new Image();
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Не удалось подготовить схему листов"));
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(clone))}`;
+    });
+    return image;
+  }));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = geometry.width;
+  canvas.height = geometry.height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Браузер не поддерживает подготовку изображения");
+  context.fillStyle = "#fffdf9";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#153b3a";
+  context.fillRect(0, 0, canvas.width, 190);
+  context.fillStyle = "#2dd4bf";
+  context.fillRect(0, 0, 12, 190);
+  context.fillStyle = "#ffffff";
+  context.font = "bold 49px Arial, sans-serif";
+  context.fillText(copy.title, 96, 75);
+  context.fillStyle = "#d5f4ed";
+  context.font = "27px Arial, sans-serif";
+  context.fillText(copy.parameters, 96, 123);
+  context.fillText(copy.method, 96, 163);
+
+  images.forEach((image, index) => {
+    const plan = geometry.plans[index];
+    context.fillStyle = "#ffffff";
+    context.fillRect(plan.x - 18, plan.y - 18, plan.width + 36, plan.height + 36);
+    context.strokeStyle = "#d4e5e2";
+    context.lineWidth = 2;
+    context.strokeRect(plan.x - 18, plan.y - 18, plan.width + 36, plan.height + 36);
+    context.drawImage(image, plan.x, plan.y, plan.width, plan.height);
+  });
+
+  const cards = [
+    { label: "К покупке", value: `${result.purchaseSheets} листов`, accent: true },
+    { label: "В раскрой", value: `${result.baseSheets} листов` },
+    { label: "Закрытый запас", value: `${result.reserveSheets} листов` },
+    { label: "Деталей на схемах", value: String(result.layoutPieces) },
+  ];
+  const cardGap = 20;
+  const cardWidth = (1408 - cardGap * 3) / 4;
+  cards.forEach((card, index) => {
+    const x = 96 + index * (cardWidth + cardGap);
+    context.fillStyle = card.accent ? "#d8f8ed" : "#f1f5f9";
+    context.fillRect(x, geometry.summaryY, cardWidth, 150);
+    context.fillStyle = card.accent ? "#115e59" : "#475569";
+    context.font = "bold 21px Arial, sans-serif";
+    context.fillText(card.label, x + 17, geometry.summaryY + 42);
+    context.fillStyle = "#172033";
+    context.font = "bold 43px Arial, sans-serif";
+    context.fillText(card.value, x + 17, geometry.summaryY + 108);
+  });
+  context.fillStyle = "#334155";
+  context.font = "27px Arial, sans-serif";
+  context.fillText(copy.scope, 96, geometry.summaryY + 224);
+  context.fillText(copy.caveat, 96, geometry.summaryY + 271);
+  context.fillStyle = "#64748b";
+  context.font = "23px Arial, sans-serif";
+  context.fillText("Одна прямоугольная поверхность · формат и упаковку сверяйте с поставщиком", 96, geometry.height - 100);
+  context.fillText("getmasterok.ru/instrumenty/raskladka-listov/", 96, geometry.height - 57);
+  return canvas.toDataURL("image/png");
 }
 
 function SurfaceLayoutSvg({ result, layer }: { result: SheetLayoutResult; layer: number }) {
@@ -237,8 +313,9 @@ export default function SheetLayoutGenerator() {
   const [activeLayer, setActiveLayer] = useState(1);
   const [showAllStock, setShowAllStock] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+  const [exportStatus, setExportStatus] = useState<"idle" | "preparing" | "done" | "error">("idle");
   const hydrated = useRef(false);
-  const svgRef = useRef<HTMLDivElement>(null);
+  const exportLayersRef = useRef<HTMLDivElement>(null);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
@@ -296,6 +373,10 @@ export default function SheetLayoutGenerator() {
     reservePercent,
   }), [jointGap, layers, material, orientation, reservePercent, sheetLength, sheetWidth, stagger, surface, surfaceHeight, surfaceWidth]);
 
+  useEffect(() => {
+    setExportStatus("idle");
+  }, [result]);
+
   const drywallHref = useMemo(() => buildDrywallCalculatorHref(result.input, result.purchaseSheets), [result]);
   const fastenersHref = useMemo(
     () => buildFastenersCalculatorHref(result.input, result.purchaseSheets),
@@ -337,28 +418,22 @@ export default function SheetLayoutGenerator() {
     }
   };
 
-  const exportPng = useCallback(() => {
-    const svg = svgRef.current?.querySelector("svg");
-    if (!svg) return;
-    trackToolExport("raskladka-listov", "png");
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = image.width * 2;
-      canvas.height = image.height * 2;
-      const context = canvas.getContext("2d");
-      if (!context) return;
-      context.scale(2, 2);
-      context.fillStyle = "#f8fafc";
-      context.fillRect(0, 0, image.width, image.height);
-      context.drawImage(image, 0, 0);
+  const exportPng = useCallback(async () => {
+    setExportStatus("preparing");
+    try {
+      const svgs = Array.from(exportLayersRef.current?.querySelectorAll("svg") ?? []);
+      if (svgs.length !== result.input.layers) throw new Error("Не удалось найти все слои раскладки");
+      const href = await renderSheetReportPng(svgs, result);
       const link = document.createElement("a");
-      link.download = `raskladka-listov-sloy-${activeLayer}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = "raskladka-listov-s-itogom.png";
+      link.href = href;
       link.click();
-    };
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
-  }, [activeLayer]);
+      trackToolExport("raskladka-listov", "png");
+      setExportStatus("done");
+    } catch {
+      setExportStatus("error");
+    }
+  }, [result]);
 
   const shareLayout = useCallback(async () => {
     const params = new URLSearchParams({
@@ -467,9 +542,11 @@ export default function SheetLayoutGenerator() {
       </div>
 
       <div ref={layoutRef} hidden={activeStage !== "layout"} className="card scroll-mt-24 space-y-5 border-stone-200 bg-[#fffdf9] p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Шаг 2 · живая схема</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">{materialShortLabel} {sheetWidth.toLocaleString("ru-RU")} × {sheetLength.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()}</p></div><button type="button" onClick={exportPng} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">Скачать PNG</button></div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Шаг 2 · живая схема</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">{materialShortLabel} {sheetWidth.toLocaleString("ru-RU")} × {sheetLength.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()}</p></div><button type="button" onClick={exportPng} disabled={exportStatus === "preparing"} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:border-teal-300 hover:text-teal-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">{exportStatus === "preparing" ? "Готовим PNG…" : "Скачать схемы и итог PNG"}</button></div>
+        {(exportStatus === "done" || exportStatus === "error") && <p role="status" aria-live="polite" className="text-xs text-slate-500 dark:text-slate-400">{exportStatus === "done" ? "Схемы всех слоёв и общий итог к покупке скачаны в PNG." : "Не удалось подготовить PNG. Попробуйте ещё раз."}</p>}
         {layers === 2 && <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">{[1, 2].map((value) => <button type="button" key={value} onClick={() => setActiveLayer(value)} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${activeLayer === value ? "bg-white text-teal-700 shadow-sm dark:bg-slate-700 dark:text-teal-300" : "text-slate-500"}`}>Слой {value}</button>)}</div>}
-        <div ref={svgRef} className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
+        <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
+        <div ref={exportLayersRef} aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden">{result.layers.map((layer) => <SurfaceLayoutSvg key={layer.layer} result={result} layer={layer.layer} />)}</div>
         <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300"><span className="flex items-center gap-2"><i className="flex size-6 shrink-0 items-center justify-center rounded-md bg-teal-700 text-[9px] not-italic font-bold text-white">Л1</i> Номер покупного листа</span><span className="flex items-center gap-2"><i className="size-5 shrink-0 rounded border border-teal-700 bg-[repeating-linear-gradient(45deg,#ccfbf1,#ccfbf1_3px,#99f6e4_3px,#99f6e4_4px)]" /> Штриховка — подрезка</span><span className="flex items-center gap-2"><i className="h-0.5 w-5 shrink-0 bg-slate-600" /> Тёмные линии — монтажные швы</span></div>
 
         <details className="group rounded-2xl border border-stone-200 bg-white dark:border-slate-700 dark:bg-slate-950"><summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold text-stone-950 dark:text-white">Карты раскроя покупных листов</span><span className="mt-0.5 block text-xs text-stone-500 dark:text-slate-400">{result.stock.length} листов · открыть детали и остатки</span></span><span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span></summary><div className="border-t border-stone-100 px-4 pb-4 pt-3 dark:border-slate-800"><p className="text-xs text-slate-500">Метка «Л1» на стене ведёт к карте «Лист 1» ниже. Так видно, где используется целый лист, а где — его остаток.</p>
