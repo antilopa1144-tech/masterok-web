@@ -1584,7 +1584,8 @@ export default function TileLayoutGenerator() {
   const [projectStatus, setProjectStatus] = useState<
     "idle" | "saving" | "saved" | "loaded" | "link-copied" | "deleted" | "failed"
   >("idle");
-  const [showMobileParameters, setShowMobileParameters] = useState(false);
+  const [showMobileParameters, setShowMobileParameters] = useState(true);
+  const [showMobileProjectWorkspace, setShowMobileProjectWorkspace] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "sharing" | "shared" | "copied" | "failed">("idle");
   const [pdfStatus, setPdfStatus] = useState<"idle" | "exporting" | "failed">("idle");
   const [renderPdfVisuals, setRenderPdfVisuals] = useState(false);
@@ -2349,17 +2350,31 @@ export default function TileLayoutGenerator() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-700 dark:text-accent-300">Проект раскладки</p>
-            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">Сохраните раскладку и вернитесь к ней позже</h2>
-            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Размеры, проём, плитка, шов, запас и выбранный вид сохраняются в этом браузере. Ссылка восстанавливает ту же схему на другом устройстве.
-            </p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
+              <span className="sm:hidden">Мои раскладки</span>
+              <span className="hidden sm:inline">Сохраните раскладку и вернитесь к ней позже</span>
+            </h2>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            {savedProjects.length > 0 ? `${savedProjects.length} сохранено` : "Хранится локально"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 sm:inline-flex dark:bg-slate-800 dark:text-slate-300">
+              {savedProjects.length > 0 ? `${savedProjects.length} сохранено` : "Хранится локально"}
+            </span>
+            <button
+              type="button"
+              aria-expanded={showMobileProjectWorkspace}
+              aria-controls="tile-project-workspace-content"
+              onClick={() => setShowMobileProjectWorkspace((visible) => !visible)}
+              className="min-h-11 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 sm:hidden dark:border-slate-700 dark:text-slate-200"
+            >
+              {showMobileProjectWorkspace ? "Свернуть" : savedProjects.length > 0 ? `Открыть · ${savedProjects.length}` : "Сохранить"}
+            </button>
+          </div>
         </div>
 
-        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(240px,1.15fr)_auto_minmax(280px,1fr)] xl:items-end">
+        <p className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 max-w-2xl text-xs leading-relaxed text-slate-500 dark:text-slate-400`}>
+          Размеры, проём, плитка, шов, запас и выбранный вид сохраняются в этом браузере. Ссылка восстанавливает ту же схему на другом устройстве.
+        </p>
+        <div id="tile-project-workspace-content" className={`${showMobileProjectWorkspace ? "grid" : "hidden sm:grid"} mt-4 gap-3 xl:grid-cols-[minmax(240px,1.15fr)_auto_minmax(280px,1fr)] xl:items-end`}>
           <label className="block min-w-0">
             <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Название помещения или поверхности</span>
             <input
@@ -2434,7 +2449,7 @@ export default function TileLayoutGenerator() {
           </div>
         </div>
 
-        <p role="status" aria-live="polite" className="mt-2 min-h-5 text-xs text-slate-500 dark:text-slate-400">
+        <p role="status" aria-live="polite" className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 min-h-5 text-xs text-slate-500 dark:text-slate-400`}>
           {projectStatus === "saved" && "Проект сохранён в этом браузере."}
           {projectStatus === "loaded" && "Проект восстановлен — все параметры применены."}
           {projectStatus === "link-copied" && "Ссылка с полной схемой скопирована."}
@@ -2445,7 +2460,7 @@ export default function TileLayoutGenerator() {
           <TileLayoutPassportCard
             passport={selectedSavedPassport.passport}
             compact
-            className="mt-3"
+            className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-3`}
             visual={(
               <TileRoomPreviewSVG
                 result={selectedSavedPassport.result}
