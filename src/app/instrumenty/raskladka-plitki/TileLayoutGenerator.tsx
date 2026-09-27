@@ -17,6 +17,7 @@ import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import SaveLayoutToProject from "@/components/commerce/SaveLayoutToProject";
 import RenovationHubStrip from "@/components/renovation/RenovationHubStrip";
 import TileLayoutPassportCard from "@/components/tools/TileLayoutPassportCard";
+import ViewportDeferred from "@/components/ui/ViewportDeferred";
 import DraftNumberInput from "@/components/tools/DraftNumberInput";
 import TileSurfaceSelector from "./TileSurfaceSelector";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
@@ -3432,20 +3433,26 @@ export default function TileLayoutGenerator() {
             stacked
             className="mb-4"
             visual={(
-              <TileRoomPreviewSVG
-                result={result}
-                groutMm={normalizedInput.groutMm}
-                surfaceView={surfaceView}
-                surfaceW={normalizedInput.surfaceW}
-                surfaceH={normalizedInput.surfaceH}
-                visualFinish={visualFinish}
-                lightingPreset={lightingPreset}
-                groutColor={groutColor}
-                textureSource={textureSource}
-                textureScalePercent={textureScalePercent}
-                textureRotationDeg={textureRotationDeg}
-                customTextureDataUrl={customTextureDataUrl}
-              />
+              <ViewportDeferred
+                rootMargin="200px"
+                minHeight={176}
+                className="w-full [&>svg]:h-auto [&>svg]:max-h-44 [&>svg]:w-full"
+              >
+                <TileRoomPreviewSVG
+                  result={result}
+                  groutMm={normalizedInput.groutMm}
+                  surfaceView={surfaceView}
+                  surfaceW={normalizedInput.surfaceW}
+                  surfaceH={normalizedInput.surfaceH}
+                  visualFinish={visualFinish}
+                  lightingPreset={lightingPreset}
+                  groutColor={groutColor}
+                  textureSource={textureSource}
+                  textureScalePercent={textureScalePercent}
+                  textureRotationDeg={textureRotationDeg}
+                  customTextureDataUrl={customTextureDataUrl}
+                />
+              </ViewportDeferred>
             )}
           />
         ) : (
