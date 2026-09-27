@@ -1,11 +1,13 @@
 import { unstable_cache } from "next/cache";
 import { fetchAllPosts } from "./ghost";
 import { BLOG_CACHE_TAG, BLOG_REVALIDATE_SECONDS } from "./blog-cache";
+import type { BlogAuthor } from "./blog-authors";
 import { canonicalBlogTagSlug, dedupeBlogTags, isSameBlogTag, tagToSlug } from "./blog-tag-slug";
 
 export { tagToSlug } from "./blog-tag-slug";
 
 export interface BlogPost {
+  authors?: BlogAuthor[];
   ghostId?: string;
   /** Digest of the exact CMS input rendered on this page, not a search signal. */
   sourceRevision?: string;
@@ -45,7 +47,7 @@ export interface BlogPost {
 }
 
 // Next owns the lifetime: no process-global snapshot that survives revalidation.
-const getCachedPosts = unstable_cache(fetchAllPosts, ["ghost-published-posts-v3"], {
+const getCachedPosts = unstable_cache(fetchAllPosts, ["ghost-published-posts-v4"], {
   tags: [BLOG_CACHE_TAG],
   revalidate: BLOG_REVALIDATE_SECONDS,
 });

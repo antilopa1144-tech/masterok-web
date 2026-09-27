@@ -35,6 +35,7 @@ export const metadata: Metadata = buildPageMetadata({
   description: META.description,
   url: PAGE_URL,
   image: HERO_IMAGE,
+  imageDimensions: { width: 1200, height: 630 },
 });
 
 const SERVICE_STEPS = [

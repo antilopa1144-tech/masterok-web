@@ -8,6 +8,7 @@ import path from "node:path";
 import type { BlogPost } from "./blog";
 import { applyBlogContentOverrides } from "./blog-content-overrides";
 import { blogSourceRevision } from "./blog-source-revision";
+import { blogAuthorsFromGhost } from "./blog-authors";
 
 // GHOST_API_URL: задайте в .env.local или CI secrets.
 // Fallback для локальных билдов (внутренний сервер Ghost).
@@ -31,6 +32,7 @@ interface GhostPost {
   updated_at?: string;
   reading_time?: number;
   tags?: GhostTag[];
+  authors?: Array<{ slug: string; name: string }>;
   primary_tag?: GhostTag;
   meta_title?: string;
   meta_description?: string;
@@ -196,6 +198,7 @@ function transformPost(post: GhostPost): BlogPost {
 
   return applyBlogContentOverrides({
     ghostId: post.id,
+    authors: blogAuthorsFromGhost(post.authors),
     sourceRevision: blogSourceRevision(post),
     slug: post.slug,
     title: post.title,
@@ -225,7 +228,7 @@ export async function fetchAllPosts(): Promise<BlogPost[]> {
   }
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>("/posts/", {
-      include: "tags",
+      include: "tags,authors",
       limit: "all",
       order: "published_at desc",
     });
@@ -248,7 +251,7 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | undefine
   }
   try {
     const res = await ghostFetch<GhostResponse<GhostPost>>(`/posts/slug/${slug}/`, {
-      include: "tags",
+      include: "tags,authors",
     });
 
     if (!res.posts || res.posts.length === 0) return undefined;

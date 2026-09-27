@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
@@ -24,8 +24,6 @@ const UI_TEXT = {
   calculatorCtaFallback: "Открыть калькулятор",
   relatedPostsTitle: "Читайте также",
   relatedPostsReadMore: "Читать →",
-  authorPrefix: "Редакция",
-  authorAbout: "о проекте",
   publishedLabel: "Опубликовано",
   updatedLabel: "Обновлено",
   tocTitle: "В этой статье",
@@ -127,6 +125,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     tags: post.tags,
     image: post.heroImage || undefined,
     }),
+    authors: post.authors?.map(({ name, url }) => ({ name, url })),
     other: post.sourceRevision ? { "masterok:source-revision": post.sourceRevision } : undefined,
   };
 }
@@ -219,7 +218,13 @@ export default async function BlogPostPage({ params }: Props) {
     dateModified: post.updatedAtIso ?? post.updatedAt ?? post.publishedAtIso ?? post.date,
     wordCount,
     articleSection: post.category,
-    author: {
+    author: post.authors?.length ? post.authors.map((author) => ({
+      "@type": "Person",
+      "@id": author.url,
+      name: author.name,
+      url: author.url,
+      jobTitle: author.role,
+    })) : {
       "@type": "Organization",
       "@id": `${baseUrl}/#organization`,
       name: `Редакция ${SITE_NAME}`,
@@ -344,13 +349,20 @@ export default async function BlogPostPage({ params }: Props) {
                 · {UI_TEXT.updatedLabel} <time dateTime={post.updatedAt}>{formatRuDate(post.updatedAt)}</time>
               </span>
             )}
-            <Link
-              href="/o-proekte/"
-              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 no-underline"
-              rel="author"
-            >
-              · {UI_TEXT.authorPrefix} {SITE_NAME}
-            </Link>
+            {post.authors?.length ? post.authors.map((author) => (
+              <span key={author.slug} className="text-xs text-slate-500 dark:text-slate-400">
+                · {author.url ? (
+                  <Link href={author.url} rel="author" className="hover:text-slate-700 dark:hover:text-slate-200 no-underline">
+                    {author.name}
+                  </Link>
+                ) : author.name}
+                {author.role && <span className="block mt-1">{author.role}</span>}
+              </span>
+            )) : (
+              <Link href="/o-proekte/#redaktsiya" rel="author" className="text-xs text-slate-500 dark:text-slate-400 no-underline">
+                · Редакция {SITE_NAME}
+              </Link>
+            )}
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
@@ -362,8 +374,9 @@ export default async function BlogPostPage({ params }: Props) {
 
           {post.heroImage && (
             <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-              <Image
+              <BlogCoverImage
                 src={post.heroImage}
+                sizes="(min-width: 1152px) 1088px, calc(100vw - 32px)"
                 alt={post.heroImageAlt || post.title}
                 className="w-full h-48 sm:h-64 md:h-80 object-cover"
                 width={1200}
@@ -459,8 +472,9 @@ export default async function BlogPostPage({ params }: Props) {
                 >
                   {rp.heroImage && (
                     <Link href={`/blog/${rp.slug}/`} className="block">
-                      <Image
+                      <BlogCoverImage
                         src={rp.heroImage}
+                        sizes="(min-width: 768px) 360px, calc(100vw - 32px)"
                         alt={rp.heroImageAlt || rp.title}
                         className="w-full h-32 object-cover"
                         width={400}

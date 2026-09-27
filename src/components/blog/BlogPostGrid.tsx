@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useId } from "react";
 import { blogCategoryLabel, getBlogCategories } from "@/lib/blog-categories";
-import Image from "next/image";
+import BlogCoverImage from "./BlogCoverImage";
 import Link from "next/link";
 
 interface BlogPostData {
@@ -86,8 +86,9 @@ export default function BlogPostGrid({ posts, readMoreText }: Props) {
           <article key={post.slug} className="card-hover flex flex-col overflow-hidden">
             {post.heroImage && (
               <Link href={`/blog/${post.slug}/`} className="block">
-                <Image
+                <BlogCoverImage
                   src={post.heroImage}
+                  sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
                   alt={post.heroImageAlt ?? post.title}
                   className="w-full h-40 object-cover"
                   width={400}

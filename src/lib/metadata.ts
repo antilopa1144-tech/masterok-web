@@ -15,6 +15,8 @@ interface BuildPageMetadataOptions {
   tags?: string[];
   /** Optional per-page OG image URL that overrides the site default */
   image?: string;
+  /** Only supply dimensions verified against the actual custom image. */
+  imageDimensions?: { width: number; height: number };
 }
 
 /**
@@ -65,12 +67,14 @@ export function buildPageMetadata({
   modifiedTime,
   tags,
   image,
+  imageDimensions,
 }: BuildPageMetadataOptions): Metadata {
   const cleanTitle = withSiteSuffix(title);
   const cleanOgTitle = withSiteSuffix(openGraphTitle ?? title);
   const cleanTwitterTitle = withSiteSuffix(twitterTitle ?? title);
   const ogImage = image
-    ? { url: image, width: 1200, height: 630 }
+    // CMS images have different aspect ratios; do not invent their dimensions.
+    ? { url: image, ...imageDimensions }
     : { url: SITE_OG_IMAGE_URL, width: SITE_OG_IMAGE_WIDTH, height: SITE_OG_IMAGE_HEIGHT };
   const twitterImage = image ?? SITE_OG_IMAGE_URL;
 

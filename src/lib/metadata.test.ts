@@ -7,6 +7,13 @@ const titleOf = (metadata: ReturnType<typeof buildPageMetadata>): string =>
   typeof metadata.title === "string" ? metadata.title : String((metadata.title as { absolute?: string })?.absolute);
 
 describe("buildPageMetadata", () => {
+  it("не приписывает произвольной обложке CMS размеры стандартной картинки сайта", () => {
+    const image = "https://cms.example.test/wide-cover.webp";
+    const metadata = buildPageMetadata({ title: "Обложка", description: "Тест", url: "https://example.test/blog/cover/", image });
+    expect(metadata.openGraph?.images).toEqual([{ url: image }]);
+    expect(metadata.twitter?.images).toEqual([image]);
+  });
+
   it("строит website metadata по умолчанию", () => {
     const metadata = buildPageMetadata({
       title: "Тестовая страница",

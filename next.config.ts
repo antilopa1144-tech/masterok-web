@@ -37,6 +37,9 @@ const nextConfig: NextConfig = {
 
   // Tree-shaking для barrel-import lucide-react (Header, CategoryIcon).
   experimental: {
+    // Timeweb runtime cannot write to the build-owned .next directories.
+    // Keep Next's in-memory ISR/data cache; refresh from Ghost after restarts.
+    isrFlushToDisk: false,
     optimizePackageImports: [
       "lucide-react",
       "three",

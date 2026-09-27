@@ -81,4 +81,33 @@ describe("Ghost blog availability guard", () => {
     const [post] = await fetchAllPosts();
     expect(post).toMatchObject({ ghostId: "post-id", date: "2026-09-06", publishedAtIso: "2026-09-06T01:02:03.000Z", updatedAtIso: "2026-09-06T02:03:04.000Z" });
   });
+
+  it("запрашивает авторов Ghost и сохраняет подтверждённое имя редактора и соавтора", async () => {
+    process.env.GHOST_API_URL = "https://cms.example.test";
+    process.env.GHOST_CONTENT_API_KEY = "test-content-key";
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ posts: [{
+      id: "authors", slug: "authors-test", title: "Test", html: "<p>Text</p>",
+      published_at: "2026-09-06T01:02:03.000Z",
+      authors: [{ slug: "mikhail", name: "Mikhail" }, { slug: "guest", name: "Автор из Ghost" }],
+    }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchAllPosts, fetchPostBySlug } = await importGhost();
+    const [post] = await fetchAllPosts();
+    expect(post.authors).toEqual([
+      expect.objectContaining({ slug: "mikhail", name: "Михаил Щегольков", url: expect.stringContaining("/o-proekte/#redaktsiya") }),
+      { slug: "guest", name: "Автор из Ghost" },
+    ]);
+    expect((await fetchPostBySlug("authors-test"))?.authors).toEqual(post.authors);
+    for (const [url] of fetchMock.mock.calls) {
+      expect(new URL(url).searchParams.get("include")).toBe("tags,authors");
+    }
+  });
+
+  it("не приписывает редактору статью без автора в Ghost", async () => {
+    const { blogAuthorsFromGhost } = await import("./blog-authors");
+    expect(blogAuthorsFromGhost()).toEqual([]);
+    expect(blogAuthorsFromGhost([{ slug: "other", name: "Другой автор" }])).toEqual([
+      { slug: "other", name: "Другой автор" },
+    ]);
+  });
 });

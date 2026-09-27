@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_FOUNDING_DATE, SITE_NAME, SITE_SAME_AS, SITE_URL } from "@/lib/site";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
+import { CHIEF_EDITOR } from "@/lib/blog-authors";
 
 export const metadata: Metadata = buildPageMetadata({
   // Бренд в title не дублируем: его добавляет withSiteSuffix.
@@ -29,6 +30,13 @@ export default function AboutPage() {
       foundingDate: SITE_FOUNDING_DATE,
       areaServed: { "@type": "Country", name: "Россия" },
       sameAs: [...SITE_SAME_AS],
+      employee: {
+        "@type": "Person",
+        "@id": CHIEF_EDITOR.url,
+        name: CHIEF_EDITOR.name,
+        jobTitle: CHIEF_EDITOR.role,
+        url: CHIEF_EDITOR.url,
+      },
     },
   };
 
@@ -90,12 +98,20 @@ export default function AboutPage() {
             </ul>
           </section>
 
-          <section>
-            <h2>Статьи и рекомендации</h2>
+          <section id="redaktsiya" className="scroll-mt-24">
+            <h2>Редакция и материалы</h2>
+            <p>
+              <strong>{CHIEF_EDITOR.name}</strong> — {CHIEF_EDITOR.role}.
+            </p>
             <p>
               Материалы в блоге носят рекомендательный и справочный характер: они помогают разобраться
               в теме, выбрать подход и избежать типичных ошибок. Это не проектная документация и не
               замена консультации профильного специалиста для ответственных конструкций.
+            </p>
+            <p>
+              Об ошибке в статье можно сообщить через «Оставить отзыв» в подвале сайта.
+              Приложите ссылку на материал и укажите, что нужно уточнить; если есть документ
+              или техническая инструкция производителя, добавьте ссылку на источник.
             </p>
           </section>
 
