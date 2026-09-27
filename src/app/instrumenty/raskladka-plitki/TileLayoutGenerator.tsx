@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
+  Suspense,
   useState,
   useMemo,
   useRef,
@@ -45,6 +46,7 @@ import {
   buildPlitkaCalculatorHref,
   buildTileAdhesiveCalculatorHref,
   buildTileGroutCalculatorHref,
+  DEFAULT_TILE_LAYOUT_RESERVE_PERCENT,
   parseTileLayoutReservePercent,
   parseTileLayoutFromSearchParams,
 } from "@/lib/tools/tile-layout-to-calc";
@@ -83,6 +85,17 @@ import {
 
 type TileSurfaceView = TileProjectSurfaceView;
 type TilePresentationMode = TileProjectPresentationMode;
+
+function TileLayoutUrlState({ onChange }: { onChange: (params: URLSearchParams) => void }) {
+  const params = useSearchParams();
+  const query = params.toString();
+
+  useEffect(() => {
+    onChange(new URLSearchParams(query));
+  }, [onChange, query]);
+
+  return null;
+}
 
 type TileVisualPalette = {
   label: string;
@@ -1530,14 +1543,7 @@ function DiagonalLayoutSVG({ result, surfaceView, showAlignmentGuides = false, o
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function TileLayoutGenerator() {
-  const searchParams = useSearchParams();
-  const initialPackAreaM2 = Number(searchParams.get("packAreaM2"));
-  const initialTilesPerBox = Number(searchParams.get("tilesPerBox"));
-  const initialPackagingSource: TilePackagingSource = searchParams.get("packagingSource") === "label"
-    && isValidTilesPerBox(initialTilesPerBox)
-    ? "label"
-    : "estimated";
-  const initialReservePercent = parseTileLayoutReservePercent(searchParams.get("reservePercent"));
+  const [searchParams, setSearchParams] = useState(() => new URLSearchParams());
   const [surfaceW, setSurfaceW] = useState(2500);
   const [surfaceH, setSurfaceH] = useState(2600);
   const [tileW, setTileW] = useState(600);
@@ -1545,14 +1551,10 @@ export default function TileLayoutGenerator() {
   const [customSurfaceSize, setCustomSurfaceSize] = useState(false);
   const [customTileSize, setCustomTileSize] = useState(false);
   const [groutMm, setGroutMm] = useState(2);
-  const [reservePercent, setReservePercent] = useState(initialReservePercent);
-  const [packAreaInput, setPackAreaInput] = useState(
-    String(isValidTilePackArea(initialPackAreaM2) ? initialPackAreaM2 : DEFAULT_TILE_PACK_AREA_M2),
-  );
-  const [tilesPerBoxInput, setTilesPerBoxInput] = useState(
-    String(isValidTilesPerBox(initialTilesPerBox) ? initialTilesPerBox : DEFAULT_TILE_TILES_PER_BOX),
-  );
-  const [packagingSource, setPackagingSource] = useState<TilePackagingSource>(initialPackagingSource);
+  const [reservePercent, setReservePercent] = useState(DEFAULT_TILE_LAYOUT_RESERVE_PERCENT);
+  const [packAreaInput, setPackAreaInput] = useState(String(DEFAULT_TILE_PACK_AREA_M2));
+  const [tilesPerBoxInput, setTilesPerBoxInput] = useState(String(DEFAULT_TILE_TILES_PER_BOX));
+  const [packagingSource, setPackagingSource] = useState<TilePackagingSource>("estimated");
   const [hasEditedTransferredPackaging, setHasEditedTransferredPackaging] = useState(false);
   const [hasOpening, setHasOpening] = useState(true);
   const [openingW, setOpeningW] = useState(900);
@@ -1653,6 +1655,18 @@ export default function TileLayoutGenerator() {
       setActiveProjectId("");
       setProjectStatus("loaded");
       return;
+    }
+    const linkedPackAreaM2 = Number(searchParams.get("packAreaM2"));
+    const linkedTilesPerBox = Number(searchParams.get("tilesPerBox"));
+    if (isValidTilePackArea(linkedPackAreaM2)) setPackAreaInput(String(linkedPackAreaM2));
+    if (isValidTilesPerBox(linkedTilesPerBox)) setTilesPerBoxInput(String(linkedTilesPerBox));
+    if (searchParams.has("packagingSource")) setPackagingSource(
+      searchParams.get("packagingSource") === "label" && isValidTilesPerBox(linkedTilesPerBox)
+        ? "label"
+        : "estimated",
+    );
+    if (searchParams.has("reservePercent")) {
+      setReservePercent(parseTileLayoutReservePercent(searchParams.get("reservePercent")));
     }
     const parsed = parseTileLayoutFromSearchParams(searchParams);
     if (!parsed?.surfaceW || !parsed.surfaceH) return;
@@ -2325,6 +2339,9 @@ export default function TileLayoutGenerator() {
 
   return (
     <div className="space-y-5">
+      <Suspense fallback={null}>
+        <TileLayoutUrlState onChange={setSearchParams} />
+      </Suspense>
       {searchParams.get("from") === "calculator" && (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/60 dark:bg-blue-950/25 dark:text-blue-200">
           <p className="font-semibold">Параметры перенесены из калькулятора плитки</p>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -63,9 +62,7 @@ export default function Page() {
       </div>
 
       <div className="page-container-wide py-5 lg:py-6">
-        <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка…</div>}>
-          <TileLayoutGenerator />
-        </Suspense>
+        <TileLayoutGenerator />
       </div>
       <ToolPageExtras slug="raskladka-plitki">
         <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
