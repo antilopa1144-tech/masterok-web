@@ -13,6 +13,10 @@
 /.next/
 /.next-commerce-build/
 /.next-commerce-preview/
+/.next-constructor-dev/
+/.next-constructor-build/
+/.next-constructor-tiles/
+/.next-constructor-sizes/
 /out/
 
 # production

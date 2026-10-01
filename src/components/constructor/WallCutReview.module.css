@@ -1,0 +1,56 @@
+.body { overflow-y: auto; min-height: 0; padding: 22px 24px; }
+.intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.intro > div:first-child { min-width: 0; max-width: 450px; }
+.intro p { font-size: 12px; line-height: 1.65; color: var(--c-secondary); }
+.intro .roomName { color: var(--c-text); font-size: 16px; font-weight: 600; margin-bottom: 7px; overflow-wrap: anywhere; }
+.metric { display: grid; grid-template-columns: 20px auto; gap: 2px 8px; align-items: center; flex-shrink: 0; }
+.metric svg { color: var(--c-accent); }
+.metric strong { font-size: 28px; line-height: 1.3; letter-spacing: -.6px; }
+.metric span { grid-column: 1 / -1; font-size: 10px; line-height: 1.5; color: var(--c-secondary); }
+.filters { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 22px; }
+.walls { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 22px; }
+.walls button { min-height: 36px; padding: 6px 11px; color: var(--c-secondary); background: var(--c-muted); border: 1px solid var(--c-line); border-radius: 6px; font-size: 11px; }
+.walls button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-tint); color: var(--c-accent); }
+.limit { display: flex; flex-direction: column; gap: 4px; width: 260px; flex-shrink: 0; font-size: 11px; color: var(--c-secondary); }
+.limit small { line-height: 1.5; }
+.caution { margin: 17px 0 20px !important; padding: 10px 12px; background: var(--c-muted); border-radius: 6px; font-size: 11px; line-height: 1.65; color: var(--c-secondary); }
+.listHeading { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 9px; font-size: 12px; }
+.listHeading span { white-space: nowrap; color: var(--c-secondary); }
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--c-line); }
+.list > li { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--c-line); }
+.preview { display: flex; align-items: center; justify-content: center; height: 60px; padding: 5px; background: var(--c-muted); border: 1px solid var(--c-line); border-radius: 5px; color: var(--c-secondary); }
+.preview svg { width: 100%; height: 100%; }
+.detail { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.detail > strong { font-size: 11px; color: var(--c-secondary); font-weight: 500; }
+.detail .dimensions { font-size: 17px; font-weight: 600; }
+.detail small { font-size: 10px; color: var(--c-secondary); }
+.detail details { font-size: 11px; color: var(--c-secondary); margin-top: 5px; }
+.detail summary { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.detail ol { padding-left: 20px; margin: 7px 0 0; }
+.show { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 7px 11px; background: transparent; color: var(--c-accent); border: 1px solid var(--c-line); border-radius: 6px; font-size: 11px; }
+.show:hover { border-color: var(--c-accent); background: var(--c-tint); }
+.more { display: block; width: 100%; padding: 12px; margin-top: 16px; min-height: 40px; border: 1px solid var(--c-line); color: var(--c-text); background: var(--c-surface); border-radius: 6px; font-size: 12px; }
+.more:hover { background: var(--c-muted); }
+.empty { padding: 30px 16px; text-align: center; background: var(--c-muted); border-radius: 8px; font-size: 12px; line-height: 1.7; color: var(--c-secondary); }
+@media (max-width: 640px) {
+  .body { padding: 16px; }
+  .intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: start; }
+  .intro > div:first-child { display: contents; }
+  .intro > div:first-child p:last-child { grid-column: 1 / -1; grid-row: 2; }
+  .intro .roomName { font-size: 14px; }
+  .metric { grid-column: 2; grid-row: 1; }
+  .metric strong { font-size: 23px; }
+  .metric span { font-size: 9px; }
+  .intro p { font-size: 11px; }
+  .filters { flex-direction: column; gap: 12px; margin-top: 16px; }
+  .walls { display: grid; grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr)); width: 100%; padding-top: 0; gap: 4px; }
+  .body .walls button { padding: 5px 4px; min-height: 44px; font-size: 12px; }
+  .limit { width: 100%; }
+  .limit input { min-height: 40px; }
+  .listHeading { font-size: 11px; }
+  .list > li { grid-template-columns: 66px minmax(0, 1fr) 36px; gap: 10px; }
+  .preview { height: 50px; }
+  .detail .dimensions { font-size: 15px; overflow-wrap: anywhere; }
+  .show { padding: 7px; }
+  .show span { display: none; }
+}

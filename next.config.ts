@@ -33,6 +33,16 @@ const nextConfig: NextConfig = {
   deploymentId: process.env.NODE_ENV === "development" ? process.env.COMMERCE_DEV_ASSET_VERSION : undefined,
   distDir: process.env.MASTEROK_BUILD_DIR ?? ".next",
   serverExternalPackages: ["@electric-sql/pglite", "pg", "nodemailer", "exceljs"],
+  webpack(config, { dev }) {
+    if (dev) {
+      // На Windows исходный фильтр Next не распознаёт обратные слеши. Выгрузки
+      // и соседние distDir не должны запускать HMR и гонки записи manifest-файлов.
+      const previous = config.watchOptions?.ignored;
+      const localArtifacts = String.raw`(?:^|[\\/])(?:\.git|\.next[^\\/]*|node_modules|output)(?:[\\/]|$)`;
+      config.watchOptions = { ...config.watchOptions, ignored: new RegExp(previous instanceof RegExp ? `${previous.source}|${localArtifacts}` : localArtifacts) };
+    }
+    return config;
+  },
   // Без output → стандартный server mode (next start)
 
   // Tree-shaking для barrel-import lucide-react (Header, CategoryIcon).

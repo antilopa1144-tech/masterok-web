@@ -5,6 +5,7 @@ import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import SiteChrome from "@/components/layout/SiteChrome";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import IdleMount from "@/components/ui/IdleMount";
@@ -176,15 +177,11 @@ export default async function RootLayout({
           </>
         ) : null}
         <StorageMigrationInitializer />
-        <Header />
-        <main id="main-content" className="flex-1">{children}</main>
-        <Footer />
-        {/* Некритичные плавающие оверлеи — монтируем на idle, чтобы их гидрация
-            не попадала в критическую длинную задачу (снижает TBT). */}
-        <IdleMount>
-          <ScrollToTop />
-          <FeedbackWidget />
-        </IdleMount>
+        <SiteChrome header={<Header />} footer={<Footer />} overlays={
+          <IdleMount><ScrollToTop /><FeedbackWidget /></IdleMount>
+        }>
+          <main id="main-content" className="flex-1">{children}</main>
+        </SiteChrome>
         <Script id="sw-unregister" strategy="lazyOnload" nonce={nonce}>{`if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(w=>w.unregister()))`}</Script>
       </body>
     </html>

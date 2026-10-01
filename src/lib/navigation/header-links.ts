@@ -15,6 +15,7 @@ export interface HeaderNavLink {
  */
 export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
   { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
+  { href: "/konstruktor/", label: "Конструктор", match: ["/konstruktor"], icon: "flooring" },
   { href: "/instrumenty/", label: "Инструменты", match: ["/instrumenty"], icon: "wrench" },
   { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/blog/", label: "Блог", match: ["/blog"], icon: "book" },

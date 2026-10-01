@@ -79,6 +79,10 @@ export default function InstrumentyPage() {
       </section>
 
       <div className="page-container-wide py-8">
+        <Link href="/konstruktor/" className="mb-6 flex flex-col gap-3 rounded-xl border border-accent-200 bg-accent-50 p-5 text-slate-900 no-underline sm:flex-row sm:items-center sm:justify-between dark:border-accent-800 dark:bg-accent-950/30 dark:text-slate-100">
+          <span><strong className="block text-lg">Конструктор Мастерок</strong><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">Комната, ламинат и плитка на стенах: 3D, развёртки, подрезки и упаковки к покупке в одном проекте.</span></span>
+          <span className="shrink-0 font-semibold text-accent-700 dark:text-accent-400">Открыть конструктор</span>
+        </Link>
         <nav aria-label="Группы инструментов" className="flex flex-wrap gap-2">
           {GROUPED_TOOL_CARDS.map(group => (
             <a key={group.id} href={`#${group.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:border-accent-500 dark:border-slate-700 dark:text-slate-200">

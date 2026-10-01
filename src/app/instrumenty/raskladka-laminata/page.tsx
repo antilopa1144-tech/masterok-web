@@ -57,6 +57,7 @@ export default function Page() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl dark:text-white">
             Раскладка ламината онлайн со схемой
           </h1>
+          <Link href="/konstruktor/" className="mt-3 inline-flex text-sm font-medium text-accent-700 underline underline-offset-4 dark:text-accent-400">Открыть конструктор комнаты с 3D и картами реза</Link>
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
             Введите размеры комнаты и доски — увидите схему укладки палубой или ёлочкой, отход и количество досок к закупке.
           </p>

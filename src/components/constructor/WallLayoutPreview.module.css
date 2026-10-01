@@ -1,0 +1,93 @@
+.body { padding: 22px 24px; overflow-y: auto; min-height: 0; }
+.lead { margin-bottom: 20px; }
+.lead strong { font-size: 15px; overflow-wrap: anywhere; }
+.lead p { color: var(--c-secondary); font-size: 12px; margin-top: 5px; line-height: 1.6; }
+.error { padding: 12px; margin-bottom: 16px !important; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-tint); color: var(--c-text); font-size: 12px; line-height: 1.6; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 26px; align-items: start; }
+.drawingColumn, .settings { min-width: 0; }
+.drawingHeading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.format { font-size: 10px; color: var(--c-secondary); margin-bottom: 8px !important; }
+.viewportTools { display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--c-line); border-radius: 6px; }
+.body .viewportTools button { width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--c-secondary); }
+.viewportTools button:hover { color: var(--c-accent); background: var(--c-tint); }
+.viewportTools > span { min-width: 40px; text-align: center; font-size: 10px; color: var(--c-secondary); }
+.viewChoice { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--c-line); border-radius: 6px; }
+.body .viewChoice button { min-height: 32px; padding: 6px 10px; border: 0; background: transparent; color: var(--c-secondary); font-size: 12px; border-radius: 4px; }
+.viewChoice button[aria-pressed="true"] { background: var(--c-tint); color: var(--c-accent); }
+.drawing { width: 100%; border: 1px solid var(--c-line); border-radius: 8px; overflow: auto; overscroll-behavior: contain; background: #fff; aspect-ratio: 1.25; max-height: 380px; scroll-margin-top: 64px; }
+.drawingCanvas { min-width: 100%; min-height: 100%; padding: 12px; }
+.drawing svg { width: 100%; height: 100%; }
+.drawing [data-tile-id] { cursor: pointer; }
+.drawing[data-zoomed="true"], .drawing[data-zoomed="true"] [data-tile-id] { cursor: grab; }
+.drawing[data-panning="true"], .drawing[data-panning="true"] [data-tile-id] { cursor: grabbing; }
+.drawing:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.drawing > p { color: #7c2d12; padding: 24px; font-size: 13px; }
+.navigation { font-size: 10px; color: var(--c-secondary); line-height: 1.6; margin-top: 7px !important; }
+.selected { padding: 7px 10px; background: var(--c-tint); border-radius: 5px; font-size: 11px; margin-top: 10px !important; overflow-wrap: anywhere; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.selected > p { flex: 1; min-width: 0; }
+.body .selectionZoom { flex-shrink: 0; display: flex; align-items: center; gap: 5px; border: 1px solid var(--c-line); border-radius: 4px; background: var(--c-surface); color: var(--c-accent); padding: 5px 7px; min-height: 32px; font-size: 10px; }
+.cutChoices { margin: 16px 0 10px; }
+.cutChoices > span { font-size: 11px; color: var(--c-secondary); }
+.cutChoices > div { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.body .cutChoices button { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; padding: 7px 9px; border: 1px solid var(--c-line); border-radius: 5px; background: var(--c-surface); color: var(--c-text); font-size: 11px; min-height: 36px; }
+.cutChoices button span, .cutChoices button small { color: var(--c-secondary); font-size: 10px; }
+.cutChoices button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-tint); }
+.cutChoices > p, .hint { color: var(--c-secondary); font-size: 11px; line-height: 1.65; }
+.settings { display: flex; flex-direction: column; gap: 13px; }
+.controls { display: flex; flex-direction: column; gap: 13px; }
+.sections, .previewLink { display: none; }
+.settings fieldset { padding: 0; border: 0; min-width: 0; margin: 0; }
+.settings legend { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.body .options button { min-height: 40px; padding: 8px 6px; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-surface); color: var(--c-secondary); font-size: 12px; }
+.options button[aria-pressed="true"] { background: var(--c-tint); border-color: var(--c-accent); color: var(--c-accent); }
+.continuation { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; padding-top: 3px; }
+.continuation input { margin-top: 1px; }
+.body .reset { display: flex; gap: 7px; align-items: center; align-self: start; background: transparent; border: 0; padding: 3px 0; color: var(--c-secondary); font-size: 11px; }
+.changes { border-top: 1px solid var(--c-line); }
+.changeHeading, .changeRow { display: grid; grid-template-columns: minmax(0, 1fr) 78px 78px; column-gap: 8px; }
+.changeHeading { padding: 12px 0 7px; font-size: 10px; color: var(--c-secondary); }
+.changeHeading > :not(:first-child), .changeRow > :not(:first-child) { text-align: right; }
+.changeRow { padding: 10px 0; border-top: 1px solid var(--c-line); align-items: center; font-size: 11px; }
+.changeRow small { display: block; font-size: 9px; color: var(--c-secondary); margin-top: 2px; }
+.changeRow > span { color: var(--c-secondary); }
+.changeRow > strong { color: var(--c-text); font-weight: 600; }
+.changeRow > * { overflow-wrap: anywhere; }
+.actions { flex-shrink: 0; border-top: 1px solid var(--c-line); padding: 15px 24px; display: flex; justify-content: flex-end; align-items: center; gap: 9px; }
+.actions button { min-height: 42px; }
+.actions .cancel { margin-right: auto; background: transparent; padding: 7px 0; border: 0; color: var(--c-secondary); font-size: 12px; }
+.actions .save { padding: 9px 12px; display: flex; align-items: center; gap: 7px; color: var(--c-text); background: transparent; border: 1px solid var(--c-line); border-radius: 7px; font-size: 12px; }
+.saveForm { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--c-line); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.saveForm label { min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--c-secondary); }
+.saveForm input { padding: 10px 12px; background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-line); border-radius: 6px; width: 100%; min-height: 42px; }
+.saveHint { margin-top: 14px !important; color: var(--c-secondary); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 290px; gap: 20px; }
+  .changeHeading, .changeRow { grid-template-columns: minmax(0, 1fr) 65px 65px; }
+}
+@media (max-height: 600px) {
+  .drawing { max-height: max(100px, calc(100dvh - 250px)); }
+}
+@media (max-width: 700px) {
+  .body { padding: 16px; }
+  .lead { margin-bottom: 14px; }
+  .lead strong { font-size: 14px; }
+  .lead p { font-size: 11px; }
+  .layout { display: flex; flex-direction: column; gap: 20px; }
+  .sections { position: sticky; top: -16px; z-index: 2; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; background: var(--c-surface); padding: 8px 0 12px; margin-bottom: 6px; }
+  .body .sections button { min-height: 40px; font-size: 12px; padding: 7px 5px; background: var(--c-muted); color: var(--c-secondary); border: 1px solid var(--c-line); border-radius: 6px; }
+  .sections button[aria-pressed="true"] { background: var(--c-tint); color: var(--c-accent); border-color: var(--c-accent); }
+  .body .previewLink { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 8px; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-muted); color: var(--c-text); font-size: 12px; }
+  .layout[data-section="settings"] .drawingColumn, .layout[data-section="results"] .drawingColumn, .layout[data-section="drawing"] .settings { display: none; }
+  .layout[data-section="results"] .controls, .layout[data-section="settings"] .changes, .layout[data-section="settings"] .costHint { display: none; }
+  .drawingColumn, .settings { width: 100%; }
+  .drawing { aspect-ratio: 1.3; scroll-margin-top: 122px; }
+  .drawingCanvas { padding: 8px; }
+  .body .cutChoices button { min-height: 40px; }
+  .actions { padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .actions > button:last-child { grid-column: 1 / -1; }
+  .actions .cancel { margin: 0; text-align: left; }
+  .actions .save { justify-content: center; padding: 8px; font-size: 11px; }
+  .saveForm { grid-template-columns: 1fr; }
+  .changeHeading, .changeRow { grid-template-columns: minmax(0, 1fr) 76px 76px; }
+}
