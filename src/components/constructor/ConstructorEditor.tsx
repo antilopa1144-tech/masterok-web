@@ -27,6 +27,7 @@ import WallLayoutPreview from "./WallLayoutPreview";
 import RoomInteriorControls, { RoomTypeIcon, RoomTypePicker } from "./RoomInteriorControls";
 import FurnishingPlacementControls from "./FurnishingPlacementControls";
 import FloorTileInspector from "./FloorTileInspector";
+import InspectorSection from "./InspectorSection";
 import TileSupplyControls from "./TileSupplyControls";
 import { reviewWallCuts, type WallCutEntry } from "@/lib/constructor/wall-cuts";
 import styles from "./constructor.module.css";
@@ -483,7 +484,7 @@ export default function ConstructorEditor() {
             <div className={styles.propertySection}><h3>Рисунок укладки</h3><div className={styles.patternOptions}>{(["third", "half"] as const).map((pattern) => <button type="button" key={pattern} aria-pressed={room.floor.pattern === pattern} className={room.floor.pattern === pattern ? styles.active : ""} onClick={() => updateFloor("pattern", pattern)}><PatternSketch pattern={pattern} /><span>Палуба {pattern === "third" ? "1/3" : "1/2"}</span></button>)}</div></div>
             <div className={styles.field}><span>Направление доски</span><div className={styles.directionOptions}><button type="button" aria-pressed={room.floor.direction === "width"} className={room.floor.direction === "width" ? styles.active : ""} onClick={() => updateFloor("direction", "width")}><span className={styles.boardsHorizontal} />Вдоль ширины</button><button type="button" aria-pressed={room.floor.direction === "length"} className={room.floor.direction === "length" ? styles.active : ""} onClick={() => updateFloor("direction", "length")}><span className={styles.boardsVertical} />Вдоль длины</button></div></div>
             {numericFloor("reservePercent", "Дополнительный резерв", 0, 100, "%")}
-            <details className={styles.details} open><summary>Упаковка и стоимость</summary><div className={styles.detailsContent}><div className={styles.fieldRow}>{numericFloor("boardsPerPack", "Досок в упаковке", 1, 1000, "шт.", true)}{numericFloor("packPriceRub", "Цена упаковки", 0, 10000000, "₽")}</div><p className={styles.hint}>Фасовка и цена — по вашему товару. Образцы цвета служат для визуализации.</p></div></details>
+            <InspectorSection title="Упаковка и стоимость" value={`${room.floor.boardsPerPack} шт./уп. · ${room.floor.packPriceRub ? formatMoney(room.floor.packPriceRub) : "цена не задана"}`}><div className={styles.fieldRow}>{numericFloor("boardsPerPack", "Досок в упаковке", 1, 1000, "шт.", true)}{numericFloor("packPriceRub", "Цена упаковки", 0, 10000000, "₽")}</div><p className={styles.hint}>Фасовка и цена — по вашему товару. Образцы цвета служат для визуализации.</p></InspectorSection>
             <details className={styles.details}><summary>Монтаж и параметры товара</summary><div className={styles.detailsContent}>
               <TextField label="Товар или артикул" value={room.floor.materialKey} onCommit={(value) => updateFloor("materialKey", value)} onStatus={onStatus} />
               <div className={styles.fieldRow}>{numericFloor("expansionGapMm", "Зазор у стен", 0, 100, "мм")}{numericFloor("kerfMm", "Ширина пропила", 0, 20, "мм")}</div>
