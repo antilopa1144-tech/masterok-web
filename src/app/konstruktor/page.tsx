@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, Box, Check, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import { CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
+import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 import styles from "@/components/constructor/constructor-entry.module.css";
@@ -28,8 +29,8 @@ const questions = [
 ];
 
 const quickTools = [
-  { href: "/instrumenty/raskladka-laminata/", title: "Ламинат и ёлочка", description: "Быстрая схема одного пола", icon: Layers },
-  { href: "/instrumenty/raskladka-plitki/", title: "Раскладка плитки", description: "Одна поверхность, включая диагональ", icon: Box },
+  { href: classicLayoutHref("laminate"), title: "Ламинат ёлочкой", description: "Отдельная схема одного пола", icon: Layers },
+  { href: classicLayoutHref("tile"), title: "Диагональная плитка", description: "Схема одной поверхности", icon: Box },
   { href: "/instrumenty/raskladka-listov/", title: "Раскрой листов", description: "Детали, пропил и остатки", icon: Scissors },
   { href: "/instrumenty/raskladka-oboev/", title: "Раскладка обоев", description: "Полотна и совмещение рисунка", icon: Ruler },
 ];
@@ -64,9 +65,9 @@ export default function ConstructorPage() {
       <div className={styles.sectionHeading}><div><h2 id="scenarios-title">С чего начнём?</h2><p>Откройте пример и измените размеры под своё помещение.</p></div><span className={styles.quiet}>Каждый пример — отдельный проект</span></div>
       <div className={styles.scenarios}>
         {CONSTRUCTOR_SCENARIOS.map((scenario) => <Link key={scenario.id} href={scenarioHref(scenario.id)} prefetch={false} className={styles.scenario}>
-          <div className={`${styles.scenarioVisual} ${scenario.id === "laminate" ? styles.laminateVisual : ""}`}>
-            <Image src={scenario.id === "bathroom" ? "/images/constructor/bathroom-editor.jpg" : scenario.id === "laminate" ? "/images/laminate-textures/natural-oak.webp" : "/images/constructor/room-editor.jpg"} alt="" fill sizes="(max-width: 650px) 100vw, 33vw" />
-            <span>{scenario.id === "bathroom" ? "Пол и стены" : scenario.id === "laminate" ? "Ряды и стыки" : "Размеры и отделка"}</span>
+          <div className={`${styles.scenarioVisual} ${scenario.id === "laminate" || scenario.id === "tile" ? styles.laminateVisual : ""}`}>
+            <Image src={scenario.id === "bathroom" ? "/images/constructor/bathroom-tiled-entry.jpg" : scenario.id === "laminate" ? "/images/laminate-textures/natural-oak.webp" : scenario.id === "tile" ? "/images/tile-textures/limestone.webp" : "/images/constructor/room-editor.jpg"} alt="" fill sizes="(max-width: 650px) 100vw, (max-width: 1100px) 50vw, 25vw" />
+            <span>{scenario.id === "bathroom" ? "Пол и стены" : scenario.id === "laminate" ? "Ряды и стыки" : scenario.id === "tile" ? "Швы и подрезки" : "Размеры и отделка"}</span>
           </div>
           <div className={styles.scenarioCopy}><h3>{scenario.title}</h3><p>{scenario.description}</p><span className={styles.scenarioAction}>{scenario.action}<ArrowUpRight size={20} /></span></div>
         </Link>)}
@@ -81,7 +82,7 @@ export default function ConstructorPage() {
       </ol>
     </section>
     <section className={styles.section} aria-labelledby="quick-tools-title">
-      <div className={styles.sectionHeading}><div><h2 id="quick-tools-title">Нужна только одна раскладка?</h2><p>Отдельные инструменты помогут решить небольшую задачу.</p></div><Link href="/instrumenty/" className={styles.textAction}>Все инструменты <ArrowUpRight size={18} /></Link></div>
+      <div className={styles.sectionHeading}><div><h2 id="quick-tools-title">Для отдельных задач</h2><p>Ёлочка, диагональ и другие схемы, которых пока нет в 3D.</p></div><Link href="/instrumenty/" className={styles.textAction}>Все инструменты <ArrowUpRight size={18} /></Link></div>
       <div className={styles.quickTools}>{quickTools.map(({ href, title, description: text, icon: Icon }) => <Link key={href} href={href} className={styles.quickTool}><Icon size={24} /><h3>{title}</h3><p>{text}</p></Link>)}</div>
       <p className={styles.toolsNote}>Также доступны <Link href="/instrumenty/rasstanovka-svetilnikov/">схема светильников</Link>, <Link href="/instrumenty/kalendar-remonta/">календарь ремонта</Link>, раскрой и справочники материалов.</p>
     </section>

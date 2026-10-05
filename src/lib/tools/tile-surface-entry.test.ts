@@ -27,9 +27,9 @@ describe("tile surface entry contracts", () => {
     expect(selector).toContain("aria-pressed={value === surface}");
   });
 
-  it("describes both supported surfaces without renaming the search title", () => {
-    expect(page).toContain("Выберите стену или пол");
-    expect(page).toContain("Проём можно учесть для стены.");
+  it("keeps the search title and separates the 3D entry from classic shared inputs", () => {
+    expect(page).toContain('isClassicLayoutEntry("tile", await searchParams)');
+    expect(page).toContain('<LayoutConstructorEntry material="tile" classic={classic}');
     expect(page).toContain("Генератор раскладки плитки");
     expect(generator).not.toContain("Сохраните стену и вернитесь к ней позже");
   });

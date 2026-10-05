@@ -29,7 +29,7 @@
 .sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 26px; }
 .sectionHeading p, .faq > div > p { margin: 10px 0 0; color: var(--entry-muted); font-size: 15px; line-height: 1.65; }
 .quiet { font-size: 12px; color: var(--entry-muted); }
-.scenarios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.scenarios { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
 .scenario { color: var(--entry-text); overflow: hidden; border: 1px solid var(--entry-line); border-radius: 12px; transition: border-color .15s; }
 .scenario:hover { border-color: #f97316; }
 .scenarioVisual { position: relative; height: clamp(145px, 16vw, 220px); overflow: hidden; background: #eef0f3; }
@@ -68,6 +68,7 @@
 .faq summary span { font-size: 24px; color: var(--entry-muted); font-weight: 400; }
 .faq details[open] summary span { transform: rotate(45deg); }
 .faq details p { margin: 0; padding: 0 28px 22px 0; color: var(--entry-muted); font-size: 14px; line-height: 1.8; }
+@media (max-width: 1100px) { .scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1000px) { .hero { gap: 25px; } .hero h1 { font-size: 39px; } .hero .intro { font-size: 15px; } .startActions { gap: 8px 14px; } .primaryAction { padding-inline: 14px; } .quickTool { padding-inline: 16px; } }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 38px; padding-bottom: 32px; gap: 24px; } .hero h1 { font-size: clamp(36px, 6vw, 50px); } .hero h1 br { display: none; } .heroCopy { max-width: 620px; } .hero .intro { font-size: 17px; } .productName { margin-bottom: 18px; } .heroPreview { max-width: 780px; } .startNote { min-height: 18px; } .capabilities { display: grid; grid-template-columns: 1fr 1fr; } .workflow, .faq { gap: 30px; grid-template-columns: .8fr 1.2fr; } .scenarios { gap: 14px; } .scenarioCopy { padding: 17px; } }
 @media (max-width: 650px) { .hero, .section, .capabilities { padding-inline: 20px; } .hero h1 { font-size: 38px; line-height: 1.1; } .hero .intro { font-size: 16px; } .heroPreview figcaption { font-size: 11px; align-items: flex-start; } .previewLabel { font-size: 10px; padding: 11px 12px; } .capabilities { gap: 18px 12px; } .capabilities span { font-size: 11px; gap: 7px; } .capabilities svg { width: 17px; } .section { padding-top: 48px; } .sectionHeading { display: block; } .sectionHeading p { font-size: 14px; } .quiet { display: block; margin-top: 12px; } .scenarios { grid-template-columns: 1fr; gap: 20px; } .scenarioVisual { height: 185px; } .scenarioCopy { padding: 20px; } .scenarioCopy p { min-height: 0; margin-bottom: 18px; } .workflow, .faq { grid-template-columns: 1fr; gap: 28px; } .workflow h2 br { display: none; } .quickTools { grid-template-columns: 1fr 1fr; } .quickTool { padding: 22px 14px; } .quickTool:nth-child(odd) { padding-left: 0; } .quickTool:nth-child(even) { border-right: 0; } .quickTool:nth-child(-n+2) { border-bottom: 1px solid var(--entry-line); } .quickTool h3 { font-size: 14px; } .quickTool p { font-size: 12px; } .faq { padding-bottom: 52px; } }

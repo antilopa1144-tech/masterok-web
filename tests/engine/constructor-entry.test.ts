@@ -13,7 +13,7 @@ describe("Constructor scenario entry", () => {
     expect(new Set([existing, ...examples].map((item) => item.project.id)).size).toBe(4);
     expect(serializeWorkspace(existing)).toBe(original);
   });
-  it.each(["room", "bathroom", "laminate"] as const)("creates a valid, calculable, exportable %s example", (scenario) => {
+  it.each(["room", "bathroom", "laminate", "tile"] as const)("creates a valid, calculable, exportable %s example", (scenario) => {
     const workspace = createScenarioWorkspace(scenario);
     expect(validateProject(workspace.project)).toEqual([]);
     expect(calculateProject(workspace.project).rooms).toHaveLength(1);
@@ -32,6 +32,18 @@ describe("Constructor scenario entry", () => {
     expect(room.floor.kind ?? "laminate").toBe("laminate");
     expect(room.interior?.items).toEqual([]);
     expect(room.widthMm * room.lengthMm).toBe(12_000_000);
+  });
+  it("starts a tile floor without adding wall cladding or furnishings to the purchase", () => {
+    const workspace = createScenarioWorkspace("tile");
+    const room = workspace.project.rooms[0];
+    expect(parseConstructorEntry("?start=tile").scenario).toBe("tile");
+    expect(room.floor.kind).toBe("tile");
+    expect(room.floor.tile).toBeDefined();
+    expect(room.wallTiles).toEqual([null, null, null, null]);
+    expect(room.interior?.items).toEqual([]);
+    const result = calculateProject(workspace.project);
+    expect(result.purchases).toHaveLength(1);
+    expect(result.rooms[0].areaM2).toBe(12);
   });
   it("ignores unknown scenarios and validates project identifiers before selecting saved work", () => {
     expect(parseConstructorEntry("?start=bathroom").scenario).toBe("bathroom");

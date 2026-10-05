@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ConstructorToolLink from "@/components/constructor/ConstructorToolLink";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import TileLayoutGenerator from "./TileLayoutGenerator";
+import LayoutConstructorEntry from "@/components/constructor/LayoutConstructorEntry";
+import { isClassicLayoutEntry, type LayoutSearchParams } from "@/lib/constructor/layout-entry";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
-  description: "Визуализатор раскладки плитки на стену или пол: введите размеры, увидите раскладку, подрезку и количество плитки. Прямая и диагональная укладка.",
+  description: "Раскладка плитки в 3D: пол и стены комнаты, размеры, швы, подрезки и упаковки к покупке. Для диагонали и отдельной поверхности доступна расширенная схема.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-plitki", {
@@ -25,7 +25,8 @@ const breadcrumbLd = {
   ],
 };
 
-export default function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<LayoutSearchParams> }) {
+  const classic = isClassicLayoutEntry("tile", await searchParams);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -57,14 +58,13 @@ export default function Page() {
             Генератор раскладки плитки
           </h1>
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
-            Выберите стену или пол, задайте размеры поверхности и плитки — увидите схему, подрезку и количество к покупке. Проём можно учесть для стены.
+            Примерьте плитку в 3D-комнате, сравните подрезки и узнайте, сколько упаковок покупать.
           </p>
-          <ConstructorToolLink material="tile" />
         </div>
       </div>
 
       <div className="page-container-wide py-5 lg:py-6">
-        <TileLayoutGenerator />
+        <LayoutConstructorEntry material="tile" classic={classic} />
       </div>
       <ToolPageExtras slug="raskladka-plitki">
         <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">

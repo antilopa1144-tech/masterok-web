@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ConstructorToolLink from "@/components/constructor/ConstructorToolLink";
 import { useState, useMemo, useRef, useCallback, useEffect, useId } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
 import SaveLayoutToProject from "@/components/commerce/SaveLayoutToProject";
@@ -564,6 +565,7 @@ export default function LaminateLayoutGenerator() {
 
   return (
     <div ref={workspaceTopRef} className="space-y-4 scroll-mt-24">
+      <ConstructorToolLink input={{ material: "laminate", surfaceW, surfaceH, boardW, boardH, mode, direction }} />
       <RenovationHubStrip scenarioId="room" compact />
       <div className="xl:hidden">
         <CompactToolWorkspaceNav activeStage={activeStage} ariaLabel="Этапы раскладки ламината" stages={LAMINATE_WORKSPACE_STAGES} onChange={changeStage} metrics={[

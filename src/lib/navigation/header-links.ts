@@ -47,8 +47,8 @@ export const HEADER_FEATURE_LINKS: HeaderNavLink[] = [
     icon: "calculator",
   },
   {
-    href: "/instrumenty/raskladka-plitki/",
-    label: "Раскладка",
+    href: "/konstruktor/redaktor/?start=tile",
+    label: "Плитка в 3D",
     match: ["/instrumenty/raskladka-plitki"],
     icon: "tile",
   },

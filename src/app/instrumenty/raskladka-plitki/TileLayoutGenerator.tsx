@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ConstructorToolLink from "@/components/constructor/ConstructorToolLink";
 import { useSearchParams } from "next/navigation";
 import {
   Suspense,
@@ -2363,6 +2364,10 @@ export default function TileLayoutGenerator() {
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Что раскладываем?</p>
         <TileSurfaceSelector value={surfaceView} onChange={setSurfaceView} label="Поверхность для раскладки" />
       </div>
+
+      <ConstructorToolLink input={{ material: "tile", ...normalizedInput, surfaceView, layoutMode, startMode, reservePercent: result.reservePercent,
+        ...(packagingSource === "label" ? { tilesPerPack: parsedTilesPerBox } : {}),
+      }} />
 
       <section data-testid="tile-project-workspace" className="card overflow-hidden p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
