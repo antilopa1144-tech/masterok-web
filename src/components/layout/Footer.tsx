@@ -123,6 +123,8 @@ export default function Footer() {
               {UI_TEXT.servicesTitle}
             </h3>
             <ul className="space-y-2">
+              <li><Link href="/konstruktor/" className="inline-flex min-h-8 items-center gap-2 text-sm font-medium text-accent-700 no-underline dark:text-accent-400"><CategoryIcon icon="flooring" size={14} color="currentColor" />Конструктор комнаты</Link></li>
+              <li><Link href="/instrumenty/" className="inline-flex min-h-8 items-center gap-2 text-sm text-slate-500 no-underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"><CategoryIcon icon="wrench" size={14} color="currentColor" />Все инструменты</Link></li>
               <li>
                 <Link href="/mikhalych/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors no-underline">
                   <CategoryIcon icon="bot" size={14} color="currentColor" />

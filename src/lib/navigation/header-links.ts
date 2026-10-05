@@ -11,12 +11,11 @@ export interface HeaderNavLink {
 
 /**
  * Разделы сайта (desktop-навигация по центру).
- * «Инструменты» на desktop раскрывается дропдауном (TOOL_CARDS из lib/tools/config).
+ * Конструктор — общий вход в проект комнаты и каталог отдельных инструментов.
  */
 export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
   { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
   { href: "/konstruktor/", label: "Конструктор", match: ["/konstruktor"], icon: "flooring" },
-  { href: "/instrumenty/", label: "Инструменты", match: ["/instrumenty"], icon: "wrench" },
   { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/blog/", label: "Блог", match: ["/blog"], icon: "book" },
   { href: "/services/video/", label: "Видео", match: ["/services/video"], icon: "video" },
@@ -24,7 +23,7 @@ export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
 
 /**
  * Быстрые ссылки для мобильного меню («Ваш ремонт»).
- * На desktop конкретные инструменты живут в дропдауне «Инструменты»,
+ * На desktop каталог инструментов доступен через меню «Конструктор»,
  * а «Проекты» — справа, рядом с утилитами.
  */
 export const HEADER_FEATURE_LINKS: HeaderNavLink[] = [

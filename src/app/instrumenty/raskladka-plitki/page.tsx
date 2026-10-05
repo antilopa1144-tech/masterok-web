@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ConstructorToolLink from "@/components/constructor/ConstructorToolLink";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -58,6 +59,7 @@ export default function Page() {
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
             Выберите стену или пол, задайте размеры поверхности и плитки — увидите схему, подрезку и количество к покупке. Проём можно учесть для стены.
           </p>
+          <ConstructorToolLink material="tile" />
         </div>
       </div>
 

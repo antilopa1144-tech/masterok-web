@@ -17,6 +17,7 @@
 /.next-constructor-build/
 /.next-constructor-tiles/
 /.next-constructor-sizes/
+/.next-constructor-entry/
 /out/
 
 # production

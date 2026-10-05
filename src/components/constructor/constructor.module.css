@@ -201,14 +201,21 @@
 .smallNote { font-size: 12px; color: var(--c-secondary); }
 .modalLead { color: var(--c-secondary); margin-bottom: 22px !important; font-size: 13px; }
 .purchaseList { border-top: 1px solid var(--c-line); }
-.purchaseRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 20px; padding: 19px 0; border-bottom: 1px solid var(--c-line); }
+.purchaseRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; padding: 16px 0 8px; border-bottom: 1px solid var(--c-line); }
 .purchaseRow h3 { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .purchaseRow p { font-size: 12px; color: var(--c-secondary); margin-top: 5px; overflow-wrap: anywhere; }
 .purchaseRow small { color: var(--c-secondary); font-size: 11px; }
 .purchaseQuantity { text-align: right; }
 .purchaseQuantity strong { font-size: 16px; white-space: nowrap; }
 .purchaseQuantity span { display: block; font-size: 12px; margin-top: 5px; color: var(--c-secondary); }
-.purchaseRow .purchaseExplanation { grid-column: 1 / -1; margin-top: 2px; font-size: 11px; line-height: 1.7; }
+.purchaseDetails { grid-column: 1 / -1; min-width: 0; }
+.purchaseDetails > summary { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 8px 0; border-radius: 4px; list-style: none; cursor: pointer; color: var(--c-secondary); font-size: 13px; font-weight: 500; }
+.purchaseDetails > summary:hover { color: var(--c-text); }
+.purchaseDetails > summary::-webkit-details-marker { display: none; }
+.purchaseDetails > summary > svg { flex-shrink: 0; transform: rotate(-90deg); }
+.purchaseDetails[open] > summary > svg { transform: none; }
+.purchaseDetailsBody { display: grid; gap: 10px; padding: 0 0 12px; }
+.purchaseRow .purchaseExplanation { margin-top: 0; font-size: 12px; line-height: 1.7; }
 .purchaseTotal { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 21px 0 12px; }
 .purchaseTotal span { font-size: 13px; }
 .purchaseTotal strong { font-size: 24px; white-space: nowrap; }
@@ -411,7 +418,7 @@
   .modalHeader { padding: 16px 18px; }
   .modalHeader h2 { font-size: 19px; }
   .modalBody { padding: 18px; }
-  .purchaseRow { gap: 10px 12px; }
+  .purchaseRow { column-gap: 12px; }
   .purchaseRow h3 { font-size: 14px; }
   .purchaseQuantity strong { font-size: 15px; }
   .purchaseTotal strong { font-size: 20px; }

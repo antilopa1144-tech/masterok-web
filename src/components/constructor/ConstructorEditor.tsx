@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -9,6 +10,8 @@ import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject,
 import { createInteriorRoom, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, presetFor } from "@/lib/constructor/interiors";
 import { cloneValue, commitWorkspace, createWorkspace, importWorkspaceFile, MAX_PROJECT_FILE_BYTES, MAX_VARIANTS, newId, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
+import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
+import { createScenarioWorkspace } from "@/lib/constructor/scenarios";
 import { DECORS, formatMoney, formatNumber } from "@/lib/constructor/presentation";
 import { LAMINATE_SIZE_PRESETS } from "@/lib/tools/laminate-layout";
 import { NumberField, TextField } from "./DraftFields";
@@ -70,6 +73,7 @@ function ModalWindow({ title, children, onClose, wide = false, aboveNotice = fal
 }
 
 export default function ConstructorEditor() {
+  const router = useRouter();
   const [history, setHistory] = useState<WorkspaceHistory | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [tab, setTab] = useState<Tab>("floor");
@@ -113,10 +117,15 @@ export default function ConstructorEditor() {
 
   useEffect(() => {
     let cancelled = false;
-    loadWorkspace().then((restored) => {
+    const entry = parseConstructorEntry(window.location.search);
+    const initialWorkspace = entry.scenario ? Promise.resolve(createScenarioWorkspace(entry.scenario)) : loadWorkspace(entry.projectId);
+    initialWorkspace.then((restored) => {
       if (cancelled) return;
       const initial = restored ?? createWorkspace(); setHistory({ present: initial, past: [], future: [] });
       setSelectedRoomId(initial.project.rooms[0]?.id ?? ""); setSaved("pending");
+      if (entry.scenario === "bathroom") setTab("walls");
+      if (entry.scenario === "room") setTab("room");
+      if (entry.projectId && !restored) setNotice("Проект не найден в этом браузере. Откройте сохранённый файл через меню «Экспорт» → «Импортировать проект».");
     }).catch((error: Error) => {
       if (cancelled) return;
       const initial = createWorkspace(); setHistory({ present: initial, past: [], future: [] }); setSelectedRoomId(initial.project.rooms[0]?.id ?? "");
@@ -159,7 +168,12 @@ export default function ConstructorEditor() {
       savingQueue.current = savingQueue.current.catch(() => {}).then(async () => {
         try {
           await saveWorkspace(snapshot);
-          if (revision === saveRevision.current) { lastSavedWorkspace.current = workspace; setSaved("saved"); }
+          if (revision === saveRevision.current) {
+            lastSavedWorkspace.current = workspace; setSaved("saved");
+            // Consume the start request only after persistence succeeds: reload resumes this exact project.
+            const url = `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(workspace.project.id)}`;
+            if (`${window.location.pathname}${window.location.search}` !== url) window.history.replaceState(null, "", url);
+          }
         }
         catch (error) { if (revision === saveRevision.current) { setSaved("error"); setNotice(error instanceof Error ? error.message : "Проект не сохранён. Скачайте резервную копию."); } }
       });
@@ -373,7 +387,13 @@ export default function ConstructorEditor() {
 
   return <section className={styles.workspace} aria-label="Конструктор Мастерок">
     <header className={styles.header}>
-      <Link href="/" className={styles.brand} title="На главную Мастерка"><span className={styles.brandMark}>М</span><span>Мастерок</span></Link>
+      <Link href="/konstruktor/" className={styles.brand} title="На стартовую страницу конструктора" aria-label="На стартовую страницу конструктора" onClick={async (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || isSaved) return;
+        event.preventDefault();
+        if (pendingDraft || validation.length || placementGesture) { setNotice("Завершите изменение параметров, чтобы сохранить проект перед выходом."); return; }
+        try { await savingQueue.current.catch(() => {}); await saveWorkspace(workspace); router.push("/konstruktor/"); }
+        catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось сохранить проект. Скачайте файл через меню «Экспорт»."); }
+      }}><span className={styles.brandMark}>М</span><span>Мастерок</span></Link>
       <h1 className={styles.editorTitle}>Конструктор</h1>
       <div className={styles.projectName}><TextField label="Название проекта" value={workspace.project.name} compact onStatus={onStatus} onCommit={(name) => commit((current) => { current.project.name = name; })} /></div>
       <div className={styles.saved} role="status" aria-label={saveText} title={saveText} aria-live="polite">{isSaved ? <Check size={16} /> : <span className={styles.saveDot} />}<span>{saveText}</span></div>
@@ -496,19 +516,24 @@ export default function ConstructorEditor() {
     {notice && <div className={styles.notice} role="alert"><p>{notice}</p><IconButton label="Закрыть сообщение" onClick={() => setNotice("")}><X size={18} /></IconButton></div>}
 
     {modal === "purchase" && <ModalWindow title="Ведомость проекта" onClose={() => setModal(null)}>
-      <div className={styles.modalBody}><p className={styles.modalLead}>{workspace.project.name} · {workspace.project.rooms.length} помещ. · {formatNumber(totalArea)} м². Одинаковый товар объединён перед округлением до упаковок.</p>
+      <div className={styles.modalBody}><p className={styles.modalLead}>{workspace.project.name} · {workspace.project.rooms.length} помещ. · {formatNumber(totalArea)} м².</p>
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
           {!!missingSupplyRates && <p className={styles.formNotice} role="status">Для {missingSupplyRates} смесей не задан расход: они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
           <div className={styles.purchaseList}>{result.purchases.map((line) => <article className={styles.purchaseRow} key={line.id}>
             <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span></div>
-            <p className={styles.purchaseExplanation}>{line.basis}</p>
-            {line.purchasedBoards !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedBoards} досок ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusBoards} досок — остаток от округления до упаковок.</p>}
-            {line.purchasedTiles !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedTiles} плиток ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusTiles} шт. — остаток от округления до упаковок. Поверхности: {[...(line.floorRoomIds?.map((id) => `${workspace.project.rooms.find((item) => item.id === id)?.name}, пол`) ?? []), ...(line.surfaces?.map((surface) => `${workspace.project.rooms.find((item) => item.id === surface.roomId)?.name}, стена ${surface.wall + 1}`) ?? [])].join("; ")}.</p>}
+            <details className={styles.purchaseDetails}>
+              <summary aria-label={`Расчёт и запас: ${line.name}`}><ChevronDown size={16} aria-hidden="true" />Расчёт и запас</summary>
+              <div className={styles.purchaseDetailsBody}>
+                <p className={styles.purchaseExplanation}>{line.basis}</p>
+                {line.purchasedBoards !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedBoards} досок ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusBoards} досок — остаток от округления до упаковок.</p>}
+                {line.purchasedTiles !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedTiles} плиток ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusTiles} шт. — остаток от округления до упаковок. Поверхности: {[...(line.floorRoomIds?.map((id) => `${workspace.project.rooms.find((item) => item.id === id)?.name}, пол`) ?? []), ...(line.surfaces?.map((surface) => `${workspace.project.rooms.find((item) => item.id === surface.roomId)?.name}, стена ${surface.wall + 1}`) ?? [])].join("; ")}.</p>}
+              </div>
+            </details>
           </article>)}</div>
           <div className={styles.purchaseTotal}><span>{missingPrices || missingSupplyRates ? "Сумма позиций с заданной ценой" : estimatedPrices ? "Оценка стоимости материалов" : "Стоимость по введённым ценам"}</span><strong>{formatMoney(result.totalCostRub)}</strong></div>
           {estimatedPrices && <p className={styles.hint}>Для одинакового товара с разными ценами взята максимальная введённая цена. Уточните цену общей закупки перед заказом.</p>}
           {!!missingPrices && <p className={styles.hint}>Для {missingPrices} позиций цена не задана. Общая стоимость проекта пока неполная.</p>}
-          <details className={styles.details}><summary>Как получен результат</summary><div className={styles.detailsContent}>{result.rooms.map((r) => <div key={r.roomId}>
+          <details className={styles.details}><summary>Как получен результат</summary><div className={styles.detailsContent}><p>Одинаковый товар объединён перед округлением до упаковок.</p>{result.rooms.map((r) => <div key={r.roomId}>
             <h3>{workspace.project.rooms.find((item) => item.id === r.roomId)?.name}</h3>
             {r.floorTiles ? <p>Пол: {formatNumber(r.areaM2)} м² помещения → {formatNumber(r.floorTiles.netAreaM2, 3)} м² укладки со швами → {r.floorTiles.baseTiles} исходных плиток, из них {r.floorTiles.cutTiles} с подрезкой. Неуложенная часть {formatNumber(r.floorTiles.unlaidAreaM2, 3)} м².</p> : <p>Пол: {formatNumber(r.areaM2)} м² помещения → {formatNumber(r.coveredAreaM2)} м² покрытия → {r.pieces.length} деталей → {r.baseBoards} исходных досок. Остатки {formatNumber(r.offcutAreaM2, 3)} м²; потеря материала на пропиле {formatNumber(r.kerfAreaM2, 4)} м².</p>}
             {r.warnings.map((warning) => <p className={styles.hint} key={warning}>{warning}</p>)}

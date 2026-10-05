@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/calculators/categories";
-import { TOOL_CARDS } from "@/lib/tools/config";
+import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SITE_NAME } from "@/lib/site";
@@ -73,10 +73,10 @@ function HeaderNavItem({
   );
 }
 
-/** Пункт «Инструменты» с выпадающим списком всех инструментов (desktop). */
-function ToolsDropdown({ link, pathname }: { link: HeaderNavLink; pathname: string }) {
+/** The label opens the landing page; the adjacent button exposes quick entries. */
+function ConstructorDropdown({ link, pathname }: { link: HeaderNavLink; pathname: string }) {
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const container = useRef<HTMLDivElement>(null);
   const active = isHeaderLinkActive(pathname, link.match);
 
   // Закрываем при переходе на другую страницу
@@ -84,26 +84,25 @@ function ToolsDropdown({ link, pathname }: { link: HeaderNavLink; pathname: stri
     setOpen(false);
   }, [pathname]);
 
-  const openNow = () => {
-    clearTimeout(closeTimer.current);
-    setOpen(true);
-  };
-  const closeSoon = () => {
-    clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  };
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [open]);
 
   return (
-    <div className="relative" onMouseEnter={openNow} onMouseLeave={closeSoon}>
+    <div ref={container} className="relative flex items-center" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }} onKeyDown={(event) => { if (event.key === "Escape") { setOpen(false); container.current?.querySelector("button")?.focus(); } }}>
       <Link
         href={link.href}
         className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors no-underline ${navLinkClass(active)}`}
         aria-current={active ? "page" : undefined}
-        aria-expanded={open}
         onClick={() => setOpen(false)}
       >
         {link.icon && <CategoryIcon icon={link.icon} size={15} color="currentColor" />}
         <span>{link.label}</span>
+      </Link>
+      <button type="button" aria-label="Сценарии конструктора и инструменты" aria-expanded={open} aria-controls="constructor-menu" onClick={() => setOpen(!open)} className="-ml-2 flex min-h-11 min-w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-orange-500 dark:text-slate-300 dark:hover:bg-slate-800">
         <svg
           className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
           viewBox="0 0 24 24"
@@ -116,31 +115,26 @@ function ToolsDropdown({ link, pathname }: { link: HeaderNavLink; pathname: stri
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
-      </Link>
+      </button>
 
       {open && (
-        <div className="theme-surface absolute left-1/2 z-50 mt-1 w-[34rem] -translate-x-1/2 rounded-2xl border border-slate-200 p-3 shadow-lg dark:border-slate-700">
-          <div className="grid grid-cols-2 gap-1">
-            {TOOL_CARDS.map((tool) => (
+        <div id="constructor-menu" className="theme-surface absolute left-0 top-full z-50 mt-1 w-80 rounded-2xl border border-slate-200 p-3 shadow-lg dark:border-slate-700">
+          <div className="grid gap-1">
+            <Link href={CONSTRUCTOR_EDITOR_URL} prefetch={false} onClick={() => setOpen(false)} className="rounded-xl bg-orange-50 px-3 py-3 text-sm font-semibold text-orange-800 no-underline dark:bg-orange-950/40 dark:text-orange-200">Открыть редактор</Link>
+            {CONSTRUCTOR_SCENARIOS.map((scenario) => (
               <Link
-                key={tool.href}
-                href={tool.href}
+                key={scenario.id}
+                href={scenarioHref(scenario.id)}
                 prefetch={false}
                 className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 no-underline transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/60"
                 onClick={() => setOpen(false)}
               >
-                <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: tool.bg }}
-                >
-                  <CategoryIcon icon={tool.icon} size={16} color={tool.color} />
-                </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                    {tool.title}
+                    {scenario.title}
                   </span>
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                    {tool.desc}
+                    Новый проект по примеру
                   </span>
                 </span>
               </Link>
@@ -204,8 +198,8 @@ export default function Header() {
             aria-label={UI_TEXT.mainNavigation}
           >
             {HEADER_MAIN_LINKS.map((link) =>
-              link.href === "/instrumenty/" ? (
-                <ToolsDropdown key={link.href} link={link} pathname={pathname} />
+              link.href === "/konstruktor/" ? (
+                <ConstructorDropdown key={link.href} link={link} pathname={pathname} />
               ) : (
                 <HeaderNavItem key={link.href} link={link} pathname={pathname} />
               ),
@@ -299,6 +293,7 @@ export default function Header() {
                   onNavigate={() => setMenuOpen(false)}
                 />
               ))}
+              <HeaderNavItem link={{ href: "/instrumenty/", label: "Все инструменты", match: ["/instrumenty"], icon: "wrench" }} pathname={pathname} onNavigate={() => setMenuOpen(false)} />
             </div>
 
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
