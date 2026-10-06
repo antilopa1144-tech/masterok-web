@@ -10,10 +10,11 @@ import styles from "./constructor.module.css";
 import { createPlankMaps, createWoodCanvas, loadWoodCanvas, PLANK_VARIANTS } from "./wood-texture";
 import { buildFurnishings } from "./room-furnishings";
 import { addFloorTileMesh, addWallTileMesh } from "./wall-tile-mesh";
-import { interiorFor } from "@/lib/constructor/interiors";
+import { furnishingName, interiorFor } from "@/lib/constructor/interiors";
 import { tileGroutColor } from "@/lib/constructor/tile-materials";
 import { configureLaminateMaterial } from "./laminate-material";
 import { createSurfaceHighlight, type SelectedSurface } from "./surface-highlight";
+import { createFurnishingHighlight } from "./furnishing-highlight";
 
 interface Runtime {
   renderer: THREE.WebGLRenderer;
@@ -256,9 +257,10 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
   group.add(label(`${formatNumber(room.lengthMm)} мм`, new THREE.Vector3(w / 2 + 0.55, 0.05, 0), labelWidth));
 }
 
-export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, onSelect, onCapture, onFallback, onControls }: {
+export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, selectedFurnishing, onSelect, onCapture, onFallback, onControls }: {
   room: ConstructorRoom; calculation: RoomCalculation; allWalls: boolean; furnished: boolean; resetToken: number;
   selectedSurface: SelectedSurface;
+  selectedFurnishing?: string;
   onSelect: (surface: "floor" | "interior" | number, id?: string) => void;
   onCapture: (capture: (() => string) | null) => void;
   onFallback: () => void;
@@ -404,16 +406,24 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     current.render();
   }, [room, calculation, furnished, ready]);
 
-  const { widthMm, lengthMm, heightMm } = room;
   useEffect(() => {
     const current = runtime.current;
     if (!current || !ready) return;
     disposeGroup(current.selection);
-    if (selectedSurface !== null) current.selection.add(createSurfaceHighlight({ widthMm, lengthMm, heightMm }, selectedSurface));
-    const selectionLabel = selectedSurface === null ? "" : selectedSurface === "floor" ? " Выбран пол." : ` Выбрана стена ${selectedSurface + 1}.`;
+    let selectionLabel = "";
+    if (selectedSurface !== null) {
+      current.selection.add(createSurfaceHighlight(room, selectedSurface));
+      selectionLabel = selectedSurface === "floor" ? " Выбран пол." : ` Выбрана стена ${selectedSurface + 1}.`;
+    } else if (furnished && selectedFurnishing) {
+      const highlight = createFurnishingHighlight(current.content, selectedFurnishing);
+      if (highlight) {
+        current.selection.add(highlight);
+        selectionLabel = ` Выбран предмет: ${furnishingName(room, selectedFurnishing)}.`;
+      }
+    }
     current.renderer.domElement.setAttribute("aria-label", `Трёхмерная модель комнаты.${selectionLabel} Перетаскивайте для вращения, используйте два пальца для масштаба.`);
     current.render();
-  }, [selectedSurface, widthMm, lengthMm, heightMm, ready]);
+  }, [selectedSurface, selectedFurnishing, room, calculation, furnished, ready]);
 
   useEffect(() => {
     if (!runtime.current) return;

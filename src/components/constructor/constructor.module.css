@@ -253,6 +253,8 @@
 .sceneDimensions span span { font-size: 11px; }
 .sceneDimensions > svg { flex-shrink: 0; }
 .sceneDimensions:hover { border-color: var(--c-accent); color: var(--c-accent); }
+.sceneObject { border-color: var(--c-accent); color: var(--c-accent); }
+.sceneObject strong { white-space: normal; overflow-wrap: anywhere; }
 .materialCheck { position: absolute; right: 4px; top: 5px; width: 19px; height: 19px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c-accent); color: white; box-shadow: 0 1px 4px #22272e20; }
 .propertySection { display: flex; flex-direction: column; gap: 9px; }
 .propertySection h3 { font-size: 13px; color: var(--c-secondary); font-weight: 400; }
