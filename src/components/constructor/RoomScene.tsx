@@ -4,9 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { Line2 } from "three/examples/jsm/lines/Line2.js";
-import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import type { ConstructorRoom, RoomCalculation } from "@/lib/constructor/core";
 import { decorFor, formatNumber } from "@/lib/constructor/presentation";
 import styles from "./constructor.module.css";
@@ -16,6 +13,7 @@ import { addFloorTileMesh, addWallTileMesh } from "./wall-tile-mesh";
 import { interiorFor } from "@/lib/constructor/interiors";
 import { tileGroutColor } from "@/lib/constructor/tile-materials";
 import { configureLaminateMaterial } from "./laminate-material";
+import { createSurfaceHighlight, type SelectedSurface } from "./surface-highlight";
 
 interface Runtime {
   renderer: THREE.WebGLRenderer;
@@ -24,6 +22,7 @@ interface Runtime {
   controls: OrbitControls;
   sun: THREE.DirectionalLight;
   content: THREE.Group;
+  selection: THREE.Group;
   render: () => void;
   reset: (direction?: THREE.Vector3) => void;
   roomId?: string;
@@ -252,16 +251,14 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
     }
   }
   if (furnished) group.add(buildFurnishings(room));
-  const boundary = new LineGeometry();
-  boundary.setPositions([-w / 2, .027, -l / 2, w / 2, .027, -l / 2, w / 2, .027, l / 2, -w / 2, .027, l / 2, -w / 2, .027, -l / 2]);
-  group.add(new Line2(boundary, new LineMaterial({ color: "#f97316", linewidth: 2.5, toneMapped: false })));
   const labelWidth = Math.max(w, l) * 0.3;
   group.add(label(`${formatNumber(room.widthMm)} мм`, new THREE.Vector3(0, 0.05, l / 2 + 0.4), labelWidth));
   group.add(label(`${formatNumber(room.lengthMm)} мм`, new THREE.Vector3(w / 2 + 0.55, 0.05, 0), labelWidth));
 }
 
-export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, onSelect, onCapture, onFallback, onControls }: {
+export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, onSelect, onCapture, onFallback, onControls }: {
   room: ConstructorRoom; calculation: RoomCalculation; allWalls: boolean; furnished: boolean; resetToken: number;
+  selectedSurface: SelectedSurface;
   onSelect: (surface: "floor" | "interior" | number, id?: string) => void;
   onCapture: (capture: (() => string) | null) => void;
   onFallback: () => void;
@@ -306,6 +303,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     gridMaterial.transparent = true; gridMaterial.opacity = .16;
     scene.add(grid);
     const content = new THREE.Group(); scene.add(content);
+    const selection = new THREE.Group(); scene.add(selection);
     let frame = 0; let stopped = false;
     const updateWalls = () => {
       const offset = camera.position.clone().sub(controls.target);
@@ -342,7 +340,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
       controls.maxDistance = Math.max(70, distance * 3);
       camera.position.copy(controls.target).addScaledVector(direction, distance * 1.08); controls.update(); render();
     };
-    runtime.current = { renderer, scene, camera, controls, sun, content, render, reset, allWalls: false };
+    runtime.current = { renderer, scene, camera, controls, sun, content, selection, render, reset, allWalls: false };
     const zoom = (factor: number) => {
       const offset = camera.position.clone().sub(controls.target);
       const distance = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
@@ -386,7 +384,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     return () => {
       stopped = true; cancelAnimationFrame(frame); resize.disconnect(); themeObserver.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", pointerDown); renderer.domElement.removeEventListener("pointerup", pointerUp); renderer.domElement.removeEventListener("webglcontextlost", lost);
-      disposeGroup(content); grid.geometry.dispose(); (grid.material as THREE.Material).dispose();
+      disposeGroup(content); disposeGroup(selection); grid.geometry.dispose(); (grid.material as THREE.Material).dispose();
       environmentTarget.dispose(); sun.shadow.map?.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
       runtime.current = undefined; onCapture(null); controlsRef.current?.(null);
     };
@@ -405,6 +403,17 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     if (current.roomId !== room.id || current.size !== size) { current.roomId = room.id; current.size = size; current.reset(); }
     current.render();
   }, [room, calculation, furnished, ready]);
+
+  const { widthMm, lengthMm, heightMm } = room;
+  useEffect(() => {
+    const current = runtime.current;
+    if (!current || !ready) return;
+    disposeGroup(current.selection);
+    if (selectedSurface !== null) current.selection.add(createSurfaceHighlight({ widthMm, lengthMm, heightMm }, selectedSurface));
+    const selectionLabel = selectedSurface === null ? "" : selectedSurface === "floor" ? " Выбран пол." : ` Выбрана стена ${selectedSurface + 1}.`;
+    current.renderer.domElement.setAttribute("aria-label", `Трёхмерная модель комнаты.${selectionLabel} Перетаскивайте для вращения, используйте два пальца для масштаба.`);
+    current.render();
+  }, [selectedSurface, widthMm, lengthMm, heightMm, ready]);
 
   useEffect(() => {
     if (!runtime.current) return;
