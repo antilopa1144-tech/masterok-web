@@ -36,6 +36,6 @@ export default function RoomInteriorControls({ room, onChange, blocked, onArrang
       }} /><span>{spec.name}<small>{instances.length > 1 ? `${instances.length} шт. · снять галочку, чтобы убрать все` : `${formatNumber(dimensions.widthMm)} × ${formatNumber(dimensions.depthMm)} мм`}{instances.some((item) => omitted.includes(item.id)) ? " · не размещён" : ""}</small></span></label>;
     })}</fieldset>}
     {omitted.length > 0 && <p className={styles.fitNotice} role="status">Не удалось разместить: {omitted.map((id) => furnishingName(room, id).toLocaleLowerCase("ru-RU")).join(", ")}. Выберите предмет, проверьте габариты или разместите его вручную.</p>}
-    <p className={styles.explanation}>У выбранного предмета можно изменить габариты, создать ещё один экземпляр и расставить их на плане. Обстановка не входит в ведомость и не уменьшает площадь отделки.</p>
+    <p className={styles.explanation}>{interior.items.length > 0 ? "У выбранного предмета можно изменить габариты, создать ещё один экземпляр и расставить их на плане." : kinds.length > 0 ? "Отметьте предметы, которые хотите добавить в комнату." : "Чтобы добавить мебель и технику, выберите тип помещения."} Обстановка не входит в ведомость и не уменьшает площадь отделки.</p>
   </div>;
 }

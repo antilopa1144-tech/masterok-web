@@ -34,7 +34,7 @@ import styles from "./constructor.module.css";
 
 const RoomScene = dynamic(() => import("./RoomScene"), { ssr: false, loading: () => <div className={styles.sceneLoading}>Загружаем 3D…</div> });
 
-type Tab = "room" | "floor" | "walls";
+type Tab = "room" | "interior" | "floor" | "walls";
 type View = "3d" | "plan" | "cuts" | "elevation";
 type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | null;
 type TileSelection = { roomId: string; wall: Wall; tileId: string; calculation: RoomCalculation; focusToken: number; bounds?: TileRect };
@@ -237,14 +237,14 @@ export default function ConstructorEditor() {
     });
   };
   const showInterior = () => {
-    setTab("room"); setPanel("properties"); requestAnimationFrame(() => {
+    expandShortPanel(); setSelectedFurnishing(undefined); setTab("interior"); setPanel("properties"); requestAnimationFrame(() => {
       const control = document.querySelector<HTMLSelectElement>('select[aria-label="Тип помещения"]');
-      scrollPropertiesTo(control?.closest<HTMLElement>("section") ?? null); control?.focus({ preventScroll: true });
+      scrollPropertiesTo(control?.closest<HTMLElement>("label") ?? null); control?.focus({ preventScroll: true });
     });
   };
   const showFurnishingProperties = () => {
     expandShortPanel();
-    setTab("room"); setPanel("properties"); requestAnimationFrame(() => {
+    setTab("interior"); setPanel("properties"); requestAnimationFrame(() => {
       const control = document.querySelector<HTMLSelectElement>('select[aria-label="Предмет для расстановки"]');
       const section = control?.closest<HTMLElement>("section"), scroller = control?.closest<HTMLElement>(`.${styles.properties}`);
       const fields = section?.querySelectorAll<HTMLElement>("[data-number-control]");
@@ -255,7 +255,7 @@ export default function ConstructorEditor() {
   };
   const arrangeFurnishings = () => {
     if (!room || pendingDraft) return;
-    setArrangement(true); setView("plan"); setFurnished(true); setTab("room"); setSelectedPieceId(undefined);
+    setArrangement(true); setView("plan"); setFurnished(true); setTab("interior"); setSelectedPieceId(undefined);
     setSelectedFurnishing(activeFurnishing ?? layoutFurnishings(room).placements[0]?.id ?? interiorFor(room).items[0]?.id);
     const mobile = window.matchMedia("(max-width: 980px)").matches;
     setPanel(mobile ? null : "properties");
@@ -361,7 +361,7 @@ export default function ConstructorEditor() {
           <button type="button" className={tab === "floor" ? styles.active : ""} onClick={() => { setTab("floor"); setPanel("properties"); }}><Layers size={17} />Пол · {item.floor.kind === "tile" ? "плитка" : "ламинат"}</button>
           <button type="button" className={tab === "walls" ? styles.active : ""} onClick={() => { setTab("walls"); setPanel("properties"); }}><Grid2X2 size={17} />Стены · плитка</button>
           <button type="button" className={tab === "room" ? styles.active : ""} onClick={showRoomProperties}><Ruler size={17} />Размеры и проёмы</button>
-          <button type="button" onClick={showInterior}><RoomTypeIcon type={interiorFor(item).type} />Обстановка</button>
+          <button type="button" className={tab === "interior" ? styles.active : ""} onClick={showInterior}><RoomTypeIcon type={interiorFor(item).type} />Обстановка</button>
         </div>}
       </div>)}
     </div>
@@ -373,6 +373,7 @@ export default function ConstructorEditor() {
   const selectedPiece = roomResult?.pieces.find((piece) => piece.id === selectedPieceId);
   const selectedSourceNumber = selectedPiece ? roomResult!.sourceBoards.findIndex((source) => source.id === selectedPiece.sourceBoardId) + 1 : 0;
   const isTileFloor = room?.floor.kind === "tile";
+  const isMaterialTab = tab === "floor" || tab === "walls";
   const selectedFloorTile = roomResult?.floorTiles?.cells.find((cell) => cell.id === selectedPieceId);
   const floorLine = result?.purchases.find((line) => isTileFloor ? line.floorRoomIds?.includes(room?.id ?? "") : line.kind === "laminate" && line.roomIds.includes(room?.id ?? ""));
   const tileLine = result?.purchases.find((line) => line.kind === "wall-tile" && line.surfaces?.some((surface) => surface.roomId === room?.id && surface.wall === selectedWall));
@@ -450,14 +451,16 @@ export default function ConstructorEditor() {
         </div>
       </div>
       <aside className={`${styles.inspector} ${panel === "properties" ? styles.mobileOpen : ""}`} aria-label="Параметры выбранной комнаты">
-        <ResizableSheetHandle expanded={panelExpanded} onResize={resizePanel} onToggle={togglePanel} /><div className={styles.inspectorHeader}><h2>{tab === "floor" ? isTileFloor ? "Пол · Плитка" : "Пол · Ламинат" : tab === "walls" ? "Стена " + (selectedWall + 1) + " · Плитка" : activeFurnishing && room ? furnishingName(room, activeFurnishing) : "Помещение"}</h2><div className={styles.panelTools}><button type="button" className={styles.mobileClose} aria-label={panelExpanded ? "Свернуть параметры" : "Развернуть параметры"} aria-expanded={panelExpanded} onClick={togglePanel}><Maximize2 size={17} /></button><button type="button" className={styles.mobileClose} aria-label="Закрыть параметры" onClick={() => setPanel(null)}><X size={18} /></button></div></div>
-        <div className={styles.inspectorTabs}><button type="button" className={tab === "floor" ? styles.active : ""} onClick={() => setTab("floor")}>Пол</button><button type="button" className={tab === "walls" ? styles.active : ""} onClick={() => setTab("walls")}>Стены</button><button type="button" className={tab === "room" ? styles.active : ""} onClick={showRoomProperties}>Размеры и проёмы</button></div>
+        <ResizableSheetHandle expanded={panelExpanded} onResize={resizePanel} onToggle={togglePanel} /><div className={styles.inspectorHeader}><h2>{tab === "floor" ? isTileFloor ? "Пол · Плитка" : "Пол · Ламинат" : tab === "walls" ? "Стена " + (selectedWall + 1) + " · Плитка" : tab === "interior" ? activeFurnishing && room ? furnishingName(room, activeFurnishing) : "Обстановка" : "Помещение"}</h2><div className={styles.panelTools}><button type="button" className={styles.mobileClose} aria-label={panelExpanded ? "Свернуть параметры" : "Развернуть параметры"} aria-expanded={panelExpanded} onClick={togglePanel}><Maximize2 size={17} /></button><button type="button" className={styles.mobileClose} aria-label="Закрыть параметры" onClick={() => setPanel(null)}><X size={18} /></button></div></div>
+        <div className={styles.inspectorTabs}>
+          <button type="button" className={tab === "floor" ? styles.active : ""} aria-pressed={tab === "floor"} onClick={() => setTab("floor")}>Пол</button>
+          <button type="button" className={tab === "walls" ? styles.active : ""} aria-pressed={tab === "walls"} onClick={() => setTab("walls")}>Стены</button>
+          <button type="button" className={tab === "room" ? styles.active : ""} aria-pressed={tab === "room"} aria-label="Размеры и проёмы" onClick={showRoomProperties}>Размеры</button>
+          <button type="button" className={tab === "interior" ? styles.active : ""} aria-pressed={tab === "interior"} aria-label="Обстановка комнаты" onClick={showInterior}>Обстановка</button>
+        </div>
         {room && <div className={styles.properties} key={room.id + tab + (tab === "walls" ? selectedWall : "")}>
           {tab === "room" ? <>
             <TextField label="Название помещения" value={room.name} onCommit={(name) => updateRoom((current) => { current.name = name; })} onStatus={onStatus} />
-            <RoomInteriorControls room={room} blocked={!!pendingDraft || placementGesture} onArrange={arrangeFurnishings} onChange={(interior) => updateRoom((current) => { current.interior = interior; })}>
-              <FurnishingPlacementControls room={room} selectedId={activeFurnishing} blocked={!!pendingDraft || placementGesture} onSelect={(id) => { setSelectedFurnishing(id); if (id) showFurnishingProperties(); }} onPosition={setFurnishingPosition} onReset={resetFurnishingPosition} onResetAll={resetAllFurnishingPositions} onDimensions={setFurnishingDimensions} onDuplicate={duplicateFurnishing} onRemove={removeFurnishing} onStatus={onStatus} />
-            </RoomInteriorControls>
             <div className={styles.fieldRow}><NumberField label="Ширина" value={room.widthMm} min={300} max={30000} unit="мм" onCommit={(value) => setRoomNumber("widthMm", value)} onStatus={onStatus} /><NumberField label="Длина" value={room.lengthMm} min={300} max={30000} unit="мм" onCommit={(value) => setRoomNumber("lengthMm", value)} onStatus={onStatus} /><NumberField label="Высота" value={room.heightMm} min={500} max={6000} unit="мм" onCommit={(value) => setRoomNumber("heightMm", value)} onStatus={onStatus} /></div>
             <p className={styles.hint}>Размеры внутри помещения. Нумерация стен и отступы проёмов идут по часовой стрелке от верхнего левого угла плана.</p>
             <div className={styles.sectionHeading}><h3>Двери и окна</h3></div>
@@ -471,7 +474,9 @@ export default function ConstructorEditor() {
             </div>)}
             <div className={styles.fieldRow}><button className={styles.secondaryButton} type="button" onClick={() => addOpening("door")}><Plus size={16} />Дверь</button><button className={styles.secondaryButton} type="button" onClick={() => addOpening("window")}><Plus size={16} />Окно</button></div>
             <div className={styles.roomActions}><button type="button" onClick={duplicateRoom}><Copy size={16} />Дублировать комнату</button><button type="button" onClick={() => setModal("remove-room")}><Trash2 size={16} />Удалить комнату</button></div>
-          </> : tab === "walls" ? <><WallTileInspector room={room} wall={selectedWall} calculation={wallResult} onSelectWall={(wall) => { setSelectedTile(undefined); setSelectedWall(wall); }} onChange={updateWallTile} onAll={applyTilesToAll} onContinuation={setTileContinuation} onStatus={onStatus} onReviewCuts={() => setModal("wall-cuts")} canReviewCuts={!!roomResult && !pendingDraft} onConfigure={() => setModal("wall-layout")} />{room.wallTiles.some(Boolean) && <TileSupplyControls value={room.tileSupplies} calculation={roomResult} onStatus={onStatus} onChange={(supplies) => updateRoom((current) => { current.tileSupplies = supplies; })} />}</> : <>
+          </> : tab === "interior" ? <RoomInteriorControls room={room} blocked={!!pendingDraft || placementGesture} onArrange={arrangeFurnishings} onChange={(interior) => updateRoom((current) => { current.interior = interior; })}>
+            <FurnishingPlacementControls room={room} selectedId={activeFurnishing} blocked={!!pendingDraft || placementGesture} onSelect={(id) => { setSelectedFurnishing(id); if (id) showFurnishingProperties(); }} onPosition={setFurnishingPosition} onReset={resetFurnishingPosition} onResetAll={resetAllFurnishingPositions} onDimensions={setFurnishingDimensions} onDuplicate={duplicateFurnishing} onRemove={removeFurnishing} onStatus={onStatus} />
+          </RoomInteriorControls> : tab === "walls" ? <><WallTileInspector room={room} wall={selectedWall} calculation={wallResult} onSelectWall={(wall) => { setSelectedTile(undefined); setSelectedWall(wall); }} onChange={updateWallTile} onAll={applyTilesToAll} onContinuation={setTileContinuation} onStatus={onStatus} onReviewCuts={() => setModal("wall-cuts")} canReviewCuts={!!roomResult && !pendingDraft} onConfigure={() => setModal("wall-layout")} />{room.wallTiles.some(Boolean) && <TileSupplyControls value={room.tileSupplies} calculation={roomResult} onStatus={onStatus} onChange={(supplies) => updateRoom((current) => { current.tileSupplies = supplies; })} />}</> : <>
             <label className={styles.field}><span>Напольное покрытие</span><select aria-label="Напольное покрытие" value={isTileFloor ? "tile" : "laminate"} disabled={!!pendingDraft} onChange={(event) => {
               const kind = event.target.value as "tile" | "laminate"; setSelectedPieceId(undefined);
               updateRoom((current) => { current.floor.kind = kind; if (kind === "tile" && !current.floor.tile) current.floor.tile = createFloorTileSpec(); });
@@ -512,7 +517,7 @@ export default function ConstructorEditor() {
       {panel === "tree" && <div className={styles.mobileTree}><div className={styles.panelHandle} /><div className={styles.inspectorHeader}><h2>Мой проект</h2><div className={styles.panelTools}><IconButton label="Открыть сохранённые проекты" onClick={openProjects}><FolderOpen size={18} /></IconButton><ThemeToggle /><IconButton label="Закрыть дерево проекта" onClick={() => setPanel(null)}><X size={18} /></IconButton></div></div>{tree}</div>}
     </div>
 
-    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && tab !== "room" ? styles.active : ""} onClick={() => { if (tab === "room") setTab("floor"); setPanel(panel === "properties" && tab !== "room" ? null : "properties"); }}><Layers size={21} />Материал</button><button type="button" onClick={() => { setPanel(null); setModal("purchase"); }}><ShoppingCart size={21} />Ведомость</button></nav>
+    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && isMaterialTab ? styles.active : ""} onClick={() => { if (!isMaterialTab) setTab("floor"); setPanel(panel === "properties" && isMaterialTab ? null : "properties"); }}><Layers size={21} />Материал</button><button type="button" onClick={() => { setPanel(null); setModal("purchase"); }}><ShoppingCart size={21} />Ведомость</button></nav>
 
     {notice && <div className={styles.notice} role="alert"><p>{notice}</p><IconButton label="Закрыть сообщение" onClick={() => setNotice("")}><X size={18} /></IconButton></div>}
 
