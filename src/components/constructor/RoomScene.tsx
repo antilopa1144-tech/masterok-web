@@ -10,12 +10,13 @@ import styles from "./constructor.module.css";
 import { createPlankMaps, createWoodCanvas, loadWoodCanvas, PLANK_VARIANTS } from "./wood-texture";
 import { buildFurnishings } from "./room-furnishings";
 import { addFloorTileMesh, addWallTileMesh } from "./wall-tile-mesh";
-import { furnishingName, interiorFor } from "@/lib/constructor/interiors";
+import { furnishingIssues, furnishingName, interiorFor, type FurnishingIssue } from "@/lib/constructor/interiors";
 import { tileGroutColor } from "@/lib/constructor/tile-materials";
 import { configureLaminateMaterial } from "./laminate-material";
 import { createSurfaceHighlight, type SelectedSurface } from "./surface-highlight";
-import { createFurnishingHighlight } from "./furnishing-highlight";
+import { createFurnishingHighlight, setFurnishingHighlightWarning } from "./furnishing-highlight";
 import { attachFurnishingDrag } from "./furnishing-drag";
+import ScenePlacementFeedback from "./ScenePlacementFeedback";
 
 interface Runtime {
   renderer: THREE.WebGLRenderer;
@@ -278,6 +279,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
   const moveRef = useRef({ id: movingFurnishing, onPosition, onGesture, onExitMove }); moveRef.current = { id: movingFurnishing, onPosition, onGesture, onExitMove };
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
+  const [feedback, setFeedback] = useState<{ room: ConstructorRoom; id: string; issues: FurnishingIssue[] }>();
 
   useEffect(() => {
     const element = host.current!;
@@ -424,6 +426,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     } else if (furnished && selectedFurnishing) {
       const highlight = createFurnishingHighlight(current.content, selectedFurnishing);
       if (highlight) {
+        setFurnishingHighlightWarning(highlight, furnishingIssues(room, undefined, selectedFurnishing).length > 0);
         current.selection.add(highlight);
         selectionLabel = ` Выбран предмет: ${furnishingName(room, selectedFurnishing)}.`;
       }
@@ -437,7 +440,8 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     if (!current || !ready || !movingFurnishing) return;
     current.controls.enabled = false;
     const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing, render: current.render,
-      onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove() });
+      onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove(),
+      onFeedback: (issues) => { setFurnishingHighlightWarning(current.selection, issues.length > 0); setFeedback({ room, id: movingFurnishing, issues }); } });
     return () => { dispose(); current.controls.enabled = true; };
   }, [room, movingFurnishing, ready, resetToken]);
 
@@ -448,5 +452,5 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
 
   useEffect(() => { runtime.current?.reset(); }, [resetToken]);
 
-  return <><div className={styles.scene} ref={host} data-testid="constructor-3d" />{error && <div className={styles.sceneError} role="status"><p>{error}</p><button type="button" onClick={onFallback}>Перейти к плану</button></div>}</>;
+  return <><div className={styles.scene} ref={host} data-testid="constructor-3d" />{movingFurnishing && !error && <ScenePlacementFeedback issues={feedback?.room === room && feedback.id === movingFurnishing ? feedback.issues : []} />}{error && <div className={styles.sceneError} role="status"><p>{error}</p><button type="button" onClick={onFallback}>Перейти к плану</button></div>}</>;
 }

@@ -3,6 +3,18 @@ import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
+export const FURNISHING_HIGHLIGHT_COLORS = { selected: "#f97316", warning: "#ef4444" };
+
+/** Change only selection brackets, without tinting the furnishing's materials. */
+export function setFurnishingHighlightWarning(highlight: Object3D, warning: boolean) {
+  highlight.traverse((object) => {
+    if (object instanceof LineSegments2 && object.userData.furnishingHighlight) {
+      object.material.color.set(warning ? FURNISHING_HIGHLIGHT_COLORS.warning : FURNISHING_HIGHLIGHT_COLORS.selected);
+      object.material.linewidth = warning ? 3 : 2.5;
+    }
+  });
+}
+
 /** Selection brackets follow the rendered model, excluding decorative rugs. */
 export function createFurnishingHighlight(content: Object3D, id: string) {
   let model: Object3D | undefined;
@@ -27,9 +39,10 @@ export function createFurnishingHighlight(content: Object3D, id: string) {
     }
   }
   const geometry = new LineSegmentsGeometry().setPositions(positions);
-  const outline = new LineSegments2(geometry, new LineMaterial({ color: "#f97316", linewidth: 2.5, depthTest: true, depthWrite: false, toneMapped: false }));
+  const outline = new LineSegments2(geometry, new LineMaterial({ color: FURNISHING_HIGHLIGHT_COLORS.selected, linewidth: 2.5, depthTest: true, depthWrite: false, toneMapped: false }));
   outline.renderOrder = 20;
   outline.userData.ignoreCameraFit = true;
+  outline.userData.furnishingHighlight = true;
   outline.raycast = () => {};
   return outline;
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from "three";
-import { createFurnishingHighlight } from "../../src/components/constructor/furnishing-highlight";
+import { BoxGeometry, Color, Group, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from "three";
+import { createFurnishingHighlight, FURNISHING_HIGHLIGHT_COLORS, setFurnishingHighlightWarning } from "../../src/components/constructor/furnishing-highlight";
 
 const resources: Array<{ dispose: () => void }> = [];
 afterEach(() => { resources.splice(0).forEach((resource) => resource.dispose()); });
@@ -22,6 +22,20 @@ function highlight(content: Group, id: string) {
 }
 
 describe("Furnishing selection in 3D", () => {
+  it("switches warning brackets without modifying model materials or their geometry", () => {
+    const content = new Group(), { item, model } = furnishing("washer"); content.add(item);
+    const frame = highlight(content, "washer")!, geometry = frame.geometry;
+    const modelMaterial = (model.children[0] as Mesh<BoxGeometry, MeshBasicMaterial>).material, originalColor = modelMaterial.color.clone();
+    const selection = new Group().add(frame, model);
+    setFurnishingHighlightWarning(selection, true);
+    expect(frame.material.color).toEqual(new Color(FURNISHING_HIGHLIGHT_COLORS.warning));
+    expect(frame.material.linewidth).toBe(3);
+    expect(modelMaterial.color).toEqual(originalColor); expect(frame.geometry).toBe(geometry);
+    setFurnishingHighlightWarning(selection, false);
+    expect(frame.material.color).toEqual(new Color(FURNISHING_HIGHLIGHT_COLORS.selected));
+    expect(frame.material.linewidth).toBe(2.5);
+  });
+
   it("selects the exact instance without including another instance or its decorative rug", () => {
     const content = new Group(), first = furnishing("first"), second = furnishing("second");
     first.item.add(new Group().add(second.item));

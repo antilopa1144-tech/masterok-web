@@ -1,6 +1,6 @@
 import { Plane, Raycaster, Vector2, Vector3, type Object3D, type PerspectiveCamera, type Ray } from "three";
 import type { ConstructorRoom, FurnishingPosition } from "@/lib/constructor/core";
-import { clampFurnishingPosition, layoutFurnishings, positionForPlacement, type FurnishingPlacement } from "@/lib/constructor/interiors";
+import { clampFurnishingPosition, furnishingIssues, furnishingIssuesAtPosition, layoutFurnishings, positionForPlacement, type FurnishingIssue, type FurnishingPlacement } from "@/lib/constructor/interiors";
 
 /** Use the grabbed height, so a tall object's point stays under the pointer. */
 export function furnishingPositionFromRay(room: ConstructorRoom, item: FurnishingPlacement, grab: Vector3, ray: Ray): FurnishingPosition | null {
@@ -16,15 +16,23 @@ export function furnishingPositionFromRay(room: ConstructorRoom, item: Furnishin
 type Drag = { pointerId: number; clientX: number; clientY: number; grab: Vector3; initial: FurnishingPosition; position: FurnishingPosition; moved: boolean };
 
 /** Preview is confined to scene transforms. Only pointerup commits to the project. */
-export function attachFurnishingDrag({ canvas, camera, content, selection, room, id, render, onPosition, onGesture, onExit }: {
+export function attachFurnishingDrag({ canvas, camera, content, selection, room, id, render, onPosition, onGesture, onExit, onFeedback }: {
   canvas: HTMLCanvasElement; camera: PerspectiveCamera; content: Object3D; selection: Object3D; room: ConstructorRoom; id: string;
   render: () => void; onPosition: (id: string, position: FurnishingPosition) => void; onGesture: (active: boolean) => void; onExit: () => void;
+  onFeedback?: (issues: FurnishingIssue[]) => void;
 }) {
-  const placed = layoutFurnishings(room).placements.find((item) => item.id === id);
+  const layout = layoutFurnishings(room), placed = layout.placements.find((item) => item.id === id);
   let model: Object3D | undefined;
   content.traverse((object) => { if (object.userData.furnishingId === id) model = object; });
   if (!placed || !model) return () => {};
   const item = model, initialModel = item.position.clone(), initialSelection = selection.position.clone();
+  const initialIssues = onFeedback ? furnishingIssues(room, layout, id) : [];
+  let feedbackKey: string | undefined;
+  const report = (issues: FurnishingIssue[]) => {
+    const key = JSON.stringify(issues);
+    if (key !== feedbackKey) { feedbackKey = key; onFeedback?.(issues); }
+  };
+  report(initialIssues);
   const cursor = canvas.style.cursor, tabIndex = canvas.tabIndex;
   canvas.style.cursor = "grab"; canvas.tabIndex = 0; canvas.focus({ preventScroll: true });
   const pointers = new Set<number>(), raycaster = new Raycaster(), pointer = new Vector2();
@@ -42,6 +50,7 @@ export function attachFurnishingDrag({ canvas, camera, content, selection, room,
     item.position.copy(initialModel); selection.position.copy(initialSelection); canvas.style.cursor = "grab";
     if (canvas.hasPointerCapture(previous.pointerId)) canvas.releasePointerCapture(previous.pointerId);
     onGesture(false);
+    if (!commit) report(initialIssues);
     if (commit && previous.moved && (previous.position.xMm !== previous.initial.xMm || previous.position.yMm !== previous.initial.yMm)) onPosition(id, previous.position);
     render();
   };
@@ -56,6 +65,7 @@ export function attachFurnishingDrag({ canvas, camera, content, selection, room,
     const dx = (next.xMm - current.initial.xMm) / 1000, dz = (next.yMm - current.initial.yMm) / 1000;
     item.position.set(initialModel.x + dx, initialModel.y, initialModel.z + dz);
     selection.position.set(initialSelection.x + dx, initialSelection.y, initialSelection.z + dz);
+    if (onFeedback) report(furnishingIssuesAtPosition(room, id, next, layout));
     render();
   };
   const down = (event: PointerEvent) => {

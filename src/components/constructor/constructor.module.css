@@ -7,6 +7,8 @@
   --c-line: #e4e7eb;
   --c-accent: var(--color-accent-600, #ea580c);
   --c-tint: var(--color-accent-50, #fff7ed);
+  --c-warning: #b91c1c;
+  --c-warning-bg: #fff7f7;
   height: 100dvh;
   min-height: 560px;
   display: grid;
@@ -19,7 +21,7 @@
   line-height: 1.5;
   isolation: isolate;
 }
-:global(html.dark) .workspace { --c-bg: #151e2b; --c-surface: #1e293b; --c-muted: #182233; --c-text: #edf2f7; --c-secondary: #a1afc2; --c-line: #344155; --c-tint: #442d21; }
+:global(html.dark) .workspace { --c-bg: #151e2b; --c-surface: #1e293b; --c-muted: #182233; --c-text: #edf2f7; --c-secondary: #a1afc2; --c-line: #344155; --c-tint: #442d21; --c-warning: #fca5a5; --c-warning-bg: #30232d; }
 .workspace button, .workspace input, .workspace select { font: inherit; }
 .workspace button { cursor: pointer; }
 .workspace button:disabled { opacity: .4; cursor: not-allowed; }
@@ -269,6 +271,18 @@
 @media (pointer: coarse) { .sceneObjectMove small { display: none; } }
 .sceneObjectIssue { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 10px; border: 0; border-top: 1px solid var(--c-line); border-radius: 0 0 7px 7px; background: var(--c-tint); color: var(--c-accent); font-size: 11px; }
 .workspace .sceneObjectLimit { padding: 0 10px 10px; font-size: 11px; color: var(--c-secondary); }
+.placementFeedback { position: absolute; left: 20px; bottom: 18px; width: min(440px, calc(100% - 40px)); pointer-events: none; }
+.placementWarning { display: flex; gap: 9px; padding: 11px 13px; background: var(--c-warning-bg); border: 1px solid var(--c-warning); border-radius: 8px; box-shadow: 0 3px 14px #0000000c; font-size: 12px; }
+.placementWarning > svg { flex-shrink: 0; color: var(--c-warning); }
+.placementWarning > div { min-width: 0; overflow-wrap: anywhere; }
+.placementWarning strong { display: block; color: var(--c-warning); margin-bottom: 3px; }
+.placementWarning p { color: var(--c-text); }
+.placementWarning small { display: block; color: var(--c-secondary); margin-top: 5px; font-size: 11px; }
+@media (max-width: 980px) {
+  .placementFeedback { left: 12px; bottom: 12px; width: calc(100% - 24px); }
+  .placementWarning { gap: 7px; padding: 8px 10px; font-size: 11px; }
+  .propertiesOpen .placementFeedback { display: none; }
+}
 .materialCheck { position: absolute; right: 4px; top: 5px; width: 19px; height: 19px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c-accent); color: white; box-shadow: 0 1px 4px #22272e20; }
 .propertySection { display: flex; flex-direction: column; gap: 9px; }
 .propertySection h3 { font-size: 13px; color: var(--c-secondary); font-weight: 400; }

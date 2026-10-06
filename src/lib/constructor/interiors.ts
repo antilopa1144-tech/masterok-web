@@ -216,9 +216,10 @@ export function layoutFurnishings(room: ConstructorRoom): FurnishingLayout {
 
 export interface FurnishingIssue { id: string; kind: FurnishingKind; code: "overlap" | "opening" | "bounds" | "height"; message: string }
 /** Подсказки относятся к габаритам образцов и условным зонам авторасстановки, а не к монтажным нормативам. */
-export function furnishingIssues(room: ConstructorRoom, layout = layoutFurnishings(room)): FurnishingIssue[] {
+export function furnishingIssues(room: ConstructorRoom, layout = layoutFurnishings(room), selectedId?: string): FurnishingIssue[] {
   const issues: FurnishingIssue[] = [], openings = openingRects(room);
   for (const item of layout.placements) {
+    if (selectedId !== undefined && item.id !== selectedId) continue;
     const name = furnishingName(room, item.id), reference = { id: item.id, kind: item.kind };
     if (item.xMm < 0 || item.yMm < 0 || item.xMm + item.widthMm > room.widthMm + .001 || item.yMm + item.depthMm > room.lengthMm + .001) {
       issues.push({ ...reference, code: "bounds", message: `${name}: габарит выходит за пределы комнаты. Измените координаты, габариты или поверните предмет.` });
@@ -233,4 +234,12 @@ export function furnishingIssues(room: ConstructorRoom, layout = layoutFurnishin
     }
   }
   return issues;
+}
+
+/** Проверяем предварительное положение, сохраняя видимых соседей и не запуская авторасстановку заново. */
+export function furnishingIssuesAtPosition(room: ConstructorRoom, id: string, position: FurnishingPosition, layout = layoutFurnishings(room)): FurnishingIssue[] {
+  const current = layout.placements.find((item) => item.id === id);
+  if (!current) return [];
+  const next = placementForPosition({ id, kind: current.kind, dimensions: current.dimensions }, position);
+  return furnishingIssues(room, { ...layout, placements: layout.placements.map((item) => item.id === id ? next : item) }, id);
 }
