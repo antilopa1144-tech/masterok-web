@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect, type RoomType } from "@/lib/constructor/core";
-import { createInteriorRoom, dimensionsFor, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, presetFor } from "@/lib/constructor/interiors";
+import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect, type RoomType } from "@/lib/constructor/core";
+import { createInteriorRoom, dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, presetFor, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
 import { cloneValue, commitWorkspace, createWorkspace, importWorkspaceFile, MAX_PROJECT_FILE_BYTES, MAX_VARIANTS, newId, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
 import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
@@ -26,6 +26,7 @@ import WallCutReview from "./WallCutReview";
 import WallLayoutPreview from "./WallLayoutPreview";
 import RoomInteriorControls, { RoomTypeIcon, RoomTypePicker } from "./RoomInteriorControls";
 import FurnishingPlacementControls from "./FurnishingPlacementControls";
+import SceneFurnishingControls from "./SceneFurnishingControls";
 import FloorTileInspector from "./FloorTileInspector";
 import InspectorSection from "./InspectorSection";
 import TileSupplyControls from "./TileSupplyControls";
@@ -151,8 +152,9 @@ export default function ConstructorEditor() {
   const activeFurnishing = room && selectedFurnishing && interiorFor(room).items.some((item) => item.id === selectedFurnishing) ? selectedFurnishing : undefined;
   const sceneFurnishing = useMemo(() => {
     if (!room || tab !== "interior" || !furnished || !activeFurnishing) return undefined;
-    const item = interiorFor(room).items.find((item) => item.id === activeFurnishing)!;
-    return { id: item.id, name: furnishingName(room, item.id), dimensions: dimensionsFor(item), placed: layoutFurnishings(room).placements.some((placement) => placement.id === item.id) };
+    const interior = interiorFor(room), layout = layoutFurnishings(room);
+    const item = interior.items.find((item) => item.id === activeFurnishing)!;
+    return { id: item.id, name: furnishingName(room, item.id), dimensions: dimensionsFor(item), placed: layout.placements.some((placement) => placement.id === item.id), atLimit: interior.items.length >= MAX_FURNISHINGS_PER_ROOM, hasIssues: furnishingIssues(room, layout).some((issue) => issue.id === item.id) };
   }, [room, tab, furnished, activeFurnishing]);
   const arranging = arrangement && view === "plan" && furnished;
   const isSaved = saved === "saved" && lastSavedWorkspace.current === workspace && !pendingDraft && !placementGesture;
@@ -269,7 +271,19 @@ export default function ConstructorEditor() {
       document.querySelector<HTMLDivElement>('[aria-label="Редактор расстановки предметов"]')?.focus({ preventScroll: true });
     });
   };
+  const showFurnishingIssues = () => {
+    showFurnishingProperties();
+    requestAnimationFrame(() => {
+      const notice = document.querySelector<HTMLElement>('[aria-label="Положение предметов"] [role="status"]');
+      scrollPropertiesTo(notice); notice?.focus({ preventScroll: true });
+    });
+  };
   const setFurnishingPosition = (id: string, position: FurnishingPosition) => updateRoom((current) => { current.interior = interiorWithPosition(current, id, position); });
+  const rotateFurnishing = (id: string) => {
+    if (!room || pendingDraft || placementGesture) return;
+    const placed = layoutFurnishings(room).placements.find((item) => item.id === id);
+    if (placed) setFurnishingPosition(id, rotatedFurnishingPosition(room, placed));
+  };
   const resetFurnishingPosition = (id: string) => updateRoom((current) => {
     const interior = interiorFor(current);
     current.interior = { ...interior, items: interior.items.map((item) => { const next = { ...item }; if (item.id === id) delete next.position; return next; }) };
@@ -438,8 +452,11 @@ export default function ConstructorEditor() {
             <button type="button" className={view === "cuts" ? styles.active : ""} aria-pressed={view === "cuts"} onClick={() => setView("cuts")}><Scissors size={16} />Раскрой</button>
           </div>{view === "3d" && <div className={styles.cameraTools} role="group" aria-label="Управление камерой"><IconButton label="Приблизить" disabled={!sceneActions} onClick={() => sceneActions?.zoomIn()}><ZoomIn size={18} /></IconButton><IconButton label="Отдалить" disabled={!sceneActions} onClick={() => sceneActions?.zoomOut()}><ZoomOut size={18} /></IconButton><IconButton label="Вид сверху" disabled={!sceneActions} onClick={() => sceneActions?.topView()}><Scan size={17} /></IconButton><IconButton label="Вернуть исходный ракурс" disabled={!sceneActions} onClick={() => { setResetToken((token) => token + 1); setSelectedPieceId(undefined); }}><Maximize2 size={17} /></IconButton></div>}</div>
           {room && roomResult ? <>
-            {view === "3d" && <RoomScene room={room} calculation={roomResult} allWalls={allWalls} furnished={furnished} resetToken={resetToken} selectedSurface={tab === "floor" ? "floor" : tab === "walls" ? selectedWall : null} selectedFurnishing={sceneFurnishing?.id} onCapture={captureReady} onControls={sceneControlsReady} onSelect={(surface, kind) => { if (surface === "interior") { if (pendingDraft) return; setSelectedFurnishing(kind); showFurnishingProperties(); return; } setTab(surface === "floor" ? "floor" : "walls"); if (surface !== "floor") setSelectedWall(surface as Wall); setPanel("properties"); }} onFallback={() => setView("plan")} />}
-            {view === "3d" && sceneFurnishing ? <button type="button" className={`${styles.sceneDimensions} ${styles.sceneObject}`} aria-label="Параметры выбранного предмета" onClick={showFurnishingProperties}><Box size={15} /><span><strong>{sceneFurnishing.name}</strong><span>{!sceneFurnishing.placed && "Не размещён · "}{formatNumber(sceneFurnishing.dimensions.widthMm)} × {formatNumber(sceneFurnishing.dimensions.depthMm)} × {formatNumber(sceneFurnishing.dimensions.heightMm)} мм</span></span><Pencil size={13} /></button> : view !== "cuts" && view !== "elevation" && <button type="button" className={styles.sceneDimensions} aria-label="Изменить размеры комнаты" onClick={showRoomProperties}><Ruler size={15} /><span><strong>{room.name}</strong><span>{formatNumber(room.widthMm)} × {formatNumber(room.lengthMm)} мм</span></span><Pencil size={13} /></button>}
+            {view === "3d" && <RoomScene room={room} calculation={roomResult} allWalls={allWalls} furnished={furnished} resetToken={resetToken} selectedSurface={tab === "floor" ? "floor" : tab === "walls" ? selectedWall : null} selectedFurnishing={sceneFurnishing?.id} onCapture={captureReady} onControls={sceneControlsReady} onSelect={(surface, kind) => { if (surface === "interior") { if (pendingDraft) return; setSelectedFurnishing(kind); setTab("interior"); setPanel(null); return; } setTab(surface === "floor" ? "floor" : "walls"); if (surface !== "floor") setSelectedWall(surface as Wall); setPanel("properties"); }} onFallback={() => setView("plan")} />}
+            {view === "3d" && sceneFurnishing ? <SceneFurnishingControls {...sceneFurnishing} blocked={!!pendingDraft || placementGesture} onConfigure={showFurnishingProperties} onInspect={showFurnishingIssues} onRotate={() => rotateFurnishing(sceneFurnishing.id)} onDuplicate={() => duplicateFurnishing(sceneFurnishing.id)} onRemove={() => {
+              removeFurnishing(sceneFurnishing.id); setSelectedFurnishing(undefined);
+              requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[aria-label="Отменить действие"]')?.focus({ preventScroll: true }));
+            }} /> : view !== "cuts" && view !== "elevation" && <button type="button" className={styles.sceneDimensions} aria-label="Изменить размеры комнаты" onClick={showRoomProperties}><Ruler size={15} /><span><strong>{room.name}</strong><span>{formatNumber(room.widthMm)} × {formatNumber(room.lengthMm)} мм</span></span><Pencil size={13} /></button>}
             {view === "plan" && <PlanView room={room} calculation={roomResult} numbers={numbers} furnished={furnished} selectedPieceId={selectedPieceId} onSelect={setSelectedPieceId} editing={arranging} blocked={!!pendingDraft} selectedId={activeFurnishing} onSelectFurnishing={setSelectedFurnishing} onPosition={setFurnishingPosition} onConfigure={showFurnishingProperties} onGesture={setPlacementGesture} />}
             {view === "elevation" && <WallElevation key={room.id + layoutResetToken} room={room} calculation={roomResult} wall={selectedWall} onSelectWall={(wall) => { setSelectedTile(undefined); setSelectedWall(wall); }} selectedTileId={activeTileSelection?.tileId} focusToken={activeTileSelection?.focusToken ?? 0} focusBounds={activeTileSelection?.bounds} onSelectTile={(tileId) => setSelectedTile(tileId ? { roomId: room.id, wall: selectedWall, tileId, calculation: roomResult, focusToken: 0 } : undefined)} onReviewCuts={() => setModal("wall-cuts")} canReviewCuts={!pendingDraft} onConfigure={() => setModal("wall-layout")} />}
             {view === "cuts" && <CutView room={room} calculation={roomResult} onSelect={(id) => { setSelectedPieceId(id); setView("plan"); }} />}

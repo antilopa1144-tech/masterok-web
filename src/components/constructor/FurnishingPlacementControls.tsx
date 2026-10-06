@@ -54,7 +54,7 @@ export default function FurnishingPlacementControls({ room, selectedId, blocked,
         onPosition(instance.id, clampFurnishingPosition(room, instance.id, { xMm: (room.widthMm - item.widthMm) / 2, yMm: (room.lengthMm - item.depthMm) / 2, rotationDeg }));
       }}>Разместить выбранный предмет</button></>}
     </div>}
-    {selectedIssues.length > 0 && <div className={styles.fitNotice} role="status">{selectedIssues.slice(0, 3).map((issue, index) => <p key={index}>{issue.message}</p>)}{selectedIssues.length > 3 && <p>Ещё замечаний: {selectedIssues.length - 3}.</p>}</div>}
+    {selectedIssues.length > 0 && <div className={styles.fitNotice} role="status" tabIndex={-1}>{selectedIssues.slice(0, 3).map((issue, index) => <p key={index}>{issue.message}</p>)}{selectedIssues.length > 3 && <p>Ещё замечаний: {selectedIssues.length - 3}.</p>}</div>}
     {hasManual && <button className={styles.resetPosition} type="button" disabled={blocked} onClick={onResetAll}><Undo2 size={14} />Авторасстановка всей комнаты</button>}
     <p className={styles.explanation}>На плане: стрелки — 10 мм, Shift — 100 мм, Alt — 1 мм; R — поворот. Свободное место у проёмов показано условно, реальные проходы и монтажные зазоры нужно проверить по выбранной мебели и технике.</p>
   </section>;

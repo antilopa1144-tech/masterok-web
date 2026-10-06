@@ -248,13 +248,22 @@
 .cameraTools .iconButton { color: var(--c-text); }
 .cameraTools .iconButton + .iconButton { border-left-color: var(--c-line); border-radius: 0 5px 5px 0; }
 .sceneDimensions { position: absolute; z-index: 9; top: 84px; left: 20px; display: inline-flex; align-items: center; gap: 11px; max-width: calc(100% - 48px); padding: 10px 13px; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); color: var(--c-secondary); box-shadow: 0 3px 12px #22272e05; text-align: left; }
-.sceneDimensions > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sceneDimensions > span, .sceneObjectSummary > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .sceneDimensions strong { font-size: 13px; color: var(--c-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sceneDimensions span span { font-size: 11px; }
-.sceneDimensions > svg { flex-shrink: 0; }
+.sceneDimensions > svg, .sceneObjectSummary > svg { flex-shrink: 0; }
 .sceneDimensions:hover { border-color: var(--c-accent); color: var(--c-accent); }
-.sceneObject { border-color: var(--c-accent); color: var(--c-accent); }
+.sceneDimensions.sceneObject { flex-direction: column; align-items: stretch; gap: 0; padding: 0; width: 280px; border-color: var(--c-accent); color: var(--c-accent); }
 .sceneObject strong { white-space: normal; overflow-wrap: anywhere; }
+.sceneObjectSummary { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 54px; padding: 10px 12px; border: 0; border-radius: 7px 7px 0 0; background: transparent; color: var(--c-accent); text-align: left; }
+.sceneObjectSummary > span { flex: 1; }
+.sceneObjectSummary span span { color: var(--c-secondary); }
+.sceneObjectActions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--c-line); padding: 3px; gap: 2px; }
+.sceneObjectActions button { display: flex; justify-content: center; align-items: center; gap: 5px; min-width: 0; min-height: 44px; padding: 6px 3px; border: 0; border-radius: 5px; background: transparent; color: var(--c-text); font-size: 11px; }
+.sceneObjectActions svg { flex-shrink: 0; }
+.sceneObjectSummary:hover, .sceneObjectActions button:hover:not(:disabled) { background: var(--c-tint); color: var(--c-accent); }
+.sceneObjectIssue { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 10px; border: 0; border-top: 1px solid var(--c-line); border-radius: 0 0 7px 7px; background: var(--c-tint); color: var(--c-accent); font-size: 11px; }
+.workspace .sceneObjectLimit { padding: 0 10px 10px; font-size: 11px; color: var(--c-secondary); }
 .materialCheck { position: absolute; right: 4px; top: 5px; width: 19px; height: 19px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c-accent); color: white; box-shadow: 0 1px 4px #22272e20; }
 .propertySection { display: flex; flex-direction: column; gap: 9px; }
 .propertySection h3 { font-size: 13px; color: var(--c-secondary); font-weight: 400; }
