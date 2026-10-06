@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import type { ConstructorRoom, RoomCalculation } from "@/lib/constructor/core";
+import type { ConstructorRoom, FurnishingPosition, RoomCalculation } from "@/lib/constructor/core";
 import { decorFor, formatNumber } from "@/lib/constructor/presentation";
 import styles from "./constructor.module.css";
 import { createPlankMaps, createWoodCanvas, loadWoodCanvas, PLANK_VARIANTS } from "./wood-texture";
@@ -15,6 +15,7 @@ import { tileGroutColor } from "@/lib/constructor/tile-materials";
 import { configureLaminateMaterial } from "./laminate-material";
 import { createSurfaceHighlight, type SelectedSurface } from "./surface-highlight";
 import { createFurnishingHighlight } from "./furnishing-highlight";
+import { attachFurnishingDrag } from "./furnishing-drag";
 
 interface Runtime {
   renderer: THREE.WebGLRenderer;
@@ -257,10 +258,14 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
   group.add(label(`${formatNumber(room.lengthMm)} мм`, new THREE.Vector3(w / 2 + 0.55, 0.05, 0), labelWidth));
 }
 
-export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, selectedFurnishing, onSelect, onCapture, onFallback, onControls }: {
+export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, selectedFurnishing, movingFurnishing, onPosition, onGesture, onExitMove, onSelect, onCapture, onFallback, onControls }: {
   room: ConstructorRoom; calculation: RoomCalculation; allWalls: boolean; furnished: boolean; resetToken: number;
   selectedSurface: SelectedSurface;
   selectedFurnishing?: string;
+  movingFurnishing?: string;
+  onPosition: (id: string, position: FurnishingPosition) => void;
+  onGesture: (active: boolean) => void;
+  onExitMove: () => void;
   onSelect: (surface: "floor" | "interior" | number, id?: string) => void;
   onCapture: (capture: (() => string) | null) => void;
   onFallback: () => void;
@@ -270,6 +275,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
   const runtime = useRef<Runtime>();
   const selectRef = useRef(onSelect); selectRef.current = onSelect;
   const controlsRef = useRef(onControls); controlsRef.current = onControls;
+  const moveRef = useRef({ id: movingFurnishing, onPosition, onGesture, onExitMove }); moveRef.current = { id: movingFurnishing, onPosition, onGesture, onExitMove };
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
 
@@ -364,6 +370,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2(); let down = { x: 0, y: 0 };
     const pointerDown = (event: PointerEvent) => { down = { x: event.clientX, y: event.clientY }; };
     const pointerUp = (event: PointerEvent) => {
+      if (moveRef.current.id) return;
       if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > 5) return;
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
@@ -421,9 +428,18 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
         selectionLabel = ` Выбран предмет: ${furnishingName(room, selectedFurnishing)}.`;
       }
     }
-    current.renderer.domElement.setAttribute("aria-label", `Трёхмерная модель комнаты.${selectionLabel} Перетаскивайте для вращения, используйте два пальца для масштаба.`);
+    current.renderer.domElement.setAttribute("aria-label", `Трёхмерная модель комнаты.${selectionLabel} ${movingFurnishing ? "Перетаскивайте выбранный предмет. Стрелки — сдвиг, Escape — отмена." : "Перетаскивайте для вращения, используйте два пальца для масштаба."}`);
     current.render();
-  }, [selectedSurface, selectedFurnishing, room, calculation, furnished, ready]);
+  }, [selectedSurface, selectedFurnishing, movingFurnishing, room, calculation, furnished, ready]);
+
+  useEffect(() => {
+    const current = runtime.current;
+    if (!current || !ready || !movingFurnishing) return;
+    current.controls.enabled = false;
+    const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing, render: current.render,
+      onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove() });
+    return () => { dispose(); current.controls.enabled = true; };
+  }, [room, movingFurnishing, ready, resetToken]);
 
   useEffect(() => {
     if (!runtime.current) return;

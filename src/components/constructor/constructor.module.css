@@ -258,10 +258,15 @@
 .sceneObjectSummary { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 54px; padding: 10px 12px; border: 0; border-radius: 7px 7px 0 0; background: transparent; color: var(--c-accent); text-align: left; }
 .sceneObjectSummary > span { flex: 1; }
 .sceneObjectSummary span span { color: var(--c-secondary); }
-.sceneObjectActions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--c-line); padding: 3px; gap: 2px; }
-.sceneObjectActions button { display: flex; justify-content: center; align-items: center; gap: 5px; min-width: 0; min-height: 44px; padding: 6px 3px; border: 0; border-radius: 5px; background: transparent; color: var(--c-text); font-size: 11px; }
+.sceneObjectActions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--c-line); padding: 3px; gap: 2px; }
+.sceneObjectActions button { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; min-width: 0; min-height: 44px; padding: 6px 3px; border: 0; border-radius: 5px; background: transparent; color: var(--c-text); font-size: 11px; }
 .sceneObjectActions svg { flex-shrink: 0; }
 .sceneObjectSummary:hover, .sceneObjectActions button:hover:not(:disabled) { background: var(--c-tint); color: var(--c-accent); }
+.sceneObjectMove { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--c-line); padding: 4px 6px 4px 12px; }
+.sceneObjectMove > span { color: var(--c-text); font-size: 11px; }
+.sceneObjectMove small { color: var(--c-secondary); font-size: 10px; }
+.sceneObjectMove button { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; padding: 6px 9px; border: 0; border-radius: 5px; background: var(--c-accent); color: #fff; font-size: 11px; }
+@media (pointer: coarse) { .sceneObjectMove small { display: none; } }
 .sceneObjectIssue { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 7px 10px; border: 0; border-top: 1px solid var(--c-line); border-radius: 0 0 7px 7px; background: var(--c-tint); color: var(--c-accent); font-size: 11px; }
 .workspace .sceneObjectLimit { padding: 0 10px 10px; font-size: 11px; color: var(--c-secondary); }
 .materialCheck { position: absolute; right: 4px; top: 5px; width: 19px; height: 19px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c-accent); color: white; box-shadow: 0 1px 4px #22272e20; }
