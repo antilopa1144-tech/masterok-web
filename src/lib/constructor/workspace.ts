@@ -151,6 +151,16 @@ export function importWorkspaceFile(text: string): ConstructorWorkspace {
   return { ...workspace, project: { ...workspace.project, id: newId("import"), updatedAt: now } };
 }
 
+export async function readWorkspaceFile(file: Pick<File, "size" | "text">): Promise<ConstructorWorkspace> {
+  if (file.size > MAX_PROJECT_FILE_BYTES) {
+    throw new Error("Файл слишком большой. Максимальный размер проекта — 4 МБ.");
+  }
+  let text: string;
+  try { text = await file.text(); }
+  catch { throw new Error("Не удалось прочитать файл. Сохраните его на устройство и выберите снова."); }
+  return importWorkspaceFile(text);
+}
+
 export interface WorkspaceHistory {
   present: ConstructorWorkspace;
   past: ConstructorWorkspace[];

@@ -8,7 +8,7 @@ import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect, type RoomType } from "@/lib/constructor/core";
 import { createInteriorRoom, dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, presetFor, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
-import { cloneValue, commitWorkspace, createWorkspace, importWorkspaceFile, MAX_PROJECT_FILE_BYTES, MAX_VARIANTS, newId, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
+import { cloneValue, commitWorkspace, createWorkspace, MAX_VARIANTS, newId, readWorkspaceFile, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
 import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
 import { createScenarioWorkspace } from "@/lib/constructor/scenarios";
@@ -441,8 +441,7 @@ export default function ConstructorEditor() {
       <input ref={fileInput} type="file" accept=".json,.masterok.json,application/json" className={styles.hidden} aria-label="Импорт файла проекта" onChange={async (event) => {
         const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
         try {
-          if (file.size > MAX_PROJECT_FILE_BYTES) throw new Error("Максимальный размер проекта — 4 МБ.");
-          const imported = importWorkspaceFile(await file.text());
+          const imported = await readWorkspaceFile(file);
           if (workspace && !validation.length) { await savingQueue.current.catch(() => {}); await saveWorkspace(workspace); }
           setHistory({ present: imported, past: [], future: [] }); setSelectedRoomId(imported.project.rooms[0]?.id ?? ""); setSelectedPieceId(undefined); setNotice("Проект импортирован как отдельная копия.");
         } catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось прочитать файл проекта."); }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, FolderOpen } from "lucide-react";
 import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_SCENARIOS, CONSTRUCTOR_URL, scenarioHref, type ConstructorScenario } from "@/lib/constructor/entry";
+import ConstructorImportAction from "./ConstructorImportAction";
 import styles from "./constructor-entry.module.css";
 
 export default function ConstructorStartActions({ scenario }: { scenario?: ConstructorScenario }) {
@@ -33,5 +34,6 @@ export default function ConstructorStartActions({ scenario }: { scenario?: Const
       {scenario && <span>Откроется отдельный проект. Ваши сохранённые проекты останутся.<br /></span>}
       {savedProject ? `Сохранён в этом браузере: ${savedProject.name}` : "Бесплатно, без установки и регистрации"}
     </p>
+    <ConstructorImportAction />
   </div>;
 }
