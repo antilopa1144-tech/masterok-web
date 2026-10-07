@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, FolderOpen } from "lucide-react";
-import { CONSTRUCTOR_EDITOR_URL, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_SCENARIOS, CONSTRUCTOR_URL, scenarioHref, type ConstructorScenario } from "@/lib/constructor/entry";
 import styles from "./constructor-entry.module.css";
 
-export default function ConstructorStartActions() {
+export default function ConstructorStartActions({ scenario }: { scenario?: ConstructorScenario }) {
   const [savedProject, setSavedProject] = useState<{ id: string; name: string } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -17,12 +17,21 @@ export default function ConstructorStartActions() {
     return () => { cancelled = true; };
   }, []);
 
+  const savedHref = savedProject ? `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(savedProject.id)}` : undefined;
+  const resume = !scenario && savedHref;
+  const action = CONSTRUCTOR_SCENARIOS.find((item) => item.id === (scenario ?? "room"))!;
+
   return <div className={styles.startActions}>
-    <Link href={savedProject ? `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(savedProject.id)}` : scenarioHref("room")} prefetch={false} className={styles.primaryAction}>
-      {savedProject ? <FolderOpen size={19} /> : <ArrowUpRight size={20} />}
-      {savedProject ? "Продолжить проект" : "Создать комнату"}
+    <Link href={resume || scenarioHref(action.id)} prefetch={false} className={styles.primaryAction}>
+      {resume ? <FolderOpen size={19} /> : <ArrowUpRight size={20} />}
+      {resume ? "Продолжить проект" : action.action}
     </Link>
-    <a href="#scenarios" className={styles.secondaryAction}>Выбрать пример</a>
-    <p className={styles.startNote}>{savedProject ? `Сохранён в этом браузере: ${savedProject.name}` : "Бесплатно, без установки и регистрации"}</p>
+    {scenario
+      ? <Link href={savedHref ?? `${CONSTRUCTOR_URL}#scenarios`} prefetch={false} className={styles.secondaryAction}>{savedHref ? "Продолжить свой проект" : "Другие примеры"}</Link>
+      : <a href="#scenarios" className={styles.secondaryAction}>Выбрать пример</a>}
+    <p className={styles.startNote}>
+      {scenario && <span>Откроется отдельный проект. Ваши сохранённые проекты останутся.<br /></span>}
+      {savedProject ? `Сохранён в этом браузере: ${savedProject.name}` : "Бесплатно, без установки и регистрации"}
+    </p>
   </div>;
 }

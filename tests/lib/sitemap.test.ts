@@ -163,6 +163,17 @@ describe("sitemap chunks", () => {
     expect(invalid.status).toBe(404);
   });
 
+  it("отдаёт поисковые страницы конструктора без редактора и адресов личных проектов", async () => {
+    const response = await getFlatSitemap();
+    const xml = await response.text();
+    const constructorUrls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)]
+      .map((match) => match[1]).filter((url) => url.startsWith(`${SITE_URL}/konstruktor/`));
+    expect(constructorUrls.sort()).toEqual([
+      `${SITE_URL}/konstruktor/`,
+      `${SITE_URL}/konstruktor/vannaya/`,
+    ]);
+  });
+
   it("sitemap инструментов не включает страницы с noindex", async () => {
     const entries = await buildSitemapChunk(3);
     const urls = new Set(entries.map((entry) => entry.url));

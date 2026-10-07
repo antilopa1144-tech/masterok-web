@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Box, Check, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
-import { CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
@@ -74,7 +74,7 @@ export default function ConstructorPage() {
       </div>
     </section>
     <section className={`${styles.section} ${styles.workflow}`} aria-labelledby="workflow-title">
-      <div><h2 id="workflow-title">Сначала проверьте<br /> на экране.</h2><p className={styles.intro}>Поменять направление досок или начало раскладки проще до покупки и укладки.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Попробовать на ванной <ArrowUpRight size={18} /></Link></div>
+      <div><h2 id="workflow-title">Сначала проверьте<br /> на экране.</h2><p className={styles.intro}>Поменять направление досок или начало раскладки проще до покупки и укладки.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Попробовать на ванной <ArrowUpRight size={18} /></Link><p className={styles.toolsNote}><Link href={CONSTRUCTOR_BATHROOM_URL}>Конструктор ванной: от расстановки до плитки</Link> — что задать в проекте и как получить ведомость.</p></div>
       <ol className={styles.steps}>
         <li><span>1</span><div><h3>Задайте помещение</h3><p>Размеры комнаты, двери и окна. Добавьте другие помещения, если планируете несколько сразу.</p></div></li>
         <li><span>2</span><div><h3>Сравните отделку</h3><p>Выберите формат и направление. Рассмотрите швы, крайние подрезки и развёртки стен. Сохраните варианты для сравнения.</p></div></li>

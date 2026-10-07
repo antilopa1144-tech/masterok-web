@@ -5,6 +5,7 @@ import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import LayoutConstructorEntry from "@/components/constructor/LayoutConstructorEntry";
 import { isClassicLayoutEntry, type LayoutSearchParams } from "@/lib/constructor/layout-entry";
+import { CONSTRUCTOR_BATHROOM_URL } from "@/lib/constructor/entry";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
@@ -67,6 +68,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Lay
         <LayoutConstructorEntry material="tile" classic={classic} />
       </div>
       <ToolPageExtras slug="raskladka-plitki">
+        <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Нужны пол и все стены? Откройте{" "}
+          <Link href={CONSTRUCTOR_BATHROOM_URL} className="text-accent-700 underline underline-offset-4 hover:no-underline dark:text-accent-400">
+            конструктор ванной в 3D
+          </Link>
+          {" "}— с расстановкой сантехники, развёртками и общей ведомостью плитки.
+        </p>
         <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
           Не уверены, где задать начало? Разбираем{" "}
           <Link href="/blog/otkuda-nachinat-raskladku-plitki/" className="text-accent-700 underline underline-offset-4 hover:no-underline dark:text-accent-400">

@@ -68,8 +68,26 @@
 .faq summary span { font-size: 24px; color: var(--entry-muted); font-weight: 400; }
 .faq details[open] summary span { transform: rotate(45deg); }
 .faq details p { margin: 0; padding: 0 28px 22px 0; color: var(--entry-muted); font-size: 14px; line-height: 1.8; }
+.breadcrumbs { max-width: 1440px; margin-inline: auto; padding: 24px clamp(20px, 4vw, 64px) 0; }
+.breadcrumbs > nav { margin-bottom: 0; }
+.scenarioHero { padding-top: 32px; }
+.pageNav { display: flex; flex-wrap: wrap; gap: 10px 32px; max-width: 1312px; margin-inline: auto; padding: 12px clamp(20px, 4vw, 64px); border-block: 1px solid var(--entry-line); }
+.pageNav a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--entry-accent); }
+.pageNav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.materialList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.materialList > div { padding: 26px 32px 26px 0; border-top: 1px solid var(--entry-line); }
+.materialList > div:nth-child(even) { padding-left: 32px; border-left: 1px solid var(--entry-line); }
+.materialList dt { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; }
+.materialList dt svg { color: var(--entry-accent); flex-shrink: 0; }
+.materialList dd { margin: 12px 0 0; color: var(--entry-muted); font-size: 14px; line-height: 1.7; max-width: 60ch; }
+.scopeNote { margin: 0; padding: 20px 24px; border-left: 3px solid var(--entry-accent); background: var(--entry-panel); color: var(--entry-muted); font-size: 14px; line-height: 1.7; }
+.closingAction { display: flex; justify-content: space-between; align-items: center; gap: 24px; max-width: 1312px; margin-inline: auto; padding: 32px clamp(20px, 4vw, 64px); background: var(--entry-panel); border-top: 1px solid var(--entry-line); }
+.closingAction h2 { margin: 0 0 8px; font-size: 24px; font-weight: 650; letter-spacing: -.025em; }
+.closingAction p { margin: 0; color: var(--entry-muted); font-size: 14px; line-height: 1.6; }
+.closingAction > a { flex-shrink: 0; }
 @media (max-width: 1100px) { .scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1000px) { .hero { gap: 25px; } .hero h1 { font-size: 39px; } .hero .intro { font-size: 15px; } .startActions { gap: 8px 14px; } .primaryAction { padding-inline: 14px; } .quickTool { padding-inline: 16px; } }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 38px; padding-bottom: 32px; gap: 24px; } .hero h1 { font-size: clamp(36px, 6vw, 50px); } .hero h1 br { display: none; } .heroCopy { max-width: 620px; } .hero .intro { font-size: 17px; } .productName { margin-bottom: 18px; } .heroPreview { max-width: 780px; } .startNote { min-height: 18px; } .capabilities { display: grid; grid-template-columns: 1fr 1fr; } .workflow, .faq { gap: 30px; grid-template-columns: .8fr 1.2fr; } .scenarios { gap: 14px; } .scenarioCopy { padding: 17px; } }
 @media (max-width: 650px) { .hero, .section, .capabilities { padding-inline: 20px; } .hero h1 { font-size: 38px; line-height: 1.1; } .hero .intro { font-size: 16px; } .heroPreview figcaption { font-size: 11px; align-items: flex-start; } .previewLabel { font-size: 10px; padding: 11px 12px; } .capabilities { gap: 18px 12px; } .capabilities span { font-size: 11px; gap: 7px; } .capabilities svg { width: 17px; } .section { padding-top: 48px; } .sectionHeading { display: block; } .sectionHeading p { font-size: 14px; } .quiet { display: block; margin-top: 12px; } .scenarios { grid-template-columns: 1fr; gap: 20px; } .scenarioVisual { height: 185px; } .scenarioCopy { padding: 20px; } .scenarioCopy p { min-height: 0; margin-bottom: 18px; } .workflow, .faq { grid-template-columns: 1fr; gap: 28px; } .workflow h2 br { display: none; } .quickTools { grid-template-columns: 1fr 1fr; } .quickTool { padding: 22px 14px; } .quickTool:nth-child(odd) { padding-left: 0; } .quickTool:nth-child(even) { border-right: 0; } .quickTool:nth-child(-n+2) { border-bottom: 1px solid var(--entry-line); } .quickTool h3 { font-size: 14px; } .quickTool p { font-size: 12px; } .faq { padding-bottom: 52px; } }
 @media (prefers-reduced-motion: reduce) { .page * { transition: none; } }
+@media (max-width: 650px) { .scenarioHero { padding-top: 24px; } .pageNav { gap: 4px 20px; } .pageNav a { font-size: 13px; } .materialList { grid-template-columns: 1fr; } .materialList > div, .materialList > div:nth-child(even) { padding: 24px 0; border-left: 0; } .materialList dt { font-size: 16px; } .scopeNote { padding: 18px; } .closingAction { align-items: flex-start; flex-direction: column; } }
