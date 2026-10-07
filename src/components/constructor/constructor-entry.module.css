@@ -16,6 +16,7 @@
 .secondaryAction:hover { color: var(--entry-accent); }
 .startNote { flex-basis: 100%; min-height: 36px; font-size: 12px; color: var(--entry-muted); line-height: 1.5; overflow-wrap: anywhere; margin: 2px 0 0; }
 .importAction { flex-basis: 100%; min-width: 0; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--entry-line); }
+.savedActions { display: flex; flex-wrap: wrap; align-items: center; gap: 0 24px; }
 .importButton { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 8px 0; background: transparent; border: 0; color: var(--entry-text); font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }
 .importButton:hover { color: var(--entry-accent); }
 .importButton:focus-visible { outline: 3px solid #f97316; outline-offset: 4px; border-radius: 6px; }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, LoaderCircle } from "lucide-react";
 import { CONSTRUCTOR_EDITOR_URL } from "@/lib/constructor/entry";
 import styles from "./constructor-entry.module.css";
 
-export default function ConstructorImportAction() {
+export default function ConstructorImportAction({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const hintId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -39,10 +39,13 @@ export default function ConstructorImportAction() {
   };
 
   return <div className={styles.importAction}>
-    <button type="button" className={styles.importButton} disabled={!ready || busy} aria-describedby={hintId} onClick={() => fileInput.current?.click()}>
-      {busy ? <LoaderCircle size={18} aria-hidden="true" /> : <FileUp size={18} aria-hidden="true" />}
-      {busy ? "Открываем проект…" : "Открыть файл проекта"}
-    </button>
+    <div className={styles.savedActions}>
+      {children}
+      <button type="button" className={styles.importButton} disabled={!ready || busy} aria-describedby={hintId} onClick={() => fileInput.current?.click()}>
+        {busy ? <LoaderCircle size={18} aria-hidden="true" /> : <FileUp size={18} aria-hidden="true" />}
+        {busy ? "Открываем проект…" : "Открыть файл проекта"}
+      </button>
+    </div>
     <input ref={fileInput} type="file" hidden accept=".json,.masterok.json,application/json" aria-label="Файл проекта конструктора" onChange={(event) => {
       const file = event.target.files?.[0]; event.target.value = "";
       if (file) void openFile(file);
