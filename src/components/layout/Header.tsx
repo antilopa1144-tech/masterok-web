@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Box } from "lucide-react";
 import { CATEGORIES } from "@/lib/calculators/categories";
-import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_SCENARIOS, CONSTRUCTOR_URL, scenarioHref } from "@/lib/constructor/entry";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SITE_NAME } from "@/lib/site";
@@ -20,7 +21,6 @@ import HeaderProjectBadge from "@/components/layout/HeaderProjectBadge";
 
 const UI_TEXT = {
   logo: SITE_NAME,
-  download: "Скачать",
   menu: "Меню",
   mainNavigation: "Основная навигация",
   featureNavigation: "Ваш ремонт",
@@ -92,17 +92,17 @@ function ConstructorDropdown({ link, pathname }: { link: HeaderNavLink; pathname
   }, [open]);
 
   return (
-    <div ref={container} className="relative flex items-center" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }} onKeyDown={(event) => { if (event.key === "Escape") { setOpen(false); container.current?.querySelector("button")?.focus(); } }}>
+    <div ref={container} className="relative flex items-center rounded-xl bg-accent-700 text-white" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }} onKeyDown={(event) => { if (event.key === "Escape") { setOpen(false); container.current?.querySelector("button")?.focus(); } }}>
       <Link
         href={link.href}
-        className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors no-underline ${navLinkClass(active)}`}
+        className="inline-flex min-h-11 items-center gap-2 rounded-l-xl px-3 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-accent-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500"
         aria-current={active ? "page" : undefined}
         onClick={() => setOpen(false)}
       >
-        {link.icon && <CategoryIcon icon={link.icon} size={15} color="currentColor" />}
+        <Box size={17} aria-hidden="true" />
         <span>{link.label}</span>
       </Link>
-      <button type="button" aria-label="Сценарии конструктора и инструменты" aria-expanded={open} aria-controls="constructor-menu" onClick={() => setOpen(!open)} className="-ml-2 flex min-h-11 min-w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-orange-500 dark:text-slate-300 dark:hover:bg-slate-800">
+      <button type="button" aria-label="Сценарии конструктора и инструменты" aria-expanded={open} aria-controls="constructor-menu" onClick={() => setOpen(!open)} className="flex min-h-11 min-w-11 items-center justify-center rounded-r-xl border-l border-white/20 text-white hover:bg-accent-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500">
         <svg
           className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
           viewBox="0 0 24 24"
@@ -209,25 +209,17 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-1.5 shrink-0">
             <HeaderNavItem link={HEADER_PROJECTS_LINK} pathname={pathname} showBadge />
             <ThemeToggle />
-            <Link
-              href="/prilozhenie/"
-              className="btn-primary text-sm py-2 px-4 ml-1 inline-flex items-center gap-1.5"
-            >
-              <CategoryIcon icon="download" size={15} color="#fff" />
-              <span className="hidden xl:inline">{UI_TEXT.download}</span>
-              <span className="xl:hidden">App</span>
-            </Link>
           </div>
 
-          <div className="flex items-center gap-2 lg:hidden shrink-0">
+          <div className="flex items-center gap-1.5 lg:hidden shrink-0">
             <Link
-              href="/proekty/"
-              className="inline-flex items-center gap-1 rounded-lg bg-accent-50 px-2.5 py-2 text-xs font-semibold text-accent-800 no-underline dark:bg-accent-900/30 dark:text-accent-200 min-h-[44px]"
-              aria-label="Проекты"
+              href={CONSTRUCTOR_URL}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-accent-700 px-3 py-2 text-xs font-bold text-white no-underline hover:bg-accent-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500"
+              onClick={() => setMenuOpen(false)}
+              aria-current={isHeaderLinkActive(pathname, ["/konstruktor"]) ? "page" : undefined}
             >
-              <CategoryIcon icon="checklist" size={14} color="currentColor" />
-              <span>Проекты</span>
-              <HeaderProjectBadge />
+              <Box size={16} aria-hidden="true" />
+              <span>Конструктор</span>
             </Link>
             <ThemeToggle />
             <button
@@ -317,10 +309,10 @@ export default function Header() {
             <div className="pt-3 flex items-center gap-2">
               <Link
                 href="/prilozhenie/"
-                className="btn-primary flex-1 text-center inline-flex items-center justify-center gap-2"
+                className="inline-flex min-h-11 items-center gap-2 px-3 text-sm text-slate-500 no-underline dark:text-slate-400"
                 onClick={() => setMenuOpen(false)}
               >
-                <CategoryIcon icon="phone" size={16} color="#fff" />
+                <CategoryIcon icon="phone" size={16} color="currentColor" />
                 {UI_TEXT.downloadApp}
               </Link>
             </div>

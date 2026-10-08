@@ -14,8 +14,8 @@ export interface HeaderNavLink {
  * Конструктор — общий вход в проект комнаты и каталог отдельных инструментов.
  */
 export const HEADER_MAIN_LINKS: HeaderNavLink[] = [
-  { href: "/", label: "Калькуляторы", match: ["/", "/kalkulyatory"] },
   { href: "/konstruktor/", label: "Конструктор", match: ["/konstruktor"], icon: "flooring" },
+  { href: "/kalkulyatory/", label: "Калькуляторы", match: ["/kalkulyatory"] },
   { href: "/mikhalych/", label: "Михалыч AI", match: ["/mikhalych"], icon: "bot" },
   { href: "/blog/", label: "Блог", match: ["/blog"], icon: "book" },
   { href: "/services/video/", label: "Видео", match: ["/services/video"], icon: "video" },

@@ -11,9 +11,9 @@ import { getHomeToolCards, TOOLS_FOR_SEARCH } from "@/lib/tools/config";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { RecentCalculators } from "@/components/home/HomeLazyWidgets";
 import ToolPreviews from "@/components/home/ToolPreviews";
+import ConstructorHero from "@/components/home/ConstructorHero";
 import VideoServiceContactButton from "@/components/services/VideoServiceContactButton";
 import {
-  MASTEROK_RUSTORE_URL,
   SITE_FOUNDING_DATE,
   SITE_NAME,
   SITE_SAME_AS,
@@ -31,17 +31,24 @@ const CalculatorSearch = dynamic(
 );
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
+const HOME_TITLE = "Мастерок — 3D-конструктор ремонта и калькуляторы";
+const HOME_DESCRIPTION = "Спланируйте комнату или ванную в 3D: размеры, плитка, ламинат и материалы к покупке. Строительные калькуляторы для отдельных задач. Бесплатно, без регистрации.";
 // Homepage search receives the current Ghost article catalogue.
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  // absolute: на главной суффикс бренда уже входит в заголовок (62 символа
-  // с ним — выше комфортного диапазона выдачи, поэтому здесь он без суффикса).
-  title: { absolute: "Строительные калькуляторы онлайн — расчёт материалов" },
-  // «65+» заменено на точное число: в каталоге ровно 65 калькуляторов,
-  // и завышение на единицу видно в выдаче.
-  description: `65 бесплатных строительных калькуляторов: точная потребность, практический запас и количество материалов к покупке. Без регистрации, на русском.`,
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/` },
+  openGraph: {
+    type: "website", locale: "ru_RU", siteName: SITE_NAME, url: `${SITE_URL}/`,
+    title: HOME_TITLE, description: HOME_DESCRIPTION,
+    images: [{ url: `${SITE_URL}/konstruktor/og/`, width: 1200, height: 630, alt: "3D-конструктор комнаты Мастерок" }],
+  },
+  twitter: {
+    card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION,
+    images: [`${SITE_URL}/konstruktor/og/`],
+  },
   // Задаётся явно: корневой layout больше не выставляет robots, чтобы страницы
   // без своих метаданных не получали второй тег. Главная не использует
   // buildPageMetadata, поэтому указывает директивы сама.
@@ -93,7 +100,7 @@ export default async function HomePage() {
     "@type": "WebSite",
     name: SITE_NAME,
     url: SITE_URL,
-    description: SITE_WEBPAGE_DESCRIPTION,
+    description: HOME_DESCRIPTION,
   };
 
   const organizationLd = {
@@ -112,15 +119,16 @@ export default async function HomePage() {
 
   const appLd = {
     "@context": "https://schema.org",
-    "@type": "MobileApplication",
-    "@id": `${SITE_URL}/#mobile-app`,
-    name: `${SITE_NAME} — строительные калькуляторы`,
-    operatingSystem: "Android",
-    applicationCategory: "UtilitiesApplication",
+    "@type": "WebApplication",
+    "@id": `${SITE_URL}/konstruktor/#application`,
+    name: `Конструктор ${SITE_NAME}`,
+    url: `${SITE_URL}/konstruktor/`,
+    operatingSystem: "Web",
+    applicationCategory: "DesignApplication",
+    description: "3D-комнаты, раскладка плитки и ламината, материалы к покупке.",
+    screenshot: `${SITE_URL}/images/constructor/room-editor.jpg`,
     inLanguage: "ru",
     isAccessibleForFree: true,
-    installUrl: MASTEROK_RUSTORE_URL,
-    downloadUrl: MASTEROK_RUSTORE_URL,
     offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
     publisher: { "@id": `${SITE_URL}/#organization` },
   };
@@ -131,16 +139,17 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
 
-      <main className="page-container-wide pb-14 pt-9 sm:pt-12 lg:pt-16">
-        <section className="text-center lg:text-left" aria-labelledby="home-title">
-          <h1 id="home-title" className="max-w-5xl text-3xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
-            Рассчитайте материалы без лишних закупок
-          </h1>
-          <p className="mt-3 text-base text-slate-500 sm:text-lg dark:text-slate-400">
-            {CALC_COUNT} строительных калькуляторов с практическим запасом и итогом к покупке
+      <div className="page-container-wide pb-14 pt-6 sm:pt-9 lg:pt-10">
+        <ConstructorHero />
+        <section id="calculators" className="mt-10 scroll-mt-24" aria-labelledby="calculator-search-title">
+          <h2 id="calculator-search-title" className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+            Нужен отдельный расчёт?
+          </h2>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base dark:text-slate-400">
+            {CALC_COUNT} строительных калькуляторов: от стяжки и плитки до фундамента и кровли.
           </p>
 
-          <div className="mt-7 max-w-6xl">
+          <div className="mt-5 max-w-6xl">
             <Suspense fallback={<div className="h-16 rounded-xl border border-slate-200 bg-white animate-pulse dark:border-slate-700 dark:bg-slate-800" />}>
               <CalculatorSearch
                 hero
@@ -153,7 +162,7 @@ export default async function HomePage() {
             </Suspense>
           </div>
 
-          <nav className="mt-4 flex max-w-5xl flex-wrap justify-center gap-2 lg:justify-start" aria-label="Популярные задачи">
+          <nav className="mt-4 flex max-w-5xl flex-wrap gap-2" aria-label="Популярные задачи">
             {HOME_TASK_LINKS.map((task) => {
               const category = CATEGORIES.find((item) => item.id === task.category);
               return (
@@ -293,7 +302,7 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
-      </main>
+      </div>
 
       <Suspense fallback={null}><RecentCalculators /></Suspense>
     </>

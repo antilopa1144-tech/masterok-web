@@ -1,6 +1,6 @@
 export const SITE_NAME = "Мастерок";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://getmasterok.ru";
-export const SITE_WEBPAGE_DESCRIPTION = "Бесплатные строительные калькуляторы онлайн";
+export const SITE_WEBPAGE_DESCRIPTION = "3D-конструктор ремонта и бесплатные строительные калькуляторы онлайн";
 // Используется в template ({ title.default } и для категорий/списков калькуляторов).
 export const SITE_TITLE_SUFFIX = "строительные калькуляторы онлайн";
 // Главная: коммерческий шаблон по единой системе сайта.
