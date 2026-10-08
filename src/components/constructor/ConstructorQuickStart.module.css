@@ -1,0 +1,19 @@
+.guide { display: flex; align-items: center; gap: 24px; padding: 12px 22px; background: var(--c-surface); border-bottom: 1px solid var(--c-line); min-width: 0; }
+.heading { margin-right: auto; min-width: 0; }
+.heading strong { font-size: 14px; font-weight: 650; }
+.heading p { margin-top: 2px; color: var(--c-secondary); font-size: 12px; }
+.steps { display: flex; gap: 8px; }
+.steps button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; min-height: 44px; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-muted); color: var(--c-text); white-space: nowrap; }
+.steps button:hover, .steps button[aria-current] { border-color: var(--c-accent); background: var(--c-tint); }
+.steps button span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--c-surface); color: var(--c-accent); font-size: 12px; font-weight: 700; }
+.close { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 8px; background: transparent; color: var(--c-secondary); }
+.close:hover { background: var(--c-muted); color: var(--c-text); }
+@media (max-width: 700px) {
+  .guide { display: grid; grid-template-columns: minmax(0, 1fr) 32px; gap: 4px 8px; padding: 6px 12px 10px; }
+  .heading strong { font-size: 13px; }
+  .heading p { display: none; }
+  .close { width: 32px; height: 32px; }
+  .steps { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .steps button { font-size: 12px; gap: 5px; padding: 7px 4px; }
+  .steps button span { width: 18px; height: 18px; font-size: 11px; }
+}

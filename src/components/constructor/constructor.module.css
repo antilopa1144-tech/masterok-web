@@ -486,3 +486,10 @@
   .fieldRow { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+/* The first-visit guide occupies its own row; it never overlays the scene. */
+.workspace.withGuide { grid-template-rows: 64px auto minmax(0, 1fr); }
+@media (max-width: 980px) {
+  .workspace.withGuide { grid-template-rows: 57px auto minmax(0, 1fr) 62px; }
+  .workspace.withGuide .body:not(.panelExpanded) { --mobile-panel-height: min(46dvh, 480px); }
+}

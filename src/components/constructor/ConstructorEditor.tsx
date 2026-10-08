@@ -12,6 +12,9 @@ import { cloneValue, commitWorkspace, createWorkspace, MAX_VARIANTS, newId, read
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
 import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
 import { createScenarioWorkspace } from "@/lib/constructor/scenarios";
+import { ConstructorJourney } from "@/lib/constructor/journey";
+import { trackEvent } from "@/lib/analytics";
+import ConstructorQuickStart from "./ConstructorQuickStart";
 import { DECORS, formatMoney, formatNumber } from "@/lib/constructor/presentation";
 import { LAMINATE_SIZE_PRESETS } from "@/lib/tools/laminate-layout";
 import { NumberField, TextField } from "./DraftFields";
@@ -40,6 +43,11 @@ type View = "3d" | "plan" | "cuts" | "elevation";
 type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | null;
 type TileSelection = { roomId: string; wall: Wall; tileId: string; calculation: RoomCalculation; focusToken: number; bounds?: TileRect };
 const BOARD_FORMATS = LAMINATE_SIZE_PRESETS.filter((format) => !format.label.includes("ёлочка"));
+const GUIDE_DISMISSED_KEY = "masterok.constructor.quick-start.dismissed.v1";
+function guideAllowed() {
+  try { return window.localStorage.getItem(GUIDE_DISMISSED_KEY) !== "1"; }
+  catch { return true; }
+}
 
 function PatternSketch({ pattern }: { pattern: FloorSpec["pattern"] }) {
   return <svg viewBox="0 0 120 48" aria-hidden="true"><rect x="1" y="1" width="118" height="46" rx="3" fill="currentColor" opacity=".09" /><path d={pattern === "third" ? "M0 16h120M0 32h120M40 0v16M100 0v16M20 16v16M80 16v16M60 32v16" : "M0 16h120M0 32h120M30 0v16M90 0v16M60 16v16M30 32v16M90 32v16"} fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>;
@@ -76,6 +84,8 @@ function ModalWindow({ title, children, onClose, wide = false, aboveNotice = fal
 
 export default function ConstructorEditor() {
   const router = useRouter();
+  const journey = useRef(new ConstructorJourney());
+  const [guideVisible, setGuideVisible] = useState(false);
   const [history, setHistory] = useState<WorkspaceHistory | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [tab, setTab] = useState<Tab>("floor");
@@ -125,6 +135,8 @@ export default function ConstructorEditor() {
     initialWorkspace.then((restored) => {
       if (cancelled) return;
       const initial = restored ?? createWorkspace(); setHistory({ present: initial, past: [], future: [] });
+      journey.current.open(initial.project, entry.scenario || !restored ? "new" : "resume", entry.scenario);
+      setGuideVisible(!!(entry.scenario || !restored) && guideAllowed());
       setSelectedRoomId(initial.project.rooms[0]?.id ?? ""); setSaved("pending");
       if (entry.scenario === "bathroom") setTab("walls");
       if (entry.scenario === "room") setTab("room");
@@ -132,6 +144,7 @@ export default function ConstructorEditor() {
     }).catch((error: Error) => {
       if (cancelled) return;
       const initial = createWorkspace(); setHistory({ present: initial, past: [], future: [] }); setSelectedRoomId(initial.project.rooms[0]?.id ?? "");
+      journey.current.open(initial.project, "new"); setGuideVisible(guideAllowed());
       setNotice(error.message); setSaved("error");
     });
     return () => { cancelled = true; };
@@ -144,6 +157,7 @@ export default function ConstructorEditor() {
     catch (error) { return { value: null, error: error instanceof Error ? error.message : "Не удалось рассчитать проект." }; }
   }, [workspace, validation]);
   const result = computation.value;
+  useEffect(() => { if (workspace && result) journey.current.observe(workspace.project); }, [workspace, result]);
   const room = workspace?.project.rooms.find((item) => item.id === selectedRoomId) ?? workspace?.project.rooms[0];
   const roomResult = result?.rooms.find((item) => item.roomId === room?.id);
   const wallResult = roomResult?.walls.find((item) => item.wall === selectedWall);
@@ -163,6 +177,15 @@ export default function ConstructorEditor() {
   useEffect(() => { setMovingFurnishing(false); }, [room?.id, view, tab, furnished, activeFurnishing, hasPendingDraft]);
   const isSaved = saved === "saved" && lastSavedWorkspace.current === workspace && !pendingDraft && !placementGesture;
   const canExport = !!workspace && !!result && !pendingDraft && !placementGesture && !busyExport && workspace.project.rooms.length > 0;
+  const dismissGuide = () => {
+    setGuideVisible(false);
+    try { window.localStorage.setItem(GUIDE_DISMISSED_KEY, "1"); } catch { /* The editor also works without preferences storage. */ }
+  };
+  const openPurchase = () => {
+    if (!result || pendingDraft || placementGesture) return;
+    journey.current.resultView(); setModal("purchase");
+    if (guideVisible) dismissGuide();
+  };
   useEffect(() => { setArrangement(false); setSelectedFurnishing(undefined); setPlacementGesture(false); }, [room?.id, workspace?.project.id]);
   const showTileCut = (entry: WallCutEntry) => {
     if (!room || !roomResult || pendingDraft) return;
@@ -352,6 +375,7 @@ export default function ConstructorEditor() {
 
   const performExport = async (kind: "png" | "pdf" | "xlsx" | "project") => {
     if (!workspace || pendingDraft || placementGesture || busyExport || (kind !== "project" && !result)) return;
+    if (kind === "png" && (!room || !roomResult)) return;
     setExportMenu(false); setBusyExport(kind === "project" ? "файл проекта" : kind.toUpperCase());
     try {
       const exports = await import("@/lib/constructor/export");
@@ -359,6 +383,7 @@ export default function ConstructorEditor() {
       if (kind === "pdf") await exports.exportConstructorPdf(workspace);
       if (kind === "xlsx") await exports.exportConstructorXlsx(workspace);
       if (kind === "png" && room && roomResult) await exports.exportRoomPng(room, roomResult, view === "3d" ? capture.current?.() : undefined, (view === "3d" || view === "plan") && furnished, view === "elevation" ? selectedWall : undefined);
+      journey.current.export(kind);
     } catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось создать файл. Повторите экспорт."); }
     finally { setBusyExport(""); }
   };
@@ -369,11 +394,12 @@ export default function ConstructorEditor() {
     catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось открыть проекты."); }
   };
   const loadProject = async (id: string) => {
-    try { const loaded = await loadWorkspace(id); if (loaded) { setHistory({ present: loaded, past: [], future: [] }); setSelectedRoomId(loaded.project.rooms[0]?.id ?? ""); setModal(null); setSelectedPieceId(undefined); } }
+    try { const loaded = await loadWorkspace(id); if (loaded) { journey.current.open(loaded.project, "resume"); setGuideVisible(false); setHistory({ present: loaded, past: [], future: [] }); setSelectedRoomId(loaded.project.rooms[0]?.id ?? ""); setModal(null); setSelectedPieceId(undefined); } }
     catch (error) { setNotice(error instanceof Error ? error.message : "Проект не загрузился."); }
   };
   const createProject = () => {
     const next = createWorkspace(); setHistory({ present: next, past: [], future: [] }); setSelectedRoomId(next.project.rooms[0]?.id ?? ""); setModal(null); setSelectedPieceId(undefined); setTab("room");
+    journey.current.open(next.project, "new"); setGuideVisible(guideAllowed());
   };
 
   if (!workspace || !history) return <div className={styles.loading}><span className={styles.brandMark}>М</span><h1>Конструктор Мастерок</h1><p>Открываем ваш проект…</p></div>;
@@ -414,7 +440,7 @@ export default function ConstructorEditor() {
   const formatIndex = room ? BOARD_FORMATS.findIndex((format) => format.w === room.floor.boardLengthMm && format.h === room.floor.boardWidthMm) : -1;
   const saveText = placementGesture ? "Перемещаем предмет…" : pendingDraft ? "Ввод не применён" : isSaved ? "Сохранено в браузере" : saved === "invalid" ? "Исправьте параметры" : saved === "error" ? "Не сохранено" : "Сохраняем…";
 
-  return <section className={styles.workspace} aria-label="Конструктор Мастерок">
+  return <section className={`${styles.workspace} ${guideVisible ? styles.withGuide : ""}`} aria-label="Конструктор Мастерок">
     <header className={styles.header}>
       <Link href="/konstruktor/" className={styles.brand} title="На стартовую страницу конструктора" aria-label="На стартовую страницу конструктора" onClick={async (event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || isSaved) return;
@@ -443,11 +469,17 @@ export default function ConstructorEditor() {
         try {
           const imported = await readWorkspaceFile(file);
           if (workspace && !validation.length) { await savingQueue.current.catch(() => {}); await saveWorkspace(workspace); }
+          journey.current.open(imported.project, "import"); setGuideVisible(false);
           setHistory({ present: imported, past: [], future: [] }); setSelectedRoomId(imported.project.rooms[0]?.id ?? ""); setSelectedPieceId(undefined); setNotice("Проект импортирован как отдельная копия.");
         } catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось прочитать файл проекта."); }
       }} />
     </header>
 
+    {guideVisible && <ConstructorQuickStart active={tab === "room" ? "dimensions" : tab === "floor" || tab === "walls" ? "material" : undefined} canOpenResult={!!result && !pendingDraft && !placementGesture}
+      onDimensions={() => { trackEvent("constructor_guide_action", { step: "dimensions" }); showRoomProperties(); }}
+      onMaterial={() => { trackEvent("constructor_guide_action", { step: "material" }); expandShortPanel(); setTab(room?.wallTiles.some(Boolean) ? "walls" : "floor"); setPanel("properties"); requestAnimationFrame(() => { const properties = document.querySelector<HTMLElement>(`.${styles.properties}`); if (properties) properties.scrollTop = 0; }); }}
+      onResult={() => { trackEvent("constructor_guide_action", { step: "result" }); openPurchase(); }}
+      onDismiss={() => { trackEvent("constructor_guide_action", { step: "dismiss" }); dismissGuide(); }} />}
     <div className={`${styles.body} ${panel === "properties" ? styles.propertiesOpen : ""} ${panelExpanded ? styles.panelExpanded : ""}`} style={panelHeight === null ? undefined : { "--mobile-panel-height": `min(${panelHeight}px, 76dvh, 700px, calc(100dvh - 230px))` } as CSSProperties}>
       <aside className={styles.tree} aria-label="Дерево проекта">{tree}</aside>
       <div className={styles.center}>
@@ -540,13 +572,13 @@ export default function ConstructorEditor() {
         <div className={styles.purchasePreview}><div className={styles.sectionHeading}><h3>Ведомость проекта</h3><span>{result?.purchases.length ?? 0} поз.</span></div>
           <div className={styles.purchaseOverview}><div><strong>{!result ? "Проверьте параметры" : hasPrices ? formatMoney(result.totalCostRub) : "Цены не заданы"}</strong><span>{!result ? "Исправьте ошибки в полях" : (missingPrices || missingSupplyRates) && hasPrices ? "Сумма известных позиций" : estimatedPrices ? "Оценка по введённым ценам" : hasPrices ? "По введённым ценам" : "Укажите цены для оценки стоимости"}</span></div>{previewLine && <span className={styles.packCount}>{previewLine.quantity}<small>{showWallMetrics || isTileFloor ? "упак. плитки" : "упак. ламината"}</small></span>}</div>
           {floorLine && floorLine.roomIds.length > 1 && <p className={styles.hint}>{isTileFloor ? "Плитка" : "Ламинат"} общей партией для {floorLine.roomIds.length} помещений.</p>}
-          <button className={styles.primaryButton} type="button" onClick={() => setModal("purchase")} disabled={!result || !!pendingDraft}><ShoppingCart size={18} />Открыть ведомость</button>
+          <button className={styles.primaryButton} type="button" onClick={openPurchase} disabled={!result || !!pendingDraft}><ShoppingCart size={18} />Открыть ведомость</button>
         </div>
       </aside>
       {panel === "tree" && <div className={styles.mobileTree}><div className={styles.panelHandle} /><div className={styles.inspectorHeader}><h2>Мой проект</h2><div className={styles.panelTools}><IconButton label="Открыть сохранённые проекты" onClick={openProjects}><FolderOpen size={18} /></IconButton><ThemeToggle /><IconButton label="Закрыть дерево проекта" onClick={() => setPanel(null)}><X size={18} /></IconButton></div></div>{tree}</div>}
     </div>
 
-    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && isMaterialTab ? styles.active : ""} onClick={() => { if (!isMaterialTab) setTab("floor"); setPanel(panel === "properties" && isMaterialTab ? null : "properties"); }}><Layers size={21} />Материал</button><button type="button" onClick={() => { setPanel(null); setModal("purchase"); }}><ShoppingCart size={21} />Ведомость</button></nav>
+    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && isMaterialTab ? styles.active : ""} onClick={() => { if (!isMaterialTab) setTab("floor"); setPanel(panel === "properties" && isMaterialTab ? null : "properties"); }}><Layers size={21} />Материал</button><button type="button" disabled={!result || !!pendingDraft || placementGesture} onClick={() => { setPanel(null); openPurchase(); }}><ShoppingCart size={21} />Ведомость</button></nav>
 
     {notice && <div className={styles.notice} role="alert"><p>{notice}</p><IconButton label="Закрыть сообщение" onClick={() => setNotice("")}><X size={18} /></IconButton></div>}
 

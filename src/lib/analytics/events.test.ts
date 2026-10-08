@@ -4,6 +4,14 @@ import { describe, expect, it } from "vitest";
 import { ANALYTICS_EVENT_DEFINITIONS } from "./events";
 
 const EXPECTED_EVENTS = [
+  "constructor_entry",
+  "constructor_open",
+  "constructor_start",
+  "constructor_dimensions_change",
+  "constructor_material_change",
+  "constructor_result_view",
+  "constructor_export",
+  "constructor_guide_action",
   "accuracy_comparison_open",
   "accuracy_mode_change",
   "calculator_calculate",

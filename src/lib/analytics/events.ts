@@ -30,6 +30,14 @@ export type ChecklistExportFormat = "pdf" | "print";
 export type VideoServiceContactPlacement = "hero" | "pricing" | "final" | "home";
 
 export interface AnalyticsEventParams {
+  constructor_entry: { placement: 'home_primary' | 'home_preview' | 'home_example' | 'landing_primary' | 'landing_resume'; scenario: 'continue' | 'room' | 'bathroom' | 'laminate' | 'tile' };
+  constructor_open: { mode: 'new' | 'resume' | 'import'; scenario: 'custom' | 'room' | 'bathroom' | 'laminate' | 'tile' };
+  constructor_start: { action: 'dimensions' | 'material' | 'other' };
+  constructor_dimensions_change: Record<string, never>;
+  constructor_material_change: { surface: 'floor' | 'walls' };
+  constructor_result_view: { edited: boolean };
+  constructor_export: { format: 'png' | 'pdf' | 'xlsx' | 'project' };
+  constructor_guide_action: { step: 'dimensions' | 'material' | 'result' | 'dismiss' };
   accuracy_comparison_open: { calculator: string };
   accuracy_mode_change: { calculator: string; from: string; to: string };
   calculator_calculate: { calculator: string; accuracy_mode: string };
@@ -93,6 +101,14 @@ export interface AnalyticsEventDefinition {
 }
 
 export const ANALYTICS_EVENT_DEFINITIONS = {
+  constructor_entry: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Явный переход с главной или посадочной страницы в редактор.', dedupe: 'Каждый явный переход по ссылке.' },
+  constructor_open: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Редактор успешно создаёт, восстанавливает или импортирует проект.', dedupe: 'Один раз при переключении активного проекта за посещение редактора.' },
+  constructor_start: { owner: 'product', kpiRole: 'primary', pii: 'none', trigger: 'Первое применённое изменение помещений валидного проекта.', dedupe: 'Один раз на активный проект за посещение редактора.' },
+  constructor_dimensions_change: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Пользователь фактически меняет размеры существующего помещения.', dedupe: 'Один раз на активный проект за посещение редактора.' },
+  constructor_material_change: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Пользователь фактически меняет покрытие или параметры раскладки.', dedupe: 'Один раз для пола и стен активного проекта за посещение редактора.' },
+  constructor_result_view: { owner: 'product', kpiRole: 'primary', pii: 'none', trigger: 'Пользователь явно открывает ведомость валидного проекта.', dedupe: 'По одному просмотру готового и изменённого проекта за посещение редактора.' },
+  constructor_export: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Файл успешно сформирован и передан браузеру для скачивания.', dedupe: 'Каждый успешный экспорт, без неудачных попыток.' },
+  constructor_guide_action: { owner: 'product', kpiRole: 'diagnostic', pii: 'none', trigger: 'Пользователь выбирает шаг подсказки или скрывает её.', dedupe: 'Каждое явное действие с подсказкой.' },
   accuracy_comparison_open: {
     owner: "product", kpiRole: "diagnostic", pii: "none",
     trigger: "Пользователь открывает сравнение режимов точности.",
