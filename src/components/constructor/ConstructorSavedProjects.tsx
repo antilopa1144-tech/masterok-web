@@ -7,11 +7,12 @@ import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL } from "@/lib/constructor/entry
 import { filterWorkspaceSummaries } from "@/lib/constructor/project-list";
 import type { WorkspaceSummary } from "@/lib/constructor/storage";
 import { pluralizeRu } from "@/lib/format/pluralize";
+import { trackEvent } from "@/lib/analytics";
 import styles from "./ConstructorSavedProjects.module.css";
 
 type ProjectsState = { status: "loading" } | { status: "ready"; projects: WorkspaceSummary[] } | { status: "error"; message: string };
 
-export default function ConstructorSavedProjects({ activeProjectId }: { activeProjectId?: string }) {
+export default function ConstructorSavedProjects({ activeProjectId, placement = "landing_saved_project" }: { activeProjectId?: string; placement?: "home_saved_project" | "landing_saved_project" }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
@@ -54,7 +55,7 @@ export default function ConstructorSavedProjects({ activeProjectId }: { activePr
   const projects = state.status === "ready" ? filterWorkspaceSummaries(state.projects, query) : [];
   const clearSearch = () => { setQuery(""); searchInput.current?.focus(); };
 
-  return <>
+  return <div className={styles.scope}>
     <button ref={trigger} type="button" className={styles.trigger} disabled={!ready} aria-haspopup="dialog" onClick={() => { setQuery(""); setOpen(true); }}><FolderOpen size={18} aria-hidden="true" />Мои проекты</button>
     <dialog ref={dialog} className={styles.dialog} aria-labelledby={titleId} aria-describedby={hintId} onCancel={() => setOpen(false)} onClose={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpen(false); }} onKeyDown={(event) => {
       if (event.key !== "Tab") return;
@@ -76,11 +77,11 @@ export default function ConstructorSavedProjects({ activeProjectId }: { activePr
             <p className={styles.count} role="status">{query.trim() ? `Найдено: ${projects.length} из ${state.projects.length}` : `Всего: ${state.projects.length} · Сначала последние изменения`}</p>
             {projects.length === 0
               ? <div className={styles.empty}><h3>Ничего не найдено</h3><p>Попробуйте часть названия или очистите поиск.</p><button type="button" className={styles.textButton} onClick={clearSearch}>Показать все проекты</button></div>
-              : <ul className={styles.list}>{projects.map((project) => <li key={project.id}><Link href={`${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(project.id)}`} prefetch={false} onClick={() => setOpen(false)}>
+              : <ul className={styles.list}>{projects.map((project) => <li key={project.id}><Link href={`${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(project.id)}`} prefetch={false} onClick={() => { trackEvent("constructor_entry", { placement, scenario: "continue" }); setOpen(false); }}>
                 <FolderOpen className={styles.projectIcon} size={21} aria-hidden="true" /><span className={styles.projectText}><strong>{project.name}</strong><span className={styles.meta}>{project.rooms} {pluralizeRu(project.rooms, ["помещение", "помещения", "помещений"])} · <time dateTime={project.updatedAt}>{new Date(project.updatedAt).toLocaleString("ru-RU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time></span>{project.id === activeProjectId && <span className={styles.current}>Последний открытый</span>}</span><ArrowUpRight size={18} aria-hidden="true" />
               </Link></li>)}</ul>}
           </>)}
       </div>
     </dialog>
-  </>;
+  </div>;
 }

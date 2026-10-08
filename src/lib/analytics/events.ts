@@ -30,7 +30,7 @@ export type ChecklistExportFormat = "pdf" | "print";
 export type VideoServiceContactPlacement = "hero" | "pricing" | "final" | "home";
 
 export interface AnalyticsEventParams {
-  constructor_entry: { placement: 'home_primary' | 'home_preview' | 'home_example' | 'landing_primary' | 'landing_resume' | 'calculator_context' | 'article_context' | 'layout_transfer'; scenario: 'continue' | 'room' | 'bathroom' | 'laminate' | 'tile' };
+  constructor_entry: { placement: 'home_primary' | 'home_resume' | 'home_saved_project' | 'home_preview' | 'home_example' | 'landing_primary' | 'landing_resume' | 'landing_saved_project' | 'calculator_context' | 'article_context' | 'layout_transfer'; scenario: 'continue' | 'room' | 'bathroom' | 'laminate' | 'tile' };
   constructor_open: { mode: 'new' | 'resume' | 'import'; scenario: 'custom' | 'room' | 'bathroom' | 'laminate' | 'tile' };
   constructor_start: { action: 'dimensions' | 'material' | 'other' };
   constructor_dimensions_change: Record<string, never>;

@@ -612,6 +612,11 @@ export default function ConstructorEditor() {
             {r.walls.map((wall) => <div key={wall.wall}><p>Стена {wall.wall + 1}: {formatNumber(wall.netAreaM2)} м² без проёмов → {formatNumber(wall.coveredAreaM2, 3)} м² плитки без швов → {wall.baseTiles} исходных плиток, в том числе {wall.cutTiles} с подрезкой. Неуложенный материал: {formatNumber(wall.unlaidAreaM2, 3)} м².</p>{wall.warnings.map((warning) => <p className={styles.hint} key={warning}>{warning}</p>)}</div>)}
           </div>)}</div></details>
           <div className={styles.modalActions}><button className={styles.primaryButton} type="button" disabled={!canExport} onClick={() => void performExport("pdf")}><Download size={17} />Скачать PDF</button><button className={styles.secondaryButton} type="button" disabled={!canExport} onClick={() => void performExport("xlsx")}>Скачать XLSX</button></div>
+          <div className={styles.projectBackup}>
+            <h3>Продолжить на другом устройстве</h3>
+            <p>Проект автоматически сохраняется в этом браузере. Скачайте файл .masterok.json для переноса размеров, материалов и вариантов. На другом устройстве откройте его на <Link href="/konstruktor/">странице конструктора</Link> кнопкой «Открыть файл проекта».</p>
+            <button className={styles.secondaryButton} type="button" disabled={!canExport} onClick={() => void performExport("project")}><Download size={17} aria-hidden="true" />Скачать файл проекта</button>
+          </div>
           {busyExport && <p role="status">Готовим {busyExport}…</p>}
         </>}
       </div>

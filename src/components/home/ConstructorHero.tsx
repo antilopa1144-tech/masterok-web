@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, Bath, Box, Check, House, Layers } from "lucide-react";
-import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL, scenarioHref } from "@/lib/constructor/entry";
+import { ArrowRight, Bath, Box, House, Layers } from "lucide-react";
+import { CONSTRUCTOR_EDITOR_URL, scenarioHref } from "@/lib/constructor/entry";
 import ConstructorEntryLink from "@/components/constructor/ConstructorEntryLink";
+import ConstructorHomeActions from "./ConstructorHomeActions";
 import styles from "./ConstructorHero.module.css";
 
 const examples = [
@@ -20,11 +20,7 @@ export default function ConstructorHero() {
           <p className={styles.product}><Box size={22} aria-hidden="true" />Конструктор Мастерок</p>
           <h1 id="home-title">Спланируйте<br /> ремонт в 3D.</h1>
           <p className={styles.description}>Задайте размеры комнаты, примерьте плитку или ламинат и получите список материалов к покупке.</p>
-          <div className={styles.actions}>
-            <ConstructorEntryLink placement="home_primary" href={CONSTRUCTOR_EDITOR_URL} prefetch={false} className={styles.primary}>Открыть конструктор<ArrowRight size={20} aria-hidden="true" /></ConstructorEntryLink>
-            <Link href={CONSTRUCTOR_URL} prefetch={false} className={styles.secondary}>Посмотреть возможности</Link>
-          </div>
-          <p className={styles.note}><Check size={16} aria-hidden="true" />Бесплатно. Без установки и регистрации.</p>
+          <ConstructorHomeActions />
         </div>
         <figure className={styles.preview}>
           <div className={styles.previewHeader}><span><Box size={16} aria-hidden="true" />Так выглядит ваш проект</span><span>3D / План / Ведомость</span></div>

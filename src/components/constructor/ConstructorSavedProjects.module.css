@@ -33,3 +33,5 @@
 .empty p { margin: 0; }
 .empty a, .textButton { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--entry-accent); font-size: 14px; font-weight: 600; cursor: pointer; }
 @media (max-width: 650px) { .dialog { max-width: calc(100vw - 20px); max-height: calc(100dvh - 28px); border-radius: 12px; } .header { padding: 12px 12px 12px 18px; } .header h2 { font-size: 19px; } .body { padding: 18px; } .list a { gap: 10px; } .projectIcon { display: none; } }
+.scope { display: contents; --entry-text: #0f172a; --entry-muted: #64748b; --entry-line: #e2e8f0; --entry-panel: #f8fafc; --entry-bg: #fff; --entry-accent: #c2410c; }
+:global(.dark) .scope { --entry-text: #f1f5f9; --entry-muted: #a7b5c8; --entry-line: #334155; --entry-panel: #182232; --entry-bg: #0f172a; --entry-accent: #fdba74; }

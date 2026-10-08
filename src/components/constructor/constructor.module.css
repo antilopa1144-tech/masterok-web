@@ -237,6 +237,11 @@
 .purchaseFacts dd { margin: 4px 0 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .purchaseTotal { flex-wrap: wrap; }
 .purchaseTotal strong { white-space: normal; }
+.projectBackup { margin-top: 24px; padding: 16px; border: 1px solid var(--c-line); border-radius: 12px; background: var(--c-bg); }
+.projectBackup h3 { font-size: 15px; font-weight: 600; }
+.projectBackup p { margin: 8px 0 14px; color: var(--c-secondary); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.projectBackup a { color: var(--c-text); text-decoration: underline; text-underline-offset: 3px; }
+.projectBackup button { min-height: 44px; white-space: normal; }
 .modalActions { display: flex; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
 .projectList { margin-top: 20px; }
 .projectList button { display: flex; gap: 15px; align-items: center; width: 100%; border: 0; border-top: 1px solid var(--c-line); background: transparent; padding: 17px 0; color: var(--c-text); text-align: left; }

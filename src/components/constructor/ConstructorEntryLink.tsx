@@ -6,7 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 import type { ConstructorScenario } from "@/lib/constructor/entry";
 
 export default function ConstructorEntryLink({ placement, scenario = "continue", ...props }: Omit<ComponentProps<typeof Link>, "onClick"> & {
-  placement: "home_primary" | "home_preview" | "home_example" | "calculator_context" | "article_context";
+  placement: "home_primary" | "home_resume" | "home_preview" | "home_example" | "calculator_context" | "article_context";
   scenario?: ConstructorScenario | "continue";
 }) {
   return <Link {...props} onClick={() => trackEvent("constructor_entry", { placement, scenario })} />;
