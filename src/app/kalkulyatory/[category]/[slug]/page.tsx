@@ -9,6 +9,7 @@ import { CALCULATOR_COMPANIONS } from "@/lib/calculators/companions";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import CalculatorWithMikhalych from "@/components/calculator/CalculatorWithMikhalych";
 import CalculatorRelatedTools from "@/components/calculator/CalculatorRelatedTools";
+import ConstructorContextCard from "@/components/constructor/ConstructorContextCard";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -153,6 +154,7 @@ export default async function CalculatorPage({ params }: PageProps) {
           />
         </Suspense>
 
+        <ConstructorContextCard calculatorSlug={calc.slug} placement="calculator_context" />
         <CalculatorRelatedTools calculatorSlug={calc.slug} items={relatedTools} />
 
         <div className="mt-4" data-print-hide>

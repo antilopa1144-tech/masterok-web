@@ -30,7 +30,7 @@ export type ChecklistExportFormat = "pdf" | "print";
 export type VideoServiceContactPlacement = "hero" | "pricing" | "final" | "home";
 
 export interface AnalyticsEventParams {
-  constructor_entry: { placement: 'home_primary' | 'home_preview' | 'home_example' | 'landing_primary' | 'landing_resume'; scenario: 'continue' | 'room' | 'bathroom' | 'laminate' | 'tile' };
+  constructor_entry: { placement: 'home_primary' | 'home_preview' | 'home_example' | 'landing_primary' | 'landing_resume' | 'calculator_context' | 'article_context' | 'layout_transfer'; scenario: 'continue' | 'room' | 'bathroom' | 'laminate' | 'tile' };
   constructor_open: { mode: 'new' | 'resume' | 'import'; scenario: 'custom' | 'room' | 'bathroom' | 'laminate' | 'tile' };
   constructor_start: { action: 'dimensions' | 'material' | 'other' };
   constructor_dimensions_change: Record<string, never>;
@@ -101,7 +101,7 @@ export interface AnalyticsEventDefinition {
 }
 
 export const ANALYTICS_EVENT_DEFINITIONS = {
-  constructor_entry: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Явный переход с главной или посадочной страницы в редактор.', dedupe: 'Каждый явный переход по ссылке.' },
+  constructor_entry: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Явный переход с главной, посадочной, калькулятора, статьи или успешное сохранение перенесённой раскладки перед переходом в редактор.', dedupe: 'Каждый явный переход по ссылке; перенос только после успешного сохранения.' },
   constructor_open: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Редактор успешно создаёт, восстанавливает или импортирует проект.', dedupe: 'Один раз при переключении активного проекта за посещение редактора.' },
   constructor_start: { owner: 'product', kpiRole: 'primary', pii: 'none', trigger: 'Первое применённое изменение помещений валидного проекта.', dedupe: 'Один раз на активный проект за посещение редактора.' },
   constructor_dimensions_change: { owner: 'product', kpiRole: 'driver', pii: 'none', trigger: 'Пользователь фактически меняет размеры существующего помещения.', dedupe: 'Один раз на активный проект за посещение редактора.' },

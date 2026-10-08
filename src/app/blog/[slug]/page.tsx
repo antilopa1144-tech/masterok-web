@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
+import ConstructorContextCard from "@/components/constructor/ConstructorContextCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCalculatorMetaBySlug as getCalculatorBySlug } from "@/lib/calculators/meta.generated";
@@ -415,6 +416,8 @@ export default async function BlogPostPage({ params }: Props) {
         )}
 
         <div className="prose-custom">{renderContent(post.content)}</div>
+
+        <ConstructorContextCard calculatorSlug={effectiveRelatedCalculator?.slug} placement="article_context" />
 
         <aside
           role="note"

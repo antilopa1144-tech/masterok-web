@@ -5,6 +5,7 @@ import { reviewWallCuts } from "./wall-cuts";
 import { serializeWorkspace, type ConstructorWorkspace } from "./workspace";
 import { floorExportText } from "./floor-presentation";
 import { summarizeFinish } from "./comparison";
+import { purchaseCostText } from "./purchase-presentation";
 
 const safeName = (name: string) => name.trim().replace(/[\\/:*?"<>|]/g, "-").slice(0, 100) || "проект";
 
@@ -129,7 +130,7 @@ export async function exportConstructorPdf(workspace: ConstructorWorkspace) {
   });
   let y = ((document as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY) + 9;
   const notes = [
-    `${cost.missingLines || cost.unconfiguredMixtures ? "Сумма позиций с заданной ценой (неполная стоимость проекта)" : cost.estimated ? "Оценка стоимости материалов" : "Стоимость по введённым ценам"}: ${formatMoney(result.totalCostRub)}.`,
+    `${purchaseCostText(cost).label}: ${purchaseCostText(cost).value}.${cost.hasPrices && (cost.missingLines || cost.unconfiguredMixtures) ? " Стоимость проекта неполная." : ""}`,
     "Товар и цены задаёт пользователь. Резерв и округление выполняются после объединения совместимых помещений.",
     ...(cost.unconfiguredMixtures ? ["Выбранные смеси без указанного расхода не включены в ведомость. Введите расход в кг/м² по выбранному товару или отключите смесь."] : []),
     ...(result.purchases.some((line) => line.unitPriceRub > 0 && line.priceNote) ? ["Для одинакового товара с разными ценами использована максимальная введённая цена. Уточните цену общей закупки перед заказом."] : []),
@@ -221,7 +222,7 @@ export async function exportConstructorXlsx(workspace: ConstructorWorkspace) {
     { header: "Остаток упаковок, кг", key: "packSurplusKg", width: 22 },
   ];
   for (const line of result.purchases) purchases.addRow({ ...line, surfaceNames: [...(line.floorRoomIds?.map((id) => `${workspace.project.rooms.find((room) => room.id === id)?.name}, пол`) ?? []), ...(line.surfaces?.map((surface) => `${workspace.project.rooms.find((room) => room.id === surface.roomId)?.name}, стена ${surface.wall + 1}`) ?? [])].join("; "), unitPriceRub: line.unitPriceRub || "Не задана", totalPriceRub: line.unitPriceRub ? line.totalPriceRub : "Не задана", roomNames: line.roomIds.map((id) => workspace.project.rooms.find((room) => room.id === id)?.name).join(", ") });
-  purchases.addRow([cost.missingLines || cost.unconfiguredMixtures ? "Сумма позиций с заданной ценой" : cost.estimated ? "Оценка стоимости материалов" : "Стоимость по введённым ценам", "", "", "", "", result.totalCostRub]);
+  purchases.addRow([purchaseCostText(cost).label, "", "", "", "", cost.hasPrices ? result.totalCostRub : "Цены не заданы"]);
   const parameters = workbook.addWorksheet("Исходные данные");
   parameters.addRow(["Проект", workspace.project.name]); parameters.addRow(["Дата", workspace.project.updatedAt]);
   parameters.addRow(["Помещение", "Ширина, мм", "Длина, мм", "Высота, мм", "Товар", "Декор", "Длина доски, мм", "Ширина доски, мм", "Досок/уп.", "Цена/уп., ₽", "Рисунок", "Направление", "Зазор, мм", "Пропил, мм", "Резерв, %", "Обрезки", "Подложка", "м²/рул.", "Цена/рул., ₽", "Плинтус", "Длина планки, мм", "Цена/шт., ₽"]);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Box, ArrowUpRight } from "lucide-react";
 import { CONSTRUCTOR_EDITOR_URL } from "@/lib/constructor/entry";
 import { getLayoutTransferIssue, type ConstructorLayoutInput } from "@/lib/constructor/layout-transfer";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ConstructorToolLink({ input }: { input: ConstructorLayoutInput }) {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function ConstructorToolLink({ input }: { input: ConstructorLayou
       ]);
       const workspace = await createWorkspaceFromLayout(input);
       await saveWorkspace(workspace);
+      trackEvent("constructor_entry", { placement: "layout_transfer", scenario: input.material === "laminate" ? "laminate" : "tile" });
       router.push(`${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(workspace.project.id)}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось открыть конструктор. Попробуйте ещё раз.");

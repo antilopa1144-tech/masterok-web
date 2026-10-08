@@ -230,6 +230,13 @@
 .purchaseTotal { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 21px 0 12px; }
 .purchaseTotal span { font-size: 13px; }
 .purchaseTotal strong { font-size: 24px; white-space: nowrap; }
+.purchaseIntro { margin-bottom: 12px; font-size: 13px; line-height: 1.6; color: var(--c-secondary); }
+.purchaseFacts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin: 12px 0 4px; padding: 12px; background: var(--c-bg); border: 1px solid var(--c-line); border-radius: 10px; }
+.purchaseFacts:empty { display: none; }
+.purchaseFacts dt { font-size: 11px; color: var(--c-secondary); }
+.purchaseFacts dd { margin: 4px 0 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.purchaseTotal { flex-wrap: wrap; }
+.purchaseTotal strong { white-space: normal; }
 .modalActions { display: flex; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
 .projectList { margin-top: 20px; }
 .projectList button { display: flex; gap: 15px; align-items: center; width: 100%; border: 0; border-top: 1px solid var(--c-line); background: transparent; padding: 17px 0; color: var(--c-text); text-align: left; }

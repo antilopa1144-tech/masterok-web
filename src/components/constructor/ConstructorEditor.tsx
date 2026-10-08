@@ -35,6 +35,8 @@ import InspectorSection from "./InspectorSection";
 import TileSupplyControls from "./TileSupplyControls";
 import { reviewWallCuts, type WallCutEntry } from "@/lib/constructor/wall-cuts";
 import styles from "./constructor.module.css";
+import { summarizeFinish } from "@/lib/constructor/comparison";
+import { purchaseCostText, purchaseFacts } from "@/lib/constructor/purchase-presentation";
 
 const RoomScene = dynamic(() => import("./RoomScene"), { ssr: false, loading: () => <div className={styles.sceneLoading}>Загружаем 3D…</div> });
 
@@ -436,6 +438,7 @@ export default function ConstructorEditor() {
   const missingPrices = result?.purchases.filter((line) => line.unitPriceRub === 0).length ?? 0;
   const estimatedPrices = result?.purchases.some((line) => line.unitPriceRub > 0 && line.priceNote) ?? false;
   const hasPrices = result?.purchases.some((line) => line.unitPriceRub > 0) ?? false;
+  const purchaseCost = result ? purchaseCostText(summarizeFinish(workspace.project, result).cost) : null;
   const missingSupplyRates = workspace.project.rooms.reduce((count, room, index) => count + (result && tileSupplyArea(result.rooms[index]) > 0 ? [room.tileSupplies?.adhesive, room.tileSupplies?.grout].filter((spec) => spec?.consumptionKgM2 === 0).length : 0), 0);
   const formatIndex = room ? BOARD_FORMATS.findIndex((format) => format.w === room.floor.boardLengthMm && format.h === room.floor.boardWidthMm) : -1;
   const saveText = placementGesture ? "Перемещаем предмет…" : pendingDraft ? "Ввод не применён" : isSaved ? "Сохранено в браузере" : saved === "invalid" ? "Исправьте параметры" : saved === "error" ? "Не сохранено" : "Сохраняем…";
@@ -585,9 +588,11 @@ export default function ConstructorEditor() {
     {modal === "purchase" && <ModalWindow title="Ведомость проекта" onClose={() => setModal(null)}>
       <div className={styles.modalBody}><p className={styles.modalLead}>{workspace.project.name} · {workspace.project.rooms.length} помещ. · {formatNumber(totalArea)} м².</p>
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
-          {!!missingSupplyRates && <p className={styles.formNotice} role="status">Для {missingSupplyRates} смесей не задан расход: они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
+          <p className={styles.purchaseIntro}>Количество к покупке указано справа. Запас уже включён; одинаковый товар объединён по помещениям перед округлением до упаковок.</p>
+          {!!missingSupplyRates && <p className={styles.formNotice} role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
           <div className={styles.purchaseList}>{result.purchases.map((line) => <article className={styles.purchaseRow} key={line.id}>
-            <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span></div>
+            <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
+            <dl className={styles.purchaseFacts}>{purchaseFacts(line).map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>
             <details className={styles.purchaseDetails}>
               <summary aria-label={`Расчёт и запас: ${line.name}`}><ChevronDown size={16} aria-hidden="true" />Расчёт и запас</summary>
               <div className={styles.purchaseDetailsBody}>
@@ -597,9 +602,9 @@ export default function ConstructorEditor() {
               </div>
             </details>
           </article>)}</div>
-          <div className={styles.purchaseTotal}><span>{missingPrices || missingSupplyRates ? "Сумма позиций с заданной ценой" : estimatedPrices ? "Оценка стоимости материалов" : "Стоимость по введённым ценам"}</span><strong>{formatMoney(result.totalCostRub)}</strong></div>
+          <div className={styles.purchaseTotal}><span>{purchaseCost?.label}</span><strong>{purchaseCost?.value}</strong></div>
           {estimatedPrices && <p className={styles.hint}>Для одинакового товара с разными ценами взята максимальная введённая цена. Уточните цену общей закупки перед заказом.</p>}
-          {!!missingPrices && <p className={styles.hint}>Для {missingPrices} позиций цена не задана. Общая стоимость проекта пока неполная.</p>}
+          {!!missingPrices && <p className={styles.hint}>{hasPrices ? `Позиций без цены: ${missingPrices}. Общая стоимость проекта пока неполная.` : "Количество к покупке рассчитано. Для стоимости укажите цены выбранных товаров в параметрах покрытий и смесей."}</p>}
           <details className={styles.details}><summary>Как получен результат</summary><div className={styles.detailsContent}><p>Одинаковый товар объединён перед округлением до упаковок.</p>{result.rooms.map((r) => <div key={r.roomId}>
             <h3>{workspace.project.rooms.find((item) => item.id === r.roomId)?.name}</h3>
             {r.floorTiles ? <p>Пол: {formatNumber(r.areaM2)} м² помещения → {formatNumber(r.floorTiles.netAreaM2, 3)} м² укладки со швами → {r.floorTiles.baseTiles} исходных плиток, из них {r.floorTiles.cutTiles} с подрезкой. Неуложенная часть {formatNumber(r.floorTiles.unlaidAreaM2, 3)} м².</p> : <p>Пол: {formatNumber(r.areaM2)} м² помещения → {formatNumber(r.coveredAreaM2)} м² покрытия → {r.pieces.length} деталей → {r.baseBoards} исходных досок. Остатки {formatNumber(r.offcutAreaM2, 3)} м²; потеря материала на пропиле {formatNumber(r.kerfAreaM2, 4)} м².</p>}
