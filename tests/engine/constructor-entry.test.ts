@@ -47,8 +47,8 @@ describe("Constructor scenario entry", () => {
   });
   it("ignores unknown scenarios and validates project identifiers before selecting saved work", () => {
     expect(parseConstructorEntry("?start=bathroom").scenario).toBe("bathroom");
-    expect(parseConstructorEntry("?start=unknown&project=saved-id")).toEqual({ scenario: undefined, projectId: "saved-id" });
+    expect(parseConstructorEntry("?start=unknown&project=saved-id")).toEqual({ scenario: undefined, projectId: "saved-id", newProject: false });
     expect(parseConstructorEntry(`?project=${"a".repeat(151)}`).projectId).toBeUndefined();
-    expect(parseConstructorEntry("")).toEqual({ scenario: undefined, projectId: undefined });
+    expect(parseConstructorEntry("")).toEqual({ scenario: undefined, projectId: undefined, newProject: false });
   });
 });

@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
+import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorProject, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
 import { dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
 import { cloneValue, commitWorkspace, createWorkspace, MAX_VARIANTS, newId, readWorkspaceFile, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
-import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL, parseConstructorEntry, type ConstructorScenario } from "@/lib/constructor/entry";
 import { createScenarioWorkspace } from "@/lib/constructor/scenarios";
 import { ConstructorJourney } from "@/lib/constructor/journey";
 import { trackEvent } from "@/lib/analytics";
@@ -29,6 +29,7 @@ import WallCutReview from "./WallCutReview";
 import WallLayoutPreview from "./WallLayoutPreview";
 import RoomInteriorControls, { RoomTypeIcon } from "./RoomInteriorControls";
 import RoomCreationForm from "./RoomCreationForm";
+import ConstructorProjectSetup, { ConstructorProjectSetupScreen } from "./ConstructorProjectSetup";
 import FurnishingPlacementControls from "./FurnishingPlacementControls";
 import SceneFurnishingControls from "./SceneFurnishingControls";
 import FloorTileInspector from "./FloorTileInspector";
@@ -43,7 +44,7 @@ const RoomScene = dynamic(() => import("./RoomScene"), { ssr: false, loading: ()
 
 type Tab = "room" | "interior" | "floor" | "walls";
 type View = "3d" | "plan" | "cuts" | "elevation";
-type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | null;
+type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | "new-project" | null;
 type TileSelection = { roomId: string; wall: Wall; tileId: string; calculation: RoomCalculation; focusToken: number; bounds?: TileRect };
 const BOARD_FORMATS = LAMINATE_SIZE_PRESETS.filter((format) => !format.label.includes("ёлочка"));
 const GUIDE_DISMISSED_KEY = "masterok.constructor.quick-start.dismissed.v1";
@@ -90,6 +91,7 @@ export default function ConstructorEditor() {
   const journey = useRef(new ConstructorJourney());
   const [guideVisible, setGuideVisible] = useState(false);
   const [history, setHistory] = useState<WorkspaceHistory | null>(null);
+  const [projectSetup, setProjectSetup] = useState<{ scenario?: ConstructorScenario } | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [tab, setTab] = useState<Tab>("floor");
   const [selectedWall, setSelectedWall] = useState<Wall>(0);
@@ -133,6 +135,10 @@ export default function ConstructorEditor() {
   useEffect(() => {
     let cancelled = false;
     const entry = parseConstructorEntry(window.location.search);
+    if (entry.newProject) {
+      setProjectSetup({ scenario: entry.scenario });
+      return;
+    }
     const initialWorkspace = entry.scenario ? Promise.resolve(createScenarioWorkspace(entry.scenario)) : loadWorkspace(entry.projectId);
     initialWorkspace.then((restored) => {
       if (cancelled) return;
@@ -220,11 +226,11 @@ export default function ConstructorEditor() {
 
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (!isSaved) { event.preventDefault(); event.returnValue = ""; }
+      if (workspace && !isSaved) { event.preventDefault(); event.returnValue = ""; }
     };
     window.addEventListener("beforeunload", beforeUnload);
     return () => window.removeEventListener("beforeunload", beforeUnload);
-  }, [isSaved]);
+  }, [isSaved, workspace]);
 
   const onStatus = useCallback((id: string, message: string | null) => setDrafts((previous) => {
     if (previous[id] === message || (!message && !(id in previous))) return previous;
@@ -400,11 +406,15 @@ export default function ConstructorEditor() {
     try { const loaded = await loadWorkspace(id); if (loaded) { journey.current.open(loaded.project, "resume"); setGuideVisible(false); setHistory({ present: loaded, past: [], future: [] }); setSelectedRoomId(loaded.project.rooms[0]?.id ?? ""); setModal(null); setSelectedPieceId(undefined); } }
     catch (error) { setNotice(error instanceof Error ? error.message : "Проект не загрузился."); }
   };
-  const createProject = () => {
-    const next = createWorkspace(); setHistory({ present: next, past: [], future: [] }); setSelectedRoomId(next.project.rooms[0]?.id ?? ""); setModal(null); setSelectedPieceId(undefined); setTab("room");
-    journey.current.open(next.project, "new"); setGuideVisible(guideAllowed());
+  const createProject = (next: ConstructorWorkspace, baseline: ConstructorProject, scenario?: ConstructorScenario) => {
+    journey.current.open(baseline, "new", scenario); journey.current.observe(next.project);
+    setHistory({ present: next, past: [], future: [] }); setSelectedRoomId(next.project.rooms[0]?.id ?? "");
+    setProjectSetup(null); setModal(null); setSelectedPieceId(undefined); setSelectedTile(undefined); setSelectedWall(0);
+    setView("3d"); setPanel(null); setFurnished(true); setTab(scenario === "bathroom" ? "walls" : "floor");
+    setNotice(""); setSaved("pending"); setGuideVisible(guideAllowed());
   };
 
+  if (projectSetup) return <ConstructorProjectSetupScreen scenario={projectSetup.scenario} onCreate={createProject} onCancel={() => router.push(CONSTRUCTOR_URL)} />;
   if (!workspace || !history) return <div className={styles.loading}><span className={styles.brandMark}>М</span><h1>Конструктор Мастерок</h1><p>Открываем ваш проект…</p></div>;
 
   const tree = <>
@@ -644,7 +654,8 @@ export default function ConstructorEditor() {
     </ModalWindow>}
 
     {modal === "add-room" && <ModalWindow title="Добавить помещение" aboveNotice onClose={() => setModal(null)}><RoomCreationForm existingNames={workspace.project.rooms.map((item) => item.name)} blocked={!!pendingDraft || workspace.project.rooms.length >= 100} onCreate={addRoom} onCancel={() => setModal(null)} /></ModalWindow>}
-    {modal === "projects" && <ModalWindow title="Проекты в этом браузере" onClose={() => setModal(null)}><div className={styles.modalBody}><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={createProject}><Plus size={17} />Новый проект</button><button className={styles.secondaryButton} type="button" onClick={() => { setModal(null); fileInput.current?.click(); }}>Импорт файла</button></div><div className={styles.projectList}>{projects.map((project) => <button type="button" key={project.id} onClick={() => void loadProject(project.id)}><FolderOpen size={23} /><span><strong>{project.name}</strong><small>{project.rooms} помещ. · {new Date(project.updatedAt).toLocaleDateString("ru-RU")}</small></span>{project.id === workspace.project.id && <Check size={18} />}</button>)}</div></div></ModalWindow>}
+    {modal === "new-project" && <ModalWindow title="Новый проект" aboveNotice onClose={() => setModal("projects")}><ConstructorProjectSetup onCreate={createProject} onCancel={() => setModal("projects")} /></ModalWindow>}
+    {modal === "projects" && <ModalWindow title="Проекты в этом браузере" onClose={() => setModal(null)}><div className={styles.modalBody}><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={() => setModal("new-project")}><Plus size={17} />Новый проект</button><button className={styles.secondaryButton} type="button" onClick={() => { setModal(null); fileInput.current?.click(); }}>Импорт файла</button></div><div className={styles.projectList}>{projects.map((project) => <button type="button" key={project.id} onClick={() => void loadProject(project.id)}><FolderOpen size={23} /><span><strong>{project.name}</strong><small>{project.rooms} помещ. · {new Date(project.updatedAt).toLocaleDateString("ru-RU")}</small></span>{project.id === workspace.project.id && <Check size={18} />}</button>)}</div></div></ModalWindow>}
 
     {modal === "remove-room" && <ModalWindow title="Удалить помещение?" onClose={() => setModal(null)}><div className={styles.modalBody}><p>Помещение «{room?.name}» и его покрытие будут удалены из текущего проекта. Действие можно отменить.</p><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={() => { commit((current) => { current.project.rooms = current.project.rooms.filter((item) => item.id !== room?.id); }); setSelectedRoomId(workspace.project.rooms.find((item) => item.id !== room?.id)?.id ?? ""); setSelectedPieceId(undefined); setModal(null); }}>Удалить помещение</button><button className={styles.secondaryButton} type="button" onClick={() => setModal(null)}>Оставить</button></div></div></ModalWindow>}
     {modal === "wall-cuts" && room && roomResult && <ModalWindow title="Подрезки плитки" onClose={() => setModal(null)}><WallCutReview room={room} entries={wallCutEntries} assignedWalls={roomResult.walls.map((wall) => wall.wall)} onShowTile={showTileCut} /></ModalWindow>}

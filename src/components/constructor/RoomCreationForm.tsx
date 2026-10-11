@@ -11,14 +11,17 @@ import common from "./constructor.module.css";
 
 type Dimension = "widthMm" | "lengthMm" | "heightMm";
 
-export default function RoomCreationForm({ existingNames, blocked, onCreate, onCancel }: {
+export default function RoomCreationForm({ existingNames, blocked, onCreate, onCancel, initialRoom, initialStep = "type", intent = "room" }: {
   existingNames: readonly string[];
   blocked: boolean;
   onCreate: (room: ConstructorRoom) => string | undefined;
   onCancel: () => void;
+  initialRoom?: ConstructorRoom;
+  initialStep?: "type" | "dimensions";
+  intent?: "room" | "project";
 }) {
-  const [step, setStep] = useState<"type" | "dimensions">("type");
-  const [room, setRoom] = useState(() => createInteriorRoom("living", existingNames));
+  const [step, setStep] = useState<"type" | "dimensions">(initialStep);
+  const [room, setRoom] = useState(() => initialRoom ?? createInteriorRoom("living", existingNames));
   const [edited, setEdited] = useState<Partial<Record<Dimension | "name", boolean>>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -49,7 +52,7 @@ export default function RoomCreationForm({ existingNames, blocked, onCreate, onC
   };
 
   return <div className={styles.form}>
-    <ol className={styles.steps} aria-label="Этапы добавления помещения">
+    <ol className={styles.steps} aria-label={intent === "project" ? "Этапы создания проекта" : "Этапы добавления помещения"}>
       <li aria-current={step === "type" ? "step" : undefined}><span>1</span>Тип помещения</li>
       <li aria-current={step === "dimensions" ? "step" : undefined}><span>2</span>Ваши размеры</li>
     </ol>
@@ -66,14 +69,14 @@ export default function RoomCreationForm({ existingNames, blocked, onCreate, onC
           <NumberField label="Длина" value={room.lengthMm} min={300} max={30000} unit="мм" onStatus={onStatus} onCommit={(value) => setDimension("lengthMm", value)} />
           <NumberField label="Высота" value={room.heightMm} min={500} max={6000} unit="мм" onStatus={onStatus} onCommit={(value) => setDimension("heightMm", value)} />
         </div>
-        <p className={styles.note}>Двери, окна и отделку можно настроить после добавления. Обстановка показана для масштаба и не входит в ведомость.</p>
+        <p className={styles.note}>Двери, окна и отделку можно настроить в редакторе. Обстановка показана для масштаба и не входит в ведомость.</p>
       </>}
       {error && <p className={styles.error} role="alert">{error}</p>}
     </div>
     <div className={styles.footer}>
       {step === "type"
         ? <button type="button" className={common.primaryButton} disabled={blocked} onClick={() => setStep("dimensions")}>Далее: размеры<ArrowRight size={18} /></button>
-        : <button type="button" className={common.primaryButton} disabled={blocked || !!pending} onClick={() => { if (!pending) setError(onCreate(room) ?? ""); }}><Plus size={18} />Добавить помещение</button>}
+        : <button type="button" className={common.primaryButton} disabled={blocked || !!pending} onClick={() => { if (!pending) setError(onCreate(room) ?? ""); }}>{intent === "project" ? <ArrowRight size={18} /> : <Plus size={18} />}{intent === "project" ? "Открыть 3D-проект" : "Добавить помещение"}</button>}
       <button type="button" className={common.secondaryButton} onClick={onCancel}>Отмена</button>
       {pending && <p className={styles.pending} role="status">{pending}</p>}
     </div>

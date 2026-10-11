@@ -4,13 +4,14 @@ import Link from "next/link";
 import { ArrowUpRight, Bath, Box, Check, Download, Layers, Ruler } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
-import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_URL, scenarioHref } from "@/lib/constructor/entry";
+import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
+import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 import styles from "@/components/constructor/constructor-entry.module.css";
 
-const description = "Спланируйте ванную в 3D онлайн: расставьте сантехнику и стиральную машину, разложите плитку на полу и стенах, проверьте подрезки и упаковки. Без регистрации.";
+const description = "Создайте ванную по своим размерам в 3D: расставьте сантехнику и стиральную машину, разложите плитку на полу и стенах, проверьте подрезки и упаковки. Без регистрации.";
 const url = `${SITE_URL}${CONSTRUCTOR_BATHROOM_URL}`;
 
 export const metadata: Metadata = buildPageMetadata({
@@ -22,7 +23,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 const questions = [
-  { question: "Можно ли начать со своей ванной, а не с примера?", answer: "Да. Откройте пример и замените его размеры на свои: ширину, длину, высоту и дверной проём. Размеры условных предметов тоже меняются. Лишние предметы можно убрать, а нужные — добавить. Пример создаётся как отдельный проект и не заменяет сохранённые работы." },
+  { question: "Как начать проект своей ванной?", answer: "Нажмите «Создать ванную», укажите название, ширину, длину и высоту в миллиметрах, затем нажмите «Открыть 3D-проект». В редакторе добавьте дверной проём, настройте размеры и положение сантехники. Новая работа сохраняется после подтверждения и не заменяет другие проекты. Для знакомства есть отдельная кнопка «Открыть готовый пример»." },
   { question: "Как учесть дверь и плитку на разных стенах?", answer: "Добавьте дверь в параметрах помещения и задайте её размеры и положение. Проём учитывается в раскладке. Плитку можно настроить для каждой стены отдельно или связать раскладку по периметру. В развёртках удобно проверить ряды и подрезки около проёма." },
   { question: "Можно ли двигать стиральную машину и сантехнику?", answer: "Да. Выберите предмет в 3D, нажмите «Двигать» и перенесите его. Можно повернуть предмет или задать положение и размеры в параметрах. Конструктор показывает пересечения, но не проверяет подключения, открывание техники и необходимые монтажные зазоры. Обстановка условная и не входит в ведомость материалов." },
   { question: "Получится ли точная смета ремонта ванной?", answer: "Ведомость показывает материалы отделки по настройкам проекта: потребность, запас и округление до упаковок. Для оценки стоимости укажите цены выбранных товаров. Это не полная смета ремонта: работа мастеров, сантехника, трубы, электрика, гидроизоляция и подготовка основания в неё не включены." },
@@ -47,7 +48,7 @@ export default function BathroomConstructorPage() {
       <div className={styles.heroCopy}>
         <p className={styles.productName}><Bath size={19} />Конструктор Мастерок</p>
         <h1 id="bathroom-title">3D-конструктор<br /> вашей ванной.</h1>
-        <p className={styles.intro}>Начните с готовой ванной. Подставьте свои размеры, расставьте сантехнику и стиральную машину. Примерьте плитку на полу и стенах и получите список материалов.</p>
+        <p className={styles.intro}>Задайте размеры своей ванной перед открытием редактора. Расставьте сантехнику и стиральную машину, примерьте плитку на полу и стенах и получите список материалов.</p>
         <ConstructorStartActions scenario="bathroom" />
       </div>
       <figure className={styles.heroPreview}>
@@ -57,7 +58,7 @@ export default function BathroomConstructorPage() {
       </figure>
     </section>
     <nav className={styles.pageNav} aria-label="На этой странице">
-      <a href="#bathroom-steps">Как спланировать</a><a href="#bathroom-materials">Что в ведомости</a><a href="#bathroom-questions">Вопросы и ограничения</a>
+      <a href="#bathroom-steps">Как спланировать</a><a href="#constructor-measurements">Какие размеры нужны</a><a href="#bathroom-materials">Что в ведомости</a><a href="#bathroom-questions">Вопросы и ограничения</a>
     </nav>
     <section id="bathroom-steps" className={`${styles.section} ${styles.workflow}`} aria-labelledby="bathroom-steps-title">
       <div><h2 id="bathroom-steps-title">От размеров ванной<br /> до раскладки плитки</h2><p className={styles.intro}>На телефоне и компьютере вы работаете с одним и тем же редактором. Размеры меняются ползунками; для точного ввода нажмите на значение.</p><p className={styles.toolsNote}>Подготовьте размеры помещения, двери и выбранной сантехники. Для закупки пригодятся формат плитки, фасовка и цена с упаковки или карточки товара.</p></div>
@@ -68,6 +69,7 @@ export default function BathroomConstructorPage() {
         <li><span>4</span><div><h3>Проверьте ведомость</h3><p>Сверьте запас и упаковку с выбранным товаром, добавьте цены. Скачайте PDF со схемами или Excel со списком материалов; файл проекта сохраните для дальнейшего редактирования.</p></div></li>
       </ol>
     </section>
+    <ConstructorMeasureGuide bathroom />
     <section id="bathroom-materials" className={styles.section} aria-labelledby="bathroom-materials-title">
       <div className={styles.sectionHeading}><div><h2 id="bathroom-materials-title">Материалы, схемы и файлы</h2><p>Потребность по раскладке, дополнительный запас и целые упаковки показаны отдельно.</p></div></div>
       <dl className={styles.materialList}>
@@ -82,6 +84,6 @@ export default function BathroomConstructorPage() {
       <div><h2 id="bathroom-questions-title">Перед началом</h2><p>Сохранение, расчёт материалов<br />и границы редактора.</p><Link href={classicLayoutHref("tile")} prefetch={false} className={styles.textAction}>Отдельная раскладка плитки <ArrowUpRight size={17} /></Link></div>
       <div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div>
     </section>
-    <section className={styles.closingAction} aria-label="Начать проект ванной"><div><h2>Примерьте свою ванную</h2><p>Откройте готовый пример и начните с размеров.</p></div><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.primaryAction}>Создать ванную <ArrowUpRight size={19} /></Link></section>
+    <section className={styles.closingAction} aria-label="Начать проект ванной"><div><h2>Примерьте свою ванную</h2><p>Задайте размеры и откройте свой 3D-проект.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Посмотреть готовый пример <ArrowUpRight size={17} /></Link></div><Link href={projectStartHref("bathroom")} prefetch={false} className={styles.primaryAction}>Создать ванную <ArrowUpRight size={19} /></Link></section>
   </div>;
 }

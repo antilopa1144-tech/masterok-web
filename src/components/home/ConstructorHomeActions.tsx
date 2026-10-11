@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Check, FolderOpen } from "lucide-react";
-import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL, projectStartHref } from "@/lib/constructor/entry";
 import { pluralizeRu } from "@/lib/format/pluralize";
 import ConstructorEntryLink from "@/components/constructor/ConstructorEntryLink";
 import ConstructorSavedProjects from "@/components/constructor/ConstructorSavedProjects";
@@ -13,7 +13,7 @@ export default function ConstructorHomeActions() {
   const project = useSavedConstructorProject();
   return <>
     <div className={styles.actions}>
-      <ConstructorEntryLink placement={project ? "home_resume" : "home_primary"} href={project ? `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(project.id)}` : CONSTRUCTOR_EDITOR_URL} prefetch={false} className={styles.primary}>
+      <ConstructorEntryLink placement={project ? "home_resume" : "home_primary"} scenario={project ? "continue" : "room"} href={project ? `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(project.id)}` : projectStartHref()} prefetch={false} className={styles.primary}>
         {project ? <FolderOpen size={20} aria-hidden="true" /> : null}{project ? "Продолжить проект" : "Открыть конструктор"}<ArrowRight size={20} aria-hidden="true" />
       </ConstructorEntryLink>
       <Link href={CONSTRUCTOR_URL} prefetch={false} className={styles.secondary}>Посмотреть возможности</Link>

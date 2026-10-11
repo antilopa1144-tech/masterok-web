@@ -3,13 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Box, Check, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
+import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
 import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 import styles from "@/components/constructor/constructor-entry.module.css";
 
-const description = "Спланируйте отделку комнаты в 3D: раскладка ламината и плитки, развёртки стен, подрезки и материалы к покупке. Бесплатный онлайн-конструктор без регистрации.";
+const description = "Создайте комнату по своим размерам: отделка в 3D, раскладка ламината и плитки, развёртки стен и упаковки к покупке. Бесплатный онлайн-конструктор без регистрации.";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "3D-конструктор комнаты: плитка и ламинат онлайн",
@@ -20,6 +21,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 const questions = [
+  { question: "Как начать проект по своим размерам?", answer: "Нажмите «Создать свой проект», выберите тип помещения и укажите его название, ширину, длину и высоту в миллиметрах. Нажмите «Открыть 3D-проект» — редактор откроется с этим помещением. До подтверждения новая работа не сохраняется. Двери, окна, обстановку и отделку можно настроить позже. Для знакомства с редактором есть отдельные готовые примеры." },
   { question: "Что можно спланировать в конструкторе?", answer: "Прямоугольные комнаты с дверями и окнами. Можно задать размеры, выбрать ламинат или плитку для пола, разложить плитку на стенах и расставить условную мебель. Комнаты объединяются в один проект." },
   { question: "Можно ли рассчитать материалы для нескольких помещений?", answer: "Да. Нажмите «Добавить помещение», выберите тип — например, ванную, кухню или спальню — и задайте название, ширину, длину и высоту. Для каждого помещения можно выбрать свою отделку. В общей ведомости материалы собираются по всему проекту, а одинаковый товар объединяется перед округлением до упаковок. Размеры меняются ползунками или точным вводом по нажатию на значение." },
   { question: "Как считается количество материалов?", answer: "Раскладка учитывает размеры элементов, швы, направление и подрезки. В ведомости отдельно показаны потребность, запас и упаковки к покупке. Фасовку и цену можно задать по выбранному товару. Для плитки доступны настройки клея и затирки." },
@@ -57,7 +59,7 @@ export default function ConstructorPage() {
       <div className={styles.heroCopy}>
         <div className={styles.productName}><Box size={21} />Конструктор Мастерок</div>
         <h1 id="constructor-title">Ваша комната.<br /> От размеров<br /> до материалов.</h1>
-        <p className={styles.intro}>Спланируйте отделку в 3D. Посмотрите раскладку плитки и ламината, проверьте подрезки и узнайте, сколько упаковок покупать.</p>
+        <p className={styles.intro}>Создайте помещение по своим размерам и спланируйте отделку в 3D. Посмотрите раскладку плитки и ламината, проверьте подрезки и узнайте, сколько упаковок покупать.</p>
         <ConstructorStartActions />
       </div>
       <figure className={styles.heroPreview}>
@@ -70,25 +72,26 @@ export default function ConstructorPage() {
       <span><Ruler size={19} />Размеры и проёмы</span><span><Layers size={19} />Отделка и подрезки</span><span><Box size={19} />Упаковки к покупке</span><span><Download size={19} />PDF, PNG и Excel</span>
     </div>
     <section id="scenarios" className={styles.section} aria-labelledby="scenarios-title">
-      <div className={styles.sectionHeading}><div><h2 id="scenarios-title">С чего начнём?</h2><p>Откройте пример и измените размеры под своё помещение.</p></div><span className={styles.quiet}>Каждый пример — отдельный проект</span></div>
+      <div className={styles.sectionHeading}><div><h2 id="scenarios-title">Попробуйте на готовом примере</h2><p>Посмотрите, как устроен редактор. Любой пример можно изменить под своё помещение.</p></div><span className={styles.quiet}>Каждый пример — отдельный проект</span></div>
       <div className={styles.scenarios}>
         {CONSTRUCTOR_SCENARIOS.map((scenario) => <Link key={scenario.id} href={scenarioHref(scenario.id)} prefetch={false} className={styles.scenario}>
           <div className={`${styles.scenarioVisual} ${scenario.id === "laminate" || scenario.id === "tile" ? styles.laminateVisual : ""}`}>
             <Image src={scenario.id === "bathroom" ? "/images/constructor/bathroom-tiled-entry.jpg" : scenario.id === "laminate" ? "/images/laminate-textures/natural-oak.webp" : scenario.id === "tile" ? "/images/tile-textures/limestone.webp" : "/images/constructor/room-editor.jpg"} alt="" fill sizes="(max-width: 650px) 100vw, (max-width: 1100px) 50vw, 25vw" />
             <span>{scenario.id === "bathroom" ? "Пол и стены" : scenario.id === "laminate" ? "Ряды и стыки" : scenario.id === "tile" ? "Швы и подрезки" : "Размеры и отделка"}</span>
           </div>
-          <div className={styles.scenarioCopy}><h3>{scenario.title}</h3><p>{scenario.description}</p><span className={styles.scenarioAction}>{scenario.action}<ArrowUpRight size={20} /></span></div>
+          <div className={styles.scenarioCopy}><h3>{scenario.title}</h3><p>{scenario.description}</p><span className={styles.scenarioAction}>Открыть пример<ArrowUpRight size={20} /></span></div>
         </Link>)}
       </div>
     </section>
     <section className={`${styles.section} ${styles.workflow}`} aria-labelledby="workflow-title">
       <div><h2 id="workflow-title">Сначала проверьте<br /> на экране.</h2><p className={styles.intro}>Поменять направление досок или начало раскладки проще до покупки и укладки.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Попробовать на ванной <ArrowUpRight size={18} /></Link><p className={styles.toolsNote}><Link href={CONSTRUCTOR_BATHROOM_URL}>Конструктор ванной: от расстановки до плитки</Link> — что задать в проекте и как получить ведомость.</p></div>
       <ol className={styles.steps}>
-        <li><span>1</span><div><h3>Задайте помещение</h3><p>Размеры комнаты, двери и окна. Добавьте другие помещения, если планируете несколько сразу.</p></div></li>
+        <li><span>1</span><div><h3>Задайте помещение</h3><p>В новом проекте выберите тип и задайте свои размеры. Двери и окна добавьте в редакторе. Другие помещения можно объединить в ту же работу.</p></div></li>
         <li><span>2</span><div><h3>Сравните отделку</h3><p>Выберите формат и направление. Рассмотрите швы, крайние подрезки и развёртки стен. Сохраните варианты для сравнения.</p></div></li>
         <li><span>3</span><div><h3>Соберите список материалов</h3><p>Проверьте запас и фасовку, укажите свои цены и скачайте ведомость вместе со схемами.</p></div></li>
       </ol>
     </section>
+    <ConstructorMeasureGuide />
     <section className={styles.section} aria-labelledby="quick-tools-title">
       <div className={styles.sectionHeading}><div><h2 id="quick-tools-title">Для отдельных задач</h2><p>Ёлочка, диагональ и другие схемы, которых пока нет в 3D.</p></div><Link href="/instrumenty/" className={styles.textAction}>Все инструменты <ArrowUpRight size={18} /></Link></div>
       <div className={styles.quickTools}>{quickTools.map(({ href, title, description: text, icon: Icon }) => <Link key={href} href={href} className={styles.quickTool}><Icon size={24} /><h3>{title}</h3><p>{text}</p></Link>)}</div>

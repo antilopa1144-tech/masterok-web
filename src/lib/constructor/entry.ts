@@ -15,9 +15,14 @@ export function scenarioHref(scenario: ConstructorScenario): string {
   return `${CONSTRUCTOR_EDITOR_URL}?start=${scenario}`;
 }
 
-export function parseConstructorEntry(search: string): { scenario?: ConstructorScenario; projectId?: string } {
+/** An explicit own-project request never resumes a saved project or saves an example. */
+export function projectStartHref(scenario?: ConstructorScenario): string {
+  return `${CONSTRUCTOR_EDITOR_URL}?new=1${scenario ? `&start=${scenario}` : ""}`;
+}
+
+export function parseConstructorEntry(search: string): { scenario?: ConstructorScenario; projectId?: string; newProject: boolean } {
   const params = new URLSearchParams(search);
   const scenario = CONSTRUCTOR_SCENARIOS.find((item) => item.id === params.get("start"))?.id;
   const projectId = params.get("project") || undefined;
-  return { scenario, projectId: projectId && projectId.length <= 150 ? projectId : undefined };
+  return { scenario, projectId: projectId && projectId.length <= 150 ? projectId : undefined, newProject: params.get("new") === "1" };
 }
