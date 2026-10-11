@@ -39,7 +39,7 @@ export function ConstructorProjectSetupScreen(props: SetupProps) {
       <Link href={`${CONSTRUCTOR_URL}#scenarios`} className={styles.back}><ArrowLeft size={17} />К примерам</Link>
       <ThemeToggle />
     </header>
-    <main className={styles.main}>
+    <div className={styles.main}>
       <div className={styles.copy}>
         <p className={styles.eyebrow}>Конструктор · Новый проект</p>
         <h1>Начнём с вашего помещения.</h1>
@@ -52,6 +52,6 @@ export function ConstructorProjectSetupScreen(props: SetupProps) {
         <p className={styles.storage}>Проект появится после подтверждения. Сохранение — в этом браузере; для переноса на другое устройство скачайте файл проекта.</p>
       </div>
       <div className={styles.card} aria-label="Первое помещение проекта"><ConstructorProjectSetup {...props} /></div>
-    </main>
+    </div>
   </section>;
 }
