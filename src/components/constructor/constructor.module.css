@@ -179,6 +179,8 @@
 .openingHeading { display: flex; justify-content: space-between; align-items: center; }
 .openingHeading strong { font-size: 13px; }
 .openingHeading .iconButton { width: 28px; height: 28px; }
+.openingActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.openingActions .secondaryButton { flex: 1; min-height: 44px; padding: 8px 10px; font-size: 12px; }
 .roomActions { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--c-line); padding-top: 10px; }
 .roomActions button { display: flex; gap: 8px; align-items: center; background: transparent; border: 0; color: var(--c-secondary); text-align: left; font-size: 12px; padding: 7px 0; }
 .purchasePreview { padding: 18px 22px 20px; border-top: 1px solid var(--c-line); display: flex; flex-direction: column; gap: 12px; background: var(--c-surface); flex-shrink: 0; box-shadow: 0 -5px 18px #22272e04; }

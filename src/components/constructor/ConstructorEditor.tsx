@@ -39,12 +39,14 @@ import { reviewWallCuts, type WallCutEntry } from "@/lib/constructor/wall-cuts";
 import styles from "./constructor.module.css";
 import { summarizeFinish } from "@/lib/constructor/comparison";
 import { purchaseCostText, purchaseFacts } from "@/lib/constructor/purchase-presentation";
+import { applyOpeningDraft, createOpeningDraft } from "@/lib/constructor/opening-draft";
+import OpeningCreationForm from "./OpeningCreationForm";
 
 const RoomScene = dynamic(() => import("./RoomScene"), { ssr: false, loading: () => <div className={styles.sceneLoading}>Загружаем 3D…</div> });
 
 type Tab = "room" | "interior" | "floor" | "walls";
 type View = "3d" | "plan" | "cuts" | "elevation";
-type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | "new-project" | null;
+type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | "new-project" | "opening" | null;
 type TileSelection = { roomId: string; wall: Wall; tileId: string; calculation: RoomCalculation; focusToken: number; bounds?: TileRect };
 const BOARD_FORMATS = LAMINATE_SIZE_PRESETS.filter((format) => !format.label.includes("ёлочка"));
 const GUIDE_DISMISSED_KEY = "masterok.constructor.quick-start.dismissed.v1";
@@ -105,6 +107,7 @@ export default function ConstructorEditor() {
   const togglePanel = useCallback(() => { setPanelHeight(null); setPanelExpanded((current) => !current); }, []);
   const resizePanel = useCallback((height: number) => { setPanelHeight(height); setPanelExpanded(height > Math.min(window.innerHeight * .57, 590) + 24); }, []);
   const [modal, setModal] = useState<Modal>(null);
+  const [openingForm, setOpeningForm] = useState<{ opening: Opening; editing: boolean } | null>(null);
   const [saved, setSaved] = useState<"loading" | "pending" | "saved" | "error" | "invalid">("loading");
   const [notice, setNotice] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -366,20 +369,22 @@ export default function ConstructorEditor() {
     copied.openings = copied.openings.map((opening) => ({ ...opening, id: newId("opening") }));
     commit((current) => current.project.rooms.push(copied)); chooseRoom(copied.id, "room");
   };
-  const addOpening = (type: Opening["type"]) => {
-    if (!room) return;
-    for (let wall = 0; wall < 4; wall++) {
-      const length = wall % 2 === 0 ? room.widthMm : room.lengthMm;
-      const width = Math.min(type === "door" ? 900 : 1400, length * .6);
-      const occupied = room.openings.filter((opening) => opening.wall === wall).sort((a, b) => a.offsetMm - b.offsetMm);
-      const candidates = [Math.max(0, (length - width) / 2), 0, ...occupied.map((opening) => opening.offsetMm + opening.widthMm)];
-      const offset = candidates.find((candidate) => candidate + width <= length && occupied.every((opening) => candidate >= opening.offsetMm + opening.widthMm || candidate + width <= opening.offsetMm));
-      if (offset === undefined) continue;
-      const sill = type === "door" ? 0 : Math.min(900, room.heightMm * .3);
-      const added: Opening = { id: newId("opening"), type, wall: wall as Opening["wall"], offsetMm: Math.round(offset), widthMm: Math.round(width), heightMm: Math.min(type === "door" ? 2100 : 1400, room.heightMm - sill), sillMm: sill };
-      updateRoom((current) => current.openings.push(added)); return;
-    }
-    setNotice("На стенах нет свободного места для нового проёма. Измените положение или ширину существующих проёмов.");
+  const openOpeningForm = (type: Opening["type"], existing?: Opening) => {
+    if (!room || pendingDraft || placementGesture || (!existing && validation.length)) return;
+    setOpeningForm({ opening: existing ?? createOpeningDraft(room, type, selectedWall, newId("opening")), editing: !!existing });
+    setModal("opening");
+  };
+  const confirmOpening = (opening: Opening): string | undefined => {
+    if (!workspace || !room || !openingForm || pendingDraft || placementGesture) return "Завершите изменение параметров проекта.";
+    try {
+      const next = applyOpeningDraft(workspace.project, room.id, opening, openingForm.editing);
+      commit((current) => { current.project = next; }); setSelectedWall(opening.wall); setSelectedTile(undefined);
+      setModal(null); setOpeningForm(null); setTab("room"); setPanel("properties");
+      requestAnimationFrame(() => {
+        const card = Array.from(document.querySelectorAll<HTMLElement>("[data-opening-id]")).find((item) => item.dataset.openingId === opening.id);
+        scrollPropertiesTo(card ?? null); card?.querySelector<HTMLButtonElement>('button[aria-label^="Изменить"]')?.focus({ preventScroll: true });
+      });
+    } catch (error) { return error instanceof Error ? error.message : "Не удалось сохранить проём."; }
   };
 
   const performExport = async (kind: "png" | "pdf" | "xlsx" | "project") => {
@@ -540,14 +545,12 @@ export default function ConstructorEditor() {
             <p className={styles.hint}>Размеры внутри помещения. Нумерация стен и отступы проёмов идут по часовой стрелке от верхнего левого угла плана.</p>
             <div className={styles.sectionHeading}><h3>Двери и окна</h3></div>
             {room.openings.length === 0 && <p className={styles.hint}>Добавьте проёмы — они появятся на плане и в 3D. Двери исключаются из длины плинтуса.</p>}
-            {room.openings.map((opening, index) => <div className={styles.openingCard} key={opening.id}>
-              <div className={styles.openingHeading}><strong>{opening.type === "door" ? "Дверь" : "Окно"} {index + 1}</strong><IconButton label={`Удалить проём ${index + 1}`} onClick={() => updateRoom((current) => { current.openings = current.openings.filter((item) => item.id !== opening.id); })}><Trash2 size={16} /></IconButton></div>
-              <label className={styles.field}><span>Стена</span><select value={opening.wall} aria-label={`Стена проёма ${index + 1}`} onChange={(event) => updateRoom((current) => { current.openings.find((item) => item.id === opening.id)!.wall = Number(event.target.value) as Opening["wall"]; })}>{[0, 1, 2, 3].map((wall) => <option value={wall} key={wall}>Стена {wall + 1}</option>)}</select></label>
-              <NumberField label={`Отступ проёма ${index + 1}`} value={opening.offsetMm} max={30000} unit="мм" onStatus={onStatus} onCommit={(value) => updateRoom((current) => { current.openings.find((item) => item.id === opening.id)!.offsetMm = value; })} />
-              <div className={styles.fieldRow}>{(["widthMm", "heightMm"] as const).map((field) => <NumberField key={field} label={`${field === "widthMm" ? "Ширина" : "Высота"} проёма ${index + 1}`} value={opening[field]} min={100} max={30000} unit="мм" onStatus={onStatus} onCommit={(value) => updateRoom((current) => { current.openings.find((item) => item.id === opening.id)![field] = value; })} />)}</div>
-              {opening.type === "window" && <NumberField label={`Высота подоконника ${index + 1}`} value={opening.sillMm} max={6000} unit="мм" onStatus={onStatus} onCommit={(value) => updateRoom((current) => { current.openings.find((item) => item.id === opening.id)!.sillMm = value; })} />}
+            {room.openings.map((opening, index) => <div className={styles.openingCard} key={opening.id} data-opening-id={opening.id}>
+              <div className={styles.openingHeading}><strong>{opening.type === "door" ? "Дверь" : "Окно"} {index + 1}</strong><IconButton label={`Удалить проём ${index + 1}`} disabled={!!pendingDraft || placementGesture} onClick={() => updateRoom((current) => { current.openings = current.openings.filter((item) => item.id !== opening.id); })}><Trash2 size={16} /></IconButton></div>
+              <p className={styles.hint}>Стена {opening.wall + 1} · {formatNumber(opening.widthMm)} × {formatNumber(opening.heightMm)} мм<br />Отступ {formatNumber(opening.offsetMm)} мм{opening.type === "window" ? ` · подоконник ${formatNumber(opening.sillMm)} мм` : ""}</p>
+              <div className={styles.openingActions}><button className={styles.secondaryButton} type="button" aria-label={`Изменить ${opening.type === "door" ? "дверь" : "окно"} ${index + 1}`} disabled={!!pendingDraft || placementGesture} onClick={() => openOpeningForm(opening.type, opening)}><Pencil size={14} />Изменить</button><button className={styles.secondaryButton} type="button" aria-label={`Показать проём ${index + 1} на стене`} disabled={!!pendingDraft || !!validation.length} onClick={() => { setSelectedWall(opening.wall); setSelectedTile(undefined); setView("elevation"); setPanel(null); }}><Square size={14} />На стене</button></div>
             </div>)}
-            <div className={styles.fieldRow}><button className={styles.secondaryButton} type="button" onClick={() => addOpening("door")}><Plus size={16} />Дверь</button><button className={styles.secondaryButton} type="button" onClick={() => addOpening("window")}><Plus size={16} />Окно</button></div>
+            <div className={styles.openingActions}><button className={styles.secondaryButton} type="button" disabled={!!pendingDraft || placementGesture || !!validation.length} onClick={() => openOpeningForm("door")}><Plus size={16} />Дверь</button><button className={styles.secondaryButton} type="button" disabled={!!pendingDraft || placementGesture || !!validation.length} onClick={() => openOpeningForm("window")}><Plus size={16} />Окно</button></div>
             <div className={styles.roomActions}><button type="button" onClick={duplicateRoom}><Copy size={16} />Дублировать комнату</button><button type="button" onClick={() => setModal("remove-room")}><Trash2 size={16} />Удалить комнату</button></div>
           </> : tab === "interior" ? <RoomInteriorControls room={room} blocked={!!pendingDraft || placementGesture} onArrange={arrangeFurnishings} onChange={(interior) => updateRoom((current) => { current.interior = interior; })}>
             <FurnishingPlacementControls room={room} selectedId={activeFurnishing} blocked={!!pendingDraft || placementGesture} onSelect={(id) => { setSelectedFurnishing(id); if (id) showFurnishingProperties(); }} onPosition={setFurnishingPosition} onReset={resetFurnishingPosition} onResetAll={resetAllFurnishingPositions} onDimensions={setFurnishingDimensions} onDuplicate={duplicateFurnishing} onRemove={removeFurnishing} onStatus={onStatus} />
@@ -654,6 +657,7 @@ export default function ConstructorEditor() {
     </ModalWindow>}
 
     {modal === "add-room" && <ModalWindow title="Добавить помещение" aboveNotice onClose={() => setModal(null)}><RoomCreationForm existingNames={workspace.project.rooms.map((item) => item.name)} blocked={!!pendingDraft || workspace.project.rooms.length >= 100} onCreate={addRoom} onCancel={() => setModal(null)} /></ModalWindow>}
+    {modal === "opening" && openingForm && room && <ModalWindow title={`${openingForm.editing ? "Изменить" : "Добавить"} ${openingForm.opening.type === "door" ? "дверь" : "окно"}`} aboveNotice onClose={() => { setModal(null); setOpeningForm(null); }}><OpeningCreationForm project={workspace.project} room={room} initialOpening={openingForm.opening} editing={openingForm.editing} blocked={!!pendingDraft || placementGesture} onConfirm={confirmOpening} onCancel={() => { setModal(null); setOpeningForm(null); }} /></ModalWindow>}
     {modal === "new-project" && <ModalWindow title="Новый проект" aboveNotice onClose={() => setModal("projects")}><ConstructorProjectSetup onCreate={createProject} onCancel={() => setModal("projects")} /></ModalWindow>}
     {modal === "projects" && <ModalWindow title="Проекты в этом браузере" onClose={() => setModal(null)}><div className={styles.modalBody}><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={() => setModal("new-project")}><Plus size={17} />Новый проект</button><button className={styles.secondaryButton} type="button" onClick={() => { setModal(null); fileInput.current?.click(); }}>Импорт файла</button></div><div className={styles.projectList}>{projects.map((project) => <button type="button" key={project.id} onClick={() => void loadProject(project.id)}><FolderOpen size={23} /><span><strong>{project.name}</strong><small>{project.rooms} помещ. · {new Date(project.updatedAt).toLocaleDateString("ru-RU")}</small></span>{project.id === workspace.project.id && <Check size={18} />}</button>)}</div></div></ModalWindow>}
 

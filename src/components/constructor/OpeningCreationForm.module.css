@@ -1,0 +1,44 @@
+.form { display: flex; flex-direction: column; min-height: 0; }
+.body { position: relative; display: grid; grid-template-columns: .85fr 1.15fr; gap: 28px; padding: 22px 24px; overflow-y: auto; min-height: 0; }
+.location, .parameters { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.roomName { color: var(--c-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.body h3 { font-size: 15px; font-weight: 650; }
+.plan, .elevation { margin: 0; padding: 12px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-muted); }
+.plan figcaption, .elevation figcaption { color: var(--c-secondary); font-size: 11px; line-height: 1.5; }
+.plan svg, .elevation svg { display: block; width: 100%; height: 174px; overflow: hidden; }
+.plan text, .elevation text { fill: var(--c-secondary); font-size: 11px; }
+.planRoom { fill: var(--c-surface); stroke: var(--c-secondary); stroke-width: 2; }
+.selectedWall { stroke: var(--c-accent); stroke-width: 4; opacity: .35; }
+.existingOpening { stroke: #5795ba; stroke-width: 5; }
+.draftOpening { stroke: var(--c-accent); stroke-width: 6; }
+.corner { fill: var(--c-accent); stroke: var(--c-surface); stroke-width: 2; }
+.plan text.activeLabel { fill: var(--c-accent); font-weight: 700; }
+.legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--c-secondary); font-size: 10px; }
+.legend span, .legend i { width: 14px; height: 4px; background: var(--c-accent); border-radius: 2px; }
+.legend i { margin-left: 8px; background: #5795ba; }
+.wallPicker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.wallPicker button { display: flex; align-items: flex-start; flex-direction: column; gap: 3px; min-height: 52px; padding: 10px 12px; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); color: var(--c-text); text-align: left; }
+.wallPicker button strong { font-size: 12px; font-weight: 600; }
+.wallPicker button span { font-size: 11px; color: var(--c-secondary); }
+.wallPicker button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-tint); }
+.wallPicker button[aria-pressed="true"] strong { color: var(--c-accent); }
+.elevationWall { fill: var(--c-surface); stroke: var(--c-secondary); stroke-width: 1.5; }
+.elevationExisting { fill: #5795ba33; stroke: #5795ba; stroke-width: 1.5; }
+.elevationDraft { fill: var(--c-tint); stroke: var(--c-accent); stroke-width: 2; }
+.offsetLine { fill: none; stroke: var(--c-secondary); stroke-width: 1; }
+.sizes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.note { color: var(--c-secondary); font-size: 12px; line-height: 1.65; }
+.error { color: var(--c-warning); font-size: 12px; line-height: 1.65; padding: 10px 12px; background: var(--c-warning-bg); border-radius: 7px; }
+.footer { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--c-line); flex-shrink: 0; }
+.footer > button { min-height: 44px; }
+.footer .note { flex-basis: 100%; }
+.footer .error { flex-basis: 100%; }
+@media (max-width: 720px) {
+  .body { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 18px; }
+  .location, .parameters { gap: 14px; }
+  .plan svg { height: 140px; }
+  .elevation svg { height: 150px; }
+  .sizes { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .footer { padding: 12px 18px; }
+  .footer > button:first-child { flex: 1; }
+}
