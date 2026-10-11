@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect, type RoomType } from "@/lib/constructor/core";
-import { createInteriorRoom, dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, presetFor, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
+import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
+import { dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
 import { cloneValue, commitWorkspace, createWorkspace, MAX_VARIANTS, newId, readWorkspaceFile, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
 import { CONSTRUCTOR_EDITOR_URL, parseConstructorEntry } from "@/lib/constructor/entry";
@@ -27,7 +27,8 @@ import WallTileInspector from "./WallTileInspector";
 import VariantComparison from "./VariantComparison";
 import WallCutReview from "./WallCutReview";
 import WallLayoutPreview from "./WallLayoutPreview";
-import RoomInteriorControls, { RoomTypeIcon, RoomTypePicker } from "./RoomInteriorControls";
+import RoomInteriorControls, { RoomTypeIcon } from "./RoomInteriorControls";
+import RoomCreationForm from "./RoomCreationForm";
 import FurnishingPlacementControls from "./FurnishingPlacementControls";
 import SceneFurnishingControls from "./SceneFurnishingControls";
 import FloorTileInspector from "./FloorTileInspector";
@@ -66,7 +67,7 @@ function ModalWindow({ title, children, onClose, wide = false, aboveNotice = fal
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); }
+      if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); closeRef.current(); }
       if (event.key !== "Tab") return;
       const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>("button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex='0']") ?? []);
       const first = controls[0]; const last = controls[controls.length - 1];
@@ -102,7 +103,6 @@ export default function ConstructorEditor() {
   const togglePanel = useCallback(() => { setPanelHeight(null); setPanelExpanded((current) => !current); }, []);
   const resizePanel = useCallback((height: number) => { setPanelHeight(height); setPanelExpanded(height > Math.min(window.innerHeight * .57, 590) + 24); }, []);
   const [modal, setModal] = useState<Modal>(null);
-  const [newRoomType, setNewRoomType] = useState<RoomType>("living");
   const [saved, setSaved] = useState<"loading" | "pending" | "saved" | "error" | "invalid">("loading");
   const [notice, setNotice] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -349,9 +349,10 @@ export default function ConstructorEditor() {
     window.addEventListener("keydown", keydown); return () => window.removeEventListener("keydown", keydown);
   }, [modal]);
 
-  const addRoom = () => {
-    if (pendingDraft || !workspace || workspace.project.rooms.length >= 100) return;
-    const added = createInteriorRoom(newRoomType, workspace.project.rooms.map((item) => item.name));
+  const addRoom = (added: ConstructorRoom): string | undefined => {
+    if (pendingDraft || !workspace || workspace.project.rooms.length >= 100) return "Завершите ввод в проекте и проверьте, что в нём меньше 100 помещений.";
+    const issues = validateProject({ ...workspace.project, rooms: [...workspace.project.rooms, added] });
+    if (issues.length) return `Не удалось добавить помещение: ${issues[0]}`;
     commit((current) => current.project.rooms.push(added)); chooseRoom(added.id, "room"); setModal(null); setView("3d"); setFurnished(true);
   };
   const duplicateRoom = () => {
@@ -420,7 +421,7 @@ export default function ConstructorEditor() {
         </div>}
       </div>)}
     </div>
-    <button type="button" className={styles.addRoom} disabled={!!pendingDraft || workspace.project.rooms.length >= 100} onClick={() => { setNewRoomType("living"); setModal("add-room"); }}><Plus size={18} />Добавить помещение</button>
+    <button type="button" className={styles.addRoom} disabled={!!pendingDraft || workspace.project.rooms.length >= 100} onClick={() => setModal("add-room")}><Plus size={18} />Добавить помещение</button>
     <div className={styles.treeBottom}><button type="button" onClick={() => setModal("variants")}><Layers size={18} />Сравнить варианты <span>{workspace.variants.length}</span></button><p>Проект хранится в этом браузере. Файл проекта — ваша резервная копия.</p><button type="button" onClick={() => void performExport("project")} disabled={!!pendingDraft || !!busyExport || !!validation.length}><Download size={16} />Скачать файл проекта</button></div>
   </>;
 
@@ -505,7 +506,7 @@ export default function ConstructorEditor() {
             {view !== "cuts" && view !== "elevation" && !movingFurnishingId && <div className={styles.sceneOptions}><div className={styles.sceneToggles}>{view === "3d" ? <label><input type="checkbox" checked={allWalls} onChange={(event) => setAllWalls(event.target.checked)} />Все стены</label> : !arranging && <label><input type="checkbox" checked={numbers} onChange={(event) => setNumbers(event.target.checked)} />Номера исходных {isTileFloor ? "плиток" : "досок"}</label>}<label title="Условные предметы для масштаба. Не входят в ведомость проекта."><input type="checkbox" aria-label="Пример обстановки" checked={furnished} onChange={(event) => { setFurnished(event.target.checked); if (!event.target.checked) setArrangement(false); }} />Обстановка</label><IconButton label="Настроить обстановку" onClick={showInterior}><Pencil size={16} /></IconButton><button type="button" className={styles.arrangementToggle} aria-pressed={arranging} disabled={!!pendingDraft || !interiorFor(room).items.length} onClick={() => arranging ? setArrangement(false) : arrangeFurnishings()}><Move size={15} />Расстановка</button></div><span>{arranging ? "Перетаскивайте предметы · R — поворот · Esc — отмена переноса" : view === "3d" ? "Перетаскивайте для вращения" : "Нажмите на деталь, чтобы проверить раскрой"}</span></div>}
             {selectedPiece && view === "plan" && <div className={styles.pieceInfo}><div><strong>Деталь {roomResult.pieces.indexOf(selectedPiece) + 1} · доска {selectedSourceNumber}</strong><span>{formatNumber(selectedPiece.sourceLengthMm)} × {formatNumber(selectedPiece.sourceWidthMm)} мм · ряд {selectedPiece.row + 1}</span></div><IconButton label="Убрать выделение детали" onClick={() => setSelectedPieceId(undefined)}><X size={16} /></IconButton></div>}
             {selectedFloorTile && view === "plan" && <div className={styles.pieceInfo}><div><strong>Плитка пола {roomResult.floorTiles!.cells.indexOf(selectedFloorTile) + 1} · {selectedFloorTile.isCut ? "с подрезкой" : "целая"}</strong><span>{selectedFloorTile.fragments.map((p) => `${formatNumber(p.widthMm)} × ${formatNumber(p.heightMm)} мм`).join("; ")}</span></div><IconButton label="Убрать выделение детали" onClick={() => setSelectedPieceId(undefined)}><X size={16} /></IconButton></div>}
-          </> : <div className={styles.emptyScene}><Ruler size={36} /><h2>{room ? "Проверьте размеры и параметры" : "Добавьте первое помещение"}</h2><p>{computation.error || "Задайте комнату, чтобы выбрать покрытие и получить список покупок."}</p>{!room && <button className={styles.primaryButton} type="button" onClick={addRoom}><Plus size={18} />Добавить помещение</button>}</div>}
+          </> : <div className={styles.emptyScene}><Ruler size={36} /><h2>{room ? "Проверьте размеры и параметры" : "Добавьте первое помещение"}</h2><p>{computation.error || "Задайте комнату, чтобы выбрать покрытие и получить список покупок."}</p>{!room && <button className={styles.primaryButton} type="button" onClick={() => setModal("add-room")}><Plus size={18} />Добавить помещение</button>}</div>}
         </div>
         <div className={styles.summaryBar}>
           <div><span>{showWallMetrics ? "Плитка на стене" : "Площадь комнаты"}</span><strong>{showWallMetrics ? wallResult ? `${formatNumber(wallResult.coveredAreaM2)} м²` : "—" : roomResult ? `${formatNumber(roomResult.areaM2)} м²` : "—"}</strong></div>
@@ -642,12 +643,7 @@ export default function ConstructorEditor() {
         }} />
     </ModalWindow>}
 
-    {modal === "add-room" && <ModalWindow title="Добавить помещение" aboveNotice onClose={() => setModal(null)}><div className={`${styles.modalBody} ${styles.roomCreation}`}>
-      <p>Выберите тип помещения. Размеры и обстановку можно изменить после добавления.</p>
-      <RoomTypePicker value={newRoomType} onChange={setNewRoomType} />
-      <div className={styles.modalActions}><button type="button" className={styles.primaryButton} disabled={!!pendingDraft || workspace.project.rooms.length >= 100} onClick={addRoom}><Plus size={17} />Добавить помещение</button><button type="button" className={styles.secondaryButton} onClick={() => setModal(null)}>Отмена</button></div>
-      <p className={styles.smallNote}>Пример размера: {formatNumber(presetFor(newRoomType).widthMm)} × {formatNumber(presetFor(newRoomType).lengthMm)} мм.</p>
-    </div></ModalWindow>}
+    {modal === "add-room" && <ModalWindow title="Добавить помещение" aboveNotice onClose={() => setModal(null)}><RoomCreationForm existingNames={workspace.project.rooms.map((item) => item.name)} blocked={!!pendingDraft || workspace.project.rooms.length >= 100} onCreate={addRoom} onCancel={() => setModal(null)} /></ModalWindow>}
     {modal === "projects" && <ModalWindow title="Проекты в этом браузере" onClose={() => setModal(null)}><div className={styles.modalBody}><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={createProject}><Plus size={17} />Новый проект</button><button className={styles.secondaryButton} type="button" onClick={() => { setModal(null); fileInput.current?.click(); }}>Импорт файла</button></div><div className={styles.projectList}>{projects.map((project) => <button type="button" key={project.id} onClick={() => void loadProject(project.id)}><FolderOpen size={23} /><span><strong>{project.name}</strong><small>{project.rooms} помещ. · {new Date(project.updatedAt).toLocaleDateString("ru-RU")}</small></span>{project.id === workspace.project.id && <Check size={18} />}</button>)}</div></div></ModalWindow>}
 
     {modal === "remove-room" && <ModalWindow title="Удалить помещение?" onClose={() => setModal(null)}><div className={styles.modalBody}><p>Помещение «{room?.name}» и его покрытие будут удалены из текущего проекта. Действие можно отменить.</p><div className={styles.modalActions}><button className={styles.primaryButton} type="button" onClick={() => { commit((current) => { current.project.rooms = current.project.rooms.filter((item) => item.id !== room?.id); }); setSelectedRoomId(workspace.project.rooms.find((item) => item.id !== room?.id)?.id ?? ""); setSelectedPieceId(undefined); setModal(null); }}>Удалить помещение</button><button className={styles.secondaryButton} type="button" onClick={() => setModal(null)}>Оставить</button></div></div></ModalWindow>}
