@@ -170,6 +170,7 @@ describe("sitemap chunks", () => {
       .map((match) => match[1]).filter((url) => url.startsWith(`${SITE_URL}/konstruktor/`));
     expect(constructorUrls.sort()).toEqual([
       `${SITE_URL}/konstruktor/`,
+      `${SITE_URL}/konstruktor/rasstanovka-mebeli/`,
       `${SITE_URL}/konstruktor/vannaya/`,
     ]);
   });

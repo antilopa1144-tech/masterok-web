@@ -110,6 +110,9 @@
 .placementToolbar button:hover { color: var(--c-accent); border-color: var(--c-accent); }
 .sceneOptions .arrangementToggle { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; min-height: 33px; color: var(--c-text); background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 6px; font-size: 11px; }
 .sceneOptions .arrangementToggle[aria-pressed="true"] { color: var(--c-accent); background: var(--c-tint); border-color: var(--c-accent); }
+.sceneOptions .sceneReviewButton { pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; min-height: 36px; background: var(--c-surface); color: var(--c-accent); border: 1px solid var(--c-accent); border-radius: 6px; font-size: 11px; }
+.sceneReviewButton svg { flex-shrink: 0; }
+.sceneReviewButton:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; }
 .plan g[data-piece-id] { cursor: pointer; }
 .plan:not(.placementPlan) g[data-piece-id]:hover rect { stroke: #f97316; stroke-width: 10; }
 .pieceInfo { position: absolute; left: 18px; bottom: 64px; z-index: 8; background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 8px; box-shadow: 0 5px 18px #17203317; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 14px; max-width: calc(100% - 36px); }

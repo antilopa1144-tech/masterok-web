@@ -1,6 +1,7 @@
 export const CONSTRUCTOR_URL = "/konstruktor/";
 export const CONSTRUCTOR_EDITOR_URL = "/konstruktor/redaktor/";
 export const CONSTRUCTOR_BATHROOM_URL = "/konstruktor/vannaya/";
+export const CONSTRUCTOR_FURNITURE_URL = "/konstruktor/rasstanovka-mebeli/";
 
 export const CONSTRUCTOR_SCENARIOS = [
   { id: "room", title: "Комната", description: "Задайте размеры, добавьте проёмы и выберите отделку.", action: "Создать комнату" },
