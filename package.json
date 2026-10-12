@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
-    "@types/three": "^0.169.0",
+    "@types/three": "0.186.0",
     "dexie": "^4.4.2",
     "exceljs": "^4.4.0",
     "html-react-parser": "^6.0.0",
@@ -50,7 +50,7 @@
     "react-dom": "^18",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "three": "^0.169.0"
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.7",

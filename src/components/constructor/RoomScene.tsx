@@ -289,7 +289,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .92;
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.setAttribute("aria-label", "Трёхмерная модель комнаты. Перетаскивайте для вращения, используйте два пальца для масштаба.");
     element.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
