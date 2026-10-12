@@ -26,6 +26,22 @@ function fixture() {
 }
 
 describe("Visual constructor variant comparison", () => {
+  it.each([
+    ["tile", ["Плитка к покупке", "Раскладка плитки"]],
+    ["laminate", ["Ламинат к покупке", "Раскрой пола"]],
+    ["mixed", ["Ламинат к покупке", "Раскрой пола", "Плитка к покупке", "Раскладка плитки"]],
+  ] as const)("shows only assigned material groups for a %s project", async (mode, labels) => {
+    const { project, bath, living } = fixture();
+    project.rooms = mode === "tile" ? [bath] : mode === "laminate" ? [living] : [bath, living];
+    const container = document.createElement("div"); document.body.append(container); const root = createRoot(container);
+    try {
+      await act(async () => root.render(React.createElement(VariantComparison, { project, calculation: calculateProject(project), variants: [],
+        selectedRoomId: project.rooms[0].id, blocked: false, onApply: vi.fn(), onSave: vi.fn(), onContinue: vi.fn(), onRename: vi.fn(), onRemove: vi.fn(), onSelectionChange: vi.fn() })));
+      const current = container.querySelector('article[aria-label="Текущий проект"]')!;
+      expect([...current.querySelectorAll("dl dt")].map(item => item.textContent)).toEqual(labels);
+    } finally { await act(async () => root.unmount()); container.remove(); }
+  });
+
   it("shows exact read-only positions, a missing room and restoration of other rooms", async () => {
     const { project, variants, bath, living } = fixture(), before = structuredClone({ project, variants });
     const onApply = vi.fn(), onSave = vi.fn(), onContinue = vi.fn();

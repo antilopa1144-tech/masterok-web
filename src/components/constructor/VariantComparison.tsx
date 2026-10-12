@@ -53,6 +53,8 @@ function FinishCard({ name, rooms, selectedRoomId, calculation, changes, summary
   const difference = comparison?.costDifferenceRub;
   const room = rooms.find((item) => item.id === selectedRoomId);
   const isCurrent = reference === undefined;
+  const hasLaminate = !!summary && summary.roomCount > summary.tileFloorCount;
+  const hasTiles = !!summary && (summary.tileWallCount > 0 || summary.tileFloorCount > 0);
   return <article aria-label={name} data-focused={focused} className={`${styles.card} ${isCurrent ? styles.currentCard : ""}`}>
     <div className={styles.cardHeading}><span>{isCurrent ? "Сейчас в редакторе" : matchesCurrent ? "Совпадает с текущим" : "Сохранённый вариант"}</span><h3>{name}</h3></div>
     <VariantRoomPreview room={room} calculation={calculation?.rooms.find((item) => item.roomId === selectedRoomId)} />
@@ -64,10 +66,14 @@ function FinishCard({ name, rooms, selectedRoomId, calculation, changes, summary
       </div>
       <p className={styles.scope}>{summary.roomCount} помещ. · пол {formatNumber(summary.floorAreaM2)} м²{summary.tileFloorCount > 0 && <span>Плиточный пол: {summary.tileFloorCount} помещ. · {formatNumber(summary.tileFloorAreaM2)} м²</span>}{summary.tileWallCount > 0 && <span>Стены с плиткой: {summary.tileWallCount} · {formatNumber(summary.tileWallAreaM2)} м²</span>}</p>
       <dl className={styles.metrics}>
-        <Metric label="Ламинат к покупке" note={`Досок: ${summary.laminate.purchasedBoards}, включая резерв и округление`}>{summary.laminate.packs} упак. ламината</Metric>
-        <Metric label="Раскрой пола" note={`${summary.laminate.sourceBoards} исходных досок · избыток упаковок ${summary.laminate.surplusBoards} шт.`}>{formatNumber(summary.laminate.wasteAreaM2, 3)} м² остатков и пропила</Metric>
-        <Metric label="Плитка к покупке" note={summary.tileWallCount || summary.tileFloorCount ? `Плиток: ${summary.tiles.purchasedTiles} · избыток упаковок ${summary.tiles.surplusTiles} шт.` : "Плитка не назначена"}>{summary.tileWallCount || summary.tileFloorCount ? `${summary.tiles.packs} упак. плитки` : "—"}</Metric>
-        <Metric label="Раскладка плитки" note={summary.tileWallCount || summary.tileFloorCount ? `${summary.tiles.sourceTiles} исходных плиток · ${summary.tiles.cutTiles} с подрезкой` : "Добавьте плитку в редакторе"}>{summary.tileWallCount || summary.tileFloorCount ? `${formatNumber(summary.tiles.wasteAreaM2, 3)} м² не уложено` : "—"}</Metric>
+        {hasLaminate && <>
+          <Metric label="Ламинат к покупке" note={`Досок: ${summary.laminate.purchasedBoards}, включая резерв и округление`}>{summary.laminate.packs} упак. ламината</Metric>
+          <Metric label="Раскрой пола" note={`${summary.laminate.sourceBoards} исходных досок · избыток упаковок ${summary.laminate.surplusBoards} шт.`}>{formatNumber(summary.laminate.wasteAreaM2, 3)} м² остатков и пропила</Metric>
+        </>}
+        {hasTiles && <>
+          <Metric label="Плитка к покупке" note={`Плиток: ${summary.tiles.purchasedTiles} · избыток упаковок ${summary.tiles.surplusTiles} шт.`}>{summary.tiles.packs} упак. плитки</Metric>
+          <Metric label="Раскладка плитки" note={`${summary.tiles.sourceTiles} исходных плиток · ${summary.tiles.cutTiles} с подрезкой`}>{formatNumber(summary.tiles.wasteAreaM2, 3)} м² не уложено</Metric>
+        </>}
       </dl>
       <FinishSamples room={room} />
     </> : <p className={shared.hint}>Исправьте параметры проекта, чтобы сравнить текущий расход.</p>}
