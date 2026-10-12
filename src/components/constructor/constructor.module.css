@@ -96,18 +96,27 @@
 .plan { position: absolute; inset: 72px 26px 60px; display: flex; justify-content: center; align-items: center; }
 .planDrawing > svg { display: block; width: 100%; height: 100%; }
 .planDrawing { width: 100%; height: 100%; }
-.placementPlan { touch-action: none; user-select: none; }
+.placementPlan { touch-action: none; user-select: none; display: grid; grid-template-rows: auto minmax(0, 1fr); align-items: stretch; gap: 10px; }
+.placementPlan .planDrawing { min-height: 0; }
 .placementPlan:focus-visible { outline: 2px solid #fb923c; outline-offset: -2px; border-radius: 8px; }
 .placementPlan g[data-furnishing-kind] { cursor: grab; }
 .placementPlan g[data-furnishing-kind]:focus-visible { outline: none; }
 .placementPlan g[data-furnishing-kind]:focus-visible > g > rect:first-child { stroke: #ea580c; stroke-width: 3; }
 .placementPlan g[data-piece-id] { cursor: default; }
 .draggingPlacement, .draggingPlacement g[data-furnishing-kind] { cursor: grabbing; }
-.placementToolbar { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 9px; max-width: calc(100% - 12px); padding: 5px 6px 5px 12px; min-height: 42px; border: 1px solid var(--c-line); background: var(--c-surface); border-radius: 9px; box-shadow: 0 4px 18px #17203312; color: var(--c-text); font-size: 12px; white-space: nowrap; }
-.placementToolbar > svg { color: var(--c-accent); flex-shrink: 0; }
-.placementToolbar > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.placementToolbar button { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-width: 36px; height: 34px; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-muted); color: var(--c-text); }
-.placementToolbar button:hover { color: var(--c-accent); border-color: var(--c-accent); }
+.placementToolbar { z-index: 3; display: grid; gap: 7px; width: min(100%, 360px); margin-inline: auto; padding: 7px; border: 1px solid var(--c-line); background: var(--c-surface); border-radius: 9px; box-shadow: 0 4px 18px #17203312; color: var(--c-text); font-size: 12px; }
+.placementSelection { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.placementSelection > svg { color: var(--c-accent); flex-shrink: 0; }
+.placementSelection > span { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; white-space: nowrap; }
+.placementSelection strong, .placementSelection small { display: block; overflow: hidden; text-overflow: ellipsis; }
+.placementSelection strong { font-size: 12px; font-weight: 600; }
+.placementSelection small { margin-top: 2px; font-size: 10px; color: var(--c-secondary); }
+.placementSelection button { display: inline-flex; align-items: center; justify-content: center; width: 44px; min-width: 44px; height: 44px; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-muted); color: var(--c-text); }
+.placementSelection button:hover { color: var(--c-accent); border-color: var(--c-accent); }
+@media (max-width: 980px) and (max-height: 650px) {
+  .center.arrangingCenter { grid-template-rows: minmax(0, 1fr); }
+  .arrangingCenter .summaryBar { display: none; }
+}
 .sceneOptions .arrangementToggle { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; min-height: 33px; color: var(--c-text); background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 6px; font-size: 11px; }
 .sceneOptions .arrangementToggle[aria-pressed="true"] { color: var(--c-accent); background: var(--c-tint); border-color: var(--c-accent); }
 .sceneOptions .sceneReviewButton { pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; min-height: 36px; background: var(--c-surface); color: var(--c-accent); border: 1px solid var(--c-accent); border-radius: 6px; font-size: 11px; }
@@ -426,6 +435,7 @@
   .sceneDimensions strong { font-size: 12px; }
   .sceneDimensions span span { font-size: 10px; }
   .plan { inset: 118px 8px 88px; }
+  .placementPlan { inset: 60px 8px 88px; }
   .sceneOptions { left: 12px; right: 12px; bottom: 12px; }
   .sceneOptions > span { display: none; }
   .sceneOptions label { padding: 7px 8px; }

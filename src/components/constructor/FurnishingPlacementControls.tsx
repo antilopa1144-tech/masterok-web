@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, RotateCcw, Trash2, Undo2 } from "lucide-react";
+import { Copy, Grid2X2, RotateCcw, Trash2, Undo2 } from "lucide-react";
 import { MAX_FURNISHINGS_PER_ROOM, MIN_FURNISHING_MM, MAX_FURNISHING_MM, type ConstructorRoom, type FurnishingDimensions, type FurnishingPosition } from "@/lib/constructor/core";
 import { clampFurnishingPosition, dimensionsFor, furnishingName, furnishingIssues, interiorFor, layoutFurnishings, placementForPosition, positionForPlacement, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
 import { formatNumber } from "@/lib/constructor/presentation";
@@ -8,11 +8,12 @@ import { NumberField, type DraftStatus } from "./DraftFields";
 import styles from "./RoomInteriorControls.module.css";
 import common from "./constructor.module.css";
 
-export default function FurnishingPlacementControls({ room, selectedId, blocked, onSelect, onPosition, onReset, onResetAll, onDimensions, onDuplicate, onRemove, onStatus }: {
+export default function FurnishingPlacementControls({ room, selectedId, blocked, onSelect, onPosition, onReset, onResetAll, onDimensions, onDuplicate, onRemove, onShowPlan, onStatus }: {
   room: ConstructorRoom; selectedId?: string; blocked: boolean; onSelect: (id: string | undefined) => void;
   onPosition: (id: string, position: FurnishingPosition) => void; onReset: (id: string) => void;
   onResetAll: () => void; onDimensions: (id: string, dimensions?: FurnishingDimensions) => void;
   onDuplicate: (id: string) => void; onRemove: (id: string) => void; onStatus: DraftStatus;
+  onShowPlan: () => void;
 }) {
   const interior = interiorFor(room), layout = layoutFurnishings(room);
   const instance = interior.items.find((item) => item.id === selectedId), id = instance?.id;
@@ -27,6 +28,7 @@ export default function FurnishingPlacementControls({ room, selectedId, blocked,
     <label className={styles.typeLabel}><span>Предмет для расстановки</span><select aria-label="Предмет для расстановки" value={id ?? ""} disabled={blocked} onChange={(event) => onSelect(event.target.value || undefined)}>
       <option value="">Выберите предмет…</option>{interior.items.map((item) => <option key={item.id} value={item.id}>{furnishingName(room, item.id)}{layout.omitted.includes(item.id) ? " · не размещён" : issues.some((issue) => issue.id === item.id) ? " · проверьте положение" : ""}</option>)}
     </select></label>
+    {placed && <button className={common.secondaryButton} type="button" disabled={blocked} onClick={onShowPlan}><Grid2X2 size={16} />Показать предмет на плане</button>}
     {instance && dimensions && <div key={room.id + instance.id} className={styles.positionFields}>
       <div className={styles.instanceActions}>
         <button type="button" disabled={blocked || atLimit} onClick={() => onDuplicate(instance.id)}><Copy size={15} />Ещё такой же</button>
@@ -56,6 +58,6 @@ export default function FurnishingPlacementControls({ room, selectedId, blocked,
     </div>}
     {selectedIssues.length > 0 && <div className={styles.fitNotice} role="status" tabIndex={-1}>{selectedIssues.map((issue, index) => <p key={index}>{issue.message}</p>)}</div>}
     {hasManual && <button className={styles.resetPosition} type="button" disabled={blocked} onClick={onResetAll}><Undo2 size={14} />Авторасстановка всей комнаты</button>}
-    <p className={styles.explanation}>На плане: стрелки — 10 мм, Shift — 100 мм, Alt — 1 мм; R — поворот. Свободное место у проёмов показано условно, реальные проходы и монтажные зазоры нужно проверить по выбранной мебели и технике.</p>
+    <p className={styles.explanation}>На плане доступны кнопки сдвига с шагом 1, 10 или 100 мм. Стрелки клавиатуры используют выбранный шаг; Shift — 100 мм, Alt — 1 мм; R — поворот. Свободное место у проёмов условное, реальные проходы и монтажные зазоры нужно проверить по выбранной мебели и технике.</p>
   </section>;
 }

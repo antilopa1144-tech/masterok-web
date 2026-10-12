@@ -111,7 +111,7 @@ export default async function CalculatorPage({ params }: PageProps) {
     <>
       <CalculatorJsonLd calc={calc} categoryLabel={category?.label} canonicalUrl={canonicalUrl} />
 
-      <main className="page-container-wide pb-14 pt-5 sm:pt-7">
+      <div className="page-container-wide pb-14 pt-5 sm:pt-7">
         <header className="mb-5 sm:mb-6" data-print-hide>
           <Breadcrumbs
             items={[
@@ -180,7 +180,7 @@ export default async function CalculatorPage({ params }: PageProps) {
             </div>
           </details>
         )}
-      </main>
+      </div>
     </>
   );
 }
