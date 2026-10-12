@@ -674,7 +674,7 @@ export default function ConstructorEditor() {
           commit((current) => { current.project.rooms = cloneValue(variant.rooms); });
           setSelectedRoomId(variant.rooms.some((item) => item.id === selectedRoomId) ? selectedRoomId : variant.rooms[0]?.id ?? "");
           setSelectedPieceId(undefined); setModal(null);
-          setNotice(`Применён вариант «${variant.name}». Кнопка «Отменить действие» вернёт предыдущую раскладку.`);
+          setNotice(`Применён вариант «${variant.name}». Кнопка «Отменить действие» вернёт предыдущее состояние проекта.`);
         }} />
     </ModalWindow>}
 

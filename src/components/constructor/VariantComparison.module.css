@@ -68,11 +68,38 @@
 .selectors label { display: flex; flex-direction: column; gap: 5px; color: var(--c-secondary); font-size: 11px; }
 .selectors select { width: 100%; min-width: 0; border: 1px solid var(--c-line); border-radius: 7px; background: var(--c-muted); color: var(--c-text); padding: 8px 10px; min-height: 42px; }
 .mobileSwitch { display: none; }
+.roomSelector { display: flex; flex-direction: column; gap: 6px; max-width: 360px; margin-top: 16px; font-size: 12px; color: var(--c-secondary); }
+.roomSelector select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--c-line); border-radius: 7px; padding: 9px 10px; color: var(--c-text); background: var(--c-muted); }
+.applyNote { margin-top: 12px !important; font-size: 11px; line-height: 1.65; color: var(--c-secondary); }
+.roomPreview { margin: 0 0 12px; min-width: 0; }
+.previewDrawing { display: flex; justify-content: center; align-items: center; height: 210px; padding: 10px; border: 1px solid var(--c-line); border-radius: 8px; background: #f6f7f9; }
+.previewDrawing > svg { width: 100%; height: 100%; display: block; }
+.roomPreview figcaption { padding-top: 9px; color: var(--c-secondary); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+.roomPreview figcaption strong { display: block; color: var(--c-text); font-size: 12px; }
+.roomPreview figcaption span { display: block; }
+.previewEmpty { display: flex; align-items: center; justify-content: center; min-height: 210px; margin-bottom: 12px; padding: 16px; border: 1px dashed var(--c-line); border-radius: 8px; color: var(--c-secondary); font-size: 12px; line-height: 1.6; text-align: center; }
+.restoreDetails { margin-bottom: 12px; padding-top: 10px; border-top: 1px solid var(--c-line); color: var(--c-secondary); font-size: 11px; line-height: 1.6; }
+.restoreDetails summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; cursor: pointer; list-style: none; color: var(--c-text); }
+.restoreDetails summary::-webkit-details-marker { display: none; }
+.restoreDetails summary svg { flex-shrink: 0; }
+.restoreDetails details[open] summary svg { transform: rotate(180deg); }
+.restoreDetails ul { margin: 0; padding: 0; list-style: none; max-height: 200px; overflow-y: auto; }
+.restoreDetails li { padding: 6px 0; overflow-wrap: anywhere; }
+.restoreDetails li + li { border-top: 1px solid var(--c-line); }
+.restoreDetails strong, .restoreDetails span { display: block; }
+.restoreDetails strong { color: var(--c-text); font-weight: 500; }
 
 @media (min-width: 981px) {
-  .grid { grid-auto-flow: column; grid-template-rows: repeat(6, auto); row-gap: 0; }
-  .card { display: grid; grid-row: span 6; grid-template-rows: subgrid; }
-  .cardAction { grid-row: 6; }
+  .grid { grid-auto-flow: column; grid-template-rows: repeat(8, auto); row-gap: 0; }
+  .card { display: grid; grid-row: span 8; grid-template-rows: subgrid; }
+  .cardHeading { grid-row: 1; }
+  .roomPreview, .previewEmpty { grid-row: 2; }
+  .cost { grid-row: 3; }
+  .scope { grid-row: 4; }
+  .metrics { grid-row: 5; }
+  .samples { grid-row: 6; }
+  .restoreDetails { grid-row: 7; }
+  .cardAction { grid-row: 8; }
   .single .metrics { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 24px; }
 }
 @media (max-width: 980px) {
@@ -96,10 +123,14 @@
   .grid { scroll-margin-top: 62px; }
   .selectors { gap: 8px; }
   .selectors select { font-size: 12px; }
+  .roomSelector { max-width: none; }
+  .previewDrawing { height: 230px; }
+  .roomPreview figcaption { font-size: 11px; }
 }
 @media (max-width: 480px) {
   .saveForm { flex-direction: column; align-items: stretch; gap: 10px; }
   .saveForm input, .renameForm input { font-size: 16px; }
   .saveForm button { min-height: 44px; }
   .grid { margin-top: 18px; }
+  .roomSelector select { font-size: 16px; }
 }

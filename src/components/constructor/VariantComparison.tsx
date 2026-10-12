@@ -4,10 +4,12 @@ import { useMemo, useRef, useState, type ReactNode, type CSSProperties } from "r
 import { ArrowRight, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { calculateProject, type ConstructorProject, type ConstructorRoom, type ProjectCalculation } from "@/lib/constructor/core";
 import { compareFinish, summarizeFinish, type FinishComparison } from "@/lib/constructor/comparison";
+import { compareVariantRooms, comparisonRooms, type VariantRoomChange } from "@/lib/constructor/variant-rooms";
 import { MAX_VARIANTS, type ConstructorVariant } from "@/lib/constructor/workspace";
 import { decorFor, formatMoney, formatNumber } from "@/lib/constructor/presentation";
 import { tileDecorFor } from "@/lib/constructor/wall-presentation";
 import MaterialSwatch from "./MaterialSwatch";
+import VariantRoomPreview from "./VariantRoomPreview";
 import shared from "./constructor.module.css";
 import styles from "./VariantComparison.module.css";
 
@@ -42,16 +44,18 @@ function Metric({ label, children, note }: { label: string; children: ReactNode;
   return <div><dt>{label}</dt><dd>{children}<small>{note}</small></dd></div>;
 }
 
-function FinishCard({ name, rooms, selectedRoomId, summary, reference, matchesCurrent, blocked, focused, children }: {
+function FinishCard({ name, rooms, selectedRoomId, calculation, changes, summary, reference, matchesCurrent, blocked, focused, children }: {
   name: string; rooms: ConstructorRoom[]; selectedRoomId: string; summary: FinishComparison | null;
+  calculation: ProjectCalculation | null; changes?: VariantRoomChange[];
   reference?: FinishComparison | null; matchesCurrent?: boolean; blocked: boolean; focused: boolean; children: ReactNode;
 }) {
   const comparison = summary && reference ? compareFinish(reference, summary) : null;
   const difference = comparison?.costDifferenceRub;
-  const room = rooms.find((item) => item.id === selectedRoomId) ?? rooms[0];
+  const room = rooms.find((item) => item.id === selectedRoomId);
   const isCurrent = reference === undefined;
   return <article aria-label={name} data-focused={focused} className={`${styles.card} ${isCurrent ? styles.currentCard : ""}`}>
     <div className={styles.cardHeading}><span>{isCurrent ? "Сейчас в редакторе" : matchesCurrent ? "Совпадает с текущим" : "Сохранённый вариант"}</span><h3>{name}</h3></div>
+    <VariantRoomPreview room={room} calculation={calculation?.rooms.find((item) => item.roomId === selectedRoomId)} />
     {summary ? <>
       <div className={styles.cost}>
         <strong>{summary.cost.hasPrices ? `${summary.cost.complete ? "" : summary.cost.estimated ? "Оценка: " : "Учтено: "}${formatMoney(summary.cost.knownRub)}` : "Цена не задана"}</strong>
@@ -67,6 +71,9 @@ function FinishCard({ name, rooms, selectedRoomId, summary, reference, matchesCu
       </dl>
       <FinishSamples room={room} />
     </> : <p className={shared.hint}>Исправьте параметры проекта, чтобы сравнить текущий расход.</p>}
+    <div className={styles.restoreDetails}>{changes?.length ? <details><summary>Что изменится в проекте · {changes.length}<ChevronDown size={15} aria-hidden="true" /></summary>
+      <ul>{changes.map((change) => <li key={change.roomId}><strong>{change.name}</strong><span>{change.kind === "added" ? "Помещение будет добавлено" : change.kind === "removed" ? "Помещение будет удалено из текущего проекта" : change.details.join(" · ")}</span></li>)}</ul>
+    </details> : <p>{isCurrent ? "План показывает выбранную комнату. Расход и стоимость ниже относятся ко всему проекту." : "Помещения и их параметры совпадают с текущими."}</p>}</div>
     <div className={styles.cardAction}>{children}</div>
   </article>;
 }
@@ -78,17 +85,21 @@ export default function VariantComparison({ project, calculation, variants, sele
   const [editingName, setEditingName] = useState("");
   const [message, setMessage] = useState("");
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [previewRoomId, setPreviewRoomId] = useState(selectedRoomId);
   const cardsRef = useRef<HTMLDivElement>(null);
   const roomData = useMemo(() => JSON.stringify(project.rooms), [project.rooms]);
   const matches = useMemo(() => new Set(variants.filter((variant) => JSON.stringify(variant.rooms) === roomData).map((variant) => variant.id)), [variants, roomData]);
   const current = useMemo(() => calculation ? summarizeFinish(project, calculation) : null, [project, calculation]);
   const selected = useMemo(() => selectedIds.map((id) => variants.find((variant) => variant.id === id)).filter((variant): variant is ConstructorVariant => !!variant).slice(0, 2), [variants, selectedIds]);
+  const roomOptions = useMemo(() => comparisonRooms(project.rooms, selected.map((variant) => variant.rooms)), [project.rooms, selected]);
+  const roomId = roomOptions.some((room) => room.id === previewRoomId) ? previewRoomId : roomOptions[0]?.id ?? "";
   // Calculate only the two selected snapshots, not every saved variant on each keystroke.
   const comparisons = useMemo(() => selected.map((variant) => {
     try {
       const savedProject = { ...project, rooms: variant.rooms };
-      return { variant, summary: summarizeFinish(savedProject, calculateProject(savedProject)) };
-    } catch { return { variant, summary: null }; }
+      const savedCalculation = calculateProject(savedProject);
+      return { variant, calculation: savedCalculation, summary: summarizeFinish(savedProject, savedCalculation), changes: compareVariantRooms(project.rooms, variant.rooms) };
+    } catch { return { variant, calculation: null, summary: null, changes: compareVariantRooms(project.rooms, variant.rooms) }; }
   }), [project, selected]);
   const canSave = !!calculation && project.rooms.length > 0 && !blocked && matches.size === 0 && variants.length < MAX_VARIANTS;
   const select = (ids: string[]) => { setSelectedIds(ids); onSelectionChange(ids); };
@@ -103,8 +114,8 @@ export default function VariantComparison({ project, calculation, variants, sele
   };
 
   return <div className={shared.modalBody}>
-    <p className={styles.lead}>Сравнивается весь проект; образцы показаны для выбранной комнаты. Выберите до двух сохранённых вариантов.</p>
-    {matches.size > 0 && !blocked ? <div className={styles.savedMatch}><Check size={17} /><p>Текущая раскладка сохранена.<span>Для нового варианта измените материал или укладку в редакторе.</span></p></div> : <form className={styles.saveForm} onSubmit={(event) => { event.preventDefault(); save(); }}>
+    <p className={styles.lead}>Выберите до двух сохранённых вариантов. Сравните план одной комнаты, её обстановку и отделку. Расход и стоимость материалов указаны по всему проекту.</p>
+    {matches.size > 0 && !blocked ? <div className={styles.savedMatch}><Check size={17} /><p>Текущий проект сохранён как вариант.<span>Для нового варианта измените обстановку, размеры или отделку в редакторе.</span></p></div> : <form className={styles.saveForm} onSubmit={(event) => { event.preventDefault(); save(); }}>
       <label>Название варианта<input type="text" placeholder="Например, вдоль окна" maxLength={120} value={name} onChange={(event) => setName(event.target.value)} /></label>
       <button className={shared.primaryButton} type="submit" disabled={!canSave}><Plus size={17} />Сохранить вариант</button>
     </form>}
@@ -116,19 +127,21 @@ export default function VariantComparison({ project, calculation, variants, sele
     {variants.length > 0 && <div className={styles.selectors}>{[0, 1].map((index) => <label key={index}>Для сравнения · вариант {index + 1}<select value={selected[index]?.id ?? ""} onChange={(event) => {
       const ids = selected.map((variant) => variant.id); ids[index] = event.target.value; select(ids.filter(Boolean));
     }}><option value="">Не выбран</option>{variants.map((variant) => <option key={variant.id} value={variant.id} disabled={selected.some((item, slot) => slot !== index && item.id === variant.id)}>{variant.name}</option>)}</select></label>)}</div>}
+    {roomOptions.length > 0 && <label className={styles.roomSelector}>Комната для просмотра<select value={roomId} onChange={(event) => setPreviewRoomId(event.target.value)}>{roomOptions.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}</select></label>}
+    <p className={styles.applyNote}>«Применить» восстановит весь проект: помещения, размеры, проёмы, обстановку и материалы. Предыдущее состояние можно вернуть кнопкой «Отменить действие».</p>
     <div className={styles.mobileSwitch} role="group" aria-label="Показать вариант">
       <button type="button" aria-pressed={currentFocused} onClick={() => focus(null)}>Текущая</button>{selected.map((variant, index) => <button type="button" key={variant.id} aria-pressed={focusedId === variant.id} onClick={() => focus(variant.id)}>Вариант {index + 1}</button>)}
     </div>
     <div ref={cardsRef} className={`${styles.grid} ${comparisons.length === 0 ? styles.single : ""}`} style={{ "--comparison-count": comparisons.length + 1 } as CSSProperties}>
-      <FinishCard name="Текущая раскладка" rooms={project.rooms} selectedRoomId={selectedRoomId} summary={current} blocked={blocked} focused={currentFocused}><button type="button" className={shared.secondaryButton} onClick={onContinue}>Продолжить редактирование<ArrowRight size={16} /></button></FinishCard>
-      {comparisons.map(({ variant, summary }) => <FinishCard key={variant.id} name={variant.name} rooms={variant.rooms} selectedRoomId={selectedRoomId} summary={summary} reference={current} matchesCurrent={matches.has(variant.id)} blocked={blocked} focused={focusedId === variant.id}>
+      <FinishCard name="Текущий проект" rooms={project.rooms} selectedRoomId={roomId} calculation={calculation} summary={current} blocked={blocked} focused={currentFocused}><button type="button" className={shared.secondaryButton} onClick={onContinue}>Продолжить редактирование<ArrowRight size={16} /></button></FinishCard>
+      {comparisons.map(({ variant, summary, calculation: savedCalculation, changes }) => <FinishCard key={variant.id} name={variant.name} rooms={variant.rooms} selectedRoomId={roomId} calculation={savedCalculation} changes={changes} summary={summary} reference={current} matchesCurrent={matches.has(variant.id)} blocked={blocked} focused={focusedId === variant.id}>
         <button type="button" className={shared.primaryButton} disabled={blocked || !summary || matches.has(variant.id)} onClick={() => onApply(variant)}>{matches.has(variant.id) ? <><Check size={16} />Применён</> : <>Применить<ArrowRight size={16} /></>}</button>
       </FinishCard>)}
     </div>
     <p className={styles.explanation}>Площадь стен указана без проёмов. Остатки и пропил пола, неуложенные части плиток — потери раскроя. Резерв и избыток упаковок учтены отдельно. Подложка и плинтус входят в стоимость, если включены. Применение и удаление варианта можно отменить.</p>
 
     <div className={styles.libraryHeader}><h3>Сохранённые варианты</h3><span>{variants.length} / {MAX_VARIANTS}</span></div>
-    {variants.length === 0 ? <p className={styles.empty}>Сохраните первую раскладку, затем попробуйте другой материал, формат или направление укладки.</p> : <>
+    {variants.length === 0 ? <p className={styles.empty}>Сохраните первый вариант, затем попробуйте другую расстановку, материал или направление укладки.</p> : <>
       <p className={styles.selectionHint}>Выбрано {selected.length} из 2. {selected.length === 2 ? "Снимите выбор с одного варианта, чтобы сравнить другой." : "Отметьте варианты для сравнения."}</p>
       <ul className={styles.library}>{variants.map((variant) => {
         const checked = selected.some((item) => item.id === variant.id);
@@ -139,7 +152,7 @@ export default function VariantComparison({ project, calculation, variants, sele
           }}><label>Новое название варианта<input autoFocus type="text" maxLength={120} value={editingName} onChange={(event) => setEditingName(event.target.value)} /></label><button type="submit" className={shared.iconButton} aria-label="Сохранить название варианта" disabled={!editingName.trim()}><Check size={18} /></button><button type="button" className={shared.iconButton} aria-label="Отменить переименование" onClick={() => setEditingId(null)}><X size={18} /></button></form> : <>
             <label className={styles.variantChoice}><input type="checkbox" checked={checked} disabled={!checked && selected.length >= 2} onChange={() => {
               select(checked ? selected.filter((item) => item.id !== variant.id).map((item) => item.id) : [...selected.map((item) => item.id), variant.id]);
-            }} /><span><strong>{variant.name}</strong><small>{variant.rooms.length} помещ. · {new Date(variant.savedAt).toLocaleDateString("ru-RU")}{matches.has(variant.id) ? " · текущая раскладка" : ""}</small></span></label>
+            }} /><span><strong>{variant.name}</strong><small>{variant.rooms.length} помещ. · {new Date(variant.savedAt).toLocaleDateString("ru-RU")}{matches.has(variant.id) ? " · текущий проект" : ""}</small></span></label>
             <button type="button" className={shared.iconButton} aria-label={`Переименовать вариант ${variant.name}`} onClick={() => { setEditingId(variant.id); setEditingName(variant.name); }}><Pencil size={17} /></button>
             <button type="button" className={shared.iconButton} aria-label={`Удалить вариант ${variant.name}`} onClick={() => { select(selected.filter((item) => item.id !== variant.id).map((item) => item.id)); onRemove(variant.id); setMessage(`Вариант «${variant.name}» удалён. Кнопка «Отменить действие» в редакторе вернёт его.`); }}><Trash2 size={17} /></button>
           </>}

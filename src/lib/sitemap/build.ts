@@ -146,7 +146,7 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/konstruktor/`,
-      lastModified: "2026-10-11",
+      lastModified: "2026-10-12",
       changeFrequency: "monthly",
       priority: 0.8,
     },
