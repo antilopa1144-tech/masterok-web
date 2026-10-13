@@ -20,14 +20,13 @@ const HeaderSearchPanel = dynamic(() => import("./HeaderSearchPanel"), {
  * панель с тем же поиском, что на главной. Работает на всех страницах.
  */
 export default function HeaderSearch() {
+  const pathname = usePathname();
+  return <HeaderSearchControls key={pathname} />;
+}
+
+function HeaderSearchControls() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-
-  // Закрываем панель при переходе на другую страницу
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   // Хоткей «/» — открыть поиск (если фокус не в поле ввода)
   useEffect(() => {

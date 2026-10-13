@@ -46,10 +46,12 @@ export default function ProjectWorkspace({ projectId, cloudId: queryCloudId }: {
   const refreshCart = useCallback(async () => {
     setProject((await getProjects()).find((item) => item.id === projectId) ?? null);
   }, [projectId]);
-  const loadAccount = useCallback(async () => {
-    try { const response = await fetch("/api/commerce/me"); if (response.ok) setMe(await response.json() as Me); }
-    catch { setNotice("Нет связи с кабинетом. Локальный черновик доступен."); }
-  }, []);
+  const loadAccount = useCallback((signal?: AbortSignal) => fetch("/api/commerce/me", { signal })
+    .then(async (response) => {
+      if (!response.ok) return;
+      const account = await response.json() as Me;
+      if (!signal?.aborted) setMe(account);
+    }).catch(() => { if (!signal?.aborted) setNotice("Нет связи с кабинетом. Локальный черновик доступен."); }), []);
   useEffect(() => {
     let canceled = false;
     async function initialize() {
@@ -73,8 +75,9 @@ export default function ProjectWorkspace({ projectId, cloudId: queryCloudId }: {
       } catch { if (!canceled) setNotice("Не удалось загрузить проект. Проверьте доступ к хранилищу браузера."); }
       finally { if (!canceled) setLoaded(true); }
     }
-    void initialize(); void loadAccount();
-    return () => { canceled = true; };
+    const controller = new AbortController();
+    void initialize(); void loadAccount(controller.signal);
+    return () => { canceled = true; controller.abort(); };
   }, [projectId, queryCloudId, loadAccount]);
   useEffect(() => {
     if (!loaded || !project || cartTracked.current) return;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "@/middleware";
+import { proxy as middleware } from "@/proxy";
 import { ARTICLE_VIEWS_URL } from "@/lib/article-views";
 
 describe("article view counter runtime CSP", () => {

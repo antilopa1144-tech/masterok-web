@@ -10,8 +10,9 @@ export { default as NumberField } from "./NumberSliderField";
 export function TextField({ label, value, onCommit, onStatus, compact = false }: {
   label: string; value: string; onCommit: (value: string) => void; onStatus: DraftStatus; compact?: boolean;
 }) {
-  const id = useId(); const [draft, setDraft] = useState(value); const [error, setError] = useState("");
-  useEffect(() => { setDraft(value); setError(""); onStatus(id, null); }, [value, id, onStatus]);
+  const id = useId(); const [draft, setDraft] = useState(value); const [error, setError] = useState(""); const [previousValue, setPreviousValue] = useState(value);
+  if (value !== previousValue) { setPreviousValue(value); setDraft(value); setError(""); }
+  useEffect(() => { onStatus(id, null); }, [value, id, onStatus]);
   useEffect(() => () => onStatus(id, null), [id, onStatus]);
   const apply = () => {
     if (!draft.trim()) { setError("Введите название."); onStatus(id, `${label}: введите название.`); return; }

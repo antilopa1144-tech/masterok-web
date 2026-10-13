@@ -11,6 +11,7 @@ import {
   useId,
   useCallback,
   useEffect,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -1582,15 +1583,38 @@ export default function TileLayoutGenerator() {
   const [compareLighting, setCompareLighting] = useState<TileLightingPreset>("warm");
   const [showAlignmentGuides, setShowAlignmentGuides] = useState(false);
   const [projectName, setProjectName] = useState("Новая раскладка");
-  const [savedProjects, setSavedProjects] = useState<SavedTileLayoutProject[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const subscribeToProjects = useCallback((notify: () => void) => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key?.startsWith("masterok:tile-layout")) notify();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("masterok-tile-layout-projects", notify);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("masterok-tile-layout-projects", notify);
+    };
+  }, []);
+  const savedProjectsSnapshot = useSyncExternalStore(
+    subscribeToProjects,
+    () => {
+      try {
+        return JSON.stringify(readSavedTileLayoutProjects(window.localStorage));
+      } catch {
+        return "[]";
+      }
+    },
+    () => "[]",
+  );
+  const savedProjects = useMemo(() => JSON.parse(savedProjectsSnapshot) as SavedTileLayoutProject[], [savedProjectsSnapshot]);
+  const [selectedProjectIdState, setSelectedProjectId] = useState("");
+  const selectedProjectId = selectedProjectIdState || savedProjects[0]?.id || "";
   const [activeProjectId, setActiveProjectId] = useState("");
   const [projectStatus, setProjectStatus] = useState<
     "idle" | "saving" | "saved" | "loaded" | "link-copied" | "deleted" | "failed"
   >("idle");
   const [showMobileParameters, setShowMobileParameters] = useState(true);
   const [showMobileProjectWorkspace, setShowMobileProjectWorkspace] = useState(false);
-  const [shareStatus, setShareStatus] = useState<"idle" | "sharing" | "shared" | "copied" | "failed">("idle");
+  const [shareState, setShareState] = useState<{ key: string; status: "idle" | "sharing" | "shared" | "copied" | "failed" }>({ key: "", status: "idle" });
   const [pdfStatus, setPdfStatus] = useState<"idle" | "exporting" | "failed">("idle");
   const [renderPdfVisuals, setRenderPdfVisuals] = useState(false);
   const svgContainerRef = useRef<HTMLDivElement>(null);
@@ -1644,33 +1668,27 @@ export default function TileLayoutGenerator() {
     setTextureUploadError("");
   }, []);
 
-  useEffect(() => {
-    const projects = readSavedTileLayoutProjects(window.localStorage);
-    setSavedProjects(projects);
-    if (projects[0]) setSelectedProjectId(projects[0].id);
-  }, []);
-
-  useEffect(() => {
-    const linkedProject = parseTileLayoutProjectSearchParams(searchParams);
+  const applySearchParams = useCallback((nextSearchParams: URLSearchParams) => {
+    const linkedProject = parseTileLayoutProjectSearchParams(nextSearchParams);
     if (linkedProject) {
       applyProjectState(linkedProject);
       setActiveProjectId("");
       setProjectStatus("loaded");
       return;
     }
-    const linkedPackAreaM2 = Number(searchParams.get("packAreaM2"));
-    const linkedTilesPerBox = Number(searchParams.get("tilesPerBox"));
+    const linkedPackAreaM2 = Number(nextSearchParams.get("packAreaM2"));
+    const linkedTilesPerBox = Number(nextSearchParams.get("tilesPerBox"));
     if (isValidTilePackArea(linkedPackAreaM2)) setPackAreaInput(String(linkedPackAreaM2));
     if (isValidTilesPerBox(linkedTilesPerBox)) setTilesPerBoxInput(String(linkedTilesPerBox));
-    if (searchParams.has("packagingSource")) setPackagingSource(
-      searchParams.get("packagingSource") === "label" && isValidTilesPerBox(linkedTilesPerBox)
+    if (nextSearchParams.has("packagingSource")) setPackagingSource(
+      nextSearchParams.get("packagingSource") === "label" && isValidTilesPerBox(linkedTilesPerBox)
         ? "label"
         : "estimated",
     );
-    if (searchParams.has("reservePercent")) {
-      setReservePercent(parseTileLayoutReservePercent(searchParams.get("reservePercent")));
+    if (nextSearchParams.has("reservePercent")) {
+      setReservePercent(parseTileLayoutReservePercent(nextSearchParams.get("reservePercent")));
     }
-    const parsed = parseTileLayoutFromSearchParams(searchParams);
+    const parsed = parseTileLayoutFromSearchParams(nextSearchParams);
     if (!parsed?.surfaceW || !parsed.surfaceH) return;
     const normalized = clampLayoutInputs(
       parsed.surfaceW,
@@ -1704,7 +1722,12 @@ export default function TileLayoutGenerator() {
     if (parsed.openingH != null) setOpeningH(parsed.openingH);
     if (parsed.openingOffsetLeft != null) setOpeningOffsetLeft(parsed.openingOffsetLeft);
     if (parsed.layoutMode) setLayoutMode(parsed.layoutMode);
-  }, [applyProjectState, searchParams]);
+  }, [applyProjectState]);
+
+  const handleUrlChange = useCallback((nextSearchParams: URLSearchParams) => {
+    setSearchParams(nextSearchParams);
+    applySearchParams(nextSearchParams);
+  }, [applySearchParams]);
 
   const handleExportPNG = useCallback(async () => {
     const svgEl = svgContainerRef.current?.querySelector("svg");
@@ -1759,24 +1782,24 @@ export default function TileLayoutGenerator() {
     return { widthMm, heightMm, offsetLeftMm };
   }, [hasOpening, normalizedInput.surfaceH, normalizedInput.surfaceW, openingH, openingOffsetLeft, openingW, surfaceView]);
 
-  useEffect(() => {
-    const nextWidth = Math.min(Math.max(openingW, 100), normalizedInput.surfaceW);
-    const nextHeight = Math.min(Math.max(openingH, 100), normalizedInput.surfaceH);
-    const nextOffset = Math.min(
+  const normalizedStartOffsetXmm = Math.min(Math.max(startOffsetXmm, 0), Math.max(normalizedInput.tileW - 0.5, 0));
+  const normalizedStartOffsetYmm = Math.min(Math.max(startOffsetYmm, 0), Math.max(normalizedInput.tileH - 0.5, 0));
+  const boundsKey = `${normalizedInput.surfaceW}:${normalizedInput.surfaceH}:${normalizedInput.tileW}:${normalizedInput.tileH}:${openingW}:${openingH}:${openingOffsetLeft}:${startOffsetXmm}:${startOffsetYmm}`;
+  const [previousBoundsKey, setPreviousBoundsKey] = useState(boundsKey);
+  if (previousBoundsKey !== boundsKey) {
+    setPreviousBoundsKey(boundsKey);
+    const nextOpeningW = Math.min(Math.max(openingW, 100), normalizedInput.surfaceW);
+    const nextOpeningH = Math.min(Math.max(openingH, 100), normalizedInput.surfaceH);
+    const nextOpeningOffset = Math.min(
       Math.max(openingOffsetLeft, 0),
-      Math.max(normalizedInput.surfaceW - nextWidth, 0),
+      Math.max(normalizedInput.surfaceW - nextOpeningW, 0),
     );
-    if (nextWidth !== openingW) setOpeningW(nextWidth);
-    if (nextHeight !== openingH) setOpeningH(nextHeight);
-    if (nextOffset !== openingOffsetLeft) setOpeningOffsetLeft(nextOffset);
-  }, [normalizedInput.surfaceH, normalizedInput.surfaceW, openingH, openingOffsetLeft, openingW]);
-
-  useEffect(() => {
-    const nextX = Math.min(Math.max(startOffsetXmm, 0), Math.max(normalizedInput.tileW - 0.5, 0));
-    const nextY = Math.min(Math.max(startOffsetYmm, 0), Math.max(normalizedInput.tileH - 0.5, 0));
-    if (nextX !== startOffsetXmm) setStartOffsetXmm(nextX);
-    if (nextY !== startOffsetYmm) setStartOffsetYmm(nextY);
-  }, [normalizedInput.tileH, normalizedInput.tileW, startOffsetXmm, startOffsetYmm]);
+    if (nextOpeningW !== openingW) setOpeningW(nextOpeningW);
+    if (nextOpeningH !== openingH) setOpeningH(nextOpeningH);
+    if (nextOpeningOffset !== openingOffsetLeft) setOpeningOffsetLeft(nextOpeningOffset);
+    if (normalizedStartOffsetXmm !== startOffsetXmm) setStartOffsetXmm(normalizedStartOffsetXmm);
+    if (normalizedStartOffsetYmm !== startOffsetYmm) setStartOffsetYmm(normalizedStartOffsetYmm);
+  }
 
   const result = useMemo(
     () => calculateTileLayout(
@@ -1788,9 +1811,9 @@ export default function TileLayoutGenerator() {
       layoutMode,
       normalizedOpening,
       reservePercent,
-      { mode: startMode, offsetXmm: startOffsetXmm, offsetYmm: startOffsetYmm },
+      { mode: startMode, offsetXmm: normalizedStartOffsetXmm, offsetYmm: normalizedStartOffsetYmm },
     ),
-    [normalizedInput, layoutMode, normalizedOpening, reservePercent, startMode, startOffsetXmm, startOffsetYmm],
+    [normalizedInput, layoutMode, normalizedOpening, reservePercent, startMode, normalizedStartOffsetXmm, normalizedStartOffsetYmm],
   );
 
   const startVariants = useMemo(
@@ -2134,13 +2157,16 @@ export default function TileLayoutGenerator() {
     tilesPerBox: tilesPerBoxError ? DEFAULT_TILE_TILES_PER_BOX : parsedTilesPerBox,
     packagingSource,
     hasOpening: surfaceView === "wall" && hasOpening,
-    openingW,
-    openingH,
-    openingOffsetLeft,
+    openingW: Math.min(Math.max(openingW, 100), normalizedInput.surfaceW),
+    openingH: Math.min(Math.max(openingH, 100), normalizedInput.surfaceH),
+    openingOffsetLeft: Math.min(
+      Math.max(openingOffsetLeft, 0),
+      Math.max(normalizedInput.surfaceW - Math.min(Math.max(openingW, 100), normalizedInput.surfaceW), 0),
+    ),
     layoutMode,
     startMode,
-    startOffsetXmm,
-    startOffsetYmm,
+    startOffsetXmm: normalizedStartOffsetXmm,
+    startOffsetYmm: normalizedStartOffsetYmm,
     surfaceView,
     presentationMode,
     visualFinish,
@@ -2165,8 +2191,8 @@ export default function TileLayoutGenerator() {
     projectName,
     reservePercent,
     startMode,
-    startOffsetXmm,
-    startOffsetYmm,
+    normalizedStartOffsetXmm,
+    normalizedStartOffsetYmm,
     surfaceView,
     tilesPerBoxError,
     visualFinish,
@@ -2178,9 +2204,11 @@ export default function TileLayoutGenerator() {
     customTextureDataUrl,
   ]);
 
-  useEffect(() => {
-    setShareStatus("idle");
-  }, [exportPlan?.shareText]);
+  const shareKey = exportPlan?.shareText ?? "";
+  const shareStatus = shareState.key === shareKey ? shareState.status : "idle";
+  const setShareStatus = useCallback((status: "idle" | "sharing" | "shared" | "copied" | "failed") => {
+    setShareState({ key: shareKey, status });
+  }, [shareKey]);
 
   const handleExportPDF = useCallback(async () => {
     if (!exportPlan) return;
@@ -2227,7 +2255,7 @@ export default function TileLayoutGenerator() {
       return;
     }
     setShareStatus(result);
-  }, [exportPlan, projectState]);
+  }, [exportPlan, projectState, setShareStatus]);
 
   const createProjectLayout = useCallback(async () => {
     if (!exportPlan) throw new Error("Сначала дождитесь расчёта раскладки");
@@ -2257,7 +2285,7 @@ export default function TileLayoutGenerator() {
         projectState,
         activeProjectId ? { id: activeProjectId } : undefined,
       );
-      setSavedProjects(saved.projects);
+      window.dispatchEvent(new Event("masterok-tile-layout-projects"));
       setActiveProjectId(saved.project.id);
       setSelectedProjectId(saved.project.id);
       setProjectName(saved.project.name);
@@ -2291,7 +2319,7 @@ export default function TileLayoutGenerator() {
     if (!window.confirm(`Удалить проект «${project.name}»?`)) return;
     try {
       const projects = deleteSavedTileLayoutProject(window.localStorage, project.id);
-      setSavedProjects(projects);
+      window.dispatchEvent(new Event("masterok-tile-layout-projects"));
       setSelectedProjectId(projects[0]?.id ?? "");
       if (activeProjectId === project.id) setActiveProjectId("");
       setProjectStatus("deleted");
@@ -2342,7 +2370,7 @@ export default function TileLayoutGenerator() {
   return (
     <div className="space-y-5">
       <Suspense fallback={null}>
-        <TileLayoutUrlState onChange={setSearchParams} />
+        <TileLayoutUrlState onChange={handleUrlChange} />
       </Suspense>
       {searchParams.get("from") === "calculator" && (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/60 dark:bg-blue-950/25 dark:text-blue-200">

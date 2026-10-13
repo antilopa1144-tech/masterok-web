@@ -30,9 +30,19 @@ export default function MikhalychCalcReview({ input, onReviewReady }: Props) {
   const context = buildMikhalychCalcContext(input);
   const contextHash = hashMikhalychCalcContext(context);
   const seed = contextHash.charCodeAt(1) ?? 0;
+  return <MikhalychCalcReviewSession key={contextHash} input={input} onReviewReady={onReviewReady} context={context} contextHash={contextHash} seed={seed} />;
+}
+
+function MikhalychCalcReviewSession({
+  input,
+  onReviewReady,
+  context,
+  contextHash,
+  seed,
+}: Props & { context: ReturnType<typeof buildMikhalychCalcContext>; contextHash: string; seed: number }) {
 
   const [instant] = useState(() => buildInstantCalcReaction(input.result, seed));
-  const [aiText, setAiText] = useState<string | null>(null);
+  const [aiText, setAiText] = useState<string | null>(() => loadCachedCalcReview(contextHash)?.text ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hidden, setHidden] = useState(() => isCalcReviewDisabled());
@@ -94,14 +104,7 @@ export default function MikhalychCalcReview({ input, onReviewReady }: Props) {
 
   useEffect(() => {
     if (hidden) return;
-    setAiText(null);
-    setError(null);
-
-    const cached = loadCachedCalcReview(contextHash);
-    if (cached) {
-      setAiText(cached.text);
-      return;
-    }
+    if (aiText) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -112,7 +115,7 @@ export default function MikhalychCalcReview({ input, onReviewReady }: Props) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       abortRef.current?.abort();
     };
-  }, [contextHash, hidden, fetchReview]);
+  }, [aiText, contextHash, hidden, fetchReview]);
 
   // Невизуальный поставщик данных: разбор показывается как первое сообщение
   // единого чата Михалыча (см. onReviewReady). Сам блок ничего не рисует.

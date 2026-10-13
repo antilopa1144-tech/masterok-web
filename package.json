@@ -11,7 +11,7 @@
     "indexnow:manual": "node scripts/ping-indexnow.js",
     "verify:live": "node scripts/verify-live-seo.mjs",
     "start": "next start",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -28,7 +28,7 @@
     "analyze": "ANALYZE=true npm run build",
     "analyze:server": "ANALYZE=true next build --webpack",
     "test:e2e": "playwright test",
-    "test:e2e:catalog": "playwright test e2e/catalog-smoke.spec.ts e2e/constructor-entry.spec.ts --project=chromium",
+    "test:e2e:catalog": "playwright test e2e/catalog-smoke.spec.ts e2e/constructor-entry.spec.ts e2e/constructor-hydration.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed"
   },

@@ -21,6 +21,10 @@ interface Props {
   calendarScenarioId?: RenovationScenarioId | null;
 }
 
+function createEntryTimestamp(): number {
+  return Date.now();
+}
+
 export default function SaveToProjectButton({
   calcId,
   calcTitle,
@@ -47,8 +51,15 @@ export default function SaveToProjectButton({
   }, []);
 
   useEffect(() => {
-    if (open) void loadProjects();
-  }, [open, loadProjects]);
+    if (!open) return;
+    let cancelled = false;
+    void getProjects().then((items) => {
+      if (!cancelled) setProjects(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open && projects.length === 0) {
@@ -78,7 +89,7 @@ export default function SaveToProjectButton({
     const savedEntryId = await saveEntryToProject(projectId, {
       calcId, calcTitle, slug, categorySlug,
       materials: (materialResults ?? materials).map(toStoredMaterial),
-      ts: Date.now(),
+      ts: createEntryTimestamp(),
     }, { entryId: existingEntryId, label: entryLabel });
     if (!savedEntryId) return;
     savedEntryIds.current.set(entrySaveKey, savedEntryId);

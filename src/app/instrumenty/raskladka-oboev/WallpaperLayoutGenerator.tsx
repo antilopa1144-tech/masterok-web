@@ -405,84 +405,52 @@ function RollPlan({ result, limit }: { result: WallpaperLayoutResult; limit?: nu
 
 export default function WallpaperLayoutGenerator() {
   const searchParams = useSearchParams();
+  const sessionKey = searchParams.toString();
+  return <WallpaperLayoutSession key={sessionKey} search={sessionKey} />;
+}
+
+function WallpaperLayoutSession({ search }: { search: string }) {
+  const initial = parseWallpaperLayoutSearchParams(new URLSearchParams(search));
+  const initialPerimeterWalls = initial.perimeter != null && initial.walls == null
+    ? [{ id: "wall-1", name: "Все стены", lengthM: initial.perimeter }]
+    : null;
   const [activeStage, setActiveStage] = useState<WallpaperWorkspaceStage>("layout");
-  const [geometryMode, setGeometryMode] = useState<GeometryMode>("rectangle");
-  const [roomWidth, setRoomWidth] = useState(4);
-  const [roomLength, setRoomLength] = useState(5);
-  const [customWalls, setCustomWalls] = useState<WallpaperWallInput[]>(buildRectangleWalls(4, 5));
-  const [wallHeight, setWallHeight] = useState(2.7);
-  const [rollWidth, setRollWidth] = useState(0.53);
-  const [rollLength, setRollLength] = useState(10.05);
-  const [matchType, setMatchType] = useState<WallpaperMatchType>("free");
-  const [rapport, setRapport] = useState(0);
-  const [offset, setOffset] = useState(32);
-  const [trimAllowance, setTrimAllowance] = useState(10);
-  const [reserveRolls, setReserveRolls] = useState(1);
+  const [geometryMode, setGeometryMode] = useState<GeometryMode>(() => initialPerimeterWalls ? "walls" : initial.geometryMode ?? "rectangle");
+  const [roomWidth, setRoomWidth] = useState(() => initial.roomWidth ?? 4);
+  const [roomLength, setRoomLength] = useState(() => initial.roomLength ?? 5);
+  const [customWalls, setCustomWalls] = useState<WallpaperWallInput[]>(() => initialPerimeterWalls ?? initial.walls ?? buildRectangleWalls(4, 5));
+  const [wallHeight, setWallHeight] = useState(() => initial.height ?? 2.7);
+  const [rollWidth, setRollWidth] = useState(() => initial.rollWidthM ?? 0.53);
+  const [rollLength, setRollLength] = useState(() => initial.rollLength ?? 10.05);
+  const [matchType, setMatchType] = useState<WallpaperMatchType>(() => initial.matchType ?? (initial.rapport != null && initial.rapport > 0 ? "straight" : "free"));
+  const [rapport, setRapport] = useState(() => initial.rapport ?? 0);
+  const [offset, setOffset] = useState(() => initial.offset ?? (initial.rapport != null && initial.rapport > 0 ? initial.rapport / 2 : 32));
+  const [trimAllowance, setTrimAllowance] = useState(() => initial.trimAllowance ?? 10);
+  const [reserveRolls, setReserveRolls] = useState(() => initial.reserveRolls ?? 1);
   const [showAllRolls, setShowAllRolls] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied" | "copied-without-photo">("idle");
   const [exportState, setExportState] = useState<"idle" | "preparing" | "done" | "error">("idle");
-  const [presentationMode, setPresentationMode] = useState<WallpaperPresentationMode>("room");
-  const [visualFinish, setVisualFinish] = useState<WallpaperVisualFinish>("botanical-sage");
+  const [presentationMode, setPresentationMode] = useState<WallpaperPresentationMode>(() => initial.visual?.presentationMode ?? "room");
+  const [visualFinish, setVisualFinish] = useState<WallpaperVisualFinish>(() => initial.visual?.finish ?? "botanical-sage");
   const [customTexture, setCustomTexture] = useState<{ name: string; dataUrl: string } | null>(null);
   const [useCustomTexture, setUseCustomTexture] = useState(false);
   const [textureUploadError, setTextureUploadError] = useState<string | null>(null);
-  const [comparisonFinish, setComparisonFinish] = useState<WallpaperVisualFinish>("art-deco-greige");
-  const [compareMode, setCompareMode] = useState(false);
-  const [textureScale, setTextureScale] = useState(100);
-  const [showWindow, setShowWindow] = useState(true);
-  const [showDoor, setShowDoor] = useState(true);
-  const [windowWidthM, setWindowWidthM] = useState(1.4);
-  const [windowHeightM, setWindowHeightM] = useState(1.25);
-  const [windowPositionPercent, setWindowPositionPercent] = useState(37);
-  const [doorWidthM, setDoorWidthM] = useState(0.9);
-  const [doorHeightM, setDoorHeightM] = useState(2.1);
-  const [doorPositionPercent, setDoorPositionPercent] = useState(82);
-  const [activeWallIndex, setActiveWallIndex] = useState(0);
-  const hydratedFromUrl = useRef(false);
+  const [comparisonFinish, setComparisonFinish] = useState<WallpaperVisualFinish>(() => initial.visual?.comparisonFinish ?? "art-deco-greige");
+  const [compareMode, setCompareMode] = useState(() => initial.visual?.compareMode ?? false);
+  const [textureScale, setTextureScale] = useState(() => initial.visual?.textureScale ?? 100);
+  const [showWindow, setShowWindow] = useState(() => initial.visual?.showWindow ?? true);
+  const [showDoor, setShowDoor] = useState(() => initial.visual?.showDoor ?? true);
+  const [windowWidthM, setWindowWidthM] = useState(() => initial.visual?.windowWidthM ?? 1.4);
+  const [windowHeightM, setWindowHeightM] = useState(() => initial.visual?.windowHeightM ?? 1.25);
+  const [windowPositionPercent, setWindowPositionPercent] = useState(() => initial.visual?.windowPositionPercent ?? 37);
+  const [doorWidthM, setDoorWidthM] = useState(() => initial.visual?.doorWidthM ?? 0.9);
+  const [doorHeightM, setDoorHeightM] = useState(() => initial.visual?.doorHeightM ?? 2.1);
+  const [doorPositionPercent, setDoorPositionPercent] = useState(() => initial.visual?.doorPositionPercent ?? 82);
+  const [activeWallIndex, setActiveWallIndex] = useState(() => initial.visual?.activeWallIndex ?? 0);
   const svgRef = useRef<HTMLDivElement>(null);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted, selectMode } = useToolAnalytics("raskladka-oboev", resultRef);
-
-  useEffect(() => {
-    if (hydratedFromUrl.current) return;
-    hydratedFromUrl.current = true;
-    const parsed = parseWallpaperLayoutSearchParams(new URLSearchParams(searchParams.toString()));
-    if (parsed.geometryMode != null) setGeometryMode(parsed.geometryMode);
-    if (parsed.roomWidth != null) setRoomWidth(parsed.roomWidth);
-    if (parsed.roomLength != null) setRoomLength(parsed.roomLength);
-    if (parsed.walls != null) setCustomWalls(parsed.walls);
-    if (parsed.perimeter != null && parsed.walls == null) {
-      setGeometryMode("walls");
-      setCustomWalls([{ id: "wall-1", name: "Все стены", lengthM: parsed.perimeter }]);
-    }
-    if (parsed.height != null) setWallHeight(parsed.height);
-    if (parsed.rollLength != null) setRollLength(parsed.rollLength);
-    if (parsed.rollWidthM != null) setRollWidth(parsed.rollWidthM);
-    if (parsed.rapport != null && parsed.rapport > 0) {
-      setRapport(parsed.rapport);
-      setOffset(parsed.rapport / 2);
-      setMatchType("straight");
-    }
-    if (parsed.matchType != null) setMatchType(parsed.matchType);
-    if (parsed.offset != null) setOffset(parsed.offset);
-    if (parsed.trimAllowance != null) setTrimAllowance(parsed.trimAllowance);
-    if (parsed.reserveRolls != null) setReserveRolls(parsed.reserveRolls);
-    if (parsed.visual?.presentationMode != null) setPresentationMode(parsed.visual.presentationMode);
-    if (parsed.visual?.finish != null) setVisualFinish(parsed.visual.finish);
-    if (parsed.visual?.compareMode != null) setCompareMode(parsed.visual.compareMode);
-    if (parsed.visual?.comparisonFinish != null) setComparisonFinish(parsed.visual.comparisonFinish);
-    if (parsed.visual?.textureScale != null) setTextureScale(parsed.visual.textureScale);
-    if (parsed.visual?.activeWallIndex != null) setActiveWallIndex(parsed.visual.activeWallIndex);
-    if (parsed.visual?.showWindow != null) setShowWindow(parsed.visual.showWindow);
-    if (parsed.visual?.showDoor != null) setShowDoor(parsed.visual.showDoor);
-    if (parsed.visual?.windowWidthM != null) setWindowWidthM(parsed.visual.windowWidthM);
-    if (parsed.visual?.windowHeightM != null) setWindowHeightM(parsed.visual.windowHeightM);
-    if (parsed.visual?.windowPositionPercent != null) setWindowPositionPercent(parsed.visual.windowPositionPercent);
-    if (parsed.visual?.doorWidthM != null) setDoorWidthM(parsed.visual.doorWidthM);
-    if (parsed.visual?.doorHeightM != null) setDoorHeightM(parsed.visual.doorHeightM);
-    if (parsed.visual?.doorPositionPercent != null) setDoorPositionPercent(parsed.visual.doorPositionPercent);
-  }, [searchParams]);
 
   const walls = useMemo(
     () => geometryMode === "rectangle" ? buildRectangleWalls(roomWidth, roomLength) : customWalls,

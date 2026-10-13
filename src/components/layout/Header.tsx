@@ -79,11 +79,6 @@ function ConstructorDropdown({ link, pathname }: { link: HeaderNavLink; pathname
   const container = useRef<HTMLDivElement>(null);
   const active = isHeaderLinkActive(pathname, link.match);
 
-  // Закрываем при переходе на другую страницу
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
   useEffect(() => {
     if (!open) return;
     const dismiss = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
@@ -199,7 +194,7 @@ export default function Header() {
           >
             {HEADER_MAIN_LINKS.map((link) =>
               link.href === "/konstruktor/" ? (
-                <ConstructorDropdown key={link.href} link={link} pathname={pathname} />
+                <ConstructorDropdown key={`${pathname}:${link.href}`} link={link} pathname={pathname} />
               ) : (
                 <HeaderNavItem key={link.href} link={link} pathname={pathname} />
               ),

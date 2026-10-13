@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   THEMES,
   applyThemeChoice,
@@ -47,17 +47,26 @@ function PaletteIcon({ className }: { className?: string }) {
  * Пикер темы оформления (исторически назывался ThemeToggle —
  * имя сохранено, чтобы не менять импорты в Header).
  */
+const subscribeToHydration = () => () => {};
+const buttonClass =
+  'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 md:min-h-0 md:min-w-0';
+
 export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  // The stored choice is read only after the server markup has hydrated.
+  return mounted ? <ThemePicker /> : (
+    <button className={buttonClass} aria-label="Выбрать тему оформления"><PaletteIcon /></button>
+  );
+}
+
+function ThemePicker() {
   const [open, setOpen] = useState(false);
-  const [choice, setChoice] = useState<ThemeChoice>('system');
+  const [choice, setChoice] = useState<ThemeChoice>(getStoredThemeChoice);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Инициализация: применяем сохранённый выбор и следим за системной темой
   useEffect(() => {
-    setMounted(true);
     const stored = getStoredThemeChoice();
-    setChoice(stored);
     applyThemeChoice(stored);
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -96,18 +105,6 @@ export function ThemeToggle() {
     applyThemeChoice(next);
     setOpen(false);
   }, []);
-
-  const buttonClass =
-    'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 md:min-h-0 md:min-w-0';
-
-  // SSR-заглушка без обработчиков — избегаем гидратационных ошибок
-  if (!mounted) {
-    return (
-      <button className={buttonClass} aria-label="Выбрать тему оформления">
-        <PaletteIcon />
-      </button>
-    );
-  }
 
   return (
     <div ref={containerRef} className="relative">

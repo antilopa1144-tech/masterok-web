@@ -295,69 +295,53 @@ function orientationLabel(surface: SheetSurface, orientation: ResolvedSheetOrien
 
 export default function SheetLayoutGenerator() {
   const searchParams = useSearchParams();
+  const sessionKey = searchParams.toString();
+  return <SheetLayoutSession key={sessionKey} search={sessionKey} />;
+}
+
+function SheetLayoutSession({ search }: { search: string }) {
+  const searchParams = new URLSearchParams(search);
   const transferSource = searchParams.get("from");
   const [activeStage, setActiveStage] = useState<SheetWorkspaceStage>("layout");
-  const [surfaceWidth, setSurfaceWidth] = useState(5000);
-  const [surfaceHeight, setSurfaceHeight] = useState(2700);
-  const [sheetWidth, setSheetWidth] = useState(1200);
-  const [sheetLength, setSheetLength] = useState(2500);
-  const [material, setMaterial] = useState<SheetMaterial>("drywall");
-  const [surface, setSurface] = useState<SheetSurface>("wall");
+  const positive = (key: string) => {
+    const value = Number(searchParams.get(key));
+    return Number.isFinite(value) && value > 0 ? value : undefined;
+  };
+  const [surfaceWidth, setSurfaceWidth] = useState(() => positive("surfaceWidthMm") ?? 5000);
+  const [surfaceHeight, setSurfaceHeight] = useState(() => positive("surfaceHeightMm") ?? 2700);
+  const [sheetWidth, setSheetWidth] = useState(() => positive("sheetWidthMm") ?? 1200);
+  const [sheetLength, setSheetLength] = useState(() => positive("sheetLengthMm") ?? 2500);
+  const materialParam = searchParams.get("material");
+  const [material, setMaterial] = useState<SheetMaterial>(() => materialParam === "drywall" || materialParam === "osb" || materialParam === "custom" ? materialParam : "drywall");
+  const surfaceParam = searchParams.get("surface");
+  const [surface, setSurface] = useState<SheetSurface>(() => surfaceParam === "wall" || surfaceParam === "floor" || surfaceParam === "ceiling" ? surfaceParam : "wall");
   // Для ГКЛ на стене безопаснее начинать с вертикального монтажа; экономичный
   // авто-вариант остаётся доступен и явно предупреждает о поперечных стыках.
-  const [orientation, setOrientation] = useState<SheetOrientation>("portrait");
-  const [stagger, setStagger] = useState<SheetStagger>("half");
-  const [layers, setLayers] = useState<1 | 2>(1);
-  const [jointGap, setJointGap] = useState(0);
-  const [reservePercent, setReservePercent] = useState(5);
+  const orientationParam = searchParams.get("orientation");
+  const [orientation, setOrientation] = useState<SheetOrientation>(() => orientationParam === "auto" || orientationParam === "portrait" || orientationParam === "landscape" ? orientationParam : "portrait");
+  const staggerParam = searchParams.get("stagger");
+  const [stagger, setStagger] = useState<SheetStagger>(() => staggerParam === "aligned" || staggerParam === "half" ? staggerParam : "half");
+  const [layers, setLayers] = useState<1 | 2>(() => positive("layers") === 2 ? 2 : 1);
+  const [jointGap, setJointGap] = useState(() => {
+    const value = Number(searchParams.get("jointGapMm"));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  });
+  const [reservePercent, setReservePercent] = useState(() => {
+    if (!searchParams.has("reservePercent")) return 5;
+    if (!searchParams.has("reservePercent")) return 5;
+    const value = Number(searchParams.get("reservePercent"));
+    return Number.isFinite(value) && value >= 0 ? value : 5;
+  });
   const [activeLayer, setActiveLayer] = useState(1);
   const [showAllStock, setShowAllStock] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
-  const [exportStatus, setExportStatus] = useState<"idle" | "preparing" | "done" | "error">("idle");
-  const hydrated = useRef(false);
+  const [exportState, setExportState] = useState<{ key: string; status: "idle" | "preparing" | "done" | "error" }>({ key: "", status: "idle" });
   const exportLayersRef = useRef<HTMLDivElement>(null);
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const parametersRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted, selectMode } = useToolAnalytics("raskladka-listov", resultRef);
-
-  useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-    const positive = (key: string) => {
-      const value = Number(searchParams.get(key));
-      return Number.isFinite(value) && value > 0 ? value : undefined;
-    };
-    setSurfaceWidth(positive("surfaceWidthMm") ?? surfaceWidth);
-    setSurfaceHeight(positive("surfaceHeightMm") ?? surfaceHeight);
-    setSheetWidth(positive("sheetWidthMm") ?? sheetWidth);
-    setSheetLength(positive("sheetLengthMm") ?? sheetLength);
-    const layerValue = positive("layers");
-    if (layerValue === 2) setLayers(2);
-    const materialValue = searchParams.get("material");
-    if (materialValue === "drywall" || materialValue === "osb" || materialValue === "custom") setMaterial(materialValue);
-    const surfaceValue = searchParams.get("surface");
-    if (surfaceValue === "wall" || surfaceValue === "floor" || surfaceValue === "ceiling") setSurface(surfaceValue);
-    const orientationValue = searchParams.get("orientation");
-    if (orientationValue === "auto" || orientationValue === "portrait" || orientationValue === "landscape") setOrientation(orientationValue);
-    const staggerValue = searchParams.get("stagger");
-    if (staggerValue === "aligned" || staggerValue === "half") setStagger(staggerValue);
-    if (searchParams.has("reservePercent")) {
-      const reserveValue = Number(searchParams.get("reservePercent"));
-      if (Number.isFinite(reserveValue) && reserveValue >= 0) setReservePercent(reserveValue);
-    }
-    if (searchParams.has("jointGapMm")) {
-      const gapValue = Number(searchParams.get("jointGapMm"));
-      if (Number.isFinite(gapValue) && gapValue >= 0) setJointGap(gapValue);
-    }
-  // Initial URL hydration only; state values are intentional defaults.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (activeLayer > layers) setActiveLayer(layers);
-  }, [activeLayer, layers]);
 
   const result = useMemo(() => calculateSheetLayout({
     surfaceWidthMm: surfaceWidth,
@@ -373,9 +357,9 @@ export default function SheetLayoutGenerator() {
     reservePercent,
   }), [jointGap, layers, material, orientation, reservePercent, sheetLength, sheetWidth, stagger, surface, surfaceHeight, surfaceWidth]);
 
-  useEffect(() => {
-    setExportStatus("idle");
-  }, [result]);
+  const exportKey = `${surfaceWidth}:${surfaceHeight}:${sheetWidth}:${sheetLength}:${material}:${surface}:${orientation}:${stagger}:${layers}:${jointGap}:${reservePercent}`;
+  const exportStatus = exportState.key === exportKey ? exportState.status : "idle";
+  const visibleLayer = Math.min(activeLayer, layers);
 
   const drywallHref = useMemo(() => buildDrywallCalculatorHref(result.input, result.purchaseSheets), [result]);
   const fastenersHref = useMemo(
@@ -419,7 +403,7 @@ export default function SheetLayoutGenerator() {
   };
 
   const exportPng = useCallback(async () => {
-    setExportStatus("preparing");
+    setExportState({ key: exportKey, status: "preparing" });
     try {
       const svgs = Array.from(exportLayersRef.current?.querySelectorAll("svg") ?? []);
       if (svgs.length !== result.input.layers) throw new Error("Не удалось найти все слои раскладки");
@@ -429,11 +413,11 @@ export default function SheetLayoutGenerator() {
       link.href = href;
       link.click();
       trackToolExport("raskladka-listov", "png");
-      setExportStatus("done");
+      setExportState({ key: exportKey, status: "done" });
     } catch {
-      setExportStatus("error");
+      setExportState({ key: exportKey, status: "error" });
     }
-  }, [result]);
+  }, [exportKey, result]);
 
   const shareLayout = useCallback(async () => {
     const params = new URLSearchParams({
@@ -532,7 +516,7 @@ export default function SheetLayoutGenerator() {
           })}</div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="block"><span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Разбежка рядов</span><select value={stagger} onChange={(event) => { selectMode(event.target.value); setStagger(event.target.value as SheetStagger); }} className="input-field w-full"><option value="half">На ½ листа</option><option value="aligned">Без смещения</option></select></label>
-            <label className="block"><span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Слоёв обшивки</span><select value={layers} onChange={(event) => { start("material_size"); setLayers(Number(event.target.value) === 2 ? 2 : 1); }} className="input-field w-full"><option value={1}>1 слой</option><option value={2}>2 слоя</option></select></label>
+            <label className="block"><span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Слоёв обшивки</span><select value={layers} onChange={(event) => { start("material_size"); const nextLayers = Number(event.target.value) === 2 ? 2 : 1; setLayers(nextLayers); setActiveLayer((current) => Math.min(current, nextLayers)); }} className="input-field w-full"><option value={1}>1 слой</option><option value={2}>2 слоя</option></select></label>
             <NumberInput label="Зазор между листами" value={jointGap} unit="мм" min={0} max={20} step={0.5} onChange={(value) => { start("material_size"); setJointGap(value); }} />
             <NumberInput label="Закрытый запас" value={reservePercent} unit="%" min={0} max={30} step={1} onChange={(value) => { start("material_size"); setReservePercent(value); }} />
           </div>
@@ -545,7 +529,7 @@ export default function SheetLayoutGenerator() {
         <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Шаг 2 · живая схема</p><h2 className="mt-1 text-xl font-bold text-stone-950 dark:text-white">{surface === "wall" ? "Как листы лягут на стену" : surface === "floor" ? "Как листы лягут на пол" : "Как листы лягут на потолок"}</h2><p className="mt-1 text-sm text-stone-500 dark:text-slate-400">{materialShortLabel} {sheetWidth.toLocaleString("ru-RU")} × {sheetLength.toLocaleString("ru-RU")} мм · {orientationLabel(surface, result.orientation).toLowerCase()}</p></div><button type="button" onClick={exportPng} disabled={exportStatus === "preparing"} className="min-h-11 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:border-teal-300 hover:text-teal-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">{exportStatus === "preparing" ? "Готовим PNG…" : "Скачать схемы и итог PNG"}</button></div>
         {(exportStatus === "done" || exportStatus === "error") && <p role="status" aria-live="polite" className="text-xs text-slate-500 dark:text-slate-400">{exportStatus === "done" ? "Схемы всех слоёв и общий итог к покупке скачаны в PNG." : "Не удалось подготовить PNG. Попробуйте ещё раз."}</p>}
         {layers === 2 && <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">{[1, 2].map((value) => <button type="button" key={value} onClick={() => setActiveLayer(value)} className={`rounded-lg px-4 py-1.5 text-xs font-medium ${activeLayer === value ? "bg-white text-teal-700 shadow-sm dark:bg-slate-700 dark:text-teal-300" : "text-slate-500"}`}>Слой {value}</button>)}</div>}
-        <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><SurfaceLayoutSvg result={result} layer={activeLayer} /></div>
+        <div className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-stone-100 p-1 shadow-inner dark:border-slate-700 dark:bg-slate-950 sm:p-3"><SurfaceLayoutSvg result={result} layer={visibleLayer} /></div>
         <div ref={exportLayersRef} aria-hidden="true" className="pointer-events-none absolute h-0 w-0 overflow-hidden">{result.layers.map((layer) => <SurfaceLayoutSvg key={layer.layer} result={result} layer={layer.layer} />)}</div>
         <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-900 dark:text-slate-300"><span className="flex items-center gap-2"><i className="flex size-6 shrink-0 items-center justify-center rounded-md bg-teal-700 text-[9px] not-italic font-bold text-white">Л1</i> Номер покупного листа</span><span className="flex items-center gap-2"><i className="size-5 shrink-0 rounded border border-teal-700 bg-[repeating-linear-gradient(45deg,#ccfbf1,#ccfbf1_3px,#99f6e4_3px,#99f6e4_4px)]" /> Штриховка — подрезка</span><span className="flex items-center gap-2"><i className="h-0.5 w-5 shrink-0 bg-slate-600" /> Тёмные линии — монтажные швы</span></div>
 

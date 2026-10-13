@@ -18,8 +18,15 @@ export default function CommerceAdmin() {
   const [data, setData] = useState<Payload | null>(null); const [state, setState] = useState<"loading" | "unauthenticated" | "forbidden" | "unavailable" | "ready">("loading");
   const [notice, setNotice] = useState<string | null>(null); const [busy, setBusy] = useState<string | null>(null); const [csv, setCsv] = useState("");
   const [refund, setRefund] = useState({ orderId: "", rubles: "", refundId: "", result: "" });
-  const load = useCallback(async () => { setState("loading"); try { const r = await fetch("/api/commerce/admin"); if (r.status === 401) return setState("unauthenticated"); if (r.status === 403) return setState("forbidden"); if (!r.ok) return setState("unavailable"); setData(await r.json() as Payload); setState("ready"); } catch { setState("unavailable"); } }, []);
-  useEffect(() => { void load(); }, [load]);
+  const load = useCallback((signal?: AbortSignal) => fetch("/api/commerce/admin", { signal }).then(async (r) => {
+    if (signal?.aborted) return;
+    if (r.status === 401) return setState("unauthenticated");
+    if (r.status === 403) return setState("forbidden");
+    if (!r.ok) return setState("unavailable");
+    const body = await r.json() as Payload;
+    if (!signal?.aborted) { setData(body); setState("ready"); }
+  }).catch(() => { if (!signal?.aborted) setState("unavailable"); }), []);
+  useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load]);
   const run = async (name: string, work: () => Promise<void>) => { if (busy) return; setBusy(name); setNotice(null); try { await work(); } catch (e) { setNotice(e instanceof Error ? e.message : "Не удалось выполнить действие."); } finally { setBusy(null); } };
   const update = <K extends keyof CommerceSettings>(key: K, value: CommerceSettings[K]) => setData((v) => v ? { ...v, settings: { ...v.settings, [key]: value } } : v);
   const save = () => void run("settings", async () => { if (!data) return; const r = await fetch("/api/commerce/admin/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(data.settings) }); const b = await r.json().catch(() => null); if (!r.ok) throw new Error(message(b, r.status === 409 ? "Настройки уже изменены. Перезагрузите страницу." : "Не удалось сохранить настройки.")); setNotice("Настройки сохранены."); await load(); });

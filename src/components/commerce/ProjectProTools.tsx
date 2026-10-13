@@ -10,9 +10,28 @@ const date = (value: number | string) => { const n = typeof value === "string" ?
 
 export default function ProjectProTools({ cloudId, enabled, aiAvailable = false, document, onDocumentChange, onSave }: Props) {
   const [templates, setTemplates] = useState<Template[]>([]); const [versions, setVersions] = useState<Version[]>([]); const [templateName, setTemplateName] = useState(""); const [beforeId, setBeforeId] = useState(""); const [afterId, setAfterId] = useState(""); const [changes, setChanges] = useState<Change[]>([]); const [totals, setTotals] = useState<{ before: number; after: number } | null>(null); const [question, setQuestion] = useState(""); const [answer, setAnswer] = useState(""); const [notice, setNotice] = useState(""); const [busy, setBusy] = useState<string | null>(null);
-  const loadVersions = useCallback(async () => { if (!cloudId) return; const r = await fetch(`/api/commerce/projects/${encodeURIComponent(cloudId)}/versions`); const b = await r.json().catch(() => null); if (!r.ok) throw new Error(b?.error ?? "Не удалось загрузить версии."); setVersions(b?.versions ?? []); }, [cloudId]);
-  const load = useCallback(async () => { if (!cloudId) return; const [t] = await Promise.all([fetch("/api/commerce/templates"), loadVersions()]); const b = await t.json().catch(() => null); if (!t.ok) throw new Error(b?.error ?? "Не удалось загрузить шаблоны."); setTemplates(b?.templates ?? []); }, [cloudId, loadVersions]);
-  useEffect(() => { if (enabled && cloudId) void load().catch((e) => setNotice(e instanceof Error ? e.message : "Не удалось загрузить PRO-инструменты.")); }, [enabled, cloudId, load]);
+  const loadVersions = useCallback((signal?: AbortSignal) => {
+    if (!cloudId) return;
+    return fetch(`/api/commerce/projects/${encodeURIComponent(cloudId)}/versions`, { signal }).then(async (response) => {
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? "Не удалось загрузить версии.");
+      if (!signal?.aborted) setVersions(body?.versions ?? []);
+    });
+  }, [cloudId]);
+  const load = useCallback((signal?: AbortSignal) => {
+    if (!cloudId) return;
+    return Promise.all([fetch("/api/commerce/templates", { signal }), loadVersions(signal)]).then(async ([response]) => {
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? "Не удалось загрузить шаблоны.");
+      if (!signal?.aborted) setTemplates(body?.templates ?? []);
+    });
+  }, [cloudId, loadVersions]);
+  useEffect(() => {
+    if (!enabled || !cloudId) return;
+    const controller = new AbortController();
+    load(controller.signal)?.catch((e) => { if (!controller.signal.aborted) setNotice(e instanceof Error ? e.message : "Не удалось загрузить PRO-инструменты."); });
+    return () => controller.abort();
+  }, [enabled, cloudId, load]);
   const run = async (name: string, fn: () => Promise<void>) => { if (busy) return; setBusy(name); setNotice(""); try { await fn(); } catch (e) { setNotice(e instanceof Error ? e.message : "Не удалось выполнить действие."); } finally { setBusy(null); } };
   if (!enabled || !cloudId || !document || !onDocumentChange) return null;
   const apply = (t: Template) => { if (!confirm("Шаблон заменит работы, данные подрядчика и условия. Материалы и заказчик останутся без изменений.")) return; onDocumentChange({ ...document, works: t.payload.works, terms: t.payload.terms, parties: { ...document.parties, contractor: t.payload.parties?.contractor } }); setNotice("Шаблон применён. Проверьте объёмы работ."); };

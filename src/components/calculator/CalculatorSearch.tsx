@@ -42,22 +42,36 @@ interface Props {
   hero?: boolean;
 }
 
-export default function CalculatorSearch({
+export default function CalculatorSearch(props: Props) {
+  const searchParams = useSearchParams();
+  const initialQuery = props.syncUrlQuery ? searchParams.get("q")?.trim() ?? "" : "";
+  return (
+    <CalculatorSearchSession
+      key={props.syncUrlQuery ? initialQuery : "local"}
+      {...props}
+      initialQuery={initialQuery}
+      searchParams={searchParams}
+    />
+  );
+}
+
+function CalculatorSearchSession({
   calculators,
   blogPosts,
   checklists,
   tools,
   syncUrlQuery = false,
   hero = false,
-}: Props) {
-  const [query, setQuery] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  initialQuery,
+  searchParams,
+}: Props & { initialQuery: string; searchParams: ReturnType<typeof useSearchParams> }) {
+  const [query, setQuery] = useState(initialQuery);
+  const [isOpen, setIsOpen] = useState(Boolean(initialQuery));
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const seenEmptyQueriesRef = useRef(new Set<string>());
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const results = useMemo((): SearchResult[] => {
     const q = query.trim();
@@ -129,6 +143,7 @@ export default function CalculatorSearch({
   }, [query, calculators, blogPosts, checklists, tools]);
 
   const showDropdown = isOpen && query.trim().length > 0;
+  const activeResultIndex = activeIndex >= results.length ? -1 : activeIndex;
 
   useEffect(() => {
     const trimmedQuery = query.trim();
@@ -141,16 +156,6 @@ export default function CalculatorSearch({
     return () => clearTimeout(timer);
   }, [isOpen, query, results.length]);
 
-  // Подставляем запрос из URL, чтобы поиском можно было делиться по ссылке.
-  useEffect(() => {
-    if (!syncUrlQuery) return;
-    const q = searchParams.get("q")?.trim();
-    if (q) {
-      setQuery(q);
-      setIsOpen(true);
-    }
-  }, [syncUrlQuery, searchParams]);
-
   // Закрытие по клику вне области
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -161,11 +166,6 @@ export default function CalculatorSearch({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // Сброс activeIndex при изменении результатов
-  useEffect(() => {
-    setActiveIndex(-1);
-  }, [results]);
 
   const close = useCallback(() => {
     setQuery("");
@@ -189,7 +189,7 @@ export default function CalculatorSearch({
         setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
       } else if (e.key === "Enter" && results.length > 0) {
         e.preventDefault();
-        const item = results[activeIndex >= 0 ? activeIndex : 0];
+        const item = results[activeResultIndex >= 0 ? activeResultIndex : 0];
         trackSearchSelection(query, item.type, item.id);
         close();
         router.push(item.href);
@@ -197,11 +197,11 @@ export default function CalculatorSearch({
         setIsOpen(false);
       }
     },
-    [showDropdown, results, activeIndex, query, close, router],
+    [showDropdown, results, activeResultIndex, query, close, router],
   );
 
   const handleSubmit = useCallback(() => {
-    const item = results[activeIndex >= 0 ? activeIndex : 0];
+    const item = results[activeResultIndex >= 0 ? activeResultIndex : 0];
     if (!item) {
       inputRef.current?.focus();
       setIsOpen(true);
@@ -210,7 +210,7 @@ export default function CalculatorSearch({
     trackSearchSelection(query, item.type, item.id);
     close();
     router.push(item.href);
-  }, [activeIndex, close, query, results, router]);
+  }, [activeResultIndex, close, query, results, router]);
 
   return (
     <div className={`relative mx-auto ${hero ? "max-w-4xl" : "max-w-xl"}`} ref={containerRef}>
@@ -224,6 +224,7 @@ export default function CalculatorSearch({
           type="search"
           value={query}
           onChange={(e) => {
+            setActiveIndex(-1);
             setQuery(e.target.value);
             setIsOpen(true);
           }}
@@ -235,7 +236,7 @@ export default function CalculatorSearch({
           aria-controls="search-results"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
-          aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
+          aria-activedescendant={activeResultIndex >= 0 ? `search-result-${activeResultIndex}` : undefined}
         />
         {query && (
           <button
@@ -256,7 +257,7 @@ export default function CalculatorSearch({
                     key={`${item.type}-${item.id}`}
                     id={`search-result-${i}`}
                     role="option"
-                    aria-selected={i === activeIndex}
+                    aria-selected={i === activeResultIndex}
                     className="border-b border-slate-50 dark:border-slate-700 last:border-0"
                   >
                     <Link
@@ -266,7 +267,7 @@ export default function CalculatorSearch({
                         close();
                       }}
                       className={`flex items-center gap-3 px-4 py-3 no-underline transition-colors ${
-                        i === activeIndex ? "bg-accent-50 dark:bg-accent-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-700"
+                        i === activeResultIndex ? "bg-accent-50 dark:bg-accent-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-700"
                       }`}
                     >
                       <span

@@ -20,8 +20,14 @@ export default function SaveLayoutToProject({ createLayout }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadProjects = useCallback(async () => setProjects(await getProjects()), []);
-  useEffect(() => { if (open) void loadProjects(); }, [open, loadProjects]);
+  useEffect(() => {
+    if (!open) return;
+    let canceled = false;
+    getProjects().then((items) => { if (!canceled) setProjects(items); }).catch(() => {
+      if (!canceled) setMessage('Не удалось загрузить проекты. Закройте список и повторите попытку.');
+    });
+    return () => { canceled = true; };
+  }, [open]);
   useEffect(() => {
     if (!open || projects.length) return;
     const timeout = window.setTimeout(() => inputRef.current?.focus(), 50);

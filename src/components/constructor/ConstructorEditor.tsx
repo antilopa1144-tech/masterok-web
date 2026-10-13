@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useEffectEvent, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, TriangleAlert, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorProject, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
@@ -49,8 +49,11 @@ type Tab = "room" | "interior" | "floor" | "walls";
 type View = "3d" | "plan" | "cuts" | "elevation";
 type Modal = "purchase" | "variants" | "projects" | "remove-room" | "wall-cuts" | "wall-layout" | "add-room" | "new-project" | "opening" | null;
 type TileSelection = { roomId: string; wall: Wall; tileId: string; calculation: RoomCalculation; focusToken: number; bounds?: TileRect };
+type SaveState = "loading" | "pending" | "saved" | "error" | "invalid";
+type SaveAction = { type: "workspace-changed" } | { type: "validation-failed" } | { type: "persisted" } | { type: "failed" };
 const BOARD_FORMATS = LAMINATE_SIZE_PRESETS.filter((format) => !format.label.includes("ёлочка"));
 const GUIDE_DISMISSED_KEY = "masterok.constructor.quick-start.dismissed.v1";
+const subscribeToHydration = () => () => {};
 function guideAllowed() {
   try { return window.localStorage.getItem(GUIDE_DISMISSED_KEY) !== "1"; }
   catch { return true; }
@@ -64,14 +67,14 @@ function IconButton({ label, children, onClick, disabled = false }: { label: str
   return <button className={styles.iconButton} type="button" aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button>;
 }
 
-function ModalWindow({ title, children, onClose, wide = false, aboveNotice = false }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean; aboveNotice?: boolean }) {
+export function ModalWindow({ title, children, onClose, wide = false, aboveNotice = false }: { title: string; children?: ReactNode; onClose: () => void; wide?: boolean; aboveNotice?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const close = useEffectEvent(onClose);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); closeRef.current(); }
+      if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); close(); }
       if (event.key !== "Tab") return;
       const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>("button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex='0']") ?? []);
       const first = controls[0]; const last = controls[controls.length - 1];
@@ -90,11 +93,25 @@ function ModalWindow({ title, children, onClose, wide = false, aboveNotice = fal
 }
 
 export default function ConstructorEditor() {
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  return hydrated ? <ConstructorEditorSession /> : <EditorLoading />;
+}
+
+function EditorLoading() {
+  return <div className={styles.loading}><span className={styles.brandMark}>М</span><h1>Конструктор Мастерок</h1><p>Открываем ваш проект…</p></div>;
+}
+
+function ConstructorEditorSession() {
   const router = useRouter();
   const journey = useRef(new ConstructorJourney());
   const [guideVisible, setGuideVisible] = useState(false);
   const [history, setHistory] = useState<WorkspaceHistory | null>(null);
-  const [projectSetup, setProjectSetup] = useState<{ scenario?: ConstructorScenario } | null>(null);
+  // The router owns the pending URL during client navigation; window.location
+  // can still point at the landing page when this session first renders.
+  const searchParams = useSearchParams();
+  const [entry] = useState(() => parseConstructorEntry(searchParams.toString()));
+  const [newProjectDismissed, setNewProjectDismissed] = useState(false);
+  const projectSetup = entry.newProject && !newProjectDismissed ? { scenario: entry.scenario } : null;
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [tab, setTab] = useState<Tab>("floor");
   const [selectedWall, setSelectedWall] = useState<Wall>(0);
@@ -109,7 +126,13 @@ export default function ConstructorEditor() {
   const resizePanel = useCallback((height: number) => { setPanelHeight(height); setPanelExpanded(height > Math.min(window.innerHeight * .57, 590) + 24); }, []);
   const [modal, setModal] = useState<Modal>(null);
   const [openingForm, setOpeningForm] = useState<{ opening: Opening; editing: boolean } | null>(null);
-  const [saved, setSaved] = useState<"loading" | "pending" | "saved" | "error" | "invalid">("loading");
+  const [saved, dispatchSave] = useReducer((_: SaveState, action: SaveAction): SaveState => {
+    if (action.type === "workspace-changed") return "pending";
+    if (action.type === "validation-failed") return "invalid";
+    if (action.type === "persisted") return "saved";
+    return "error";
+  }, "loading");
+  const [lastSavedWorkspace, setLastSavedWorkspace] = useState<ConstructorWorkspace | null>(null);
   const [notice, setNotice] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [exportMenu, setExportMenu] = useState(false);
@@ -117,8 +140,8 @@ export default function ConstructorEditor() {
   const [numbers, setNumbers] = useState(false);
   const [allWalls, setAllWalls] = useState(false);
   const [furnished, setFurnished] = useState(true);
-  const [arrangement, setArrangement] = useState(false);
-  const [movingFurnishing, setMovingFurnishing] = useState(false);
+  const [arrangementRoomId, setArrangementRoomId] = useState<string>();
+  const [movingFurnishing, setMovingFurnishing] = useState<string>();
   const [selectedFurnishing, setSelectedFurnishing] = useState<string>();
   const [placementGesture, setPlacementGesture] = useState(false);
   const [resetToken, setResetToken] = useState(0);
@@ -132,24 +155,19 @@ export default function ConstructorEditor() {
   const captureReady = useCallback((next: (() => string) | null) => { capture.current = next; }, []);
   const savingQueue = useRef<Promise<void>>(Promise.resolve());
   const saveRevision = useRef(0);
-  const lastSavedWorkspace = useRef<ConstructorWorkspace | null>(null);
-  const comparisonSelection = useRef<Record<string, string[]>>({});
+  const [comparisonSelection, setComparisonSelection] = useState<Record<string, string[]>>({});
   const workspace = history?.present;
 
   useEffect(() => {
     let cancelled = false;
-    const entry = parseConstructorEntry(window.location.search);
-    if (entry.newProject) {
-      setProjectSetup({ scenario: entry.scenario });
-      return;
-    }
+    if (entry.newProject) return;
     const initialWorkspace = entry.scenario ? Promise.resolve(createScenarioWorkspace(entry.scenario)) : loadWorkspace(entry.projectId);
     initialWorkspace.then((restored) => {
       if (cancelled) return;
       const initial = restored ?? createWorkspace(); setHistory({ present: initial, past: [], future: [] });
       journey.current.open(initial.project, entry.scenario || !restored ? "new" : "resume", entry.scenario);
       setGuideVisible(!!(entry.scenario || !restored) && guideAllowed());
-      setSelectedRoomId(initial.project.rooms[0]?.id ?? ""); setSaved("pending");
+      setSelectedRoomId(initial.project.rooms[0]?.id ?? ""); dispatchSave({ type: "workspace-changed" });
       if (entry.scenario === "bathroom") setTab("walls");
       if (entry.scenario === "room") setTab("room");
       if (entry.projectId && !restored) setNotice("Проект не найден в этом браузере. Откройте сохранённый файл через меню «Экспорт» → «Импортировать проект».");
@@ -157,10 +175,10 @@ export default function ConstructorEditor() {
       if (cancelled) return;
       const initial = createWorkspace(); setHistory({ present: initial, past: [], future: [] }); setSelectedRoomId(initial.project.rooms[0]?.id ?? "");
       journey.current.open(initial.project, "new"); setGuideVisible(guideAllowed());
-      setNotice(error.message); setSaved("error");
+      setNotice(error.message); dispatchSave({ type: "failed" });
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [entry]);
 
   const validation = useMemo(() => workspace ? validateProject(workspace.project) : [], [workspace]);
   const computation = useMemo<{ value: ProjectCalculation | null; error: string }>(() => {
@@ -173,7 +191,8 @@ export default function ConstructorEditor() {
   const room = workspace?.project.rooms.find((item) => item.id === selectedRoomId) ?? workspace?.project.rooms[0];
   const roomResult = result?.rooms.find((item) => item.roomId === room?.id);
   const wallResult = roomResult?.walls.find((item) => item.wall === selectedWall);
-  const wallCutEntries = useMemo(() => reviewWallCuts(roomResult?.walls ?? []), [roomResult]);
+  const effectiveRoomId = room?.id;
+  const wallCutEntries = useMemo(() => reviewWallCuts(result?.rooms.find((item) => item.roomId === effectiveRoomId)?.walls ?? []), [result, effectiveRoomId]);
   const activeTileSelection = selectedTile?.roomId === room?.id && selectedTile?.wall === selectedWall && selectedTile?.calculation === roomResult ? selectedTile : undefined;
   const pendingDraft = Object.values(drafts)[0];
   const activeFurnishing = room && selectedFurnishing && interiorFor(room).items.some((item) => item.id === selectedFurnishing) ? selectedFurnishing : undefined;
@@ -184,11 +203,10 @@ export default function ConstructorEditor() {
     const item = interior.items.find((item) => item.id === activeFurnishing)!;
     return { id: item.id, name: furnishingName(room, item.id), dimensions: dimensionsFor(item), placed: layout.placements.some((placement) => placement.id === item.id), atLimit: interior.items.length >= MAX_FURNISHINGS_PER_ROOM, hasIssues: furnishingIssues(room, layout).some((issue) => issue.id === item.id) };
   }, [room, tab, furnished, activeFurnishing]);
-  const arranging = arrangement && view === "plan" && furnished;
+  const arranging = arrangementRoomId === room?.id && view === "plan" && furnished;
   const hasPendingDraft = !!pendingDraft;
-  const movingFurnishingId = movingFurnishing && view === "3d" && sceneFurnishing?.placed && !hasPendingDraft ? sceneFurnishing.id : undefined;
-  useEffect(() => { setMovingFurnishing(false); }, [room?.id, view, tab, furnished, activeFurnishing, hasPendingDraft]);
-  const isSaved = saved === "saved" && lastSavedWorkspace.current === workspace && !pendingDraft && !placementGesture;
+  const movingFurnishingId = movingFurnishing === sceneFurnishing?.id && view === "3d" && sceneFurnishing?.placed && !hasPendingDraft ? sceneFurnishing.id : undefined;
+  const isSaved = saved === "saved" && lastSavedWorkspace === workspace && !pendingDraft && !placementGesture;
   const canExport = !!workspace && !!result && !pendingDraft && !placementGesture && !busyExport && workspace.project.rooms.length > 0;
   const dismissGuide = () => {
     setGuideVisible(false);
@@ -199,7 +217,6 @@ export default function ConstructorEditor() {
     journey.current.resultView(); setModal("purchase");
     if (guideVisible) dismissGuide();
   };
-  useEffect(() => { setArrangement(false); setSelectedFurnishing(undefined); setPlacementGesture(false); }, [room?.id, workspace?.project.id]);
   const showTileCut = (entry: WallCutEntry) => {
     if (!room || !roomResult || pendingDraft) return;
     setSelectedWall(entry.wall); setView("elevation"); setTab("walls"); setPanel(null); setModal(null);
@@ -209,21 +226,21 @@ export default function ConstructorEditor() {
   useEffect(() => {
     const revision = ++saveRevision.current;
     if (!workspace) return;
-    if (validation.length) { setSaved("invalid"); return; }
-    setSaved("pending");
+    if (validation.length) { dispatchSave({ type: "validation-failed" }); return; }
+    dispatchSave({ type: "workspace-changed" });
     const timer = window.setTimeout(() => {
       const snapshot = cloneValue(workspace);
       savingQueue.current = savingQueue.current.catch(() => {}).then(async () => {
         try {
           await saveWorkspace(snapshot);
           if (revision === saveRevision.current) {
-            lastSavedWorkspace.current = workspace; setSaved("saved");
+            setLastSavedWorkspace(workspace); dispatchSave({ type: "persisted" });
             // Consume the start request only after persistence succeeds: reload resumes this exact project.
             const url = `${CONSTRUCTOR_EDITOR_URL}?project=${encodeURIComponent(workspace.project.id)}`;
             if (`${window.location.pathname}${window.location.search}` !== url) window.history.replaceState(null, "", url);
           }
         }
-        catch (error) { if (revision === saveRevision.current) { setSaved("error"); setNotice(error instanceof Error ? error.message : "Проект не сохранён. Скачайте резервную копию."); } }
+        catch (error) { if (revision === saveRevision.current) { dispatchSave({ type: "failed" }); setNotice(error instanceof Error ? error.message : "Проект не сохранён. Скачайте резервную копию."); } }
       });
     }, 350);
     return () => window.clearTimeout(timer);
@@ -290,7 +307,7 @@ export default function ConstructorEditor() {
     });
   };
   const showFurnishingProperties = () => {
-    expandShortPanel(); setMovingFurnishing(false);
+    expandShortPanel(); setMovingFurnishing(undefined);
     setTab("interior"); setPanel("properties"); requestAnimationFrame(() => {
       const control = document.querySelector<HTMLSelectElement>('select[aria-label="Предмет для расстановки"]');
       const section = control?.closest<HTMLElement>("section"), scroller = control?.closest<HTMLElement>(`.${styles.properties}`);
@@ -308,12 +325,12 @@ export default function ConstructorEditor() {
     });
   };
   const finishMovingFurnishing = () => {
-    setMovingFurnishing(false);
+    setMovingFurnishing(undefined);
     requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[aria-label="Переместить выбранный предмет"]')?.focus({ preventScroll: true }));
   };
   const arrangeFurnishings = () => {
     if (!room || pendingDraft) return;
-    setArrangement(true); setView("plan"); setFurnished(true); setTab("interior"); setSelectedPieceId(undefined);
+    setArrangementRoomId(room.id); setView("plan"); setFurnished(true); setTab("interior"); setSelectedPieceId(undefined);
     setSelectedFurnishing(activeFurnishing ?? layoutFurnishings(room).placements[0]?.id ?? interiorFor(room).items[0]?.id);
     const mobile = window.matchMedia("(max-width: 980px)").matches;
     setPanel(mobile ? null : "properties");
@@ -427,13 +444,13 @@ export default function ConstructorEditor() {
   const createProject = (next: ConstructorWorkspace, baseline: ConstructorProject, scenario?: ConstructorScenario) => {
     journey.current.open(baseline, "new", scenario); journey.current.observe(next.project);
     setHistory({ present: next, past: [], future: [] }); setSelectedRoomId(next.project.rooms[0]?.id ?? "");
-    setProjectSetup(null); setModal(null); setSelectedPieceId(undefined); setSelectedTile(undefined); setSelectedWall(0);
+    setNewProjectDismissed(true); setModal(null); setSelectedPieceId(undefined); setSelectedTile(undefined); setSelectedWall(0);
     setView("3d"); setPanel(null); setFurnished(true); setTab(scenario === "bathroom" ? "walls" : "floor");
-    setNotice(""); setSaved("pending"); setGuideVisible(guideAllowed());
+    setNotice(""); dispatchSave({ type: "workspace-changed" }); setGuideVisible(guideAllowed());
   };
 
   if (projectSetup) return <ConstructorProjectSetupScreen scenario={projectSetup.scenario} onCreate={createProject} onCancel={() => router.push(CONSTRUCTOR_URL)} />;
-  if (!workspace || !history) return <div className={styles.loading}><span className={styles.brandMark}>М</span><h1>Конструктор Мастерок</h1><p>Открываем ваш проект…</p></div>;
+  if (!workspace || !history) return <EditorLoading />;
 
   const tree = <>
     <div className={styles.treeHeading}><strong>Мой проект</strong><IconButton label="Открыть сохранённые проекты" onClick={openProjects}><FolderOpen size={18} /></IconButton></div>
@@ -517,14 +534,14 @@ export default function ConstructorEditor() {
       <div className={`${styles.center} ${arranging ? styles.arrangingCenter : ""}`}>
         <div className={styles.viewport} data-view={view}>
           <div className={styles.viewportToolbar}><div className={styles.viewTabs} role="group" aria-label="Представление проекта">
-            <button type="button" className={view === "3d" ? styles.active : ""} aria-pressed={view === "3d"} onClick={() => { setView("3d"); setArrangement(false); }}><Box size={16} />3D</button>
+            <button type="button" className={view === "3d" ? styles.active : ""} aria-pressed={view === "3d"} onClick={() => { setView("3d"); setArrangementRoomId(undefined); }}><Box size={16} />3D</button>
             <button type="button" className={view === "plan" ? styles.active : ""} aria-pressed={view === "plan"} onClick={() => setView("plan")}><Grid2X2 size={16} />План</button>
             <button type="button" className={view === "elevation" ? styles.active : ""} aria-pressed={view === "elevation"} onClick={() => { setView("elevation"); setTab("walls"); }}><Square size={16} />Развёртка</button>
             <button type="button" className={view === "cuts" ? styles.active : ""} aria-pressed={view === "cuts"} onClick={() => setView("cuts")}><Scissors size={16} />Раскрой</button>
           </div>{view === "3d" && <div className={styles.cameraTools} role="group" aria-label="Управление камерой"><IconButton label="Приблизить" disabled={!sceneActions} onClick={() => sceneActions?.zoomIn()}><ZoomIn size={18} /></IconButton><IconButton label="Отдалить" disabled={!sceneActions} onClick={() => sceneActions?.zoomOut()}><ZoomOut size={18} /></IconButton><IconButton label="Вид сверху" disabled={!sceneActions} onClick={() => sceneActions?.topView()}><Scan size={17} /></IconButton><IconButton label="Вернуть исходный ракурс" disabled={!sceneActions} onClick={() => { setResetToken((token) => token + 1); setSelectedPieceId(undefined); }}><Maximize2 size={17} /></IconButton></div>}</div>
           {room && roomResult ? <>
             {view === "3d" && <RoomScene room={room} calculation={roomResult} allWalls={allWalls} furnished={furnished} resetToken={resetToken} selectedSurface={tab === "floor" ? "floor" : tab === "walls" ? selectedWall : null} selectedFurnishing={sceneFurnishing?.id} movingFurnishing={movingFurnishingId} onPosition={setFurnishingPosition} onGesture={setPlacementGesture} onExitMove={finishMovingFurnishing} onCapture={captureReady} onControls={sceneControlsReady} onSelect={(surface, kind) => { if (surface === "interior") { if (pendingDraft) return; setSelectedFurnishing(kind); setTab("interior"); setPanel(null); return; } setTab(surface === "floor" ? "floor" : "walls"); if (surface !== "floor") setSelectedWall(surface as Wall); setPanel("properties"); }} onFallback={() => setView("plan")} />}
-            {view === "3d" && sceneFurnishing ? <SceneFurnishingControls {...sceneFurnishing} moving={!!movingFurnishingId} blocked={!!pendingDraft || placementGesture} onMove={() => { setPanel(null); setMovingFurnishing(true); }} onExitMove={finishMovingFurnishing} onConfigure={showFurnishingProperties} onInspect={showFurnishingIssues} onRotate={() => rotateFurnishing(sceneFurnishing.id)} onDuplicate={() => duplicateFurnishing(sceneFurnishing.id)} onRemove={() => {
+            {view === "3d" && sceneFurnishing ? <SceneFurnishingControls {...sceneFurnishing} moving={!!movingFurnishingId} blocked={!!pendingDraft || placementGesture} onMove={() => { setPanel(null); setMovingFurnishing(sceneFurnishing.id); }} onExitMove={finishMovingFurnishing} onConfigure={showFurnishingProperties} onInspect={showFurnishingIssues} onRotate={() => rotateFurnishing(sceneFurnishing.id)} onDuplicate={() => duplicateFurnishing(sceneFurnishing.id)} onRemove={() => {
               removeFurnishing(sceneFurnishing.id); setSelectedFurnishing(undefined);
               requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[aria-label="Отменить действие"]')?.focus({ preventScroll: true }));
             }} /> : view !== "cuts" && view !== "elevation" && !arranging && <button type="button" className={styles.sceneDimensions} aria-label="Изменить размеры комнаты" onClick={showRoomProperties}><Ruler size={15} /><span><strong>{room.name}</strong><span>{formatNumber(room.widthMm)} × {formatNumber(room.lengthMm)} мм</span></span><Pencil size={13} /></button>}
@@ -534,9 +551,9 @@ export default function ConstructorEditor() {
             {view !== "cuts" && view !== "elevation" && !movingFurnishingId && <div className={styles.sceneOptions}>
               <div className={styles.sceneToggles}>
                 {view === "3d" ? <label><input type="checkbox" checked={allWalls} onChange={(event) => setAllWalls(event.target.checked)} />Все стены</label> : !arranging && <label><input type="checkbox" checked={numbers} onChange={(event) => setNumbers(event.target.checked)} />Номера исходных {isTileFloor ? "плиток" : "досок"}</label>}
-                <label title="Условные предметы для масштаба. Не входят в ведомость проекта."><input type="checkbox" aria-label="Пример обстановки" checked={furnished} onChange={(event) => { setFurnished(event.target.checked); if (!event.target.checked) setArrangement(false); }} />Обстановка</label>
+                <label title="Условные предметы для масштаба. Не входят в ведомость проекта."><input type="checkbox" aria-label="Пример обстановки" checked={furnished} onChange={(event) => { setFurnished(event.target.checked); if (!event.target.checked) setArrangementRoomId(undefined); }} />Обстановка</label>
                 <IconButton label="Настроить обстановку" onClick={showInterior}><Pencil size={16} /></IconButton>
-                <button type="button" className={styles.arrangementToggle} aria-pressed={arranging} disabled={!!pendingDraft || !interiorFor(room).items.length} onClick={() => arranging ? setArrangement(false) : arrangeFurnishings()}><Move size={15} />Расстановка</button>
+                <button type="button" className={styles.arrangementToggle} aria-pressed={arranging} disabled={!!pendingDraft || !interiorFor(room).items.length} onClick={() => arranging ? setArrangementRoomId(undefined) : arrangeFurnishings()}><Move size={15} />Расстановка</button>
                 {furnished && furnishingReview.length > 0 && <button type="button" className={styles.sceneReviewButton} aria-label={`Проверить расстановку. Предметов с замечаниями: ${furnishingReview.length}`} disabled={!!pendingDraft || placementGesture} onClick={showFurnishingReview}><TriangleAlert size={15} />Замечания · {furnishingReview.length}</button>}
               </div>
               <span>{arranging ? "Перетаскивайте предметы · R — поворот · Esc — отмена переноса" : view === "3d" ? "Перетаскивайте для вращения" : "Нажмите на деталь, чтобы проверить раскрой"}</span>
@@ -660,8 +677,8 @@ export default function ConstructorEditor() {
 
     {modal === "variants" && <ModalWindow title="Сравнение вариантов" wide={workspace.variants.length > 0} onClose={() => setModal(null)}>
       <VariantComparison project={workspace.project} calculation={result} variants={workspace.variants} selectedRoomId={selectedRoomId} blocked={!!pendingDraft}
-        initialSelection={comparisonSelection.current[workspace.project.id]}
-        onSelectionChange={(ids) => { comparisonSelection.current[workspace.project.id] = ids; }}
+        initialSelection={comparisonSelection[workspace.project.id]}
+        onSelectionChange={(ids) => setComparisonSelection((current) => ({ ...current, [workspace.project.id]: ids }))}
         onContinue={() => setModal(null)}
         onSave={(name) => {
           const id = newId("variant");

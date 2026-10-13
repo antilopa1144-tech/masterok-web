@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { act, createElement, Fragment, useRef } from "react";
+import { act, createElement, createRef, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,8 +16,9 @@ vi.mock("@/lib/analytics", () => ({
 import { trackToolResultView, trackToolStart } from "@/lib/analytics";
 import { useToolAnalytics } from "./useToolAnalytics";
 
+const resultRef = createRef<HTMLDivElement>();
+
 function Harness({ resultReady }: { resultReady: boolean }) {
-  const resultRef = useRef<HTMLDivElement>(null);
   const { markStarted } = useToolAnalytics("test-tool", resultRef, resultReady);
 
   return createElement(

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowUpRight, FolderOpen, Search, X } from "lucide-react";
 import { CONSTRUCTOR_EDITOR_URL, CONSTRUCTOR_URL } from "@/lib/constructor/entry";
 import { filterWorkspaceSummaries } from "@/lib/constructor/project-list";
@@ -9,6 +9,8 @@ import type { WorkspaceSummary } from "@/lib/constructor/storage";
 import { pluralizeRu } from "@/lib/format/pluralize";
 import { trackEvent } from "@/lib/analytics";
 import styles from "./ConstructorSavedProjects.module.css";
+
+const subscribeToHydration = () => () => {};
 
 type ProjectsState = { status: "loading" } | { status: "ready"; projects: WorkspaceSummary[] } | { status: "error"; message: string };
 
@@ -19,13 +21,14 @@ export default function ConstructorSavedProjects({ activeProjectId, placement = 
   const titleId = useId();
   const hintId = useId();
   const searchId = useId();
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<ProjectsState>({ status: "loading" });
+  const openProjects = () => { setQuery(""); setState({ status: "loading" }); setOpen(true); };
+  const retry = () => { setState({ status: "loading" }); setAttempt((value) => value + 1); };
 
-  useEffect(() => { setReady(true); }, []);
   useEffect(() => {
     if (!open) return;
     const element = dialog.current!;
@@ -42,7 +45,6 @@ export default function ConstructorSavedProjects({ activeProjectId, placement = 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setState({ status: "loading" });
     // Read the full list only when requested, keeping the landing page lightweight.
     import("@/lib/constructor/storage").then(({ listWorkspaces }) => listWorkspaces()).then((projects) => {
       if (!cancelled) setState({ status: "ready", projects });
@@ -56,7 +58,7 @@ export default function ConstructorSavedProjects({ activeProjectId, placement = 
   const clearSearch = () => { setQuery(""); searchInput.current?.focus(); };
 
   return <div className={styles.scope}>
-    <button ref={trigger} type="button" className={styles.trigger} disabled={!ready} aria-haspopup="dialog" onClick={() => { setQuery(""); setOpen(true); }}><FolderOpen size={18} aria-hidden="true" />Мои проекты</button>
+    <button ref={trigger} type="button" className={styles.trigger} disabled={!ready} aria-haspopup="dialog" onClick={openProjects}><FolderOpen size={18} aria-hidden="true" />Мои проекты</button>
     <dialog ref={dialog} className={styles.dialog} aria-labelledby={titleId} aria-describedby={hintId} onCancel={() => setOpen(false)} onClose={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpen(false); }} onKeyDown={(event) => {
       if (event.key !== "Tab") return;
       const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), a[href], input:not(:disabled)"));
@@ -68,7 +70,7 @@ export default function ConstructorSavedProjects({ activeProjectId, placement = 
       <div className={styles.body}>
         <p id={hintId} className={styles.hint}>Проекты конструктора в этом браузере. На другом устройстве откройте скачанный файл проекта.</p>
         {state.status === "loading" && <p className={styles.empty} role="status">Загружаем проекты…</p>}
-        {state.status === "error" && <div className={styles.empty}><p role="alert">{state.message}</p><button type="button" className={styles.textButton} onClick={() => setAttempt((value) => value + 1)}>Попробовать ещё раз</button></div>}
+        {state.status === "error" && <div className={styles.empty}><p role="alert">{state.message}</p><button type="button" className={styles.textButton} onClick={retry}>Попробовать ещё раз</button></div>}
         {state.status === "ready" && (state.projects.length === 0
           ? <div className={styles.empty}><FolderOpen size={30} aria-hidden="true" /><h3>Здесь пока нет проектов</h3><p>Начните с примера или закройте окно и откройте файл проекта.</p><Link href={`${CONSTRUCTOR_URL}#scenarios`} onClick={() => setOpen(false)}>Выбрать пример <ArrowUpRight size={16} /></Link></div>
           : <>

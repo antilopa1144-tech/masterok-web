@@ -45,10 +45,11 @@ export default function RenovationCostCalculator() {
     () => readRenovationCostRoomTransfer(searchParams),
     [searchParams],
   );
-
-  useEffect(() => {
+  const [previousRoomTransfer, setPreviousRoomTransfer] = useState(roomTransfer);
+  if (roomTransfer !== previousRoomTransfer) {
+    setPreviousRoomTransfer(roomTransfer);
     if (roomTransfer) setAreaInput(String(roomTransfer.areaM2));
-  }, [roomTransfer]);
+  }
 
   useEffect(() => {
     let cancelled = false;

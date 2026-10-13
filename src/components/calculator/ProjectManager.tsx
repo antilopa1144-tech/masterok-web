@@ -91,8 +91,17 @@ export default function ProjectManager() {
   }, []);
 
   useEffect(() => {
-    void refreshProjects();
-  }, [refreshProjects]);
+    let cancelled = false;
+    void getProjects().then(async (items) => {
+      const nextEstimates = await buildProjectEstimates(items);
+      if (cancelled) return;
+      setProjects(items);
+      setEstimates(nextEstimates);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const createProject = useCallback(async () => {
     const name = newName.trim();

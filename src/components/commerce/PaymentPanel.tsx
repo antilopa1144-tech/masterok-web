@@ -18,20 +18,23 @@ export default function PaymentPanel({ orderId }: { orderId: string }) {
   const [statusNotice, setStatusNotice] = useState("");
   const [downloading, setDownloading] = useState<"pdf" | "xlsx" | null>(null);
 
-  const load = useCallback(async (manual = false) => {
-    if (manual) { setChecking(true); setStatusNotice(""); }
+  const load = useCallback((manual = false) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch(`/api/commerce/orders/${encodeURIComponent(orderId)}`, { cache: "no-store", signal: controller.signal });
+    return fetch(`/api/commerce/orders/${encodeURIComponent(orderId)}`, { cache: "no-store", signal: controller.signal }).then(async (response) => {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
       setData(body); setError("");
       if (!manual && body.order.state !== "pending") setStatusNotice("");
       if (manual) setStatusNotice(body.order.state === "pending" ? "Подтверждение оплаты ещё не поступило. Если деньги списаны, не оплачивайте повторно." : `Статус обновлён: ${labels[body.order.state] ?? "проверено"}.`);
-    } catch (cause) { setError(cause instanceof Error && cause.name === "AbortError" ? "Проверка заняла слишком много времени. Повторите позже; повторно оплачивать не нужно." : cause instanceof Error ? cause.message : "Не удалось проверить заказ"); }
-    finally { clearTimeout(timeout); if (manual) setChecking(false); }
+    }).catch((cause) => { setError(cause instanceof Error && cause.name === "AbortError" ? "Проверка заняла слишком много времени. Повторите позже; повторно оплачивать не нужно." : cause instanceof Error ? cause.message : "Не удалось проверить заказ"); })
+      .finally(() => { clearTimeout(timeout); if (manual) setChecking(false); });
   }, [orderId]);
+  const checkManually = () => {
+    setChecking(true);
+    setStatusNotice("");
+    void load(true);
+  };
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     if (!data || data.order.state !== "pending" || data.state.mode === "local" || attempts >= 10) return;
@@ -111,7 +114,7 @@ export default function PaymentPanel({ orderId }: { orderId: string }) {
             </>}
             {paid && <Link className={`${isPack ? "block text-center text-sm underline underline-offset-2" : "btn-primary w-full"}`} href={destination}>{isPack ? "Открыть проект и изменить смету" : "Перейти в кабинет"}</Link>}
             {!paid && data.order.state !== "pending" && <Link className="btn-secondary w-full" href="/kabinet/">Вернуться в кабинет</Link>}
-            {data.order.state === "pending" && <button type="button" disabled={busy || checking} aria-busy={checking} className="btn-secondary min-h-11 w-full disabled:cursor-wait" onClick={() => void load(true)}>{checking ? "Проверяем оплату…" : "Проверить оплату"}</button>}
+            {data.order.state === "pending" && <button type="button" disabled={busy || checking} aria-busy={checking} className="btn-secondary min-h-11 w-full disabled:cursor-wait" onClick={checkManually}>{checking ? "Проверяем оплату…" : "Проверить оплату"}</button>}
             <p role="status" aria-live="polite" className="text-sm leading-5 text-slate-600 dark:text-slate-300">{statusNotice}</p>
           </div>
         </div>

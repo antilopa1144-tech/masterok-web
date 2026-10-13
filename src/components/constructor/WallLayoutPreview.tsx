@@ -45,7 +45,7 @@ export default function WallLayoutPreview({ project, calculation, roomId, wall, 
   const visibleCalculation = showCurrent ? calculation : preview.calculation;
   const visibleRoom = visibleProject.rooms.find((item) => item.id === roomId)!;
   const visibleWall = visibleCalculation?.rooms.find((item) => item.roomId === roomId)?.walls.find((item) => item.wall === wall);
-  const viewport = useDrawingViewport({ focus: focus?.calculation === visibleCalculation ? focus : undefined, resetKey: visibleCalculation });
+  const [drawing, viewport] = useDrawingViewport({ focus: focus?.calculation === visibleCalculation ? focus : undefined, resetKey: visibleCalculation });
   const cuts = useMemo(() => visibleWall ? reviewWallCuts([visibleWall]) : [], [visibleWall]);
   const cell = selected?.calculation === visibleCalculation ? visibleWall?.cells.find((item) => item.id === selected.id) : undefined;
   const selectedParts = useMemo(() => connectedTileParts(cell?.fragments ?? []), [cell]);
@@ -80,7 +80,7 @@ export default function WallLayoutPreview({ project, calculation, roomId, wall, 
             </div>
           </div>
           <p className={styles.format}>{cutDimension(spec.tileWidthMm)} × {cutDimension(spec.tileHeightMm)} мм · шов {cutDimension(spec.jointMm)} мм</p>
-          <div ref={viewport.drawing} className={styles.drawing} data-testid="wall-layout-preview" role="region" aria-label="Чертёж для настройки раскладки" aria-describedby="wall-preview-navigation" tabIndex={visibleCalculation ? 0 : undefined} data-zoomed={viewport.zoom > 1} data-panning={viewport.panning} {...viewport.handlers} onClick={(event) => { if (viewport.isPanClick()) return; const target = (event.target as Element).closest("[data-tile-id]"); const id = target?.getAttribute("data-tile-id"); setSelected(id && visibleCalculation ? { id, calculation: visibleCalculation } : undefined); setFocus(undefined); }}>
+          <div ref={drawing} className={styles.drawing} data-testid="wall-layout-preview" role="region" aria-label="Чертёж для настройки раскладки" aria-describedby="wall-preview-navigation" tabIndex={visibleCalculation ? 0 : undefined} data-zoomed={viewport.zoom > 1} data-panning={viewport.panning} {...viewport.handlers} onClick={(event) => { if (viewport.isPanClick()) return; const target = (event.target as Element).closest("[data-tile-id]"); const id = target?.getAttribute("data-tile-id"); setSelected(id && visibleCalculation ? { id, calculation: visibleCalculation } : undefined); setFocus(undefined); }}>
             {visibleCalculation ? <div className={styles.drawingCanvas} style={{ width: `${viewport.zoom * 100}%`, height: `${viewport.zoom * 100}%` }} dangerouslySetInnerHTML={{ __html: markup }} /> : <p>Измените настройки, чтобы построить предпросмотр.</p>}
           </div>
           <p className={styles.navigation} id="wall-preview-navigation">Перемещайте увеличенный чертёж мышью или пальцем. На клавиатуре: стрелки, +/− для масштаба, 0 — вся стена.</p>

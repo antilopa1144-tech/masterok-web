@@ -39,7 +39,9 @@ describe("ISR on read-only Timeweb build directories", () => {
   });
 
   it("updates content and sitemap and invalidates tags without writing build files", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
+    // Next 16 writes tag timestamps with Date and checks expiry with performance.
+    // Both clocks must advance together, otherwise this assertion races real time.
+    vi.useFakeTimers({ toFake: ["Date", "performance"] });
     try {
       expect(nextConfig.experimental?.isrFlushToDisk).toBe(false);
       const { cache, writeFile } = readonlyCache(nextConfig.experimental!.isrFlushToDisk!);

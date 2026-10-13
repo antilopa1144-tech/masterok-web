@@ -9,11 +9,22 @@ import type { PackRunResult } from "@/lib/room-master/run-pack";
   .IS_REACT_ACT_ENVIRONMENT = true;
 
 const roomPack = vi.hoisted(() => ({ runRoomPack: vi.fn() }));
-const router = vi.hoisted(() => ({ replace: vi.fn() }));
+const navigation = vi.hoisted(() => {
+  const state = { search: "" };
+  return {
+    state,
+    router: {
+      replace: vi.fn((href: string) => {
+        state.search = href.split("?")[1] ?? "";
+      }),
+    },
+  };
+});
+const router = navigation.router;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(navigation.state.search),
 }));
 vi.mock("next/link", () => ({
   default: ({ children }: { children: unknown }) => children,
@@ -57,7 +68,8 @@ describe("RoomMasterWizard calculation revision", () => {
 
   beforeEach(async () => {
     roomPack.runRoomPack.mockReset();
-    router.replace.mockReset();
+    router.replace.mockClear();
+    navigation.state.search = "";
     window.requestAnimationFrame = vi.fn(() => 1);
     container = document.createElement("div");
     document.body.append(container);
@@ -101,5 +113,25 @@ describe("RoomMasterWizard calculation revision", () => {
     });
 
     expect(container.textContent).not.toContain("Сводный расчёт");
+  });
+
+  it("keeps entered measures and disabled waterproofing when switching packs through URL", async () => {
+    const lengthInput = container.querySelector<HTMLInputElement>('input[aria-label="Длина комнаты, м"]');
+    const waterproofing = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!lengthInput || !waterproofing) throw new Error("Room controls not found");
+
+    await act(async () => typeValue(lengthInput, "5.7"));
+    await act(async () => waterproofing.click());
+    expect(waterproofing.checked).toBe(false);
+
+    await act(async () => findButton(container, "Кухня").click());
+    await act(async () => root.render(createElement(RoomMasterWizard)));
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Длина комнаты, м"]')?.value).toBe("5.7");
+
+    await act(async () => findButton(container, "Ванная").click());
+    await act(async () => root.render(createElement(RoomMasterWizard)));
+    expect(container.querySelector<HTMLInputElement>('input[aria-label="Длина комнаты, м"]')?.value).toBe("5.7");
+    expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
+    expect(router.replace).toHaveBeenCalledTimes(2);
   });
 });

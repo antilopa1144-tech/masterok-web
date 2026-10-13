@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
 import {
@@ -40,39 +40,42 @@ const LINK_STYLE: Record<RenovationStageLink["type"], string> = {
 export default function RenovationCalendar() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialScenario = parseScenarioId(searchParams.get("scenario"));
-
-  const [state, setState] = useState<RenovationCalendarState>({
-    ...DEFAULT_CALENDAR_STATE,
-    scenarioId: initialScenario,
-  });
-  const [hydrated, setHydrated] = useState(false);
-  const [expandedStageId, setExpandedStageId] = useState<string | null>(
-    RENOVATION_SCENARIOS[initialScenario].stages[0]?.id ?? null,
+  const requestedScenario = searchParams.has("scenario")
+    ? parseScenarioId(searchParams.get("scenario"))
+    : null;
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
   );
+  return <RenovationCalendarSession key={`${requestedScenario ?? "saved"}:${hydrated}`} router={router} requestedScenario={requestedScenario} hydrated={hydrated} />;
+}
+
+function RenovationCalendarSession({ router, requestedScenario, hydrated }: {
+  router: ReturnType<typeof useRouter>;
+  requestedScenario: RenovationScenarioId | null;
+  hydrated: boolean;
+}) {
+  const [state, setState] = useState<RenovationCalendarState>(() => resolveCalendarState(
+    hydrated ? loadCalendarState() : DEFAULT_CALENDAR_STATE,
+    requestedScenario,
+  ));
+  const [expandedStageId, setExpandedStageId] = useState<string | null>(() => {
+    const initialState = resolveCalendarState(
+      hydrated ? loadCalendarState() : DEFAULT_CALENDAR_STATE,
+      requestedScenario,
+    );
+    const initialScenario = RENOVATION_SCENARIOS[initialState.scenarioId];
+    return initialScenario.stages.find((stage) => !initialState.completedStageIds.includes(stage.id))?.id
+      ?? initialScenario.stages[0]?.id
+      ?? null;
+  });
   const resultRef = useRef<HTMLElement>(null);
   const { markStarted } = useToolAnalytics(
     CALENDAR_TOOL_SLUG,
     resultRef,
     hydrated,
   );
-
-  useEffect(() => {
-    const saved = loadCalendarState();
-    const scenarioParam = searchParams.get("scenario");
-    const next = resolveCalendarState(
-      saved,
-      scenarioParam === null ? null : parseScenarioId(scenarioParam),
-    );
-    setState(next);
-    const resolvedScenario = RENOVATION_SCENARIOS[next.scenarioId];
-    setExpandedStageId(
-      resolvedScenario.stages.find((stage) => !next.completedStageIds.includes(stage.id))?.id
-        ?? resolvedScenario.stages[0]?.id
-        ?? null,
-    );
-    setHydrated(true);
-  }, [searchParams]);
 
   const persist = useCallback((next: RenovationCalendarState) => {
     setState(next);

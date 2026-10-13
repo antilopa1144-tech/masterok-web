@@ -17,8 +17,8 @@ import { canonicalBlogTagSlug, tagToSlug } from "./lib/blog-tag-slug";
 // отдавали 200 с пустым телом (мягкий 404) и с конфликтующими тегами robots.
 // Middleware исполняется раньше рендера — здесь статус гарантирован.
 //
-// Списки маршрутов лежат в route-manifest.generated.ts строками: middleware
-// работает на Edge и не может импортировать модули с Node-зависимостями.
+// Списки маршрутов лежат в route-manifest.generated.ts строками: proxy
+// не загружает полные вычислительные модули для проверки адреса.
 // =============================================================================
 
 const CATEGORY_SLUGS = new Set<string>(ROUTE_CATEGORY_SLUGS);
@@ -138,7 +138,7 @@ function buildCsp(nonce: string): string {
 // skipTrailingSlashRedirect: true в next.config.ts отключает встроенные 308-редиректы
 // для всех маршрутов. Этот middleware восстанавливает их только для страниц,
 // оставляя API-роуты без редиректа (иначе Dart http.Client ломается на POST-редиректе).
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Nonce для CSP + inline-скриптов

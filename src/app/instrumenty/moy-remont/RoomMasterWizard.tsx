@@ -109,45 +109,37 @@ function packDisclosures(packId: RoomPackId): string[] {
 export default function RoomMasterWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const sessionKey = searchParams.toString();
+  return <RoomMasterWizardSession key={sessionKey} router={router} search={sessionKey} />;
+}
+
+function RoomMasterWizardSession({ router, search }: { router: ReturnType<typeof useRouter>; search: string }) {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLElement>(null);
   const calculationRevisionRef = useRef(0);
-  const [packId, setPackId] = useState<RoomPackId>("bathroom");
-  const [drafts, setDrafts] = useState<MeasureDrafts>(defaultDrafts);
-  const [floorTileSize, setFloorTileSize] = useState(DEFAULT_ROOM_DIMENSIONS.floorTileSize);
-  const [wallTileSize, setWallTileSize] = useState(DEFAULT_ROOM_DIMENSIONS.wallTileSize);
-  const [hasWaterproofing, setHasWaterproofing] = useState(DEFAULT_ROOM_DIMENSIONS.hasWaterproofing);
+  const initialParams = new URLSearchParams(search);
+  const [packId, setPackId] = useState<RoomPackId>(() => parsePackId(initialParams.get("pack")) ?? "bathroom");
+  const [drafts, setDrafts] = useState<MeasureDrafts>(() => {
+    const next = defaultDrafts();
+    for (const key of Object.keys(next) as RoomMeasureKey[]) {
+      const value = initialParams.get(key);
+      if (value !== null) next[key] = value;
+    }
+    return next;
+  });
+  const [floorTileSize, setFloorTileSize] = useState(() => {
+    const value = Number(initialParams.get("floorTileSize"));
+    return TILE_FLOOR_OPTIONS.some((option) => option.value === value) ? value : DEFAULT_ROOM_DIMENSIONS.floorTileSize;
+  });
+  const [wallTileSize, setWallTileSize] = useState(() => {
+    const value = Number(initialParams.get("wallTileSize"));
+    return TILE_WALL_OPTIONS.some((option) => option.value === value) ? value : DEFAULT_ROOM_DIMENSIONS.wallTileSize;
+  });
+  const [hasWaterproofing, setHasWaterproofing] = useState(() => initialParams.get("hasWaterproofing") === "0" ? 0 : DEFAULT_ROOM_DIMENSIONS.hasWaterproofing);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [run, setRun] = useState<PackRunResult | null>(null);
   const [mobileStage, setMobileStage] = useState<MobileStage>("parameters");
-  const serializedSearchParams = searchParams.toString();
-
-  useEffect(() => {
-    calculationRevisionRef.current += 1;
-    setLoading(false);
-    setRun(null);
-    setError(null);
-    setMobileStage("parameters");
-
-    const params = new URLSearchParams(serializedSearchParams);
-    const fromUrl = parsePackId(params.get("pack"));
-    if (fromUrl) setPackId(fromUrl);
-
-    setDrafts((current) => {
-      const next = { ...current };
-      let changed = false;
-      for (const key of Object.keys(next) as RoomMeasureKey[]) {
-        const value = params.get(key);
-        if (value !== null) {
-          next[key] = value;
-          changed = true;
-        }
-      }
-      return changed ? next : current;
-    });
-  }, [serializedSearchParams]);
-
   useEffect(() => () => {
     calculationRevisionRef.current += 1;
   }, []);
@@ -206,8 +198,14 @@ export default function RoomMasterWizard() {
     selectMode(`pack:${nextPack}`);
     setPackId(nextPack);
     resetResult();
-    const params = new URLSearchParams(serializedSearchParams);
+    const params = new URLSearchParams(search);
     params.set("pack", nextPack);
+    for (const key of Object.keys(drafts) as RoomMeasureKey[]) {
+      params.set(key, drafts[key]);
+    }
+    params.set("floorTileSize", String(floorTileSize));
+    params.set("wallTileSize", String(wallTileSize));
+    params.set("hasWaterproofing", String(hasWaterproofing));
     router.replace(`/instrumenty/${ROOM_MASTER_TOOL_SLUG}/?${params}`, { scroll: false });
   };
 

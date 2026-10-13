@@ -5,13 +5,16 @@ import { Eye } from "lucide-react";
 import { ARTICLE_VIEWS_URL, articleVisitor, validViewCount } from "@/lib/article-views";
 
 export default function ArticleViews({ slug }: { slug: string }) {
+  return <ArticleViewsContent key={slug} slug={slug} />;
+}
+
+function ArticleViewsContent({ slug }: { slug: string }) {
   const [views, setViews] = useState<number | null>(null);
 
   useEffect(() => {
     let disposed = false;
     let registered = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    setViews(null);
     const url = `${ARTICLE_VIEWS_URL}${encodeURIComponent(slug)}/`;
     const request = async (visitor?: string) => {
       try {

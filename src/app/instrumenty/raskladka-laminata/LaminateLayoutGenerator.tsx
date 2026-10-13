@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ConstructorToolLink from "@/components/constructor/ConstructorToolLink";
 import { useState, useMemo, useRef, useCallback, useEffect, useId } from "react";
 import SaveToProjectButton from "@/components/calculator/SaveToProjectButton";
@@ -459,12 +460,19 @@ function LaminateRoomSVG({
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function LaminateLayoutGenerator() {
+  const searchParams = useSearchParams();
+  const sessionKey = searchParams.toString();
+  return <LaminateLayoutSession key={sessionKey} search={sessionKey} />;
+}
+
+function LaminateLayoutSession({ search }: { search: string }) {
+  const initial = parseLaminateLayoutSearchParams(new URLSearchParams(search));
   const [activeStage, setActiveStage] = useState<LaminateWorkspaceStage>("layout");
-  const [surfaceW, setSurfaceW] = useState(3000);
-  const [surfaceH, setSurfaceH] = useState(4000);
+  const [surfaceW, setSurfaceW] = useState(() => initial.surfaceW ?? 3000);
+  const [surfaceH, setSurfaceH] = useState(() => initial.surfaceH ?? 4000);
   const [boardW, setBoardW] = useState(1285);
   const [boardH, setBoardH] = useState(192);
-  const [mode, setMode] = useState<LaminateMode>("deck-third");
+  const [mode, setMode] = useState<LaminateMode>(() => initial.mode ?? "deck-third");
   const [visualFinish, setVisualFinish] = useState<LaminateVisualFinish>("natural-oak");
   const [direction, setDirection] = useState<LaminateDirection>("along-width");
   const [presentationMode, setPresentationMode] = useState<LaminatePresentationMode>("room");
@@ -473,8 +481,7 @@ export default function LaminateLayoutGenerator() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareFinish, setCompareFinish] = useState<LaminateVisualFinish>("white-oak");
   const [compareDirection, setCompareDirection] = useState<LaminateDirection>("along-length");
-  const [exportStatus, setExportStatus] = useState<"idle" | "preparing" | "done" | "error">("idle");
-  const hydratedFromUrl = useRef(false);
+  const [exportState, setExportState] = useState<{ key: string; status: "idle" | "preparing" | "done" | "error" }>({ key: "", status: "idle" });
   const workspaceTopRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<HTMLDivElement>(null);
   const exportPlanRef = useRef<HTMLDivElement>(null);
@@ -486,15 +493,6 @@ export default function LaminateLayoutGenerator() {
     resultRef,
   );
 
-  useEffect(() => {
-    if (hydratedFromUrl.current) return;
-    hydratedFromUrl.current = true;
-    const parsed = parseLaminateLayoutSearchParams(new URLSearchParams(window.location.search));
-    if (parsed.surfaceW != null) setSurfaceW(parsed.surfaceW);
-    if (parsed.surfaceH != null) setSurfaceH(parsed.surfaceH);
-    if (parsed.mode != null) setMode(parsed.mode);
-  }, []);
-
   const changeStage = useCallback((stage: LaminateWorkspaceStage) => {
     setActiveStage(stage);
     window.requestAnimationFrame(() => workspaceTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -505,9 +503,8 @@ export default function LaminateLayoutGenerator() {
     [surfaceW, surfaceH, boardW, boardH, mode, direction],
   );
 
-  useEffect(() => {
-    setExportStatus("idle");
-  }, [result, visualFinish, presentationMode]);
+  const exportKey = `${surfaceW}:${surfaceH}:${boardW}:${boardH}:${mode}:${direction}:${visualFinish}:${presentationMode}`;
+  const exportStatus = exportState.key === exportKey ? exportState.status : "idle";
 
   const compareResult = useMemo(
     () => calculateDirectionalLaminateLayout(surfaceW, surfaceH, boardW, boardH, mode, compareDirection),
@@ -520,7 +517,7 @@ export default function LaminateLayoutGenerator() {
   );
 
   const handleExportPNG = useCallback(async () => {
-    setExportStatus("preparing");
+    setExportState({ key: exportKey, status: "preparing" });
     try {
       const plan = (presentationMode === "plan" ? svgRef : exportPlanRef).current?.querySelector("svg");
       if (!plan) throw new Error("Не удалось найти план для экспорта");
@@ -530,11 +527,11 @@ export default function LaminateLayoutGenerator() {
       link.href = href;
       link.click();
       trackToolExport("raskladka-laminata", "png");
-      setExportStatus("done");
+      setExportState({ key: exportKey, status: "done" });
     } catch {
-      setExportStatus("error");
+      setExportState({ key: exportKey, status: "error" });
     }
-  }, [direction, presentationMode, result]);
+  }, [direction, exportKey, presentationMode, result]);
 
   const createProjectLayout = useCallback(async () => {
     const svg = svgRef.current?.querySelector("svg");

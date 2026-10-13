@@ -17,8 +17,8 @@ export default function WallElevation({ room, calculation, wall, onSelectWall, s
 }) {
   const [numbers, setNumbers] = useState(false);
   const current = calculation.walls.find((item) => item.wall === wall);
-  const viewport = useDrawingViewport({ focus: focusToken && focusBounds && current ? { token: focusToken, x: focusBounds.xMm + focusBounds.widthMm / 2, y: current.heightMm - focusBounds.yMm - focusBounds.heightMm / 2 } : undefined });
-  const { drawing, zoom, changeZoom, fit } = viewport;
+  const [drawing, viewport] = useDrawingViewport({ focus: focusToken && focusBounds && current ? { token: focusToken, x: focusBounds.xMm + focusBounds.widthMm / 2, y: current.heightMm - focusBounds.yMm - focusBounds.heightMm / 2 } : undefined });
+  const { zoom, changeZoom, fit } = viewport;
   const markup = useMemo(() => wallSvg(room, wall, current, { numbers, selectedTileId, idPrefix: "elevation" }), [room, wall, current, numbers, selectedTileId]);
   const cell = current?.cells.find((item) => item.id === selectedTileId);
   const parts = useMemo(() => connectedTileParts(cell?.fragments ?? []), [cell]);

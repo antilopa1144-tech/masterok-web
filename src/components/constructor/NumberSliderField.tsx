@@ -11,14 +11,16 @@ export default function NumberSliderField({ label, value, min = 0, max = 30_000,
   onCommit: (value: number) => void; onStatus: DraftStatus; zeroLabel?: string; emptyValue?: number;
 }) {
   const id = useId(), bounds = { min, max, integer, unit, emptyValue };
-  const [shown, setShown] = useState(value), shownRef = useRef(value);
+  const [shown, setShown] = useState(value), shownRef = useRef(value), [previousValue, setPreviousValue] = useState(value);
   const [active, setActive] = useState(false), start = useRef<number | null>(null);
   const pointer = useRef<number | null>(null), ignorePointer = useRef(false);
   const [editing, setEditing] = useState(false), [draft, setDraft] = useState(String(value)), [error, setError] = useState("");
   const exact = useRef<HTMLInputElement>(null), readout = useRef<HTMLButtonElement>(null), skipExactBlur = useRef(false);
-  useEffect(() => {
-    shownRef.current = value; setShown(value); setDraft(String(value)); setError(""); setEditing(false); setActive(false); start.current = null; pointer.current = null; ignorePointer.current = false; onStatus(id, null);
-  }, [value, id, onStatus]);
+  if (value !== previousValue) {
+    setPreviousValue(value); setShown(value); setDraft(String(value)); setError(""); setEditing(false); setActive(false);
+  }
+  useEffect(() => { shownRef.current = value; start.current = null; pointer.current = null; ignorePointer.current = false; }, [value]);
+  useEffect(() => { onStatus(id, null); }, [value, id, onStatus]);
   useEffect(() => () => onStatus(id, null), [id, onStatus]);
   useEffect(() => { if (editing) { exact.current?.focus(); exact.current?.select(); } }, [editing]);
   const show = (next: number) => { shownRef.current = next; setShown(next); };

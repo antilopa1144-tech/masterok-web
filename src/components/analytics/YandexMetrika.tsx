@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- noscript tracking pixel must stay a plain img */
-
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER_ID } from "@/lib/analytics/config";

@@ -30,6 +30,7 @@ const withBundleAnalyzer = bundleAnalyzer({
  */
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: process.cwd(),
   deploymentId: process.env.NODE_ENV === "development" ? process.env.COMMERCE_DEV_ASSET_VERSION : undefined,
   distDir: process.env.MASTEROK_BUILD_DIR ?? ".next",
   serverExternalPackages: ["@electric-sql/pglite", "pg", "nodemailer", "exceljs"],
@@ -190,19 +191,14 @@ const nextConfig: NextConfig = {
           //  4. ВНИМАНИЕ: это необратимо на 6-12 месяцев. Если разорвёшь HTTPS
           //     на каком-то поддомене — пользователи Chrome не смогут попасть.
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-              // CSP задаётся в middleware.ts с динамическим nonce (nonce-based)
+              // CSP задаётся в proxy.ts с динамическим nonce (nonce-based)
               // вместо статического 'unsafe-inline' в script-src.
               { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
         ],
       },
-      // В dev имена чанков не содержат хэш: годовой кэш оставляет старый UI после правок.
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          { key: "Cache-Control", value: process.env.NODE_ENV === "development" ? "no-store" : "public, max-age=31536000, immutable" },
-        ],
-      },
+      // Next.js сам задаёт immutable-кэш хэшированных чанков в production
+      // и no-store в dev. Не переопределяем служебные /_next/static ресурсы.
       // Шрифты — иммутабельный кэш на год
       {
         source: "/:path*.woff2",

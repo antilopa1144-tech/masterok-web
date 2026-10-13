@@ -195,8 +195,18 @@ export default function ProjectsPageClient() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    void getProjects().then(async (items) => {
+      const nextEstimates = await buildProjectEstimates(items);
+      if (cancelled) return;
+      setProjects(items);
+      setEstimates(nextEstimates);
+      setLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleCreate = async () => {
     const name = newName.trim();

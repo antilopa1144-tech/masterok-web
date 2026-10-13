@@ -53,12 +53,9 @@ export default function ReverseCalculator() {
     : null;
   const hasInputError = Boolean(amountError || adjustmentError);
 
-  const result = useMemo(
-    () => hasInputError
-      ? null
-      : calculateReverseCoverage({ material, amount, adjustmentValue: effectiveAdjustment }),
-    [material, amount, effectiveAdjustment, hasInputError],
-  );
+  const result = hasInputError
+    ? null
+    : calculateReverseCoverage({ material, amount, adjustmentValue: effectiveAdjustment });
   const { markStarted, selectMode } = useToolAnalytics(
     REVERSE_COVERAGE_TOOL_SLUG,
     resultRef,

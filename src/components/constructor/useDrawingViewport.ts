@@ -13,6 +13,7 @@ export interface DrawingFocus {
 export function useDrawingViewport({ focus, resetKey }: { focus?: DrawingFocus; resetKey?: unknown } = {}) {
   const drawing = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
+  const [appliedResetKey, setAppliedResetKey] = useState(resetKey);
   const [sizeRevision, setSizeRevision] = useState(0);
   const [panning, setPanning] = useState(false);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
@@ -22,13 +23,18 @@ export function useDrawingViewport({ focus, resetKey }: { focus?: DrawingFocus; 
   const focusFrame = useRef<number | undefined>(undefined);
   const token = focus?.token, x = focus?.x, y = focus?.y, reveal = focus?.reveal;
 
+  if (!Object.is(appliedResetKey, resetKey)) {
+    setAppliedResetKey(resetKey);
+    setZoom(1);
+  }
+
   const cancelZoom = () => { if (zoomFrame.current !== undefined) cancelAnimationFrame(zoomFrame.current); };
   const cancelFocus = () => { if (focusFrame.current !== undefined) cancelAnimationFrame(focusFrame.current); };
 
   useEffect(() => {
     cancelZoom(); cancelFocus(); focusedToken.current = 0;
-    setZoom(1); drawing.current?.scrollTo(0, 0);
-  }, [resetKey]);
+    drawing.current?.scrollTo(0, 0);
+  }, [appliedResetKey]);
 
   useEffect(() => {
     const container = drawing.current;
@@ -114,13 +120,13 @@ export function useDrawingViewport({ focus, resetKey }: { focus?: DrawingFocus; 
     }
   };
 
-  return {
-    drawing, zoom, panning, changeZoom, fit, isPanClick,
+  return [drawing, {
+    zoom, panning, changeZoom, fit, isPanClick,
     handlers: {
       onPointerDown: pointerDown, onPointerMove: pointerMove, onPointerUp: pointerUp,
       onPointerCancel: (event: PointerEvent<HTMLDivElement>) => { pointerUp(event); dragged.current = false; },
       onPointerLeave: () => { if (!dragged.current) drag.current = undefined; },
       onKeyDown: keyDown,
     },
-  };
+  }] as const;
 }

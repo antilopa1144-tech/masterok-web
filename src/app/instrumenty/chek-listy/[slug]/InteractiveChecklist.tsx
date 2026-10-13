@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   trackChecklistProgress,
   trackChecklistStart,
@@ -16,27 +16,29 @@ import {
 } from "@/lib/checklist-progress";
 
 export default function InteractiveChecklist({ checklist }: { checklist: Checklist }) {
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  return <InteractiveChecklistSession key={`${checklist.slug}:${hydrated}`} checklist={checklist} hydrated={hydrated} />;
+}
+
+function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Checklist; hydrated: boolean }) {
   const allKeys = useMemo(() => getChecklistItemKeys(checklist), [checklist]);
   const validKeys = useMemo(() => new Set(allKeys), [allKeys]);
-  const [checkedKeys, setCheckedKeys] = useState<Set<string>>(new Set());
-  const [expandedStep, setExpandedStep] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
-  const startedRef = useRef(false);
-  const reportedMilestonesRef = useRef<Set<ChecklistProgressMilestone>>(new Set());
-
-  useEffect(() => {
-    const saved = loadChecklistProgress(checklist.slug, validKeys);
-    startedRef.current = false;
-    reportedMilestonesRef.current = new Set(
-      getChecklistMilestonesToReport(saved.size, allKeys.length, new Set()),
-    );
-    setCheckedKeys(saved);
+  const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
+    () => hydrated ? loadChecklistProgress(checklist.slug, validKeys) : new Set(),
+  );
+  const [expandedStep, setExpandedStep] = useState<number | null>(() => {
+    const saved = hydrated ? loadChecklistProgress(checklist.slug, validKeys) : new Set<string>();
     const firstIncomplete = checklist.steps.findIndex((step, stepIndex) =>
       step.items.some((_, itemIndex) => !saved.has(checklistItemKey(stepIndex, itemIndex))),
     );
-    setExpandedStep(firstIncomplete >= 0 ? firstIncomplete : Math.max(0, checklist.steps.length - 1));
-    setHydrated(true);
-  }, [allKeys.length, checklist, validKeys]);
+    return firstIncomplete >= 0 ? firstIncomplete : Math.max(0, checklist.steps.length - 1);
+  });
+  const startedRef = useRef(false);
+  const reportedMilestonesRef = useRef<Set<ChecklistProgressMilestone>>(new Set());
 
   const totalItems = allKeys.length;
   const completedItems = checkedKeys.size;
@@ -52,6 +54,9 @@ export default function InteractiveChecklist({ checklist }: { checklist: Checkli
     saveChecklistProgress(checklist.slug, next);
     if (!startedRef.current) {
       startedRef.current = true;
+      reportedMilestonesRef.current = new Set(
+        getChecklistMilestonesToReport(checkedKeys.size, totalItems, new Set()),
+      );
       trackChecklistStart(checklist.slug);
     }
     for (const milestone of getChecklistMilestonesToReport(
@@ -72,8 +77,8 @@ export default function InteractiveChecklist({ checklist }: { checklist: Checkli
   const resetProgress = () => {
     if (!window.confirm("Сбросить все отметки в этом чек-листе?")) return;
     const next = new Set<string>();
-    setCheckedKeys(next);
     setExpandedStep(0);
+    setCheckedKeys(next);
     saveChecklistProgress(checklist.slug, next);
   };
 

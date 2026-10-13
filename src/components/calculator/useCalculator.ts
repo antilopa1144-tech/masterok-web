@@ -181,10 +181,9 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
 
   // Автоматический перерасчёт при изменении значений (debounce 300ms)
   const accuracyModeRef = useRef(accuracyMode);
-  accuracyModeRef.current = accuracyMode;
   const showComparisonRef = useRef(showComparison);
-  showComparisonRef.current = showComparison;
-
+  useEffect(() => { accuracyModeRef.current = accuracyMode; }, [accuracyMode]);
+  useEffect(() => { showComparisonRef.current = showComparison; }, [showComparison]);
   const runAutoCalc = useCallback((newValues: Record<string, number>) => {
     clearTimeout(debounceRef.current);
     const requestRevision = ++calculationRevisionRef.current;
@@ -206,7 +205,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
         }
       });
     }, 300);
-  }, [calculator, applyTransferResult]);
+  }, [applyTransferResult, calculator]);
 
   // Очистка таймера при размонтировании
   useEffect(() => () => {
@@ -364,10 +363,10 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
     setCustomModifiersState(mods);
     setCustomModifiers(mods);
     // Recalculate if in custom mode
-    if (accuracyModeRef.current === "custom") {
+    if (accuracyMode === "custom") {
       runAutoCalc(values);
     }
-  }, [values, runAutoCalc, markCalculatorStarted]);
+  }, [accuracyMode, values, runAutoCalc, markCalculatorStarted]);
 
   // Contextual accuracy mode hint based on current inputs
   const accuracyHint = (() => {

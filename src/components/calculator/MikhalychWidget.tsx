@@ -22,8 +22,24 @@ interface Message {
   content: string;
 }
 
+function firstAssistantMessage(calculatorTitle: string, calcContext?: string, seedReview?: string | null): Message {
+  const seed = seedReview?.trim();
+  return {
+    role: "assistant",
+    content: seed
+      ? seed
+      : calcContext
+        ? UI_TEXT.greetingWithContext(calculatorTitle)
+        : UI_TEXT.greetingWithoutContext(calculatorTitle),
+  };
+}
+
 export default function MikhalychWidget({ calculatorTitle, calcContext, seedReview }: Props) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const greetingKey = `${calculatorTitle}\u0000${calcContext ?? ""}\u0000${seedReview ?? ""}`;
+  const [messages, setMessages] = useState<Message[]>(() => [
+    firstAssistantMessage(calculatorTitle, calcContext, seedReview),
+  ]);
+  const [previousGreetingKey, setPreviousGreetingKey] = useState(greetingKey);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -43,29 +59,15 @@ export default function MikhalychWidget({ calculatorTitle, calcContext, seedRevi
     };
   }, []);
 
-  // Первое сообщение Михалыча: готовый авто-разбор расчёта, если он уже есть,
-  // иначе обычное приветствие. Когда разбор дозагружается (был null → текст),
-  // подменяем им первое сообщение — но только пока пользователь не начал диалог.
-  useEffect(() => {
-    setMessages((prev) => {
-      const seed = seedReview?.trim();
-      const firstContent = seed
-        ? seed
-        : calcContext
-          ? UI_TEXT.greetingWithContext(calculatorTitle)
-          : UI_TEXT.greetingWithoutContext(calculatorTitle);
-
-      if (prev.length === 0) {
-        return [{ role: "assistant", content: firstContent }];
-      }
-      // Диалог ещё не начался (только первое сообщение ассистента) — обновляем его
-      // свежим разбором, когда тот подгрузился.
-      if (prev.length === 1 && prev[0].role === "assistant" && seed) {
-        return [{ role: "assistant", content: seed }];
-      }
-      return prev;
-    });
-  }, [seedReview, calculatorTitle, calcContext]);
+  // Пока пользователь не начал диалог, обновляем первое сообщение при появлении
+  // готового разбора. Это корректировка derived state во время render, без
+  // лишнего каскадного render из effect.
+  if (greetingKey !== previousGreetingKey) {
+    setPreviousGreetingKey(greetingKey);
+    if (messages.length === 1 && messages[0].role === "assistant") {
+      setMessages([firstAssistantMessage(calculatorTitle, calcContext, seedReview)]);
+    }
+  }
 
   useEffect(() => {
     const el = messagesContainerRef.current;

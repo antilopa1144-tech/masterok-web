@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useToolAnalytics } from "@/components/tools/useToolAnalytics";
@@ -28,6 +28,34 @@ type TimerStatus = "setup" | "running" | "paused" | "completed";
 
 const DEFAULT_PRESET_ID = "primer-deep";
 
+function subscribeToNotificationPermission(onStoreChange: () => void) {
+  let disposed = false;
+  let status: PermissionStatus | undefined;
+  const handleChange = () => onStoreChange();
+  window.addEventListener("masterok-notification-permission", handleChange);
+  window.addEventListener("focus", handleChange);
+  void navigator.permissions?.query({ name: "notifications" }).then((nextStatus) => {
+    if (disposed) return;
+    status = nextStatus;
+    status.addEventListener("change", handleChange);
+    onStoreChange();
+  }).catch(() => undefined);
+  return () => {
+    disposed = true;
+    status?.removeEventListener("change", handleChange);
+    window.removeEventListener("masterok-notification-permission", handleChange);
+    window.removeEventListener("focus", handleChange);
+  };
+}
+
+function getNotificationPermissionSnapshot(): NotificationPermission | "unsupported" {
+  return typeof Notification === "undefined" ? "unsupported" : Notification.permission;
+}
+
+function getCuringPresetName(id: string): string {
+  return CURING_PRESETS.find((preset) => preset.id === id)?.name ?? CURING_PRESETS[0].name;
+}
+
 function formatFinishTime(deadlineMs: number): string {
   const deadline = new Date(deadlineMs);
   const today = new Date();
@@ -42,14 +70,31 @@ function formatFinishTime(deadlineMs: number): string {
 
 export default function CuringTimer() {
   const searchParams = useSearchParams();
-  const [selectedId, setSelectedId] = useState(DEFAULT_PRESET_ID);
-  const [activeCategory, setActiveCategory] = useState(CURING_PRESETS[0].category);
+  const urlPresetId = searchParams.get("preset");
+  const initialPresetId = urlPresetId && isCuringPresetId(urlPresetId) ? urlPresetId : DEFAULT_PRESET_ID;
+  return <CuringTimerSession key={initialPresetId} searchParams={searchParams} initialPresetId={initialPresetId} />;
+}
+
+function CuringTimerSession({
+  searchParams,
+  initialPresetId,
+}: {
+  searchParams: ReturnType<typeof useSearchParams>;
+  initialPresetId: string;
+}) {
+  const initialPreset = CURING_PRESETS.find((preset) => preset.id === initialPresetId) ?? CURING_PRESETS[0];
+  const [selectedId, setSelectedId] = useState(initialPreset.id);
+  const [activeCategory, setActiveCategory] = useState(initialPreset.category);
   const [customMinutesInput, setCustomMinutesInput] = useState("");
   const [status, setStatus] = useState<TimerStatus>("setup");
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [timerTotalSeconds, setTimerTotalSeconds] = useState(0);
   const [deadlineMs, setDeadlineMs] = useState<number | null>(null);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const notificationPermission = useSyncExternalStore(
+    subscribeToNotificationPermission,
+    getNotificationPermissionSnapshot,
+    () => "unsupported",
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const resultRef = useRef<HTMLElement>(null);
 
@@ -70,26 +115,6 @@ export default function CuringTimer() {
     status !== "setup",
   );
 
-  useEffect(() => {
-    const fromUrl = searchParams.get("preset");
-    if (fromUrl && isCuringPresetId(fromUrl)) {
-      const fromUrlPreset = CURING_PRESETS.find((preset) => preset.id === fromUrl);
-      if (fromUrlPreset) {
-        setSelectedId(fromUrlPreset.id);
-        setActiveCategory(fromUrlPreset.category);
-        setCustomMinutesInput("");
-        setStatus("setup");
-        setDeadlineMs(null);
-      }
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (typeof Notification !== "undefined") {
-      setNotificationPermission(Notification.permission);
-    }
-  }, []);
-
   const signalCompletion = useCallback(() => {
     setStatus("completed");
     setDeadlineMs(null);
@@ -98,13 +123,13 @@ export default function CuringTimer() {
     navigator.vibrate?.([200, 100, 200, 100, 200]);
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("Таймер завершён!", {
-        body: `${selectedPreset.name}: проверьте поверхность перед продолжением работ`,
+        body: `${getCuringPresetName(selectedId)}: проверьте поверхность перед продолжением работ`,
         icon: "/favicon.ico",
         tag: "curing-timer",
         requireInteraction: true,
       });
     }
-  }, [selectedPreset.name]);
+  }, [selectedId]);
 
   useEffect(() => {
     if (status !== "running" || deadlineMs === null) return;
@@ -186,8 +211,8 @@ export default function CuringTimer() {
 
   const enableNotifications = async () => {
     if (typeof Notification === "undefined") return;
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
+    await Notification.requestPermission();
+    window.dispatchEvent(new Event("masterok-notification-permission"));
   };
 
   const phase = status === "completed" ? 3 : status === "setup" ? 1 : 2;

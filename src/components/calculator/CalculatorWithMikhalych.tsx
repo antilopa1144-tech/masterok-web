@@ -151,10 +151,7 @@ export default function CalculatorWithMikhalych({ calculator }: { calculator: Ca
   const transferredRoofArea = Number(searchParams.get("roofArea") ?? searchParams.get("projectSlopeAreaM2"));
   const deckLayoutBoardsHint = Number(searchParams.get("layoutBoardsHint"));
   const paverLayoutPiecesHint = Number(searchParams.get("layoutPaversHint"));
-  const lightingLayoutTransfer = useMemo(
-    () => readLightingLayoutCeilingTransfer(searchParams),
-    [searchParams],
-  );
+  const lightingLayoutTransfer = readLightingLayoutCeilingTransfer(searchParams);
   const foundationConcreteSourceLabel = getFoundationConcreteSourceLabel(transferSource);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, LoaderCircle } from "lucide-react";
 import { CONSTRUCTOR_EDITOR_URL } from "@/lib/constructor/entry";
 import styles from "./constructor-entry.module.css";
+
+const subscribeToHydration = () => () => {};
 
 export default function ConstructorImportAction({ children }: { children?: ReactNode }) {
   const router = useRouter();
@@ -12,11 +14,11 @@ export default function ConstructorImportAction({ children }: { children?: React
   const fileInput = useRef<HTMLInputElement>(null);
   const errorMessage = useRef<HTMLParagraphElement>(null);
   const pending = useRef<AbortController | null>(null);
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => { setReady(true); return () => pending.current?.abort(); }, []);
+  useEffect(() => () => pending.current?.abort(), []);
   useEffect(() => { if (error) errorMessage.current?.focus(); }, [error]);
 
   const openFile = async (file: File) => {

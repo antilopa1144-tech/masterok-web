@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { trackProjectExport } from "@/lib/analytics";
 import {
   deleteEntryFromProject,
@@ -36,6 +37,7 @@ function priceProgress(totals: ProjectEstimateViewModel["totals"]) {
 }
 
 export default function ProjectEstimateView({ projectId }: { projectId: string }) {
+  const router = useRouter();
   const [project, setProject] = useState<ProjectWithEntries | null>(null);
   const [view, setView] = useState<ProjectEstimateViewModel | null>(null);
   const [meta, setMeta] = useState<ProjectEstimateMeta>({ reservePercent: 0, deliveryRub: 0 });
@@ -68,8 +70,30 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
   }, [projectId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    void getProjects().then(async (projects) => {
+      const found = projects.find((item) => item.id === projectId) ?? null;
+      if (!found) {
+        if (!cancelled) {
+          setNotFound(true);
+          setLoaded(true);
+        }
+        return;
+      }
+      const projectMeta = loadProjectMeta(projectId);
+      const model = await buildProjectEstimateView(found, projectMeta);
+      if (cancelled) return;
+      setProject(found);
+      setMeta(projectMeta);
+      setView(model);
+      setChecked(loadCheckedKeys(projectId));
+      setNameDraft(found.name);
+      setLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   const totals = useMemo(() => {
     if (!view) return null;
@@ -489,7 +513,7 @@ export default function ProjectEstimateView({ projectId }: { projectId: string }
             onClick={async () => {
               if (!confirm("Удалить проект и все расчёты?")) return;
               await deleteProject(project.id);
-              window.location.href = "/proekty/";
+              router.push("/proekty/");
             }}
             className="text-sm text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
           >

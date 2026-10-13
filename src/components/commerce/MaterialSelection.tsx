@@ -23,16 +23,19 @@ function quantityText(material: MaterialResult): string {
 }
 
 export default function MaterialSelection({ calculatorId, calculatorSlug, materials }: Props) {
+  const pilot = procurementPilotForCalculator(calculatorId) ?? (isPilot(calculatorSlug) ? calculatorSlug : undefined);
+  return <MaterialSelectionSession key={pilot ?? "none"} pilot={pilot} materials={materials} />;
+}
+
+function MaterialSelectionSession({ pilot, materials }: { pilot?: (typeof PROCUREMENT_PILOT)[number]; materials: MaterialResult[] }) {
   const [open, setOpen] = useState(false);
   const [offers, setOffers] = useState<MaterialOffer[] | null>(null);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "unavailable">("idle");
-  const pilot = procurementPilotForCalculator(calculatorId) ?? (isPilot(calculatorSlug) ? calculatorSlug : undefined);
   const guidance = useMemo(() => pilot ? getMaterialGuidance(pilot) : null, [pilot]);
 
   useEffect(() => {
     if (!open || !pilot) return;
     const controller = new AbortController();
-    setLoadState("loading");
     fetch(`/api/commerce/offers?calculator=${encodeURIComponent(pilot)}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Offers unavailable: ${response.status}`);
@@ -55,11 +58,14 @@ export default function MaterialSelection({ calculatorId, calculatorSlug, materi
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-sm font-semibold text-slate-800 hover:border-accent-300 hover:text-accent-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100"
-        onClick={() => setOpen((value) => {
-          const next = !value;
-          if (next) trackCommerceEvent("commerce_materials_open", { calculator: pilot });
-          return next;
-        })}
+        onClick={() => {
+          if (!open) {
+            setLoadState("loading");
+            setOffers(null);
+            trackCommerceEvent("commerce_materials_open", { calculator: pilot });
+          }
+          setOpen(!open);
+        }}
         aria-expanded={open}
       >
         <span>Подобрать материалы</span>

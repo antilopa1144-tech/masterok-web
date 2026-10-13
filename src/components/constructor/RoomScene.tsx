@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -259,6 +259,10 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
   group.add(label(`${formatNumber(room.lengthMm)} мм`, new THREE.Vector3(w / 2 + 0.55, 0.05, 0), labelWidth));
 }
 
+type SceneState = { phase: "starting" | "ready" | "unavailable"; error: string };
+type SceneAction = { type: "renderer-ready" } | { type: "renderer-unavailable"; message: string };
+const reduceSceneState = (state: SceneState, action: SceneAction): SceneState => action.type === "renderer-ready" ? { phase: "ready", error: "" } : { phase: "unavailable", error: action.message || state.error };
+
 export default function RoomScene({ room, calculation, allWalls, furnished, resetToken, selectedSurface, selectedFurnishing, movingFurnishing, onPosition, onGesture, onExitMove, onSelect, onCapture, onFallback, onControls }: {
   room: ConstructorRoom; calculation: RoomCalculation; allWalls: boolean; furnished: boolean; resetToken: number;
   selectedSurface: SelectedSurface;
@@ -274,18 +278,21 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
 }) {
   const host = useRef<HTMLDivElement>(null);
   const runtime = useRef<Runtime | undefined>(undefined);
-  const selectRef = useRef(onSelect); selectRef.current = onSelect;
-  const controlsRef = useRef(onControls); controlsRef.current = onControls;
-  const moveRef = useRef({ id: movingFurnishing, onPosition, onGesture, onExitMove }); moveRef.current = { id: movingFurnishing, onPosition, onGesture, onExitMove };
-  const [error, setError] = useState("");
-  const [ready, setReady] = useState(false);
+  const selectRef = useRef(onSelect);
+  const controlsRef = useRef(onControls);
+  const moveRef = useRef({ id: movingFurnishing, onPosition, onGesture, onExitMove });
+  const [sceneState, dispatchScene] = useReducer(reduceSceneState, { phase: "starting", error: "" });
   const [feedback, setFeedback] = useState<{ room: ConstructorRoom; id: string; issues: FurnishingIssue[] }>();
+
+  useEffect(() => { selectRef.current = onSelect; }, [onSelect]);
+  useEffect(() => { controlsRef.current = onControls; }, [onControls]);
+  useEffect(() => { moveRef.current = { id: movingFurnishing, onPosition, onGesture, onExitMove }; }, [movingFurnishing, onPosition, onGesture, onExitMove]);
 
   useEffect(() => {
     const element = host.current!;
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" }); }
-    catch { setError("3D недоступно в этом браузере. План, раскрой и расчёты продолжают работать."); return; }
+    catch { dispatchScene({ type: "renderer-unavailable", message: "3D недоступно в этом браузере. План, раскрой и расчёты продолжают работать." }); return; }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .92;
@@ -386,12 +393,12 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
         if (object.userData.floor || object.userData.wall !== undefined) { selectRef.current(object.userData.floor ? "floor" : object.userData.wall); break; }
       }
     };
-    const lost = (event: Event) => { event.preventDefault(); setError("Браузер остановил 3D. Откройте план, чтобы продолжить работу и сохранить проект."); };
+    const lost = (event: Event) => { event.preventDefault(); dispatchScene({ type: "renderer-unavailable", message: "Браузер остановил 3D. Откройте план, чтобы продолжить работу и сохранить проект." }); };
     renderer.domElement.addEventListener("pointerdown", pointerDown);
     renderer.domElement.addEventListener("pointerup", pointerUp);
     renderer.domElement.addEventListener("webglcontextlost", lost);
     onCapture(() => { updateWalls(); renderer.render(scene, camera); return renderer.domElement.toDataURL("image/png"); });
-    setReady(true);
+    dispatchScene({ type: "renderer-ready" });
     return () => {
       stopped = true; cancelAnimationFrame(frame); resize.disconnect(); themeObserver.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", pointerDown); renderer.domElement.removeEventListener("pointerup", pointerUp); renderer.domElement.removeEventListener("webglcontextlost", lost);
@@ -403,7 +410,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
 
   useEffect(() => {
     const current = runtime.current;
-    if (!current || !ready) return;
+    if (!current || sceneState.phase !== "ready") return;
     disposeGroup(current.content); buildRoom(current.content, room, calculation, furnished, Math.min(16, current.renderer.capabilities.getMaxAnisotropy()), current.render);
     const extent = Math.max(room.widthMm, room.lengthMm, room.heightMm) / 1000;
     current.sun.position.set(-extent * .35, extent * 1.4, -extent * 1.1);
@@ -413,11 +420,11 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     const size = `${room.widthMm}/${room.lengthMm}/${room.heightMm}`;
     if (current.roomId !== room.id || current.size !== size) { current.roomId = room.id; current.size = size; current.reset(); }
     current.render();
-  }, [room, calculation, furnished, ready]);
+  }, [room, calculation, furnished, sceneState.phase]);
 
   useEffect(() => {
     const current = runtime.current;
-    if (!current || !ready) return;
+    if (!current || sceneState.phase !== "ready") return;
     disposeGroup(current.selection);
     let selectionLabel = "";
     if (selectedSurface !== null) {
@@ -433,24 +440,24 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     }
     current.renderer.domElement.setAttribute("aria-label", `Трёхмерная модель комнаты.${selectionLabel} ${movingFurnishing ? "Перетаскивайте выбранный предмет. Стрелки — сдвиг, Escape — отмена." : "Перетаскивайте для вращения, используйте два пальца для масштаба."}`);
     current.render();
-  }, [selectedSurface, selectedFurnishing, movingFurnishing, room, calculation, furnished, ready]);
+  }, [selectedSurface, selectedFurnishing, movingFurnishing, room, calculation, furnished, sceneState.phase]);
 
   useEffect(() => {
     const current = runtime.current;
-    if (!current || !ready || !movingFurnishing) return;
+    if (!current || sceneState.phase !== "ready" || !movingFurnishing) return;
     current.controls.enabled = false;
     const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing, render: current.render,
       onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove(),
       onFeedback: (issues) => { setFurnishingHighlightWarning(current.selection, issues.length > 0); setFeedback({ room, id: movingFurnishing, issues }); } });
     return () => { dispose(); current.controls.enabled = true; };
-  }, [room, movingFurnishing, ready, resetToken]);
+  }, [room, movingFurnishing, sceneState.phase, resetToken]);
 
   useEffect(() => {
     if (!runtime.current) return;
     runtime.current.allWalls = allWalls; runtime.current.render();
-  }, [allWalls, ready]);
+  }, [allWalls, sceneState.phase]);
 
   useEffect(() => { runtime.current?.reset(); }, [resetToken]);
 
-  return <><div className={styles.scene} ref={host} data-testid="constructor-3d" />{movingFurnishing && !error && <ScenePlacementFeedback issues={feedback?.room === room && feedback.id === movingFurnishing ? feedback.issues : []} />}{error && <div className={styles.sceneError} role="status"><p>{error}</p><button type="button" onClick={onFallback}>Перейти к плану</button></div>}</>;
+  return <><div className={styles.scene} ref={host} data-testid="constructor-3d" />{movingFurnishing && sceneState.phase !== "unavailable" && <ScenePlacementFeedback issues={feedback?.room === room && feedback.id === movingFurnishing ? feedback.issues : []} />}{sceneState.error && <div className={styles.sceneError} role="status"><p>{sceneState.error}</p><button type="button" onClick={onFallback}>Перейти к плану</button></div>}</>;
 }

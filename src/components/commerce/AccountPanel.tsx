@@ -26,8 +26,12 @@ export function CommerceLogin({onSignedIn}:{onSignedIn?:()=>void}) {
 }
 export default function AccountPanel() {
   const [data,setData]=useState<Me|null>(null);const [loading,setLoading]=useState(true);const [offer,setOffer]=useState(false);const [renew,setRenew]=useState(false);const [notice,setNotice]=useState("");const [busy,setBusy]=useState(false);
-  const load=useCallback(async()=>{try{const r=await fetch("/api/commerce/me");const b=await r.json();if(!r.ok)throw new Error(b.error);setData(b);}catch{setNotice("Кабинет сейчас недоступен. Повторите загрузку.");}finally{setLoading(false);}},[]);
-  useEffect(()=>{void load();},[load]);
+  const load=useCallback((signal?: AbortSignal)=>fetch("/api/commerce/me", { signal })
+    .then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error); return body as Me; })
+    .then((body) => { if (!signal?.aborted) setData(body); })
+    .catch(() => { if (!signal?.aborted) setNotice("Кабинет сейчас недоступен. Повторите загрузку."); })
+    .finally(() => { if (!signal?.aborted) setLoading(false); }), []);
+  useEffect(()=>{const controller = new AbortController(); void load(controller.signal); return () => controller.abort();},[load]);
   async function action(path:string,body:Record<string,unknown>={}) {setBusy(true);setNotice("");try{const r=await fetch(`/api/commerce/${path}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const b=await r.json();if(!r.ok)throw new Error(b.error??"Действие не выполнено");if(b.paymentUrl)location.href=b.paymentUrl;else await load();}catch(cause){setNotice(cause instanceof Error?cause.message:"Нет связи с сервером");}finally{setBusy(false);}}
   if(loading)return <main className="page-container py-12">Загружаем кабинет…</main>;
   if(!data)return <main className="page-container py-12"><p role="alert">{notice}</p><button className="btn-secondary mt-3" onClick={()=>void load()}>Повторить</button></main>;

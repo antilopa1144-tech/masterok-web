@@ -47,7 +47,6 @@ function BrickworkSVG({ result, jointMm }: { result: BrickLayoutResult; jointMm:
   const brickH = result.brickHmm * scale;
   const gap = jointMm * scale;
 
-  let y = 0;
   return (
     <svg
       viewBox={`0 0 ${svgW} ${svgH}`}
@@ -57,9 +56,8 @@ function BrickworkSVG({ result, jointMm }: { result: BrickLayoutResult; jointMm:
       aria-label={`Схема кирпичной кладки, перевязка: ${result.bond}`}
     >
       {result.rows.map((row, ri) => {
+        const rowY = result.rows.slice(0, ri).length * (brickH + gap);
         let x = 0;
-        const rowY = y;
-        y += brickH + gap;
         return (
           <g key={ri}>
             {row.map((b, ci) => {

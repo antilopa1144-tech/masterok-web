@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-import { middleware } from "../src/middleware";
+import { proxy as middleware } from "../src/proxy";
 
 const request = (path: string) => new NextRequest(`https://getmasterok.ru${path}`);
 
