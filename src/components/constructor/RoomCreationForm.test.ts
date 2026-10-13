@@ -14,7 +14,7 @@ describe("Preparing a room before adding it to the project", () => {
   let container: HTMLDivElement;
   let root: Root;
   let onCreate: ReturnType<typeof vi.fn<(room: ConstructorRoom) => string | undefined>>;
-  let onCancel: ReturnType<typeof vi.fn>;
+  let onCancel: ReturnType<typeof vi.fn<() => void>>;
   beforeEach(async () => {
     container = document.createElement("div"); document.body.append(container);
     root = createRoot(container); onCreate = vi.fn(() => undefined); onCancel = vi.fn();

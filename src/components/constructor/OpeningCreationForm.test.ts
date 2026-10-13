@@ -13,7 +13,7 @@ afterAll(() => vi.unstubAllGlobals());
 describe("The door and window setup form", () => {
   let container: HTMLDivElement, root: Root, project: ConstructorProject;
   let onConfirm: ReturnType<typeof vi.fn<(opening: Opening) => string | undefined>>;
-  let onCancel: ReturnType<typeof vi.fn>;
+  let onCancel: ReturnType<typeof vi.fn<() => void>>;
   const render = async (initialOpening: Opening, editing = false) => {
     await act(async () => root.render(React.createElement(OpeningCreationForm, { project, room: project.rooms[0], initialOpening, editing, blocked: false, onConfirm, onCancel })));
   };
