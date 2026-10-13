@@ -39,16 +39,23 @@ describe("ISR on read-only Timeweb build directories", () => {
   });
 
   it("updates content and sitemap and invalidates tags without writing build files", async () => {
-    expect(nextConfig.experimental?.isrFlushToDisk).toBe(false);
-    const { cache, writeFile } = readonlyCache(nextConfig.experimental!.isrFlushToDisk!);
-    for (const version of ["v1", "v2"]) {
-      await cache.set("fixed-posts", fetchValue(version), fetchContext);
-      await cache.set("fixed-sitemap.xml", routeValue(version), routeContext);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      expect(nextConfig.experimental?.isrFlushToDisk).toBe(false);
+      const { cache, writeFile } = readonlyCache(nextConfig.experimental!.isrFlushToDisk!);
+      for (const version of ["v1", "v2"]) {
+        await cache.set("fixed-posts", fetchValue(version), fetchContext);
+        await cache.set("fixed-sitemap.xml", routeValue(version), routeContext);
+      }
+      expect((await cache.get("fixed-posts", fetchContext))?.value).toEqual(fetchValue("v2"));
+      expect((await cache.get("fixed-sitemap.xml", routeContext))?.value).toEqual(routeValue("v2"));
+      // Next 16 истекает записи, созданные строго до инвалидации тега.
+      vi.advanceTimersByTime(1);
+      await cache.revalidateTag("readonly-test", { expire: 0 });
+      expect(await cache.get("fixed-posts", fetchContext)).toBeNull();
+      expect(writeFile).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
     }
-    expect((await cache.get("fixed-posts", fetchContext))?.value).toEqual(fetchValue("v2"));
-    expect((await cache.get("fixed-sitemap.xml", routeContext))?.value).toEqual(routeValue("v2"));
-    await cache.revalidateTag("readonly-test");
-    expect(await cache.get("fixed-posts", fetchContext)).toBeNull();
-    expect(writeFile).not.toHaveBeenCalled();
   });
 });

@@ -99,7 +99,8 @@ function parsePublicationEvent(value: unknown): PublicationEvent | null {
 }
 
 function invalidatePublishedBlogCache(): void {
-  revalidateTag(BLOG_CACHE_TAG);
+  // Webhook сохраняет немедленное истечение кэша, без выдачи старой статьи.
+  revalidateTag(BLOG_CACHE_TAG, { expire: 0 });
   revalidatePath("/blog/");
   revalidatePath("/blog/[slug]", "page");
   revalidatePath("/blog/tag/[tag]", "page");

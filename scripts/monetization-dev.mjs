@@ -21,7 +21,7 @@ const environment = {
 };
 
 const next = path.join(process.cwd(), "node_modules", "next", "dist", "bin", "next");
-const child = spawn(process.execPath, [next, "dev", "-H", "127.0.0.1", "-p", String(port)], {
+const child = spawn(process.execPath, [next, "dev", "--webpack", "-H", "127.0.0.1", "-p", String(port)], {
   cwd: process.cwd(), env: environment, stdio: "inherit",
 });
 

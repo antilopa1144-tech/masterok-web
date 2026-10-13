@@ -45,7 +45,7 @@ describe("POST /api/blog/revalidate", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ accepted: true, publicReady: false });
-    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith("ghost-blog");
+    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith("ghost-blog", { expire: 0 });
     expect(revalidatePath).toHaveBeenCalledTimes(9);
     expect(revalidatePath).toHaveBeenNthCalledWith(1, "/blog/");
     expect(revalidatePath).toHaveBeenNthCalledWith(2, "/blog/[slug]", "page");

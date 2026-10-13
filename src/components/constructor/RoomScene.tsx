@@ -273,7 +273,7 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
   onControls?: (actions: { zoomIn: () => void; zoomOut: () => void; topView: () => void } | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  const runtime = useRef<Runtime>();
+  const runtime = useRef<Runtime | undefined>(undefined);
   const selectRef = useRef(onSelect); selectRef.current = onSelect;
   const controlsRef = useRef(onControls); controlsRef.current = onControls;
   const moveRef = useRef({ id: movingFurnishing, onPosition, onGesture, onExitMove }); moveRef.current = { id: movingFurnishing, onPosition, onGesture, onExitMove };

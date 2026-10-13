@@ -15,11 +15,11 @@ export function useDrawingViewport({ focus, resetKey }: { focus?: DrawingFocus; 
   const [zoom, setZoom] = useState(1);
   const [sizeRevision, setSizeRevision] = useState(0);
   const [panning, setPanning] = useState(false);
-  const drag = useRef<{ x: number; y: number; left: number; top: number }>();
+  const drag = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
   const dragged = useRef(false);
   const focusedToken = useRef(0);
-  const zoomFrame = useRef<number>();
-  const focusFrame = useRef<number>();
+  const zoomFrame = useRef<number | undefined>(undefined);
+  const focusFrame = useRef<number | undefined>(undefined);
   const token = focus?.token, x = focus?.x, y = focus?.y, reveal = focus?.reveal;
 
   const cancelZoom = () => { if (zoomFrame.current !== undefined) cancelAnimationFrame(zoomFrame.current); };

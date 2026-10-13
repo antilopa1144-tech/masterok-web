@@ -111,7 +111,7 @@ export function useCalculator(calculator: CalculatorWidgetProps) {
   const [showComparison, setShowComparison] = useState(false);
   const [customModifiers, setCustomModifiersState] = useState<Partial<AccuracyModifiers>>({});
   const [hasStarted, setHasStarted] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const calculationRevisionRef = useRef(0);
   const hasTrackedStartRef = useRef(false);
   const lastValidationErrorSignatureRef = useRef("");
