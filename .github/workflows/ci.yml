@@ -95,5 +95,17 @@ jobs:
           npm run test:e2e:catalog || { cat /tmp/masterok-next.log; exit 1; }
         env:
           E2E_BASE_URL: http://127.0.0.1:3456
+          GHOST_API_URL: ${{ secrets.GHOST_API_URL }}
+          GHOST_CONTENT_API_KEY: ${{ secrets.GHOST_CONTENT_API_KEY }}
+
+      - name: Save browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-evidence
+          path: |
+            test-results/
+            /tmp/masterok-next.log
+          retention-days: 7
 
   # Deploy: Timeweb Cloud auto-deploys from main branch
