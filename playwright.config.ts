@@ -33,7 +33,7 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined
     : {
-        command: "npx next dev -p 3456",
+        command: "node node_modules/next/dist/bin/next dev --webpack -p 3456",
         url: "http://localhost:3456",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
