@@ -1,0 +1,17 @@
+.calculatorWorkspace {
+  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  border-block: 1px solid var(--color-slate-200);
+  background: var(--theme-surface-muted);
+}
+
+:global(.dark) .calculatorWorkspace {
+  border-color: var(--color-slate-700);
+}
+
+@media (max-width: 639px) {
+  .calculatorWorkspace {
+    margin-inline: -1rem;
+    padding: 1.25rem 1rem;
+  }
+}

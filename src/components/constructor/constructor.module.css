@@ -1,10 +1,10 @@
 .workspace {
-  --c-bg: #f0f2f3;
+  --c-bg: #edece8;
   --c-surface: #fff;
-  --c-muted: #f6f7f8;
-  --c-text: #22272e;
-  --c-secondary: #6d7682;
-  --c-line: #e4e7eb;
+  --c-muted: #f5f4f1;
+  --c-text: #252825;
+  --c-secondary: #626960;
+  --c-line: #e3e4df;
   --c-accent: var(--color-accent-600, #ea580c);
   --c-tint: var(--color-accent-50, #fff7ed);
   --c-warning: #b91c1c;

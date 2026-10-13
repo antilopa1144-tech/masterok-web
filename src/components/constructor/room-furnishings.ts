@@ -3,6 +3,8 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import type { ConstructorRoom, FurnishingDimensions } from "@/lib/constructor/core";
 import { interiorFor, layoutFurnishings } from "@/lib/constructor/interiors";
 import { createFixture } from "./room-fixtures";
+import { createContactShade, createJoineryMaterial } from "./surface-finishes";
+import { batchFurnishingMeshes } from "./furnishing-meshes";
 
 const FLOOR_Y = .023;
 const SOFA_LENGTH = 2.05;
@@ -11,7 +13,7 @@ const SOFA_DEPTH = .88;
 function fabricTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas"); canvas.width = canvas.height = 192;
   const context = canvas.getContext("2d")!;
-  context.fillStyle = "#dedad2"; context.fillRect(0, 0, 192, 192);
+  context.fillStyle = "#eeeae2"; context.fillRect(0, 0, 192, 192);
   for (let line = 0; line < 192; line += 6) {
     context.strokeStyle = line % 12 ? "rgba(104,96,86,.08)" : "rgba(255,255,255,.2)";
     context.lineWidth = 1; context.beginPath(); context.moveTo(0, line + .5); context.lineTo(192, line + .5); context.stroke();
@@ -96,16 +98,17 @@ export function buildFurnishings(room: ConstructorRoom): THREE.Group {
   if (!layout.placements.length) return group;
   let fabric: THREE.MeshStandardMaterial | undefined;
   const getFabric = () => {
-    if (!fabric) { const map = fabricTexture(); fabric = new THREE.MeshStandardMaterial({ color: "#e5e1d9", map, bumpMap: map, bumpScale: .006, roughness: .92 }); }
+    if (!fabric) { const map = fabricTexture(); fabric = new THREE.MeshStandardMaterial({ color: "#ded8cc", map, bumpMap: map, bumpScale: .0018, roughness: .96, envMapIntensity: .3 }); }
     return fabric;
   };
+  let contactShade: THREE.DataTexture | undefined;
   for (const placement of layout.placements) {
     const item = new THREE.Group(), model = new THREE.Group(); item.name = placement.kind; model.name = "furnishing-model"; item.userData.furnishingKind = placement.kind; item.userData.furnishingId = placement.id;
     const instance = interiorFor(room).items.find((value) => value.id === placement.id)!;
     if (placement.kind === "sofa") {
       addSofa(model, new THREE.Vector3(0, -FLOOR_Y, 0), 0, getFabric(), new THREE.MeshStandardMaterial({ color: "#bc684d", roughness: .83 }), new THREE.MeshStandardMaterial({ color: "#625e57", roughness: .48, metalness: .08 }));
     } else if (placement.kind === "coffee-table") {
-      addTable(model, new THREE.Vector3(0, -FLOOR_Y, 0), new THREE.MeshStandardMaterial({ color: "#a7774f", roughness: .56 }), new THREE.MeshStandardMaterial({ color: "#625e57", roughness: .48, metalness: .08 }));
+      addTable(model, new THREE.Vector3(0, -FLOOR_Y, 0), createJoineryMaterial(), new THREE.MeshStandardMaterial({ color: "#625e57", roughness: .48, metalness: .08 }));
       const rotated = Math.abs(Math.sin(placement.rotation)) > .5;
       const availableX = 2 * Math.min(placement.centerXmm, room.widthMm - placement.centerXmm) / 1000 - .15;
       const availableZ = 2 * Math.min(placement.centerYmm, room.lengthMm - placement.centerYmm) / 1000 - .15;
@@ -123,8 +126,16 @@ export function buildFurnishings(room: ConstructorRoom): THREE.Group {
       const needsFabric = ["bed", "office-chair", "dining-table", "towel-rail"].includes(placement.kind);
       model.add(createFixture(placement.kind, needsFabric ? getFabric() : undefined));
     }
+    batchFurnishingMeshes(model);
     if (instance.dimensions) fitFurnishingModel(model, instance.dimensions);
     item.add(model);
+    if (!["towel-rail", "wall-cabinet"].includes(placement.kind)) {
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+      const shade = new THREE.Mesh(new THREE.PlaneGeometry(size.x + .22, size.z + .22), new THREE.MeshBasicMaterial({ map: contactShade ??= createContactShade(), transparent: true, depthWrite: false, toneMapped: false }));
+      shade.rotation.x = -Math.PI / 2; shade.position.set(center.x, .001, center.z);
+      shade.userData.ignoreCameraFit = true; shade.raycast = () => {}; item.add(shade);
+    }
     item.position.set((placement.centerXmm - room.widthMm / 2) / 1000, FLOOR_Y, (placement.centerYmm - room.lengthMm / 2) / 1000);
     item.rotation.y = placement.rotation;
     group.add(item);

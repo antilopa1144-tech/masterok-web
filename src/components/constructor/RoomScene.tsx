@@ -17,6 +17,8 @@ import { createSurfaceHighlight, type SelectedSurface } from "./surface-highligh
 import { createFurnishingHighlight, setFurnishingHighlightWarning } from "./furnishing-highlight";
 import { attachFurnishingDrag } from "./furnishing-drag";
 import ScenePlacementFeedback from "./ScenePlacementFeedback";
+import { scenePixelRatio } from "./scene-quality";
+import { createMineralRelief } from "./surface-finishes";
 
 interface Runtime {
   renderer: THREE.WebGLRenderer;
@@ -128,7 +130,7 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
   const texture = canvasTexture(maps.color, anisotropy, true);
   const relief = canvasTexture(maps.relief, anisotropy);
   const matte = canvasTexture(maps.roughness, anisotropy);
-  const wood = new THREE.MeshStandardMaterial({ map: texture, bumpMap: relief, roughnessMap: matte, bumpScale: .004, roughness: .86, metalness: 0, envMapIntensity: .7 });
+  const wood = new THREE.MeshStandardMaterial({ map: texture, bumpMap: relief, roughnessMap: matte, bumpScale: .002, roughness: .72, metalness: 0, envMapIntensity: .85 });
   configureLaminateMaterial(wood, room.floor.direction);
   loadWoodCanvas(decor).then((loadedCanvas) => {
     if (textureLoadCancelled) return;
@@ -160,14 +162,13 @@ function buildRoom(group: THREE.Group, room: ConstructorRoom, calculation: RoomC
   group.add(boards);
   }
 
-  const wallMaterials = [
-    new THREE.MeshStandardMaterial({ color: "#ede9e1", roughness: .96, metalness: 0, envMapIntensity: .45 }),
-    new THREE.MeshStandardMaterial({ color: "#f3f0e9", roughness: .96, metalness: 0, envMapIntensity: .45 }),
-  ];
+  const plaster = createMineralRelief();
+  const wallMaterials = ["#e6e1d8", "#efebe4"].map(color => new THREE.MeshStandardMaterial({ color, roughness: .94, bumpMap: plaster, bumpScale: .0012, envMapIntensity: .35 }));
   const wallCapMaterial = new THREE.MeshStandardMaterial({ color: "#ddd7ce", roughness: .84, metalness: 0 });
   const frameMaterial = new THREE.MeshStandardMaterial({ color: "#f9faf9", roughness: .54, metalness: 0 });
   const trimMaterial = new THREE.MeshStandardMaterial({ color: "#e8e4dc", roughness: .7, metalness: 0 });
-  const glassMaterial = new THREE.MeshPhysicalMaterial({ color: "#c9e6ea", transparent: true, opacity: .42, roughness: .08, metalness: 0, transmission: .08, thickness: .02 });
+  // A small tinted pane does not need the full-scene transmission render pass.
+  const glassMaterial = new THREE.MeshStandardMaterial({ color: "#c9dce2", transparent: true, opacity: .3, roughness: .12, metalness: .12, depthWrite: false });
   const plinthMaterial = new THREE.MeshStandardMaterial({ color: "#f0ede6", roughness: .58, metalness: 0 });
   const curtainMaterial = furnished && ["living", "bedroom", "office"].includes(interiorFor(room).type) ? new THREE.MeshStandardMaterial({ color: "#d4cabb", roughness: .98, side: THREE.DoubleSide, envMapIntensity: .45 }) : undefined;
   for (let wall = 0; wall < 4; wall++) {
@@ -295,25 +296,28 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     catch { dispatchScene({ type: "renderer-unavailable", message: "3D недоступно в этом браузере. План, раскрой и расчёты продолжают работать." }); return; }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = .92;
+    renderer.toneMappingExposure = .9;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     renderer.domElement.setAttribute("aria-label", "Трёхмерная модель комнаты. Перетаскивайте для вращения, используйте два пальца для масштаба.");
     element.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
     const environment = new RoomEnvironment();
     const pmrem = new THREE.PMREMGenerator(renderer);
     const environmentTarget = pmrem.fromScene(environment, .04);
-    scene.environment = environmentTarget.texture; scene.environmentIntensity = .25;
+    scene.environment = environmentTarget.texture; scene.environmentIntensity = .55;
     environment.dispose(); pmrem.dispose();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 250);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = false; controls.minPolarAngle = 0.08; controls.maxPolarAngle = Math.PI / 2.1;
     controls.minDistance = 1; controls.maxDistance = 70; controls.target.set(0, 0.5, 0);
-    scene.add(new THREE.HemisphereLight("#f8fbff", "#b8afa2", 1.15));
-    const fill = new THREE.DirectionalLight("#e7efff", .8); fill.position.set(4, 5, 4); scene.add(fill);
-    const sun = new THREE.DirectionalLight("#fff1df", 2.5);
+    scene.add(new THREE.HemisphereLight("#f5f8ff", "#aa9580", .85));
+    const fill = new THREE.DirectionalLight("#e1ebff", .45); fill.position.set(-4, 3, -2); scene.add(fill);
+    const sun = new THREE.DirectionalLight("#fff3e2", 2.35);
     sun.position.set(3, 8, 4); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.00015; sun.shadow.normalBias = 0.018;
+    sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.00012; sun.shadow.normalBias = 0.012;
+    sun.shadow.radius = 3;
     scene.add(sun);
     const grid = new THREE.GridHelper(80, 80, "#ffffff", "#ffffff"); grid.position.y = -0.15;
     const gridMaterial = grid.material as THREE.LineBasicMaterial;
@@ -327,7 +331,11 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
       const hidden = [offset.z < -.02, offset.x > .02, offset.z > .02, offset.x < -.02];
       content.traverse((object) => {
         const wall = object.userData.wall as number | undefined;
-        if (wall !== undefined) object.visible = !!runtime.current?.allWalls || !hidden[wall];
+        if (wall !== undefined) {
+          const visible = !!runtime.current?.allWalls || !hidden[wall];
+          if (object.visible !== visible) renderer.shadowMap.needsUpdate = true;
+          object.visible = visible;
+        }
       });
     };
     const render = () => {
@@ -369,8 +377,8 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     controls.addEventListener("change", render);
     const resize = new ResizeObserver(() => {
       if (!element.clientWidth || !element.clientHeight) return;
-      // Supersample even on a 1x display; bound the buffer for large screens and high-DPI phones.
-      renderer.setPixelRatio(Math.max(1, Math.min(Math.max(window.devicePixelRatio, 2), 3, Math.sqrt(8_000_000 / (element.clientWidth * element.clientHeight)))));
+      // Keep crisp 2x output on phones without drawing a 3x buffer for every gesture.
+      renderer.setPixelRatio(scenePixelRatio(element.clientWidth, element.clientHeight, window.devicePixelRatio, matchMedia("(pointer: coarse)").matches || element.clientWidth < 600));
       renderer.setSize(element.clientWidth, element.clientHeight);
       const aspect = element.clientWidth / element.clientHeight; const changed = Math.abs(camera.aspect - aspect) > .05;
       camera.aspect = aspect; camera.updateProjectionMatrix();
@@ -413,10 +421,11 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     if (!current || sceneState.phase !== "ready") return;
     disposeGroup(current.content); buildRoom(current.content, room, calculation, furnished, Math.min(16, current.renderer.capabilities.getMaxAnisotropy()), current.render);
     const extent = Math.max(room.widthMm, room.lengthMm, room.heightMm) / 1000;
-    current.sun.position.set(-extent * .35, extent * 1.4, -extent * 1.1);
+    current.sun.position.set(-extent * .55, extent * 1.65, extent * .95);
     const shadow = current.sun.shadow.camera;
     shadow.left = shadow.bottom = -extent * 1.15; shadow.right = shadow.top = extent * 1.15;
     shadow.far = extent * 5; shadow.updateProjectionMatrix();
+    current.renderer.shadowMap.needsUpdate = true;
     const size = `${room.widthMm}/${room.lengthMm}/${room.heightMm}`;
     if (current.roomId !== room.id || current.size !== size) { current.roomId = room.id; current.size = size; current.reset(); }
     current.render();
@@ -446,7 +455,8 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     const current = runtime.current;
     if (!current || sceneState.phase !== "ready" || !movingFurnishing) return;
     current.controls.enabled = false;
-    const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing, render: current.render,
+    const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing,
+      render: () => { current.renderer.shadowMap.needsUpdate = true; current.render(); },
       onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove(),
       onFeedback: (issues) => { setFurnishingHighlightWarning(current.selection, issues.length > 0); setFeedback({ room, id: movingFurnishing, issues }); } });
     return () => { dispose(); current.controls.enabled = true; };

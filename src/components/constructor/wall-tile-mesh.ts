@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { ConstructorRoom, FloorTileCalculation, WallTileCalculation, WallTileSpec } from "@/lib/constructor/core";
 import { tileGroutColor } from "@/lib/constructor/tile-materials";
+import { createMineralRelief } from "./surface-finishes";
 
 /** Draw clipped fragments without adding artificial seams inside the same tile. */
 function addTileMesh(group: THREE.Group, spec: WallTileSpec, calculation: FloorTileCalculation, anisotropy: number, render: () => void, cancelled: () => boolean,
@@ -12,7 +13,10 @@ function addTileMesh(group: THREE.Group, spec: WallTileSpec, calculation: FloorT
     loaded.colorSpace = THREE.SRGBColorSpace; loaded.anisotropy = anisotropy; loaded.needsUpdate = true; render();
   });
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = anisotropy;
-  const material = new THREE.MeshStandardMaterial({ map, roughness: spec.decor === "marble" ? .4 : .78, metalness: 0, envMapIntensity: .55 });
+  const material = new THREE.MeshStandardMaterial({ map,
+    roughness: spec.decor === "marble" ? .28 : spec.decor === "microcement" ? .88 : .62,
+    bumpMap: createMineralRelief(), bumpScale: spec.decor === "marble" ? .0002 : .0008,
+    metalness: 0, envMapIntensity: .85 });
   const showJoints = spec.jointMm > 0;
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>\nattribute vec4 tileUv;${showJoints ? "\nvarying vec2 vTileSurfaceUv;" : ""}`);
@@ -21,6 +25,9 @@ vec2 surfaceUv = ${floor ? "vec2(uv.x, 1.0 - uv.y)" : "uv"} * tileUv.xy + tileUv
 ${showJoints ? "vTileSurfaceUv = surfaceUv;" : ""}
 #ifdef USE_MAP
 vMapUv = ${spec.orientation === "vertical" ? "vec2(surfaceUv.y, 1.0 - surfaceUv.x)" : "surfaceUv"};
+#endif
+#ifdef USE_BUMPMAP
+vBumpMapUv = surfaceUv * 8.0;
 #endif`);
     if (showJoints) {
       shader.uniforms.tileJointColor = { value: new THREE.Color(tileGroutColor(spec.decor)) };

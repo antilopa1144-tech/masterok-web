@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { FurnishingKind } from "@/lib/constructor/core";
+import { createJoineryMaterial } from "./surface-finishes";
 
 type Material = THREE.MeshStandardMaterial;
 function block(g: THREE.Group, w: number, h: number, d: number, x: number, y: number, z: number, material: THREE.Material, radius = .014) {
@@ -39,10 +40,10 @@ export function createFixture(kind: FurnishingKind, fabric?: THREE.Material): TH
     if (!cache.has(name)) cache.set(name, new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra }));
     return cache.get(name)!;
   };
-  const ceramic = () => material("ceramic", "#faf9f5", .2);
-  const inner = () => material("inner", "#e2e7e5", .29);
-  const chrome = () => material("chrome", "#c8d1d3", .18, .95);
-  const wood = () => material("wood", "#ba9676", .63);
+  const ceramic = () => material("ceramic", "#f8f7f2", .19, 0, { envMapIntensity: 1.15 });
+  const inner = () => material("inner", "#e1e4df", .24, 0, { envMapIntensity: .8 });
+  const chrome = () => material("chrome", "#e1e5e5", .23, 1, { envMapIntensity: 1.35 });
+  const wood = () => { if (!cache.has("wood")) cache.set("wood", createJoineryMaterial()); return cache.get("wood")!; };
   const sage = () => material("sage", "#8f9e90", .63);
   const dark = () => material("dark", "#26363a", .47, .12);
   const glass = () => material("glass", "#b8dae0", .13, .16, { transparent: true, opacity: .2, depthWrite: false, side: THREE.DoubleSide });

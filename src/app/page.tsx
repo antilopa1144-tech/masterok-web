@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import styles from "./HomePage.module.css";
 import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { getAllPosts } from "@/lib/blog";
@@ -141,7 +142,8 @@ export default async function HomePage() {
 
       <div className="page-container-wide pb-14 pt-6 sm:pt-9 lg:pt-10">
         <ConstructorHero />
-        <section id="calculators" className="mt-10 scroll-mt-24" aria-labelledby="calculator-search-title">
+
+        <section id="calculators" className={`${styles.calculatorWorkspace} scroll-mt-24`} aria-labelledby="calculator-search-title">
           <h2 id="calculator-search-title" className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
             Нужен отдельный расчёт?
           </h2>
