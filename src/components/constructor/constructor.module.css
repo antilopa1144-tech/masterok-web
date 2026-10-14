@@ -422,16 +422,16 @@
   .propertiesOpen .center { height: calc(100% - var(--mobile-panel-height)); grid-template-rows: minmax(0, 1fr); }
   .propertiesOpen .summaryBar { display: none; }
   .propertiesOpen .sceneDimensions, .propertiesOpen .cameraTools, .propertiesOpen .sceneOptions { display: none; }
-  .propertiesOpen .scene { top: 52px; }
+  .propertiesOpen .scene { top: 62px; }
   .propertiesOpen .plan { inset: 56px 8px 8px; }
   .viewportToolbar { top: 12px; left: 12px; right: 12px; gap: 10px; }
   .viewTabs { padding: 4px; border-radius: 8px; }
-  .viewTabs button { min-height: 34px; padding: 7px 11px; font-size: 12px; gap: 5px; }
+  .viewTabs button { min-height: 44px; padding: 7px 11px; font-size: 12px; gap: 5px; }
   .viewportToolbar > .iconButton { width: 34px; height: 34px; }
-  .cameraTools { position: absolute; right: 0; top: 53px; flex-direction: column; padding: 3px; gap: 3px; }
-  .cameraTools .iconButton { width: 36px; height: 36px; }
-  .cameraTools .iconButton + .iconButton { border-left-color: transparent; border-top-color: var(--c-line); border-radius: 5px; }
-  .sceneDimensions { top: 67px; left: 12px; max-width: calc(100% - 86px); padding: 8px 10px; gap: 8px; }
+  .cameraTools { position: absolute; right: 0; top: 63px; display: grid; grid-template-columns: repeat(2, 44px); padding: 3px; gap: 3px; }
+  .cameraTools .iconButton { width: 44px; height: 44px; }
+  .cameraTools .iconButton + .iconButton { border-color: transparent; border-radius: 5px; }
+  .sceneDimensions { top: 77px; left: 12px; max-width: calc(100% - 130px); padding: 8px 10px; gap: 8px; }
   .sceneDimensions strong { font-size: 12px; }
   .sceneDimensions span span { font-size: 10px; }
   .plan { inset: 118px 8px 88px; }
@@ -452,7 +452,7 @@
   .sheetHandle + .inspectorHeader { padding-top: 0; }
   .inspectorHeader { padding: 11px 20px 12px; }
   .inspectorHeader h2 { font-size: 18px; }
-  .mobileClose { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--c-secondary); border: 0; min-width: 36px; min-height: 36px; }
+  .mobileClose { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--c-secondary); border: 0; min-width: 44px; min-height: 44px; }
   .properties, .purchasePreview { padding-left: 20px; padding-right: 20px; }
   .properties { padding-top: 18px; padding-bottom: 18px; }
   .purchasePreview { padding-top: 12px; padding-bottom: 14px; gap: 9px; }
@@ -496,7 +496,7 @@
   .sheetHandle, .panelTools button[aria-expanded] { display: none; }
   .inspector .inspectorHeader { padding: 7px 16px 4px; }
   .inspectorHeader h2 { font-size: 16px; }
-  .panelTools .mobileClose { min-width: 28px; min-height: 28px; }
+  .panelTools .mobileClose { min-width: 44px; min-height: 44px; }
   .inspectorTabs { margin-left: 16px; margin-right: 16px; }
   .inspectorTabs button { padding: 6px 0 8px; font-size: 12px; }
   .properties { padding: 10px 16px; gap: 12px; }
@@ -508,7 +508,9 @@
   .editorTitle { display: none; }
   .projectName { font-size: 12px; }
   .historyButtons .iconButton { width: 25px; }
-  .viewTabs button { padding: 7px 9px; }
+  .viewTabs { width: 100%; }
+  .viewTabs button { flex: 1; justify-content: center; min-width: 0; padding: 7px 5px; font-size: 11px; }
+  .viewTabs button svg { display: none; }
   .fieldRow { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .workspace *, .workspace *::before, .workspace *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

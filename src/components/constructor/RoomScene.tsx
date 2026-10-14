@@ -17,7 +17,8 @@ import { createSurfaceHighlight, type SelectedSurface } from "./surface-highligh
 import { createFurnishingHighlight, setFurnishingHighlightWarning } from "./furnishing-highlight";
 import { attachFurnishingDrag } from "./furnishing-drag";
 import ScenePlacementFeedback from "./ScenePlacementFeedback";
-import { scenePixelRatio } from "./scene-quality";
+import { createSceneQualityController, scenePixelRatio } from "./scene-quality";
+import { createSceneTapTracker } from "./scene-tap";
 import { createMineralRelief } from "./surface-finishes";
 
 interface Runtime {
@@ -29,6 +30,7 @@ interface Runtime {
   content: THREE.Group;
   selection: THREE.Group;
   render: () => void;
+  quality: ReturnType<typeof createSceneQualityController>;
   reset: (direction?: THREE.Vector3) => void;
   roomId?: string;
   size?: string;
@@ -365,7 +367,11 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
       controls.maxDistance = Math.max(70, distance * 3);
       camera.position.copy(controls.target).addScaledVector(direction, distance * 1.08); controls.update(); render();
     };
-    runtime.current = { renderer, scene, camera, controls, sun, content, selection, render, reset, allWalls: false };
+    const quality = createSceneQualityController(
+      (moving) => scenePixelRatio(element.clientWidth, element.clientHeight, window.devicePixelRatio, matchMedia("(pointer: coarse)").matches || element.clientWidth < 600, moving),
+      (ratio) => { renderer.setPixelRatio(ratio); render(); },
+    );
+    runtime.current = { renderer, scene, camera, controls, sun, content, selection, render, quality, reset, allWalls: false };
     const zoom = (factor: number) => {
       const offset = camera.position.clone().sub(controls.target);
       const distance = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
@@ -374,21 +380,25 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
       controls.update(); render();
     };
     controlsRef.current?.({ zoomIn: () => zoom(.82), zoomOut: () => zoom(1.22), topView: () => reset(new THREE.Vector3(0, 1, .005)) });
-    controls.addEventListener("change", render);
+    let orbiting = false;
+    controls.addEventListener("start", () => { orbiting = true; });
+    controls.addEventListener("change", () => { if (orbiting) quality.start(); render(); });
+    controls.addEventListener("end", () => { orbiting = false; quality.end(); });
     const resize = new ResizeObserver(() => {
       if (!element.clientWidth || !element.clientHeight) return;
-      // Keep crisp 2x output on phones without drawing a 3x buffer for every gesture.
-      renderer.setPixelRatio(scenePixelRatio(element.clientWidth, element.clientHeight, window.devicePixelRatio, matchMedia("(pointer: coarse)").matches || element.clientWidth < 600));
+      quality.update();
       renderer.setSize(element.clientWidth, element.clientHeight);
       const aspect = element.clientWidth / element.clientHeight; const changed = Math.abs(camera.aspect - aspect) > .05;
       camera.aspect = aspect; camera.updateProjectionMatrix();
       if (changed && content.children.length) reset(); else render();
     }); resize.observe(element);
-    const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2(); let down = { x: 0, y: 0 };
-    const pointerDown = (event: PointerEvent) => { down = { x: event.clientX, y: event.clientY }; };
+    const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
+    const taps = createSceneTapTracker();
+    const pointerDown = (event: PointerEvent) => { taps.down(event); };
+    const pointerMove = (event: PointerEvent) => { taps.move(event); };
+    const pointerCancel = (event: PointerEvent) => { taps.cancel(event.pointerId); quality.restore(); };
     const pointerUp = (event: PointerEvent) => {
-      if (moveRef.current.id) return;
-      if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > 5) return;
+      if (!taps.up(event) || moveRef.current.id) return;
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
       raycaster.setFromCamera(pointer, camera);
@@ -403,13 +413,20 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     };
     const lost = (event: Event) => { event.preventDefault(); dispatchScene({ type: "renderer-unavailable", message: "Браузер остановил 3D. Откройте план, чтобы продолжить работу и сохранить проект." }); };
     renderer.domElement.addEventListener("pointerdown", pointerDown);
+    renderer.domElement.addEventListener("pointermove", pointerMove);
     renderer.domElement.addEventListener("pointerup", pointerUp);
+    renderer.domElement.addEventListener("pointercancel", pointerCancel);
+    const interrupt = () => { orbiting = false; taps.reset(); quality.restore(); };
+    window.addEventListener("blur", interrupt);
+    document.addEventListener("visibilitychange", interrupt);
     renderer.domElement.addEventListener("webglcontextlost", lost);
-    onCapture(() => { updateWalls(); renderer.render(scene, camera); return renderer.domElement.toDataURL("image/png"); });
+    onCapture(() => { quality.restore(); updateWalls(); renderer.render(scene, camera); return renderer.domElement.toDataURL("image/png"); });
     dispatchScene({ type: "renderer-ready" });
     return () => {
-      stopped = true; cancelAnimationFrame(frame); resize.disconnect(); themeObserver.disconnect(); controls.dispose();
+      stopped = true; quality.dispose(); cancelAnimationFrame(frame); resize.disconnect(); themeObserver.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", pointerDown); renderer.domElement.removeEventListener("pointerup", pointerUp); renderer.domElement.removeEventListener("webglcontextlost", lost);
+      renderer.domElement.removeEventListener("pointermove", pointerMove); renderer.domElement.removeEventListener("pointercancel", pointerCancel);
+      window.removeEventListener("blur", interrupt); document.removeEventListener("visibilitychange", interrupt);
       disposeGroup(content); disposeGroup(selection); grid.geometry.dispose(); (grid.material as THREE.Material).dispose();
       environmentTarget.dispose(); sun.shadow.map?.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
       runtime.current = undefined; onCapture(null); controlsRef.current?.(null);
@@ -457,9 +474,9 @@ export default function RoomScene({ room, calculation, allWalls, furnished, rese
     current.controls.enabled = false;
     const dispose = attachFurnishingDrag({ canvas: current.renderer.domElement, camera: current.camera, content: current.content, selection: current.selection, room, id: movingFurnishing,
       render: () => { current.renderer.shadowMap.needsUpdate = true; current.render(); },
-      onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => moveRef.current.onGesture(active), onExit: () => moveRef.current.onExitMove(),
+      onPosition: (id, position) => moveRef.current.onPosition(id, position), onGesture: (active) => { if (active) current.quality.start(); else current.quality.end(); moveRef.current.onGesture(active); }, onExit: () => moveRef.current.onExitMove(),
       onFeedback: (issues) => { setFurnishingHighlightWarning(current.selection, issues.length > 0); setFeedback({ room, id: movingFurnishing, issues }); } });
-    return () => { dispose(); current.controls.enabled = true; };
+    return () => { dispose(); current.quality.restore(); current.controls.enabled = true; };
   }, [room, movingFurnishing, sceneState.phase, resetToken]);
 
   useEffect(() => {
