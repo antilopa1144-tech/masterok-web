@@ -1,0 +1,15 @@
+.mobileStart { display: none; }
+.related { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.related > a { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--entry-line); border-radius: 12px; background: var(--entry-panel); }
+.related > a:hover { border-color: var(--entry-accent); }
+.related h3 { margin: 0; font-size: 18px; font-weight: 650; }
+.related p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--entry-muted); }
+.related span { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 8px; min-height: 44px; font-size: 14px; color: var(--entry-accent); }
+@media (max-width: 650px) {
+  .mobileStart { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 65px; z-index: 30; padding: 8px 20px; border-block: 1px solid var(--entry-line); background: var(--entry-panel); }
+  .mobileStart > span { font-size: 12px; line-height: 1.4; color: var(--entry-muted); }
+  .mobileStart > a { flex-shrink: 0; min-height: 44px; padding: 10px 12px; font-size: 13px; }
+  .page section[id] { scroll-margin-top: 145px; }
+  .related { grid-template-columns: 1fr; gap: 12px; }
+  .related > a { padding: 20px; }
+}
