@@ -63,7 +63,7 @@ export default function ConstructorPage() {
     <section className={`${styles.hero} ${landing.hero}`} aria-labelledby="constructor-title">
       <div className={`${styles.heroCopy} ${landing.heroCopy}`}>
         <div className={styles.productName}><Box size={21} />Конструктор Мастерок</div>
-        <h1 id="constructor-title">От комнаты в 3D<br />до списка покупок.</h1>
+        <h1 id="constructor-title">От комнаты в 3D<br /> до списка покупок.</h1>
         <p className={styles.intro}>Размеры, отделка и закупка в одном проекте. Проверьте свои идеи до начала ремонта.</p>
       </div>
       <div className={landing.preview}><ProjectPreview bathroom /></div>
