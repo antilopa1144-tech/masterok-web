@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Box, Check, Download, Layers, Ruler, Scissors } from "lucide-react";
+import { ArrowUpRight, Box, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
-import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_SCENARIOS, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_SCENARIOS, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
 import styles from "@/components/constructor/constructor-entry.module.css";
+import ProjectPreview from "@/components/home/ProjectPreview";
+import landing from "./Landing.module.css";
 
 const description = "Создайте комнату по своим размерам: отделка в 3D, раскладка ламината и плитки, развёртки стен и упаковки к покупке. Бесплатный онлайн-конструктор без регистрации.";
 
@@ -45,7 +47,7 @@ export default function ConstructorPage() {
   const jsonLd = {
     "@context": "https://schema.org", "@type": "WebApplication", name: "Конструктор Мастерок",
     description, url: `${SITE_URL}/konstruktor/`, applicationCategory: "DesignApplication", operatingSystem: "Web",
-    screenshot: `${SITE_URL}/images/constructor/room-editor.jpg`,
+    screenshot: `${SITE_URL}/images/constructor/bathroom-editor-2026.webp`,
     inLanguage: "ru", isAccessibleForFree: true, offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
     featureList: ["3D и план комнаты", "Раскладка ламината и плитки", "Развёртки стен", "Сравнение планов, расстановки и отделки", "Подрезки и упаковки к покупке", "Экспорт PDF, PNG и XLSX"],
   };
@@ -55,38 +57,34 @@ export default function ConstructorPage() {
       "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer },
     })),
   };
-  return <div className={styles.page}>
+  return <div className={`${styles.page} ${landing.page}`}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-    <section className={styles.hero} aria-labelledby="constructor-title">
+    <section className={`${styles.hero} ${landing.hero}`} aria-labelledby="constructor-title">
       <div className={styles.heroCopy}>
         <div className={styles.productName}><Box size={21} />Конструктор Мастерок</div>
-        <h1 id="constructor-title">Ваша комната.<br /> От размеров<br /> до материалов.</h1>
+        <h1 id="constructor-title">От размеров комнаты до списка материалов.</h1>
         <p className={styles.intro}>Создайте помещение по своим размерам и спланируйте отделку в 3D. Посмотрите раскладку плитки и ламината, проверьте подрезки и узнайте, сколько упаковок покупать.</p>
         <ConstructorStartActions />
       </div>
-      <figure className={styles.heroPreview}>
-        <div className={styles.previewLabel}><span><Box size={16} />Настоящий редактор</span><span>3D · План · Развёртки</span></div>
-        <Image src="/images/constructor/room-editor.jpg" alt="Гостиная в конструкторе: 3D-комната, раскладка ламината и ведомость материалов" width={1274} height={717} priority sizes="(max-width: 900px) 100vw, 65vw" />
-        <figcaption><Check size={16} />Размеры, раскладки и закупка связаны в одном проекте.</figcaption>
-      </figure>
+      <ProjectPreview bathroom />
     </section>
-    <div className={styles.capabilities} aria-label="Возможности конструктора">
+    <div className={`${styles.capabilities} ${landing.capabilities}`} aria-label="Возможности конструктора">
       <span><Ruler size={19} />Размеры и проёмы</span><span><Layers size={19} />Отделка и подрезки</span><span><Box size={19} />Упаковки к покупке</span><span><Download size={19} />PDF, PNG и Excel</span>
     </div>
     <section id="scenarios" className={styles.section} aria-labelledby="scenarios-title">
       <div className={styles.sectionHeading}><div><h2 id="scenarios-title">Попробуйте на готовом примере</h2><p>Посмотрите, как устроен редактор. Любой пример можно изменить под своё помещение.</p></div><span className={styles.quiet}>Каждый пример — отдельный проект</span></div>
-      <div className={styles.scenarios}>
-        {CONSTRUCTOR_SCENARIOS.map((scenario) => <Link key={scenario.id} href={scenarioHref(scenario.id)} prefetch={false} className={styles.scenario}>
-          <div className={`${styles.scenarioVisual} ${scenario.id === "laminate" || scenario.id === "tile" ? styles.laminateVisual : ""}`}>
-            <Image src={scenario.id === "bathroom" ? "/images/constructor/bathroom-tiled-entry.jpg" : scenario.id === "laminate" ? "/images/laminate-textures/natural-oak.webp" : scenario.id === "tile" ? "/images/tile-textures/limestone.webp" : "/images/constructor/room-editor.jpg"} alt="" fill sizes="(max-width: 650px) 100vw, (max-width: 1100px) 50vw, 25vw" />
+      <div className={`${styles.scenarios} ${landing.scenarios}`}>
+        {CONSTRUCTOR_SCENARIOS.map((scenario) => <Link key={scenario.id} href={scenarioHref(scenario.id)} prefetch={false} className={`${styles.scenario} ${landing.scenario}`}>
+          <div className={`${styles.scenarioVisual} ${landing.scenarioVisual}`}>
+            <Image src={scenario.id === "bathroom" ? "/images/constructor/bathroom-scene-2026.webp" : scenario.id === "laminate" ? "/images/laminate-textures/natural-oak.webp" : scenario.id === "tile" ? "/images/tile-textures/limestone.webp" : "/images/constructor/room-scene-2026.webp"} alt="" fill sizes="(max-width: 359px) 100vw, (max-width: 1100px) 50vw, 25vw" />
             <span>{scenario.id === "bathroom" ? "Пол и стены" : scenario.id === "laminate" ? "Ряды и стыки" : scenario.id === "tile" ? "Швы и подрезки" : "Размеры и отделка"}</span>
           </div>
-          <div className={styles.scenarioCopy}><h3>{scenario.title}</h3><p>{scenario.description}</p><span className={styles.scenarioAction}>Открыть пример<ArrowUpRight size={20} /></span></div>
+          <div className={`${styles.scenarioCopy} ${landing.scenarioCopy}`}><h3>{scenario.title}</h3><p>{scenario.description}</p><span className={styles.scenarioAction}>Открыть пример<ArrowUpRight size={20} /></span></div>
         </Link>)}
       </div>
     </section>
-    <section className={`${styles.section} ${styles.workflow}`} aria-labelledby="workflow-title">
+    <section className={`${styles.section} ${styles.workflow} ${landing.workflow}`} aria-labelledby="workflow-title">
       <div><h2 id="workflow-title">Сначала проверьте<br /> на экране.</h2><p className={styles.intro}>Поменять направление досок или начало раскладки проще до покупки и укладки.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Попробовать на ванной <ArrowUpRight size={18} /></Link><p className={styles.toolsNote}><Link href={CONSTRUCTOR_BATHROOM_URL}>Конструктор ванной: от расстановки до плитки</Link> — что задать в проекте и как получить ведомость.</p><p className={styles.toolsNote}><Link href={CONSTRUCTOR_FURNITURE_URL}>Расстановка мебели в комнате онлайн</Link> — свои габариты, перемещение в 3D и общий список замечаний.</p></div>
       <ol className={styles.steps}>
         <li><span>1</span><div><h3>Задайте помещение</h3><p>В новом проекте выберите тип и задайте свои размеры. Двери и окна добавьте в редакторе. Другие помещения можно объединить в ту же работу.</p></div></li>
@@ -94,12 +92,14 @@ export default function ConstructorPage() {
         <li><span>3</span><div><h3>Соберите список материалов</h3><p>Проверьте запас и фасовку, укажите свои цены и скачайте ведомость вместе со схемами.</p></div></li>
       </ol>
     </section>
+    <div className={landing.editor}><details><summary><span>Посмотрите, как устроен редактор</span><span aria-hidden="true">＋</span></summary><Image src="/images/constructor/bathroom-editor-2026.webp" alt="Интерфейс конструктора: ванная в 3D, параметры плитки справа, переход к ведомости" width={1440} height={1100} sizes="(max-width: 900px) 100vw, 1200px" /></details></div>
     <ConstructorMeasureGuide />
     <section className={styles.section} aria-labelledby="quick-tools-title">
       <div className={styles.sectionHeading}><div><h2 id="quick-tools-title">Для отдельных задач</h2><p>Ёлочка, диагональ и другие схемы, которых пока нет в 3D.</p></div><Link href="/instrumenty/" className={styles.textAction}>Все инструменты <ArrowUpRight size={18} /></Link></div>
       <div className={styles.quickTools}>{quickTools.map(({ href, title, description: text, icon: Icon }) => <Link key={href} href={href} className={styles.quickTool}><Icon size={24} /><h3>{title}</h3><p>{text}</p></Link>)}</div>
       <p className={styles.toolsNote}>Также доступны <Link href="/instrumenty/rasstanovka-svetilnikov/">схема светильников</Link>, <Link href="/instrumenty/kalendar-remonta/">календарь ремонта</Link>, раскрой и справочники материалов.</p>
     </section>
-    <section className={`${styles.section} ${styles.faq}`} aria-labelledby="faq-title"><div><h2 id="faq-title">Перед началом</h2><p>Что умеет конструктор<br />и как сохранить работу.</p></div><div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+    <section className={`${styles.section} ${styles.faq} ${landing.faq}`} aria-labelledby="faq-title"><div><h2 id="faq-title">Перед началом</h2><p>Что умеет конструктор<br />и как сохранить работу.</p></div><div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+    <section className={landing.closing} aria-label="Начать свой проект"><div><h2>Теперь — ваше помещение</h2><p>Начните с размеров. Отделку и обстановку можно менять в процессе.</p></div><Link href={projectStartHref()} prefetch={false} className={styles.primaryAction}>Начать новый проект<ArrowUpRight size={18} /></Link></section>
   </div>;
 }

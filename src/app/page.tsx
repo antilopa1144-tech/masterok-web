@@ -127,7 +127,7 @@ export default async function HomePage() {
     operatingSystem: "Web",
     applicationCategory: "DesignApplication",
     description: "3D-комнаты, раскладка плитки и ламината, материалы к покупке.",
-    screenshot: `${SITE_URL}/images/constructor/room-editor.jpg`,
+    screenshot: `${SITE_URL}/images/constructor/room-editor-2026.webp`,
     inLanguage: "ru",
     isAccessibleForFree: true,
     offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
@@ -140,7 +140,8 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
 
-      <div className="page-container-wide pb-14 pt-6 sm:pt-9 lg:pt-10">
+      <div className={styles.page}>
+      <div className={`page-container-wide ${styles.content}`}>
         <ConstructorHero />
 
         <section id="calculators" className={`${styles.calculatorWorkspace} scroll-mt-24`} aria-labelledby="calculator-search-title">
@@ -177,7 +178,7 @@ export default async function HomePage() {
           </nav>
         </section>
 
-        <section className="theme-surface mt-10 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700" aria-labelledby="popular-title">
+        <section className={`theme-surface mt-10 overflow-hidden border border-slate-200 dark:border-slate-700 ${styles.resourcePanel}`} aria-labelledby="popular-title">
           <div className="border-b border-slate-200 px-5 py-3.5 dark:border-slate-700 sm:hidden">
             <h2 id="popular-title" className="text-base font-bold text-slate-900 dark:text-white">Популярные расчёты</h2>
           </div>
@@ -194,8 +195,8 @@ export default async function HomePage() {
                   prefetch={false}
                   className={`group flex min-w-0 items-center gap-3 px-4 py-4 text-left no-underline transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/70 ${index > 0 ? "border-t border-slate-200 sm:border-l sm:border-t-0 dark:border-slate-700" : ""} ${index >= 2 ? "sm:border-t lg:border-t-0" : ""}`}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: category?.bgColor ?? "#f1f5f9" }}>
-                    <CategoryIcon icon={category?.icon ?? "calculator"} size={22} color={category?.color ?? "#64748b"} />
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${styles.iconTile}`}>
+                    <CategoryIcon icon={category?.icon ?? "calculator"} size={22} color="currentColor" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-slate-900 group-hover:text-accent-700 dark:text-white">{calc.title}</span>
@@ -209,7 +210,7 @@ export default async function HomePage() {
         </section>
 
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_.7fr]">
-          <section className="theme-surface rounded-2xl border border-slate-200 p-5 dark:border-slate-700" aria-labelledby="categories-title">
+          <section className={`theme-surface border border-slate-200 p-5 dark:border-slate-700 ${styles.resourcePanel}`} aria-labelledby="categories-title">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <h2 id="categories-title" className="text-xl font-bold text-slate-950 dark:text-white">Все категории</h2>
               <Link href="/kalkulyatory/" className="text-sm font-semibold text-accent-700 no-underline hover:text-accent-800 dark:text-accent-400">Все калькуляторы →</Link>
@@ -229,8 +230,7 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <section className="theme-surface relative overflow-hidden rounded-2xl border border-slate-200 p-5 sm:p-6 dark:border-slate-700" aria-labelledby="mikhalych-title">
-            <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-accent-200/45 blur-3xl dark:bg-accent-700/15" aria-hidden />
+          <section className={`theme-surface relative overflow-hidden border border-slate-200 p-5 sm:p-6 dark:border-slate-700 ${styles.resourcePanel}`} aria-labelledby="mikhalych-title">
             <div className="relative">
               <div className="flex items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-100 text-accent-700 ring-1 ring-accent-200 dark:bg-accent-900/30 dark:text-accent-300 dark:ring-accent-800">
@@ -264,13 +264,13 @@ export default async function HomePage() {
           ))}
         </section>
 
-        <section className="relative mt-6 overflow-hidden rounded-3xl bg-slate-950 text-white" aria-labelledby="home-video-title">
+        <section className={`relative mt-6 overflow-hidden bg-slate-950 text-white ${styles.videoBanner}`} aria-labelledby="home-video-title">
           <div className="absolute inset-0 lg:left-[42%]">
             <Image src="/services/video-production-hero.webp" alt="" fill sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover object-[68%_center] opacity-45 lg:opacity-80" />
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/25" aria-hidden="true" />
           <div className="relative max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
-            <p className="text-xs font-bold uppercase tracking-[.16em] text-orange-300">Новое направление Мастерка</p>
+            <p className="text-sm font-medium text-orange-300">Для строительного бизнеса</p>
             <h2 id="home-video-title" className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">3D-ролики для строительного бизнеса</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">Сценарий, персонажи, озвучка, субтитры и монтаж. Пилот на 20–30 секунд — от 4 990 ₽.</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -293,8 +293,8 @@ export default async function HomePage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {tools.map((tool) => (
               <Link key={tool.href} href={tool.href} prefetch={false} className="group flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 no-underline transition-colors hover:border-accent-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-accent-700">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: tool.bg }}>
-                  <CategoryIcon icon={tool.icon} size={20} color={tool.color} />
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${styles.iconTile}`}>
+                  <CategoryIcon icon={tool.icon} size={20} color="currentColor" />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-bold text-slate-900 group-hover:text-accent-700 dark:text-white">{tool.title}</span>
@@ -307,6 +307,7 @@ export default async function HomePage() {
       </div>
 
       <Suspense fallback={null}><RecentCalculators /></Suspense>
+      </div>
     </>
   );
 }

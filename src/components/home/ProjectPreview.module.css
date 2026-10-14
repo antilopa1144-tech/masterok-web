@@ -1,0 +1,13 @@
+.project { margin: 0; overflow: hidden; background: #eeefeb; border: 1px solid #d8dcd5; border-radius: 10px; color: #283a30; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 22px; border-bottom: 1px solid #d8dcd5; font-size: 12px; }
+.heading > span:first-child { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.heading > span:last-child { color: #59665e; }
+.scene { position: relative; aspect-ratio: 1.4; overflow: hidden; background: #edece8; }
+.scene img { object-fit: contain; object-position: center; }
+.specification { display: flex; align-items: center; flex-wrap: wrap; gap: 18px 28px; padding: 18px 22px; border-top: 1px solid #d8dcd5; background: #f8f9f6; }
+.specification > div { display: flex; gap: 10px; align-items: center; }
+.specification span { color: #59665e; font-size: 11px; }
+.specification strong { display: block; font-size: 14px; font-weight: 600; color: #283a30; }
+.specification p { margin: 0 0 0 auto; max-width: 19ch; font-size: 12px; line-height: 1.5; color: #59665e; }
+:global(.dark) .project { border-color: #48534c; }
+@media (max-width: 600px) { .heading { padding: 12px 16px; } .scene { aspect-ratio: 1.25; } .specification { padding: 14px 16px; gap: 12px 26px; } .specification p { max-width: none; flex-basis: 100%; margin: 0; font-size: 11px; } }

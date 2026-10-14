@@ -1,0 +1,31 @@
+.page.page { --entry-text: #283a30; --entry-muted: #5d6e62; --entry-line: #d8dfd5; --entry-panel: #e9ede6; --entry-bg: #f4f6f1; --entry-accent: #c2410c; }
+.page h1, .page h2, .page h3 { color: var(--entry-text); }
+.page .hero { grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); gap: clamp(32px, 5vw, 76px); padding-top: 56px; padding-bottom: 48px; }
+.page .hero h1 { font-size: clamp(40px, 3.9vw, 56px); font-weight: 650; line-height: 1.07; max-width: 16ch; letter-spacing: -.04em; text-wrap: balance; }
+.page .hero p { max-width: 43ch; }
+.page .capabilities { max-width: none; justify-content: center; gap: clamp(20px, 5vw, 72px); padding-block: 24px; background: #283a30; border: 0; color: #f3f6ef; }
+.page .capabilities svg { color: #b7cbb8; }
+.page .scenarios { gap: 20px; }
+.page .scenario { display: flex; flex-direction: column; border-radius: 8px; background: var(--entry-bg); border-color: var(--entry-line); }
+.page .scenario:hover { border-color: var(--entry-accent); }
+.page .scenarioVisual { height: auto; aspect-ratio: 1.15; background: #edece8; }
+.page .scenarioVisual > img { width: 100% !important; left: 0 !important; object-fit: cover; }
+.page .scenarioCopy { display: flex; flex-direction: column; flex: 1; padding: 20px; }
+.page .scenarioCopy p { flex: 1; }
+.page .workflow { padding-top: 72px; }
+.page .faq { margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--entry-line); }
+.editor { max-width: 1312px; margin: 56px auto 0; padding: 0 clamp(20px, 4vw, 64px); }
+.editor details { border: 1px solid var(--entry-line); border-radius: 8px; overflow: hidden; background: var(--entry-panel); }
+.editor summary { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 20px 24px; font-size: 15px; cursor: pointer; list-style: none; }
+.editor summary::-webkit-details-marker { display: none; }
+.editor summary span:last-child { color: var(--entry-accent); }
+.editor details[open] summary { border-bottom: 1px solid var(--entry-line); }
+.editor details img { display: block; width: 100%; height: auto; }
+.closing { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 36px clamp(20px, 4vw, 64px); background: var(--entry-panel); border-top: 1px solid var(--entry-line); }
+.closing h2 { margin: 0; font-size: 28px; letter-spacing: -.025em; }
+.closing p { margin: 8px 0 0; color: var(--entry-muted); font-size: 14px; }
+.closing a { flex-shrink: 0; }
+:global(.dark) .page.page { --entry-text: #edf3eb; --entry-muted: #abbcaf; --entry-line: #425446; --entry-panel: #26362b; --entry-bg: #19271e; --entry-accent: #fdba74; }
+@media(max-width: 900px) { .page .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 32px; padding-bottom: 32px; } .page .hero h1 { max-width: 17ch; font-size: clamp(36px, 6vw, 52px); } .page .capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+@media(max-width: 650px) { .page .hero h1 { font-size: clamp(34px, 9.6vw, 42px); } .page .scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .page .scenarioCopy { padding: 14px 12px; } .page .scenarioCopy h3 { font-size: 16px; } .page .scenarioCopy p { font-size: 12px; line-height: 1.6; } .page .scenarioVisual > span { left: 8px; top: 8px; font-size: 10px; padding: 4px 6px; } .page .scenarioCopy a, .page .scenarioCopy span { font-size: 12px; } .page .workflow { padding-top: 48px; } .page .faq { margin-top: 40px; padding-top: 32px; } .editor { margin-top: 36px; } .editor summary { padding: 16px; font-size: 13px; } .closing { align-items: flex-start; flex-direction: column; gap: 20px; } .closing h2 { font-size: 25px; } }
+@media(max-width: 359px) { .page .scenarios { grid-template-columns: 1fr; } .page .scenarioVisual { aspect-ratio: 1.5; } }
