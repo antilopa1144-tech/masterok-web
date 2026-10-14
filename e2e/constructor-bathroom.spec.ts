@@ -23,6 +23,7 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       await expect(page).toHaveURL(/new=1&start=bathroom/);
       await expect(page.getByRole("textbox", { name: "Название помещения", exact: true })).toHaveValue("Ванная");
       await page.getByRole("button", { name: "Открыть 3D-проект", exact: true }).click();
+      await expect(page.getByRole("status", { name: "Сохранено в браузере", exact: true })).toBeAttached({ timeout: 15_000 });
       await expect(page).toHaveURL(/project=/);
       await page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true }).click();
       await expect(page.getByRole("dialog", { name: "Ведомость проекта" })).toBeVisible();
