@@ -1,5 +1,5 @@
 import { ArrowRight, Bath, Box, House, Layers } from "lucide-react";
-import { CONSTRUCTOR_EDITOR_URL, scenarioHref } from "@/lib/constructor/entry";
+import { scenarioHref } from "@/lib/constructor/entry";
 import ConstructorEntryLink from "@/components/constructor/ConstructorEntryLink";
 import ConstructorHomeActions from "./ConstructorHomeActions";
 import ProjectPreview from "./ProjectPreview";
@@ -18,11 +18,11 @@ export default function ConstructorHero() {
       <div className={styles.overview}>
         <div className={styles.copy}>
           <p className={styles.product}><Box size={22} aria-hidden="true" />Конструктор Мастерок</p>
-          <h1 id="home-title">Спланируйте ремонт в 3D.</h1>
-          <p className={styles.description}>Задайте размеры комнаты, примерьте плитку или ламинат и получите список материалов к покупке.</p>
-          <ConstructorHomeActions />
+          <h1 id="home-title">Ваш ремонт.<br />Сначала в 3D.</h1>
+          <p className={styles.description}>Примерьте отделку, проверьте раскладку и соберите список материалов — по размерам вашей комнаты.</p>
         </div>
-        <ConstructorEntryLink placement="home_preview" href={CONSTRUCTOR_EDITOR_URL} prefetch={false} className={styles.previewLink} aria-label="Открыть 3D-конструктор комнаты"><ProjectPreview /></ConstructorEntryLink>
+        <div className={styles.preview}><ProjectPreview /></div>
+        <div className={styles.actionArea}><ConstructorHomeActions /></div>
       </div>
       <div className={styles.examples}>
         <div className={styles.examplesLabel}><h2>Начните с примера</h2><p>Откроется новый проект</p></div>

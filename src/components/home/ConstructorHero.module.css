@@ -1,9 +1,11 @@
 .hero { color: var(--color-slate-950); }
-.overview { display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); align-items: center; gap: clamp(2rem, 5vw, 5rem); }
-.copy { min-width: 0; padding-block: 0; }
+.overview { display: grid; grid-template-columns: minmax(0, .83fr) minmax(0, 1.17fr); grid-template-areas: "copy preview" "actions preview"; align-content: center; column-gap: clamp(28px, 4vw, 64px); row-gap: 24px; }
+.copy { grid-area: copy; min-width: 0; align-self: end; padding-top: 24px; }
+.preview { grid-area: preview; min-width: 0; }
+.actionArea { grid-area: actions; align-self: start; padding-bottom: 24px; }
 .product { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; color: var(--color-accent-700); font-size: 14px; font-weight: 700; }
-.copy h1 { max-width: 11ch; margin: 0; font-size: clamp(2.75rem, 4.6vw, 4rem); font-weight: 650; line-height: 1.07; letter-spacing: -.045em; text-wrap: balance; }
-.description { max-width: 30rem; margin: 20px 0 24px; color: var(--color-slate-600); font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.6; }
+.copy h1 { max-width: none; margin: 0; font-size: clamp(44px, 4.8vw, 70px); font-weight: 700; line-height: 1.03; letter-spacing: -.045em; text-wrap: balance; }
+.description { max-width: 35ch; margin: 24px 0 0; color: var(--color-slate-600); font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.6; }
 .actions { display: flex; align-items: flex-start; flex-direction: column; gap: 14px; }
 .primary { display: inline-flex; align-items: center; justify-content: center; gap: 18px; min-height: 54px; padding: 14px 22px; border-radius: 7px; background: var(--color-accent-700); color: #fff; font-size: 16px; font-weight: 700; text-decoration: none; transition: background-color .15s; }
 .primary:hover { background: var(--color-accent-800); }
@@ -43,13 +45,14 @@
   .exampleArrow { display: none; }
 }
 @media (max-width: 759px) {
-  .overview { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .overview { grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "actions" "preview"; gap: 20px; }
   .copy { padding-block: 0; }
   .product { margin-bottom: 16px; font-size: 14px; }
-  .copy h1 { max-width: 14ch; font-size: clamp(2.35rem, 9.7vw, 3.25rem); }
-  .description { max-width: 34rem; margin: 18px 0 22px; font-size: 16px; line-height: 1.55; }
+  .copy h1 { max-width: none; font-size: clamp(36px, 10vw, 52px); }
+  .description { max-width: 34rem; margin: 14px 0 0; font-size: 14px; line-height: 1.55; }
   .actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
-  .note { margin-top: 12px; }
+  .note { margin-top: 8px; }
+  .actionArea { padding: 0; }
   .examples { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 24px; padding-block: 16px; }
   .examplesLabel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 12px; }
   .examplesLabel p { margin: 0; }

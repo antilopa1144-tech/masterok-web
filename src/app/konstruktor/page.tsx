@@ -61,13 +61,13 @@ export default function ConstructorPage() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
     <section className={`${styles.hero} ${landing.hero}`} aria-labelledby="constructor-title">
-      <div className={styles.heroCopy}>
+      <div className={`${styles.heroCopy} ${landing.heroCopy}`}>
         <div className={styles.productName}><Box size={21} />Конструктор Мастерок</div>
-        <h1 id="constructor-title">От размеров комнаты до списка материалов.</h1>
-        <p className={styles.intro}>Создайте помещение по своим размерам и спланируйте отделку в 3D. Посмотрите раскладку плитки и ламината, проверьте подрезки и узнайте, сколько упаковок покупать.</p>
-        <ConstructorStartActions />
+        <h1 id="constructor-title">От комнаты в 3D<br />до списка покупок.</h1>
+        <p className={styles.intro}>Размеры, отделка и закупка в одном проекте. Проверьте свои идеи до начала ремонта.</p>
       </div>
-      <ProjectPreview bathroom />
+      <div className={landing.preview}><ProjectPreview bathroom /></div>
+      <div className={landing.heroActions}><ConstructorStartActions /></div>
     </section>
     <div className={`${styles.capabilities} ${landing.capabilities}`} aria-label="Возможности конструктора">
       <span><Ruler size={19} />Размеры и проёмы</span><span><Layers size={19} />Отделка и подрезки</span><span><Box size={19} />Упаковки к покупке</span><span><Download size={19} />PDF, PNG и Excel</span>
@@ -93,7 +93,7 @@ export default function ConstructorPage() {
       </ol>
     </section>
     <div className={landing.editor}><details><summary><span>Посмотрите, как устроен редактор</span><span aria-hidden="true">＋</span></summary><Image src="/images/constructor/bathroom-editor-2026.webp" alt="Интерфейс конструктора: ванная в 3D, параметры плитки справа, переход к ведомости" width={1440} height={1100} sizes="(max-width: 900px) 100vw, 1200px" /></details></div>
-    <ConstructorMeasureGuide />
+    <div className={landing.measureGuide}><details><summary>Как измерить помещение перед началом<Ruler size={18} aria-hidden="true" /></summary><ConstructorMeasureGuide /></details></div>
     <section className={styles.section} aria-labelledby="quick-tools-title">
       <div className={styles.sectionHeading}><div><h2 id="quick-tools-title">Для отдельных задач</h2><p>Ёлочка, диагональ и другие схемы, которых пока нет в 3D.</p></div><Link href="/instrumenty/" className={styles.textAction}>Все инструменты <ArrowUpRight size={18} /></Link></div>
       <div className={styles.quickTools}>{quickTools.map(({ href, title, description: text, icon: Icon }) => <Link key={href} href={href} className={styles.quickTool}><Icon size={24} /><h3>{title}</h3><p>{text}</p></Link>)}</div>

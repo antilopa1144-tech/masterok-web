@@ -1,18 +1,40 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
-import { Box, Layers, Ruler } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, Bath, House } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
+import { scenarioHref } from "@/lib/constructor/entry";
 import styles from "./ProjectPreview.module.css";
 
-/** Static views captured in the editor: the landing pages do not load Three.js. */
+// Values transcribed from the real editor captures, not a second calculation engine.
+const examples = {
+  room: { title: "Комната", size: "3 × 4 м", finish: "Натуральный дуб", texture: "/images/laminate-textures/natural-oak.webp", alt: "Комната в редакторе Мастерок: ламинат, диван и стол", facts: [["12 м²", "Площадь комнаты"], ["54", "Доски по раскрою"], ["8 упак.", "Ламинат к покупке"]] },
+  bathroom: { title: "Ванная", size: "2,5 × 2,8 м", finish: "Бежевый камень", texture: "/images/tile-textures/limestone.webp", alt: "Ванная в редакторе Мастерок: плитка, ванна, раковина и стиральная машина", facts: [["7 м²", "Площадь пола"], ["7 упак.", "Плитка на пол"], ["28 упак.", "Плитка на стены"]] },
+} as const;
+
+/** Lightweight example switcher; the interactive 3D editor opens through the link. */
 export default function ProjectPreview({ bathroom = false }: { bathroom?: boolean }) {
-  return <figure className={styles.project}>
-    <div className={styles.heading}><span><Box size={17} aria-hidden="true" />{bathroom ? "Ванная" : "Комната"}</span><span>Пример проекта</span></div>
-    <div className={styles.scene}>
-      <Image src={`/images/constructor/${bathroom ? "bathroom" : "room"}-scene-2026.webp`} alt={bathroom ? "Ванная из редактора Мастерок: плитка, ванна, раковина и стиральная машина" : "Комната из редактора Мастерок: ламинат, диван и стол, размеры 3 на 4 метра"} fill priority sizes="(min-width: 1440px) 700px, (min-width: 900px) 55vw, 100vw" />
+  const [selected, setSelected] = useState<keyof typeof examples>(bathroom ? "bathroom" : "room");
+  const example = examples[selected];
+  return <div className={styles.project}>
+    <div className={styles.toolbar}>
+      <div className={styles.switcher} role="group" aria-label="Помещение в примере">
+        <button type="button" aria-pressed={selected === "room"} onClick={() => setSelected("room")}><House size={16} aria-hidden="true" />Комната</button>
+        <button type="button" aria-pressed={selected === "bathroom"} onClick={() => setSelected("bathroom")}><Bath size={16} aria-hidden="true" />Ванная</button>
+      </div>
+      <span className={styles.dimensions}>{example.size}</span>
     </div>
-    <figcaption className={styles.specification}>
-      <div><Ruler size={18} aria-hidden="true" /><span>Помещение<strong>{bathroom ? "2,5 × 2,8 м" : "3 × 4 м"}</strong></span></div>
-      <div><Layers size={18} aria-hidden="true" /><span>Отделка<strong>{bathroom ? "Плитка" : "Ламинат"}</strong></span></div>
-      <p>Размеры → раскладка → материалы</p>
-    </figcaption>
-  </figure>;
+    <figure className={styles.scene} data-example={selected}>
+      <Image src={`/images/constructor/${selected}-scene-2026.webp`} alt={example.alt} fill priority loading="eager" sizes="(min-width: 1440px) 760px, (min-width: 901px) 58vw, 100vw" />
+      <figcaption className={styles.material}><Image src={example.texture} alt="" width={30} height={38} /><span>Отделка в примере<strong>{example.finish}</strong></span></figcaption>
+      <span className={styles.viewLabel}>Вид из редактора</span>
+    </figure>
+    <div className={styles.result} aria-live="polite" aria-atomic="true">
+      <div className={styles.resultHeading}><span>Фрагмент расчёта</span><span>{example.title}</span></div>
+      <dl>{example.facts.map(([value, label]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+      <div className={styles.resultFooter}><span>При настройках этого примера</span><Link href={scenarioHref(selected)} onClick={() => trackEvent("constructor_entry", { placement: bathroom ? "landing_primary" : "home_preview", scenario: selected })} prefetch={false}>Открыть пример<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+    </div>
+  </div>;
 }

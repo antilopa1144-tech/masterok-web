@@ -1,11 +1,11 @@
-.page { --color-slate-950: #24362c; --color-slate-900: #2b3b32; --color-slate-800: #36483d; --color-slate-700: #45554b; --color-slate-600: #5c6960; --color-slate-500: #66736b; --color-slate-300: #c9d0c8; --color-slate-200: #dce1d9; --color-slate-100: #e9ede6; --color-slate-50: #f4f6f1; --theme-surface-muted: #e9ede6; --theme-surface: #fff; background: #f4f6f1; }
-.content { padding-top: clamp(28px, 4vw, 56px); padding-bottom: 72px; }
+.page { --color-slate-950: #242423; --color-slate-900: #2f302d; --color-slate-800: #3c3d39; --color-slate-700: #51514b; --color-slate-600: #62615a; --color-slate-500: #76746b; --color-slate-300: #cfcdc5; --color-slate-200: #dfddd5; --color-slate-100: #eeede7; --color-slate-50: #f8f7f3; --theme-surface-muted: #eeede7; --theme-surface: #fff; background: #f8f7f3; }
+.content { padding-top: clamp(24px, 3vw, 42px); padding-bottom: 72px; }
 .resourcePanel { border-radius: 10px; }
-.iconTile { background: #edf1ea; color: #45554b; }
+.iconTile { background: #eeede7; color: #51514b; }
 .videoBanner { border-radius: 10px; }
 .videoBanner h2 { color: #fff; }
-:global(.dark) .page { --color-slate-950: #17231c; --color-slate-900: #202e25; --color-slate-800: #2d3b32; --color-slate-700: #425046; --color-slate-600: #7d8e81; --color-slate-500: #96a69a; --color-slate-400: #a7b5aa; --color-slate-300: #c9d4cc; --color-slate-200: #dce5df; --color-slate-100: #eff4ef; --theme-surface-muted: #202e25; --theme-surface: #1c2921; background: #17231c; }
-:global(.dark) .iconTile { background: #2d3b32; color: #c9d4cc; }
+:global(.dark) .page { --color-slate-950: #20211f; --color-slate-900: #292a27; --color-slate-800: #343530; --color-slate-700: #494a43; --color-slate-600: #919188; --color-slate-500: #aaa99f; --color-slate-400: #bab9af; --color-slate-300: #d2d0c7; --color-slate-200: #e5e3dc; --color-slate-100: #f6f4ed; --theme-surface-muted: #292a27; --theme-surface: #262723; background: #20211f; }
+:global(.dark) .iconTile { background: #343530; color: #d2d0c7; }
 .calculatorWorkspace {
   margin-top: clamp(1.75rem, 3vw, 2.5rem);
   padding: clamp(1.5rem, 3vw, 2.5rem);
