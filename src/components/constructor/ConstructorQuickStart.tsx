@@ -10,7 +10,7 @@ export default function ConstructorQuickStart({ active, canOpenResult, onDimensi
   onDismiss: () => void;
 }) {
   return <aside className={styles.guide} aria-label="Первые шаги в конструкторе">
-    <div className={styles.heading}><strong>Ваша комната за три шага</strong><p>Начните с размеров своего помещения.</p></div>
+    <div className={styles.heading}><strong>Ваш проект за три шага</strong><p>Размеры, отделка и список покупок — в одном проекте.</p></div>
     <nav className={styles.steps} aria-label="Путь к списку покупок">
       <button type="button" aria-current={active === "dimensions" ? "step" : undefined} onClick={onDimensions}><span aria-hidden="true">1</span>Размеры</button>
       <button type="button" aria-current={active === "material" ? "step" : undefined} onClick={onMaterial}><span aria-hidden="true">2</span>Покрытие</button>

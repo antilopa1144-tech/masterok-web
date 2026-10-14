@@ -16,6 +16,7 @@ export default function NumberSliderField({ label, value, min = 0, max = 30_000,
   const pointer = useRef<number | null>(null), ignorePointer = useRef(false);
   const [editing, setEditing] = useState(false), [draft, setDraft] = useState(String(value)), [error, setError] = useState("");
   const exact = useRef<HTMLInputElement>(null), readout = useRef<HTMLButtonElement>(null), skipExactBlur = useRef(false);
+  const applyButton = useRef<HTMLButtonElement>(null), cancelButton = useRef<HTMLButtonElement>(null);
   if (value !== previousValue) {
     setPreviousValue(value); setShown(value); setDraft(String(value)); setError(""); setEditing(false); setActive(false);
   }
@@ -51,25 +52,37 @@ export default function NumberSliderField({ label, value, min = 0, max = 30_000,
     if (next !== value) onCommit(next);
     return true;
   };
+  const focusReadout = () => requestAnimationFrame(() => readout.current?.focus());
+  const cancelExact = () => {
+    skipExactBlur.current = true;
+    exact.current?.blur();
+    setEditing(false); setDraft(String(value)); setError(""); onStatus(id, null);
+    focusReadout();
+  };
   const position = sliderPosition(shown, bounds), text = zeroLabel && shown === 0 ? zeroLabel : controlNumberText(shown);
   return <div className={styles.numberField} role="group" aria-label={label} data-number-control data-editing={editing || undefined} data-adjusting={active || undefined}>
     <div className={styles.heading}>
       <label htmlFor={editing ? `${id}-exact` : id}>{label}</label>
       {editing ? <div className={`${styles.exactWrap} ${error ? styles.invalid : ""}`}>
         <input ref={exact} id={`${id}-exact`} type="text" inputMode={integer ? "numeric" : "decimal"} value={draft} aria-label={label} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : `${id}-hint`} onChange={(event) => {
-          setDraft(event.target.value); setError(""); onStatus(id, `${label}: примените точное значение клавишей Enter или выйдите из поля.`);
-        }} onBlur={applyExact} onKeyDown={(event) => {
-          if (event.key === "Enter") { event.preventDefault(); if (applyExact()) requestAnimationFrame(() => readout.current?.focus()); }
+          setDraft(event.target.value); setError(""); onStatus(id, `${label}: нажмите «Применить», Enter или выйдите из поля.`);
+        }} onBlur={(event) => {
+          if (event.relatedTarget === applyButton.current || event.relatedTarget === cancelButton.current) return;
+          applyExact();
+        }} onKeyDown={(event) => {
+          if (event.key === "Enter") { event.preventDefault(); if (applyExact()) focusReadout(); }
           if (event.key === "Escape") {
-            event.preventDefault(); skipExactBlur.current = true; event.currentTarget.blur(); setEditing(false); setDraft(String(value)); setError(""); onStatus(id, null);
-            requestAnimationFrame(() => readout.current?.focus());
+            event.preventDefault(); cancelExact();
           }
         }} />{unit && <span>{unit}</span>}
       </div> : <button ref={readout} type="button" className={styles.readout} aria-label={`Точное значение: ${label}`} title="Нажмите, чтобы ввести точное значение" disabled={active} onClick={() => {
         skipExactBlur.current = false; setDraft(emptyValue !== undefined && value === emptyValue ? "" : String(value)); setEditing(true);
       }}><strong>{text}</strong>{unit && !(zeroLabel && shown === 0) && <span>{unit}</span>}<Pencil size={12} aria-hidden="true" /></button>}
     </div>
-    <div className={styles.trackRow}>
+    {editing ? <div className={styles.exactActions}>
+      <button ref={applyButton} type="button" aria-label={`Применить: ${label}`} onPointerDown={(event) => event.preventDefault()} onClick={() => { if (applyExact()) focusReadout(); else exact.current?.focus(); }}>Применить</button>
+      <button ref={cancelButton} type="button" aria-label={`Вернуть: ${label}`} onPointerDown={(event) => event.preventDefault()} onClick={cancelExact}>Вернуть</button>
+    </div> : <div className={styles.trackRow}>
       <button type="button" className={styles.step} aria-label={`Уменьшить: ${label}`} disabled={editing || active || shown <= min} onClick={() => commitStep(-1)}><Minus size={16} aria-hidden="true" /></button>
       <input id={id} className={styles.range} type="range" min={0} max={SLIDER_TICKS} step="any" value={position} aria-label={label} aria-valuemin={min} aria-valuemax={max} aria-valuenow={Math.max(min, Math.min(max, shown))} aria-valuetext={`${text}${unit && !(zeroLabel && shown === 0) ? ` ${unit}` : ""}`} aria-describedby={`${id}-hint`} disabled={editing || max <= min} style={{ "--number-progress": `${position / SLIDER_TICKS * 100}%` } as CSSProperties}
         onPointerDown={(event) => { pointer.current = event.pointerId; ignorePointer.current = false; begin(); event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -94,7 +107,7 @@ export default function NumberSliderField({ label, value, min = 0, max = 30_000,
           show(event.key === "Home" ? min : event.key === "End" ? max : stepNumber(shownRef.current, direction, bounds, multiplier));
         }} onKeyUp={(event) => { if (["ArrowRight", "ArrowUp", "ArrowLeft", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)) finish(); }} />
       <button type="button" className={styles.step} aria-label={`Увеличить: ${label}`} disabled={editing || active || shown >= max} onClick={() => commitStep(1)}><Plus size={16} aria-hidden="true" /></button>
-    </div>
+    </div>}
     <span id={`${id}-hint`} className={styles.srOnly}>От {controlNumberText(min)} до {controlNumberText(max)}{unit ? ` ${unit.replace(/\.$/, "")}` : ""}. Стрелки — точный шаг, Shift — десять шагов, Home и End — границы. Нажмите на значение для точного ввода. Изменение применяется при отпускании ползунка; Escape отменяет перемещение.</span>
     {error && <small id={`${id}-error`} className={styles.error}>{error}</small>}
   </div>;

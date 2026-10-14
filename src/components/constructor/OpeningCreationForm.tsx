@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useId, useMemo, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, Plus } from "lucide-react";
 import type { ConstructorProject, ConstructorRoom, Opening, Wall } from "@/lib/constructor/core";
 import { OPENING_CORNERS, OPENING_WALLS, openingDraftIssues, openingOnWall, openingWallLength, openingWithWidth } from "@/lib/constructor/opening-draft";
 import { formatNumber, openingPlanPosition } from "@/lib/constructor/presentation";
@@ -59,6 +59,18 @@ export default function OpeningCreationForm({ project, room, initialOpening, edi
   onConfirm: (opening: Opening) => string | undefined; onCancel: () => void;
 }) {
   const [opening, setOpening] = useState(() => ({ ...initialOpening }));
+  const [step, setStep] = useState<"location" | "parameters">(editing ? "parameters" : "location");
+  const body = useRef<HTMLDivElement>(null);
+  const locationHeading = useRef<HTMLHeadingElement>(null);
+  const parametersHeading = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+  const sectionId = useId();
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    if (body.current) body.current.scrollTop = 0;
+    (step === "location" ? locationHeading : parametersHeading).current?.focus({ preventScroll: true });
+  }, [step]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const onStatus = useCallback((id: string, message: string | null) => setDrafts((previous) => {
@@ -71,11 +83,15 @@ export default function OpeningCreationForm({ project, room, initialOpening, edi
   const setNumber = (field: "widthMm" | "heightMm" | "offsetMm" | "sillMm", value: number) => {
     setOpening((current) => field === "widthMm" ? openingWithWidth(room, current, value) : { ...current, [field]: value }); setError("");
   };
-  return <div className={styles.form}>
-    <div className={styles.body}>
-      <div className={styles.location}>
+  return <div className={styles.form} data-step={step}>
+    <nav className={styles.steps} aria-label="Настройка проёма">
+      <button type="button" aria-current={step === "location" ? "step" : undefined} aria-controls={`${sectionId}-location`} disabled={blocked || !!pending} onClick={() => setStep("location")}>1. Стена</button>
+      <button type="button" aria-current={step === "parameters" ? "step" : undefined} aria-controls={`${sectionId}-parameters`} disabled={blocked || !!pending} onClick={() => setStep("parameters")}>2. Размеры</button>
+    </nav>
+    <div ref={body} className={styles.body}>
+      <div id={`${sectionId}-location`} className={styles.location}>
         <p className={styles.roomName}>{room.name}</p>
-        <h3>Выберите стену</h3>
+        <h3 ref={locationHeading} tabIndex={-1}>Выберите стену</h3>
         <OpeningPlan room={room} opening={opening} />
         <div className={styles.wallPicker} role="group" aria-label="Стена для проёма">{OPENING_WALLS.map((wall) =>
           <button type="button" key={wall} aria-label={`Стена ${wall + 1} для проёма`} aria-pressed={opening.wall === wall} disabled={blocked || !!pending} onClick={() => {
@@ -83,8 +99,8 @@ export default function OpeningCreationForm({ project, room, initialOpening, edi
           }}><strong>Стена {wall + 1}</strong><span>{formatNumber(openingWallLength(room, wall))} мм</span></button>)}</div>
         <p className={styles.note}>Точка на схеме — начало выбранной стены. Отступ идёт по стрелке от {OPENING_CORNERS[opening.wall]} угла плана.</p>
       </div>
-      <div className={styles.parameters}>
-        <h3>Размеры и положение</h3>
+      <div id={`${sectionId}-parameters`} className={styles.parameters}>
+        <h3 ref={parametersHeading} tabIndex={-1}>Размеры и положение</h3>
         <OpeningElevation room={room} opening={opening} />
         <div className={styles.sizes}>
           <NumberField label="Ширина проёма" value={opening.widthMm} min={100} max={length} unit="мм" onStatus={onStatus} onCommit={(value) => setNumber("widthMm", value)} />
@@ -97,7 +113,8 @@ export default function OpeningCreationForm({ project, room, initialOpening, edi
     </div>
     <div className={styles.footer}>
       {(error || (!pending && issues[0])) && <p className={styles.error} role="alert">{error || issues[0]} Измените стену, размеры или отступ.</p>}
-      <button type="button" className={common.primaryButton} disabled={blocked || !!pending || !!issues.length} onClick={() => setError(onConfirm(opening) ?? "")}>
+      <button type="button" className={`${common.primaryButton} ${styles.mobileNext}`} disabled={blocked || !!pending} onClick={() => setStep("parameters")}>Далее: размеры<ArrowRight size={18} /></button>
+      <button type="button" className={`${common.primaryButton} ${styles.confirm}`} disabled={blocked || !!pending || !!issues.length} onClick={() => setError(onConfirm(opening) ?? "")}>
         {editing ? <Check size={18} /> : <Plus size={18} />}{editing ? "Сохранить проём" : opening.type === "door" ? "Добавить дверь" : "Добавить окно"}
       </button>
       <button type="button" className={common.secondaryButton} onClick={onCancel}>Отмена</button>

@@ -256,6 +256,10 @@
 .projectBackup a { color: var(--c-text); text-decoration: underline; text-underline-offset: 3px; }
 .projectBackup button { min-height: 44px; white-space: normal; }
 .modalActions { display: flex; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.purchaseActions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--c-line); background: var(--c-surface); }
+.purchaseActions > p { width: 100%; font-size: 12px; color: var(--c-secondary); }
+.purchaseQuantity .purchaseLabel { color: var(--c-accent); font-size: 11px; font-weight: 600; }
+.mobilePanelActions { display: none; }
 .projectList { margin-top: 20px; }
 .projectList button { display: flex; gap: 15px; align-items: center; width: 100%; border: 0; border-top: 1px solid var(--c-line); background: transparent; padding: 17px 0; color: var(--c-text); text-align: left; }
 .projectList button > span { flex: 1; min-width: 0; }
@@ -520,4 +524,14 @@
 @media (max-width: 980px) {
   .workspace.withGuide { grid-template-rows: 57px auto minmax(0, 1fr) 62px; }
   .workspace.withGuide .body:not(.panelExpanded) { --mobile-panel-height: min(46dvh, 480px); }
+  .workspace.withGuide.panelOpen { grid-template-rows: 57px minmax(0, 1fr) 62px; }
+  .workspace.panelOpen > aside[aria-label="Первые шаги в конструкторе"] { display: none; }
+  .workspace.withGuide.panelOpen .body:not(.panelExpanded) { --mobile-panel-height: min(60dvh, 590px); }
+  .inspector .inspectorHeader { padding-bottom: 4px; }
+  .inspector .properties { padding-top: 12px; }
+  .mobilePanelActions { display: flex; flex-wrap: wrap; flex-shrink: 0; gap: 8px; padding: 10px 20px; background: var(--c-surface); border-top: 1px solid var(--c-line); }
+  .mobilePanelActions > button { flex: 1; min-height: 44px; padding: 10px 8px; font-size: 13px; }
+  .mobilePanelActions > p { width: 100%; font-size: 12px; color: var(--c-secondary); }
+  .purchaseActions { padding: 12px 18px max(12px, env(safe-area-inset-bottom)); }
+  .purchaseActions > button { flex: 1; min-height: 44px; padding-inline: 10px; font-size: 13px; }
 }

@@ -300,6 +300,14 @@ function ConstructorEditorSession() {
       scrollPropertiesTo(control?.closest<HTMLElement>("[data-number-control]") ?? null); control?.focus({ preventScroll: true });
     });
   };
+  const showMaterialProperties = (surface: "floor" | "walls" = "floor") => {
+    if (pendingDraft || placementGesture) return;
+    expandShortPanel(); setSelectedFurnishing(undefined); setTab(surface); setPanel("properties");
+    requestAnimationFrame(() => {
+      const properties = document.querySelector<HTMLElement>(`.${styles.properties}`);
+      if (properties) properties.scrollTop = 0;
+    });
+  };
   const showInterior = () => {
     expandShortPanel(); setSelectedFurnishing(undefined); setTab("interior"); setPanel("properties"); requestAnimationFrame(() => {
       const control = document.querySelector<HTMLSelectElement>('select[aria-label="Тип помещения"]');
@@ -489,7 +497,7 @@ function ConstructorEditorSession() {
   const formatIndex = room ? BOARD_FORMATS.findIndex((format) => format.w === room.floor.boardLengthMm && format.h === room.floor.boardWidthMm) : -1;
   const saveText = placementGesture ? "Перемещаем предмет…" : pendingDraft ? "Ввод не применён" : isSaved ? "Сохранено в браузере" : saved === "invalid" ? "Исправьте параметры" : saved === "error" ? "Не сохранено" : "Сохраняем…";
 
-  return <section className={`${styles.workspace} ${guideVisible ? styles.withGuide : ""}`} aria-label="Конструктор Мастерок">
+  return <section className={`${styles.workspace} ${guideVisible ? styles.withGuide : ""} ${panel ? styles.panelOpen : ""}`} aria-label="Конструктор Мастерок">
     <header className={styles.header}>
       <Link href="/konstruktor/" className={styles.brand} title="На стартовую страницу конструктора" aria-label="На стартовую страницу конструктора" onClick={async (event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || isSaved) return;
@@ -526,7 +534,7 @@ function ConstructorEditorSession() {
 
     {guideVisible && <ConstructorQuickStart active={tab === "room" ? "dimensions" : tab === "floor" || tab === "walls" ? "material" : undefined} canOpenResult={!!result && !pendingDraft && !placementGesture}
       onDimensions={() => { trackEvent("constructor_guide_action", { step: "dimensions" }); showRoomProperties(); }}
-      onMaterial={() => { trackEvent("constructor_guide_action", { step: "material" }); expandShortPanel(); setTab(room?.wallTiles.some(Boolean) ? "walls" : "floor"); setPanel("properties"); requestAnimationFrame(() => { const properties = document.querySelector<HTMLElement>(`.${styles.properties}`); if (properties) properties.scrollTop = 0; }); }}
+      onMaterial={() => { trackEvent("constructor_guide_action", { step: "material" }); showMaterialProperties(room?.wallTiles.some(Boolean) ? "walls" : "floor"); }}
       onResult={() => { trackEvent("constructor_guide_action", { step: "result" }); openPurchase(); }}
       onDismiss={() => { trackEvent("constructor_guide_action", { step: "dismiss" }); dismissGuide(); }} />}
     <div className={`${styles.body} ${panel === "properties" ? styles.propertiesOpen : ""} ${panelExpanded ? styles.panelExpanded : ""}`} style={panelHeight === null ? undefined : { "--mobile-panel-height": `min(${panelHeight}px, 76dvh, 700px, calc(100dvh - 230px))` } as CSSProperties}>
@@ -572,8 +580,8 @@ function ConstructorEditorSession() {
       <aside className={`${styles.inspector} ${panel === "properties" ? styles.mobileOpen : ""}`} aria-label="Параметры выбранной комнаты">
         <ResizableSheetHandle expanded={panelExpanded} onResize={resizePanel} onToggle={togglePanel} /><div className={styles.inspectorHeader}><h2>{tab === "floor" ? isTileFloor ? "Пол · Плитка" : "Пол · Ламинат" : tab === "walls" ? "Стена " + (selectedWall + 1) + " · Плитка" : tab === "interior" ? activeFurnishing && room ? furnishingName(room, activeFurnishing) : "Обстановка" : "Помещение"}</h2><div className={styles.panelTools}><button type="button" className={styles.mobileClose} aria-label={panelExpanded ? "Свернуть параметры" : "Развернуть параметры"} aria-expanded={panelExpanded} onClick={togglePanel}><Maximize2 size={17} /></button><button type="button" className={styles.mobileClose} aria-label="Закрыть параметры" onClick={() => setPanel(null)}><X size={18} /></button></div></div>
         <div className={styles.inspectorTabs}>
-          <button type="button" className={tab === "floor" ? styles.active : ""} aria-pressed={tab === "floor"} onClick={() => setTab("floor")}>Пол</button>
-          <button type="button" className={tab === "walls" ? styles.active : ""} aria-pressed={tab === "walls"} onClick={() => setTab("walls")}>Стены</button>
+          <button type="button" className={tab === "floor" ? styles.active : ""} aria-pressed={tab === "floor"} disabled={!!pendingDraft || placementGesture} onClick={() => showMaterialProperties("floor")}>Пол</button>
+          <button type="button" className={tab === "walls" ? styles.active : ""} aria-pressed={tab === "walls"} disabled={!!pendingDraft || placementGesture} onClick={() => showMaterialProperties("walls")}>Стены</button>
           <button type="button" className={tab === "room" ? styles.active : ""} aria-pressed={tab === "room"} aria-label="Размеры и проёмы" onClick={showRoomProperties}>Размеры</button>
           <button type="button" className={tab === "interior" ? styles.active : ""} aria-pressed={tab === "interior"} aria-label="Обстановка комнаты" onClick={showInterior}>Обстановка</button>
         </div>
@@ -625,6 +633,15 @@ function ConstructorEditorSession() {
           {pendingDraft && <p className={styles.formNotice} role="status">{pendingDraft}</p>}
           {computation.error && <p className={styles.fieldError} role="alert">{computation.error}</p>}
         </div>}
+        {room && tab !== "interior" && <div className={styles.mobilePanelActions}>
+          <button type="button" className={styles.secondaryButton} disabled={!!pendingDraft || placementGesture} onClick={() => { setPanel(null); setView("3d"); }}><Box size={16} />Вид в 3D</button>
+          <button type="button" className={styles.primaryButton} disabled={!result || !!pendingDraft || placementGesture} onClick={() => {
+            if (tab === "room") showMaterialProperties("floor");
+            else if (tab === "floor") showMaterialProperties("walls");
+            else { setPanel(null); openPurchase(); }
+          }}>{tab === "room" ? "К отделке" : tab === "floor" ? "К стенам" : "К ведомости"}</button>
+          {pendingDraft && <p role="status">{pendingDraft}</p>}
+        </div>}
         <div className={styles.purchasePreview}><div className={styles.sectionHeading}><h3>Ведомость проекта</h3><span>{result?.purchases.length ?? 0} поз.</span></div>
           <div className={styles.purchaseOverview}><div><strong>{!result ? "Проверьте параметры" : hasPrices ? formatMoney(result.totalCostRub) : "Цены не заданы"}</strong><span>{!result ? "Исправьте ошибки в полях" : (missingPrices || missingSupplyRates) && hasPrices ? "Сумма известных позиций" : estimatedPrices ? "Оценка по введённым ценам" : hasPrices ? "По введённым ценам" : "Укажите цены для оценки стоимости"}</span></div>{previewLine && <span className={styles.packCount}>{previewLine.quantity}<small>{showWallMetrics || isTileFloor ? "упак. плитки" : "упак. ламината"}</small></span>}</div>
           {floorLine && floorLine.roomIds.length > 1 && <p className={styles.hint}>{isTileFloor ? "Плитка" : "Ламинат"} общей партией для {floorLine.roomIds.length} помещений.</p>}
@@ -634,17 +651,17 @@ function ConstructorEditorSession() {
       {panel === "tree" && <div className={styles.mobileTree}><div className={styles.panelHandle} /><div className={styles.inspectorHeader}><h2>Мой проект</h2><div className={styles.panelTools}><IconButton label="Открыть сохранённые проекты" onClick={openProjects}><FolderOpen size={18} /></IconButton><ThemeToggle /><IconButton label="Закрыть дерево проекта" onClick={() => setPanel(null)}><X size={18} /></IconButton></div></div>{tree}</div>}
     </div>
 
-    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && isMaterialTab ? styles.active : ""} onClick={() => { if (!isMaterialTab) setTab("floor"); setPanel(panel === "properties" && isMaterialTab ? null : "properties"); }}><Layers size={21} />Материал</button><button type="button" disabled={!result || !!pendingDraft || placementGesture} onClick={() => { setPanel(null); openPurchase(); }}><ShoppingCart size={21} />Ведомость</button></nav>
+    <nav className={styles.mobileNav} aria-label="Разделы конструктора"><button type="button" className={panel === "tree" ? styles.active : ""} onClick={() => setPanel(panel === "tree" ? null : "tree")}><Home size={21} />Проект</button><button type="button" className={panel === "properties" && tab === "room" ? styles.active : ""} onClick={() => { if (panel === "properties" && tab === "room") setPanel(null); else showRoomProperties(); }}><Ruler size={21} />Размеры</button><button type="button" className={panel === "properties" && isMaterialTab ? styles.active : ""} disabled={!!pendingDraft || placementGesture} onClick={() => { if (panel === "properties" && isMaterialTab) setPanel(null); else showMaterialProperties(isMaterialTab ? tab : "floor"); }}><Layers size={21} />Отделка</button><button type="button" disabled={!result || !!pendingDraft || placementGesture} onClick={() => { setPanel(null); openPurchase(); }}><ShoppingCart size={21} />Ведомость</button></nav>
 
     {notice && <div className={styles.notice} role="alert"><p>{notice}</p><IconButton label="Закрыть сообщение" onClick={() => setNotice("")}><X size={18} /></IconButton></div>}
 
     {modal === "purchase" && <ModalWindow title="Ведомость проекта" onClose={() => setModal(null)}>
       <div className={styles.modalBody}><p className={styles.modalLead}>{workspace.project.name} · {workspace.project.rooms.length} помещ. · {formatNumber(totalArea)} м².</p>
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
-          <p className={styles.purchaseIntro}>Количество к покупке указано справа. Запас уже включён; одинаковый товар объединён по помещениям перед округлением до упаковок.</p>
+          <p className={styles.purchaseIntro}>Запас уже включён. Одинаковый товар объединён по помещениям и округлён до целых упаковок.</p>
           {!!missingSupplyRates && <p className={styles.formNotice} role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
           <div className={styles.purchaseList}>{result.purchases.map((line) => <article className={styles.purchaseRow} key={line.id}>
-            <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
+            <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><span className={styles.purchaseLabel}>К покупке</span><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
             <dl className={styles.purchaseFacts}>{purchaseFacts(line).map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>
             <details className={styles.purchaseDetails}>
               <summary aria-label={`Расчёт и запас: ${line.name}`}><ChevronDown size={16} aria-hidden="true" />Расчёт и запас</summary>
@@ -664,15 +681,18 @@ function ConstructorEditorSession() {
             {r.warnings.map((warning) => <p className={styles.hint} key={warning}>{warning}</p>)}
             {r.walls.map((wall) => <div key={wall.wall}><p>Стена {wall.wall + 1}: {formatNumber(wall.netAreaM2)} м² без проёмов → {formatNumber(wall.coveredAreaM2, 3)} м² плитки без швов → {wall.baseTiles} исходных плиток, в том числе {wall.cutTiles} с подрезкой. Неуложенный материал: {formatNumber(wall.unlaidAreaM2, 3)} м².</p>{wall.warnings.map((warning) => <p className={styles.hint} key={warning}>{warning}</p>)}</div>)}
           </div>)}</div></details>
-          <div className={styles.modalActions}><button className={styles.primaryButton} type="button" disabled={!canExport} onClick={() => void performExport("pdf")}><Download size={17} />Скачать PDF</button><button className={styles.secondaryButton} type="button" disabled={!canExport} onClick={() => void performExport("xlsx")}>Скачать XLSX</button></div>
           <div className={styles.projectBackup}>
             <h3>Продолжить на другом устройстве</h3>
             <p>Проект автоматически сохраняется в этом браузере. Скачайте файл .masterok.json для переноса размеров, материалов и вариантов. На другом устройстве откройте его на <Link href="/konstruktor/">странице конструктора</Link> кнопкой «Открыть файл проекта».</p>
             <button className={styles.secondaryButton} type="button" disabled={!canExport} onClick={() => void performExport("project")}><Download size={17} aria-hidden="true" />Скачать файл проекта</button>
           </div>
-          {busyExport && <p role="status">Готовим {busyExport}…</p>}
         </>}
       </div>
+      {result && <div className={styles.purchaseActions}>
+        <button className={styles.primaryButton} type="button" disabled={!canExport} onClick={() => void performExport("pdf")}><Download size={17} />Скачать PDF</button>
+        <button className={styles.secondaryButton} type="button" disabled={!canExport} onClick={() => void performExport("xlsx")}>Скачать XLSX</button>
+        {busyExport && <p role="status">Готовим {busyExport}…</p>}
+      </div>}
     </ModalWindow>}
 
     {modal === "variants" && <ModalWindow title="Сравнение вариантов" wide={workspace.variants.length > 0} onClose={() => setModal(null)}>

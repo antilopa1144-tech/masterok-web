@@ -92,4 +92,26 @@ describe("The door and window setup form", () => {
     await click("Сохранить проём"); expect(onConfirm.mock.calls[0][0]).toMatchObject({ widthMm: 900, offsetMm: 50 });
     expect(project.rooms[0].openings[0].offsetMm).toBe(1050);
   });
+
+  it("keeps the chosen wall and exact dimensions when returning between mobile steps", async () => {
+    await render(createOpeningDraft(project.rooms[0], "door", 0, "door"));
+    await click("Стена 3"); await click("Далее: размеры");
+    await exact("Ширина проёма", "850.5");
+    await click("1. Стена"); await click("2. Размеры");
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(document.activeElement?.textContent).toBe("Размеры и положение");
+    await click("Добавить дверь");
+    expect(onConfirm.mock.calls[0][0]).toMatchObject({ wall: 2, widthMm: 850.5 });
+  });
+
+  it("opens editing at dimensions and prevents hiding an invalid draft by switching steps", async () => {
+    const initial = createOpeningDraft(project.rooms[0], "door", 0, "existing");
+    project.rooms[0].openings = [initial]; await render(initial, true);
+    expect(button("2. Размеры").getAttribute("aria-current")).toBe("step");
+    await exact("Ширина проёма", "3001");
+    expect(button("1. Стена").disabled).toBe(true);
+    expect(button("Сохранить проём").disabled).toBe(true);
+    await click("Отмена");
+    expect(onCancel).toHaveBeenCalledOnce(); expect(onConfirm).not.toHaveBeenCalled();
+  });
 });
