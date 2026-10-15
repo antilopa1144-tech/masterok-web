@@ -39,6 +39,8 @@ import { reviewWallCuts, type WallCutEntry } from "@/lib/constructor/wall-cuts";
 import styles from "./constructor.module.css";
 import { summarizeFinish } from "@/lib/constructor/comparison";
 import { purchaseCostText, purchaseFacts } from "@/lib/constructor/purchase-presentation";
+import type { PurchaseTarget } from "@/lib/constructor/purchase-targets";
+import PurchaseMaterialLinks from "./PurchaseMaterialLinks";
 import { applyOpeningDraft, createOpeningDraft } from "@/lib/constructor/opening-draft";
 import OpeningCreationForm from "./OpeningCreationForm";
 import { reviewFurnishings } from "@/lib/constructor/furnishing-review";
@@ -312,6 +314,15 @@ function ConstructorEditorSession() {
     expandShortPanel(); setSelectedFurnishing(undefined); setTab("interior"); setPanel("properties"); requestAnimationFrame(() => {
       const control = document.querySelector<HTMLSelectElement>('select[aria-label="Тип помещения"]');
       scrollPropertiesTo(control?.closest<HTMLElement>("label") ?? null); control?.focus({ preventScroll: true });
+    });
+  };
+  const editPurchaseMaterial = (target: PurchaseTarget) => {
+    if (pendingDraft || placementGesture) return;
+    setSelectedRoomId(target.roomId); setSelectedPieceId(undefined); setSelectedTile(undefined);
+    if (target.wall !== undefined) setSelectedWall(target.wall);
+    setModal(null); showMaterialProperties(target.surface);
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLSelectElement>(`.${styles.properties} select`)?.focus({ preventScroll: true });
     });
   };
   const showFurnishingProperties = () => {
@@ -671,6 +682,7 @@ function ConstructorEditorSession() {
                 {line.purchasedTiles !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedTiles} плиток ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusTiles} шт. — остаток от округления до упаковок. Поверхности: {[...(line.floorRoomIds?.map((id) => `${workspace.project.rooms.find((item) => item.id === id)?.name}, пол`) ?? []), ...(line.surfaces?.map((surface) => `${workspace.project.rooms.find((item) => item.id === surface.roomId)?.name}, стена ${surface.wall + 1}`) ?? [])].join("; ")}.</p>}
               </div>
             </details>
+            <PurchaseMaterialLinks line={line} rooms={workspace.project.rooms} onSelect={editPurchaseMaterial} disabled={!!pendingDraft || placementGesture || !!busyExport} />
           </article>)}</div>
           <div className={styles.purchaseTotal}><span>{purchaseCost?.label}</span><strong>{purchaseCost?.value}</strong></div>
           {estimatedPrices && <p className={styles.hint}>Для одинакового товара с разными ценами взята максимальная введённая цена. Уточните цену общей закупки перед заказом.</p>}
