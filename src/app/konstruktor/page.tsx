@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight, Box, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
+import ConstructorMobileStart from "@/components/constructor/ConstructorMobileStart";
 import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_SCENARIOS, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -23,6 +24,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 const questions = [
+  { question: "Можно ли спланировать кухню в 3D?", answer: "Да. Нажмите «Создать свой проект», выберите «Кухня» и перейдите к размерам. В редакторе можно менять габариты и положение условного гарнитура, холодильника и стола, добавлять проёмы и выбирать отделку. Это планирование помещения, а не проектирование кухонных модулей: деталировка шкафов, столешница, подключения и открывание техники не рассчитываются. Мебель и техника не входят в ведомость отделки." },
   { question: "Как начать проект по своим размерам?", answer: "Нажмите «Создать свой проект», выберите тип помещения и укажите его название, ширину, длину и высоту в миллиметрах. Нажмите «Открыть 3D-проект» — редактор откроется с этим помещением. До подтверждения новая работа не сохраняется. Двери, окна, обстановку и отделку можно настроить позже. Для знакомства с редактором есть отдельные готовые примеры." },
   { question: "Что можно спланировать в конструкторе?", answer: "Прямоугольные комнаты с дверями и окнами. Можно задать размеры, выбрать ламинат или плитку для пола, разложить плитку на стенах и расставить условную мебель. Комнаты объединяются в один проект." },
   { question: "Как проверить расстановку мебели?", answer: "Откройте раздел «Обстановка». В блоке «Проверка расстановки» собраны предметы с пересечениями, выходом за границы комнаты, превышением высоты потолка и замечаниями у проёмов. Там же видны предметы, которым не нашлось места автоматически. Нажмите на предмет в списке, чтобы открыть его параметры. При наличии замечаний возле 3D-комнаты и плана появляется кнопка «Замечания». Зоны у дверей и окон условные; открывание створок, подключения техники и монтажные зазоры нужно проверить отдельно." },
@@ -69,9 +71,13 @@ export default function ConstructorPage() {
       <div className={landing.preview}><ProjectPreview bathroom /></div>
       <div className={landing.heroActions}><ConstructorStartActions /></div>
     </section>
+    <ConstructorMobileStart />
     <div className={`${styles.capabilities} ${landing.capabilities}`} aria-label="Возможности конструктора">
       <span><Ruler size={19} />Размеры и проёмы</span><span><Layers size={19} />Отделка и подрезки</span><span><Box size={19} />Упаковки к покупке</span><span><Download size={19} />PDF, PNG и Excel</span>
     </div>
+    <nav className={styles.pageNav} aria-label="На этой странице">
+      <a href="#room-planning">Комната</a><a href="#kitchen-planning">Кухня</a><a href="#scenarios">Готовые примеры</a><a href="#faq-title">Вопросы и ограничения</a>
+    </nav>
     <section id="scenarios" className={styles.section} aria-labelledby="scenarios-title">
       <div className={styles.sectionHeading}><div><h2 id="scenarios-title">Попробуйте на готовом примере</h2><p>Посмотрите, как устроен редактор. Любой пример можно изменить под своё помещение.</p></div><span className={styles.quiet}>Каждый пример — отдельный проект</span></div>
       <div className={`${styles.scenarios} ${landing.scenarios}`}>
@@ -91,6 +97,22 @@ export default function ConstructorPage() {
         <li><span>2</span><div><h3>Сравните варианты</h3><p>Выберите формат и направление укладки, попробуйте разную расстановку. Сохраните варианты и сопоставьте планы одной комнаты, расход и стоимость материалов. Перед применением проверьте список изменений по всему проекту.</p></div></li>
         <li><span>3</span><div><h3>Соберите список материалов</h3><p>Проверьте запас и фасовку, укажите свои цены и скачайте ведомость вместе со схемами.</p></div></li>
       </ol>
+    </section>
+    <section className={`${styles.section} ${landing.planning}`} aria-label="Планирование комнаты и кухни">
+      <article id="room-planning" aria-labelledby="room-planning-title">
+        <p className={landing.eyebrow}>Комната</p><h2 id="room-planning-title">От расстановки до покрытия пола</h2>
+        <p>Начните с размеров комнаты, добавьте дверь и окна. Расставьте мебель, затем выберите ламинат или плитку: направление укладки и размер элементов влияют на подрезки.</p>
+        <p>Мебель помогает оценить пространство, но не вычитается из площади пола. Перед покупкой проверьте запас и фасовку в ведомости. Сложный контур помещения редактор пока не рассчитывает.</p>
+        <Link href={projectStartHref("room")} prefetch={false} className={styles.textAction}>Создать свою комнату <ArrowUpRight size={18} aria-hidden="true" /></Link>
+        <p className={styles.toolsNote}>Для стен: <Link href="/instrumenty/raskladka-oboev/">раскладка обоев с рисунком</Link>. Этот отдельный расчёт не добавляется в ведомость 3D-проекта.</p>
+      </article>
+      <article id="kitchen-planning" aria-labelledby="kitchen-planning-title">
+        <p className={landing.eyebrow}>Кухня</p><h2 id="kitchen-planning-title">Проверьте место для мебели и техники</h2>
+        <p>В новом проекте выберите «Кухня», укажите размеры и откройте редактор. Измените положение и габариты гарнитура, холодильника и стола; добавьте проёмы и проверьте замечания о пересечениях.</p>
+        <p>Гарнитур показан условно: отдельные модули, столешница и подключения здесь не проектируются. Открывание техники и монтажные зазоры проверяйте отдельно. Ведомость включает отделку, а не стоимость кухни.</p>
+        <Link href={projectStartHref()} prefetch={false} className={styles.textAction}>Создать проект и выбрать кухню <ArrowUpRight size={18} aria-hidden="true" /></Link>
+        <p className={styles.toolsNote}>Подробнее: <Link href={CONSTRUCTOR_FURNITURE_URL}>расстановка мебели и проверка пересечений</Link>.</p>
+      </article>
     </section>
     <div className={landing.editor}><details><summary><span>Посмотрите, как устроен редактор</span><span aria-hidden="true">＋</span></summary><Image src="/images/constructor/bathroom-editor-2026.webp" alt="Интерфейс конструктора: ванная в 3D, параметры плитки справа, переход к ведомости" width={1440} height={1100} sizes="(max-width: 900px) 100vw, 1200px" /></details></div>
     <div className={landing.measureGuide}><details><summary>Как измерить помещение перед началом<Ruler size={18} aria-hidden="true" /></summary><ConstructorMeasureGuide /></details></div>

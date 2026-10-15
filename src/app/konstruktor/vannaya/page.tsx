@@ -5,6 +5,7 @@ import { ArrowUpRight, Bath, Box, Check, Download, Layers, Ruler } from "lucide-
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
+import ConstructorMobileStart from "@/components/constructor/ConstructorMobileStart";
 import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -60,9 +61,7 @@ export default function BathroomConstructorPage() {
         <figcaption><Check size={16} />Пример можно менять: размеры, обстановку и отделку.</figcaption>
       </figure>
     </section>
-    <nav className={bathroom.mobileStart} aria-label="Создать проект ванной">
-      <span>Ваша ванная в 3D</span><Link href={projectStartHref("bathroom")} prefetch={false} className={styles.primaryAction}>Создать проект<ArrowUpRight size={17} aria-hidden="true" /></Link>
-    </nav>
+    <ConstructorMobileStart scenario="bathroom" label="Ваша ванная в 3D" navigationLabel="Создать проект ванной" />
     <nav className={styles.pageNav} aria-label="На этой странице">
       <a href="#bathroom-steps">Как спланировать</a><a href="#constructor-measurements">Какие размеры нужны</a><a href="#bathroom-variants">Сравнить плитку</a><a href="#bathroom-materials">Что в ведомости</a><a href="#bathroom-tile-quantity">Как считается плитка</a><a href="#bathroom-questions">Вопросы и ограничения</a>
     </nav>

@@ -29,7 +29,7 @@
     "analyze": "ANALYZE=true npm run build",
     "analyze:server": "ANALYZE=true next build --webpack",
     "test:e2e": "playwright test",
-    "test:e2e:catalog": "playwright test e2e/catalog-smoke.spec.ts e2e/constructor-entry.spec.ts e2e/constructor-hydration.spec.ts e2e/constructor-bathroom.spec.ts --project=chromium",
+    "test:e2e:catalog": "playwright test e2e/catalog-smoke.spec.ts e2e/constructor-entry.spec.ts e2e/constructor-hydration.spec.ts e2e/constructor-bathroom.spec.ts e2e/constructor-planning.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed"
   },

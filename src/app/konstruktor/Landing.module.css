@@ -1,5 +1,12 @@
 .page.page { --entry-text: #292a28; --entry-muted: #69675e; --entry-line: #dcd9d0; --entry-panel: #eeede7; --entry-bg: #f8f7f3; --entry-accent: #c2410c; }
 .page h1, .page h2, .page h3 { color: var(--entry-text); }
+.planning { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 5vw, 64px); }
+.planning article { min-width: 0; padding-top: 24px; border-top: 1px solid var(--entry-line); scroll-margin-top: 85px; }
+.planning h2 { margin-bottom: 16px; font-size: clamp(25px, 3vw, 34px); }
+.planning p { margin: 0 0 16px; color: var(--entry-muted); font-size: 15px; line-height: 1.7; }
+.planning .eyebrow { margin: 0 0 16px; color: var(--entry-accent); font-size: 13px; font-weight: 600; }
+.planning a { min-height: 44px; }
+@media(max-width: 650px) { .planning { grid-template-columns: 1fr; gap: 32px; } .page [id] { scroll-margin-top: 145px; } }
 .page .hero { grid-template-columns: minmax(0, .83fr) minmax(0, 1.17fr); grid-template-areas: "copy preview" "actions preview"; align-content: center; row-gap: 22px; column-gap: clamp(28px, 4vw, 60px); padding-top: 42px; padding-bottom: 40px; }
 .heroCopy { grid-area: copy; align-self: end; }
 .preview { grid-area: preview; min-width: 0; }
