@@ -41,6 +41,7 @@ import { summarizeFinish } from "@/lib/constructor/comparison";
 import { purchaseCostText, purchaseFacts } from "@/lib/constructor/purchase-presentation";
 import type { PurchaseTarget } from "@/lib/constructor/purchase-targets";
 import PurchaseMaterialLinks from "./PurchaseMaterialLinks";
+import PurchaseList from "./PurchaseList";
 import { applyOpeningDraft, createOpeningDraft } from "@/lib/constructor/opening-draft";
 import OpeningCreationForm from "./OpeningCreationForm";
 import { reviewFurnishings } from "@/lib/constructor/furnishing-review";
@@ -671,7 +672,7 @@ function ConstructorEditorSession() {
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
           <p className={styles.purchaseIntro}>Запас уже включён. Одинаковый товар объединён по помещениям и округлён до целых упаковок.</p>
           {!!missingSupplyRates && <p className={styles.formNotice} role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
-          <div className={styles.purchaseList}>{result.purchases.map((line) => <article className={styles.purchaseRow} key={line.id}>
+          <PurchaseList lines={result.purchases} rooms={workspace.project.rooms} renderLine={(line) => <article className={styles.purchaseRow} key={line.id}>
             <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><span className={styles.purchaseLabel}>К покупке</span><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
             <dl className={styles.purchaseFacts}>{purchaseFacts(line).map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>
             <details className={styles.purchaseDetails}>
@@ -683,7 +684,7 @@ function ConstructorEditorSession() {
               </div>
             </details>
             <PurchaseMaterialLinks line={line} rooms={workspace.project.rooms} onSelect={editPurchaseMaterial} disabled={!!pendingDraft || placementGesture || !!busyExport} />
-          </article>)}</div>
+          </article>} />
           <div className={styles.purchaseTotal}><span>{purchaseCost?.label}</span><strong>{purchaseCost?.value}</strong></div>
           {estimatedPrices && <p className={styles.hint}>Для одинакового товара с разными ценами взята максимальная введённая цена. Уточните цену общей закупки перед заказом.</p>}
           {!!missingPrices && <p className={styles.hint}>{hasPrices ? `Позиций без цены: ${missingPrices}. Общая стоимость проекта пока неполная.` : "Количество к покупке рассчитано. Для стоимости укажите цены выбранных товаров в параметрах покрытий и смесей."}</p>}
