@@ -16,6 +16,7 @@ for (const [width, manual] of [[390, false], [320, true]] as const) {
       const open = page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true });
       await open.click();
       const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
+      await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).tap();
       const names = await bill.getByRole("article").getByRole("heading").allTextContents();
       await bill.getByRole("searchbox", { name: "Найти материал", exact: true }).fill("графит");
       await expect(bill.getByRole("article")).toHaveCount(1);
@@ -38,6 +39,7 @@ for (const [width, manual] of [[390, false], [320, true]] as const) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await bill.getByRole("button", { name: "Закрыть окно", exact: true }).click();
       await open.click();
+      await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).tap();
       await expect(bill.getByText("Список всего проекта скопирован. Вставьте его в сообщение.", { exact: true })).toHaveCount(0);
       await expect(bill.getByRole("textbox", { name: "Список материалов всего проекта", exact: true })).toHaveCount(0);
       expect(errors).toEqual([]);

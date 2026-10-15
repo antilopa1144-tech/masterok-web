@@ -225,6 +225,10 @@
 .smallNote { font-size: 12px; color: var(--c-secondary); }
 .modalLead { color: var(--c-secondary); margin-bottom: 22px !important; font-size: 13px; }
 .purchaseList { border-top: 1px solid var(--c-line); }
+.purchaseTools { margin-bottom: 12px; }
+.purchaseTools > summary { display: list-item; min-height: 44px; padding: 12px 0; color: var(--c-text); font-size: 13px; font-weight: 600; cursor: pointer; }
+.purchaseTools > summary:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
+.purchaseTools > summary small { display: block; padding-top: 4px; font-weight: 400; color: var(--c-secondary); }
 .purchaseCopy { display: grid; justify-items: start; gap: 8px; margin: 14px 0 20px; }
 .purchaseCopy button { min-height: 44px; white-space: normal; }
 .purchaseCopy label { font-size: 13px; font-weight: 600; }

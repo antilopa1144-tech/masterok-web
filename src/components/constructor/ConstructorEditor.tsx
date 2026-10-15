@@ -673,13 +673,12 @@ function ConstructorEditorSession() {
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
           <p className={styles.purchaseIntro}>Запас уже включён. Одинаковый товар объединён по помещениям и округлён до целых упаковок.</p>
           {!!missingSupplyRates && <p className={styles.formNotice} role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
-          <PurchaseCopy project={workspace.project} result={result} disabled={!canExport} />
-          <PurchaseList lines={result.purchases} rooms={workspace.project.rooms} renderLine={(line) => <article className={styles.purchaseRow} key={line.id}>
+          <PurchaseList lines={result.purchases} rooms={workspace.project.rooms} actions={<PurchaseCopy project={workspace.project} result={result} disabled={!canExport} />} renderLine={(line) => <article className={styles.purchaseRow} key={line.id}>
             <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><span className={styles.purchaseLabel}>К покупке</span><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
-            <dl className={styles.purchaseFacts}>{purchaseFacts(line).map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>
             <details className={styles.purchaseDetails}>
               <summary aria-label={`Расчёт и запас: ${line.name}`}><ChevronDown size={16} aria-hidden="true" />Расчёт и запас</summary>
               <div className={styles.purchaseDetailsBody}>
+                <dl className={styles.purchaseFacts}>{purchaseFacts(line).map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>
                 <p className={styles.purchaseExplanation}>{line.basis}</p>
                 {line.purchasedBoards !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedBoards} досок ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusBoards} досок — остаток от округления до упаковок.</p>}
                 {line.purchasedTiles !== undefined && <p className={styles.purchaseExplanation}>В упаковках: {line.purchasedTiles} плиток ({formatNumber(line.purchasedAreaM2!)} м²). Из них {line.packSurplusTiles} шт. — остаток от округления до упаковок. Поверхности: {[...(line.floorRoomIds?.map((id) => `${workspace.project.rooms.find((item) => item.id === id)?.name}, пол`) ?? []), ...(line.surfaces?.map((surface) => `${workspace.project.rooms.find((item) => item.id === surface.roomId)?.name}, стена ${surface.wall + 1}`) ?? [])].join("; ")}.</p>}

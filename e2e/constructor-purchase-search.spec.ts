@@ -14,6 +14,16 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       const open = page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true });
       await open.click();
       const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
+      const tools = bill.locator("summary").filter({ hasText: "Найти или скопировать список" });
+      // Both purchase amounts must be readable without scrolling the default mobile bill.
+      const second = bill.getByRole("article").nth(1).getByText("К покупке", { exact: true });
+      expect((await second.boundingBox())!.y + (await second.boundingBox())!.height).toBeLessThan((await bill.getByRole("button", { name: "Скачать PDF", exact: true }).boundingBox())!.y);
+      const first = bill.getByRole("article").first();
+      await expect(first.getByText("Нужно с резервом", { exact: true })).not.toBeVisible();
+      await first.locator("summary").filter({ hasText: "Расчёт и запас" }).tap();
+      await expect(first.getByText("Нужно с резервом", { exact: true })).toBeVisible();
+      await first.locator("summary").filter({ hasText: "Расчёт и запас" }).tap();
+      await tools.tap();
       const search = bill.getByRole("searchbox", { name: "Найти материал", exact: true });
       const count = await bill.getByRole("article").count();
       expect(count).toBeGreaterThan(1);
@@ -30,9 +40,14 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       await expect(bill.getByRole("article")).toHaveCount(count);
       await search.fill("графит");
       await expect(bill.getByRole("article")).toHaveCount(1);
+      await tools.tap();
+      await expect(tools).toContainText("Поиск применён: 1 из 2");
+      await expect(bill.getByRole("article")).toHaveCount(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await bill.getByRole("button", { name: "Закрыть окно", exact: true }).click();
       await open.click();
+      await expect(tools).not.toContainText("Поиск применён");
+      await tools.tap();
       await expect(search).toHaveValue("");
       await expect(bill.getByRole("article")).toHaveCount(count);
       expect(errors).toEqual([]);
@@ -47,6 +62,7 @@ test("XLSX retains every purchase while the visible list is filtered", async ({ 
   await expect(page.getByRole("status", { name: "Сохранено в браузере", exact: true })).toBeAttached({ timeout: 15_000 });
   await page.getByRole("button", { name: "Открыть ведомость", exact: true }).click();
   const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
+  await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).click();
   const names = await bill.getByRole("article").getByRole("heading").allTextContents();
   await bill.getByRole("searchbox", { name: "Найти материал", exact: true }).fill("графит");
   await expect(bill.getByRole("article")).toHaveCount(1);
