@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Download, Ruler } from "lucide-react";
+import { ArrowUpRight, Copy, Download, Ruler } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorGuideLinks from "@/components/constructor/ConstructorGuideLinks";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
@@ -82,8 +82,9 @@ export default function RoomPlanPage() {
       </ol>
     </section>
     <section id="plan-export" className={styles.section} aria-labelledby="plan-export-title">
-      <div className={styles.sectionHeading}><div><h2 id="plan-export-title">Сохранить, передать, продолжить</h2><p>Выберите файл в зависимости от того, что нужно получателю.</p></div></div>
+      <div className={styles.sectionHeading}><div><h2 id="plan-export-title">Сохранить, передать, продолжить</h2><p>Отправьте размеры сообщением или сохраните файл — в зависимости от того, что нужно получателю.</p></div></div>
       <dl className={styles.materialList}>
+        <div><dt><Copy size={21} aria-hidden="true" />Размеры текстом — отправить мастеру</dt><dd>В разделе «Размеры» нажмите «Скопировать размеры». В сообщение попадут габариты выбранной комнаты, размеры дверей и окон, номера стен, отступы и высота подоконников. Если браузер запрещает копирование, редактор покажет текст для ручного выделения. Перед ремонтом сверьте параметры проекта с замерами на месте.</dd></div>
         <div><dt><Download size={21} aria-hidden="true" />PNG или PDF — посмотреть план</dt><dd>Переключитесь на «План» и откройте «Экспорт». Картинку или документ можно передать мастеру для обсуждения размеров и расстановки.</dd></div>
         <div><dt><Download size={21} aria-hidden="true" />Файл проекта — редактировать дальше</dt><dd>Скачайте .masterok.json и откройте его на другом устройстве через «Открыть файл проекта». Адрес страницы не содержит сохранённую комнату.</dd></div>
       </dl>

@@ -60,3 +60,48 @@ test.describe("crawlable planning advice", () => {
     await expect(disclosure.locator("p")).toHaveText(kitchen.acceptedAnswer.text);
   });
 });
+
+for (const [width, manual] of [[390, false], [320, true], [1280, false]] as const) {
+  test.describe(`room dimensions message at ${width}px`, () => {
+    test.use({ viewport: { width, height: 844 }, isMobile: width < 600, hasTouch: width < 600, colorScheme: manual ? "dark" : "light" });
+    test("copies current dimensions, supports denied clipboard and clears stale feedback after editing", async ({ page, context }) => {
+      test.setTimeout(60_000);
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      if (manual) await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.reject(new Error("denied")) } }));
+      else await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await page.goto("/konstruktor/redaktor/?new=1&start=bathroom");
+      await page.getByRole("button", { name: "Открыть 3D-проект", exact: true }).click();
+      await expect(page.getByRole("status", { name: "Сохранено в браузере", exact: true })).toBeAttached({ timeout: 15_000 });
+      await page.getByRole("button", { name: "Изменить размеры комнаты", exact: true }).click();
+      const panel = page.getByRole("complementary", { name: "Параметры выбранной комнаты" });
+      const copy = panel.getByRole("button", { name: "Скопировать размеры", exact: true });
+      const field = panel.getByRole("textbox", { name: "Размеры выбранной комнаты", exact: true });
+      const success = panel.getByRole("status").filter({ hasText: "Размеры комнаты скопированы" });
+      expect((await copy.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await copy.click();
+      if (manual) {
+        await expect(field).toBeVisible();
+        await panel.getByRole("button", { name: "Выделить весь текст", exact: true }).click();
+        expect(await field.evaluate((node: HTMLTextAreaElement) => node.selectionEnd - node.selectionStart)).toBe((await field.inputValue()).length);
+      } else await expect(success).toBeVisible();
+      await panel.getByRole("button", { name: "Точное значение: Ширина", exact: true }).click();
+      await panel.getByRole("textbox", { name: "Ширина", exact: true }).fill("0");
+      await expect(copy).toBeDisabled();
+      await panel.getByRole("textbox", { name: "Ширина", exact: true }).fill("2450");
+      await panel.getByRole("button", { name: "Применить: Ширина", exact: true }).click();
+      await expect(success).toHaveCount(0);
+      await expect(field).toHaveCount(0);
+      await copy.click();
+      if (manual) await expect(field).toBeVisible();
+      else await expect(success).toBeVisible();
+      const text = (manual ? await field.inputValue() : await page.evaluate(() => navigator.clipboard.readText())).replaceAll("\u00a0", " ");
+      expect(text).toContain("ширина 2 450 мм");
+      expect(text).toContain("Только выбранная комната");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(errors).toEqual([]);
+      await copy.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: test.info().outputPath(`room-dimensions-${width}.png`) });
+    });
+  });
+}

@@ -43,6 +43,7 @@ import type { PurchaseTarget } from "@/lib/constructor/purchase-targets";
 import PurchaseMaterialLinks from "./PurchaseMaterialLinks";
 import PurchaseList from "./PurchaseList";
 import PurchaseCopy from "./PurchaseCopy";
+import RoomDimensionsCopy from "./RoomDimensionsCopy";
 import { applyOpeningDraft, createOpeningDraft } from "@/lib/constructor/opening-draft";
 import OpeningCreationForm from "./OpeningCreationForm";
 import { reviewFurnishings } from "@/lib/constructor/furnishing-review";
@@ -616,6 +617,7 @@ function ConstructorEditorSession() {
             <TextField label="Название помещения" value={room.name} onCommit={(name) => updateRoom((current) => { current.name = name; })} onStatus={onStatus} />
             <div className={styles.fieldRow}><NumberField label="Ширина" value={room.widthMm} min={300} max={30000} unit="мм" onCommit={(value) => setRoomNumber("widthMm", value)} onStatus={onStatus} /><NumberField label="Длина" value={room.lengthMm} min={300} max={30000} unit="мм" onCommit={(value) => setRoomNumber("lengthMm", value)} onStatus={onStatus} /><NumberField label="Высота" value={room.heightMm} min={500} max={6000} unit="мм" onCommit={(value) => setRoomNumber("heightMm", value)} onStatus={onStatus} /></div>
             <p className={styles.hint}>Размеры внутри помещения. Нумерация стен и отступы проёмов идут по часовой стрелке от верхнего левого угла плана.</p>
+            <RoomDimensionsCopy room={room} disabled={!!pendingDraft || !!placementGesture} />
             <div className={styles.sectionHeading}><h3>Двери и окна</h3></div>
             {room.openings.length === 0 && <p className={styles.hint}>Добавьте проёмы — они появятся на плане и в 3D. Двери исключаются из длины плинтуса.</p>}
             {room.openings.map((opening, index) => <div className={styles.openingCard} key={opening.id} data-opening-id={opening.id}>
