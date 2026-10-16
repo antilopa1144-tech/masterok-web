@@ -14,6 +14,7 @@ export default function PurchaseList({ lines, rooms, renderLine, actions }: {
   const id = useId();
   const visible = searchPurchases(lines, rooms, query, scope);
   const unpricedCount = lines.filter(line => !(line.unitPriceRub > 0)).length;
+  const filtered = Boolean(query.trim()) || scope === "unpriced";
   return <>
     <details className={styles.purchaseTools}>
       <summary>Найти или скопировать список{(query.trim() || scope === "unpriced") && <small>{scope === "unpriced" ? "Без цены" : "Поиск применён"}: {visible.length} из {lines.length}</small>}</summary>
@@ -31,6 +32,10 @@ export default function PurchaseList({ lines, rooms, renderLine, actions }: {
       <p role="status" aria-live="polite">Показано позиций: {visible.length} из {lines.length}</p>
     </div>}
     </details>
+    {filtered && <div className={styles.purchaseFilterNotice}>
+      <p role="status">{scope === "unpriced" ? "Без цены" : "Поиск"}: показано {visible.length} из {lines.length}. Итог и файлы — для всего проекта.</p>
+      <button type="button" className={styles.secondaryButton} onClick={() => { setQuery(""); setScope("all"); }}>Показать все материалы</button>
+    </div>}
     {visible.length ? <div className={styles.purchaseList}>{visible.map(renderLine)}</div> : <p className={styles.purchaseIntro}>{scope === "unpriced" ? "Позиций без цены по этим условиям не найдено. Выберите «Все позиции» или сбросьте поиск." : "Материалы не найдены. Попробуйте другое название, размер или сбросьте поиск."}</p>}
   </>;
 }

@@ -233,6 +233,9 @@
 .purchaseFilter button { min-height: 44px; padding: 10px 12px; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); color: var(--c-text); font-size: 13px; cursor: pointer; }
 .purchaseFilter button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-tint); color: var(--c-accent); }
 .purchaseFilter button:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.purchaseFilterNotice { padding: 12px; margin: 12px 0; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); }
+.purchaseFilterNotice p { margin: 0 0 8px; color: var(--c-secondary); font-size: 12px; line-height: 1.6; }
+.purchaseFilterNotice button { min-height: 44px; white-space: normal; }
 .purchaseCopy { display: grid; justify-items: start; gap: 8px; margin: 14px 0 20px; }
 .purchaseCopy button { min-height: 44px; white-space: normal; }
 .purchaseCopy label { font-size: 13px; font-weight: 600; }

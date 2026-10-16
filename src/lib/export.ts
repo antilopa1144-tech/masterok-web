@@ -95,7 +95,7 @@ function binaryToBase64(bytes: Uint8Array): string {
 }
 
 /** Подключает Roboto из /public для корректной кириллицы в PDF */
-async function applyRobotoFont(
+export async function applyRobotoFont(
   doc: import('jspdf').jsPDF,
   fontBase64?: string,
 ): Promise<boolean> {

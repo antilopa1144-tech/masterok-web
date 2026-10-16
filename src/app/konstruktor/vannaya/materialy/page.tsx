@@ -66,6 +66,7 @@ export default function BathroomMaterialsPage() {
     </section>
     <section id="purchase-check" className={styles.section} aria-labelledby="purchase-check-title">
       <div className={styles.sectionHeading}><div><h2 id="purchase-check-title">Перед покупкой проверьте четыре вещи</h2><p>Проверяйте проект по карточкам выбранных товаров и замерам помещения.</p></div></div>
+      <p className={styles.toolsNote}>Для проверки перед заказом откройте <Link href="/instrumenty/chek-listy/zakupka-materialov-vannoy/">чек-лист закупки материалов ванной — 12 пунктов с отметками</Link>. Прогресс сохраняется в этом браузере; для магазина можно скачать чистый список в PDF. Чек-лист не изменяет ведомость проекта.</p>
       <dl className={styles.materialList}>
         <div><dt><ClipboardCheck size={21} aria-hidden="true" />Раскладка и запас</dt><dd>Посмотрите подрезки на плане и развёртках. Раскройте «Расчёт и запас» у материала: потребность, резерв и остаток от целых упаковок показаны отдельно. Заданный запас повторно добавлять не нужно.</dd></div>
         <div><dt><Boxes size={21} aria-hidden="true" />Фасовка товара</dt><dd>Сверьте число плиток в коробке и массу мешка или ведра. В строке плитки откройте «Изменить материал, упаковку или цену» → «Упаковка и цена» у нужного помещения и поверхности.</dd></div>

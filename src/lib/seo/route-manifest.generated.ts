@@ -196,5 +196,6 @@ export const ROUTE_CHECKLIST_SLUGS: readonly string[] = [
   "ukladka-plitki",
   "ustanovka-santehniki",
   "ustroystvo-fundamenta",
-  "uteplenie-fasada"
+  "uteplenie-fasada",
+  "zakupka-materialov-vannoy"
 ];

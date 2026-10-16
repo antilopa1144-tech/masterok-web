@@ -92,6 +92,14 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       await bill.getByRole("button", { name: /^Все позиции ·/ }).tap();
       expect(await bill.getByRole("article").allTextContents()).toEqual(rows);
       await unpriced.tap();
+      await search.fill("несуществующий материал");
+      await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).tap();
+      const showAll = bill.getByRole("button", { name: "Показать все материалы", exact: true });
+      await expect(showAll).toBeVisible();
+      expect((await showAll.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await showAll.tap();
+      await expect(bill.getByRole("article")).toHaveCount(names.length);
+      await expect(showAll).toHaveCount(0);
       await bill.getByRole("button", { name: "Закрыть окно", exact: true }).tap();
       await openBill.tap();
       await expect(bill.getByRole("article")).toHaveCount(names.length);
