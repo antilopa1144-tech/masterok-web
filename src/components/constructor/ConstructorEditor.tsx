@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode, type CSSProperties } from "react";
 import { Box, Check, ChevronDown, Copy, Download, FileInput, FolderOpen, Grid2X2, Home, Layers, Maximize2, Move, Plus, Redo2, Ruler, Scissors, ShoppingCart, Square, Trash2, TriangleAlert, Undo2, X, ZoomIn, ZoomOut, Pencil, Scan } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { calculateProject, createFloorTileSpec, tileSupplyArea, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorProject, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
+import { calculateProject, createFloorTileSpec, validateProject, MAX_FURNISHINGS_PER_ROOM, type ConstructorProject, type ConstructorRoom, type FloorSpec, type FurnishingDimensions, type FurnishingPosition, type Opening, type ProjectCalculation, type RoomCalculation, type Wall, type WallTileSpec, type TileRect } from "@/lib/constructor/core";
 import { dimensionsFor, furnishingIssues, furnishingName, interiorFor, interiorWithPosition, interiorWithDimensions, interiorWithAddedItem, interiorWithoutItem, layoutFurnishings, rotatedFurnishingPosition } from "@/lib/constructor/interiors";
 import { cloneValue, commitWorkspace, createWorkspace, MAX_VARIANTS, newId, readWorkspaceFile, redoWorkspace, undoWorkspace, type ConstructorWorkspace, type WorkspaceHistory } from "@/lib/constructor/workspace";
 import { listWorkspaces, loadWorkspace, saveWorkspace, type WorkspaceSummary } from "@/lib/constructor/storage";
@@ -39,7 +39,7 @@ import { reviewWallCuts, type WallCutEntry } from "@/lib/constructor/wall-cuts";
 import styles from "./constructor.module.css";
 import { summarizeFinish } from "@/lib/constructor/comparison";
 import { purchaseCostText, purchaseFacts } from "@/lib/constructor/purchase-presentation";
-import type { PurchaseTarget } from "@/lib/constructor/purchase-targets";
+import { missingSupplyTargets, type PurchaseTarget, type PurchaseSettingsSection } from "@/lib/constructor/purchase-targets";
 import PurchaseMaterialLinks from "./PurchaseMaterialLinks";
 import PurchaseList from "./PurchaseList";
 import PurchaseCopy from "./PurchaseCopy";
@@ -320,17 +320,18 @@ function ConstructorEditorSession() {
       scrollPropertiesTo(control?.closest<HTMLElement>("label") ?? null); control?.focus({ preventScroll: true });
     });
   };
-  const editPurchaseMaterial = (target: PurchaseTarget, section?: "packaging") => {
+  const editPurchaseMaterial = (target: PurchaseTarget, section?: PurchaseSettingsSection) => {
     if (pendingDraft || placementGesture) return;
     setSelectedRoomId(target.roomId); setSelectedPieceId(undefined); setSelectedTile(undefined);
     if (target.wall !== undefined) setSelectedWall(target.wall);
     setModal(null); showMaterialProperties(target.surface);
-    if (section === "packaging" && window.matchMedia("(max-width: 980px)").matches) {
+    if (section && window.matchMedia("(max-width: 980px)").matches) {
       setPanelHeight(null); setPanelExpanded(true);
     }
     requestAnimationFrame(() => {
-      if (section === "packaging") {
-        const summary = document.querySelector<HTMLElement>(`.${styles.properties} summary[aria-label="Упаковка и стоимость"]`);
+      if (section) {
+        const label = section === "supplies" ? "Клей и затирка" : "Упаковка и стоимость";
+        const summary = document.querySelector<HTMLElement>(`.${styles.properties} summary[aria-label="${label}"]`);
         const details = summary?.closest("details");
         if (summary && details) {
           details.open = true;
@@ -521,7 +522,8 @@ function ConstructorEditorSession() {
   const estimatedPrices = result?.purchases.some((line) => line.unitPriceRub > 0 && line.priceNote) ?? false;
   const hasPrices = result?.purchases.some((line) => line.unitPriceRub > 0) ?? false;
   const purchaseCost = result ? purchaseCostText(summarizeFinish(workspace.project, result).cost) : null;
-  const missingSupplyRates = workspace.project.rooms.reduce((count, room, index) => count + (result && tileSupplyArea(result.rooms[index]) > 0 ? [room.tileSupplies?.adhesive, room.tileSupplies?.grout].filter((spec) => spec?.consumptionKgM2 === 0).length : 0), 0);
+  const incompleteSupplies = missingSupplyTargets(workspace.project.rooms, result?.rooms ?? []);
+  const missingSupplyRates = incompleteSupplies.reduce((count, item) => count + item.missing.length, 0);
   const formatIndex = room ? BOARD_FORMATS.findIndex((format) => format.w === room.floor.boardLengthMm && format.h === room.floor.boardWidthMm) : -1;
   const saveText = placementGesture ? "Перемещаем предмет…" : pendingDraft ? "Ввод не применён" : isSaved ? "Сохранено в браузере" : saved === "invalid" ? "Исправьте параметры" : saved === "error" ? "Не сохранено" : "Сохраняем…";
 
@@ -688,7 +690,13 @@ function ConstructorEditorSession() {
       <div className={styles.modalBody}><p className={styles.modalLead}>{workspace.project.name} · {workspace.project.rooms.length} помещ. · {formatNumber(totalArea)} м².</p>
         {!result ? <p className={styles.fieldError}>{computation.error}</p> : <>
           <p className={styles.purchaseIntro}>Запас уже включён. Одинаковый товар объединён по помещениям и округлён до целых упаковок.</p>
-          {!!missingSupplyRates && <p className={styles.formNotice} role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² в разделе «Клей и затирка» или отключите их.</p>}
+          {!!missingSupplyRates && <section className={`${styles.formNotice} ${styles.purchaseSources}`} aria-label="Смеси без расхода">
+            <p role="status">Смесей без заданного расхода: {missingSupplyRates}. Они пока не включены в ведомость. Укажите кг/м² по выбранному товару или отключите ненужную смесь.</p>
+            <div className={styles.purchaseDetailsBody}>{incompleteSupplies.map(({ target, roomName, missing }) => <div className={styles.purchaseSourceActions} key={target.roomId}>
+              <p>{roomName}: {missing.map(kind => kind === "adhesive" ? "клей" : "затирка").join(" и ")}.</p>
+              <button type="button" className={styles.secondaryButton} disabled={!!pendingDraft || placementGesture || !!busyExport} onClick={() => editPurchaseMaterial(target, "supplies")}>Указать расход · {roomName}</button>
+            </div>)}</div>
+          </section>}
           <PurchaseList lines={result.purchases} rooms={workspace.project.rooms} actions={<PurchaseCopy project={workspace.project} result={result} disabled={!canExport} />} renderLine={(line) => <article className={styles.purchaseRow} key={line.id}>
             <div><h3>{line.name}</h3><p>{line.detail}</p><small>{line.roomIds.map((id) => workspace.project.rooms.find((item) => item.id === id)?.name).join(", ")}</small></div><div className={styles.purchaseQuantity}><span className={styles.purchaseLabel}>К покупке</span><strong>{line.quantity} {line.unit}</strong><span>{line.unitPriceRub ? formatMoney(line.totalPriceRub) : "Цена не задана"}</span>{line.unitPriceRub > 0 && <span>{formatMoney(line.unitPriceRub)} / {line.unit}</span>}</div>
             <details className={styles.purchaseDetails}>

@@ -8,7 +8,7 @@ import styles from "./constructor.module.css";
 export default function TileSupplyControls({ value, calculation, onChange, onStatus }: {
   value?: TileSupplies; calculation?: RoomCalculation; onChange: (value: TileSupplies) => void; onStatus: DraftStatus;
 }) {
-  return <details className={styles.details}><summary>Клей и затирка</summary><div className={styles.detailsContent}>
+  return <details className={styles.details}><summary aria-label="Клей и затирка">Клей и затирка</summary><div className={styles.detailsContent}>
     <p className={styles.hint}>Для плиточного пола и облицованных стен этой комнаты{calculation ? `: ${formatNumber(tileSupplyArea(calculation), 3)} м² укладки` : ""}. Расход в кг/м² возьмите у выбранного производителя для вашего формата, шва и условий нанесения.</p>
     {(["adhesive", "grout"] as const).map((kind) => {
       const spec = value?.[kind], title = kind === "adhesive" ? "клея" : "затирки";

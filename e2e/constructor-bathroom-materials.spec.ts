@@ -11,6 +11,8 @@ test.describe("bathroom procurement SEO", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://getmasterok.ru${route}`);
     await expect(page.locator('meta[name="robots"]')).not.toHaveAttribute("content", /noindex/);
     await expect(page.locator("#separate-materials")).toContainText("не добавляются в ведомость конструктора автоматически");
+    await expect(page.locator("#mixture-settings")).toContainText("Настройки относятся ко всей её плиточной отделке");
+    await expect(page.locator("#purchase-check")).toContainText("расход, фасовка и цена здесь общие");
     const data = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(text => JSON.parse(text));
     const faq = data.find(item => item["@type"] === "FAQPage");
     expect(faq.mainEntity).toHaveLength(7);

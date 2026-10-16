@@ -1,11 +1,34 @@
 import { describe, expect, it } from "vitest";
 import { createScenarioWorkspace } from "./scenarios";
-import type { PurchaseLine } from "./core";
-import { purchaseTargets } from "./purchase-targets";
+import { calculateProject, createTileSupply, type PurchaseLine } from "./core";
+import { missingSupplyTargets, purchaseTargets } from "./purchase-targets";
 
 const base: PurchaseLine = { id: "item", name: "Материал", detail: "", unit: "упак.", quantity: 1, unitPriceRub: 0, totalPriceRub: 0, roomIds: [], basis: "" };
 
 describe("purchase source navigation", () => {
+  it("finds enabled zero-rate mixtures by room identity, with one destination per room", () => {
+    const { project } = createScenarioWorkspace("bathroom");
+    const room = { ...project.rooms[0], tileSupplies: { adhesive: createTileSupply("adhesive"), grout: createTileSupply("grout") } };
+    const wallOnly = { ...room, id: "walls", name: "Стены ванной", floor: createScenarioWorkspace("room").project.rooms[0].floor,
+      tileSupplies: { grout: createTileSupply("grout") } };
+    const rooms = [room, wallOnly];
+    const calculations = calculateProject({ ...project, rooms }).rooms.reverse();
+    const targets = missingSupplyTargets(rooms, calculations);
+    expect(targets.map(item => [item.target.roomId, item.target.surface, item.missing])).toEqual([
+      [room.id, "floor", ["adhesive", "grout"]], ["walls", "walls", ["grout"]],
+    ]);
+    expect(targets[1].target.wall).toBe(wallOnly.wallTiles.findIndex(Boolean));
+    expect(targets[1].roomName).toBe("Стены ванной");
+  });
+  it("does not warn for disabled, configured, uncalculated or untiled mixtures", () => {
+    const { project } = createScenarioWorkspace("bathroom");
+    const room = { ...project.rooms[0], tileSupplies: { adhesive: { ...createTileSupply("adhesive"), consumptionKgM2: 1 } } };
+    expect(missingSupplyTargets([room], calculateProject({ ...project, rooms: [room] }).rooms)).toEqual([]);
+    room.tileSupplies.adhesive.consumptionKgM2 = 0;
+    expect(missingSupplyTargets([room], [])).toEqual([]);
+    const plain = { ...createScenarioWorkspace("room").project.rooms[0], tileSupplies: room.tileSupplies };
+    expect(missingSupplyTargets([plain], calculateProject({ ...project, rooms: [plain] }).rooms)).toEqual([]);
+  });
   it("keeps all rooms and surfaces of a combined tile item, removing duplicate references", () => {
     const room = createScenarioWorkspace("bathroom").project.rooms[0];
     const second = { ...room, id: "second", name: "Вторая ванная" };
