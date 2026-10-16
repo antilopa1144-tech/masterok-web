@@ -96,6 +96,7 @@ export default function BathroomConstructorPage() {
       </dl>
       <p className={styles.scopeNote}>Ведомость относится к отделке. Сантехника и мебель показаны для планирования; их стоимость, работы, коммуникации и подготовку основания нужно учитывать отдельно.</p>
       <p className={styles.toolsNote}>Перед заказом откройте <Link href={CONSTRUCTOR_BATHROOM_MATERIALS_URL}>список материалов для отделки ванной и проверку ведомости</Link>: что входит в расчёт, где уточнить цены и что считать отдельно.</p>
+      <p className={styles.toolsNote}>В магазине используйте <Link href="/instrumenty/chek-listy/zakupka-materialov-vannoy/">чек-лист закупки материалов для ванной</Link>: отмечайте проверенные позиции и показывайте только оставшиеся. Для печати доступны чистый PDF и копия с вашими отметками.</p>
       <p className={styles.toolsNote}>О перемещении, своих габаритах и проверке пересечений подробнее на странице <Link href={CONSTRUCTOR_FURNITURE_URL}>расстановки мебели в 3D</Link>.</p>
     </section>
     <section id="bathroom-tile-quantity" className={`${styles.section} ${styles.workflow}`} aria-labelledby="bathroom-tile-quantity-title">

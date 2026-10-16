@@ -7,6 +7,7 @@ import {
   type ChecklistProgressMilestone,
 } from "@/lib/analytics";
 import type { Checklist } from "@/lib/checklists";
+import styles from "./checklist.module.css";
 import {
   checklistItemKey,
   getChecklistMilestonesToReport,
@@ -38,6 +39,9 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
     return firstIncomplete >= 0 ? firstIncomplete : Math.max(0, checklist.steps.length - 1);
   });
   const startedRef = useRef(false);
+  const listRef = useRef<HTMLOListElement>(null);
+  const showAllRef = useRef<HTMLButtonElement>(null);
+  const [onlyRemaining, setOnlyRemaining] = useState(false);
   const reportedMilestonesRef = useRef<Set<ChecklistProgressMilestone>>(new Set());
 
   const totalItems = allKeys.length;
@@ -46,6 +50,7 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
   const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
   const toggleItem = (stepIndex: number, itemIndex: number) => {
+    const focused = document.activeElement;
     const key = checklistItemKey(stepIndex, itemIndex);
     const next = new Set(checkedKeys);
     if (next.has(key)) next.delete(key);
@@ -72,19 +77,28 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
       next.has(checklistItemKey(stepIndex, index)),
     );
     if (stepComplete && stepIndex < checklist.steps.length - 1) setExpandedStep(stepIndex + 1);
+    if (onlyRemaining && focused instanceof HTMLInputElement) {
+      requestAnimationFrame(() => {
+        const inputs = Array.from(listRef.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? []);
+        const after = inputs.slice(inputs.indexOf(focused) + 1);
+        const nextInput = [...after, ...inputs].find(input => !input.checked);
+        (nextInput ?? showAllRef.current)?.focus({ preventScroll: true });
+      });
+    }
   };
 
   const resetProgress = () => {
     if (!window.confirm("Сбросить все отметки в этом чек-листе?")) return;
     const next = new Set<string>();
     setExpandedStep(0);
+    setOnlyRemaining(false);
     setCheckedKeys(next);
     saveChecklistProgress(checklist.slug, next);
   };
 
   return (
-    <div className="space-y-4">
-      <section className="card overflow-hidden" aria-label="Прогресс чек-листа">
+    <div className={`space-y-4 ${styles.checklist}`}>
+      <section className="card overflow-hidden print:hidden" aria-label="Прогресс чек-листа">
         <div className="border-b border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-accent-50 p-4 dark:border-emerald-800/50 dark:from-emerald-950/30 dark:via-slate-900 dark:to-accent-950/20 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -117,29 +131,37 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
         </div>
       </section>
 
-      <ol aria-busy={!hydrated} className={`space-y-3 transition-opacity ${hydrated ? "opacity-100" : "opacity-70"}`}>
+      <div className="print:hidden">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Показать пункты чек-листа">
+          <button ref={showAllRef} type="button" disabled={!hydrated} aria-pressed={!onlyRemaining} onClick={() => setOnlyRemaining(false)} className={styles.filter}>Все пункты · {totalItems}</button>
+          <button type="button" disabled={!hydrated} aria-pressed={onlyRemaining} onClick={() => setOnlyRemaining(true)} className={styles.filter}>Только оставшиеся · {remainingItems}</button>
+        </div>
+        {onlyRemaining && <p role="status" className="mt-2 text-sm text-slate-600 dark:text-slate-300">{remainingItems ? `Осталось проверить: ${remainingItems}. Открыты все незавершённые этапы.` : "Все пункты проверены. Чтобы изменить отметку, покажите все пункты."}</p>}
+      </div>
+
+      <ol ref={listRef} aria-label="Этапы проверки" aria-busy={!hydrated} className={`space-y-3 transition-opacity ${hydrated ? "opacity-100" : "opacity-70"}`}>
         {checklist.steps.map((step, stepIndex) => {
           const checkedInStep = step.items.filter((_, itemIndex) => checkedKeys.has(checklistItemKey(stepIndex, itemIndex))).length;
           const stepComplete = checkedInStep === step.items.length;
-          const expanded = expandedStep === stepIndex;
+          const expanded = onlyRemaining || expandedStep === stepIndex;
           return (
-            <li key={step.title} className={`card overflow-hidden transition-opacity ${stepComplete ? "opacity-75" : ""}`}>
-              <button type="button" onClick={() => setExpandedStep(expanded ? -1 : stepIndex)} aria-expanded={expanded} className="flex min-h-16 w-full items-center gap-3 p-3 text-left sm:p-5">
+            <li key={step.title} className={`card overflow-hidden transition-opacity ${styles.step} ${onlyRemaining && stepComplete ? "hidden" : ""} ${stepComplete ? "opacity-75" : ""}`}>
+              <button type="button" disabled={onlyRemaining} onClick={() => setExpandedStep(expanded ? -1 : stepIndex)} aria-expanded={expanded} className="flex min-h-16 w-full items-center gap-3 p-3 text-left sm:p-5">
                 <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${stepComplete ? "bg-emerald-500 text-white" : "bg-accent-100 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300"}`}>{stepComplete ? "✓" : stepIndex + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className={`block text-sm font-bold leading-snug sm:text-base ${stepComplete ? "text-slate-500 line-through" : "text-slate-900 dark:text-slate-100"}`}>{step.title.replace(/^\d+\.\s*/, "")}</span>
                   <span className="mt-1 block text-[11px] font-medium text-slate-400">{checkedInStep} из {step.items.length} выполнено</span>
                 </span>
-                <span className={`text-lg text-slate-400 transition-transform sm:hidden ${expanded ? "rotate-180" : ""}`} aria-hidden="true">⌄</span>
+                <span className={`text-lg text-slate-400 transition-transform sm:hidden ${expanded ? "rotate-180" : ""} ${onlyRemaining ? "hidden" : ""}`} aria-hidden="true">⌄</span>
               </button>
 
-              <div className={`${expanded ? "block" : "hidden"} border-t border-slate-100 px-3 pb-3 dark:border-slate-700 sm:px-5 sm:pb-5`}>
+              <div className={`${styles.items} ${expanded ? "block" : "hidden"} border-t border-slate-100 px-3 pb-3 dark:border-slate-700 sm:px-5 sm:pb-5`}>
                 <ul className="divide-y divide-slate-100 dark:divide-slate-700">
                   {step.items.map((item, itemIndex) => {
                     const key = checklistItemKey(stepIndex, itemIndex);
                     const checked = checkedKeys.has(key);
                     return (
-                      <li key={key}>
+                      <li key={key} className={`${styles.item} ${onlyRemaining && checked ? "hidden" : ""}`}>
                         <label className="flex min-h-12 cursor-pointer items-start gap-3 py-3 text-sm leading-snug text-slate-700 dark:text-slate-200">
                           <input type="checkbox" checked={checked} disabled={!hydrated} onChange={() => toggleItem(stepIndex, itemIndex)} className="mt-0.5 size-5 shrink-0 rounded border-slate-300 text-accent-600 focus:ring-accent-500/30 disabled:cursor-wait" />
                           <span className={checked ? "text-slate-400 line-through" : ""}>{item}</span>
@@ -155,7 +177,7 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
       </ol>
 
       {completedItems > 0 && (
-        <div className="flex justify-end">
+        <div className="flex justify-end print:hidden">
           <button type="button" onClick={resetProgress} className="min-h-11 text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">Сбросить отметки</button>
         </div>
       )}

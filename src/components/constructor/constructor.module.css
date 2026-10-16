@@ -236,6 +236,11 @@
 .purchaseFilterNotice { padding: 12px; margin: 12px 0; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); }
 .purchaseFilterNotice p { margin: 0 0 8px; color: var(--c-secondary); font-size: 12px; line-height: 1.6; }
 .purchaseFilterNotice button { min-height: 44px; white-space: normal; }
+.purchaseGuide { display: grid; gap: 8px; margin: 20px 0; padding: 16px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-surface); font-size: 13px; }
+.purchaseGuide p { color: var(--c-secondary); line-height: 1.6; }
+.purchaseGuide a { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 44px; color: var(--c-accent); text-decoration: underline; text-underline-offset: 3px; }
+.purchaseGuide a span { color: var(--c-secondary); font-size: 11px; }
+.purchaseGuide a:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; }
 .purchaseCopy { display: grid; justify-items: start; gap: 8px; margin: 14px 0 20px; }
 .purchaseCopy button { min-height: 44px; white-space: normal; }
 .purchaseCopy label { font-size: 13px; font-weight: 600; }

@@ -24,6 +24,7 @@ test.describe("bathroom procurement SEO", () => {
     test(`procurement guide linked from ${path}`, async ({ page }) => {
       expect((await page.goto(path))?.status()).toBe(200);
       await expect(page.locator(`a[href="${route}"]`).first()).toBeAttached();
+      if (path === "/konstruktor/vannaya/") await expect(page.locator('a[href="/instrumenty/chek-listy/zakupka-materialov-vannoy/"]')).toBeAttached();
     });
   }
   test("discovery feeds include procurement guide", async ({ request }) => {
@@ -55,6 +56,17 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       const openBill = page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true });
       await openBill.tap();
       const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
+      const checklist = bill.getByRole("link", { name: /Чек-лист закупки ванной/ });
+      await expect(checklist).toHaveAttribute("href", "/instrumenty/chek-listy/zakupka-materialov-vannoy/");
+      await expect(checklist).toHaveAttribute("target", "_blank");
+      if (width === 390) {
+        const opened = page.waitForEvent("popup");
+        await checklist.tap();
+        const popup = await opened;
+        await expect(popup.getByRole("heading", { level: 1 })).toHaveText("Закупка материалов для ванной");
+        await popup.close();
+        await expect(bill).toBeVisible();
+      }
       const floor = bill.getByRole("article").filter({ has: page.getByRole("heading", { name: "Плитка · Напольная плитка", exact: true }) });
       await floor.getByText("Изменить материал, упаковку или цену", { exact: true }).tap();
       await floor.getByRole("button", { name: "Упаковка и цена: Ванная · Пол", exact: true }).tap();

@@ -1,0 +1,34 @@
+.filter {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.filter[aria-pressed="true"] {
+  color: white;
+  background: #9a3412;
+  border-color: #9a3412;
+}
+.filter:focus-visible { outline: 2px solid #ea580c; outline-offset: 3px; }
+
+@media print {
+  .checklist .step, .checklist .items, .checklist .item {
+    display: block !important;
+    opacity: 1 !important;
+  }
+  .checklist .item { break-inside: avoid; }
+  .checklist .step { padding: 4pt !important; margin-bottom: 6pt !important; break-inside: avoid; }
+  .checklist .step > button { break-after: avoid; min-height: 0; padding: 6pt; }
+  .checklist .step > button > span:first-child { width: 20pt; height: 20pt; }
+  .checklist .step > button > span:last-child { display: none; }
+  .checklist .items { padding: 0 6pt 6pt; }
+  .checklist label { min-height: 0; padding: 4pt 0; font-size: 9pt; line-height: 1.35; }
+  .checklist .step * {
+    color: #111 !important;
+    background: transparent !important;
+    text-decoration: none !important;
+  }
+  .checklist input { accent-color: #111; }
+}

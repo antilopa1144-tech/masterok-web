@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import type { ConstructorRoom, PurchaseLine } from "@/lib/constructor/core";
 import { searchPurchases } from "@/lib/constructor/purchase-search";
 import styles from "./constructor.module.css";
@@ -37,5 +38,11 @@ export default function PurchaseList({ lines, rooms, renderLine, actions }: {
       <button type="button" className={styles.secondaryButton} onClick={() => { setQuery(""); setScope("all"); }}>Показать все материалы</button>
     </div>}
     {visible.length ? <div className={styles.purchaseList}>{visible.map(renderLine)}</div> : <p className={styles.purchaseIntro}>{scope === "unpriced" ? "Позиций без цены по этим условиям не найдено. Выберите «Все позиции» или сбросьте поиск." : "Материалы не найдены. Попробуйте другое название, размер или сбросьте поиск."}</p>}
+    {rooms.some(room => room.interior?.type === "bathroom") && <aside className={styles.purchaseGuide} aria-label="Проверка закупки ванной">
+      <strong>Перед заказом материалов</strong>
+      <p>Сверьте фасовку, цены и состав заказа. Памятки откроются в новой вкладке; ведомость останется здесь.</p>
+      <Link href="/instrumenty/chek-listy/zakupka-materialov-vannoy/" target="_blank" rel="noopener noreferrer">Чек-лист закупки ванной <span>(новая вкладка)</span></Link>
+      <Link href="/konstruktor/vannaya/materialy/" target="_blank" rel="noopener noreferrer">Что проверить в ведомости <span>(новая вкладка)</span></Link>
+    </aside>}
   </>;
 }

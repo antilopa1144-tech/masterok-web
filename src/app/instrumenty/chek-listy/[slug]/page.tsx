@@ -24,7 +24,7 @@ const UI_TEXT = {
   stagesSuffix: "этапов",
   backToAll: "← Все чек-листы",
   tipPrefix: "Совет:",
-  tipText: "Отметки сохраняются в этом браузере после перезагрузки. Для отдельной копии скачайте PDF или нажмите Ctrl+P для печати.",
+  tipText: "Отметки сохраняются в этом браузере после перезагрузки. PDF — чистый список для заполнения. Ctrl+P печатает все пункты с текущими отметками, даже если этапы свёрнуты или включён фильтр.",
 } as const;
 
 interface Props {
@@ -122,7 +122,7 @@ export default async function ChecklistPage({ params }: Props) {
 
       <InteractiveChecklist checklist={cl} />
 
-      {["zakupka-materialov-vannoy", "ustanovka-santehniki"].includes(cl.slug) && <section className="my-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700" aria-label="План и закупка ванной">
+      {["zakupka-materialov-vannoy", "ustanovka-santehniki"].includes(cl.slug) && <section className="my-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700 print:hidden" aria-label="План и закупка ванной">
         <h2 className="text-lg font-semibold">От размеров ванной до заказа</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Чек-лист помогает проверить действия. Количество материалов и цены уточняйте в своём проекте и у продавца. Отметки не связаны с конкретным 3D-проектом; перед новой закупкой сбросьте их.</p>
         <div className="mt-3 flex flex-col gap-2 text-sm">
@@ -132,7 +132,7 @@ export default async function ChecklistPage({ params }: Props) {
         </div>
       </section>}
 
-      <ChecklistCalculatorLink checklistSlug={cl.slug} />
+      <div className="print:hidden"><ChecklistCalculatorLink checklistSlug={cl.slug} /></div>
 
       {/* Нижние кнопки */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -147,13 +147,13 @@ export default async function ChecklistPage({ params }: Props) {
       </div>
 
       {/* Совет */}
-      <div className="mt-6 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4">
+      <div className="mt-6 bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800/40 rounded-xl p-4 print:hidden">
         <p className="text-sm text-accent-700 dark:text-accent-300">
           <strong>{UI_TEXT.tipPrefix}</strong> {UI_TEXT.tipText.split("Ctrl+P")[0]}<strong>Ctrl+P</strong>{UI_TEXT.tipText.split("Ctrl+P")[1]}
         </p>
       </div>
     </div>
-    <ToolPageExtras slug="chek-listy" />
+    <div className="print:hidden"><ToolPageExtras slug="chek-listy" /></div>
     </>
   );
 }
