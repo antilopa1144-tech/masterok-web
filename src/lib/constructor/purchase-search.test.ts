@@ -22,4 +22,14 @@ describe("purchase list search", () => {
     expect(searchPurchases(lines, project.rooms, "   ")).toBe(lines);
     expect(searchPurchases(lines, project.rooms, "несуществующий товар")).toEqual([]);
   });
+  it("combines the unpriced filter with search without changing purchase quantities", () => {
+    const priced = { ...lines[0], id: "priced", unitPriceRub: 1250, name: "Плитка с ценой" };
+    const unpriced = { ...lines[0], id: "unpriced", unitPriceRub: 0, name: "Плитка без цены", quantity: 7 };
+    const source = [priced, unpriced];
+    expect(searchPurchases(source, project.rooms, "плитка", "unpriced")).toEqual([unpriced]);
+    expect(searchPurchases(source, project.rooms, "", "unpriced")[0]).toBe(unpriced);
+    expect(searchPurchases(source, project.rooms, "несуществующее", "unpriced")).toEqual([]);
+    expect(searchPurchases(source, project.rooms, "", "all")).toBe(source);
+    expect(source[1].quantity).toBe(7);
+  });
 });

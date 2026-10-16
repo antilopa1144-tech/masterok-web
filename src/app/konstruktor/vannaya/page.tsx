@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
 import ConstructorMobileStart from "@/components/constructor/ConstructorMobileStart";
-import { CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_BATHROOM_MATERIALS_URL, CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, CONSTRUCTOR_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import { classicLayoutHref } from "@/lib/constructor/layout-entry";
 import { buildPageMetadata } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site";
@@ -66,7 +66,7 @@ export default function BathroomConstructorPage() {
     </section>
     <ConstructorMobileStart scenario="bathroom" label="Ваша ванная в 3D" navigationLabel="Создать проект ванной" />
     <nav className={styles.pageNav} aria-label="На этой странице">
-      <a href="#bathroom-steps">Как спланировать</a><a href="#constructor-measurements">Какие размеры нужны</a><a href="#bathroom-variants">Сравнить плитку</a><a href="#bathroom-materials">Что в ведомости</a><a href="#bathroom-tile-quantity">Как считается плитка</a><a href="#bathroom-questions">Вопросы и ограничения</a>
+      <a href="#bathroom-steps">Как спланировать</a><a href="#constructor-measurements">Какие размеры нужны</a><a href="#bathroom-variants">Сравнить плитку</a><a href="#bathroom-materials">Что в ведомости</a><a href="#bathroom-tile-quantity">Как считается плитка</a><a href="#bathroom-questions">Вопросы и ограничения</a><Link href={CONSTRUCTOR_BATHROOM_MATERIALS_URL}>Материалы к покупке</Link>
     </nav>
     <section id="bathroom-steps" className={`${styles.section} ${styles.workflow}`} aria-labelledby="bathroom-steps-title">
       <div><h2 id="bathroom-steps-title">От размеров ванной<br /> до раскладки плитки</h2><p className={styles.intro}>На телефоне и компьютере вы работаете с одним и тем же редактором. Размеры меняются ползунками; для точного ввода нажмите на значение.</p><p className={styles.toolsNote}>Подготовьте размеры помещения, двери и выбранной сантехники. Для закупки пригодятся формат плитки, фасовка и цена с упаковки или карточки товара.</p></div>
@@ -95,6 +95,7 @@ export default function BathroomConstructorPage() {
         <div><dt><Download size={21} />Файлы проекта</dt><dd>PDF для просмотра и печати, Excel для закупки, PNG текущего вида и файл проекта для переноса между устройствами.</dd></div>
       </dl>
       <p className={styles.scopeNote}>Ведомость относится к отделке. Сантехника и мебель показаны для планирования; их стоимость, работы, коммуникации и подготовку основания нужно учитывать отдельно.</p>
+      <p className={styles.toolsNote}>Перед заказом откройте <Link href={CONSTRUCTOR_BATHROOM_MATERIALS_URL}>список материалов для отделки ванной и проверку ведомости</Link>: что входит в расчёт, где уточнить цены и что считать отдельно.</p>
       <p className={styles.toolsNote}>О перемещении, своих габаритах и проверке пересечений подробнее на странице <Link href={CONSTRUCTOR_FURNITURE_URL}>расстановки мебели в 3D</Link>.</p>
     </section>
     <section id="bathroom-tile-quantity" className={`${styles.section} ${styles.workflow}`} aria-labelledby="bathroom-tile-quantity-title">

@@ -173,6 +173,7 @@ describe("sitemap chunks", () => {
       `${SITE_URL}/konstruktor/plan-komnaty/`,
       `${SITE_URL}/konstruktor/rasstanovka-mebeli/`,
       `${SITE_URL}/konstruktor/vannaya/`,
+      `${SITE_URL}/konstruktor/vannaya/materialy/`,
     ]);
   });
 

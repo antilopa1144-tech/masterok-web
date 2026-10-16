@@ -229,6 +229,10 @@
 .purchaseTools > summary { display: list-item; min-height: 44px; padding: 12px 0; color: var(--c-text); font-size: 13px; font-weight: 600; cursor: pointer; }
 .purchaseTools > summary:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 4px; }
 .purchaseTools > summary small { display: block; padding-top: 4px; font-weight: 400; color: var(--c-secondary); }
+.purchaseFilter { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.purchaseFilter button { min-height: 44px; padding: 10px 12px; border: 1px solid var(--c-line); border-radius: 8px; background: var(--c-surface); color: var(--c-text); font-size: 13px; cursor: pointer; }
+.purchaseFilter button[aria-pressed="true"] { border-color: var(--c-accent); background: var(--c-tint); color: var(--c-accent); }
+.purchaseFilter button:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 .purchaseCopy { display: grid; justify-items: start; gap: 8px; margin: 14px 0 20px; }
 .purchaseCopy button { min-height: 44px; white-space: normal; }
 .purchaseCopy label { font-size: 13px; font-weight: 600; }

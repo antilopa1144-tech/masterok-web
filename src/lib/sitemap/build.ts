@@ -163,6 +163,12 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/konstruktor/vannaya/materialy/`,
+      lastModified: "2026-10-16",
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${BASE_URL}/konstruktor/plan-komnaty/`,
       lastModified: "2026-10-16",
       changeFrequency: "monthly",

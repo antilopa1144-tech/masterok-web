@@ -1,7 +1,7 @@
 import { Box, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { constructorContext } from "@/lib/constructor/context-links";
-import { CONSTRUCTOR_URL, CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
+import { CONSTRUCTOR_BATHROOM_MATERIALS_URL, CONSTRUCTOR_URL, CONSTRUCTOR_BATHROOM_URL, CONSTRUCTOR_FURNITURE_URL, projectStartHref, scenarioHref } from "@/lib/constructor/entry";
 import ConstructorEntryLink from "./ConstructorEntryLink";
 
 export default function ConstructorContextCard({ calculatorSlug, placement }: { calculatorSlug?: string; placement: "calculator_context" | "article_context" }) {
@@ -17,5 +17,6 @@ export default function ConstructorContextCard({ calculatorSlug, placement }: { 
     </div>
     <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">В новом проекте сначала укажите размеры помещения. Значения из калькулятора или статьи не переносятся. Сохранённые проекты останутся.</p>
     <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300"><Link href={context.scenario === "bathroom" ? CONSTRUCTOR_BATHROOM_URL : CONSTRUCTOR_URL} className="font-medium text-orange-700 underline underline-offset-4 dark:text-orange-300">{context.scenario === "bathroom" ? "Как спланировать ванную и раскладку плитки" : "Как проверить отделку и закупку в конструкторе"}</Link>{context.scenario === "bathroom" && <>. Для сантехники и техники пригодится <Link href={CONSTRUCTOR_FURNITURE_URL} className="font-medium text-orange-700 underline underline-offset-4 dark:text-orange-300">расстановка предметов по своим габаритам</Link>.</>}</p>
+    {context.scenario === "bathroom" && <Link href={CONSTRUCTOR_BATHROOM_MATERIALS_URL} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-orange-700 underline underline-offset-4 dark:text-orange-300">Материалы для ванной: проверить список перед покупкой</Link>}
   </aside>;
 }
