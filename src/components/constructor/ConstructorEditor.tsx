@@ -318,12 +318,25 @@ function ConstructorEditorSession() {
       scrollPropertiesTo(control?.closest<HTMLElement>("label") ?? null); control?.focus({ preventScroll: true });
     });
   };
-  const editPurchaseMaterial = (target: PurchaseTarget) => {
+  const editPurchaseMaterial = (target: PurchaseTarget, section?: "packaging") => {
     if (pendingDraft || placementGesture) return;
     setSelectedRoomId(target.roomId); setSelectedPieceId(undefined); setSelectedTile(undefined);
     if (target.wall !== undefined) setSelectedWall(target.wall);
     setModal(null); showMaterialProperties(target.surface);
+    if (section === "packaging" && window.matchMedia("(max-width: 980px)").matches) {
+      setPanelHeight(null); setPanelExpanded(true);
+    }
     requestAnimationFrame(() => {
+      if (section === "packaging") {
+        const summary = document.querySelector<HTMLElement>(`.${styles.properties} summary[aria-label="Упаковка и стоимость"]`);
+        const details = summary?.closest("details");
+        if (summary && details) {
+          details.open = true;
+          scrollPropertiesTo(summary);
+          summary.focus({ preventScroll: true });
+          return;
+        }
+      }
       document.querySelector<HTMLSelectElement>(`.${styles.properties} select`)?.focus({ preventScroll: true });
     });
   };
