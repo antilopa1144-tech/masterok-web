@@ -23,6 +23,10 @@ test.describe("constructor search entries without JavaScript", () => {
   });
 
   test("discovery feeds include the plan route", async ({ request }) => {
+    const index = await request.get("/sitemap.xml");
+    expect(index.status()).toBe(200);
+    const locations = [...(await index.text()).matchAll(/<loc>(.*?)<\/loc>/g)].map(match => match[1]);
+    expect(locations).toEqual(["https://getmasterok.ru/sitemap-pages.xml"]);
     for (const path of ["/sitemap-pages.xml", "/llms.txt"]) {
       const response = await request.get(path);
       expect(response.status()).toBe(200);

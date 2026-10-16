@@ -4,8 +4,8 @@ import { SITE_URL } from "@/lib/site";
 /**
  * Части карты сайта. Порядок = id в URL `/sitemap/{id}.xml`.
  *
- * Корневой `/sitemap.xml` отдаёт sitemap-index через явный route handler,
- * а `/sitemap/{id}.xml` — urlset соответствующей группы.
+ * Группы используются для построения общей карты и совместимых старых URL.
+ * Корневой индекс ссылается на общую `/sitemap-pages.xml`.
  */
 export const SITEMAP_CHUNKS = [
   "static",
@@ -17,6 +17,7 @@ export const SITEMAP_CHUNKS = [
 
 export type SitemapChunkName = (typeof SITEMAP_CHUNKS)[number];
 export type SitemapChunkId = number;
+export const SITEMAP_PAGES_PATH = "/sitemap-pages.xml";
 
 /**
  * Принимает числовой id или его точную строковую форму с необязательным `.xml`.
@@ -62,14 +63,14 @@ export function buildSitemapIndexXml(options?: {
 }): string {
   const siteUrl = options?.siteUrl ?? SITE_URL;
 
-  const entries = SITEMAP_CHUNKS.map((_, id) => {
-    const lastmod = options?.lastmod
-      ? `\n    <lastmod>${escapeXml(options.lastmod)}</lastmod>`
-      : "";
-    return `  <sitemap>
-    <loc>${escapeXml(getSitemapChunkUrl(id, siteUrl))}</loc>${lastmod}
+  // Google reads this root-level urlset; legacy /sitemap/* submissions fail to
+  // fetch. Keep one discovery chain without changing the set of page URLs.
+  const lastmod = options?.lastmod
+    ? `\n    <lastmod>${escapeXml(options.lastmod)}</lastmod>`
+    : "";
+  const entries = `  <sitemap>
+    <loc>${escapeXml(`${siteUrl}${SITEMAP_PAGES_PATH}`)}</loc>${lastmod}
   </sitemap>`;
-  }).join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

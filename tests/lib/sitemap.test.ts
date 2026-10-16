@@ -41,7 +41,7 @@ describe("sitemap chunks", () => {
     expect(ids.map((entry) => entry.id)).toEqual([0, 1, 2, 3, 4]);
   });
 
-  it("buildSitemapIndexXml — валидный sitemapindex со ссылками на все части", () => {
+  it("buildSitemapIndexXml — индекс указывает на общую карту в корне сайта", () => {
     const xml = buildSitemapIndexXml({
       siteUrl: "https://example.test",
       lastmod: "2026-05-25",
@@ -53,13 +53,12 @@ describe("sitemap chunks", () => {
     );
     expect(xml).not.toContain("<urlset");
 
-    for (let id = 0; id < SITEMAP_CHUNKS.length; id++) {
-      expect(xml).toContain(getSitemapChunkUrl(id, "https://example.test"));
-      expect(xml).toContain("<lastmod>2026-05-25</lastmod>");
-    }
+    expect(xml).toContain("https://example.test/sitemap-pages.xml");
+    expect(xml).toContain("<lastmod>2026-05-25</lastmod>");
+    expect(xml).not.toContain("/sitemap/0.xml");
 
     const locCount = (xml.match(/<loc>/g) ?? []).length;
-    expect(locCount).toBe(SITEMAP_CHUNKS.length);
+    expect(locCount).toBe(1);
   });
 
   it("не подставляет фиктивный lastmod в sitemap-index, но экранирует явный", () => {
@@ -70,7 +69,7 @@ describe("sitemap chunks", () => {
     });
 
     expect(withoutLastmod).not.toContain("<lastmod>");
-    expect(withLastmod).toContain("https://example.test?a=1&amp;b=2/sitemap/0.xml");
+    expect(withLastmod).toContain("https://example.test?a=1&amp;b=2/sitemap-pages.xml");
     expect(withLastmod).toContain("<lastmod>2026-09-06&amp;edited</lastmod>");
   });
 
@@ -82,6 +81,7 @@ describe("sitemap chunks", () => {
   );
 
   it.each([0, 1, 2, 3, 4])("статические адреса и парсер согласованы для части %i", (id) => {
+    expect(getSitemapChunkUrl(id)).toBe(`${SITE_URL}/sitemap/${id}.xml`);
     expect(parseSitemapChunkId(`${id}.xml`)).toBe(id);
     expect(generateStaticParams()).toContainEqual({ id: `${id}.xml` });
   });
@@ -106,7 +106,7 @@ describe("sitemap chunks", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=60");
     expect(xml).toContain("<sitemapindex");
     expect(xml).not.toContain("<urlset");
-    expect((xml.match(/<loc>/g) ?? [])).toHaveLength(SITEMAP_CHUNKS.length);
+    expect([...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(match => match[1])).toEqual([`${SITE_URL}/sitemap-pages.xml`]);
   });
 
   it("плоский sitemap отдаёт все URL без зависимости от чтения дочерних карт", async () => {

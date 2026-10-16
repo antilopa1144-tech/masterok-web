@@ -46,6 +46,7 @@ import PurchaseCopy from "./PurchaseCopy";
 import RoomDimensionsCopy from "./RoomDimensionsCopy";
 import { applyOpeningDraft, createOpeningDraft } from "@/lib/constructor/opening-draft";
 import OpeningCreationForm from "./OpeningCreationForm";
+import OpeningRemoveAction from "./OpeningRemoveAction";
 import { reviewFurnishings } from "@/lib/constructor/furnishing-review";
 
 const RoomScene = dynamic(() => import("./RoomScene"), { ssr: false, loading: () => <div className={styles.sceneLoading}>Загружаем 3D…</div> });
@@ -621,7 +622,7 @@ function ConstructorEditorSession() {
             <div className={styles.sectionHeading}><h3>Двери и окна</h3></div>
             {room.openings.length === 0 && <p className={styles.hint}>Добавьте проёмы — они появятся на плане и в 3D. Двери исключаются из длины плинтуса.</p>}
             {room.openings.map((opening, index) => <div className={styles.openingCard} key={opening.id} data-opening-id={opening.id}>
-              <div className={styles.openingHeading}><strong>{opening.type === "door" ? "Дверь" : "Окно"} {index + 1}</strong><IconButton label={`Удалить проём ${index + 1}`} disabled={!!pendingDraft || placementGesture} onClick={() => updateRoom((current) => { current.openings = current.openings.filter((item) => item.id !== opening.id); })}><Trash2 size={16} /></IconButton></div>
+              <div className={styles.openingHeading}><strong>{opening.type === "door" ? "Дверь" : "Окно"} {index + 1}</strong><OpeningRemoveAction name={`${opening.type === "door" ? "Дверь" : "Окно"} ${index + 1}`} index={index + 1} disabled={!!pendingDraft || placementGesture} onRemove={() => updateRoom((current) => { current.openings = current.openings.filter((item) => item.id !== opening.id); })} /></div>
               <p className={styles.hint}>Стена {opening.wall + 1} · {formatNumber(opening.widthMm)} × {formatNumber(opening.heightMm)} мм<br />Отступ {formatNumber(opening.offsetMm)} мм{opening.type === "window" ? ` · подоконник ${formatNumber(opening.sillMm)} мм` : ""}</p>
               <div className={styles.openingActions}><button className={styles.secondaryButton} type="button" aria-label={`Изменить ${opening.type === "door" ? "дверь" : "окно"} ${index + 1}`} disabled={!!pendingDraft || placementGesture} onClick={() => openOpeningForm(opening.type, opening)}><Pencil size={14} />Изменить</button><button className={styles.secondaryButton} type="button" aria-label={`Показать проём ${index + 1} на стене`} disabled={!!pendingDraft || !!validation.length} onClick={() => { setSelectedWall(opening.wall); setSelectedTile(undefined); setView("elevation"); setPanel(null); }}><Square size={14} />На стене</button></div>
             </div>)}

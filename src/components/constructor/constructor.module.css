@@ -188,7 +188,7 @@
 .sectionHeading h3 { font-size: 14px; font-weight: 600; }
 .sectionHeading > span { color: var(--c-secondary); font-size: 11px; }
 .openingCard { padding: 13px; border: 1px solid var(--c-line); border-radius: 7px; display: flex; flex-direction: column; gap: 11px; }
-.openingHeading { display: flex; justify-content: space-between; align-items: center; }
+.openingHeading { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
 .openingHeading strong { font-size: 13px; }
 .openingHeading .iconButton { width: 28px; height: 28px; }
 .openingActions { display: flex; flex-wrap: wrap; gap: 8px; }
