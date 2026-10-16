@@ -50,7 +50,8 @@ export function ExportChecklistPDF({ checklist }: { checklist: Checklist }) {
 
       // Steps
       for (const step of checklist.steps) {
-        if (y > 270) {
+        const firstItemHeight = doc.splitTextToSize(step.items[0] ?? "", pageW - 8).length * 4.5;
+        if (y + 6 + firstItemHeight > 280) {
           doc.addPage();
           y = 20;
         }
