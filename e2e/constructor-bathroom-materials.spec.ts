@@ -13,7 +13,7 @@ test.describe("bathroom procurement SEO", () => {
     await expect(page.locator("#separate-materials")).toContainText("не добавляются в ведомость конструктора автоматически");
     const data = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(text => JSON.parse(text));
     const faq = data.find(item => item["@type"] === "FAQPage");
-    expect(faq.mainEntity).toHaveLength(6);
+    expect(faq.mainEntity).toHaveLength(7);
     for (const item of faq.mainEntity) {
       const detail = page.locator("details").filter({ has: page.locator("summary").filter({ hasText: item.name }) });
       await detail.locator("summary").click();
@@ -77,7 +77,7 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       const names = await bill.getByRole("article").getByRole("heading").allTextContents();
       const rows = await bill.getByRole("article").allTextContents();
       const total = (await bill.locator('[class*="purchaseTotal"]').textContent())!;
-      await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).tap();
+      await bill.locator("summary").filter({ hasText: "Найти или отправить список" }).tap();
       const unpriced = bill.getByRole("button", { name: /^Без цены ·/ });
       expect((await unpriced.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await unpriced.tap();
@@ -105,7 +105,7 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       expect(await bill.getByRole("article").allTextContents()).toEqual(rows);
       await unpriced.tap();
       await search.fill("несуществующий материал");
-      await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).tap();
+      await bill.locator("summary").filter({ hasText: "Найти или отправить список" }).tap();
       const showAll = bill.getByRole("button", { name: "Показать все материалы", exact: true });
       await expect(showAll).toBeVisible();
       expect((await showAll.boundingBox())!.height).toBeGreaterThanOrEqual(44);

@@ -14,7 +14,7 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       const open = page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true });
       await open.click();
       const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
-      const tools = bill.locator("summary").filter({ hasText: "Найти или скопировать список" });
+      const tools = bill.locator("summary").filter({ hasText: "Найти или отправить список" });
       // Both purchase amounts must be readable without scrolling the default mobile bill.
       const second = bill.getByRole("article").nth(1).getByText("К покупке", { exact: true });
       expect((await second.boundingBox())!.y + (await second.boundingBox())!.height).toBeLessThan((await bill.getByRole("button", { name: "Скачать PDF", exact: true }).boundingBox())!.y);
@@ -62,7 +62,7 @@ test("XLSX retains every purchase while the visible list is filtered", async ({ 
   await expect(page.getByRole("status", { name: "Сохранено в браузере", exact: true })).toBeAttached({ timeout: 15_000 });
   await page.getByRole("button", { name: "Открыть ведомость", exact: true }).click();
   const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
-  await bill.locator("summary").filter({ hasText: "Найти или скопировать список" }).click();
+  await bill.locator("summary").filter({ hasText: "Найти или отправить список" }).click();
   const names = await bill.getByRole("article").getByRole("heading").allTextContents();
   await bill.getByRole("searchbox", { name: "Найти материал", exact: true }).fill("графит");
   await expect(bill.getByRole("article")).toHaveCount(1);
