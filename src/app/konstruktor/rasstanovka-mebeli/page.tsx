@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ConstructorGuideLinks from "@/components/constructor/ConstructorGuideLinks";
 import { ArrowUpRight, Check, Download, Move, Ruler, Sofa, TriangleAlert } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
@@ -91,6 +92,7 @@ export default function FurnitureConstructorPage() {
       <p className={styles.toolsNote}>Если планируете санузел, откройте <Link href={CONSTRUCTOR_BATHROOM_URL}>конструктор ванной с расстановкой сантехники и плиткой</Link>. Для количества покрытия и закупки пригодится <Link href={CONSTRUCTOR_URL}>конструктор отделки комнаты</Link>.</p>
     </section>
     <section className={`${styles.section} ${styles.faq}`} aria-labelledby="furniture-questions"><div><h2 id="furniture-questions">Перед расстановкой</h2><p>Сохранение и границы модели.</p></div><div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+    <ConstructorGuideLinks current="/konstruktor/rasstanovka-mebeli/" />
     <section className={styles.closingAction} aria-label="Начать расстановку мебели"><div><h2>Примерьте мебель в своей комнате</h2><p>Выберите тип помещения и задайте размеры.</p></div><Link href={projectStartHref()} prefetch={false} className={styles.primaryAction}>Создать свой проект <ArrowUpRight size={19} /></Link></section>
   </div>;
 }

@@ -146,19 +146,25 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/konstruktor/`,
-      lastModified: "2026-10-12",
+      lastModified: "2026-10-16",
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/konstruktor/vannaya/`,
-      lastModified: "2026-10-12",
+      lastModified: "2026-10-16",
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${BASE_URL}/konstruktor/rasstanovka-mebeli/`,
-      lastModified: "2026-10-12",
+      lastModified: "2026-10-16",
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}/konstruktor/plan-komnaty/`,
+      lastModified: "2026-10-16",
       changeFrequency: "monthly",
       priority: 0.7,
     },

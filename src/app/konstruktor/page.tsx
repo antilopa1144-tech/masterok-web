@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ConstructorGuideLinks from "@/components/constructor/ConstructorGuideLinks";
 import { ArrowUpRight, Box, Download, Layers, Ruler, Scissors } from "lucide-react";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
 import ConstructorMeasureGuide from "@/components/constructor/ConstructorMeasureGuide";
@@ -124,6 +125,7 @@ export default function ConstructorPage() {
       <p className={styles.toolsNote}>Также доступны <Link href="/instrumenty/rasstanovka-svetilnikov/">схема светильников</Link>, <Link href="/instrumenty/kalendar-remonta/">календарь ремонта</Link>, раскрой и справочники материалов.</p>
     </section>
     <section className={`${styles.section} ${styles.faq} ${landing.faq}`} aria-labelledby="faq-title"><div><h2 id="faq-title">Перед началом</h2><p>Что умеет конструктор<br />и как сохранить работу.</p></div><div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+    <ConstructorGuideLinks current="/konstruktor/" />
     <section className={landing.closing} aria-label="Начать свой проект"><div><h2>Теперь — ваше помещение</h2><p>Начните с размеров. Отделку и обстановку можно менять в процессе.</p></div><Link href={projectStartHref()} prefetch={false} className={styles.primaryAction}>Начать новый проект<ArrowUpRight size={18} /></Link></section>
   </div>;
 }

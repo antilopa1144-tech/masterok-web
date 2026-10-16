@@ -6,8 +6,9 @@ describe("инструмент площади комнаты", () => {
   it("SEO-обещание соответствует доступным результатам", () => {
     const config = getToolConfig("ploshchad-komnaty");
 
-    expect(config?.seoTitle).toBe("Калькулятор площади комнаты в м² онлайн");
-    expect(config?.description).toContain("площадь пола, периметр и площадь стен");
+    expect(config?.seoTitle).toBe("Калькулятор квадратных метров — площадь комнаты в м²");
+    expect(config?.description).toContain("квадратные метры пола по длине и ширине");
+    expect(config?.description).toContain("периметр и площадь стен по высоте");
     expect(config?.seoIntro).toContain("5 × 4 м занимает 20 м²");
     expect(config?.seoIntro).toContain("48,6 м² без вычета окон и дверей");
     expect(config?.faq.some((item) => item.question.includes("квадратуру стен"))).toBe(true);

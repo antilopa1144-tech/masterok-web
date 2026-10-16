@@ -6,8 +6,8 @@ const room = getToolConfig("ploshchad-komnaty")!;
 const answerFor = (question: string) => room.faq.find((item) => item.question === question)?.answer;
 
 describe("площадь комнаты: ответы на поисковые вопросы", () => {
-  it("сохраняет владельца интента и существующий title", () => {
-    expect(room.seoTitle).toBe("Калькулятор площади комнаты в м² онлайн");
+  it("сохраняет интент площади комнаты и отвечает запросу о квадратных метрах", () => {
+    expect(room.seoTitle).toBe("Калькулятор квадратных метров — площадь комнаты в м²");
     expect(new Set(room.faq.map((item) => item.question)).size).toBe(room.faq.length);
   });
 

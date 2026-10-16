@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ConstructorGuideLinks from "@/components/constructor/ConstructorGuideLinks";
 import { getToolConfig, toolHref, type ToolFaqItem } from "@/lib/tools/config";
 import { SITE_URL } from "@/lib/site";
 import RelatedCalculators from "./RelatedCalculators";
@@ -26,6 +27,7 @@ export default function ToolPageExtras({ slug, children, extraFaq, extraIntro }:
   return (
     <div className="page-container pb-12">
       {children}
+      {["ploshchad-komnaty", "raskladka-plitki", "raskladka-laminata"].includes(slug) && <ConstructorGuideLinks />}
       <RelatedCalculators refs={tool.relatedCalculators} />
       <ToolSeoBlock intro={intro} faq={faq} pageUrl={pageUrl} />
       <p className="mt-8 text-xs text-slate-400 dark:text-slate-500 leading-relaxed">

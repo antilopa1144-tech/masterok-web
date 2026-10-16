@@ -1,0 +1,10 @@
+.preview { background-image: linear-gradient(#94a3b81a 1px, transparent 1px), linear-gradient(90deg, #94a3b81a 1px, transparent 1px); background-size: 24px 24px; }
+.drawing { width: 100%; height: auto; color: var(--entry-text); }
+.drawing text { fill: currentColor; font-size: 16px; font-family: inherit; }
+.drawing .area { font-size: 30px; font-weight: 650; }
+.wall { fill: none; stroke: currentColor; stroke-width: 10; }
+.window { fill: var(--entry-bg); stroke: var(--entry-accent); stroke-width: 3; }
+.door { fill: none; stroke: var(--entry-accent); stroke-width: 2; }
+.furniture { fill: var(--entry-line); stroke: var(--entry-muted); stroke-width: 2; }
+.dimension { fill: none; stroke: var(--entry-muted); stroke-width: 1.5; }
+@media (max-width: 650px) { .page section[id] { scroll-margin-top: 144px; } }

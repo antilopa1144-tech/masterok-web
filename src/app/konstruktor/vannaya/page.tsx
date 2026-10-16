@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ConstructorGuideLinks from "@/components/constructor/ConstructorGuideLinks";
 import { ArrowUpRight, Bath, Box, Check, Download, Layers, Ruler } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ConstructorStartActions from "@/components/constructor/ConstructorStartActions";
@@ -116,6 +117,7 @@ export default function BathroomConstructorPage() {
       <div><h2 id="bathroom-questions-title">Перед началом</h2><p>Сохранение, расчёт материалов<br />и границы редактора.</p><Link href={classicLayoutHref("tile")} prefetch={false} className={styles.textAction}>Отдельная раскладка плитки <ArrowUpRight size={17} /></Link></div>
       <div>{questions.map(({ question, answer }) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div>
     </section>
+    <ConstructorGuideLinks current="/konstruktor/vannaya/" />
     <section className={styles.closingAction} aria-label="Начать проект ванной"><div><h2>Примерьте свою ванную</h2><p>Задайте размеры и откройте свой 3D-проект.</p><Link href={scenarioHref("bathroom")} prefetch={false} className={styles.textAction}>Посмотреть готовый пример <ArrowUpRight size={17} /></Link></div><Link href={projectStartHref("bathroom")} prefetch={false} className={styles.primaryAction}>Создать ванную <ArrowUpRight size={19} /></Link></section>
   </div>;
 }
