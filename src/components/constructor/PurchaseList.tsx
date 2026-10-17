@@ -17,13 +17,13 @@ export default function PurchaseList({ lines, rooms, renderLine, actions }: {
   const unpricedCount = lines.filter(line => !(line.unitPriceRub > 0)).length;
   const filtered = Boolean(query.trim()) || scope === "unpriced";
   return <>
+    {lines.length > 0 && <div className={styles.purchaseFilter} role="group" aria-label="Фильтр по цене">
+      <button type="button" aria-pressed={scope === "all"} onClick={() => setScope("all")}>Все позиции · {lines.length}</button>
+      <button type="button" aria-pressed={scope === "unpriced"} onClick={() => setScope("unpriced")}>Без цены · {unpricedCount}</button>
+    </div>}
     <details className={styles.purchaseTools}>
       <summary>Найти или отправить список{(query.trim() || scope === "unpriced") && <small>{scope === "unpriced" ? "Без цены" : "Поиск применён"}: {visible.length} из {lines.length}</small>}</summary>
       {actions}
-      {lines.length > 0 && <div className={styles.purchaseFilter} role="group" aria-label="Фильтр по цене">
-        <button type="button" aria-pressed={scope === "all"} onClick={() => setScope("all")}>Все позиции · {lines.length}</button>
-        <button type="button" aria-pressed={scope === "unpriced"} onClick={() => setScope("unpriced")}>Без цены · {unpricedCount}</button>
-      </div>}
     {lines.length > 1 && <div className={styles.purchaseSearch}>
       <label htmlFor={id}>Найти материал</label>
       <div><input id={id} type="search" value={query} maxLength={120} placeholder="Название, формат или помещение" aria-describedby={`${id}-hint`} onChange={event => setQuery(event.target.value)} />
