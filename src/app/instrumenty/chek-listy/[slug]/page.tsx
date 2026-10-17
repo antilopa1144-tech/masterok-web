@@ -127,6 +127,7 @@ export default async function ChecklistPage({ params }: Props) {
         <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Чек-лист помогает проверить действия. Количество материалов и цены уточняйте в своём проекте и у продавца. Отметки не связаны с конкретным 3D-проектом; перед новой закупкой сбросьте их.</p>
         <div className="mt-3 flex flex-col gap-2 text-sm">
           <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/konstruktor/vannaya/materialy/">Как собрать и проверить ведомость ванной</Link>
+          {cl.slug === "zakupka-materialov-vannoy" && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/konstruktor/vannaya/materialy/#compare-source-prices">Сверить цены одного товара на разных стенах</Link>}
           <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/kalkulyatory/otdelka/vannaya-komnata/">Рассчитать отделочные материалы ванной</Link>
           {cl.slug !== "zakupka-materialov-vannoy" && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/instrumenty/chek-listy/zakupka-materialov-vannoy/">Чек-лист закупки материалов для ванной</Link>}
         </div>

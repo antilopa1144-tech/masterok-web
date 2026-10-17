@@ -270,7 +270,9 @@
 .purchaseSources button { min-height: 44px; justify-content: flex-start; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .purchaseSourceActions { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--c-line); }
 .purchaseSourceActions:last-child { padding-bottom: 0; border-bottom: 0; }
-.purchaseSourceActions button + button { justify-content: space-between; color: var(--c-accent); }
+.purchaseSourceActions button + button, .purchaseSourceActions p + button { justify-content: space-between; color: var(--c-accent); }
+.purchaseSourceActions .purchaseSourcePrice { margin: 0; padding: 2px 4px; color: var(--c-secondary); font-size: 12px; line-height: 1.5; }
+.purchaseSourcePrice strong { color: var(--c-text); font-size: inherit; }
 .purchaseRow .purchaseExplanation { margin-top: 0; font-size: 12px; line-height: 1.7; }
 .purchaseTotal { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 21px 0 12px; }
 .purchaseTotal span { font-size: 13px; }

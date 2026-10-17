@@ -17,6 +17,7 @@ test("bathroom checklist has server-rendered content, canonical and linked guide
     await expect(page.locator("label").filter({ hasText: item.text })).toBeAttached();
   }
   await expect(page.locator('a[href="/konstruktor/vannaya/materialy/"]')).toBeAttached();
+  await expect(page.locator('a[href="/konstruktor/vannaya/materialy/#compare-source-prices"]')).toBeAttached();
   await context.close();
 });
 
@@ -96,6 +97,9 @@ for (const width of [320, 390]) {
       expect(bytes.toString("latin1")).toContain("/BaseFont /Roboto");
       expect(bytes.toString("latin1")).toContain("/ToUnicode");
       await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+      await page.getByRole("link", { name: "Сверить цены одного товара на разных стенах", exact: true }).tap();
+      await expect(page).toHaveURL(/#compare-source-prices$/);
+      await expect(page.getByRole("heading", { name: "Как сравнить цены плитки на разных стенах", exact: true })).toBeInViewport();
       expect(errors).toEqual([]);
     });
   });

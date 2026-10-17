@@ -19,6 +19,8 @@ test.describe("bathroom procurement SEO", () => {
     const faq = data.find(item => item["@type"] === "FAQPage");
     expect(faq.mainEntity).toHaveLength(9);
     await expect(page.locator("#material-prices")).toContainText("Разные цены");
+    await expect(page.locator("#compare-source-prices")).toContainText("все параметры плитки выбранной стены");
+    await expect(page.locator("#compare-source-prices")).toContainText("не задана");
     for (const item of faq.mainEntity) {
       const detail = page.locator("details").filter({ has: page.locator("summary").filter({ hasText: item.name }) });
       await detail.locator("summary").click();
@@ -151,6 +153,13 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       await expect(bill.getByText(/Для оценки взята максимальная/)).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: testInfo.outputPath("mixed-prices.png") });
+      await walls.getByText("Изменить материал, упаковку или цену", { exact: true }).tap();
+      const firstSource = walls.getByRole("group", { name: "Ванная · Стена 1", exact: true });
+      const secondSource = walls.getByRole("group", { name: "Ванная · Стена 2", exact: true });
+      await expect(firstSource).toContainText(/Цена упаковки: 1\s440 ₽/);
+      await expect(secondSource).toContainText("Цена упаковки: не задана");
+      await firstSource.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: testInfo.outputPath("source-prices.png") });
       await bill.getByRole("button", { name: "Без цены · 0", exact: true }).tap();
       await expect(bill.getByRole("article")).toHaveCount(0);
       await expect(bill.getByText(/Позиций без цены по этим условиям не найдено/)).toBeVisible();
@@ -164,6 +173,8 @@ for (const [width, colorScheme] of [[390, "light"], [320, "dark"]] as const) {
       await expect(bill.getByRole("article")).toHaveCount(names.length);
       await expect(bill.locator('[class*="purchaseTotal"] strong')).toHaveText(pricedAmount);
       await expect(bill.locator('[class*="purchaseTotal"]')).toContainText("Стоимость по введённым ценам");
+      await walls.getByText("Изменить материал, упаковку или цену", { exact: true }).tap();
+      await expect(walls.getByRole("group", { name: "Ванная · Стена 2", exact: true })).toContainText(/Цена упаковки: 1\s440 ₽/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(errors).toEqual([]);
     });
