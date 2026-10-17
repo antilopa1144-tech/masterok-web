@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createScenarioWorkspace } from "./scenarios";
 import { calculateProject } from "./core";
-import { searchPurchases } from "./purchase-search";
+import { hasMixedPurchasePrices, searchPurchases } from "./purchase-search";
 
 describe("purchase list search", () => {
   const { project } = createScenarioWorkspace("bathroom");
@@ -31,5 +31,26 @@ describe("purchase list search", () => {
     expect(searchPurchases(source, project.rooms, "несуществующее", "unpriced")).toEqual([]);
     expect(searchPurchases(source, project.rooms, "", "all")).toBe(source);
     expect(source[1].quantity).toBe(7);
+  });
+  it.each([0, 1200])("finds grouped wall prices including a source priced at %s", (otherPrice) => {
+    const { project: bathroom } = createScenarioWorkspace("bathroom");
+    bathroom.rooms[0].continuousWallTiles = false;
+    bathroom.rooms[0].wallTiles.forEach(spec => { if (spec) spec.packPriceRub = otherPrice; });
+    bathroom.rooms[0].wallTiles[0]!.packPriceRub = 1440;
+    const result = calculateProject(bathroom);
+    const snapshot = JSON.stringify(result);
+    const wallTile = result.purchases.find(line => line.kind === "wall-tile")!;
+    expect(hasMixedPurchasePrices(wallTile)).toBe(true);
+    expect(searchPurchases(result.purchases, bathroom.rooms, "плитка", "mixed-price")).toEqual([wallTile]);
+    expect(searchPurchases(result.purchases, bathroom.rooms, "", "mixed-price")[0]).toBe(wallTile);
+    expect(searchPurchases(result.purchases, bathroom.rooms, "несуществующее", "mixed-price")).toEqual([]);
+    expect(searchPurchases(result.purchases, bathroom.rooms, "", "unpriced")).not.toContain(wallTile);
+    expect(JSON.stringify(result)).toBe(snapshot);
+    bathroom.rooms[0].wallTiles.forEach(spec => { if (spec) spec.packPriceRub = 1440; });
+    expect(searchPurchases(calculateProject(bathroom).purchases, bathroom.rooms, "", "mixed-price")).toEqual([]);
+  });
+  it("does not classify missing prices as mixed prices", () => {
+    expect(lines.some(line => line.priceNote)).toBe(true);
+    expect(lines.some(hasMixedPurchasePrices)).toBe(false);
   });
 });
