@@ -47,6 +47,7 @@ export default function PurchaseList({ lines, rooms, renderLine, actions }: {
       <p>Сверьте фасовку, цены и состав заказа. Памятки откроются в новой вкладке; ведомость останется здесь.</p>
       <Link href="/instrumenty/chek-listy/zakupka-materialov-vannoy/" target="_blank" rel="noopener noreferrer">Чек-лист закупки ванной <span>(новая вкладка)</span></Link>
       <Link href="/konstruktor/vannaya/materialy/" target="_blank" rel="noopener noreferrer">Что проверить в ведомости <span>(новая вкладка)</span></Link>
+      <Link href="/instrumenty/chek-listy/priemka-plitki/" target="_blank" rel="noopener noreferrer">Приёмка плитки после доставки <span>(новая вкладка)</span></Link>
     </aside>}
   </>;
 }

@@ -190,6 +190,7 @@ export const ROUTE_CHECKLIST_SLUGS: readonly string[] = [
   "montazh-krovli",
   "pokleivaniye-oboev",
   "pokraska-sten",
+  "priemka-plitki",
   "razvodka-elektriki",
   "remont-kvartiry",
   "styazhka-pola",

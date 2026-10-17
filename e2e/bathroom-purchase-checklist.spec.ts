@@ -2,6 +2,35 @@ import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const route = "/instrumenty/chek-listy/zakupka-materialov-vannoy/";
+const deliveryRoute = "/instrumenty/chek-listy/priemka-plitki/";
+
+test("tile delivery checklist exposes its own SEO intent and inbound links", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  const base = process.env.E2E_BASE_URL ?? "http://localhost:3456";
+  expect((await page.goto(base + deliveryRoute))?.status()).toBe(200);
+  await expect(page.locator("h1")).toHaveText("Приёмка плитки после доставки");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://getmasterok.ru${deliveryRoute}`);
+  await expect(page.locator('meta[name="robots"]')).not.toHaveAttribute("content", /noindex/);
+  const schemas = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(s => JSON.parse(s));
+  const steps = schemas.find(s => s["@type"] === "HowTo").step;
+  expect(steps.flatMap((s: { itemListElement: unknown[] }) => s.itemListElement)).toHaveLength(12);
+  for (const step of steps) for (const item of step.itemListElement) await expect(page.locator("label").filter({ hasText: item.text })).toBeAttached();
+  await expect(page.locator('a[href="https://kerama-marazzi.com/razdel-voprosy-i-otvety-faq/"]')).toBeAttached();
+  for (const source of [route, "/konstruktor/vannaya/materialy/", "/konstruktor/vannaya/", "/instrumenty/chek-listy/"]) {
+    expect((await page.goto(base + source))?.status()).toBe(200);
+    await expect(page.locator(`a[href="${deliveryRoute}"]`).first()).toBeAttached();
+  }
+  await context.close();
+});
+
+test("discovery feeds include tile delivery checklist", async ({ request }) => {
+  for (const path of ["/sitemap-pages.xml", "/llms.txt"]) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toContain(deliveryRoute);
+  }
+});
 
 test("bathroom checklist has server-rendered content, canonical and linked guide", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -24,6 +53,52 @@ test("bathroom checklist has server-rendered content, canonical and linked guide
 for (const width of [320, 390]) {
   test.describe(`bathroom purchase checklist ${width}px`, () => {
     test.use({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, colorScheme: width === 320 ? "dark" : "light" });
+    test("opens delivery checks from the bill without losing the project or purchase checks", async ({ page }, testInfo) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      await page.goto(route);
+      await page.getByRole("checkbox").first().check();
+      await page.goto("/konstruktor/redaktor/?new=1&start=bathroom");
+      await page.getByRole("button", { name: "Открыть 3D-проект", exact: true }).tap();
+      await expect(page.getByRole("status", { name: "Сохранено в браузере", exact: true })).toBeAttached({ timeout: 20_000 });
+      const projectUrl = page.url();
+      await page.getByRole("navigation", { name: "Разделы конструктора" }).getByRole("button", { name: "Ведомость", exact: true }).tap();
+      const bill = page.getByRole("dialog", { name: "Ведомость проекта", exact: true });
+      const before = await bill.getByRole("article").allTextContents();
+      const link = bill.getByRole("link", { name: /Приёмка плитки после доставки/ });
+      await expect(link).toHaveAttribute("target", "_blank");
+      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      const opened = page.waitForEvent("popup");
+      await link.tap();
+      const popup = await opened;
+      popup.on("pageerror", error => errors.push(error.message));
+      await expect(popup.getByRole("heading", { level: 1 })).toHaveText("Приёмка плитки после доставки");
+      await expect(popup.getByRole("checkbox", { checked: true })).toHaveCount(0);
+      await popup.getByRole("checkbox").first().check();
+      await popup.getByRole("button", { name: /^Только оставшиеся/ }).tap();
+      await expect(popup.getByRole("checkbox")).toHaveCount(11);
+      await popup.reload();
+      await expect(popup.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "8");
+      await popup.getByRole("button", { name: /^Все пункты/ }).tap();
+      await expect(popup.getByRole("checkbox").first()).toBeChecked();
+      expect(await popup.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await popup.screenshot({ path: testInfo.outputPath("delivery-mobile.png"), fullPage: true });
+      if (width === 390) {
+        const pending = popup.waitForEvent("download");
+        await popup.getByRole("button", { name: "📄 Скачать PDF", exact: true }).tap();
+        const download = await pending;
+        const output = testInfo.outputPath("tile-delivery.pdf");
+        await download.saveAs(output);
+        expect((await readFile(output)).subarray(0, 5).toString()).toBe("%PDF-");
+      }
+      await popup.getByRole("link", { name: "Чек-лист закупки материалов для ванной", exact: true }).tap();
+      await expect(popup.getByRole("checkbox").first()).toBeChecked();
+      await popup.close();
+      await expect(page).toHaveURL(projectUrl);
+      await expect(bill).toBeVisible();
+      expect(await bill.getByRole("article").allTextContents()).toEqual(before);
+      expect(errors).toEqual([]);
+    });
     test("remaining checks span all stages while print keeps all items and marks", async ({ page }, testInfo) => {
       await page.goto(route);
       const checks = page.getByRole("checkbox");

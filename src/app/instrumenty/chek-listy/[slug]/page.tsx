@@ -122,12 +122,18 @@ export default async function ChecklistPage({ params }: Props) {
 
       <InteractiveChecklist checklist={cl} />
 
-      {["zakupka-materialov-vannoy", "ustanovka-santehniki"].includes(cl.slug) && <section className="my-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700 print:hidden" aria-label="План и закупка ванной">
+      {cl.slug === "priemka-plitki" && <section className="my-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700" aria-labelledby="tile-delivery-notes">
+        <h2 id="tile-delivery-notes" className="text-lg font-semibold">Что проверять по маркировке</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Тон обозначает оттенок партии, калибр — фактический размер плитки. Для одной поверхности производитель рекомендует один тон и калибр. Обозначения и особенности рисунка сверяйте по конкретному товару: вариативность коллекции сама по себе не означает дефект.</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Источник пояснений о тоне и калибре — <a className="underline underline-offset-4" href="https://kerama-marazzi.com/razdel-voprosy-i-otvety-faq/" target="_blank" rel="noopener noreferrer">вопросы и ответы KERAMA MARAZZI</a>. Для другой марки используйте её инструкцию. Чек-лист помогает организовать осмотр; порядок приёмки и решения по расхождениям согласуйте с продавцом.</p>
+      </section>}
+      {["zakupka-materialov-vannoy", "ustanovka-santehniki", "priemka-plitki"].includes(cl.slug) && <section className="my-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700 print:hidden" aria-label="План и закупка ванной">
         <h2 className="text-lg font-semibold">От размеров ванной до заказа</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Чек-лист помогает проверить действия. Количество материалов и цены уточняйте в своём проекте и у продавца. Отметки не связаны с конкретным 3D-проектом; перед новой закупкой сбросьте их.</p>
         <div className="mt-3 flex flex-col gap-2 text-sm">
           <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/konstruktor/vannaya/materialy/">Как собрать и проверить ведомость ванной</Link>
           {cl.slug === "zakupka-materialov-vannoy" && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/konstruktor/vannaya/materialy/#compare-source-prices">Сверить цены одного товара на разных стенах</Link>}
+          {cl.slug === "zakupka-materialov-vannoy" && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/instrumenty/chek-listy/priemka-plitki/">Проверить плитку после доставки</Link>}
           <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/kalkulyatory/otdelka/vannaya-komnata/">Рассчитать отделочные материалы ванной</Link>
           {cl.slug !== "zakupka-materialov-vannoy" && <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href="/instrumenty/chek-listy/zakupka-materialov-vannoy/">Чек-лист закупки материалов для ванной</Link>}
         </div>

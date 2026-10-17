@@ -115,6 +115,9 @@ export default function BathroomMaterialsPage() {
       </div>
       <p className={styles.toolsNote}>Расходы смесей разбираем отдельно: <Link href="/blog/rashod-kleya-dlya-plitki-na-m2/">клей для плитки</Link> и <Link href="/blog/rashod-zatirki-shirina-shva-format-plitki/">затирка по формату плитки и ширине шва</Link>. Для количества есть <Link href="/kalkulyatory/poly/klej-dlya-plitki/">калькулятор клея</Link> и <Link href="/kalkulyatory/poly/zatirka/">калькулятор затирки</Link>.</p>
     </section>
+    <section id="tile-delivery" className={styles.section} aria-label="Приёмка плитки">
+      <div><h2>После доставки плитки</h2><p className={styles.toolsNote}>Сверьте привезённые коробки с подтверждённым заказом: артикулы, количество, фасовку и маркировку. Откройте <Link href="/instrumenty/chek-listy/priemka-plitki/">чек-лист приёмки плитки — 12 проверок до укладки</Link>. На телефоне можно отмечать выполненное и показывать только оставшиеся пункты. Отметки приёмки сохраняются отдельно от чек-листа закупки и не меняют ведомость проекта.</p></div>
+    </section>
     <section id="purchase-files" className={`${styles.section} ${styles.workflow}`} aria-labelledby="purchase-files-title">
       <div><h2 id="purchase-files-title">Как отправить список материалов мастеру</h2><p className={styles.intro}>Выберите формат под задачу: сообщение для заказа, схемы для обсуждения или файл для продолжения работы.</p><p className={styles.toolsNote}>Перед отправкой проверьте названия, количества и цены. При нескольких помещениях передаётся весь проект. Приложение и получателя выбираете вы; конструктор не подтверждает доставку сообщения.</p></div>
       <dl className={styles.materialList}>
