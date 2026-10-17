@@ -1,3 +1,5 @@
+import { getAnalyticsAutomationGuardScript } from "./runtime";
+
 /**
  * Product interaction origins are not acquisition sources. Keep the legacy
  * Metrika contract, but namespace this parameter at the Google transport edge.
@@ -14,8 +16,12 @@ export function getGoogleAnalyticsEventParams(
 export function getGoogleAnalyticsInitScript(measurementId: string): string {
   const id = JSON.stringify(measurementId);
 
-  return `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
+  return `(() => {
+${getAnalyticsAutomationGuardScript()}
+window.dataLayer = window.dataLayer || [];
+window.gtag = function(){window.dataLayer.push(arguments);};
+const gtag = window.gtag;
 gtag('js', new Date());
-gtag('config', ${id}, { send_page_view: false });`;
+gtag('config', ${id}, { send_page_view: false });
+})();`;
 }

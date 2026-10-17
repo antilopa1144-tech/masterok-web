@@ -15,7 +15,7 @@ import StorageMigrationInitializer from "@/components/storage/StorageMigrationIn
 import { getYandexMetrikaDeferredInitScript } from "@/lib/analytics/yandex-metrika-deferred";
 import { getGoogleAnalyticsInitScript } from "@/lib/analytics/google-analytics";
 import { GOOGLE_ANALYTICS_ID, YANDEX_METRIKA_COUNTER } from "@/lib/analytics/config";
-import { isProductionAnalyticsHost } from "@/lib/analytics/runtime";
+import { isProductionAnalyticsRequest } from "@/lib/analytics/runtime";
 
 import { SITE_DEFAULT_TITLE, SITE_METADATA_DESCRIPTION, SITE_NAME, SITE_OG_DESCRIPTION, SITE_OG_IMAGE_HEIGHT, SITE_OG_IMAGE_PATH, SITE_OG_IMAGE_WIDTH, SITE_TWITTER_DESCRIPTION, SITE_TWITTER_TITLE, SITE_URL } from "@/lib/site";
 
@@ -129,7 +129,9 @@ export default async function RootLayout({
   const headersList = await headers();
   const nonce = headersList.get("x-nonce") ?? undefined;
   const requestHost = headersList.get("x-forwarded-host") ?? headersList.get("host");
-  const analyticsEnabled = isProductionAnalyticsHost(requestHost);
+  const analyticsEnabled = isProductionAnalyticsRequest(
+    requestHost, headersList.get("user-agent"), headersList.get("x-masterok-automation"),
+  );
 
   return (
     <html lang="ru" className={inter.variable} suppressHydrationWarning>
@@ -167,12 +169,7 @@ export default async function RootLayout({
         </a>
         {analyticsEnabled ? (
           <>
-            <YandexMetrikaLoader />
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
-              strategy="afterInteractive"
-              nonce={nonce}
-            />
+            <YandexMetrikaLoader nonce={nonce} />
             <WebVitalsReporter />
           </>
         ) : null}

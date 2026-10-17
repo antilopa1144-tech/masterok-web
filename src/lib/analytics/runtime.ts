@@ -32,5 +32,21 @@ export function isProductionAnalyticsHost(
 /** Дополнительная клиентская защита для событий и SPA-навигации. */
 export function isProductionAnalyticsBrowser(): boolean {
   if (typeof window === "undefined") return false;
-  return isProductionAnalyticsHost(window.location?.hostname);
+  return isProductionAnalyticsHost(window.location?.hostname) &&
+    (typeof navigator === "undefined" || navigator.webdriver !== true);
+}
+
+/** Explicit test marker also excludes the noscript pixel in JavaScript-free checks. */
+export function isProductionAnalyticsRequest(
+  host: string | null | undefined,
+  userAgent: string | null | undefined,
+  automation: string | null | undefined,
+): boolean {
+  return isProductionAnalyticsHost(host) && automation !== "1" &&
+    !/\bHeadlessChrome\//i.test(userAgent ?? "");
+}
+
+/** Runs before creating queues or scheduling third-party scripts. */
+export function getAnalyticsAutomationGuardScript(): string {
+  return 'if (typeof navigator !== "undefined" && navigator.webdriver === true) return;';
 }

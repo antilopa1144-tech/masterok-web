@@ -17,6 +17,7 @@ export default defineConfig({
   reporter: "html",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3456",
+    extraHTTPHeaders: { "x-masterok-automation": "1" },
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },

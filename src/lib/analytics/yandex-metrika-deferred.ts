@@ -1,3 +1,5 @@
+import { getAnalyticsAutomationGuardScript } from "./runtime";
+
 /**
  * Отложенная загрузка tag.js для Yandex.Metrika.
  *
@@ -7,6 +9,7 @@
  */
 export function getYandexMetrikaDeferredInitScript(counterId: string): string {
   return `(() => {
+  ${getAnalyticsAutomationGuardScript()}
   const id = ${counterId};
   const src = "https://mc.yandex.ru/metrika/tag.js";
   const w = window;
