@@ -13,6 +13,7 @@ import {
 } from "@/lib/tools/checklist-schema";
 import InteractiveChecklist from "./InteractiveChecklist";
 import ChecklistCalculatorLink from "./ChecklistCalculatorLink";
+import { CHECKLIST_GUIDANCE } from "@/lib/checklist-guidance";
 
 const UI_TEXT = {
   notFoundTitle: "Чек-лист не найден",
@@ -73,6 +74,7 @@ export default async function ChecklistPage({ params }: Props) {
 
   const checklistJsonLd = buildChecklistHowToJsonLd(cl);
   const breadcrumbLd = buildChecklistDetailBreadcrumbJsonLd(cl);
+  const guidance = CHECKLIST_GUIDANCE[cl.slug];
 
   return (
     <>
@@ -160,7 +162,7 @@ export default async function ChecklistPage({ params }: Props) {
         </p>
       </div>
     </div>
-    <div className="print:hidden"><ToolPageExtras slug="chek-listy" /></div>
+    <div className="print:hidden"><ToolPageExtras slug="chek-listy" pagePath={`/instrumenty/chek-listy/${cl.slug}/`} extraFaq={guidance?.faq} extraIntro={guidance?.intro} /></div>
     </>
   );
 }

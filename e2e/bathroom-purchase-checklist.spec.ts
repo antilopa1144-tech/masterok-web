@@ -4,6 +4,28 @@ import { readFile } from "node:fs/promises";
 const route = "/instrumenty/chek-listy/zakupka-materialov-vannoy/";
 const deliveryRoute = "/instrumenty/chek-listy/priemka-plitki/";
 
+test("checklist FAQs match visible content and use their own page URLs", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  for (const [path, question] of [
+    [route, "Какие материалы для ванной не входят в ведомость конструктора?"],
+    [deliveryRoute, "Что записать, если количество или маркировка не совпали?"],
+    ["/instrumenty/chek-listy/pokraska-sten/", "Можно ли отмечать выполненные пункты?"],
+  ]) {
+    expect((await page.goto((process.env.E2E_BASE_URL ?? "http://localhost:3456") + path))?.status()).toBe(200);
+    const schemas = (await page.locator('script[type="application/ld+json"]').allTextContents()).map(s => JSON.parse(s));
+    const faqs = schemas.filter(s => s["@type"] === "FAQPage");
+    expect(faqs).toHaveLength(1);
+    expect(faqs[0].url).toBe(`https://getmasterok.ru${path}`);
+    expect(faqs[0].mainEntity.some((item: { name: string }) => item.name === question)).toBe(true);
+    for (const item of faqs[0].mainEntity) {
+      await expect(page.locator("h3").filter({ hasText: item.name })).toBeAttached();
+      await expect(page.locator("p").filter({ hasText: item.acceptedAnswer.text })).toBeAttached();
+    }
+  }
+  await context.close();
+});
+
 test("tile delivery checklist exposes its own SEO intent and inbound links", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
@@ -53,6 +75,50 @@ test("bathroom checklist has server-rendered content, canonical and linked guide
 for (const width of [320, 390]) {
   test.describe(`bathroom purchase checklist ${width}px`, () => {
     test.use({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, colorScheme: width === 320 ? "dark" : "light" });
+    test("copies remaining checks across stages with a manual fallback and empty state", async ({ page, context }, testInfo) => {
+      const errors: string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      if (width === 320) {
+        await page.addInitScript(() => {
+          Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.reject(new Error("denied")) }, configurable: true });
+          Object.defineProperty(document, "execCommand", { value: () => false, configurable: true });
+        });
+      } else await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await page.goto(width === 320 ? deliveryRoute : route);
+      const labels = await page.locator('ol[aria-label="Этапы проверки"] label').allTextContents();
+      await page.getByRole("checkbox").first().check();
+      const copy = page.getByRole("button", { name: "Скопировать оставшиеся проверки", exact: true });
+      expect((await copy.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await copy.tap();
+      let text: string;
+      if (width === 320) {
+        await expect(page.locator('p[role="alert"]')).toContainText("Браузер не разрешил копирование");
+        const field = page.getByRole("textbox", { name: "Оставшиеся проверки для копирования", exact: true });
+        text = await field.inputValue();
+        await field.focus();
+        expect(await field.evaluate((node: HTMLTextAreaElement) => node.selectionEnd - node.selectionStart)).toBe(text.length);
+      } else {
+        await expect(page.getByRole("status", { name: "Результат копирования" })).toContainText("Скопировано");
+        text = await page.evaluate(() => navigator.clipboard.readText());
+      }
+      expect(text).not.toContain(labels[0].trim());
+      for (const label of labels.slice(1)) expect(text).toContain(label.trim());
+      expect(text.match(/☐ /g)).toHaveLength(11);
+      expect(text).toContain("не результат осмотра");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`copy-remaining-${width}.png`), fullPage: true });
+      await page.getByRole("checkbox").first().uncheck();
+      await expect(page.getByRole("status", { name: "Результат копирования" })).toHaveCount(0);
+      await expect(page.getByRole("textbox", { name: "Оставшиеся проверки для копирования" })).toHaveCount(0);
+      await page.getByRole("button", { name: /^Только оставшиеся/ }).tap();
+      for (let index = 0; index < 12; index++) await page.getByRole("checkbox").first().check();
+      await expect(copy).toBeDisabled();
+      await expect(page.getByRole("status")).toContainText("Все пункты проверены");
+      await page.emulateMedia({ media: "print" });
+      await expect(copy).not.toBeVisible();
+      await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(12);
+      expect(errors).toEqual([]);
+    });
     test("opens delivery checks from the bill without losing the project or purchase checks", async ({ page }, testInfo) => {
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));

@@ -8,6 +8,8 @@ import {
 } from "@/lib/analytics";
 import type { Checklist } from "@/lib/checklists";
 import styles from "./checklist.module.css";
+import { copyText } from "@/lib/clipboard";
+import { buildChecklistRemainingText } from "@/lib/checklist-export";
 import {
   checklistItemKey,
   getChecklistMilestonesToReport,
@@ -42,17 +44,30 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
   const listRef = useRef<HTMLOListElement>(null);
   const showAllRef = useRef<HTMLButtonElement>(null);
   const [onlyRemaining, setOnlyRemaining] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copyResult, setCopyResult] = useState<{ text: string; copied: boolean } | null>(null);
   const reportedMilestonesRef = useRef<Set<ChecklistProgressMilestone>>(new Set());
 
   const totalItems = allKeys.length;
   const completedItems = checkedKeys.size;
   const remainingItems = totalItems - completedItems;
   const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  const remainingText = useMemo(() => buildChecklistRemainingText(checklist, checkedKeys), [checklist, checkedKeys]);
+  const currentCopyResult = copyResult?.text === remainingText ? copyResult : null;
+
+  const copyRemaining = async () => {
+    if (!remainingText || copying) return;
+    setCopying(true);
+    const copied = await copyText(remainingText);
+    setCopyResult({ text: remainingText, copied });
+    setCopying(false);
+  };
 
   const toggleItem = (stepIndex: number, itemIndex: number) => {
     const focused = document.activeElement;
     const key = checklistItemKey(stepIndex, itemIndex);
     const next = new Set(checkedKeys);
+    setCopyResult(null);
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setCheckedKeys(next);
@@ -92,6 +107,7 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
     const next = new Set<string>();
     setExpandedStep(0);
     setOnlyRemaining(false);
+    setCopyResult(null);
     setCheckedKeys(next);
     saveChecklistProgress(checklist.slug, next);
   };
@@ -137,6 +153,14 @@ function InteractiveChecklistSession({ checklist, hydrated }: { checklist: Check
           <button type="button" disabled={!hydrated} aria-pressed={onlyRemaining} onClick={() => setOnlyRemaining(true)} className={styles.filter}>Только оставшиеся · {remainingItems}</button>
         </div>
         {onlyRemaining && <p role="status" className="mt-2 text-sm text-slate-600 dark:text-slate-300">{remainingItems ? `Осталось проверить: ${remainingItems}. Открыты все незавершённые этапы.` : "Все пункты проверены. Чтобы изменить отметку, покажите все пункты."}</p>}
+        <button type="button" disabled={!hydrated || !remainingItems || copying} onClick={copyRemaining} className={`${styles.filter} mt-3 w-full text-left disabled:cursor-default disabled:opacity-50 sm:w-auto`} aria-describedby="remaining-copy-help">{copying ? "Копируем…" : "Скопировать оставшиеся проверки"}</button>
+        <p id="remaining-copy-help" className="mt-2 text-xs text-slate-500 dark:text-slate-400">Действия из всех этапов для заметок или сообщения мастеру. Количества материалов берите из ведомости.</p>
+        {currentCopyResult?.copied && <p role="status" aria-label="Результат копирования" className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">Скопировано. Вставьте список в заметку или сообщение.</p>}
+        {currentCopyResult && !currentCopyResult.copied && <div className="mt-3">
+          <p role="alert" className="mb-2 text-sm text-slate-600 dark:text-slate-300">Браузер не разрешил копирование. Выделите текст ниже и скопируйте вручную.</p>
+          <label className="block text-sm font-semibold" htmlFor="remaining-copy-text">Оставшиеся проверки для копирования</label>
+          <textarea id="remaining-copy-text" readOnly rows={8} value={remainingText} onFocus={event => event.currentTarget.select()} className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
+        </div>}
       </div>
 
       <ol ref={listRef} aria-label="Этапы проверки" aria-busy={!hydrated} className={`space-y-3 transition-opacity ${hydrated ? "opacity-100" : "opacity-70"}`}>

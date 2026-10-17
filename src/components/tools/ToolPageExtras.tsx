@@ -13,13 +13,15 @@ interface Props {
   extraFaq?: ToolFaqItem[];
   /** Дополнительный абзац к «Как пользоваться» */
   extraIntro?: string;
+  /** Адрес конкретной страницы, если инструмент имеет вложенные маршруты. */
+  pagePath?: string;
 }
 
-export default function ToolPageExtras({ slug, children, extraFaq, extraIntro }: Props) {
+export default function ToolPageExtras({ slug, children, extraFaq, extraIntro, pagePath }: Props) {
   const tool = getToolConfig(slug);
   if (!tool) return null;
 
-  const pageUrl = `${SITE_URL}${toolHref(slug)}`;
+  const pageUrl = `${SITE_URL}${pagePath ?? toolHref(slug)}`;
   // Один FAQPage на страницу: общие вопросы инструмента + страничные.
   const faq = extraFaq?.length ? [...tool.faq, ...extraFaq] : tool.faq;
   const intro = extraIntro ? `${tool.seoIntro} ${extraIntro}` : tool.seoIntro;
