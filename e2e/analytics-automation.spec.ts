@@ -89,8 +89,9 @@ for (const automated of [true, false]) {
         expect(vendors).toEqual([]);
       } else {
         await expect.poll(async () => (await readQueues(page)).ym.some(a => a[1] === "reachGoal")).toBe(true);
-        const queues = await readQueues(page);
-        expect(queues.ga.some(a => a[0] === "event" && a[1] === "page_view")).toBe(true);
+        // page_view уходит из отдельного чанка после гидрации. Без скелетона
+        // чек-лист кликабелен раньше, поэтому событие ждём, а не читаем сразу.
+        await expect.poll(async () => (await readQueues(page)).ga.some(a => a[0] === "event" && a[1] === "page_view")).toBe(true);
         expect(vendors.some(url => url.includes("mc.yandex.ru/metrika/tag.js"))).toBe(true);
         expect(vendors.some(url => url.includes("googletagmanager.com/gtag/js"))).toBe(true);
       }
