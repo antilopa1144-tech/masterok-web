@@ -151,3 +151,29 @@ export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[
     },
   ],
 };
+
+/**
+ * Чек-лист работы, для которой калькулятор считает материалы. Значение — slug
+ * из `ALL_CHECKLISTS`. Ссылка рендерится на сервере рядом с инструментами:
+ * без неё на страницу чек-листа вёл только общий каталог чек-листов.
+ */
+export const CALCULATOR_RELATED_CHECKLISTS: Record<string, string[]> = {
+  plitka: ["ukladka-plitki", "priemka-plitki"],
+  "klej-dlya-plitki": ["ukladka-plitki"],
+  zatirka: ["ukladka-plitki"],
+  "vannaya-komnata": ["zakupka-materialov-vannoy", "ustanovka-santehniki"],
+  styazhka: ["styazhka-pola"],
+  "nalivnoy-pol": ["styazhka-pola"],
+  gipsokarton: ["montazh-gipsokartona"],
+  "podvesnoy-potolok-gkl": ["montazh-gipsokartona"],
+  krovlya: ["montazh-krovli"],
+  oboi: ["pokleivaniye-oboev"],
+  kraska: ["pokraska-sten"],
+  shpaklevka: ["pokraska-sten"],
+  elektrika: ["razvodka-elektriki"],
+  "lentochnyy-fundament": ["ustroystvo-fundamenta"],
+  armatura: ["ustroystvo-fundamenta"],
+  "uteplenie-fasada-minvatoj": ["uteplenie-fasada"],
+  shtukaturka: ["remont-kvartiry"],
+  laminat: ["remont-kvartiry"],
+};

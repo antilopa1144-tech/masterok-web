@@ -22,6 +22,9 @@ describe("publication route contract", () => {
   it("does not stream a root loading shell before blog existence is resolved", () => {
     expect(existsSync("src/app/loading.tsx")).toBe(false);
     expect(existsSync("src/app/blog/loading.tsx")).toBe(false);
-    expect(existsSync("src/app/instrumenty/loading.tsx")).toBe(true);
+    // Скелетон в <main> уводил H1 и текст в скрытый блок потока на всех
+    // страницах калькуляторов и инструментов — индексируемые разделы его не держат.
+    expect(existsSync("src/app/instrumenty/loading.tsx")).toBe(false);
+    expect(existsSync("src/app/kalkulyatory/loading.tsx")).toBe(false);
   });
 });

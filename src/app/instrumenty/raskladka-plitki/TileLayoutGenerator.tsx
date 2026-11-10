@@ -2397,141 +2397,6 @@ export default function TileLayoutGenerator() {
         ...(packagingSource === "label" ? { tilesPerPack: parsedTilesPerBox } : {}),
       }} />
 
-      <section data-testid="tile-project-workspace" className="card overflow-hidden p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-700 dark:text-accent-300">Проект раскладки</p>
-            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
-              <span className="sm:hidden">Мои раскладки</span>
-              <span className="hidden sm:inline">Сохраните раскладку и вернитесь к ней позже</span>
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 sm:inline-flex dark:bg-slate-800 dark:text-slate-300">
-              {savedProjects.length > 0 ? `${savedProjects.length} сохранено` : "Хранится локально"}
-            </span>
-            <button
-              type="button"
-              aria-expanded={showMobileProjectWorkspace}
-              aria-controls="tile-project-workspace-content"
-              onClick={() => setShowMobileProjectWorkspace((visible) => !visible)}
-              className="min-h-11 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 sm:hidden dark:border-slate-700 dark:text-slate-200"
-            >
-              {showMobileProjectWorkspace ? "Свернуть" : savedProjects.length > 0 ? `Открыть · ${savedProjects.length}` : "Сохранить"}
-            </button>
-          </div>
-        </div>
-
-        <p className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 max-w-2xl text-xs leading-relaxed text-slate-500 dark:text-slate-400`}>
-          Размеры, проём, плитка, шов, запас и выбранный вид сохраняются в этом браузере. Ссылка восстанавливает ту же схему на другом устройстве.
-        </p>
-        <div id="tile-project-workspace-content" className={`${showMobileProjectWorkspace ? "grid" : "hidden sm:grid"} mt-4 gap-3 xl:grid-cols-[minmax(240px,1.15fr)_auto_minmax(280px,1fr)] xl:items-end`}>
-          <label className="block min-w-0">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Название помещения или поверхности</span>
-            <input
-              data-testid="tile-project-name"
-              type="text"
-              maxLength={80}
-              value={projectName}
-              onChange={(event) => { setProjectName(event.target.value); setProjectStatus("idle"); }}
-              placeholder="Например, ванная — стена у двери"
-              className="input-field min-h-11 w-full"
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <button
-              type="button"
-              data-testid="tile-save-layout-project"
-              disabled={Boolean(packagingError) || projectStatus === "saving"}
-              onClick={handleSaveProject}
-              className="btn-primary inline-flex min-h-11 items-center justify-center px-4 text-center text-sm disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {projectStatus === "saving" ? "Сохраняем…" : activeProjectId ? "Обновить проект" : "Сохранить проект"}
-            </button>
-            <button
-              type="button"
-              data-testid="tile-copy-project-link"
-              onClick={handleCopyProjectLink}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-accent-700 dark:hover:bg-accent-950/30 dark:hover:text-accent-300"
-            >
-              Копировать ссылку
-            </button>
-          </div>
-
-          <div className="min-w-0">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Сохранённые проекты</span>
-            {savedProjects.length === 0 ? (
-              <div className="flex min-h-11 items-center rounded-xl border border-dashed border-slate-200 px-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                После сохранения проект появится здесь
-              </div>
-            ) : (
-              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
-                <select
-                  aria-label="Сохранённые проекты раскладки"
-                  value={selectedProjectId}
-                  onChange={(event) => setSelectedProjectId(event.target.value)}
-                  className="input-field min-h-11 min-w-0 w-full text-sm"
-                >
-                  {savedProjects.map((project) => (
-                    <option key={project.id} value={project.id}>{project.name}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  data-testid="tile-open-layout-project"
-                  disabled={!selectedProjectId}
-                  onClick={handleOpenProject}
-                  className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-45 dark:border-slate-700 dark:text-slate-200"
-                >
-                  Открыть
-                </button>
-                <button
-                  type="button"
-                  aria-label="Удалить сохранённый проект"
-                  disabled={!selectedProjectId}
-                  onClick={handleDeleteProject}
-                  className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-500 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-45 dark:border-slate-700 dark:text-slate-400"
-                >
-                  Удалить
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <p role="status" aria-live="polite" className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 min-h-5 text-xs text-slate-500 dark:text-slate-400`}>
-          {projectStatus === "saved" && "Проект сохранён в этом браузере."}
-          {projectStatus === "loaded" && "Проект восстановлен — все параметры применены."}
-          {projectStatus === "link-copied" && "Ссылка с полной схемой скопирована."}
-          {projectStatus === "deleted" && "Сохранённый проект удалён."}
-          {projectStatus === "failed" && "Не удалось сохранить данные. Проверьте доступ браузера к локальному хранилищу."}
-        </p>
-        {selectedSavedPassport && (
-          <TileLayoutPassportCard
-            passport={selectedSavedPassport.passport}
-            compact
-            className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-3`}
-            visual={(
-              <TileRoomPreviewSVG
-                result={selectedSavedPassport.result}
-                groutMm={selectedSavedPassport.input.groutMm}
-                surfaceView={selectedSavedPassport.surfaceView}
-                surfaceW={selectedSavedPassport.input.surfaceW}
-                surfaceH={selectedSavedPassport.input.surfaceH}
-                visualFinish={selectedSavedPassport.visualFinish}
-                lightingPreset={selectedSavedPassport.lightingPreset}
-                groutColor={selectedSavedPassport.groutColor}
-                textureSource={selectedSavedPassport.textureSource}
-                textureScalePercent={selectedSavedPassport.textureScalePercent}
-                textureRotationDeg={selectedSavedPassport.textureRotationDeg}
-                customTextureDataUrl={selectedSavedPassport.customTextureDataUrl}
-              />
-            )}
-          />
-        )}
-      </section>
-
       <div className="grid gap-5 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.6fr)] lg:items-start xl:grid-cols-[minmax(250px,0.9fr)_minmax(0,1.9fr)_minmax(260px,0.9fr)]">
       <div ref={parametersRef} data-tool-panel="parameters" className="card scroll-mt-32 p-4 sm:scroll-mt-24 sm:p-5 lg:col-start-1 lg:row-start-1">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
@@ -3625,6 +3490,142 @@ export default function TileLayoutGenerator() {
         )}
       </div>
       </div>
+
+      {/* Сохранение проекта стоит после инструмента: человек из поиска сначала видит ввод и схему. */}
+      <section data-testid="tile-project-workspace" className="card overflow-hidden p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-700 dark:text-accent-300">Проект раскладки</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
+              <span className="sm:hidden">Мои раскладки</span>
+              <span className="hidden sm:inline">Сохраните раскладку и вернитесь к ней позже</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 sm:inline-flex dark:bg-slate-800 dark:text-slate-300">
+              {savedProjects.length > 0 ? `${savedProjects.length} сохранено` : "Хранится локально"}
+            </span>
+            <button
+              type="button"
+              aria-expanded={showMobileProjectWorkspace}
+              aria-controls="tile-project-workspace-content"
+              onClick={() => setShowMobileProjectWorkspace((visible) => !visible)}
+              className="min-h-11 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 sm:hidden dark:border-slate-700 dark:text-slate-200"
+            >
+              {showMobileProjectWorkspace ? "Свернуть" : savedProjects.length > 0 ? `Открыть · ${savedProjects.length}` : "Сохранить"}
+            </button>
+          </div>
+        </div>
+
+        <p className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 max-w-2xl text-xs leading-relaxed text-slate-500 dark:text-slate-400`}>
+          Размеры, проём, плитка, шов, запас и выбранный вид сохраняются в этом браузере. Ссылка восстанавливает ту же схему на другом устройстве.
+        </p>
+        <div id="tile-project-workspace-content" className={`${showMobileProjectWorkspace ? "grid" : "hidden sm:grid"} mt-4 gap-3 xl:grid-cols-[minmax(240px,1.15fr)_auto_minmax(280px,1fr)] xl:items-end`}>
+          <label className="block min-w-0">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Название помещения или поверхности</span>
+            <input
+              data-testid="tile-project-name"
+              type="text"
+              maxLength={80}
+              value={projectName}
+              onChange={(event) => { setProjectName(event.target.value); setProjectStatus("idle"); }}
+              placeholder="Например, ванная — стена у двери"
+              className="input-field min-h-11 w-full"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button
+              type="button"
+              data-testid="tile-save-layout-project"
+              disabled={Boolean(packagingError) || projectStatus === "saving"}
+              onClick={handleSaveProject}
+              className="btn-primary inline-flex min-h-11 items-center justify-center px-4 text-center text-sm disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {projectStatus === "saving" ? "Сохраняем…" : activeProjectId ? "Обновить проект" : "Сохранить проект"}
+            </button>
+            <button
+              type="button"
+              data-testid="tile-copy-project-link"
+              onClick={handleCopyProjectLink}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-accent-300 hover:bg-accent-50 hover:text-accent-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-accent-700 dark:hover:bg-accent-950/30 dark:hover:text-accent-300"
+            >
+              Копировать ссылку
+            </button>
+          </div>
+
+          <div className="min-w-0">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Сохранённые проекты</span>
+            {savedProjects.length === 0 ? (
+              <div className="flex min-h-11 items-center rounded-xl border border-dashed border-slate-200 px-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                После сохранения проект появится здесь
+              </div>
+            ) : (
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
+                <select
+                  aria-label="Сохранённые проекты раскладки"
+                  value={selectedProjectId}
+                  onChange={(event) => setSelectedProjectId(event.target.value)}
+                  className="input-field min-h-11 min-w-0 w-full text-sm"
+                >
+                  {savedProjects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  data-testid="tile-open-layout-project"
+                  disabled={!selectedProjectId}
+                  onClick={handleOpenProject}
+                  className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-45 dark:border-slate-700 dark:text-slate-200"
+                >
+                  Открыть
+                </button>
+                <button
+                  type="button"
+                  aria-label="Удалить сохранённый проект"
+                  disabled={!selectedProjectId}
+                  onClick={handleDeleteProject}
+                  className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-500 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-45 dark:border-slate-700 dark:text-slate-400"
+                >
+                  Удалить
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p role="status" aria-live="polite" className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-2 min-h-5 text-xs text-slate-500 dark:text-slate-400`}>
+          {projectStatus === "saved" && "Проект сохранён в этом браузере."}
+          {projectStatus === "loaded" && "Проект восстановлен — все параметры применены."}
+          {projectStatus === "link-copied" && "Ссылка с полной схемой скопирована."}
+          {projectStatus === "deleted" && "Сохранённый проект удалён."}
+          {projectStatus === "failed" && "Не удалось сохранить данные. Проверьте доступ браузера к локальному хранилищу."}
+        </p>
+        {selectedSavedPassport && (
+          <TileLayoutPassportCard
+            passport={selectedSavedPassport.passport}
+            compact
+            className={`${showMobileProjectWorkspace ? "block" : "hidden sm:block"} mt-3`}
+            visual={(
+              <TileRoomPreviewSVG
+                result={selectedSavedPassport.result}
+                groutMm={selectedSavedPassport.input.groutMm}
+                surfaceView={selectedSavedPassport.surfaceView}
+                surfaceW={selectedSavedPassport.input.surfaceW}
+                surfaceH={selectedSavedPassport.input.surfaceH}
+                visualFinish={selectedSavedPassport.visualFinish}
+                lightingPreset={selectedSavedPassport.lightingPreset}
+                groutColor={selectedSavedPassport.groutColor}
+                textureSource={selectedSavedPassport.textureSource}
+                textureScalePercent={selectedSavedPassport.textureScalePercent}
+                textureRotationDeg={selectedSavedPassport.textureRotationDeg}
+                customTextureDataUrl={selectedSavedPassport.customTextureDataUrl}
+              />
+            )}
+          />
+        )}
+      </section>
 
       <section data-testid="tile-procurement-plan" className="card p-4 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-2">

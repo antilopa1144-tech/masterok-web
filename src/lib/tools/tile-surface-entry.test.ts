@@ -15,6 +15,12 @@ describe("tile surface entry contracts", () => {
     expect(entry).toBeLessThan(generator.indexOf('data-testid="tile-project-workspace"'));
   });
 
+  it("shows the parameters and layout before the saved-project workspace", () => {
+    const parameters = generator.indexOf('data-tool-panel="parameters"');
+    expect(parameters).toBeGreaterThan(-1);
+    expect(parameters).toBeLessThan(generator.indexOf('data-testid="tile-project-workspace"'));
+  });
+
   it("shares the existing surface state with both controls", () => {
     expect(generator.match(/<TileSurfaceSelector value=\{surfaceView\} onChange=\{setSurfaceView\}/g)).toHaveLength(2);
     expect(selector).not.toContain("useState");
@@ -27,9 +33,11 @@ describe("tile surface entry contracts", () => {
     expect(selector).toContain("aria-pressed={value === surface}");
   });
 
-  it("keeps the search title and separates the 3D entry from classic shared inputs", () => {
-    expect(page).toContain('isClassicLayoutEntry("tile", await searchParams)');
-    expect(page).toContain('<LayoutConstructorEntry material="tile" classic={classic}');
+  it("keeps the search title and renders the layout tool itself on the landing page", () => {
+    // Замена инструмента баннером 3D (05.10.2026) стоила странице 43% входов.
+    expect(page).toContain("<TileLayoutGenerator />");
+    expect(page).not.toContain("LayoutConstructorEntry");
+    expect(generator).toContain("<ConstructorToolLink");
     expect(page).toContain("Генератор раскладки плитки");
     expect(generator).not.toContain("Сохраните стену и вернитесь к ней позже");
   });

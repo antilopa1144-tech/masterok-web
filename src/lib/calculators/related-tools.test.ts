@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ALL_CALCULATORS_META } from "./meta.generated";
-import { CALCULATOR_RELATED_TOOLS } from "./related-tools";
+import { CALCULATOR_RELATED_CHECKLISTS, CALCULATOR_RELATED_TOOLS } from "./related-tools";
+import { ALL_CHECKLISTS } from "../checklists";
 import { getToolConfig } from "../tools/config";
 
 describe("контекстные связи калькуляторов с инструментами", () => {
@@ -44,5 +45,29 @@ describe("контекстные связи калькуляторов с инс
     expect(CALCULATOR_RELATED_TOOLS.laminat?.map((item) => item.slug)).toContain("sravnenie-materialov");
     expect(CALCULATOR_RELATED_TOOLS.laminat?.find((item) => item.slug === "sravnenie-materialov")?.href)
       .toBe("/instrumenty/sravnenie-materialov/?category=flooring&from=laminat");
+  });
+});
+
+describe("связи калькуляторов с чек-листами работ", () => {
+  it("ссылается только на существующие калькуляторы и чек-листы без дублей", () => {
+    const calculatorSlugs = new Set(ALL_CALCULATORS_META.map((item) => item.slug));
+    const checklistSlugs = new Set(ALL_CHECKLISTS.map((item) => item.slug));
+
+    for (const [calculatorSlug, slugs] of Object.entries(CALCULATOR_RELATED_CHECKLISTS)) {
+      expect(calculatorSlugs.has(calculatorSlug), calculatorSlug).toBe(true);
+      expect(slugs.length, calculatorSlug).toBeGreaterThan(0);
+      expect(new Set(slugs).size, calculatorSlug).toBe(slugs.length);
+      for (const slug of slugs) {
+        expect(checklistSlugs.has(slug), `${calculatorSlug} -> ${slug}`).toBe(true);
+      }
+    }
+  });
+
+  it("даёт каждому чек-листу хотя бы один вход из калькулятора", () => {
+    const targets = new Set(Object.values(CALCULATOR_RELATED_CHECKLISTS).flat());
+
+    for (const checklist of ALL_CHECKLISTS) {
+      expect(targets.has(checklist.slug), checklist.slug).toBe(true);
+    }
   });
 });

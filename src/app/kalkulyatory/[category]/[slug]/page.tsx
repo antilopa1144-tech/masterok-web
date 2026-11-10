@@ -16,7 +16,8 @@ import { buildPageMetadata } from "@/lib/metadata";
 import { CalculatorJsonLd } from "@/components/seo/CalculatorJsonLd";
 import SeoContentBlock from "@/components/seo/SeoContentBlock";
 import { getCalculatorCategoryRedirect } from "@/lib/calculators/canonical-path";
-import { CALCULATOR_RELATED_TOOLS } from "@/lib/calculators/related-tools";
+import { CALCULATOR_RELATED_CHECKLISTS, CALCULATOR_RELATED_TOOLS } from "@/lib/calculators/related-tools";
+import { getChecklistBySlug } from "@/lib/checklists";
 import { getToolConfig, toolHref } from "@/lib/tools/config";
 
 interface PageProps {
@@ -106,6 +107,17 @@ export default async function CalculatorPage({ params }: PageProps) {
       ? [{ slug: tool.slug, href: link.href ?? toolHref(tool.slug), title: tool.cardTitle, reason: link.reason }]
       : [];
   });
+  const relatedChecklists = (CALCULATOR_RELATED_CHECKLISTS[calc.slug] ?? []).flatMap((slug) => {
+    const checklist = getChecklistBySlug(slug);
+    return checklist
+      ? [{
+          slug: `chek-list-${checklist.slug}`,
+          href: `/instrumenty/chek-listy/${checklist.slug}/`,
+          title: `Чек-лист: ${checklist.title}`,
+          reason: checklist.description,
+        }]
+      : [];
+  });
 
   return (
     <>
@@ -155,7 +167,7 @@ export default async function CalculatorPage({ params }: PageProps) {
         </Suspense>
 
         <ConstructorContextCard calculatorSlug={calc.slug} placement="calculator_context" />
-        <CalculatorRelatedTools calculatorSlug={calc.slug} items={relatedTools} />
+        <CalculatorRelatedTools calculatorSlug={calc.slug} items={[...relatedTools, ...relatedChecklists]} />
 
         <div className="mt-4" data-print-hide>
           <SeoContentBlock

@@ -3,13 +3,12 @@ import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import LayoutConstructorEntry from "@/components/constructor/LayoutConstructorEntry";
-import { isClassicLayoutEntry, type LayoutSearchParams } from "@/lib/constructor/layout-entry";
+import TileLayoutGenerator from "./TileLayoutGenerator";
 import { CONSTRUCTOR_BATHROOM_MATERIALS_URL, CONSTRUCTOR_BATHROOM_URL } from "@/lib/constructor/entry";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
-  description: "Раскладка плитки в 3D: пол и стены комнаты, размеры, швы, подрезки и упаковки к покупке. Для диагонали и отдельной поверхности доступна расширенная схема.",
+  description: "Визуализатор раскладки плитки на стену или пол: введите размеры, увидите раскладку, подрезку и количество плитки. Прямая и диагональная укладка.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-plitki", {
@@ -26,8 +25,7 @@ const breadcrumbLd = {
   ],
 };
 
-export default async function Page({ searchParams }: { searchParams: Promise<LayoutSearchParams> }) {
-  const classic = isClassicLayoutEntry("tile", await searchParams);
+export default function Page() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -59,13 +57,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Lay
             Генератор раскладки плитки
           </h1>
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
-            Примерьте плитку в 3D-комнате, сравните подрезки и узнайте, сколько упаковок покупать.
+            Выберите стену или пол, задайте размеры поверхности и плитки — увидите схему, подрезку и количество к покупке. Проём можно учесть для стены.
           </p>
         </div>
       </div>
 
       <div className="page-container-wide py-5 lg:py-6">
-        <LayoutConstructorEntry material="tile" classic={classic} />
+        <TileLayoutGenerator />
       </div>
       <ToolPageExtras slug="raskladka-plitki">
         <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Раскладка готова? Проверьте <Link href={CONSTRUCTOR_BATHROOM_MATERIALS_URL} className="text-accent-700 underline underline-offset-4 dark:text-accent-400">материалы для отделки ванной перед покупкой</Link>: упаковки плитки, расход смесей, цены и отдельные позиции ремонта.</p>

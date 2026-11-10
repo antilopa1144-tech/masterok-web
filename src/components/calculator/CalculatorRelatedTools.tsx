@@ -28,7 +28,7 @@ export default function CalculatorRelatedTools({ calculatorSlug, items }: Props)
         Следующий шаг
       </p>
       <h2 id="calculator-related-tools-title" className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
-        Проверьте результат на схеме или в справочнике
+        Проверьте результат и подготовьтесь к работе
       </h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {items.map((item) => (

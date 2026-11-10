@@ -3,13 +3,13 @@ import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import LayoutConstructorEntry from "@/components/constructor/LayoutConstructorEntry";
-import { isClassicLayoutEntry, type LayoutSearchParams } from "@/lib/constructor/layout-entry";
+import { Suspense } from "react";
+import LaminateLayoutGenerator from "./LaminateLayoutGenerator";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 
 const META = {
   description:
-    "Раскладка ламината в 3D-комнате: размеры, направление досок, подрезки и упаковки к покупке. Палуба 1/3 и 1/2 в конструкторе, ёлочка — в отдельной схеме.",
+    "Бесплатная программа раскладки ламината онлайн: схема 1/3, 1/2 или ёлочкой. Введите размеры комнаты и доски — увидите подрезки, отход и количество к закупке.",
 };
 
 export const metadata: Metadata = buildToolPageMetadata("raskladka-laminata", {
@@ -26,8 +26,7 @@ const breadcrumbLd = {
   ],
 };
 
-export default async function Page({ searchParams }: { searchParams: Promise<LayoutSearchParams> }) {
-  const classic = isClassicLayoutEntry("laminate", await searchParams);
+export default function Page() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -59,13 +58,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Lay
             Раскладка ламината онлайн со схемой
           </h1>
           <p className="mt-1.5 max-w-4xl text-sm text-slate-500 sm:text-base dark:text-slate-400">
-            Примерьте покрытие в 3D-комнате и получите список материалов к покупке.
+            Введите размеры комнаты и доски — увидите схему укладки палубой или ёлочкой, отход и количество досок к закупке.
           </p>
         </div>
       </div>
 
       <div className="page-container-wide py-5 lg:py-6">
-        <LayoutConstructorEntry material="laminate" classic={classic} />
+        <Suspense fallback={<div className="card p-8 animate-pulse text-sm text-slate-400">Загрузка…</div>}>
+          <LaminateLayoutGenerator />
+        </Suspense>
       </div>
       <ToolPageExtras slug="raskladka-laminata">
         <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">

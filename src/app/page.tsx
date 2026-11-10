@@ -32,8 +32,11 @@ const CalculatorSearch = dynamic(
 );
 
 const CALC_COUNT = ALL_CALCULATORS_META.length;
-const HOME_TITLE = "Мастерок — 3D-конструктор ремонта и калькуляторы";
-const HOME_DESCRIPTION = "Спланируйте комнату или ванную в 3D: размеры, плитка, ламинат и материалы к покупке. Строительные калькуляторы для отдельных задач. Бесплатно, без регистрации.";
+// Широкий запрос «строительные калькуляторы онлайн» закреплён за главной
+// (docs/seo-growth-roadmap.md, решение от 2026-07-31), поэтому он стоит в
+// начале title и description, а 3D-конструктор идёт следом.
+const HOME_TITLE = "Строительные калькуляторы онлайн и 3D-конструктор ремонта";
+const HOME_DESCRIPTION = "Строительные калькуляторы онлайн: расчёт материалов с запасом и количеством к покупке. 3D-конструктор комнаты и ванной. Бесплатно, без регистрации.";
 // Homepage search receives the current Ghost article catalogue.
 export const revalidate = 60;
 
