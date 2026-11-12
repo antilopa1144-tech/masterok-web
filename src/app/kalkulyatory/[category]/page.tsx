@@ -63,7 +63,10 @@ export default async function CategoryPage({ params }: PageProps) {
   const calculators = getCalculatorsByCategory(cat.id);
   const faqItems = CATEGORY_FAQ[cat.id] ?? [];
   const intro = getCategoryIntro(cat.id);
-  const allBlogPosts = await getAllPosts();
+  const allBlogPosts = await getAllPosts().catch(() => {
+    console.warn(`Не удалось загрузить статьи для категории калькуляторов: ${cat.slug}`);
+    return [];
+  });
   const baseUrl = SITE_URL;
 
   const pageUrl = `${baseUrl}/kalkulyatory/${cat.slug}/`;

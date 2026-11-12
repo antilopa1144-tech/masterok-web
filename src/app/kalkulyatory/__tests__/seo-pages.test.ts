@@ -1,6 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { getAllPosts } from "@/lib/blog";
 
 Object.assign(globalThis, { React });
 
@@ -40,6 +41,56 @@ describe("SEO-страницы калькуляторов", () => {
     );
     expect(html).toContain("Рассчитать материалы плитного фундамента");
     expect(html).toContain("Рассчитать опалубку для фундамента");
+  });
+
+  it("сохраняет каталог и SEO категории при отказе Ghost", async () => {
+    vi.mocked(getAllPosts).mockRejectedValueOnce(new Error("Ghost unavailable"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      const page = await CategoryPage({
+        params: Promise.resolve({ category: "fundament" }),
+      });
+      const html = renderToStaticMarkup(page);
+
+      expect(html).toContain("Фундамент и основание</h1>");
+      expect(html).toContain('href="/kalkulyatory/fundament/plitnyj-fundament"');
+      expect(html).toContain('"@type":"CollectionPage"');
+      expect(html).toContain('"@type":"FAQPage"');
+      expect(html).not.toContain("Полезные статьи");
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("показывает подходящие статьи при доступном Ghost", async () => {
+    vi.mocked(getAllPosts).mockResolvedValueOnce([
+      {
+        slug: "beton-dlya-fundamenta",
+        title: "Бетон для фундамента",
+        description: "Как выбрать бетон",
+        relatedCalculator: { categorySlug: "fundament", slug: "beton" },
+        date: "2026-11-01",
+        readTime: "5 мин",
+        category: "Стройка",
+        icon: "",
+        tags: [],
+        internalTags: [],
+        heroImage: "",
+        heroImageAlt: "",
+        content: "",
+      },
+    ]);
+
+    const page = await CategoryPage({
+      params: Promise.resolve({ category: "fundament" }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain("Полезные статьи");
+    expect(html).toMatch(/href="\/blog\/beton-dlya-fundamenta\/?"/);
+    expect(html).toContain("Бетон для фундамента");
   });
 
   it("выводит в потолочном хабе реечный потолок, утепление и схему светильников", async () => {
