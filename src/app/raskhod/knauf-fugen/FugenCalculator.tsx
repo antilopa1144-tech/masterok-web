@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { parseDecimalDraft } from "@/components/calculator/parts/numericInput";
+import { CalculationDecimalField, calculationFieldClassName } from "@/components/tools/CalculationDecimalField";
 import {
   calculateFugenPurchase,
   formatFugenRange,
@@ -12,46 +13,8 @@ import {
   type FugenWork,
 } from "@/lib/tools/knauf-fugen";
 
-const fieldClass =
-  "mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 aria-invalid:border-red-500 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100";
 const minArea = 0.01;
 const maxArea = 100_000;
-
-function DecimalField({
-  id, label, value, onChange, hint, error,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  hint?: string;
-  error?: string;
-}) {
-  const description = error ?? hint;
-  return (
-    <div className="min-w-0">
-      <label htmlFor={id} className="block text-sm font-semibold">{label}</label>
-      <input
-        id={id}
-        type="text"
-        inputMode="decimal"
-        className={fieldClass}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        aria-invalid={Boolean(error)}
-        aria-describedby={description ? `${id}-hint` : undefined}
-      />
-      {description && (
-        <p id={`${id}-hint`} className={error
-          ? "mt-1.5 text-sm text-red-700 dark:text-red-300"
-          : "mt-1.5 text-sm text-slate-600 dark:text-slate-400"}
-        >
-          {description}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export default function FugenCalculator() {
   const [work, setWork] = useState<FugenWork>("surface");
@@ -80,7 +43,7 @@ export default function FugenCalculator() {
         <select
           id="fugen-work"
           value={work}
-          className={fieldClass + " truncate"}
+          className={calculationFieldClassName + " truncate"}
           onChange={(event) => {
             const nextWork = event.target.value;
             if (Object.hasOwn(FUGEN_WORK, nextWork)) setWork(nextWork as FugenWork);
@@ -93,7 +56,7 @@ export default function FugenCalculator() {
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <DecimalField
+        <CalculationDecimalField
           id="fugen-area"
           label={isSurface ? "Площадь без проёмов, м²" : "Площадь обшивки, м²"}
           value={areaDraft}
@@ -102,7 +65,7 @@ export default function FugenCalculator() {
           error={validArea ? undefined : `Введите площадь от ${formatFugenRange(minArea)} до ${formatFugenRange(maxArea)} м².`}
         />
         {isSurface && (
-          <DecimalField
+          <CalculationDecimalField
             id="fugen-thickness"
             label="Толщина слоя, мм"
             value={thicknessDraft}
@@ -115,7 +78,7 @@ export default function FugenCalculator() {
           <label htmlFor="fugen-bag" className="block text-sm font-semibold">Вес мешка</label>
           <select
             id="fugen-bag"
-            className={fieldClass}
+            className={calculationFieldClassName}
             value={bagWeightKg}
             onChange={(event) => {
               const weight = FUGEN_BAG_WEIGHTS_KG.find((bag) => String(bag) === event.target.value);

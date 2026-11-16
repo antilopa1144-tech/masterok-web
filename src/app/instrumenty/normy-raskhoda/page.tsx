@@ -6,6 +6,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 import ConsumptionNormsExplorer from "@/components/tools/ConsumptionNormsExplorer";
 import { FUGEN_PATH } from "@/lib/tools/knauf-fugen";
+import { UNTERPUTTS_PATH } from "@/lib/tools/knauf-unterputts";
 import { VETONIT_LR_PLUS_PATH } from "@/lib/tools/vetonit-lr-plus";
 
 const META = {
@@ -86,6 +87,7 @@ export default function Page() {
         <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
           <li>Для финишной шпаклёвки Vetonit LR+ есть <Link href={VETONIT_LR_PLUS_PATH} className="font-semibold text-cyan-800 underline underline-offset-2 dark:text-cyan-300">расчёт расхода и количества мешков</Link> по площади и толщине слоя.</li>
           <li><Link href={FUGEN_PATH} className="font-semibold text-cyan-800 underline underline-offset-2 dark:text-cyan-300">Расчёт расхода КНАУФ-Фуген</Link> для сплошного слоя и стыков ГКЛ или ГВЛ.</li>
+          <li><Link href={UNTERPUTTS_PATH} className="font-semibold text-cyan-800 underline underline-offset-2 dark:text-cyan-300">Расчёт расхода КНАУФ-Унтерпутц</Link> по площади и средней толщине слоя.</li>
         </ul>
 
         <details className="card group overflow-hidden">

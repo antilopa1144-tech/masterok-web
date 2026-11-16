@@ -4,7 +4,7 @@ import type {
   MaterialResult,
 } from "../types";
 import { withSiteMetaTitle } from "../meta";
-import { calculatePuttyPurchase, roundPuttyValue as round } from "../putty-purchase";
+import { calculateDryMixPurchase, roundDryMixValue as round } from "../dry-mix-purchase";
 import {
   ACCURACY_MODE_LABELS,
   DEFAULT_ACCURACY_MODE,
@@ -98,7 +98,7 @@ const calculatePosition = ({
   packageWeightKg: number;
   category: string;
 }): PositionCalculation => {
-  const purchase = calculatePuttyPurchase({
+  const purchase = calculateDryMixPurchase({
     areaM2: workAreaM2,
     consumptionRate,
     rateFactor: rateBasis === 0 ? thicknessMm : layerCount,

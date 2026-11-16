@@ -1,4 +1,4 @@
-import { calculatePuttyPurchase } from "@/lib/calculators/putty-purchase";
+import { calculateDryMixPurchase } from "@/lib/calculators/dry-mix-purchase";
 import { getConsumptionNorm, getConsumptionPerAdjustment } from "./consumption-norms";
 
 export const VETONIT_LR_PLUS_PATH = "/raskhod/vetonit-lr-plus/";
@@ -19,7 +19,7 @@ export function calculateVetonitLrPlus(
   thicknessMm: number,
   packageWeightKg: VetonitBagWeight,
 ) {
-  return calculatePuttyPurchase({
+  return calculateDryMixPurchase({
     areaM2,
     consumptionRate: VETONIT_LR_PLUS_RATE,
     rateFactor: thicknessMm,

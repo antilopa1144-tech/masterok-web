@@ -1,4 +1,4 @@
-import { calculatePuttyPurchase } from "@/lib/calculators/putty-purchase";
+import { calculateDryMixPurchase } from "@/lib/calculators/dry-mix-purchase";
 import { getConsumptionNorm } from "./consumption-norms";
 
 export const FUGEN_PATH = "/raskhod/knauf-fugen/";
@@ -31,7 +31,7 @@ export function formatFugenRange(lower: number, upper = lower): string {
 
 export function calculateFugenPurchase(inputs: FugenInputs) {
   const [lowerRate, upperRate] = FUGEN_WORK[inputs.work].rate;
-  const calculateAtRate = (consumptionRate: number) => calculatePuttyPurchase({
+  const calculateAtRate = (consumptionRate: number) => calculateDryMixPurchase({
     areaM2: inputs.areaM2,
     consumptionRate,
     rateFactor: inputs.work === "surface" ? inputs.thicknessMm : 1,
