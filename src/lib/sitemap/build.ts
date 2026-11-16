@@ -4,6 +4,7 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
+import { FUGEN_PATH } from "@/lib/tools/knauf-fugen";
 import { VETONIT_LR_PLUS_PATH } from "@/lib/tools/vetonit-lr-plus";
 import {
   parseSitemapChunkId,
@@ -123,6 +124,10 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}${VETONIT_LR_PLUS_PATH}`,
+      lastModified: "2026-11-16",
+    },
+    {
+      url: `${BASE_URL}${FUGEN_PATH}`,
       lastModified: "2026-11-16",
     },
     {

@@ -2,6 +2,7 @@ import { ALL_CALCULATORS_META } from "@/lib/calculators/meta.generated";
 import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_TOOLS } from "@/lib/tools";
 import { getAllPosts } from "@/lib/blog";
+import { FUGEN_PATH } from "@/lib/tools/knauf-fugen";
 import { VETONIT_LR_PLUS_PATH } from "@/lib/tools/vetonit-lr-plus";
 import {
   MASTEROK_SOCIAL_LINKS,
@@ -31,6 +32,7 @@ export async function GET() {
   lines.push(`- [Михалыч](${SITE_URL}/mikhalych/): AI-помощник строителя`);
   lines.push(`- [Инструменты](${SITE_URL}/instrumenty/): конвертеры, сравнения, чек-листы`);
   lines.push(`- [Расход шпаклёвки Vetonit LR+](${SITE_URL}${VETONIT_LR_PLUS_PATH}): норма по техкарте, расчёт сухой смеси и количества мешков по площади и толщине слоя`);
+  lines.push(`- [Расход шпаклёвки КНАУФ-Фуген](${SITE_URL}${FUGEN_PATH}): нормы производителя и количество мешков для сплошного слоя и стыков ГКЛ и ГВЛ`);
   lines.push(`- [Конструктор комнаты](${SITE_URL}/konstruktor/): бесплатный 3D-конструктор отделки без регистрации; примеры комнаты, ванной и раскладки ламината. Прямоугольные помещения, двери и окна, ламинат и плитка на полу и стенах, развёртки, подрезки и закупка упаковками. Сравнение планов одной комнаты, обстановки и отделки в сохранённых вариантах; расход и стоимость материалов по всему проекту. Проекты сохраняются в браузере; экспорт PNG, PDF, XLSX и файла проекта. Со стартовой страницы доступны редактор и отдельные инструменты`);
   lines.push(`- [Материалы для отделки ванной](${SITE_URL}/konstruktor/vannaya/materialy/): состав ведомости, расход смесей, упаковки, цены и отдельные расходы ремонта`);
   lines.push(`- [Чек-лист закупки материалов ванной](${SITE_URL}/instrumenty/chek-listy/zakupka-materialov-vannoy/): 12 проверок проекта, товаров, цен и доставки; отметки в браузере, копирование оставшихся проверок и чистый PDF для магазина`);
