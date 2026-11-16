@@ -4,6 +4,7 @@ import { CATEGORIES } from "@/lib/calculators/categories";
 import { ALL_CHECKLISTS } from "@/lib/checklists";
 import { getAllPosts, getAllTags, getPostsByTag, tagToSlug } from "@/lib/blog";
 import { TOOL_CONFIGS, toolHref } from "@/lib/tools/config";
+import { VETONIT_LR_PLUS_PATH } from "@/lib/tools/vetonit-lr-plus";
 import {
   parseSitemapChunkId,
   type SitemapChunkId,
@@ -119,6 +120,10 @@ async function buildStaticSitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: METHODOLOGY_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}${VETONIT_LR_PLUS_PATH}`,
+      lastModified: "2026-11-16",
     },
     {
       url: `${BASE_URL}/politika-konfidencialnosti/`,

@@ -5,6 +5,7 @@ import { buildToolPageMetadata } from "@/lib/tools/metadata";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import ToolPageExtras from "@/components/tools/ToolPageExtras";
 import ConsumptionNormsExplorer from "@/components/tools/ConsumptionNormsExplorer";
+import { VETONIT_LR_PLUS_PATH } from "@/lib/tools/vetonit-lr-plus";
 
 const META = {
   title: "Таблица норм расхода строительных материалов на 1 м²",
@@ -80,6 +81,10 @@ export default function Page() {
 
       <div className="page-container space-y-4 py-4 sm:space-y-6 sm:py-8">
         <ConsumptionNormsExplorer />
+
+        <p className="text-sm text-slate-700 dark:text-slate-300">
+          Для финишной шпаклёвки Vetonit LR+ есть <Link href={VETONIT_LR_PLUS_PATH} className="font-semibold text-cyan-800 underline underline-offset-2 dark:text-cyan-300">расчёт расхода и количества мешков</Link> по площади и толщине слоя.
+        </p>
 
         <details className="card group overflow-hidden">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden sm:px-5">
