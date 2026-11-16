@@ -71,10 +71,10 @@ export default function VetonitLrPlusPage() {
             <table aria-labelledby="vetonit-examples" className="w-full text-left text-sm tabular-nums">
               <thead className="bg-slate-100 dark:bg-slate-800">
                 <tr>
-                  <th scope="col" className="px-2 py-2.5 sm:px-4">Площадь, м²</th>
-                  <th scope="col" className="px-2 py-2.5 sm:px-4">Смесь, кг</th>
+                  <th scope="col" className="px-1.5 py-2.5 sm:px-4">Площадь, м²</th>
+                  <th scope="col" className="px-1.5 py-2.5 sm:px-4">Смесь, кг</th>
                   {VETONIT_LR_PLUS_BAGS.map((weight) => (
-                    <th key={weight} scope="col" className="px-2 py-2.5 sm:px-4">Мешки<br />по {weight} кг</th>
+                    <th key={weight} scope="col" className="px-1.5 py-2.5 sm:px-4">Мешки<br />по {weight} кг</th>
                   ))}
                 </tr>
               </thead>
@@ -83,10 +83,10 @@ export default function VetonitLrPlusPage() {
                   const results = VETONIT_LR_PLUS_BAGS.map((weight) => calculateVetonitLrPlus(area, min, weight));
                   return (
                     <tr key={area} className="border-t border-slate-200 dark:border-slate-700">
-                      <th scope="row" className="px-2 py-2.5 font-medium sm:px-4">{area}</th>
-                      <td className="px-2 py-2.5 sm:px-4">{formatVetonitNumber(results[0].baseNeedKg)}</td>
+                      <th scope="row" className="px-1.5 py-2.5 font-medium sm:px-4">{area}</th>
+                      <td className="px-1.5 py-2.5 sm:px-4">{formatVetonitNumber(results[0].baseNeedKg)}</td>
                       {results.map(({ packages }, index) => (
-                        <td key={VETONIT_LR_PLUS_BAGS[index]} className="px-2 py-2.5 sm:px-4">{packages}</td>
+                        <td key={VETONIT_LR_PLUS_BAGS[index]} className="px-1.5 py-2.5 sm:px-4">{packages}</td>
                       ))}
                     </tr>
                   );
