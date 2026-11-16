@@ -4,6 +4,7 @@ import type {
   MaterialResult,
 } from "../types";
 import { withSiteMetaTitle } from "../meta";
+import { calculatePuttyPurchase, roundPuttyValue as round } from "../putty-purchase";
 import {
   ACCURACY_MODE_LABELS,
   DEFAULT_ACCURACY_MODE,
@@ -59,14 +60,6 @@ const readNumber = (value: unknown, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const round = (value: number, digits = 3): number => {
-  const factor = 10 ** digits;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
-};
-
-const ceilPositive = (value: number): number =>
-  value > 0 ? Math.ceil(value - 1e-9) : 0;
-
 const formatRuNumber = (value: number): string =>
   new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 3 }).format(value);
 
@@ -105,15 +98,14 @@ const calculatePosition = ({
   packageWeightKg: number;
   category: string;
 }): PositionCalculation => {
-  const rateFactor = rateBasis === 0 ? thicknessMm : layerCount;
-  const baseNeedKg = round(workAreaM2 * consumptionRate * rateFactor, 6);
-  const requiredNeedKg = round(
-    baseNeedKg * (1 + allowancePercent / 100),
-    6,
-  );
-  const packages = ceilPositive(requiredNeedKg / packageWeightKg);
-  const purchaseKg = round(packages * packageWeightKg, 6);
-  const leftoverKg = round(Math.max(0, purchaseKg - requiredNeedKg), 6);
+  const purchase = calculatePuttyPurchase({
+    areaM2: workAreaM2,
+    consumptionRate,
+    rateFactor: rateBasis === 0 ? thicknessMm : layerCount,
+    allowancePercent,
+    packageWeightKg,
+  });
+  const { baseNeedKg, requiredNeedKg, packages, purchaseKg } = purchase;
 
   return {
     purpose,
@@ -123,11 +115,7 @@ const calculatePosition = ({
     layerCount,
     allowancePercent,
     packageWeightKg,
-    baseNeedKg,
-    requiredNeedKg,
-    packages,
-    purchaseKg,
-    leftoverKg,
+    ...purchase,
     material: {
       name: PURPOSE_NAMES[purpose] ?? PURPOSE_NAMES[0],
       quantity: baseNeedKg,
