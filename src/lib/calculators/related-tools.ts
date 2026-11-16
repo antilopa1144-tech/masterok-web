@@ -65,6 +65,16 @@ export const CALCULATOR_RELATED_TOOLS: Record<string, CalculatorRelatedToolLink[
       slug: "rasstanovka-svetilnikov",
       reason: "Проверить симметрию светильников на плане до разметки реечного потолка.",
     },
+    {
+      slug: "lineynyy-raskroy",
+      reason: "Разложить отрезки потолочных реек по заводским длинам с учётом ширины пропила.",
+    },
+  ],
+  "kalkulyator-terrasnoy-doski": [
+    {
+      slug: "lineynyy-raskroy",
+      reason: "Разложить доски по списку отрезков и проверить, сколько заготовок нужно для раскроя.",
+    },
   ],
   gruntovka: [
     {

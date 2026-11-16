@@ -219,7 +219,9 @@ export function ResultBlock({
     [result.materials]
   );
   const primaryMaterial = result.materials[0];
-  const primaryPackage = primaryMaterial?.packageInfo;
+  const packageInfo = primaryMaterial?.packageInfo;
+  // Шаг округления объёма не является упаковкой. В сводке показываем объём покупки.
+  const primaryPackage = packageInfo?.packageUnit === "шагов заказа" ? undefined : packageInfo;
   const primaryQty = primaryPackage?.count ?? (primaryMaterial ? qtyForMaterial(primaryMaterial) : 0);
   const primaryDisplay = primaryMaterial
     ? formatMaterialQty(primaryQty, primaryPackage ? primaryPackage.packageUnit : primaryMaterial.unit)
